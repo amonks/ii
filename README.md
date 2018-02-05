@@ -34,4 +34,7 @@ these domains I own but have no dns for as yet
 - legacyforce.org
 - mikemonks.io
 - popefucker.com
+- realtruths.exposed
+- reptiles.exposed
+- theweb.exposed
 
