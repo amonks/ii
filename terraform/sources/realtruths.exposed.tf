@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "realtruths-exposed-public" {
   name    = "realtruths.exposed"
-  comment = "HostedZone created by Route53 Registrar"
 
   tags {}
 }

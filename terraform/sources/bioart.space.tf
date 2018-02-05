@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "bioart-space-public" {
   name    = "bioart.space"
-  comment = "bioart"
 
   tags {}
 }

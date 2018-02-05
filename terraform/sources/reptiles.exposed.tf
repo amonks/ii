@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "reptiles-exposed-public" {
   name    = "reptiles.exposed"
-  comment = "HostedZone created by Route53 Registrar"
 
   tags {}
 }

@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "int3rn3t-website-public" {
   name    = "int3rn3t.website"
-  comment = "Managed by Terraform"
 
   tags {}
 }

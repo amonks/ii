@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "xn--onks-99b-com-public" {
   name    = "xn--onks-99b.com"
-  comment = "HostedZone created by Route53 Registrar"
 
   tags {}
 }

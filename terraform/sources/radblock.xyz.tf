@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "radblock-xyz-public" {
   name    = "radblock.xyz"
-  comment = "Managed by Terraform"
 
   tags {}
 }

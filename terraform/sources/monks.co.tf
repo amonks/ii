@@ -1,6 +1,5 @@
 resource "aws_route53_zone" "monks-co-public" {
   name    = "monks.co"
-  comment = ""
 
   tags {}
 }
