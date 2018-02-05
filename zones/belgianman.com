@@ -1,0 +1,11 @@
+@ 10800 IN A 217.70.184.38
+music 10800 IN CNAME dom.bandcamp.com.
+old 10800 IN CNAME belgianman.github.io.
+status 10800 IN CNAME stats.pingdom.com.
+wafelijzer 10800 IN CNAME belgianman.github.io.
+www 10800 IN CNAME wafelijzer.herokuapp.com.
+@ 28800 IN MX 3 ALT1.ASPMX.L.GOOGLE.COM.
+@ 28800 IN MX 3 ALT2.ASPMX.L.GOOGLE.COM.
+@ 28800 IN MX 1 ASPMX.L.GOOGLE.COM.
+@ 28800 IN MX 5 ASPMX2.GOOGLEMAIL.COM.
+@ 28800 IN MX 5 ASPMX3.GOOGLEMAIL.COM.
