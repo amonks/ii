@@ -1,5 +1,5 @@
 resource "aws_route53_zone" "xn--onks-99b-com-public" {
-  name    = "xn--onks-99b.com"
+  name = "xn--onks-99b.com"
 
   tags {}
 }

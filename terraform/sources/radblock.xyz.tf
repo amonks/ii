@@ -1,5 +1,5 @@
 resource "aws_route53_zone" "radblock-xyz-public" {
-  name    = "radblock.xyz"
+  name = "radblock.xyz"
 
   tags {}
 }

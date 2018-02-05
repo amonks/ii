@@ -1,5 +1,5 @@
 resource "aws_route53_zone" "int3rn3t-website-public" {
-  name    = "int3rn3t.website"
+  name = "int3rn3t.website"
 
   tags {}
 }
