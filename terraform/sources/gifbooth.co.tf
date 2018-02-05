@@ -29,7 +29,7 @@ resource "aws_route53_record" "gifbooth-co-NS" {
   zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
   name    = "gifbooth.co"
   type    = "NS"
-  records = ["ns-769.awsdns-32.net.", "ns-1595.awsdns-07.co.uk.", "ns-390.awsdns-48.com.", "ns-1215.awsdns-23.org."]
+  records = ["ns-1774.awsdns-29.co.uk", "ns-489.awsdns-61.com", "ns-1261.awsdns-29.org", "ns-611.awsdns-12.net"]
   ttl     = "172800"
 }
 
@@ -37,7 +37,7 @@ resource "aws_route53_record" "gifbooth-co-SOA" {
   zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
   name    = "gifbooth.co"
   type    = "SOA"
-  records = ["ns-769.awsdns-32.net. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
+  records = ["ns-1774.awsdns-29.co.uk. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
   ttl     = "900"
 }
 

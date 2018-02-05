@@ -21,7 +21,7 @@ resource "aws_route53_record" "xn--onks-99b-com-NS" {
   zone_id = "${aws_route53_zone.xn--onks-99b-com-public.zone_id}"
   name    = "xn--onks-99b.com"
   type    = "NS"
-  records = ["ns-494.awsdns-61.com.", "ns-1374.awsdns-43.org.", "ns-1682.awsdns-18.co.uk.", "ns-610.awsdns-12.net."]
+  records = ["ns-223.awsdns-27.com", "ns-1288.awsdns-33.org", "ns-860.awsdns-43.net", "ns-1784.awsdns-31.co.uk"]
   ttl     = "172800"
 }
 
@@ -29,7 +29,7 @@ resource "aws_route53_record" "xn--onks-99b-com-SOA" {
   zone_id = "${aws_route53_zone.xn--onks-99b-com-public.zone_id}"
   name    = "xn--onks-99b.com"
   type    = "SOA"
-  records = ["ns-494.awsdns-61.com. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
+  records = ["ns-223.awsdns-27.com. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
   ttl     = "900"
 }
 

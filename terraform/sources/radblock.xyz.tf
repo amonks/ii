@@ -29,7 +29,7 @@ resource "aws_route53_record" "radblock-xyz-NS" {
   zone_id = "${aws_route53_zone.radblock-xyz-public.zone_id}"
   name    = "radblock.xyz"
   type    = "NS"
-  records = ["ns-1144.awsdns-15.org", "ns-1990.awsdns-56.co.uk", "ns-37.awsdns-04.com", "ns-886.awsdns-46.net"]
+  records = ["ns-227.awsdns-28.com", "ns-644.awsdns-16.net", "ns-1089.awsdns-08.org", "ns-1883.awsdns-43.co.uk"]
   ttl     = "30"
 }
 
@@ -37,7 +37,7 @@ resource "aws_route53_record" "radblock-xyz-SOA" {
   zone_id = "${aws_route53_zone.radblock-xyz-public.zone_id}"
   name    = "radblock.xyz"
   type    = "SOA"
-  records = ["ns-1990.awsdns-56.co.uk. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
+  records = ["ns-227.awsdns-28.com. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
   ttl     = "900"
 }
 
