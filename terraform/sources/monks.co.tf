@@ -24,22 +24,6 @@ resource "aws_route53_record" "monks-co-MX" {
   ttl     = "10800"
 }
 
-resource "aws_route53_record" "monks-co-NS" {
-  zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
-  name    = "monks.co"
-  type    = "NS"
-  records = ["ns-170.awsdns-21.com", "ns-1804.awsdns-33.co.uk", "ns-839.awsdns-40.net", "ns-1380.awsdns-44.org"]
-  ttl     = "172800"
-}
-
-resource "aws_route53_record" "monks-co-SOA" {
-  zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
-  name    = "monks.co"
-  type    = "SOA"
-  records = ["ns-170.awsdns-21.com. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
-  ttl     = "900"
-}
-
 resource "aws_route53_record" "monks-co-SPF" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
   name    = "monks.co"

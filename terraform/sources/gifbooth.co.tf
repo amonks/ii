@@ -24,22 +24,6 @@ resource "aws_route53_record" "gifbooth-co-MX" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "gifbooth-co-NS" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
-  name    = "gifbooth.co"
-  type    = "NS"
-  records = ["ns-1774.awsdns-29.co.uk", "ns-489.awsdns-61.com", "ns-1261.awsdns-29.org", "ns-611.awsdns-12.net"]
-  ttl     = "172800"
-}
-
-resource "aws_route53_record" "gifbooth-co-SOA" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
-  name    = "gifbooth.co"
-  type    = "SOA"
-  records = ["ns-1774.awsdns-29.co.uk. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
-  ttl     = "900"
-}
-
 resource "aws_route53_record" "_amazonses-gifbooth-co-TXT" {
   zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
   name    = "_amazonses.gifbooth.co"

@@ -16,22 +16,6 @@ resource "aws_route53_record" "xn--onks-99b-com-A" {
   }
 }
 
-resource "aws_route53_record" "xn--onks-99b-com-NS" {
-  zone_id = "${aws_route53_zone.xn--onks-99b-com-public.zone_id}"
-  name    = "xn--onks-99b.com"
-  type    = "NS"
-  records = ["ns-223.awsdns-27.com", "ns-1288.awsdns-33.org", "ns-860.awsdns-43.net", "ns-1784.awsdns-31.co.uk"]
-  ttl     = "172800"
-}
-
-resource "aws_route53_record" "xn--onks-99b-com-SOA" {
-  zone_id = "${aws_route53_zone.xn--onks-99b-com-public.zone_id}"
-  name    = "xn--onks-99b.com"
-  type    = "SOA"
-  records = ["ns-223.awsdns-27.com. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
-  ttl     = "900"
-}
-
 resource "aws_route53_record" "_keybase-xn--onks-99b-com-TXT" {
   zone_id = "${aws_route53_zone.xn--onks-99b-com-public.zone_id}"
   name    = "_keybase.xn--onks-99b.com"

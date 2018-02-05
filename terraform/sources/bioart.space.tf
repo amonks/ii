@@ -16,22 +16,6 @@ resource "aws_route53_record" "bioart-space-A" {
   }
 }
 
-resource "aws_route53_record" "bioart-space-NS" {
-  zone_id = "${aws_route53_zone.bioart-space-public.zone_id}"
-  name    = "bioart.space"
-  type    = "NS"
-  records = ["ns-1744.awsdns-26.co.uk", "ns-1298.awsdns-34.org", "ns-836.awsdns-40.net", "ns-197.awsdns-24.com"]
-  ttl     = "172800"
-}
-
-resource "aws_route53_record" "bioart-space-SOA" {
-  zone_id = "${aws_route53_zone.bioart-space-public.zone_id}"
-  name    = "bioart.space"
-  type    = "SOA"
-  records = ["ns-1744.awsdns-26.co.uk. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"]
-  ttl     = "900"
-}
-
 resource "aws_route53_record" "deployer-bioart-space-CNAME" {
   zone_id = "${aws_route53_zone.bioart-space-public.zone_id}"
   name    = "deployer.bioart.space"
