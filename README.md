@@ -15,3 +15,23 @@ domains
 - run `yarn apply` to deploy the config to aws
 - run `yarn destroy` to delete all dns resources
 
+## also
+
+### hosted elsewhere
+
+these domains I own but have on other nameservers intentionally
+
+- fmail.email *on fastmail*
+- sellf.org *on cloudfront*
+- sundayschool.rocks *on zeit*
+
+### unhosted
+
+these domains I own but have no dns for as yet
+
+- blgn.mn
+- boardwalk.tech
+- legacyforce.org
+- mikemonks.io
+- popefucker.com
+

@@ -1,3 +1,0 @@
-fmail.email fastmail
-sellf.org cloudfront
-sundayschool.rocks zeit
