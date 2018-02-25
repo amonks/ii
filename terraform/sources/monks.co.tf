@@ -4,18 +4,42 @@ resource "aws_route53_zone" "monks-co-public" {
   tags {}
 }
 
+resource "aws_route53_record" "now-monks-co-TXT" {
+  zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
+  name    = "_now.monks.co"
+  type    = "TXT"
+  records = ["b3f39bbd3640c48b8335292201c1deff27525728caa8e8807b313040bbf78118"]
+  ttl     = "10800"
+}
+
+resource "aws_route53_record" "g-monks-co-CNAME" {
+  zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
+  name    = "alias.zeit.co"
+  type    = "CNAME"
+  records = [""]
+  ttl     = "10800"
+}
+
+resource "aws_s3_bucket" "monks-co-bucket" {
+  bucket = "monks.co"
+  acl    = "public-read"
+
+  website {
+    redirect_all_requests_to = "http://g.monks.co"
+  }
+}
+
 resource "aws_route53_record" "monks-co-A" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
   name    = "monks.co"
   type    = "A"
 
   alias {
-    name                   = "dkpobroa8zd0h.cloudfront.net"
-    zone_id                = "Z2FDTNDATAQYW2"
+    name                   = "${aws_s3_bucket.blgn-mn-bucket.website_domain}"
+    zone_id                = "${aws_s3_bucket.blgn-mn-bucket.hosted_zone_id}"
     evaluate_target_health = false
   }
 }
-
 resource "aws_route53_record" "monks-co-MX" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
   name    = "monks.co"
