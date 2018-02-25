@@ -8,6 +8,8 @@ domains
 - terraform/converted-zones contains the result of converting those zone files into .tf files
 
 ## how
+
+Setup the standard AWS environment variables: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
 	
 - run `yarn convert` to convert zones to converted-zones
 - run `yarn format` to format the terraform files
