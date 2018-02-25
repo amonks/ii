@@ -20,12 +20,20 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
   ttl     = "10800"
 }
 
+resource "aws_s3_bucket_object" "monks-co-index-html" {
+  bucket       = "monks.co"
+  content_type = "text/html"
+  key          = "index.html"
+  source       = "../public/monks.co.html"
+  etag         = "${md5(file("../public/monks.co.html"))}"
+}
+
 resource "aws_s3_bucket" "monks-co-bucket" {
   bucket = "monks.co"
   acl    = "public-read"
 
   website {
-    redirect_all_requests_to = "https://g.monks.co"
+    index_document = "index.html"
   }
 }
 
@@ -40,6 +48,7 @@ resource "aws_route53_record" "monks-co-A" {
     evaluate_target_health = false
   }
 }
+
 resource "aws_route53_record" "monks-co-MX" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
   name    = "monks.co"
