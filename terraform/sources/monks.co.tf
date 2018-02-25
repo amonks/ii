@@ -14,9 +14,9 @@ resource "aws_route53_record" "now-monks-co-TXT" {
 
 resource "aws_route53_record" "g-monks-co-CNAME" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
-  name    = "alias.zeit.co"
+  name    = "g.monks.co"
   type    = "CNAME"
-  records = [""]
+  records = ["alias.zeit.co"]
   ttl     = "10800"
 }
 
@@ -25,7 +25,7 @@ resource "aws_s3_bucket" "monks-co-bucket" {
   acl    = "public-read"
 
   website {
-    redirect_all_requests_to = "http://g.monks.co"
+    redirect_all_requests_to = "https://g.monks.co"
   }
 }
 
