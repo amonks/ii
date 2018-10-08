@@ -43,8 +43,8 @@ resource "aws_route53_record" "monks-co-A" {
   type    = "A"
 
   alias {
-    name                   = "${aws_s3_bucket.blgn-mn-bucket.website_domain}"
-    zone_id                = "${aws_s3_bucket.blgn-mn-bucket.hosted_zone_id}"
+    name                   = "${aws_s3_bucket.monks-co-bucket.website_domain}"
+    zone_id                = "${aws_monks-co-bucket.blgn-mn-bucket.hosted_zone_id}"
     evaluate_target_health = false
   }
 }
