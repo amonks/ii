@@ -39,4 +39,4 @@ these domains I own but have no dns for as yet
 - realtruths.exposed
 - reptiles.exposed
 - theweb.exposed
-
+- αndrew.com
