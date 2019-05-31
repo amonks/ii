@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "blgn-mn-public" {
   name = "blgn.mn"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_s3_bucket" "blgn-mn-bucket" {

@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "bioart-space-public" {
   name = "bioart.space"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "bioart-space-A" {

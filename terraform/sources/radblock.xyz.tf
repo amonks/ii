@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "radblock-xyz-public" {
   name = "radblock.xyz"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "radblock-xyz-A" {
@@ -32,7 +32,7 @@ resource "aws_route53_record" "_amazonses-radblock-xyz-TXT" {
   ttl     = "1800"
 }
 
-resource "aws_route53_record" "4klau6rhbc2dx4lq5fifcnrziujq22iw-_domainkey-radblock-xyz-CNAME" {
+resource "aws_route53_record" "a-4klau6rhbc2dx4lq5fifcnrziujq22iw-_domainkey-radblock-xyz-CNAME" {
   zone_id = "${aws_route53_zone.radblock-xyz-public.zone_id}"
   name    = "4klau6rhbc2dx4lq5fifcnrziujq22iw._domainkey.radblock.xyz"
   type    = "CNAME"

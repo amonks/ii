@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "xn--wxa-art-public" {
   name = "xn--wxa.art"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "xn--wxa-art-A" {

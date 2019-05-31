@@ -1,0 +1,7 @@
+@ 10800 IN A 168.235.71.126
+wifi 10800 IN A 35.247.99.86
+vpn 10800 IN A 35.230.108.149
+x 10800 IN A 34.83.45.46
+b 10800 IN CNAME cross-origin-bouncer.herokuapp.com.
+s 10800 IN CNAME bioart-saic-production.herokuapp.com.
+v 10800 IN CNAME amonks.github.io.

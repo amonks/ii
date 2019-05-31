@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "monks-co-public" {
   name = "monks.co"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "now-monks-co-TXT" {
@@ -81,7 +81,7 @@ resource "aws_route53_record" "_amazonses-monks-co-TXT" {
   ttl     = "1800"
 }
 
-resource "aws_route53_record" "6hnnvk6qxhx2zdw5diz3r6hkebqfnn4x-_domainkey-monks-co-CNAME" {
+resource "aws_route53_record" "a-6hnnvk6qxhx2zdw5diz3r6hkebqfnn4x-_domainkey-monks-co-CNAME" {
   zone_id = "${aws_route53_zone.monks-co-public.zone_id}"
   name    = "6hnnvk6qxhx2zdw5diz3r6hkebqfnn4x._domainkey.monks.co"
   type    = "CNAME"

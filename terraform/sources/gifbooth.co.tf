@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "gifbooth-co-public" {
   name = "gifbooth.co"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "gifbooth-co-A" {

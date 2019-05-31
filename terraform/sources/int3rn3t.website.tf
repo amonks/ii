@@ -1,7 +1,7 @@
 resource "aws_route53_zone" "int3rn3t-website-public" {
   name = "int3rn3t.website"
 
-  tags {}
+  tags = {}
 }
 
 resource "aws_route53_record" "int3rn3t-website-A" {

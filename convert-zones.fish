@@ -1,7 +1,7 @@
 cd zones
 for file in *
 	if test -s $file
-		../bzfttr53rdutil -domain $file -zone-file $file > ../terraform/converted-zones/$file.tf
+		../tfz53 -domain $file -zone-file $file > ../terraform/converted-zones/$file.tf
 	else
 		if test -s ../terraform/sources/$file.tf
 			echo "deleting empty with source $file"
