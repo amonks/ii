@@ -20,12 +20,21 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
   ttl     = "300"
 }
 
+resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
+  bucket       = "monks.co"
+  content_type = "image/jpeg"
+  key          = "index.html"
+  source       = "../public/monks.co/monks.jpg"
+  etag         = "${md5(file("../public/monks.co/monks.jpg"))}"
+	cache_control = "max-age=31536000"
+}
+
 resource "aws_s3_bucket_object" "monks-co-index-html" {
   bucket       = "monks.co"
   content_type = "text/html; charset=utf-8"
   key          = "index.html"
-  source       = "../public/monks.co.html"
-  etag         = md5(file("../public/monks.co.html"))
+  source       = "../public/monks.co/index.html"
+  etag         = "${md5(file("../public/monks.co/index.html"))}"
 }
 
 resource "aws_s3_bucket" "monks-co-bucket" {
