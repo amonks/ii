@@ -23,9 +23,9 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
 resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
   bucket       = "monks.co"
   content_type = "image/jpeg"
-  key          = "index.html"
+  key          = "monks.jpg"
   source       = "../public/monks.co/monks.jpg"
-  etag         = "${md5(file("../public/monks.co/monks.jpg"))}"
+  etag         = "${filemd5("../public/monks.co/monks.jpg")}"
 	cache_control = "max-age=31536000"
 }
 
