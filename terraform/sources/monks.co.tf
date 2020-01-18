@@ -22,7 +22,7 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
 
 resource "aws_s3_bucket_object" "monks-co-index-html" {
   bucket       = "monks.co"
-  content_type = "text/html"
+  content_type = "text/html; charset=utf-8"
   key          = "index.html"
   source       = "../public/monks.co.html"
   etag         = md5(file("../public/monks.co.html"))
