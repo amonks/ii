@@ -5,7 +5,7 @@ resource "aws_route53_zone" "gifbooth-co-public" {
 }
 
 resource "aws_route53_record" "gifbooth-co-A" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "gifbooth.co"
   type    = "A"
 
@@ -17,7 +17,7 @@ resource "aws_route53_record" "gifbooth-co-A" {
 }
 
 resource "aws_route53_record" "gifbooth-co-MX" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "gifbooth.co"
   type    = "MX"
   records = ["10 inbound-smtp.us-east-1.amazonaws.com."]
@@ -25,7 +25,7 @@ resource "aws_route53_record" "gifbooth-co-MX" {
 }
 
 resource "aws_route53_record" "_amazonses-gifbooth-co-TXT" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "_amazonses.gifbooth.co"
   type    = "TXT"
   records = ["rgV0IaEBkhwjbFau3iHbqgY6MnttGaeBPNQD1OZ5V90="]
@@ -33,7 +33,7 @@ resource "aws_route53_record" "_amazonses-gifbooth-co-TXT" {
 }
 
 resource "aws_route53_record" "lo4od7zfwvqb2jmkjuqbe5yaza4eul43-_domainkey-gifbooth-co-CNAME" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "lo4od7zfwvqb2jmkjuqbe5yaza4eul43._domainkey.gifbooth.co"
   type    = "CNAME"
   records = ["lo4od7zfwvqb2jmkjuqbe5yaza4eul43.dkim.amazonses.com"]
@@ -41,7 +41,7 @@ resource "aws_route53_record" "lo4od7zfwvqb2jmkjuqbe5yaza4eul43-_domainkey-gifbo
 }
 
 resource "aws_route53_record" "vo3lqx4fdwkk5ipwghlrbifnfngbp75u-_domainkey-gifbooth-co-CNAME" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "vo3lqx4fdwkk5ipwghlrbifnfngbp75u._domainkey.gifbooth.co"
   type    = "CNAME"
   records = ["vo3lqx4fdwkk5ipwghlrbifnfngbp75u.dkim.amazonses.com"]
@@ -49,7 +49,7 @@ resource "aws_route53_record" "vo3lqx4fdwkk5ipwghlrbifnfngbp75u-_domainkey-gifbo
 }
 
 resource "aws_route53_record" "yibczxpctizfstbzlk26eqc4li4xwtax-_domainkey-gifbooth-co-CNAME" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "yibczxpctizfstbzlk26eqc4li4xwtax._domainkey.gifbooth.co"
   type    = "CNAME"
   records = ["yibczxpctizfstbzlk26eqc4li4xwtax.dkim.amazonses.com"]
@@ -57,7 +57,7 @@ resource "aws_route53_record" "yibczxpctizfstbzlk26eqc4li4xwtax-_domainkey-gifbo
 }
 
 resource "aws_route53_record" "gifs-gifbooth-co-A" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "gifs.gifbooth.co"
   type    = "A"
 
@@ -69,7 +69,7 @@ resource "aws_route53_record" "gifs-gifbooth-co-A" {
 }
 
 resource "aws_route53_record" "proxy-gifbooth-co-CNAME" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "proxy.gifbooth.co"
   type    = "CNAME"
   records = ["gifbooth-proxy.herokuapp.com"]
@@ -77,7 +77,7 @@ resource "aws_route53_record" "proxy-gifbooth-co-CNAME" {
 }
 
 resource "aws_route53_record" "r29-gifbooth-co-A" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "r29.gifbooth.co"
   type    = "A"
 
@@ -89,7 +89,7 @@ resource "aws_route53_record" "r29-gifbooth-co-A" {
 }
 
 resource "aws_route53_record" "server-gifbooth-co-A" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "server.gifbooth.co"
   type    = "A"
 
@@ -101,13 +101,13 @@ resource "aws_route53_record" "server-gifbooth-co-A" {
 }
 
 resource "aws_route53_record" "www-gifbooth-co-A" {
-  zone_id = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+  zone_id = aws_route53_zone.gifbooth-co-public.zone_id
   name    = "www.gifbooth.co"
   type    = "A"
 
   alias {
     name                   = "gifbooth.co"
-    zone_id                = "${aws_route53_zone.gifbooth-co-public.zone_id}"
+    zone_id                = aws_route53_zone.gifbooth-co-public.zone_id
     evaluate_target_health = false
   }
 }

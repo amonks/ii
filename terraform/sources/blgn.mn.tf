@@ -14,13 +14,13 @@ resource "aws_s3_bucket" "blgn-mn-bucket" {
 }
 
 resource "aws_route53_record" "blgn-mn-A" {
-  zone_id = "${aws_route53_zone.blgn-mn-public.zone_id}"
+  zone_id = aws_route53_zone.blgn-mn-public.zone_id
   name    = "blgn.mn"
   type    = "A"
 
   alias {
-    name                   = "${aws_s3_bucket.blgn-mn-bucket.website_domain}"
-    zone_id                = "${aws_s3_bucket.blgn-mn-bucket.hosted_zone_id}"
+    name                   = aws_s3_bucket.blgn-mn-bucket.website_domain
+    zone_id                = aws_s3_bucket.blgn-mn-bucket.hosted_zone_id
     evaluate_target_health = false
   }
 }

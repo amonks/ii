@@ -5,7 +5,7 @@ resource "aws_route53_zone" "int3rn3t-website-public" {
 }
 
 resource "aws_route53_record" "int3rn3t-website-A" {
-  zone_id = "${aws_route53_zone.int3rn3t-website-public.zone_id}"
+  zone_id = aws_route53_zone.int3rn3t-website-public.zone_id
   name    = "int3rn3t.website"
   type    = "A"
   records = ["192.30.252.154", "192.30.252.153"]
@@ -13,7 +13,7 @@ resource "aws_route53_record" "int3rn3t-website-A" {
 }
 
 resource "aws_route53_record" "science-int3rn3t-website-A" {
-  zone_id = "${aws_route53_zone.int3rn3t-website-public.zone_id}"
+  zone_id = aws_route53_zone.int3rn3t-website-public.zone_id
   name    = "science.int3rn3t.website"
   type    = "A"
 
@@ -25,7 +25,7 @@ resource "aws_route53_record" "science-int3rn3t-website-A" {
 }
 
 resource "aws_route53_record" "zingularity-int3rn3t-website-A" {
-  zone_id = "${aws_route53_zone.int3rn3t-website-public.zone_id}"
+  zone_id = aws_route53_zone.int3rn3t-website-public.zone_id
   name    = "zingularity.int3rn3t.website"
   type    = "A"
 
