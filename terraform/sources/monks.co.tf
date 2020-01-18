@@ -9,7 +9,7 @@ resource "aws_route53_record" "now-monks-co-TXT" {
   name    = "_now.monks.co"
   type    = "TXT"
   records = ["b3f39bbd3640c48b8335292201c1deff27525728caa8e8807b313040bbf78118"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "g-monks-co-CNAME" {
@@ -17,7 +17,7 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
   name    = "g.monks.co"
   type    = "CNAME"
   records = ["alias.zeit.co"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_s3_bucket_object" "monks-co-index-html" {
@@ -54,7 +54,7 @@ resource "aws_route53_record" "monks-co-MX" {
   name    = "monks.co"
   type    = "MX"
   records = ["10 in1-smtp.messagingengine.com.", "20 in2-smtp.messagingengine.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "monks-co-SPF" {
@@ -62,7 +62,7 @@ resource "aws_route53_record" "monks-co-SPF" {
   name    = "monks.co"
   type    = "SPF"
   records = ["v=spf1 include:spf.messagingengine.com include:spf.mandrillapp.com -all"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "monks-co-TXT" {
@@ -70,7 +70,7 @@ resource "aws_route53_record" "monks-co-TXT" {
   name    = "monks.co"
   type    = "TXT"
   records = ["v=spf1 include:spf.messagingengine.com include:spf.mandrillapp.com -all"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "_amazonses-monks-co-TXT" {
@@ -110,7 +110,7 @@ resource "aws_route53_record" "mandrill-_domainkey-monks-co-TXT" {
   name    = "mandrill._domainkey.monks.co"
   type    = "TXT"
   records = ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrLHiExVd55zd/IQ/J/mRwSRMAocV/hMB3jXwaHH36d9NaVynQFYV8NaWi69c1veUtRzGt7yAioXqLj7Z4TeEUoOLgrKsn8YnckGs9i3B3tVFB+Ch/4mPhXWiNfNdynHWBcPcbJ8kjEQ2U8y78dHZj1YeRXXVvWob2OaKynO8/lQIDAQAB;"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "mesmtp-_domainkey-monks-co-TXT" {
@@ -118,7 +118,7 @@ resource "aws_route53_record" "mesmtp-_domainkey-monks-co-TXT" {
   name    = "mesmtp._domainkey.monks.co"
   type    = "TXT"
   records = ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCsdLt3xomT52Iewm5v1RSpRqpXA2vIghgAHNck63znFYCEOFgVyKMbznwdqvO83Dv0MSzzHpwoC2lIj7oHZaIGHQDdISJpmOsaQrhri+3VES7lhE0z+OrfUv6kQKAYpKxgzDXSAC+n0fcIilvpzVRyKwX6yIA2rhrUM7mb21hQ6wIDAQAB"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "_keybase-monks-co-TXT" {
@@ -126,7 +126,7 @@ resource "aws_route53_record" "_keybase-monks-co-TXT" {
   name    = "_keybase.monks.co"
   type    = "TXT"
   records = ["keybase-site-verification=JZj7vchXA6vfSV8oa5QQyGmnI8CKDRgQIHYIFPl5sF0"]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "a-monks-co-CNAME" {
@@ -134,7 +134,7 @@ resource "aws_route53_record" "a-monks-co-CNAME" {
   name    = "a.monks.co"
   type    = "CNAME"
   records = ["monks.co."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "baton-monks-co-CNAME" {
@@ -142,7 +142,7 @@ resource "aws_route53_record" "baton-monks-co-CNAME" {
   name    = "baton.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "code-monks-co-A" {
@@ -170,7 +170,7 @@ resource "aws_route53_record" "facekov-monks-co-CNAME" {
   name    = "facekov.monks.co"
   type    = "CNAME"
   records = ["facekov.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "fftjs-monks-co-CNAME" {
@@ -178,7 +178,7 @@ resource "aws_route53_record" "fftjs-monks-co-CNAME" {
   name    = "fftjs.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "gimme-monks-co-A" {
@@ -210,7 +210,7 @@ resource "aws_route53_record" "homer-monks-co-CNAME" {
   name    = "homer.monks.co"
   type    = "CNAME"
   records = ["collectivememory.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "installation-monks-co-CNAME" {
@@ -218,7 +218,7 @@ resource "aws_route53_record" "installation-monks-co-CNAME" {
   name    = "installation.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "lyrics-monks-co-CNAME" {
@@ -226,7 +226,7 @@ resource "aws_route53_record" "lyrics-monks-co-CNAME" {
   name    = "lyrics.monks.co"
   type    = "CNAME"
   records = ["limitless-harbor-4493.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "monument-monks-co-CNAME" {
@@ -234,7 +234,7 @@ resource "aws_route53_record" "monument-monks-co-CNAME" {
   name    = "monument.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "nabu-monks-co-CNAME" {
@@ -242,7 +242,7 @@ resource "aws_route53_record" "nabu-monks-co-CNAME" {
   name    = "nabu.monks.co"
   type    = "CNAME"
   records = ["nabudata.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "numbers-monks-co-CNAME" {
@@ -250,7 +250,7 @@ resource "aws_route53_record" "numbers-monks-co-CNAME" {
   name    = "numbers.monks.co"
   type    = "CNAME"
   records = ["tranquil-spire-3396.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "oblique-monks-co-CNAME" {
@@ -258,7 +258,7 @@ resource "aws_route53_record" "oblique-monks-co-CNAME" {
   name    = "oblique.monks.co"
   type    = "CNAME"
   records = ["oblique-strategies-api.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "presence-monks-co-CNAME" {
@@ -274,7 +274,7 @@ resource "aws_route53_record" "processing-monks-co-CNAME" {
   name    = "processing.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "real-monks-co-A" {
@@ -306,7 +306,7 @@ resource "aws_route53_record" "realproxy-monks-co-CNAME" {
   name    = "realproxy.monks.co"
   type    = "CNAME"
   records = ["this-time-its-real.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "shout-monks-co-A" {
@@ -326,7 +326,7 @@ resource "aws_route53_record" "surveil-monks-co-CNAME" {
   name    = "surveil.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "text-monks-co-CNAME" {
@@ -334,7 +334,7 @@ resource "aws_route53_record" "text-monks-co-CNAME" {
   name    = "text.monks.co"
   type    = "CNAME"
   records = ["personaltextgen.herokuapp.com."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "u-monks-co-A" {
@@ -354,7 +354,7 @@ resource "aws_route53_record" "vj-monks-co-CNAME" {
   name    = "vj.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "vjjs-monks-co-CNAME" {
@@ -362,7 +362,7 @@ resource "aws_route53_record" "vjjs-monks-co-CNAME" {
   name    = "vjjs.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "10800"
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "www-monks-co-A" {
@@ -382,5 +382,5 @@ resource "aws_route53_record" "yungfuture-monks-co-CNAME" {
   name    = "yungfuture.monks.co"
   type    = "CNAME"
   records = ["monks.co."]
-  ttl     = "10800"
+  ttl     = "300"
 }
