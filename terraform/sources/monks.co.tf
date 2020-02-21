@@ -4,6 +4,61 @@ resource "aws_route53_zone" "monks-co-public" {
   tags = {}
 }
 
+resource "aws_acm_certificate" "monks-co-certificate" {
+  domain_name       = "*.monks.co"
+  validation_method = "EMAIL"
+  subject_alternative_names = ["monks.co"]
+}
+
+
+resource "aws_cloudfront_distribution" "monks-co-distribution" {
+  origin {
+    custom_origin_config {
+      http_port              = "80"
+      https_port             = "443"
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
+    }
+
+    domain_name = "${aws_s3_bucket.monks-co-bucket.website_endpoint}"
+    origin_id   = "monks.co"
+  }
+
+  enabled             = true
+  default_root_object = "index.html"
+
+  default_cache_behavior {
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "monks.co"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 31536000
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  aliases = ["monks.co"]
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn = "${aws_acm_certificate.monks-co-certificate.arn}"
+    ssl_support_method  = "sni-only"
+  }
+}
+
 resource "aws_route53_record" "now-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "_now.monks.co"
@@ -51,9 +106,10 @@ resource "aws_route53_record" "monks-co-A" {
   name    = "monks.co"
   type    = "A"
 
+
   alias {
-    name                   = aws_s3_bucket.monks-co-bucket.website_domain
-    zone_id                = aws_s3_bucket.monks-co-bucket.hosted_zone_id
+    name                   = "${aws_cloudfront_distribution.monks-co-distribution.domain_name}"
+    zone_id                = "${aws_cloudfront_distribution.monks-co-distribution.hosted_zone_id}"
     evaluate_target_health = false
   }
 }
@@ -372,18 +428,6 @@ resource "aws_route53_record" "vjjs-monks-co-CNAME" {
   type    = "CNAME"
   records = ["amonks.github.io."]
   ttl     = "300"
-}
-
-resource "aws_route53_record" "www-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "www.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "dkpobroa8zd0h.cloudfront.net"
-    zone_id                = "Z2FDTNDATAQYW2"
-    evaluate_target_health = false
-  }
 }
 
 resource "aws_route53_record" "yungfuture-monks-co-CNAME" {
