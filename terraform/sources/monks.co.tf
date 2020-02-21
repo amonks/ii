@@ -102,6 +102,7 @@ resource "aws_s3_bucket_object" "monks-co-old-html" {
 
 resource "aws_s3_bucket_object" "monks-co-index-html" {
   bucket       = "monks.co"
+  # content_type = "text/plain; charset=utf-8"
   content_type = "text/html; charset=utf-8"
   key          = "index.html"
   source       = "../public/monks.co/index.html"
