@@ -106,7 +106,8 @@ resource "aws_s3_bucket_object" "monks-co-index-html" {
   content_type = "text/html; charset=utf-8"
   key          = "index.html"
   source       = "../public/monks.co/index.html"
-  etag         = "${md5(file("../public/monks.co/index.html"))}"
+  # etag         = "plain-${md5(file("../public/monks.co/index.html"))}"
+  etag         = "rich-${md5(file("../public/monks.co/index.html"))}"
 }
 
 resource "aws_s3_bucket" "monks-co-bucket" {
