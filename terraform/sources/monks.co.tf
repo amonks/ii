@@ -84,6 +84,22 @@ resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
 	cache_control = "max-age=31536000"
 }
 
+resource "aws_s3_bucket_object" "monks-co-graphql-html" {
+  bucket       = "monks.co"
+  content_type = "text/html; charset=utf-8"
+  key          = "graphql.html"
+  source       = "../public/monks.co/graphql.html"
+  etag         = "${md5(file("../public/monks.co/graphql.html"))}"
+}
+
+resource "aws_s3_bucket_object" "monks-co-old-html" {
+  bucket       = "monks.co"
+  content_type = "text/html; charset=utf-8"
+  key          = "old.html"
+  source       = "../public/monks.co/old.html"
+  etag         = "${md5(file("../public/monks.co/old.html"))}"
+}
+
 resource "aws_s3_bucket_object" "monks-co-index-html" {
   bucket       = "monks.co"
   content_type = "text/html; charset=utf-8"
