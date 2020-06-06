@@ -34,14 +34,6 @@ resource "aws_route53_record" "numbers-andrewmonks-net-CNAME" {
   records = ["tranquil-spire-3396.herokuapp.com."]
 }
 
-resource "aws_route53_record" "mesmtp-_domainkey-andrewmonks-net-TXT" {
-  zone_id = aws_route53_zone.andrewmonks-net.zone_id
-  name    = "mesmtp._domainkey.andrewmonks.net."
-  type    = "TXT"
-  ttl     = "300"
-  records = ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCpei/JKjIBw0Cdq+2AoqOYF2/chTf2J94qbJ/UTotlofS4xdLNkDlLEG7iXC4J/gJhlYxWWl2zImu7GqgqIzvCxu30nqFS35wILvcNGfFV/V5MFXCua2dTwJERcY3DP41UuiNAdbR4GapEjRDYMcDDpnWnVAyb0+qxVv+lkCMWBwIDAQAB"]
-}
-
 resource "aws_route53_record" "lyrics-andrewmonks-net-CNAME" {
   zone_id = aws_route53_zone.andrewmonks-net.zone_id
   name    = "lyrics.andrewmonks.net."
@@ -56,6 +48,30 @@ resource "aws_route53_record" "homer-andrewmonks-net-CNAME" {
   type    = "CNAME"
   ttl     = "300"
   records = ["collectivememory.herokuapp.com."]
+}
+
+resource "aws_route53_record" "fm3-_domainkey-andrewmonks-net-CNAME" {
+  zone_id = aws_route53_zone.andrewmonks-net.zone_id
+  name    = "fm3._domainkey.andrewmonks.net."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["fm3.andrewmonks.net.dkim.fmhosted.com."]
+}
+
+resource "aws_route53_record" "fm2-_domainkey-andrewmonks-net-CNAME" {
+  zone_id = aws_route53_zone.andrewmonks-net.zone_id
+  name    = "fm2._domainkey.andrewmonks.net."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["fm2.andrewmonks.net.dkim.fmhosted.com."]
+}
+
+resource "aws_route53_record" "fm1-_domainkey-andrewmonks-net-CNAME" {
+  zone_id = aws_route53_zone.andrewmonks-net.zone_id
+  name    = "fm1._domainkey.andrewmonks.net."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["fm1.andrewmonks.net.dkim.fmhosted.com."]
 }
 
 resource "aws_route53_record" "facekov-andrewmonks-net-CNAME" {

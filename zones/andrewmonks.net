@@ -11,4 +11,6 @@ yungfuture 300 IN CNAME monks.co.
 @ 300 IN MX 20 in2-smtp.messagingengine.com.
 @ 300 IN SPF "v=spf1 include:spf.messagingengine.com -all"
 @ 300 IN TXT "v=spf1 include:spf.messagingengine.com -all"
-mesmtp._domainkey 300 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCpei/JKjIBw0Cdq+2AoqOYF2/chTf2J94qbJ/UTotlofS4xdLNkDlLEG7iXC4J/gJhlYxWWl2zImu7GqgqIzvCxu30nqFS35wILvcNGfFV/V5MFXCua2dTwJERcY3DP41UuiNAdbR4GapEjRDYMcDDpnWnVAyb0+qxVv+lkCMWBwIDAQAB"
+fm1._domainkey 300 IN CNAME fm1.andrewmonks.net.dkim.fmhosted.com.
+fm2._domainkey 300 IN CNAME fm2.andrewmonks.net.dkim.fmhosted.com.
+fm3._domainkey 300 IN CNAME fm3.andrewmonks.net.dkim.fmhosted.com.
