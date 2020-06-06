@@ -196,11 +196,27 @@ resource "aws_route53_record" "mandrill-_domainkey-monks-co-TXT" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "mesmtp-_domainkey-monks-co-TXT" {
+resource "aws_route53_record" "fm1-_domainkey-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "mesmtp._domainkey.monks.co"
-  type    = "TXT"
-  records = ["v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCsdLt3xomT52Iewm5v1RSpRqpXA2vIghgAHNck63znFYCEOFgVyKMbznwdqvO83Dv0MSzzHpwoC2lIj7oHZaIGHQDdISJpmOsaQrhri+3VES7lhE0z+OrfUv6kQKAYpKxgzDXSAC+n0fcIilvpzVRyKwX6yIA2rhrUM7mb21hQ6wIDAQAB"]
+  name    = "fm1._domainkey.monks.co"
+  type    = "CNAME"
+  records = ["fm1.monks.co.dkim.fmhosted.com"]
+  ttl     = "300"
+}
+
+resource "aws_route53_record" "fm2-_domainkey-monks-co-TXT" {
+  zone_id = aws_route53_zone.monks-co-public.zone_id
+  name    = "fm2._domainkey.monks.co"
+  type    = "CNAME"
+  records = ["fm2.monks.co.dkim.fmhosted.com"]
+  ttl     = "300"
+}
+
+resource "aws_route53_record" "fm3-_domainkey-monks-co-TXT" {
+  zone_id = aws_route53_zone.monks-co-public.zone_id
+  name    = "fm3._domainkey.monks.co"
+  type    = "CNAME"
+  records = ["fm3.monks.co.dkim.fmhosted.com"]
   ttl     = "300"
 }
 
