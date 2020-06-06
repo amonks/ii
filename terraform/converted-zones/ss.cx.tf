@@ -42,22 +42,6 @@ resource "aws_route53_record" "s-ss-cx-CNAME" {
   records = ["bioart-saic-production.herokuapp.com."]
 }
 
-resource "aws_route53_record" "p-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "p.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["10.0.0.3"]
-}
-
-resource "aws_route53_record" "i-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "i.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["10.0.0.2"]
-}
-
 resource "aws_route53_record" "b-ss-cx-CNAME" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "b.ss.cx."

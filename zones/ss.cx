@@ -4,5 +4,3 @@ vpn 300 IN A 35.230.108.149
 b 300 IN CNAME cross-origin-bouncer.herokuapp.com.
 s 300 IN CNAME bioart-saic-production.herokuapp.com.
 v 300 IN CNAME amonks.github.io.
-p 300 IN A 10.0.0.3
-i 300 IN A 10.0.0.2
