@@ -75,6 +75,15 @@ resource "aws_route53_record" "g-monks-co-CNAME" {
   ttl     = "300"
 }
 
+resource "aws_s3_bucket_object" "monks-co-headshot-jpg" {
+  bucket       = "monks.co"
+  content_type = "image/jpeg"
+  key          = "headshot.jpg"
+  source       = "../public/monks.co/headshot.jpg"
+  etag         = "${filemd5("../public/monks.co/headshot.jpg")}"
+	cache_control = "max-age=31536000"
+}
+
 resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
   bucket       = "monks.co"
   content_type = "image/jpeg"
