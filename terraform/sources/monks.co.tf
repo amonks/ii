@@ -237,27 +237,11 @@ resource "aws_route53_record" "_keybase-monks-co-TXT" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "a-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "a.monks.co"
-  type    = "CNAME"
-  records = ["monks.co."]
-  ttl     = "300"
-}
-
 resource "aws_route53_record" "baton-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "baton.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "code-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "code.monks.co"
-  type    = "A"
-  records = ["159.203.152.27"]
   ttl     = "300"
 }
 
@@ -271,14 +255,6 @@ resource "aws_route53_record" "f-monks-co-A" {
     zone_id                = "Z2FDTNDATAQYW2"
     evaluate_target_health = false
   }
-}
-
-resource "aws_route53_record" "facekov-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "facekov.monks.co"
-  type    = "CNAME"
-  records = ["facekov.herokuapp.com."]
-  ttl     = "300"
 }
 
 resource "aws_route53_record" "fftjs-monks-co-CNAME" {
@@ -397,18 +373,6 @@ resource "aws_route53_record" "real-monks-co-A" {
   }
 }
 
-resource "aws_route53_record" "realgifs-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "realgifs.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "s3-website-us-east-1.amazonaws.com"
-    zone_id                = "Z3AQBSTGFYJSTF"
-    evaluate_target_health = false
-  }
-}
-
 resource "aws_route53_record" "realproxy-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "realproxy.monks.co"
@@ -417,66 +381,3 @@ resource "aws_route53_record" "realproxy-monks-co-CNAME" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "shout-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "shout.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "s3-website-us-east-1.amazonaws.com"
-    zone_id                = "Z3AQBSTGFYJSTF"
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "surveil-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "surveil.monks.co"
-  type    = "CNAME"
-  records = ["amonks.github.io."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "text-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "text.monks.co"
-  type    = "CNAME"
-  records = ["personaltextgen.herokuapp.com."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "u-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "u.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "s3-website-us-east-1.amazonaws.com"
-    zone_id                = "Z3AQBSTGFYJSTF"
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "vj-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "vj.monks.co"
-  type    = "CNAME"
-  records = ["amonks.github.io."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "vjjs-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "vjjs.monks.co"
-  type    = "CNAME"
-  records = ["amonks.github.io."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "yungfuture-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "yungfuture.monks.co"
-  type    = "CNAME"
-  records = ["monks.co."]
-  ttl     = "300"
-}
