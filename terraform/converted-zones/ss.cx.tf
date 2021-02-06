@@ -10,36 +10,36 @@ resource "aws_route53_record" "wifi-ss-cx-A" {
   records = ["35.247.99.86"]
 }
 
-resource "aws_route53_record" "vpn-ss-cx-A" {
+resource "aws_route53_record" "thor-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "vpn.ss.cx."
+  name    = "thor.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["35.230.108.149"]
+  records = ["100.67.149.108"]
 }
 
-resource "aws_route53_record" "v-ss-cx-CNAME" {
+resource "aws_route53_record" "nencatacoa-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "v.ss.cx."
-  type    = "CNAME"
-  ttl     = "300"
-  records = ["amonks.github.io."]
-}
-
-resource "aws_route53_record" "ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "ss.cx."
+  name    = "nencatacoa.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["168.235.71.126"]
+  records = ["100.77.27.57"]
 }
 
-resource "aws_route53_record" "s-ss-cx-CNAME" {
+resource "aws_route53_record" "lugh-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "s.ss.cx."
-  type    = "CNAME"
+  name    = "lugh.ss.cx."
+  type    = "A"
   ttl     = "300"
-  records = ["bioart-saic-production.herokuapp.com."]
+  records = ["100.84.31.13"]
+}
+
+resource "aws_route53_record" "calder-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "calder.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.85.55.109"]
 }
 
 resource "aws_route53_record" "b-ss-cx-CNAME" {
