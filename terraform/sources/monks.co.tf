@@ -20,7 +20,7 @@ resource "aws_cloudfront_distribution" "monks-co-distribution" {
       origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
     }
 
-    domain_name = "${aws_s3_bucket.monks-co-bucket.website_endpoint}"
+    domain_name = aws_s3_bucket.monks-co-bucket.website_endpoint
     origin_id   = "monks.co"
   }
 
@@ -54,7 +54,7 @@ resource "aws_cloudfront_distribution" "monks-co-distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = "${aws_acm_certificate.monks-co-certificate.arn}"
+    acm_certificate_arn = aws_acm_certificate.monks-co-certificate.arn
     ssl_support_method  = "sni-only"
   }
 }
@@ -80,7 +80,7 @@ resource "aws_s3_bucket_object" "monks-co-headshot-jpg" {
   content_type = "image/jpeg"
   key          = "headshot.jpg"
   source       = "../public/monks.co/headshot.jpg"
-  etag         = "${filemd5("../public/monks.co/headshot.jpg")}"
+  etag         = filemd5("../public/monks.co/headshot.jpg")
 	cache_control = "max-age=31536000"
 }
 
@@ -89,7 +89,7 @@ resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
   content_type = "image/jpeg"
   key          = "monks.jpg"
   source       = "../public/monks.co/monks.jpg"
-  etag         = "${filemd5("../public/monks.co/monks.jpg")}"
+  etag         = filemd5("../public/monks.co/monks.jpg")
 	cache_control = "max-age=31536000"
 }
 
@@ -98,7 +98,7 @@ resource "aws_s3_bucket_object" "monks-co-graphql-html" {
   content_type = "text/html; charset=utf-8"
   key          = "graphql.html"
   source       = "../public/monks.co/graphql.html"
-  etag         = "${md5(file("../public/monks.co/graphql.html"))}"
+  etag         = md5(file("../public/monks.co/graphql.html"))
 }
 
 resource "aws_s3_bucket_object" "monks-co-old-html" {
@@ -106,7 +106,7 @@ resource "aws_s3_bucket_object" "monks-co-old-html" {
   content_type = "text/html; charset=utf-8"
   key          = "old.html"
   source       = "../public/monks.co/old.html"
-  etag         = "${md5(file("../public/monks.co/old.html"))}"
+  etag         = md5(file("../public/monks.co/old.html"))
 }
 
 resource "aws_s3_bucket_object" "monks-co-index-html" {
@@ -135,8 +135,8 @@ resource "aws_route53_record" "monks-co-A" {
 
 
   alias {
-    name                   = "${aws_cloudfront_distribution.monks-co-distribution.domain_name}"
-    zone_id                = "${aws_cloudfront_distribution.monks-co-distribution.hosted_zone_id}"
+    name                   = aws_cloudfront_distribution.monks-co-distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.monks-co-distribution.hosted_zone_id
     evaluate_target_health = false
   }
 }
