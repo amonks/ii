@@ -15,7 +15,7 @@ resource "aws_route53_record" "thor-ss-cx-A" {
   name    = "thor.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.67.149.108"]
+  records = ["100.83.137.16"]
 }
 
 resource "aws_route53_record" "nencatacoa-ss-cx-A" {
