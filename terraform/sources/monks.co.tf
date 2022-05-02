@@ -81,7 +81,7 @@ resource "aws_s3_bucket_object" "monks-co-headshot-jpg" {
   key          = "headshot.jpg"
   source       = "../public/monks.co/headshot.jpg"
   etag         = filemd5("../public/monks.co/headshot.jpg")
-	cache_control = "max-age=31536000"
+  cache_control = "max-age=31536000"
 }
 
 resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
@@ -90,7 +90,7 @@ resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
   key          = "monks.jpg"
   source       = "../public/monks.co/monks.jpg"
   etag         = filemd5("../public/monks.co/monks.jpg")
-	cache_control = "max-age=31536000"
+  cache_control = "max-age=31536000"
 }
 
 resource "aws_s3_bucket_object" "monks-co-graphql-html" {
