@@ -1,0 +1,31 @@
+[class^="aspect-ratio-"],
+[class*="aspect-ratio-"] {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+}
+
+[class^="aspect-ratio-"] > *,
+[class*="aspect-ratio-"] > * {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.aspect-ratio-16x9 {
+  padding-bottom: 56.25%;
+}
+
+.aspect-ratio-4x3 {
+  padding-bottom: 75%;
+}
+
+.aspect-ratio-1x1 {
+  max-width: 700px;
+  padding-bottom: 100%;
+}
+

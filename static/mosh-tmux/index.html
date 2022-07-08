@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>mosh tmux</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/mosh-tmux/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">mosh tmux</span></div>
+        <div class="f2 i ma0 mt1">Pi Guide</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-06 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn>
+        </a><a href="/everything#linux" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-linux"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/mosh-tmux/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <h1 id="mosh-tmux">mosh; tmux</h1>
+          <h2 id="install">install</h2>
+          <p>sudo apt-get install mosh sudo apt-get install<span class="widont">&nbsp;</span>tmux</p>
+          <h2 id="start-tmux-on-boot">start tmux on<span class="widont">&nbsp;</span>boot</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo cp ~/rpi-setup/src/tmux /etc/init.d/tmux
+sudo chmod 755 /etc/init.d/tmux
+</code></pre>
+          </div>
+          <p>test:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo /etc/init.d/tmux start
+tmux attach
+[ctrl-b d]
+sudo /etc/init.d/tmux stop
+tmux attach
+</code></pre>
+          </div>
+          <p>that last attach shouldn’t<span class="widont">&nbsp;</span>work</p>
+          <p>run at startup:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo update-rc.d tmux defaults
+</code></pre>
+          </div>
+          <h2 id="usage">usage</h2>
+          <p>mosh into raspberrypi:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>mosh pi@raspberrypi.local
+</code></pre>
+          </div>
+          <p>attach to tmux<span class="widont">&nbsp;</span>session:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>tmux attach
+</code></pre>
+          </div>
+          <p>detach when you’re<span class="widont">&nbsp;</span>done:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>^B d
+</code></pre>
+          </div>
+          <h2 id="tmux-extras">tmux extras</h2>
+          <ul>
+            <li>
+              <p><code class="highlighter-rouge">^B t</code> current time</p>
+            </li>
+            <li>
+              <p><code class="highlighter-rouge">^B "</code> split horizontal</p>
+            </li>
+            <li>
+              <p><code class="highlighter-rouge">^B %</code> split vertical</p>
+            </li>
+            <li>
+              <p><code class="highlighter-rouge">^B [arrow keys]</code> navigate between<span class="widont">&nbsp;</span>panes</p>
+            </li>
+          </ul>
+          <h3 id="credit">credit</h3>
+          <p>from <a href="http://www.stuffaboutcode.com/2012/06/raspberry-pi-run-program-at-start-up.html">stuffaboutcode</a></p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

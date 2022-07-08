@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>0js</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/0js/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><a href="https://github.com/0js/0" class="link"><span class="p-name">0js</span> <span class="icon-arrow"></span></a></div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2015-09-14 00:00:00 -0500">2015</time> </span><span class="f4"><a href="/everything#javascript" class="link" data-turbolinks="false"><dfn data-info="javascript"><span class="icon-javascript"></span></dfn>
+        </a>
+        </span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://github.com/0js/0" class="link"><span class="icon-github"></span> source code</a></li>
+          <li><a href="https://monks.co/0js/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>This project creates a stdlib of CDNed vendor code for (require.js) async<span class="widont">&nbsp;</span>javascript.</p>
+          <p>Simply <code class="highlighter-rouge">src</code>-in 0.js and then <code class="highlighter-rouge">require</code> any libraries you need, they’ll be loaded in asynchronously. You don’t need to think about CDNs or building libraries or versions
+            or anything like that, dependencies are resolved<span class="widont">&nbsp;</span>automatically.</p>
+          <p><a href="http://0.ss.cx/index.html">live demo</a></p>
+          <div class="language-html highlighter-rouge">
+            <pre class="highlight"><code><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"http://0.ss.cx/0.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;script&gt;</span>
+  <span class="nx">require</span><span class="p">([</span><span class="s1">'jquery'</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">append</span><span class="p">(</span><span class="s1">'&lt;h1&gt;Hello from jQuery!'</span><span class="p">)</span>
+  <span class="p">})</span>
+<span class="nt">&lt;/script&gt;</span>
+</code></pre>
+          </div>
+          <!--more-->
+          <h2 id="versioning">Versioning</h2>
+          <p>All libraries are updated once per<span class="widont">&nbsp;</span>week.</p>
+          <p>If during that week a semver library makes a major version, or a non-semver library (boo) releases <em>any</em> version, 0 will bump to a new major version as<span class="widont">&nbsp;</span>well.</p>
+          <p>Each major version of 0 will be kept updated with minor and patch releases of semver<span class="widont">&nbsp;</span>libraries.</p>
+          <p>The <code class="highlighter-rouge">latest</code> of each major version of 0 will be available at <code class="highlighter-rouge">http://0.ss.cx/[major-version].js</code>. The <code class="highlighter-rouge">latest</code> major version of 0
+            will be available at <code class="highlighter-rouge">http://0.ss.cx/0.js</code>.</p>
+          <p>So, if <code class="highlighter-rouge">http://0.ss.cx/5.js</code> is the latest version of 0 when you included it, it <em>will</em> introduce patches and upgrades but it <em>will not</em> introduce breaking<span class="widont">&nbsp;</span>changes.</p>
+          <h2
+            id="adding-libraries">Adding Libraries</h2>
+            <p>To add a library to 0, fork this repository then add the library config to <code class="highlighter-rouge">_libs/[library-name]/[library-version].json</code> and submit a pull<span class="widont">&nbsp;</span>request.</p>
+            <p>Or, if that’s not your thing, <a href="https://github.com/0js/0/issues/new">create an issue</a> and include a link to the library you need and we’ll add it within a few<span class="widont">&nbsp;</span>days.</p>
+            <h3 id="mirroring">Mirroring</h3>
+            <p>If your library doesn’t have a CDNed url, submodule it into <code class="highlighter-rouge">_mirrors</code> and set <code class="highlighter-rouge">local</code> to <code class="highlighter-rouge">true</code> in the json file. It’ll be uglified
+              and gzipped and served from the 0 s3<span class="widont">&nbsp;</span>bucket.</p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

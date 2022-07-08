@@ -1,0 +1,1026 @@
+html {
+  font-family: sans-serif;
+  line-height: 1.15;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+article,footer,header,main {
+  display: block;
+}
+
+a {
+  background-color: transparent;
+  -webkit-text-decoration-skip: objects;
+}
+
+a:active,a:hover {
+  outline-width: 0;
+}
+
+abbr[title] {
+  border-bottom: none;
+  text-decoration: underline;
+  text-decoration: underline dotted;
+}
+
+strong {
+  font-weight: inherit;
+  font-weight: bolder;
+}
+
+dfn {
+  font-style: italic;
+}
+
+h1 {
+  font-size: 2em;
+  margin: .67em 0;
+}
+
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -.5em;
+}
+
+img {
+  border-style: none;
+}
+
+code,pre {
+  font-family: monospace,monospace;
+  font-size: 1em;
+}
+
+hr {
+  box-sizing: content-box;
+  height: 0;
+  overflow: visible;
+}
+
+input {
+  font: inherit;
+  margin: 0;
+}
+
+input {
+  overflow: visible;
+}
+
+::-webkit-input-placeholder {
+  color: inherit;
+  opacity: .54;
+}
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+article,body,code,div,footer,form,header,html,input[type=text],li,main,ol,p,pre,ul {
+  box-sizing: border-box;
+}
+
+.cf:after,.cf:before {
+  content: " ";
+  display: table;
+}
+
+.cf:after {
+  clear: both;
+}
+
+.cf {
+  zoom: 1;
+}
+
+.dn {
+  display: none;
+}
+
+.db {
+  display: block;
+}
+
+.fn {
+  float: none;
+}
+
+code {
+  font-family: Consolas,monaco,monospace;
+}
+
+.i {
+  font-style: italic;
+}
+
+.tracked {
+  letter-spacing: .16em;
+}
+
+.lh-solid {
+  line-height: 1;
+}
+
+.lh-title {
+  line-height: 1.3;
+}
+
+.lh-copy {
+  line-height: 1.6;
+}
+
+.link {
+  text-decoration: none;
+}
+
+.link,.link:active,.link:focus,.link:hover,.link:link,.link:visited {
+  transition: color .15s ease-in;
+}
+
+.list {
+  list-style-type: none;
+}
+
+.mw7 {
+  max-width: 48rem;
+}
+
+.mw8 {
+  max-width: 64rem;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+
+.black-50 {
+  color: rgba(0,0,0,.5);
+}
+
+.bg-white {
+  background-color: #fff;
+}
+
+.bg-yellow {
+  background-color: #ffde37;
+}
+
+.pa0 {
+  padding: 0;
+}
+
+.pa2 {
+  padding: .5rem;
+}
+
+.pl0 {
+  padding-left: 0;
+}
+
+.pb3 {
+  padding-bottom: 1rem;
+}
+
+.pb4 {
+  padding-bottom: 2rem;
+}
+
+.pb5 {
+  padding-bottom: 4rem;
+}
+
+.pb6 {
+  padding-bottom: 8rem;
+}
+
+.pv1 {
+  padding-top: .25rem;
+  padding-bottom: .25rem;
+}
+
+.pv2 {
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+}
+
+.pv3 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.pv5 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.ph2 {
+  padding-left: .5rem;
+  padding-right: .5rem;
+}
+
+.ph3 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.ma0 {
+  margin: 0;
+}
+
+.mb1 {
+  margin-bottom: .25rem;
+}
+
+.mb3 {
+  margin-bottom: 1rem;
+}
+
+.mb5 {
+  margin-bottom: 4rem;
+}
+
+.mt1 {
+  margin-top: .25rem;
+}
+
+.mt6 {
+  margin-top: 8rem;
+}
+
+.mv4 {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.mv5 {
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+}
+
+.mh2 {
+  margin-left: .5rem;
+  margin-right: .5rem;
+}
+
+.ttu {
+  text-transform: uppercase;
+}
+
+.f2 {
+  font-size: 2.25rem;
+}
+
+.f3 {
+  font-size: 1.5rem;
+}
+
+.f4 {
+  font-size: 1.25rem;
+}
+
+.f5 {
+  font-size: 1rem;
+}
+
+.f6 {
+  font-size: .875rem;
+}
+
+.measure {
+  max-width: 30em;
+}
+
+.center {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.grow {
+  transition: transform .2s;
+}
+
+.grow:hover {
+  transform: scale(1.05);
+}
+
+.grow-large {
+  transition: transform .2s;
+}
+
+.grow-large:hover {
+  transform: scale(1.2);
+}
+
+@media screen and (min-width: 30em) {
+  .ba-ns {
+    border-style: solid;
+    border-width: 1px;
+  }
+  .di-ns {
+    display: inline;
+  }
+  .fl-ns {
+    float: left;
+  }
+  .fl-ns {
+    display: inline;
+  }
+  .pa5-ns {
+    padding: 4rem;
+  }
+  .ph0-ns {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .ph3-ns {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .mv3-ns {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media screen and (min-width: 60em) {
+  .fl-l {
+    float: left;
+  }
+  .fl-l {
+    display: inline;
+  }
+  .lh-copy-l {
+    line-height: 1.6;
+  }
+  .w-50-l {
+    width: 50%;
+  }
+  .pr4-l {
+    padding-right: 2rem;
+  }
+  .f-headline-l {
+    font-size: 6rem;
+  }
+}
+
+.bg-yellow {
+  background-color: #FFDC00;
+}
+
+.bg-white {
+  background-color: #fff;
+}
+
+.maroon {
+  color: #85144B;
+}
+
+@charset "UTF-8";
+
+@font-face {
+  font-family: "monksco";
+  src: url("../fonts/monksco.eot");
+  src: url("../fonts/monksco.eot?#iefix") format("embedded-opentype"),
+    url("../fonts/monksco.woff") format("woff"),
+    url("../fonts/monksco.ttf") format("truetype"),
+    url("../fonts/monksco.svg#monksco") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="icon-"]:before {
+  font-family: "monksco" !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-graphic:before {
+  content: "\61";
+}
+
+.icon-javascript:before {
+  content: "\62";
+}
+
+.icon-linux:before {
+  content: "\63";
+}
+
+.icon-ruby:before {
+  content: "\64";
+}
+
+.icon-postgres:before {
+  content: "\65";
+}
+
+.icon-writing:before {
+  content: "\67";
+}
+
+.icon-featured:before {
+  content: "\68";
+}
+
+.icon-website:before {
+  content: "\69";
+}
+
+.icon-howto:before {
+  content: "\6a";
+}
+
+.icon-print:before {
+  content: "\6b";
+}
+
+.icon-physical:before {
+  content: "\6c";
+}
+
+.icon-music:before {
+  content: "\6d";
+}
+
+.icon-clojure:before {
+  content: "\6f";
+}
+
+.icon-performance:before {
+  content: "\71";
+}
+
+.icon-joke:before {
+  content: "\72";
+}
+
+.icon-hardware:before {
+  content: "\73";
+}
+
+.icon-video:before {
+  content: "\74";
+}
+
+.icon-of:before {
+  content: "\75";
+}
+
+.icon-bmr:before {
+  content: "\76";
+}
+
+.icon-arrow:before {
+  content: "\78";
+}
+
+.icon-link:before {
+  content: "\79";
+}
+
+.icon-three:before {
+  content: "\7a";
+}
+
+.icon-game:before {
+  content: "\41";
+}
+
+.icon-interaction:before {
+  content: "\42";
+}
+
+.icon-code:before {
+  content: "\43";
+}
+
+.icon-github:before {
+  content: "\44";
+}
+
+.highlight .c {
+  color: #8f5902;
+  font-style: italic;
+}
+
+.highlight .k {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .n {
+  color: #000000;
+}
+
+.highlight .o {
+  color: #ce5c00;
+  font-weight: bold;
+}
+
+.highlight .p {
+  color: #000000;
+  font-weight: bold;
+}
+
+.highlight .cm {
+  color: #8f5902;
+  font-style: italic;
+}
+
+.highlight .cp {
+  color: #8f5902;
+  font-style: italic;
+}
+
+.highlight .c1 {
+  color: #8f5902;
+  font-style: italic;
+}
+
+.highlight .kc {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .kd {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .kn {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .kp {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .kr {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .s {
+  color: #4e9a06;
+}
+
+.highlight .na {
+  color: #c4a000;
+}
+
+.highlight .nb {
+  color: #204a87;
+}
+
+.highlight .no {
+  color: #000000;
+}
+
+.highlight .nf {
+  color: #000000;
+}
+
+.highlight .nl {
+  color: #f57900;
+}
+
+.highlight .nn {
+  color: #000000;
+}
+
+.highlight .nx {
+  color: #000000;
+}
+
+.highlight .nt {
+  color: #204a87;
+  font-weight: bold;
+}
+
+.highlight .nv {
+  color: #000000;
+}
+
+.highlight .w {
+  color: #f8f8f8;
+  text-decoration: underline;
+}
+
+.highlight .mf {
+  color: #0000cf;
+  font-weight: bold;
+}
+
+.highlight .mi {
+  color: #0000cf;
+  font-weight: bold;
+}
+
+.highlight .sb {
+  color: #4e9a06;
+}
+
+.highlight .s2 {
+  color: #4e9a06;
+}
+
+.highlight .se {
+  color: #4e9a06;
+}
+
+.highlight .si {
+  color: #4e9a06;
+}
+
+.highlight .s1 {
+  color: #4e9a06;
+}
+
+.highlight .ss {
+  color: #4e9a06;
+}
+
+.highlight .bp {
+  color: #3465a4;
+}
+
+dfn {
+  cursor: help;
+  font-style: normal;
+  position: relative;
+}
+
+dfn::after {
+  content: attr(data-info);
+  width: 30em;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms, top 150ms;
+}
+
+dfn:hover {
+  z-index: 2;
+}
+
+dfn:hover::after,
+dfn:hover::before {
+  opacity: 1;
+}
+
+dfn:hover::after {
+  top: 18px;
+}
+
+dfn:hover::before {
+  top: 0;
+}
+
+#bmr:not(:target) {
+  display: none;
+}
+
+#bmr:target {
+  display: block;
+}
+
+#clojure:not(:target) {
+  display: none;
+}
+
+#clojure:target {
+  display: block;
+}
+
+#code:not(:target) {
+  display: none;
+}
+
+#code:target {
+  display: block;
+}
+
+#featured:not(:target) {
+  display: none;
+}
+
+#featured:target {
+  display: block;
+}
+
+#game:not(:target) {
+  display: none;
+}
+
+#game:target {
+  display: block;
+}
+
+#graphic:not(:target) {
+  display: none;
+}
+
+#graphic:target {
+  display: block;
+}
+
+#hardware:not(:target) {
+  display: none;
+}
+
+#hardware:target {
+  display: block;
+}
+
+#howto:not(:target) {
+  display: none;
+}
+
+#howto:target {
+  display: block;
+}
+
+#interaction:not(:target) {
+  display: none;
+}
+
+#interaction:target {
+  display: block;
+}
+
+#javascript:not(:target) {
+  display: none;
+}
+
+#javascript:target {
+  display: block;
+}
+
+#joke:not(:target) {
+  display: none;
+}
+
+#joke:target {
+  display: block;
+}
+
+#music:not(:target) {
+  display: none;
+}
+
+#music:target {
+  display: block;
+}
+
+#of:not(:target) {
+  display: none;
+}
+
+#of:target {
+  display: block;
+}
+
+#physical:not(:target) {
+  display: none;
+}
+
+#physical:target {
+  display: block;
+}
+
+#print:not(:target) {
+  display: none;
+}
+
+#print:target {
+  display: block;
+}
+
+#ruby:not(:target) {
+  display: none;
+}
+
+#ruby:target {
+  display: block;
+}
+
+#performance:not(:target) {
+  display: none;
+}
+
+#performance:target {
+  display: block;
+}
+
+#three:not(:target) {
+  display: none;
+}
+
+#three:target {
+  display: block;
+}
+
+#video:not(:target) {
+  display: none;
+}
+
+#video:target {
+  display: block;
+}
+
+#website:not(:target) {
+  display: none;
+}
+
+#website:target {
+  display: block;
+}
+
+#writing:not(:target) {
+  display: none;
+}
+
+#writing:target {
+  display: block;
+}
+
+#chron:not(:target) {
+  display: none;
+}
+
+#chron:target {
+  display: block;
+}
+
+[class^="aspect-ratio-"],
+[class*="aspect-ratio-"] {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+}
+
+[class^="aspect-ratio-"] > *,
+[class*="aspect-ratio-"] > * {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.aspect-ratio-16x9 {
+  padding-bottom: 56.25%;
+}
+
+.aspect-ratio-4x3 {
+  padding-bottom: 75%;
+}
+
+.aspect-ratio-1x1 {
+  max-width: 700px;
+  padding-bottom: 100%;
+}
+
+@media screen and (min-width: 48em) {
+  .grow-ns {
+    transition: transform .2s;
+  }
+  .grow-ns:hover {
+    transform: scale(1.05);
+  }
+}
+
+@media screen and (min-width: 48em) and (max-width: 64em) {
+  .grow-m {
+    transition: transform .2s;
+  }
+  .grow-m:hover {
+    transform: scale(1.05);
+  }
+}
+
+@media screen and (min-width: 64em) {
+  .grow-l {
+    transition: transform .2s;
+  }
+  .grow-l:hover {
+    transform: scale(1.05);
+  }
+}
+
+.grow {
+  transition: transform .2s;
+}
+
+.grow:hover {
+  transform: scale(1.05);
+}
+
+.caps {
+  letter-spacing: .08em;
+}
+
+[class*=" tracked"] .caps {
+  letter-spacing: inherit;
+}
+
+[class$="-space"] {
+  display: inline-block;
+}
+
+.en-space {
+  width: 0.5em;
+}
+
+.three-per-em-space {
+  width: 0.33333em;
+}
+
+.thin-space {
+  width: 0.2em;
+}
+
+[class^="ba"],
+[class*=" ba"] {
+  border-color: #001f3f;
+  border-width: 5px;
+}
+
+a {
+  color: #0000ff;
+}
+
+body {
+  color: #001f3f;
+}
+
+.black-50 {
+  color: #3f9dff;
+}
+
+a:visited {
+  color: #F012BE;
+}
+
+a {
+  text-decoration: none;
+}
+
+span.amp {
+  font-family: Baskerville, "Goudy Old Style", "Palatino", "Book Antiqua", serif;
+  font-size: 110%;
+  font-style: italic;
+}
+
+.copy p {
+  max-width: 30em;
+  line-height: 1.6;
+}
+
+img {
+  max-width: 100%;
+}
+
+#resume:not(:target) {
+  display: none;
+}
+
+#resume:target {
+  display: block;
+}
+
+pre {
+  overflow-x: scroll;
+}
+
+body {
+  font-family: -apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", sans-serif;
+}
+

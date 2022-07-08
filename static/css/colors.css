@@ -1,0 +1,16 @@
+[class^="ba"],
+[class*=" ba"] {
+  border-color: #001f3f;
+  border-width: 5px; }
+
+a {
+  color: #0000ff; }
+
+body {
+  color: #001f3f; }
+
+.black-50 {
+  color: #3f9dff; }
+
+a:visited {
+  color: #F012BE; }

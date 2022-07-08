@@ -1,0 +1,27 @@
+/* https://www.cs.tut.fi/~jkorpela/styles/spaces.html */
+
+[class*="-space "],
+[class$="-space"] {
+  display: inline-block;
+}
+
+.em-space {
+  width: 1em;
+}
+
+.en-space {
+  width: 0.5em;
+}
+
+.three-per-em-space {
+  width: 0.33333em;
+}
+
+.thin-space {
+  width: 0.2em;
+}
+
+.hair-space {
+  width: 0.0417em;
+}
+

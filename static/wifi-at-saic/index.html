@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Wifi at SAIC</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/wifi-at-saic/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">Wifi at <span class="caps">SAIC</span></span>
+        </div>
+        <div class="f2 i ma0 mt1">Student How-To</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-06 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn>
+        </a><a href="/everything#linux" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-linux"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/wifi-at-saic/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <h1 id="wifi-at-saic">wifi at <span class="caps">SAIC</span></h1>
+          <h2 id="credit">credit</h2>
+          <p>a lot of this page is directly copy-and-pasted from an email from Chris Baker. Props to<span class="widont">&nbsp;</span>him.</p>
+          <h2 id="chris-bakers-warnings-verbatim">Chris Baker’s warnings,<span class="widont">&nbsp;</span>verbatim</h2>
+          <p>Several notes about my<span class="widont">&nbsp;</span>setup:</p>
+          <ol>
+            <li>
+              <p>I used an Edimax (http://www.amazon.com/<span class="caps">EW</span>-<span class="caps">7811UN</span>-<span class="caps">IEEE</span>-802-11n-draft-<span class="caps">USB</span>/dp/<span class="caps">B005CLMJLU</span>) <span class="caps">USB</span>                wireless interface. I tried other wireless interfaces (even some that claimed to use the same realtek chipset) and they did not work. Other interfaces with compatible chipsets should work as well. Check the http://elinux.org/RPi_VerifiedPeripherals
+                for<span class="widont">&nbsp;</span>ideas.</p>
+            </li>
+            <li>
+              <p>Plugging the wireless interface into a powered <span class="caps">USB</span> hub did not work. The wireless interface had to be plugged directly into the <span class="caps">PI</span>. Everything else (keyboard, etc) was plugged into a powered
+                usb hub. I’m assuming this was a power issue, but it could have been anything including interference,<span class="widont">&nbsp;</span>etc.</p>
+            </li>
+            <li>
+              <p>It is currently impossible (from my research) to hash / encrypt inner auth passwords when using a <span class="caps">PAP</span> inner authentication scheme (like we use here). It is possible to <span class="caps">NT</span> hash some inner
+                auth schemes (e.g. <span class="caps">MSCHAPV2</span>), but I can’t find a way to do it with <span class="caps">PAP</span>. Thus, the security of your wireless password (and by extension your <span class="caps">ARTIC</span> password) can
+                only be protected<span class="widont">&nbsp;</span>by:</p>
+            </li>
+          </ol>
+          <ul>
+            <li>
+              <p>Choosing a secure <span class="caps">ROOT</span> password on your <span class="caps">PI</span> (don’t use the default pi/raspberry user/pass !!!). The wpa_supplicant.conf file is limited to root access, but the default “pi” user is set up
+                as a a passwordless sudoer by default, so sudo vi … gets you in if you have the pi<span class="widont">&nbsp;</span>password.</p>
+            </li>
+            <li>
+              <p>Securing your physical <span class="caps">SD</span> Card / <span class="caps">PI</span> for installations. If someone swipes your <span class="caps">SD</span> card, the filesystem (and thus the user/password) is easily accessible. If this
+                happens (or even if you momentarily misplace an <span class="caps">SD</span> <span class="caps">CARD</span>), change your <span class="caps">SAIC</span> user / pass<span class="widont">&nbsp;</span>immediately.</p>
+            </li>
+          </ul>
+          <h2 id="now-heres-how-to-do-it">now here’s how to do<span class="widont">&nbsp;</span>it</h2>
+          <p>copy wpa_supplicant file</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo cp ~/rpi-setup/src/wpa_supplicant.conf.saic /etc/wpa_supplicant/wpa_supplicant.conf
+</code></pre>
+          </div>
+          <p>edit it with your <span class="caps">SAIC</span> username and<span class="widont">&nbsp;</span>password</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+</code></pre>
+          </div>
+          <p>After you edit the file you can plug / unplug your <span class="caps">USB</span> wifi interface, or you can reboot the pi or you can<span class="widont">&nbsp;</span>do:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo ifdown wlan0
+sudo ifup wlan0
+</code></pre>
+          </div>
+          <p>After that it should associate with the ssid automagically in the future on<span class="widont">&nbsp;</span>startup.</p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

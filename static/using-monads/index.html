@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Using Monads</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/using-monads/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><a href="https://tonicdev.com/amonks/578beb1fdb37ac12001d3826" class="link"><span class="p-name">Using Monads</span> <span class="icon-arrow"></span></a></div>
+        <div class="f2 i ma0 mt1">Functional Usage</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2016-07-26 00:00:00 -0500">2016</time> </span><span class="f4"><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn>
+        </a><a href="/everything#javascript" class="link" data-turbolinks="false"><dfn data-info="javascript"><span class="icon-javascript"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/using-monads/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>You can try this code out in your browser on <a href="https://tonicdev.com/amonks/578beb1fdb37ac12001d3826">tonicdev</a></p>
+          <p>Have you ever chained a bunch of functions<span class="widont">&nbsp;</span>together?</p>
+          <div class="language-javascript highlighter-rouge">
+            <pre class="highlight"><code><span class="nb">Math</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">sqrt</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">())))</span>
+</code></pre>
+          </div>
+          <p>Maybe in jQuery?</p>
+          <div class="language-javascript highlighter-rouge">
+            <pre class="highlight"><code><span class="nx">$</span><span class="p">(</span><span class="s1">'div'</span><span class="p">).</span><span class="nx">css</span><span class="p">(</span><span class="s1">'color'</span><span class="p">,</span> <span class="s1">'red'</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">slideUp</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">slideDown</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+</code></pre>
+          </div>
+          <p>or with promises or node<span class="widont">&nbsp;</span>streams?</p>
+          <p>It’s a powerful, expressive, <span class="amp">&amp;</span> concise way to<span class="widont">&nbsp;</span>program.</p>
+          <p>It’s easy to do when you have a set of functions that accept an object and return an object of the same<span class="widont">&nbsp;</span>type.</p>
+          <p>These four functions all work with jQuery <span class="caps">DOM</span><span class="widont">&nbsp;</span>elements:</p>
+          <ul>
+            <li>$(‘div’)</li>
+            <li>.css(‘color’, ‘red’)</li>
+            <li>.slideUp(2000)</li>
+            <li>.slideDown(2000)</li>
+          </ul>
+          <p>These four functions all work with<span class="widont">&nbsp;</span>Numbers:</p>
+          <ul>
+            <li>Math.random</li>
+            <li>Math.sqrt</li>
+            <li>Math.floor</li>
+            <li>Math.log</li>
+          </ul>
+          <p>Check out this<span class="widont">&nbsp;</span>chain:</p>
+          <div class="language-javascript highlighter-rouge">
+            <pre class="highlight"><code><span class="kr">const</span> <span class="nx">isEven</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="kc">false</span>
+
+<span class="p">[</span><span class="mi">5</span><span class="p">].</span><span class="nx">map</span><span class="p">(</span><span class="nx">add</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+   <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">multiply</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+   <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">isEven</span><span class="p">)</span>
+   <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">power</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+   <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre>
+          </div>
+          <p>Here’s a few properties that arrays have that make them good for<span class="widont">&nbsp;</span>chaining:</p>
+          <ul>
+            <li>there’s a way to put something into an array<span class="widont">&nbsp;</span>([])</li>
+            <li>there’s a way to get something out of an array ([0])
+              <ul>
+                <li>in fact, <code class="highlighter-rouge">i === [i][0]</code></li>
+              </ul>
+            </li>
+            <li>there are functions that take arrays and return other arrays, like <code class="highlighter-rouge">filter(fn)</code></li>
+            <li>there’s <code class="highlighter-rouge">.map(fn)</code>, which does three things:
+              <ul>
+                <li>unwrap the array</li>
+                <li>apply a apply regular (not array-specific) function to the value<span class="widont">&nbsp;</span>inside</li>
+                <li>wrap the result back up into an<span class="widont">&nbsp;</span>array</li>
+              </ul>
+            </li>
+          </ul>
+          <p>When a data structure has those properties ^^, it is a<span class="widont">&nbsp;</span>monad.</p>
+          <p>jQuery <span class="caps">DOM</span> elements are not a monad because there isn’t really a way to put something in and take it back<span class="widont">&nbsp;</span>out.</p>
+          <p>The Array Monad has some special features that distinguish it from other monads,<span class="widont">&nbsp;</span>namely:</p>
+          <ul>
+            <li>it’s good for holding a bunch of values in a particular<span class="widont">&nbsp;</span>order</li>
+            <li>it’s good for finding a value if you know its<span class="widont">&nbsp;</span>index</li>
+          </ul>
+          <p>Monads (“chainable containers”) are such a generic idea that people have conceived of monads suited to all sorts of particular tasks, such<span class="widont">&nbsp;</span>as:</p>
+          <ul>
+            <li>
+              <p>the Maybe Monad and the Either Monad, which make it easy to chain functions together that might<span class="widont">&nbsp;</span>fail</p>
+            </li>
+            <li>
+              <p>the Task/Future monad, which makes it easy to chain functions together that perform long-running or asynchronous<span class="widont">&nbsp;</span>tasks</p>
+            </li>
+            <li>
+              <p>the <span class="caps">IO</span> monad, which makes it easy to control exactly when and how a chain of functions interacts with the outside<span class="widont">&nbsp;</span>world</p>
+            </li>
+          </ul>
+          <p>Functions within a program might all return different monads. This program has a long-running function that returns a Task monad, a randomly-failing function that returns a Maybe monad, and a logging function that returns an <span class="caps">IO</span>
+            <span
+              class="widont">&nbsp;</span>monad.</p>
+          <p>However, functions in a chain must all accept and return the same type of monad. The chain in this program is based around the Task monad. We’ll use functions to convert the Maybe and <span class="caps">IO</span> monads into Task<span class="widont">&nbsp;</span>monads.</p>
+          <p>Let’s get started.</p>
+          <!--more-->
+          <div class="language-javascript highlighter-rouge">
+            <pre class="highlight"><code><span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Imports 
+ *
+ * None of these monads is especially complex,
+ * a better article than this one could have you
+ * implementing all of them without breaking a
+ * sweat.
+ *
+ * For interoperability, most monad implementations
+ * in javascript conform to the fantasy land spec.
+ *
+ * see: https://github.com/fantasyland/fantasy-land
+ */</span>
+
+<span class="kr">const</span> <span class="nx">Task</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'data.task'</span><span class="p">)</span>
+<span class="kr">const</span> <span class="nx">R</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'ramda'</span><span class="p">)</span>
+<span class="kr">const</span> <span class="nx"><span class="caps">IO</span></span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'fantasy-io'</span><span class="p">)</span>
+
+<span class="kr">const</span> <span class="nx">Maybe</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'data.maybe'</span><span class="p">)</span>
+<span class="kr">const</span> <span class="nx">Just</span> <span class="o">=</span> <span class="nx">Maybe</span><span class="p">.</span><span class="nx">Just</span>
+<span class="kr">const</span> <span class="nx">Nothing</span> <span class="o">=</span> <span class="nx">Maybe</span><span class="p">.</span><span class="nx">Nothing</span>
+
+<span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Util */</span>
+
+
+<span class="c1">//    depoint : a[String] -&gt; c -&gt; (a -&gt; b) =&gt; String -&gt; a -&gt; b -&gt; c</span>
+<span class="kr">const</span> <span class="nx">depoint</span> <span class="o">=</span> <span class="nx">R</span><span class="p">.</span><span class="nx">curry</span><span class="p">((</span><span class="nx">fnName</span><span class="p">,</span> <span class="nx">args</span><span class="p">,</span> <span class="nx">obj</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">fnName</span><span class="p">](...</span><span class="nx">args</span><span class="p">))</span>
+
+
+
+<span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Functions 
+
+ * Our chain is based on the Task Monad, but that
+ * doesn't mean all our functions need to accept or
+ * return Tasks.
+ *
+ * Each of our chained functions will do kinda the
+ * same thing: build a string around its input.
+ * 
+ * But, they'll each return a different type of value.
+ */</span>
+
+
+ <span class="cm">/* Non-monadic
+ 
+  * Here's a basic wrapper. Nothing monad-specific.
+  *
+  * If you aren't hip to es6, the arrow syntax might
+  * be confusing.
+  *
+  * Here's wrap without the arrows:
+  *
+  *     const wrap = function (str) {
+  *       return function (val) {
+  *         return `${str} &lt;<span class="caps">NM</span>&gt; [${val}]`
+  *       }
+  *     }
+  * 
+  * Call it like this:
+  * 
+  *     const sayHello = wrap('hello!')
+  *     sayHello(5)
+  *     // "Hello! &lt;<span class="caps">NM</span>&gt; [5]"
+  *
+  *     wrap('Goodbye')('watermelon')
+  *     // "Goodbye! &lt;<span class="caps">NM</span>&gt; [watermelon]"
+  *
+  *     wrap('Goodbye')(sayHello('Wonderful!'))
+  *     // "Goodbye &lt;<span class="caps">NM</span>&gt; [Hello! &lt;<span class="caps">NM</span>&gt; [Wonderful!]]"
+  */</span>
+
+<span class="c1">//    wrap : String -&gt; a -&gt; String</span>
+<span class="kr">const</span> <span class="nx">wrap</span> <span class="o">=</span> <span class="nx">str</span> <span class="o">=&gt;</span> <span class="nx">val</span> <span class="o">=&gt;</span> <span class="err">`</span><span class="nx">$</span><span class="p">{</span><span class="nx">str</span><span class="p">}</span> <span class="o">&lt;</span><span class="nx"><span class="caps">NM</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span>
+
+    
+<span class="cm">/* Task 
+ *
+ * This function accomplishes the same thing,
+ * except it does it asynchronously, after a
+ * 100ms delay, and it returns a Task monad.
+ *
+ * A Task monad is a reference to a value that
+ * might not be in yet, perhaps the result of
+ * a long-running process or a network request.
+ *
+ * In this example, our chain is made up of
+ * Task Monads.
+ *
+ * If you've worked with promises, it might
+ * feel a bit familiar.
+ *
+ * Tasks in a chain won't execute until the
+ * chain reaches a `.fork()`. Scroll down to our
+ * chain and you'll see a fork at the end.
+ *
+ * If you chain a bunch of tasks together
+ * and one fails, the chain will break and skip
+ * to the next chained `.fork()`.
+ * 
+ * At the fork, you can handle the errors and
+ * resume processing (or not).
+ *
+ * The Task monad also provides ways to do
+ * things we won't here, like:
+ *
+ * - pause a chain until several concurrent
+    tasks are complete
+ * - sort tasks by how long they took
+ */</span>
+
+<span class="c1">//    wrapSlowly : String -&gt; String -&gt; Task(_, String)</span>
+<span class="kr">const</span> <span class="nx">wrapSlowly</span> <span class="o">=</span> <span class="nx">msg</span> <span class="o">=&gt;</span>
+  <span class="nx">str</span> <span class="o">=&gt;</span>
+    <span class="k">new</span> <span class="nx">Task</span><span class="p">((</span><span class="nx">reject</span><span class="p">,</span> <span class="nx">resolve</span><span class="p">)</span> <span class="o">=&gt;</span>
+      <span class="nx">setTimeout</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nx">resolve</span><span class="p">(</span><span class="err">`</span><span class="nx">$</span><span class="p">{</span><span class="nx">msg</span><span class="p">}</span> <span class="p">[</span><span class="o">&lt;</span><span class="nx"><span class="caps">TASK</span></span><span class="o">&gt;</span> <span class="nx">$</span><span class="p">{</span><span class="nx">str</span><span class="p">}]</span><span class="err">`</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="cm">/* <span class="caps">IO</span> 
+ *
+ * This function wraps the text too, but it
+ * also logs its input and returns an <span class="caps">IO</span> monad.
+ *
+ * <span class="caps">IO</span> monads are like the delayed execution
+ * (`.fork()`) part of Task Monads, minus the
+ * error handling and the asynchronicity.
+ *
+ * You can use them to controlwhen and where
+ * certain procedures (usually <span class="caps">IO</span>) are performed.
+ * 
+ * You can chain <span class="caps">IO</span> monads together, and they
+ * won't be executed until the chain reaches a
+ * `.unsafePerform()`.
+ *
+ * In some languages (like Haskell), functions
+ * _can't_ have any side effects unless they're
+ * wrapped in an <span class="caps">IO</span> Monad.
+ *
+ * It sounds niche, but there are cases (like
+ * working with library code) when it's very
+ * comforting to know that nothing will happen
+ * until you explicitly tell it to.
+ */</span>
+
+<span class="c1">//    wrapAndLog : String -&gt; a -&gt; <span class="caps">IO</span>( String )</span>
+<span class="kr">const</span> <span class="nx">wrapAndLog</span> <span class="o">=</span> <span class="nx">msg</span> <span class="o">=&gt;</span> <span class="nx">val</span> <span class="o">=&gt;</span> <span class="nx"><span class="caps">IO</span></span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span> 
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="err">`</span><span class="na">log</span><span class="p">:</span> <span class="p">[</span><span class="nx">msg</span> <span class="nx">$</span><span class="p">{</span><span class="nx">msg</span><span class="p">}]</span> <span class="p">[</span><span class="nx">val</span> <span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">)</span>
+  <span class="k">return</span> <span class="err">`</span><span class="nx">$</span><span class="p">{</span><span class="nx">msg</span><span class="p">}</span> <span class="o">&lt;</span><span class="nx"><span class="caps">IO</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span>
+<span class="p">})</span>
+
+
+<span class="cm">/* Maybe 
+ * 
+ * This one's fun. Half the time it just returns
+ * the wrapped string, like the other functions,
+ * but there's a 50% chance it will return nothing.
+ *
+ * The Maybe monad is among the most useful. It
+ * consists of two types: Just (think 'only', like
+ * Just(5)) and Nothing.
+ *
+ * A function in a Maybe monad chain will only
+ * execute if its passed a Just. If it's passed a
+ * Nothing, it'll silently pass the Nothing right
+ * along.
+ *
+ * See also:
+ * The Either monad is similar, but more generic.
+ * A function in an Either chain can return one of
+ * two definable types. Usually the type it was passed
+ * _or_ an Exception, which is more detailed
+ * than Nothing.
+ */</span>
+
+<span class="c1">//    wrapMaybe : String -&gt; a -&gt; Maybe(String)</span>
+<span class="kr">const</span> <span class="nx">wrapMaybe</span> <span class="o">=</span> <span class="nx">msg</span> <span class="o">=&gt;</span> <span class="nx">val</span> <span class="o">=&gt;</span>
+  <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="p">?</span> <span class="nx">Just</span><span class="p">(</span><span class="err">`</span><span class="nx">$</span><span class="p">{</span><span class="nx">msg</span><span class="p">}</span> <span class="o">&lt;</span><span class="nx"><span class="caps">JUST</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">)</span>
+                      <span class="p">:</span> <span class="nx">Nothing</span><span class="p">()</span>
+
+
+<span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Convert Other Monads to Tasks!
+
+ * We're building our chain around the Task Monad,
+ * so we'll need to be able to turn our other monads
+ * into Task Monads.
+ * 
+ * Putting some value (like another monad) into a
+ * monad container is called "lifting" it.
+ */</span>
+
+
+<span class="c1">//    IOToTask : (<span class="caps">IO</span>) -&gt; a -&gt; Task[_ a]</span>
+<span class="kr">const</span> <span class="nx">IOToTask</span> <span class="o">=</span> <span class="nx">io</span> <span class="o">=&gt;</span>
+  <span class="nx">v</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">Task</span><span class="p">((</span><span class="nx">reject</span><span class="p">,</span> <span class="nx">resolve</span><span class="p">)</span> <span class="o">=&gt;</span>
+    <span class="nx">R</span><span class="p">.</span><span class="nx">compose</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">depoint</span><span class="p">(</span><span class="s1">'unsafePerform'</span><span class="p">,</span> <span class="p">[</span><span class="kc">undefined</span><span class="p">]),</span> <span class="nx">io</span><span class="p">)(</span><span class="nx">v</span><span class="p">)</span>
+  <span class="p">)</span>
+
+<span class="c1">//    MaybeToTask : Maybe -&gt; Task</span>
+<span class="kr">const</span> <span class="nx">MaybeToTask</span> <span class="o">=</span> <span class="nx">m</span> <span class="o">=&gt;</span> <span class="nx">v</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kr">const</span> <span class="nx">maybied</span> <span class="o">=</span> <span class="nx">m</span><span class="p">(</span><span class="nx">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="nx">maybied</span><span class="p">.</span><span class="nx">isNothing</span> <span class="p">?</span> <span class="nx">Task</span><span class="p">.</span><span class="nx">rejected</span><span class="p">(</span><span class="s1">'error'</span><span class="p">)</span>
+                           <span class="p">:</span> <span class="nx">Task</span><span class="p">.</span><span class="nx">of</span><span class="p">(</span><span class="nx">maybied</span><span class="p">.</span><span class="nx">value</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kr">const</span> <span class="nx">wrapAndLog_task</span> <span class="o">=</span> <span class="nx">R</span><span class="p">.</span><span class="nx">compose</span><span class="p">(</span><span class="nx">IOToTask</span><span class="p">,</span> <span class="nx">wrapAndLog</span><span class="p">)</span>
+
+<span class="kr">const</span> <span class="nx">wrapMaybe_task</span> <span class="o">=</span> <span class="nx">R</span><span class="p">.</span><span class="nx">compose</span><span class="p">(</span><span class="nx">MaybeToTask</span><span class="p">,</span> <span class="nx">wrapMaybe</span><span class="p">)</span>
+
+
+<span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Chain it!
+    
+ * We're good to go. This is a Task-based chain,
+ * so we'll start by lifting (converting) a string
+ * literal into a Task
+ */</span>
+
+<span class="nx">Task</span><span class="p">.</span><span class="nx">of</span><span class="p">(</span><span class="s1">'1 &lt;<span class="caps">INIT</span>&gt;'</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">wrap</span><span class="p">(</span><span class="s1">'2'</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">chain</span><span class="p">(</span><span class="nx">wrapSlowly</span><span class="p">(</span><span class="s1">'3'</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">chain</span><span class="p">(</span><span class="nx">wrapAndLog_task</span><span class="p">(</span><span class="s1">'4'</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">chain</span><span class="p">(</span><span class="nx">wrapMaybe_task</span><span class="p">(</span><span class="s1">'5'</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">chain</span><span class="p">(</span><span class="nx">wrapAndLog_task</span><span class="p">(</span><span class="s1">'6'</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">fork</span><span class="p">(</span>
+    <span class="nx">val</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="err">`</span><span class="mi">7</span><span class="nx">a</span> <span class="o">&lt;</span><span class="nx"><span class="caps">FAILURE</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">),</span>
+    <span class="nx">val</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="err">`</span><span class="mi">7</span><span class="nx">b</span> <span class="o">&lt;</span><span class="nx"><span class="caps">SUCCESS</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">)</span>
+  <span class="p">)</span>
+
+
+<span class="c1">// ///////////////////////////////////////////////</span>
+
+<span class="cm">/* Bonus: Pointfree style
+  
+ * With a couple extra utilities, we can
+ * compose our chain into a function
+ *
+ * This style is called "pointfree" because
+ * you don't have to refer to the "point"
+ * of the function (aka the initial value)
+ */</span>
+    
+<span class="kr">const</span> <span class="nx">map</span> <span class="o">=</span> <span class="nx">fn</span> <span class="o">=&gt;</span> <span class="nx">depoint</span><span class="p">(</span><span class="s1">'map'</span><span class="p">,</span> <span class="p">[</span><span class="nx">fn</span><span class="p">])</span>
+<span class="kr">const</span> <span class="nx">chain</span> <span class="o">=</span> <span class="nx">fn</span> <span class="o">=&gt;</span> <span class="nx">depoint</span><span class="p">(</span><span class="s1">'chain'</span><span class="p">,</span> <span class="p">[</span><span class="nx">fn</span><span class="p">])</span>
+    
+<span class="c1">// compose works inside out, to match how</span>
+<span class="c1">// functions would be nested:</span>
+<span class="c1">//</span>
+<span class="c1">// f(g(x)) === R.compose(f, g)(x)</span>
+
+<span class="kr">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">R</span><span class="p">.</span><span class="nx">compose</span><span class="p">(</span>
+  <span class="nx">depoint</span><span class="p">(</span><span class="s1">'fork'</span><span class="p">,</span> <span class="p">[</span>
+    <span class="nx">val</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="err">`</span><span class="mi">7</span><span class="nx">a</span> <span class="o">&lt;</span><span class="nx"><span class="caps">FAILURE</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">),</span>
+    <span class="nx">val</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="err">`</span><span class="mi">7</span><span class="nx">b</span> <span class="o">&lt;</span><span class="nx"><span class="caps">SUCCESS</span></span><span class="o">&gt;</span> <span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">val</span><span class="p">}]</span><span class="err">`</span><span class="p">)</span>
+  <span class="p">]),</span>
+  <span class="nx">chain</span><span class="p">(</span><span class="nx">wrapAndLog_task</span><span class="p">(</span><span class="s1">'6'</span><span class="p">)),</span>
+  <span class="nx">chain</span><span class="p">(</span><span class="nx">wrapMaybe_task</span><span class="p">(</span><span class="s1">'5'</span><span class="p">)),</span>
+  <span class="nx">chain</span><span class="p">(</span><span class="nx">wrapAndLog_task</span><span class="p">(</span><span class="s1">'4'</span><span class="p">)),</span>
+  <span class="nx">chain</span><span class="p">(</span><span class="nx">wrapSlowly</span><span class="p">(</span><span class="s1">'3'</span><span class="p">)),</span>
+  <span class="nx">map</span><span class="p">(</span><span class="nx">wrap</span><span class="p">(</span><span class="s1">'2'</span><span class="p">)),</span>
+  <span class="nx">Task</span><span class="p">.</span><span class="nx">of</span>
+<span class="p">)</span>
+
+<span class="nx">app</span><span class="p">(</span><span class="s1">'1 &lt;<span class="caps">INIT</span>&gt;'</span><span class="p">)</span>
+
+<span class="cm">/* Cool, huh?
+ *
+ * So today we learned about _using_ monads, which
+ * we imported from Folktale.js and from fantasy-land.
+ *
+ * We did not implement our own monadic containers
+ */</span>
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

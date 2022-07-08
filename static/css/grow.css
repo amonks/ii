@@ -1,0 +1,19 @@
+@media screen and (min-width: 48em) {
+ .grow-ns { transition: transform .2s }
+ .grow-ns:hover { transform: scale(1.05) }
+}
+@media screen and (min-width: 48em) and (max-width: 64em) {
+ .grow-m { transition: transform .2s }
+ .grow-m:hover { transform: scale(1.05) }
+}
+@media screen and (min-width: 64em) {
+ .grow-l { transition: transform .2s }
+ .grow-l:hover { transform: scale(1.05) }
+}
+.grow {
+  transition: transform .2s;
+}
+.grow:hover {
+  transform: scale(1.05);
+}
+

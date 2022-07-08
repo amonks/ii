@@ -1,0 +1,24 @@
+<h1 id="beaglebone-black-setup-steps">beaglebone black setup<span class="widont">&nbsp;</span>steps</h1>
+<p>1.</p>
+<p>from beagleboard.org/latest-images get the latest sd boot image <em>not the emmc flasher</em> (the emmc has so little memory you end up having to use the microsd slot anyway which gets<span class="widont">&nbsp;</span>weird)</p>
+<p>2.</p>
+<p>use Pi Filler http://ivanx.com/raspberrypi/ to put it on a microsd<span class="widont">&nbsp;</span>card</p>
+<p>3.</p>
+<p>plug bbb into ethernet and sd card. Boot while holding down the<span class="widont">&nbsp;</span>button</p>
+<p>4.</p>
+<p><span class="caps">CRUCIAL</span> expand partition to size of sd card using gparted or<span class="widont">&nbsp;</span>http://www.gigamegablog.com/2012/09/26/beaglebone-101-linux-tricks-for-backing-up-and-resizing-your-microsd-card/</p>
+<p>5.</p>
+<p>http://derekmolloy.ie/set-ip-address-to-be-static-on-the-beaglebone-black/</p>
+<p>do step 1 of ^^ to set<span class="widont">&nbsp;</span>nameservers:</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>/usr/lib/connman/test/get-services
+/usr/lib/connman/test/set-nameservers ethernet_9059af5bb675_cable_or_something 192.168.1.1 8.8.8.8
+</code></pre></div>
+<p>also edit /etc/resolv.conf to last until<span class="widont">&nbsp;</span>reboot</p>
+<p>6.</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>opkg --tmp-dir ~ update
+opkg --tmp-dir ~ upgrade
+</code></pre></div>
+<p><strong>froze once during<span class="widont">&nbsp;</span>this</strong></p>
+<p>7.</p>
+<p>set clock</p>
+<p>/usr/bin/ntpdate -b -s -u<span class="widont">&nbsp;</span>pool.ntp.org</p>

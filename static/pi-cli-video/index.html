@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>CLI video control on RPI</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/pi-cli-video/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name"><span class="caps">CLI</span> video control on <span class="caps">RPI</span></span>
+        </div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-07 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#hardware" class="link" data-turbolinks="false"><dfn data-info="hardware"><span class="icon-hardware"></span></dfn>
+        </a><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn> </a><a href="/everything#video" class="link" data-turbolinks="false"><dfn data-info="video"><span class="icon-video"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/pi-cli-video/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>I often like to watch movies on a projector, but I don’t always want to commit to keeping my laptop plugged in. So, I load up the video on a <a href="/rpi-hfs">hfs+ usb stick</a>, and control the video via<span class="widont">&nbsp;</span>ssh.</p>
+          <p>Omxplayer is cool because it uses the <span class="caps">GPU</span> (rad for 1080p). It’s uncool because it doesn’t support <span class="caps">ALSA</span>: audio can’t be routed to a <span class="caps">USB</span> interface, only <span class="caps">HDMI</span>            or the built-in 8<span class="ord">th</span>-inch<span class="widont">&nbsp;</span>jack.</p>
+          <h2 id="install-omxplayer">install omxplayer</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo apt-get update
+sudo apt-get install omxplayer
+</code></pre>
+          </div>
+          <h2 id="play-video">play video</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>omxplayer ./video.mkv
+</code></pre>
+          </div>
+          <!--more-->
+          <h2 id="options">options</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>Usage: omxplayer [OPTIONS] [FILE]
+Options :
+-h / --help                print this help
+-n / --aidx  index         audio stream index    : e.g. 1
+-o / --adev  device        audio out device      : e.g. hdmi/local
+-i / --info                dump stream format and exit
+-s / --stats               pts and buffer stats
+-p / --passthrough         audio passthrough
+-d / --deinterlace         deinterlacing
+-w / --hw                  hw audio decoding
+-3 / --3d mode             switch tv into 3d mode (e.g. SBS/TB)
+-y / --hdmiclocksync       adjust display refresh rate to match
+                           video (default)
+-z / --nohdmiclocksync     do not adjust display refresh rate to
+                           match video
+-t / --sid index           show subtitle with index
+-r / --refresh             adjust framerate/resolution to video
+-l / --pos                 start position (in seconds)
+    --boost-on-downmix     boost volume when downmixing
+    --subtitles path       external subtitles in UTF-8 srt form at
+    --font path            subtitle font
+                           (default: /usr/share/fonts/truetype/
+                                      freefont/FreeSans.ttf)
+    --font-size size       font size as thousandths of screen height
+                           (default: 55)
+    --align left/center    subtitle alignment (default: left)
+    --lines n              number of lines to accommodate in the
+                           subtitle buffer (default: 3)
+</code></pre>
+          </div>
+          <h2 id="keyboard-shortcuts">keyboard shortcuts</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>Space or p   Pause/Resume
+q            Exit OMXPlayer
+z            Show Info
+
+-            Decrease Volume
++            Increase Volume
+
+i            Previous Chapter
+o            Next Chapter
+
+Left Arrow   Seek -30
+Right Arrow  Seek +30
+Down Arrow   Seek -600
+Up Arrow     Seek +600
+
+1            Increase Speed
+2            Decrease Speed
+
+j            Previous Audio stream
+k            Next Audio stream
+n            Previous Subtitle stream
+m            Next Subtitle stream
+s            Toggle subtitles
+d            Subtitle delay -250 ms
+f            Subtitle delay +250 ms
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

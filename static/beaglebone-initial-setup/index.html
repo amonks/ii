@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>initial beaglebone black setup</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/beaglebone-initial-setup/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">initial beaglebone black setup</span></div>
+        <div class="f2 i ma0 mt1">Pi Guide</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-09 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#hardware" class="link" data-turbolinks="false"><dfn data-info="hardware"><span class="icon-hardware"></span></dfn>
+        </a><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn> </a><a href="/everything#linux" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-linux"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/beaglebone-initial-setup/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <h1 id="beaglebone-black-setup-steps">beaglebone black setup<span class="widont">&nbsp;</span>steps</h1>
+          <p>1.</p>
+          <p>from beagleboard.org/latest-images get the latest sd boot image <em>not the emmc flasher</em> (the emmc has so little memory you end up having to use the microsd slot anyway which gets<span class="widont">&nbsp;</span>weird)</p>
+          <p>2.</p>
+          <p>use Pi Filler http://ivanx.com/raspberrypi/ to put it on a microsd<span class="widont">&nbsp;</span>card</p>
+          <p>3.</p>
+          <p>plug bbb into ethernet and sd card. Boot while holding down the<span class="widont">&nbsp;</span>button</p>
+          <p>4.</p>
+          <p><span class="caps">CRUCIAL</span> expand partition to size of sd card using gparted or<span class="widont">&nbsp;</span>http://www.gigamegablog.com/2012/09/26/beaglebone-101-linux-tricks-for-backing-up-and-resizing-your-microsd-card/</p>
+          <p>5.</p>
+          <p>http://derekmolloy.ie/set-ip-address-to-be-static-on-the-beaglebone-black/</p>
+          <p>do step 1 of ^^ to set<span class="widont">&nbsp;</span>nameservers:</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>/usr/lib/connman/test/get-services
+/usr/lib/connman/test/set-nameservers ethernet_9059af5bb675_cable_or_something 192.168.1.1 8.8.8.8
+</code></pre>
+          </div>
+          <p>also edit /etc/resolv.conf to last until<span class="widont">&nbsp;</span>reboot</p>
+          <p>6.</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>opkg --tmp-dir ~ update
+opkg --tmp-dir ~ upgrade
+</code></pre>
+          </div>
+          <p><strong>froze once during<span class="widont">&nbsp;</span>this</strong></p>
+          <p>7.</p>
+          <p>set clock</p>
+          <p>/usr/bin/ntpdate -b -s -u<span class="widont">&nbsp;</span>pool.ntp.org</p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

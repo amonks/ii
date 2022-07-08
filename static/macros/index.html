@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Two uses of macros</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/macros/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">Two uses of macros</span></div>
+        <div class="f2 i ma0 mt1">Understanding Lisp</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2016-08-26 00:00:00 -0500">2016</time> </span><span class="f4"><a href="/everything#code" class="link" data-turbolinks="false"><dfn data-info="code"><span class="icon-code"></span></dfn>
+        </a><a href="/everything#writing" class="link" data-turbolinks="false"><dfn data-info="writing"><span class="icon-writing"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/macros/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>Lisp has macros.</p>
+          <p>Macros are functions you write that operate on that syntax tree during<span class="widont">&nbsp;</span>compilation.</p>
+          <p>It’s not obvious at all what they’re<span class="widont">&nbsp;</span>for.</p>
+          <p>I’ll discuss two ways that macros are<span class="widont">&nbsp;</span>used.</p>
+          <!--more-->
+          <hr>
+          <p>One use of macros is what lispers call “bottom-up development”. Rubyists do it too, but they call it “domain specific<span class="widont">&nbsp;</span>language”.</p>
+          <p>Methods like <code class="highlighter-rouge">attr_accessor</code>, and active record’s <code class="highlighter-rouge">has_many</code> and <code class="highlighter-rouge">belongs_to</code> are great examples in ruby. They’re implemented using
+            its ‘metaprogramming capabilities’, where you can interact with classes. Lisp code doesn’t usually use classes, so you operate directly on the syntax tree, which is easy because your code is a <em>literally</em> a syntax tree literal: nested
+            lists of functions and<span class="widont">&nbsp;</span>argumenmts.</p>
+          <p>Ruby’s metaprogramming is quite complex, but lisp’s macros are less so because they use the same functions that you use on the other lists and arrays that make up your<span class="widont">&nbsp;</span>program.</p>
+          <hr>
+          <p>Another use of macros relies on the fact that they’re executed during compile time, rather than<span class="widont">&nbsp;</span>runtime.</p>
+          <p>When I’m writing lisp, I put my documentation and testing inline. In clojurescript, for example, whenever I define a react component, on the next line I pass it as an argument to a macro, along with maybe some sets of test props. In production,
+            the macro returns no code. In development, it returns code that generates a new set of routes in the app for testing and documentation, including the component’s docstring, if I’ve defined one (clojure, like python, uses in-language docstrings
+            rather than comments above functions), and an instance with each set of test props. It would be crazy to build the same thing with babel<span class="widont">&nbsp;</span>plugins.</p>
+          <p>Distinction between compile-time and run-time code within the same app is useful in more subtle ways,<span class="widont">&nbsp;</span>too.</p>
+          <p>With the javascript html templating library handlebars, you can use a gulp task (or something) to precompile your templates. It’s partly because the compilation is slow, but also because you don’t want to have to include html parsing junk in
+            your app. In lisp, handlebars would be a<span class="widont">&nbsp;</span>macro.</p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

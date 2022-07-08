@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Start Something At Login on Linux with init.d</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/start-at-login/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">Start Something At Login on Linux with init.d</span></div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2014-01-21 00:00:00 -0600">2014</time> </span><span class="f4"><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn>
+        </a><a href="/everything#linux" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-linux"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://monks.co/start-at-login/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <h2 id="info">Info</h2>
+          <p>Put this file in /etc/init.d/ and edit {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>} as<span class="widont">&nbsp;</span>appropriate.</p>
+          <p>You can run <code class="highlighter-rouge">sudo update-rc.d {THIS-FILE'S-NAME} defaults</code> to <code class="highlighter-rouge">start</code> at boot and <code class="highlighter-rouge">stop</code> at shutdown.</p>
+          <h2 id="the-script">The Script</h2>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code><span class="c">#! /bin/sh</span>
+<span class="c"># /etc/init.d/{<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>}</span>
+
+<span class="c">### <span class="caps">BEGIN</span> <span class="caps">INIT</span> <span class="caps">INFO</span></span>
+<span class="c"># Provides:          {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>}</span>
+<span class="c"># Required-Start:    $remote_fs $syslog</span>
+<span class="c"># Required-Stop:     $remote_fs $syslog</span>
+<span class="c"># Default-Start:     2 3 4 5</span>
+<span class="c"># Default-Stop:      0 1 6</span>
+<span class="c"># Short-Description: Simple script to start a program at boot</span>
+<span class="c"># Description:       Simple, conventional, practical launch script.</span>
+<span class="c">### <span class="caps">END</span> <span class="caps">INIT</span> <span class="caps">INFO</span></span>
+
+<span class="c"># run `sudo update-rc.d {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>} defaults` to `start` at boot and `stop` at shutdown.</span>
+
+<span class="c"># Carry out specific functions when asked to by the system</span>
+<span class="k">case</span> <span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span> <span class="k">in
+  </span>start<span class="p">)</span>
+    <span class="nb">echo</span> <span class="s2">"Starting {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>}"</span>
+    <span class="c"># run application you want to start</span>
+    <span class="c"># runs as root by default, hence the `su`</span>
+    su pi -c <span class="s1">'/usr/bin/{<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>} new -d'</span> <span class="c"># or whatever</span>
+    <span class="p">;;</span>
+  stop<span class="p">)</span>
+    <span class="nb">echo</span> <span class="s2">"Stopping {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>}"</span>
+    <span class="c"># kill application you want to stop</span>
+    su pi -c <span class="s1">'killall {<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>}'</span> <span class="c"># or whatever</span>
+    <span class="p">;;</span>
+  <span class="k">*</span><span class="p">)</span>
+    <span class="nb">echo</span> <span class="s2">"Usage: /etc/init.d/{<span class="caps">THING</span>-<span class="caps">TO</span>-<span class="caps">LAUNCH</span>} {start|stop}"</span>
+    <span class="nb">exit </span>1
+    <span class="p">;;</span>
+<span class="k">esac</span>
+
+<span class="nb">exit </span>0
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+.caps {
+  letter-spacing:  .08em;
+}
+
+[class^="tracked"] .caps,
+[class*=" tracked"] .caps {
+  letter-spacing: inherit;
+}
+

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Flocking in OpenFrameworks</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/ofx-flocking/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">Flocking in OpenFrameworks</span></div>
+        <div class="f2 i ma0 mt1">Like Birds</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-08 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#of" class="link" data-turbolinks="false"><dfn data-info="open frameworks"><span class="icon-of"></span></dfn>
+        </a><a href="/everything#graphics" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-graphics"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="http://github.com/amonks/ofxFlocking" class="link"><span class="icon-github"></span> source code</a></li>
+          <li><a href="https://monks.co/ofx-flocking/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <h1 id="ofxflocking">ofxFlocking</h1>
+          <p>I updated ofxFlocking to work on mavericks in openFrameworks<span class="widont">&nbsp;</span>0.8.0</p>
+          <p><a href="https://github.com/amonks/ofxFlocking">github</a></p>
+          <h2 id="installation">installation</h2>
+          <p>Copy this folder into your openframeworks<span class="widont">&nbsp;</span>folder/addons</p>
+          <h2 id="usage">usage</h2>
+          <p>to make the example project, I used the project generator to create a project and included the<span class="widont">&nbsp;</span>addon.</p>
+          <h3 id="testapph">testapp.h</h3>
+          <p>In the blank project, I<span class="widont">&nbsp;</span>added</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>#include "ofxFlocking.h"
+</code></pre>
+          </div>
+          <p>to the beginning of <code class="highlighter-rouge">testApp.h</code>, and added</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>ofxFlocking flock;
+</code></pre>
+          </div>
+          <p>in the bottom of hte testApp<span class="widont">&nbsp;</span>class.</p>
+          <h3 id="testappcpp">testApp.cpp</h3>
+          <p>I then I changed the following two functions in <code class="highlighter-rouge">testApp.cpp</code></p>
+          <p>setup</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>void testApp::setup(){
+    for (int i = startCount; i &gt; 0; i--) {
+        flock.addBoid();
+    }
+}
+</code></pre>
+          </div>
+          <p>mouseReleased</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>void testApp::mouseReleased(int x, int y, int button){
+	ofLog(OF_LOG_NOTICE, ofToString(button));
+	switch(button) {
+		case 0: // left mouse:
+			flock.addBoid(x, y);
+			break;
+		case 2: // right mouse
+			flock.removeBoid(x, y, 500);
+			break;
+		default:
+			flock.addBoid(x, y);
+			break;
+	}
+	flock.addBoid(x, y);
+}
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

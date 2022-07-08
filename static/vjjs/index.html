@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>vjjs</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/vjjs/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><a href="http://github.com/amonks/vjjs" class="link"><span class="p-name">vjjs</span> <span class="icon-arrow"></span></a></div>
+        <div class="f2 i ma0 mt1">Client-Side Collaboration</div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2016-03-29 00:00:00 -0500">ongoing</time> </span><span class="f4"><a href="/everything#website" class="link" data-turbolinks="false"><dfn data-info="website"><span class="icon-website"></span></dfn>
+        </a><a href="/everything#clojure" class="link" data-turbolinks="false"><dfn data-info="clojure"><span class="icon-clojure"></span></dfn> </a><a href="/everything#javascript" class="link" data-turbolinks="false"><dfn data-info="javascript"><span class="icon-javascript"></span></dfn> </a>
+        <a
+          href="/everything#interaction" class="link" data-turbolinks="false"><dfn data-info="interaction"><span class="icon-interaction"></span></dfn> </a><a href="/everything#experience" class="link" data-turbolinks="false"><dfn data-info=""><span class="icon-experience"></span></dfn> </a><a href="/everything#performance"
+            class="link" data-turbolinks="false"><dfn data-info="performance"><span class="icon-performance"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://github.com/amonks/vjjs" class="link"><span class="icon-github"></span> source code</a></li>
+          <li><a href="https://monks.co/vjjs/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"><img src="/images/vjjs.png" alt="" class="w-100"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>I’m working on a multipurpose in-browser livecoding system for remixing the<span class="widont">&nbsp;</span>Web.</p>
+          <!--more-->
+          <p><em>Imagine:</em></p>
+          <p>You make a Facebook-style popup, and throw a Google map in it. You make an oscillator, and pipe its output into the longitude and latitude of the Google map. Then you pipe the oscillator into the x and y position of the popup.<span class="widont">&nbsp;</span>Etc.</p>
+          <p>I’ve been working on various iterations of this for a while, but I haven’t been satisfied with any. The current iteration uses the <a href="https://www.npmjs.com/package/redux">Redux</a> (kinda like Flux) architecture, and the modules are React
+            components. I like where it’s<span class="widont">&nbsp;</span>headed.</p>
+          <p><a href="https://github.com/vjjs">vjjs</a> is a currently-in-development collaboration platform for client-side creative code. It will make it possible to use the browser for livecoding or vjing, and use GitHub as a backend so you can easily
+            share your code or find modules to<span class="widont">&nbsp;</span>use.</p>
+          <p><a href="#baton">baton</a> and <a href="#fftjs">fftjs</a> are components that make vjjs<span class="widont">&nbsp;</span>possible.</p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>

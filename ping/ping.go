@@ -1,0 +1,5 @@
+package ping
+
+import (
+	"fmt"
+)

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<!--                      __
+   ____ ___  ____  ____  / /_______ _________
+  / __ `__ \/ __ \/ __ \/ //_/ ___// ___/ __ \
+ / / / / / / /_/ / / / / ,< (__  )/ /__/ /_/ /
+/_/ /_/ /_/\____/_/ /_/_/|_/____(_)___/\____/
+
+source code at http://github.com/amonks/monks.co
+all code ISC licensed unless otherwise noted
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Using pitch-shift.js ++ what's NPM?</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://monks.co/pitch-shift-npm/">
+</head>
+
+<body class="overflow-x-hidden">
+  <main class="pa5-ns overflow-x-hidden">
+    <h1 class="ph2"><a href="/">monks.co</a></h1>
+    <article class="cf pb6 h-entry">
+      <header class="pb4 ph2">
+        <div class="f3 ma0 mb1 ttu tracked lh-title"><span class="p-name">Using pitch-shift.js ++ what&#8217;s <span class="caps">NPM</span>?</span>
+        </div>
+      </header>
+      <div class="f3 pb3 ph2"><span class="f3"><time class="black-50" datetime="2013-12-07 00:00:00 -0600">2013</time> </span><span class="f4"><a href="/everything#howto" class="link" data-turbolinks="false"><dfn data-info="how-tos"><span class="icon-howto"></span></dfn>
+        </a><a href="/everything#writing" class="link" data-turbolinks="false"><dfn data-info="writing"><span class="icon-writing"></span></dfn> </a><a href="/everything#javascript" class="link" data-turbolinks="false"><dfn data-info="javascript"><span class="icon-javascript"></span></dfn></a></span>
+      </div>
+      <div class="pb5 ph2">
+        <ul class="list pl0">
+          <li><a href="https://github.com/amonks/pitch-shift-installation" class="link"><span class="icon-github"></span> source code</a></li>
+          <li><a href="https://monks.co/pitch-shift-npm/" class="link u-url"><span class="icon-link"></span> permalink</a></li>
+        </ul>
+      </div>
+      <div class="mw8"></div>
+      <div class="pv3 ph2 copy">
+        <div class="e-content">
+          <p>The problem with pitch-shift is the examples. The super-bare-bones minimal example they provide doesn’t actually play any audio, so it’s hard to tell if it<span class="widont">&nbsp;</span>works.</p>
+          <p>The online demo requires 2 packages that aren’t required by pitch-shift itself, so if you try to run its <code class="highlighter-rouge">index.html</code> locally without installing those first, it throws hella<span class="widont">&nbsp;</span>errors.</p>
+          <p>Here I’ll take you through both install processes: how to install the non-functional super-bare-bones minimal pitch-shift example, and how to install the working demo. Here<span class="widont">&nbsp;</span>goes.</p>
+          <!--more-->
+          <h2 id="browserify">browserify</h2>
+          <p>First you’ll need browserify, node normally installs packages into the working directory (so that each project / library / whathaveyou can have its own version of each dependency without causing conflicts, which is awesome). Use the <code class="highlighter-rouge">-g</code>            flag to install browserify globally, since it’s a command-line tool rather than a project<span class="widont">&nbsp;</span>dependency.</p>
+          <div class="highlighter-rouge">
+            <pre class="highlight"><code>sudo npm install browserify -g
+</code></pre>
+          </div>
+          <h2 id="minimal-pitch-shift-install">minimal pitch-shift install</h2>
+          <h3 id="files-minimal">files (<code class="highlighter-rouge">minimal/</code>):</h3>
+          <p><code class="highlighter-rouge">./app.js</code> (from the Pitch-shift<span class="widont">&nbsp;</span>readme):</p>
+          <div class="language-js highlighter-rouge">
+            <pre class="highlight"><code><span class="c1">//Create a pitch shifting object</span>
+<span class="kd">var</span> <span class="nx">shifter</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"pitch-shift"</span><span class="p">)(</span>
+  <span class="kd">function</span> <span class="nx">onData</span><span class="p">(</span><span class="nx">frame</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">//Play / write out frame.  Called whenver data is ready</span>
+  <span class="p">},</span>
+  <span class="kd">function</span> <span class="nx">onTune</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="nx">pitch</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Got pitch "</span><span class="p">,</span> <span class="nx">pitch</span><span class="p">,</span> <span class="s2">" at time "</span><span class="p">,</span> <span class="nx">t</span><span class="p">)</span>
+
+    <span class="c1">//This is the amount to scale the sample by</span>
+    <span class="k">return</span> <span class="mf">1.0</span>
+  <span class="p">})</span>
+
+<span class="c1">//Feed some data to the shifter</span>
+<span class="nx">shifter</span><span class="p">(</span><span class="k">new</span> <span class="nx">Float32Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="cm">/* ... etc */</span> <span class="p">]))</span>
+</code></pre>
+          </div>
+          <p><code class="highlighter-rouge">./index.html</code>:</p>
+          <div class="language-html highlighter-rouge">
+            <pre class="highlight"><code><span class="cp">&lt;!<span class="caps">DOCTYPE</span> html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+	<span class="nt">&lt;title&gt;</span>pitch-shift demo<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+	<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"bundle.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre>
+          </div>
+          <h3 id="install-pitch-shift-itself">install pitch-shift itself:</h3>
+          <div class="language-bash highlighter-rouge">
+            <pre class="highlight"><code><span class="nb">cd</span> ./minimal
+npm install pitch-shift
+browserify ./app.js -o ./bundle.js
+</code></pre>
+          </div>
+          <h3 id="done">Done!</h3>
+          <p>Pitch-shift is now installed into <code class="highlighter-rouge">./minimal</code>. If you open up <code class="highlighter-rouge">index.html</code> you’ll notice that it doesn’t actually do<span class="widont">&nbsp;</span>anything.</p>
+          <h2
+            id="functional-demo-install">functional demo install</h2>
+            <p>That wasn’t very useful, let’s try to run the <a href="http://mikolalysenko.github.io/pitch-shift/">demo</a>.</p>
+            <h3 id="files-demo">files (<code class="highlighter-rouge">demo/</code>)</h3>
+            <p><a href="https://github.com/mikolalysenko/pitch-shift/blob/master/example/index.js"><code class="highlighter-rouge">./index.js</code></a></p>
+            <p><a href="https://github.com/mikolalysenko/pitch-shift/blob/master/example/www"><code class="highlighter-rouge">./index.html, ./gettysburg.mp3, ./guitar_c.mp3</code></a></p>
+            <h3 id="install-pitch-shift--app-dependencies">install pitch-shift + app<span class="widont">&nbsp;</span>dependencies</h3>
+            <p>our <code class="highlighter-rouge">./index.js</code> file two dependencies of its own that are <em>not</em> required by pitch-shift itself. We’ll need to install these<span class="widont">&nbsp;</span>manually.</p>
+            <div class="language-bash highlighter-rouge">
+              <pre class="highlight"><code><span class="nb">cd</span> ./demo
+npm install pitch-shift
+npm install typedarray-pool
+npm install domready
+</code></pre>
+            </div>
+            <h3 id="done-1">Done!</h3>
+            <p>You’re done! Note: if you try to open up <code class="highlighter-rouge">file:///.../demo/index.html</code> in your browser, you’ll get a cross-origin request error because your computer isn’t serving the mp3s<span class="widont">&nbsp;</span>properly.</p>
+            <p>You’ll have to move <code class="highlighter-rouge">demo/</code> do a webserver of some kind to get it to run. I’m on <span class="caps">OSX</span>, so I like to use <span class="caps">OSX</span>’s built-in apache server. If you’ve never used
+              it, you can turn it on by running <code class="highlighter-rouge">sudo apachectl start</code>, and then it’ll automatically serve anything in <code class="highlighter-rouge">/Library/WebServer/Documents</code> at <code class="highlighter-rouge">http://localhost</code>.</p>
+            <h2
+              id="but-why">but why?</h2>
+              <h3 id="why-npm">Why npm?</h3>
+              <p>npm is becoming the de-facto javascript package/dependency manager, for both server-and-client applications, so it’s pretty useful to pick<span class="widont">&nbsp;</span>up.</p>
+              <p>It’s a bit different from apt-like package managers you may have used, in that it installs everything <em>into the working directory</em> rather than globally. If you install a package with a dependency, it installs the package into ./node_modules/package,
+                and the dependency into<span class="widont">&nbsp;</span>./node_modules/package/node_modules/dependency.</p>
+              <p>This is super rad if you’ve ever been to dependency hell: need two libraries that depend on two different versions of the same package? Great! Want to run an old project with a library for which the <span class="caps">API</span> has changed?
+                Who<span class="widont">&nbsp;</span>cares!</p>
+              <h3 id="why-browserify">why browserify?</h3>
+              <p>If you’re using npm with a node.js server, all you need to do is make a <code class="highlighter-rouge">packages.json</code> file that declares what your project depends on, and node automatically makes sure all the proper javascript files
+                get combined into one and served with your<span class="widont">&nbsp;</span>application.</p>
+              <p>If you <em>aren’t</em> using a node.js server, you can still benefit from npm, you just need to compile all those dependencies<span class="widont">&nbsp;</span>manually.</p>
+              <p>Thus, Browserify. Declare npm package dependencies within your javascript file using require syntax: <code class="highlighter-rouge">require("npm-package-that-i-want")</code>. If you then run <code class="highlighter-rouge">browserify ./app.js -o ./bundle.js</code>,
+                it’ll take <code class="highlighter-rouge">./app.js</code>, <code class="highlighter-rouge">npm-package-that-i-want</code>, and anything else you’ve <code class="highlighter-rouge">required</code>, and paste them all into your <code class="highlighter-rouge">./bundle.js</code>                output file. You can now load all your javascript with a single request. If this excites you, check out <code class="highlighter-rouge">npm-css</code> also. It does the same thing but with .css<span class="widont">&nbsp;</span>files.</p>
+              <p>protip: run browserify with a <code class="highlighter-rouge">-w</code> flag to make it watch your <code class="highlighter-rouge">app.js</code> file for changes and automatically generate as-needed. If <em>this</em> excites you, look into
+                <code class="highlighter-rouge">grunt</code>. It’s a build manager targetted for websites: you tell it your build operations, and it runs them when you run <code class="highlighter-rouge">grunt</code>. Very customizably.</p>
+              <h2 id="more-resources">more resources:</h2>
+              <p><a href="http://engineering.yp.com/post/browserify">browserify tutorial</a></p>
+              <p><a href="http://dontkry.com/posts/code/using-npm-on-the-client-side.html">npm on the client-side<span class="widont">&nbsp;</span>tutorial</a></p>
+        </div>
+      </div>
+    </article>
+    <footer class="pv5 ph2">2005<span class="thin-space"></span>–<span class="thin-space"></span>2017<br></footer>
+    <div class="dn">
+      <a href="https://twitter.com/xmonksx" rel="me"></a>
+      <a href="https://github.com/amonks" rel="me"></a>
+      <a href="https://www.facebook.com/andrewmonks" rel="me"></a>
+      <a href="https://www.coinbase.com/amonks" rel="me"></a>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js"></script>
+  <script>
+    ;
+    (function() {
+      window.GoogleAnalyticsObject = 'ga'
+      if (!window.ga) {
+        window.ga = function() {
+          window.ga.q = window.ga.q || []
+          window.ga.q.push(arguments)
+        }
+      }
+      window.ga.l = new Date().getTime()
+      var script = document.createElement('script')
+      script.src = 'https://www.google-analytics.com/analytics.js'
+      document.body.appendChild(script)
+      ga('create', 'UA-37834146-1', 'auto')
+      ga('send', 'pageview')
+    })()
+  </script>
+</body>
+
+</html>
