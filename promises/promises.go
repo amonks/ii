@@ -10,16 +10,16 @@ import (
 )
 
 func Server() *dbserver.DBServer {
-	p := &promises{}
+	a := &app{}
 
 	s := dbserver.New("promises")
-	s.HandleFunc("/", p.ServeHTTP)
-	s.Start(p.migrate)
+	s.HandleFunc("/", a.GetPromise)
+	s.Start(a.Migrate)
 
 	return s
 }
 
-type promises struct{}
+type app struct{}
 
 type promise struct {
 	slug          string
@@ -31,7 +31,7 @@ type promise struct {
 	isVoid        bool
 }
 
-func (p *promises) migrate(conn *sqlite.Conn) error {
+func (p *app) Migrate(conn *sqlite.Conn) error {
 	return sqlitex.ExecScript(conn, `
 		create table if not exists promises (
 			slug text primary key not null,
@@ -44,7 +44,7 @@ func (p *promises) migrate(conn *sqlite.Conn) error {
 		);`)
 }
 
-func (*promises) ServeHTTP(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (*app) GetPromise(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Path
 
 	var p promise

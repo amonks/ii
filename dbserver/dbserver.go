@@ -41,14 +41,18 @@ func (s *DBServer) Start(migrate func(conn *sqlite.Conn) error) {
 	if err := migrate(conn); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("started db server")
 }
 
 func (s *DBServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("serving app", req.URL.Path)
 	s.mux.ServeHTTP(w, req)
 }
 
 func (s *DBServer) HandleFunc(pattern string, f func(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)) {
+	fmt.Println("building handler func", pattern)
 	s.mux.HandleFunc(pattern, func(w http.ResponseWriter, req *http.Request) {
+		fmt.Println("executing handler func", pattern)
 		if s.db == nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 		}

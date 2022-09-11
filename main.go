@@ -1,21 +1,24 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 
-	"co.monks.monks.co/dbserver/promises"
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
+	"co.monks.monks.co/ping"
+	"co.monks.monks.co/promises"
 )
 
 func main() {
-	http.Handle("/promises", http.StripPrefix("/promises/", promises.Server()))
-	http.Handle("/", http.FileServer(http.Dir("./static")))
+	mux := http.NewServeMux()
 
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	mux.Handle("/promises/", promises.Server())
+	mux.Handle("/ping/", ping.Server())
+
+	mux.Handle("/", http.FileServer(http.Dir("./static")))
+
+	fmt.Println("on 3000")
+	if err := http.ListenAndServe(":3000", mux); err != nil {
 		log.Fatal(err)
 	}
 }

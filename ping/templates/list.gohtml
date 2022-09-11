@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>ping</title>
+</head>
+<body>
+    <h1>ping</h1>
+
+    tracking {{ len . }} people<br />
+
+    <a href="https://beeminder.com/ajm/ping">beeminder</a>
+
+    <ul>
+        {{ range . }}
+        <li>
+            {{ if not .IsActive }}<em>{{ end }}
+                {{ if .IsLongestUnpinged }}<strong>{{ end }}
+                    {{.LastPingAt}}:
+                {{ if .IsLongestUnpinged }}</strong>{{ end }}
+
+                <a href="/ping/person?slug={{.Slug}}">{{.Slug}}</a>
+
+                {{- if ne .LastPingNotes "" }}: {{.LastPingNotes}}{{ end }}
+            {{ if not .IsActive }}</em>{{ end }}
+        </li>
+        {{ end }}
+    </ul>
+
+    <form method="post" action="/ping/commands/add-person">
+        <h2>add person</h2><input type="text" name="slug" placeholder="name"><br>
+        <textarea name="notes" placeholder="initial ping notes"></textarea><br>
+        <button type="submit">add</button>
+    </form>
+</body>
+</html>
