@@ -38,7 +38,7 @@ func Server() *dbserver.DBServer {
 	s.HandleFunc("/ping/commands/ping-person", a.PingPerson)
 	s.HandleFunc("/ping/commands/add-person", a.AddPerson)
 	s.HandleFunc("/ping/commands/update-person", a.UpdatePerson)
-	s.Start(a.Migrate)
+	s.Init(a.Migrate)
 	fmt.Println("started server")
 	return s
 }

@@ -24,7 +24,7 @@ func New(name string) *DBServer {
 	}
 }
 
-func (s *DBServer) Start(migrate func(conn *sqlite.Conn) error) {
+func (s *DBServer) Init(migrate func(conn *sqlite.Conn) error) {
 	db, err := sqlitex.Open(fmt.Sprintf("file:data/%s.db", s.name), 0, 10)
 	if err != nil {
 		log.Fatal(err)
@@ -37,6 +37,10 @@ func (s *DBServer) Start(migrate func(conn *sqlite.Conn) error) {
 		log.Fatal(err)
 	}
 	defer db.Put(conn)
+
+	if err := sqlitex.Exec(conn, `PRAGMA journal_mode=wal;`, nil); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := migrate(conn); err != nil {
 		log.Fatal(err)

@@ -19,7 +19,7 @@
                     {{.LastPingAt}}:
                 {{ if .IsLongestUnpinged }}</strong>{{ end }}
 
-                <a href="/ping/person?slug={{.Slug}}">{{.Slug}}</a>
+                <a hx-boost="true" href="/ping/person?slug={{.Slug}}">{{.Slug}}</a>
 
                 {{- if ne .LastPingNotes "" }}: {{.LastPingNotes}}{{ end }}
             {{ if not .IsActive }}</em>{{ end }}

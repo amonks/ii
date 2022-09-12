@@ -20,24 +20,22 @@
 	<h2>Redirects</h2>
 	<ul>
 		{{range .Shortlinks}}
-		<li>
-			<a href="{{.URL}}">/{{.Key}}</a> (to {{.URL}})
-			<button data-action="DELETE" data-key="{{.Key}}">delete</button>
-		</li>
+			<li>
+				<a href="{{.URL}}">/{{.Key}}</a> (to {{.URL}})
+				<button
+					data-hx-confirm="really delete?"
+					data-hx-target="closest li"
+					data-hx-swap="outerHTML"
+					data-hx-delete="/go/{{.Key}}"
+				>
+					delete
+				</button>
+			</li>
 		{{end}}
-
-		<script type="application/javascript">
-			const deleteButtons = document.querySelectorAll("button[data-action=\"DELETE\"]")
-			for (const button of deleteButtons) {
-				button.addEventListener("click", e => {
-					const key = e.target.getAttribute("data-key")
-					fetch(`/go/${key}`, {method: "DELETE"})
-						.then(() => location.reload())
-				})
-			}
-		</script>
 	</ul>
 </section>
+
+<script src="https://unpkg.com/htmx.org@1.8.0" integrity="sha384-cZuAZ+ZbwkNRnrKi05G/fjBX+azI9DNOkNYysZ0I/X5ZFgsmMiBXgDZof30F5ofc" crossorigin="anonymous"></script>
 
 </body>
 

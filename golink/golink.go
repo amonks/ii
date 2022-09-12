@@ -35,7 +35,7 @@ func Server() *dbserver.DBServer {
 	a := &app{}
 	s.HandleFunc("/go", a.Handler)
 	s.HandleFunc("/go/", a.Handler)
-	s.Start(a.Migrate)
+	s.Init(a.Migrate)
 	fmt.Println("started server")
 	return s
 }
@@ -110,7 +110,6 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 		}
 
 		w.WriteHeader(200)
-		w.Write([]byte("ok"))
 		return
 	}
 

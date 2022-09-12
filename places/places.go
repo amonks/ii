@@ -9,7 +9,6 @@ import (
 	"co.monks.monks.co/dbserver"
 	"co.monks.monks.co/util"
 	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
 )
 
 var (
@@ -27,45 +26,26 @@ func init() {
 	templates = ts
 }
 
-func Server() *dbserver.DBServer {
+type server struct {
+	*dbserver.DBServer
+	model *model
+}
+
+func Server() *server {
 	fmt.Println("build places server")
-	s := dbserver.New("places")
-	a := &app{}
-	s.HandleFunc("/places/", a.Places)
-	s.HandleFunc("/places/commands/import-saved-places", a.ImportSavedPlaces)
-	s.HandleFunc("/places/commands/annotate-peoples-places", a.AnnotatePeoplesPlaces)
-	s.Start(a.Migrate)
-	fmt.Println("started server")
+	s := &server{
+		DBServer: dbserver.New("places"),
+	}
+	s.HandleFunc("/places/", s.places)
+	s.HandleFunc("/places/commands/import-saved-places", s.importSavedPlaces)
+	s.HandleFunc("/places/commands/annotate-peoples-places", s.annotatePeoplesPlaces)
+	s.Init(s.model.migrate)
+	fmt.Println("started places server")
 	return s
 }
 
-type app struct{}
-
-func (a *app) Migrate(conn *sqlite.Conn) error {
-	if err := sqlitex.ExecScript(conn, `
-		create table if not exists places (
-			google_maps_url text primary key not null,
-			google_maps_place_id text,
-			google_maps_business_status text,
-			is_public integer,
-			notes text,
-			rating integer,
-			created_at text,
-			updated_at text,
-			lat text,
-			lng text,
-			business_name text,
-			country_code text,
-			address text,
-			title text
-		);`); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (*app) Places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	places, err := listPlaces(conn)
+func (s *server) places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+	places, err := s.model.listPlaces(conn)
 	if err != nil {
 		util.HTTPError("places", w, req, http.StatusInternalServerError, "%s", err)
 		return
@@ -77,8 +57,8 @@ func (*app) Places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) 
 	}
 }
 
-func (*app) ImportSavedPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	if err := importSavedPlaces(conn); err != nil {
+func (s *server) importSavedPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+	if err := s.model.importSavedPlaces(conn); err != nil {
 		util.HTTPError("places", w, req, http.StatusInternalServerError, "%s", err)
 		return
 	}
@@ -86,8 +66,8 @@ func (*app) ImportSavedPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *htt
 	http.Redirect(w, req, "/places", 302)
 }
 
-func (*app) AnnotatePeoplesPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	if err := annotatePeoplesPlaces(conn); err != nil {
+func (s *server) annotatePeoplesPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+	if err := s.model.annotatePeoplesPlaces(conn); err != nil {
 		util.HTTPError("places", w, req, http.StatusInternalServerError, "%s", err)
 		return
 	}

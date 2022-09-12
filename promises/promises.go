@@ -14,7 +14,7 @@ func Server() *dbserver.DBServer {
 
 	s := dbserver.New("promises")
 	s.HandleFunc("/", a.GetPromise)
-	s.Start(a.Migrate)
+	s.Init(a.Migrate)
 
 	return s
 }

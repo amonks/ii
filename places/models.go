@@ -61,7 +61,32 @@ func (p Place) DisplayName() (string, error) {
 	return "", fmt.Errorf("could not create display name for '%s'", p.GoogleMapsURL)
 }
 
-func listPlaces(conn *sqlite.Conn) ([]Place, error) {
+type model struct {}
+
+func (m *model) migrate(conn *sqlite.Conn) error {
+	if err := sqlitex.ExecScript(conn, `
+		create table if not exists places (
+			google_maps_url text primary key not null,
+			google_maps_place_id text,
+			google_maps_business_status text,
+			is_public integer,
+			notes text,
+			rating integer,
+			created_at text,
+			updated_at text,
+			lat text,
+			lng text,
+			business_name text,
+			country_code text,
+			address text,
+			title text
+		);`); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *model) listPlaces(conn *sqlite.Conn) ([]Place, error) {
 	urls := []string{}
 	const query = `
 		select google_maps_url
@@ -77,7 +102,7 @@ func listPlaces(conn *sqlite.Conn) ([]Place, error) {
 
 	places := []Place{}
 	for _, url := range urls {
-		place, err := getPlace(conn, url)
+		place, err := m.getPlace(conn, url)
 		if err != nil {
 			return places, err
 		}
@@ -88,7 +113,7 @@ func listPlaces(conn *sqlite.Conn) ([]Place, error) {
 	return places, nil
 }
 
-func getPlace(conn *sqlite.Conn, googleMapsURL string) (*Place, error) {
+func (m *model) getPlace(conn *sqlite.Conn, googleMapsURL string) (*Place, error) {
 	const query = `
 		select
 			google_maps_place_id,
@@ -135,7 +160,7 @@ func getPlace(conn *sqlite.Conn, googleMapsURL string) (*Place, error) {
 	return place, nil
 }
 
-func findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, error) {
+func (m *model) findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, error) {
 	const query = `
 		select
 			google_maps_url
@@ -158,7 +183,7 @@ func findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, error) {
 		return nil, nil
 	}
 
-	place, err := getPlace(conn, *url)
+	place, err := m.getPlace(conn, *url)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +191,7 @@ func findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, error) {
 	return place, nil
 }
 
-func insertPlace(conn *sqlite.Conn, place Place) error {
+func (m *model) insertPlace(conn *sqlite.Conn, place Place) error {
 	const query = `
 		insert into places
 			(
@@ -220,7 +245,7 @@ func insertPlace(conn *sqlite.Conn, place Place) error {
 	return err
 }
 
-func updatePlace(conn *sqlite.Conn, place Place) error {
+func (m *model) updatePlace(conn *sqlite.Conn, place Place) error {
 	const query = `
 		update places
 		set
@@ -256,7 +281,7 @@ func updatePlace(conn *sqlite.Conn, place Place) error {
 	return err
 }
 
-func importSavedPlaces(conn *sqlite.Conn) error {
+func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 	const filename = "places/saved_places.json"
 
 	jsonFile, err := os.Open(filename)
@@ -326,7 +351,7 @@ func importSavedPlaces(conn *sqlite.Conn) error {
 
 	for _, place := range places {
 		log.Printf("fetching %s", place.GoogleMapsURL)
-		got, err := getPlace(conn, place.GoogleMapsURL)
+		got, err := m.getPlace(conn, place.GoogleMapsURL)
 		if err != nil {
 			log.Printf("ERROR fetching %s", place.GoogleMapsURL)
 			return err
@@ -336,14 +361,14 @@ func importSavedPlaces(conn *sqlite.Conn) error {
 			continue
 		}
 		log.Printf("inserting %s", place.GoogleMapsURL)
-		if err := insertPlace(conn, place); err != nil {
+		if err := m.insertPlace(conn, place); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func annotatePeoplesPlaces(conn *sqlite.Conn) error {
+func (m *model) annotatePeoplesPlaces(conn *sqlite.Conn) error {
 	const filename = "places/people.csv"
 
 	csvFile, err := os.Open(filename)
@@ -377,7 +402,7 @@ func annotatePeoplesPlaces(conn *sqlite.Conn) error {
 		if record.Title == "" {
 			continue
 		}
-		place, err := findPlaceByAddress(conn, record.Title)
+		place, err := m.findPlaceByAddress(conn, record.Title)
 		if err != nil {
 			return err
 		}
@@ -396,7 +421,7 @@ func annotatePeoplesPlaces(conn *sqlite.Conn) error {
 			place.Notes += "\n\n"
 		}
 		place.Notes += note
-		if err := updatePlace(conn, *place); err != nil {
+		if err := m.updatePlace(conn, *place); err != nil {
 			return err
 		}
 	}
