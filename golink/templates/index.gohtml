@@ -1,0 +1,43 @@
+<!doctype html>
+<body>
+<h1>Redirector</h1>
+
+<section>
+	<h1>Create A Redirect</h1>
+
+	<form method="post" action="/go/">
+		<label for="key">Key</label>
+		<input name="key" />
+
+		<label for="url">URL</label>
+		<input name="url" type="url" />
+
+		<button>submit</button>
+	</form>
+</section>
+
+<section>
+	<h2>Redirects</h2>
+	<ul>
+		{{range .Shortlinks}}
+		<li>
+			<a href="{{.URL}}">/{{.Key}}</a> (to {{.URL}})
+			<button data-action="DELETE" data-key="{{.Key}}">delete</button>
+		</li>
+		{{end}}
+
+		<script type="application/javascript">
+			const deleteButtons = document.querySelectorAll("button[data-action=\"DELETE\"]")
+			for (const button of deleteButtons) {
+				button.addEventListener("click", e => {
+					const key = e.target.getAttribute("data-key")
+					fetch(`/go/${key}`, {method: "DELETE"})
+						.then(() => location.reload())
+				})
+			}
+		</script>
+	</ul>
+</section>
+
+</body>
+

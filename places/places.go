@@ -68,6 +68,7 @@ func (*app) Places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) 
 	places, err := listPlaces(conn)
 	if err != nil {
 		util.HTTPError("places", w, req, http.StatusInternalServerError, "%s", err)
+		return
 	}
 
 	if err := templates["list.gohtml"].Execute(w, places); err != nil {

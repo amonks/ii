@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"co.monks.monks.co/golink"
 	"co.monks.monks.co/ping"
 	"co.monks.monks.co/places"
 	"co.monks.monks.co/promises"
@@ -16,6 +17,7 @@ func main() {
 	mux.Handle("/promises/", promises.Server())
 	mux.Handle("/ping/", ping.Server())
 	mux.Handle("/places/", places.Server())
+	mux.Handle("/go/", golink.Server())
 
 	mux.Handle("/", http.FileServer(http.Dir("./static")))
 
