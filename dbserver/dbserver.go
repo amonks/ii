@@ -45,7 +45,7 @@ func (s *DBServer) Start(migrate func(conn *sqlite.Conn) error) {
 }
 
 func (s *DBServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("serving app", req.URL.Path)
+	fmt.Println("serving route", req.URL.Path)
 	s.mux.ServeHTTP(w, req)
 }
 

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>places</title>
+</head>
+<body>
+    <h1>places</h1>
+    {{ len . }} places<br />
+
+    <ul>
+        {{ range . }}
+            <li>
+                {{.DisplayName}}
+            </li>
+        {{ end }}
+    </ul>
+</body>
+</html>
