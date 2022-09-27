@@ -28,23 +28,26 @@ func init() {
 	templates = ts
 }
 
-func Server() *dbserver.DBServer {
-	s := dbserver.New("ping")
-	a := &app{}
+type server struct {
+	*dbserver.DBServer
+}
 
-	s.HandleFunc("/ping/", a.ListPeople)
-	s.HandleFunc("/ping/person/", a.ShowPerson)
-	s.HandleFunc("/ping/commands/ping-person", a.PingPerson)
-	s.HandleFunc("/ping/commands/add-person", a.AddPerson)
-	s.HandleFunc("/ping/commands/update-person", a.UpdatePerson)
+func Server() *server {
+	s := &server{
+		dbserver.New("ping"),
+	}
 
-	s.Init(a.Migrate)
+	s.HandleFunc("/ping/", s.ListPeople)
+	s.HandleFunc("/ping/person/", s.ShowPerson)
+	s.HandleFunc("/ping/commands/ping-person", s.PingPerson)
+	s.HandleFunc("/ping/commands/add-person", s.AddPerson)
+	s.HandleFunc("/ping/commands/update-person", s.UpdatePerson)
+
+	s.Init(s.Migrate)
 	return s
 }
 
-type app struct{}
-
-func (a *app) Migrate(conn *sqlite.Conn) error {
+func (s *server) Migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
 		create table if not exists people (
 			slug text primary key not null
@@ -79,24 +82,25 @@ func (a *app) Migrate(conn *sqlite.Conn) error {
 	return nil
 }
 
-func (*app) ListPeople(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) ListPeople(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	people, err := listPeople(conn)
 	if err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
+		return
 	}
 
 	if err := templates["list.gohtml"].Execute(w, people); err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 }
 
-func (*app) ShowPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) ShowPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	slug := req.URL.Query().Get("slug")
 
 	person, pings, err := showPerson(conn, slug)
 	if err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 
@@ -113,14 +117,14 @@ func (*app) ShowPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Reque
 	}
 
 	if err := templates["show.gohtml"].Execute(w, data); err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 }
 
-func (*app) AddPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) AddPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	if err := req.ParseForm(); err != nil {
-		util.HTTPError("ping", w, req, http.StatusBadRequest, "%s", err)
+		s.Error(w, req, http.StatusBadRequest, err)
 		return
 	}
 
@@ -128,13 +132,13 @@ func (*app) AddPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Reques
 	notes := req.Form.Get("notes")
 
 	if err := addPerson(conn, slug); err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 
 	if notes != "" {
 		if err := addPing(conn, slug, notes); err != nil {
-			util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 	}
@@ -142,9 +146,9 @@ func (*app) AddPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Reques
 	http.Redirect(w, req, "/ping", 302)
 }
 
-func (*app) UpdatePerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) UpdatePerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	if err := req.ParseForm(); err != nil {
-		util.HTTPError("ping", w, req, http.StatusBadRequest, "%s", err)
+		s.Error(w, req, http.StatusBadRequest, err)
 		return
 	}
 
@@ -152,16 +156,16 @@ func (*app) UpdatePerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	isActive := req.Form.Get("is_active") == "on"
 
 	if err := updatePerson(conn, slug, isActive); err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 
 	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), 302)
 }
 
-func (*app) PingPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) PingPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	if err := req.ParseForm(); err != nil {
-		util.HTTPError("ping", w, req, http.StatusBadRequest, "%s", err)
+		s.Error(w, req, http.StatusBadRequest, err)
 		return
 	}
 
@@ -170,19 +174,19 @@ func (*app) PingPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Reque
 
 	person, _, err := showPerson(conn, slug)
 	if err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 
 	if person.IsLongestUnpinged {
 		if err := beeminder.Insert(beeminder.Datapoint{User: "ajm", Goal: "ping", Value: 1, Comment: slug}); err != nil {
-			util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 	}
 
 	if err := addPing(conn, slug, notes); err != nil {
-		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		s.InternalServerError(w, req, err)
 		return
 	}
 
