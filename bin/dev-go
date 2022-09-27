@@ -1,0 +1,7 @@
+#!/usr/bin/env fish
+
+begin
+	fd -e gohtml
+	echo places/static/index.js
+end | entr -r go run ./...
+

@@ -1,0 +1,4 @@
+#!/usr/bin/env fish
+
+bin/dev-css & bin/dev-go
+

@@ -1,0 +1,5 @@
+#!/usr/bin/env fish
+
+cd places/css
+fd -e css | entr -r npx tailwindcss -i ./index.css -o ../static/index.css
+
