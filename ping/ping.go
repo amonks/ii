@@ -21,7 +21,6 @@ var (
 )
 
 func init() {
-	fmt.Println("init ping")
 	ts, err := util.ReadTemplates(files, "templates")
 	if err != nil {
 		panic(err)
@@ -30,16 +29,16 @@ func init() {
 }
 
 func Server() *dbserver.DBServer {
-	fmt.Println("build ping server")
 	s := dbserver.New("ping")
 	a := &app{}
+
 	s.HandleFunc("/ping/", a.ListPeople)
 	s.HandleFunc("/ping/person/", a.ShowPerson)
 	s.HandleFunc("/ping/commands/ping-person", a.PingPerson)
 	s.HandleFunc("/ping/commands/add-person", a.AddPerson)
 	s.HandleFunc("/ping/commands/update-person", a.UpdatePerson)
+
 	s.Init(a.Migrate)
-	fmt.Println("started server")
 	return s
 }
 
@@ -153,8 +152,8 @@ func (*app) UpdatePerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	isActive := req.Form.Get("is_active") == "on"
 
 	if err := updatePerson(conn, slug, isActive); err != nil {
-			util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
-			return
+		util.HTTPError("ping", w, req, http.StatusInternalServerError, "%s", err)
+		return
 	}
 
 	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), 302)

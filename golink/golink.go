@@ -2,7 +2,6 @@ package golink
 
 import (
 	"embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -21,7 +20,6 @@ var (
 )
 
 func init() {
-	fmt.Println("init golink")
 	ts, err := util.ReadTemplates(files, "templates")
 	if err != nil {
 		panic(err)
@@ -30,13 +28,11 @@ func init() {
 }
 
 func Server() *dbserver.DBServer {
-	fmt.Println("build golink server")
 	s := dbserver.New("golink")
 	a := &app{}
 	s.HandleFunc("/go", a.Handler)
 	s.HandleFunc("/go/", a.Handler)
 	s.Init(a.Migrate)
-	fmt.Println("started server")
 	return s
 }
 
@@ -119,13 +115,13 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 
 		url, err := Get(req.Context(), conn, key)
 		if err != nil {
-		log.Println("get err")
+			log.Println("get err")
 			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
 			return
 		}
 
 		if url == "" {
-		log.Println("no such")
+			log.Println("no such")
 			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
 			return
 		}

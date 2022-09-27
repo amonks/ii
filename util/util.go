@@ -10,7 +10,6 @@ import (
 )
 
 func ReadTemplates(fs embed.FS, root string) (map[string]*template.Template, error) {
-	fmt.Println("init tmplates")
 	templates := make(map[string]*template.Template)
 
 	files, err := fs.ReadDir(root)
@@ -19,12 +18,10 @@ func ReadTemplates(fs embed.FS, root string) (map[string]*template.Template, err
 	}
 
 	for _, f := range files {
-		fmt.Println("file", f.Name())
 		if f.IsDir() {
 			continue
 		}
 		name := f.Name()
-		fmt.Println("loaded templ", name)
 		t, err := template.ParseFS(fs, path.Join("templates", name))
 		if err != nil {
 			return nil, err

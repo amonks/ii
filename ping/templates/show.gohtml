@@ -1,36 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8" />
-    <title>ping {{.Slug}}</title>
-</head>
+    <title>ping {{ .Slug }}</title>
+  </head>
 
-<body>
+  <body>
     <a href="/ping">← people</a>
 
-    <h1>{{.Slug}}</h1>
+    <h1>{{ .Slug }}</h1>
     <ul>
-    {{ range .Pings }}
-        <li>{{.At}}: {{.Notes}}</li>
-    {{ end }}
+      {{ range .Pings }}
+        <li>{{ .At }}: {{ .Notes }}</li>
+      {{ end }}
     </ul>
 
     <form method="post" action="/ping/commands/update-person">
-        <h2>update</h2>
-        <input name="slug" type="hidden" value="{{.Slug}}" />
+      <h2>update</h2>
+      <input name="slug" type="hidden" value="{{ .Slug }}" />
 
-        <input name="is_active" type="checkbox" {{ if .IsActive }}checked{{ end }} />
-        <label for="is_active">is active?</label>
-        <br />
+      <input
+        name="is_active"
+        type="checkbox"
+        {{ if .IsActive }}checked{{ end }}
+      />
+      <label for="is_active">is active?</label>
+      <br />
 
-        <button type="submit">save</button>
+      <button type="submit">save</button>
     </form>
 
     <form method="post" action="/ping/commands/ping-person">
-        <h2>add ping</h2>
-        <input name="slug" type="hidden" value="{{.Slug}}" />
-        <textarea name="notes" placeholder="notes"></textarea><br />
-        <button type="submit">send</button>
+      <h2>add ping</h2>
+      <input name="slug" type="hidden" value="{{ .Slug }}" />
+      <textarea name="notes" placeholder="notes"></textarea><br />
+      <button type="submit">send</button>
     </form>
-</body>
+  </body>
 </html>

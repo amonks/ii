@@ -45,25 +45,25 @@ func (s *DBServer) Init(migrate func(conn *sqlite.Conn) error) {
 	if err := migrate(conn); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("started db server")
+	s.Logf("initialized")
 }
 
 func (s *DBServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("serving route", req.URL.Path)
+	s.Logf("serving: %s", req.URL.Path)
 	s.mux.ServeHTTP(w, req)
 }
 
 func (s *DBServer) HandleFunc(pattern string, f func(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)) {
-	fmt.Println("building handler func", pattern)
 	s.mux.HandleFunc(pattern, func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("executing handler func", pattern)
 		if s.db == nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			s.InternalServerErrorf(w, req, "Internal error")
+			return
 		}
 
 		conn := s.db.Get(req.Context())
 		if conn == nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			s.InternalServerErrorf(w, req, "Internal error")
+			return
 		}
 		defer s.db.Put(conn)
 

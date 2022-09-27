@@ -61,7 +61,7 @@ func (p Place) DisplayName() (string, error) {
 	return "", fmt.Errorf("could not create display name for '%s'", p.GoogleMapsURL)
 }
 
-type model struct {}
+type model struct{}
 
 func (m *model) migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
@@ -167,7 +167,7 @@ func (m *model) findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, e
 		from
 			places
 		where
-			true
+			address like '%?$'
 		limit 1;`
 
 	var url *string
@@ -176,7 +176,7 @@ func (m *model) findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, e
 		url = &got
 		return nil
 	}
-	if err := sqlitex.Exec(conn, query, onResult); err != nil {
+	if err := sqlitex.Exec(conn, query, onResult, address); err != nil {
 		return nil, err
 	}
 	if url == nil {
@@ -325,18 +325,18 @@ func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 	for _, savedPlace := range savedPlaces.Features {
 		log.Printf("importing %s", savedPlace.Properties.GoogleMapsURL)
 		place := Place{
-			GoogleMapsURL:            savedPlace.Properties.GoogleMapsURL,
-			IsPublic:                 true,
-			Notes:                    "",
-			Rating:                   0,
-			CreatedAt:                savedPlace.Properties.Published,
-			UpdatedAt:                savedPlace.Properties.Updated,
-			Lat:                      savedPlace.Properties.Location.GeoCoords.Latitude,
-			Lng:                      savedPlace.Properties.Location.GeoCoords.Longitude,
-			BusinessName:             savedPlace.Properties.Location.BusinessName,
-			CountryCode:              savedPlace.Properties.Location.CountryCode,
-			Address:                  savedPlace.Properties.Location.Address,
-			Title:                    savedPlace.Properties.Title,
+			GoogleMapsURL: savedPlace.Properties.GoogleMapsURL,
+			IsPublic:      true,
+			Notes:         "",
+			Rating:        0,
+			CreatedAt:     savedPlace.Properties.Published,
+			UpdatedAt:     savedPlace.Properties.Updated,
+			Lat:           savedPlace.Properties.Location.GeoCoords.Latitude,
+			Lng:           savedPlace.Properties.Location.GeoCoords.Longitude,
+			BusinessName:  savedPlace.Properties.Location.BusinessName,
+			CountryCode:   savedPlace.Properties.Location.CountryCode,
+			Address:       savedPlace.Properties.Location.Address,
+			Title:         savedPlace.Properties.Title,
 		}
 		details, err := googlemaps.GetPlaceDetailsByURL(savedPlace.Properties.GoogleMapsURL)
 		if err != nil {
