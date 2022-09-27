@@ -23,7 +23,7 @@ resource "aws_route53_record" "nencatacoa-ss-cx-A" {
   name    = "nencatacoa.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.77.27.57"]
+  records = ["100.65.172.95"]
 }
 
 resource "aws_route53_record" "lugh-ss-cx-A" {
