@@ -27,18 +27,21 @@ func init() {
 	templates = ts
 }
 
-func Server() *dbserver.DBServer {
-	s := dbserver.New("golink")
-	a := &app{}
-	s.HandleFunc("/go", a.Handler)
-	s.HandleFunc("/go/", a.Handler)
-	s.Init(a.Migrate)
+type server struct {
+	*dbserver.DBServer
+}
+
+func Server() *server {
+	s := &server{
+		dbserver.New("golink"),
+	}
+	s.HandleFunc("/go", s.Handler)
+	s.HandleFunc("/go/", s.Handler)
+	s.Init(s.Migrate)
 	return s
 }
 
-type app struct{}
-
-func (a *app) Migrate(conn *sqlite.Conn) error {
+func (s *server) Migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
 		create table if not exists urls (
 			key text primary key not null,
@@ -51,20 +54,20 @@ func (a *app) Migrate(conn *sqlite.Conn) error {
 	return nil
 }
 
-func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	log.Println("->", req.Method, req.URL)
 
 	if req.Method == "GET" && req.URL.Path == "/go/" {
 		log.Println("path: list")
 		urls, err := List(req.Context(), conn)
 		if err != nil {
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
 		v := struct{ Shortlinks []Shortening }{Shortlinks: urls}
 		if err := templates["index.gohtml"].Execute(w, v); err != nil {
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
@@ -74,7 +77,7 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 	if req.Method == "POST" {
 		log.Println("path: post")
 		if err := req.ParseForm(); err != nil {
-			util.HTTPError("golink", w, req, http.StatusBadRequest, "%s", err)
+			s.Error(w, req, http.StatusBadRequest, err)
 			return
 		}
 
@@ -82,13 +85,13 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 		url := req.Form.Get("url")
 
 		if key == "" || url == "" {
-			util.HTTPError("golink", w, req, http.StatusBadRequest, "%s")
+			s.Errorf(w, req, http.StatusBadRequest, "key or url is required")
 			return
 		}
 
 		err := Set(req.Context(), conn, key, url)
 		if err != nil {
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
@@ -101,7 +104,7 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 		key := strings.Trim(req.URL.Path, "/go/")
 
 		if err := Delete(req.Context(), conn, key); err != nil {
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
@@ -115,14 +118,12 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 
 		url, err := Get(req.Context(), conn, key)
 		if err != nil {
-			log.Println("get err")
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
 		if url == "" {
-			log.Println("no such")
-			util.HTTPError("golink", w, req, http.StatusInternalServerError, "%s", err)
+			s.InternalServerError(w, req, err)
 			return
 		}
 
@@ -130,6 +131,5 @@ func (*app) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	log.Println("path: none")
-	util.HTTPError("golink", w, req, http.StatusNotFound, "no such path")
+	s.Errorf(w, req, http.StatusNotFound, "no such path")
 }
