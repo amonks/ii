@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"co.monks.monks.co/ping"
 	"co.monks.monks.co/places"
 	"co.monks.monks.co/promises"
+	"tailscale.com/client/tailscale"
 )
 
 func main() {
@@ -21,8 +23,15 @@ func main() {
 
 	mux.Handle("/", http.FileServer(http.Dir("./static")))
 
-	fmt.Println("on 3000")
-	if err := http.ListenAndServe(":3000", mux); err != nil {
+	s := &http.Server{
+		TLSConfig: &tls.Config{
+			GetCertificate: tailscale.GetCertificate,
+		},
+		Handler: mux,
+	}
+
+	fmt.Println("listening for TLS requests")
+	if err := s.ListenAndServeTLS("", ""); err != nil {
 		log.Fatal(err)
 	}
 }
