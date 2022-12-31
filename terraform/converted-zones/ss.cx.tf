@@ -47,7 +47,7 @@ resource "aws_route53_record" "brigid-ss-cx-A" {
   name    = "brigid.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.84.31.13"]
+  records = ["100.103.217.4"]
 }
 
 resource "aws_route53_record" "b-ss-cx-CNAME" {
@@ -56,4 +56,12 @@ resource "aws_route53_record" "b-ss-cx-CNAME" {
   type    = "CNAME"
   ttl     = "300"
   records = ["cross-origin-bouncer.herokuapp.com."]
+}
+
+resource "aws_route53_record" "wildcard-brigid-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "*.brigid.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.103.217.4"]
 }
