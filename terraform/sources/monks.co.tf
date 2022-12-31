@@ -67,14 +67,6 @@ resource "aws_route53_record" "now-monks-co-TXT" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "g-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "g.monks.co"
-  type    = "CNAME"
-  records = ["alias.zeit.co"]
-  ttl     = "300"
-}
-
 resource "aws_s3_bucket_object" "monks-co-headshot-jpg" {
   bucket       = "monks.co"
   content_type = "image/jpeg"
@@ -91,14 +83,6 @@ resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
   source       = "../public/monks.co/monks.jpg"
   etag         = filemd5("../public/monks.co/monks.jpg")
   cache_control = "max-age=31536000"
-}
-
-resource "aws_s3_bucket_object" "monks-co-graphql-html" {
-  bucket       = "monks.co"
-  content_type = "text/html; charset=utf-8"
-  key          = "graphql.html"
-  source       = "../public/monks.co/graphql.html"
-  etag         = md5(file("../public/monks.co/graphql.html"))
 }
 
 resource "aws_s3_bucket_object" "monks-co-old-html" {
@@ -265,18 +249,6 @@ resource "aws_route53_record" "fftjs-monks-co-CNAME" {
   ttl     = "300"
 }
 
-resource "aws_route53_record" "gimme-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "gimme.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "d3kicode3ffc45.cloudfront.net"
-    zone_id                = "Z2FDTNDATAQYW2"
-    evaluate_target_health = false
-  }
-}
-
 resource "aws_route53_record" "graviton-monks-co-A" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "graviton.monks.co"
@@ -287,14 +259,6 @@ resource "aws_route53_record" "graviton-monks-co-A" {
     zone_id                = "Z3AQBSTGFYJSTF"
     evaluate_target_health = false
   }
-}
-
-resource "aws_route53_record" "homer-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "homer.monks.co"
-  type    = "CNAME"
-  records = ["collectivememory.herokuapp.com."]
-  ttl     = "300"
 }
 
 resource "aws_route53_record" "installation-monks-co-CNAME" {
@@ -358,26 +322,6 @@ resource "aws_route53_record" "processing-monks-co-CNAME" {
   name    = "processing.monks.co"
   type    = "CNAME"
   records = ["amonks.github.io."]
-  ttl     = "300"
-}
-
-resource "aws_route53_record" "real-monks-co-A" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "real.monks.co"
-  type    = "A"
-
-  alias {
-    name                   = "s3-website-us-east-1.amazonaws.com"
-    zone_id                = "Z3AQBSTGFYJSTF"
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "realproxy-monks-co-CNAME" {
-  zone_id = aws_route53_zone.monks-co-public.zone_id
-  name    = "realproxy.monks.co"
-  type    = "CNAME"
-  records = ["this-time-its-real.herokuapp.com."]
   ttl     = "300"
 }
 
