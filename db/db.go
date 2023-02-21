@@ -59,10 +59,10 @@ func (db *DB) Migrate() error {
 			languages          text,
 			release_date       text,
 
-			library_path       text,
-			imported_from_path text
-		);
-	`, nil); err != nil {
+			extension          text,
+			library_path       text unique,
+			imported_from_path text unique
+		);`, nil); err != nil {
 		return fmt.Errorf("failed to create `movies` table: %w", err)
 	}
 
@@ -114,14 +114,15 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 }
 
 func (m *Movie) BuildLibraryPath() string {
-	return fmt.Sprintf("%s-%s%s", m.ReleaseDate, m.Title, m.Extension)
+	releaseYear := m.ReleaseDate[0:4]
+	return fmt.Sprintf("/mypool/tank/movies/%s-%s%s", releaseYear, m.Title, m.Extension)
 }
 
 func (d *DB) AddMovie(conn *sqlite.Conn, movie *Movie) error {
 	const q = `insert into movies (id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 	if err := sqlitex.Exec(conn, q, nil,
-		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.LibraryPath, movie.ImportedFromPath,
+		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.Extension, movie.LibraryPath, movie.ImportedFromPath,
 	); err != nil {
 		return fmt.Errorf("failed to insert movie: %w", err)
 	}
