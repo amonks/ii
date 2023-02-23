@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -61,7 +62,9 @@ func (db *DB) Migrate() error {
 
 			extension          text,
 			library_path       text unique,
-			imported_from_path text unique
+			imported_from_path text unique,
+
+			is_imported        integer
 		);`, nil); err != nil {
 		return fmt.Errorf("failed to create `movies` table: %w", err)
 	}
@@ -84,6 +87,8 @@ type Movie struct {
 	Extension        string
 	LibraryPath      string
 	ImportedFromPath string
+
+	IsImported bool
 }
 
 func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
@@ -108,6 +113,8 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 
 		Extension:        filepath.Ext(importedFromPath),
 		ImportedFromPath: importedFromPath,
+
+		IsImported: false,
 	}
 	movie.LibraryPath = movie.BuildLibraryPath()
 	return &movie
@@ -118,13 +125,50 @@ func (m *Movie) BuildLibraryPath() string {
 	return fmt.Sprintf("/mypool/tank/movies/%s-%s%s", releaseYear, m.Title, m.Extension)
 }
 
+var ErrCollision = fmt.Errorf("collision")
+
 func (d *DB) AddMovie(conn *sqlite.Conn, movie *Movie) error {
-	const q = `insert into movies (id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+	const q = `insert into movies (id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 	if err := sqlitex.Exec(conn, q, nil,
-		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.Extension, movie.LibraryPath, movie.ImportedFromPath,
+		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.Extension, movie.LibraryPath, movie.ImportedFromPath, false,
 	); err != nil {
+		sqliteError, isSqliteError := err.(sqlite.Error)
+		if isSqliteError && sqliteError.Code == sqlite.SQLITE_CONSTRAINT_UNIQUE {
+			err = errors.Join(err, ErrCollision)
+		}
 		return fmt.Errorf("failed to insert movie: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) GetMovieToImport(conn *sqlite.Conn) (*Movie, error) {
+	const q = `select id from movies where is_imported = false;`
+	var id int64
+	onResult := func(stmt *sqlite.Stmt) error {
+		id = stmt.ColumnInt64(0)
+		return nil
+	}
+	if err := sqlitex.Exec(conn, q, onResult); err != nil {
+		return nil, fmt.Errorf("failed to fetch next movie to import: %w", err)
+	}
+	if id == 0 {
+		return nil, fmt.Errorf("no movies to import")
+	}
+
+	movie, err := d.Get(conn, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return movie, nil
+}
+
+func (d *DB) MarkMovieAsImported(conn *sqlite.Conn, id int64) error {
+	const q = `update movies set is_imported to true where id = ?;`
+	if err := sqlitex.Exec(conn, q, nil, id); err != nil {
+		return fmt.Errorf("failed to mark movie as imported: %w", err)
 	}
 
 	return nil
@@ -143,13 +187,13 @@ func (d *DB) MovieExistsFromPath(conn *sqlite.Conn, importedFromPath string) (bo
 	return wasImported, nil
 }
 
-func (d *DB) Movies(conn *sqlite.Conn) ([]Movie, error) {
-	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path from movies;`
-	var movies []Movie
+func (d *DB) Get(conn *sqlite.Conn, id int64) (*Movie, error) {
+	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path from movies where id = ?;`
+	var movie Movie
 	f := func(stmt *sqlite.Stmt) error {
 		var json []byte
 		stmt.ColumnBytes(4, json)
-		movies = append(movies, Movie{
+		movie = Movie{
 			ID:            stmt.ColumnInt64(0),
 			Title:         stmt.ColumnText(1),
 			OriginalTitle: stmt.ColumnText(2),
@@ -163,11 +207,11 @@ func (d *DB) Movies(conn *sqlite.Conn) ([]Movie, error) {
 			Extension:        stmt.ColumnText(9),
 			LibraryPath:      stmt.ColumnText(10),
 			ImportedFromPath: stmt.ColumnText(11),
-		})
+		}
 		return nil
 	}
-	if err := sqlitex.Exec(conn, q, f); err != nil {
-		return nil, fmt.Errorf("failed to get movies: %w", err)
+	if err := sqlitex.Exec(conn, q, f, id); err != nil {
+		return nil, fmt.Errorf("failed to get movie: %w", err)
 	}
-	return movies, nil
+	return &movie, nil
 }
