@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
@@ -60,7 +61,14 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 
 func (m *Movie) BuildLibraryPath() string {
 	releaseYear := m.ReleaseDate[0:4]
-	return fmt.Sprintf("/mypool/tank/movies/%s-%s%s", releaseYear, m.Title, m.Extension)
+	filename := sanitizeFilename(fmt.Sprintf("%s-%s%s", releaseYear, m.Title, m.Extension))
+	return "/mypool/tank/movies/"+filename
+}
+
+var illegalCharForFilename = regexp.MustCompile(`\/`)
+
+func sanitizeFilename(filename string) string {
+	return illegalCharForFilename.ReplaceAllString(filename, "-")
 }
 
 func (d *DB) AddMovie(movie *Movie) error {
@@ -112,7 +120,7 @@ func (d *DB) MarkMovieAsImported(id int64) error {
 		return err
 	}
 
-	const q = `update movies set is_imported to true where id = ?;`
+	const q = `update movies set is_imported = true where id = ?;`
 	if err := sqlitex.Exec(c.Conn, q, nil, id); err != nil {
 		return fmt.Errorf("failed to mark movie as imported: %w", err)
 	}
@@ -129,6 +137,25 @@ func (d *DB) ReplaceMovie(id int64, path string) error {
 
 	const q = `update movies set is_imported = false, imported_from_path = ? where id = ?;`
 	if err := sqlitex.Exec(c.Conn, q, nil, path, id); err != nil {
+		return fmt.Errorf("failed to replace movie: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) RebuildLibraryPath(movie *Movie) error {
+	if movie.IsImported {
+		return errors.New("cannot rebuild path for imported movie")
+	}
+
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set library_path = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, movie.BuildLibraryPath(), movie.ID); err != nil {
 		return fmt.Errorf("failed to replace movie: %w", err)
 	}
 
@@ -154,7 +181,27 @@ func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
 	return wasImported, nil
 }
 
-func (d *DB) Get(id int64) (*Movie, error) {
+func (d *DB) AllMovies() ([]int64, error) {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return nil, err
+	}
+
+	const q = `select id from movies;`
+	var ids []int64
+	f := func(stmt *sqlite.Stmt) error {
+		ids = append(ids, stmt.ColumnInt64(0))
+		return nil
+	}
+	if err := sqlitex.Exec(c.Conn, q, f); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (d *DB) GetMovie(id int64) (*Movie, error) {
 	c, err := d.conn()
 	defer c.release()
 	if err != nil {

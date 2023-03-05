@@ -3,7 +3,6 @@ package movietagger
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,24 +10,33 @@ import (
 
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/system"
+	"monks.co/movietagger/tmdb"
 	"monks.co/movietagger/ui"
 )
 
 type MovieTagger struct {
-	system.System
+	*system.System
+	tmdb *tmdb.Client
+	db   *db.DB
 }
 
-func New(system system.System) *MovieTagger {
-	return &MovieTagger{system}
+func New(tmdb *tmdb.Client, db *db.DB) *MovieTagger {
+	system := system.New("tagger")
+	return &MovieTagger{
+		System: system,
+		tmdb:   tmdb,
+		db:     db,
+	}
 }
 
 func (app *MovieTagger) Run() error {
-	logfile, err := os.OpenFile("movietagger.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		os.Exit(1)
+	defer app.System.Start()()
+
+	fmt.Println("sanitizing filenames")
+	if err := app.sanitizeFilenames(); err != nil {
+		return err
 	}
-	defer logfile.Close()
-	logger := log.New(logfile, "", log.Ldate | log.Ltime)
+	fmt.Println("done sanitizing filenames")
 
 	if err := filepath.Walk("/mypool/data/mirror/whatbox/files/movies", func(path string, info os.FileInfo, err error) error {
 		if !info.Mode().IsRegular() {
@@ -36,21 +44,21 @@ func (app *MovieTagger) Run() error {
 		}
 
 		if !strings.HasSuffix(path, "mkv") {
-			logger.Println("skip", path)
+			app.Printf("skip %s", path)
 			return nil
 		}
 
-		if ignored, err := app.DB.PathIsIgnored(path); err != nil {
+		if ignored, err := app.db.PathIsIgnored(path); err != nil {
 			return err
 		} else if ignored {
-			logger.Println("ignore", path)
+			app.Printf("ignore %s", path)
 			return nil
 		}
 
-		if exists, err := app.DB.MovieExistsFromPath(path); err != nil {
+		if exists, err := app.db.MovieExistsFromPath(path); err != nil {
 			return err
 		} else if exists {
-			logger.Println("duplicate", path)
+			app.Printf("duplicate %s", path)
 			return nil
 		}
 
@@ -62,6 +70,9 @@ func (app *MovieTagger) Run() error {
 		}
 		if titleQ == "" {
 			fmt.Printf("skipping.\n")
+			if err := app.db.IgnorePath(path); err != nil {
+				return err
+			}
 			return nil
 		}
 
@@ -70,14 +81,17 @@ func (app *MovieTagger) Run() error {
 		if err == errRetry {
 			goto search
 		} else if err == errSkip {
-			fmt.Printf("Skipping.\n")
+			fmt.Printf("skipping.\n")
+			if err := app.db.IgnorePath(path); err != nil {
+				return err
+			}
 			return nil
 		} else if err != nil {
 			return err
 		}
 
 		fmt.Printf("looking up movie metadata...")
-		tmdbMovie, err := app.TMDB.Get(tmdbID)
+		tmdbMovie, err := app.tmdb.Get(tmdbID)
 		if err != nil {
 			fmt.Printf("\n")
 			return err
@@ -86,8 +100,8 @@ func (app *MovieTagger) Run() error {
 
 		fmt.Printf("adding movie to database...")
 		movie := db.NewMovie(tmdbMovie, path)
-		if err := app.DB.AddMovie(movie); errors.Is(err, db.ErrCollision) {
-			existing, err := app.DB.Get(movie.ID)
+		if err := app.db.AddMovie(movie); errors.Is(err, db.ErrCollision) {
+			existing, err := app.db.GetMovie(movie.ID)
 			if err != nil {
 				fmt.Printf("\n")
 				return err
@@ -104,12 +118,15 @@ func (app *MovieTagger) Run() error {
 			switch response {
 			case "yes":
 				fmt.Println("ok. overwriting.")
-				if err := app.DB.ReplaceMovie(movie.ID, movie.ImportedFromPath); err != nil {
+				if err := app.db.ReplaceMovie(movie.ID, movie.ImportedFromPath); err != nil {
 					return err
 				}
 				return nil
 			case "no":
 				fmt.Println("ok. skipping.")
+				if err := app.db.IgnorePath(path); err != nil {
+					return err
+				}
 				return nil
 			case "retry":
 				goto search
@@ -128,6 +145,40 @@ func (app *MovieTagger) Run() error {
 	}); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	return nil
+}
+
+func (a *MovieTagger) sanitizeFilenames() error {
+	ids, err := a.db.AllMovies()
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		movie, err := a.db.GetMovie(id)
+		if err != nil {
+			return err
+		}
+
+		correctPath := movie.BuildLibraryPath()
+		if movie.LibraryPath != correctPath {
+			fmt.Printf("'%s' should be '%s'\n", movie.LibraryPath, correctPath)
+		prompt:
+			response := ui.Prompt("correct? [yes,no]")
+			switch response {
+			case "yes":
+				if err := a.db.RebuildLibraryPath(movie); err != nil {
+					return err
+				}
+				continue
+			case "no":
+				continue
+			default:
+				goto prompt
+			}
+		}
 	}
 
 	return nil
@@ -154,7 +205,7 @@ var errRetry = errors.New("retry")
 var errSkip = errors.New("skip")
 
 func (a *MovieTagger) search(titleQ string, yearQ int64) (int64, error) {
-	ress, err := a.TMDB.Search(titleQ, yearQ)
+	ress, err := a.tmdb.Search(titleQ, yearQ)
 	if err != nil {
 		return 0, err
 	}

@@ -1,59 +1,89 @@
 package moviecopier
 
 import (
-	"log"
+	"fmt"
+	"io"
 	"os"
 
+	"monks.co/movietagger/db"
 	"monks.co/movietagger/system"
 )
 
 type MovieCopier struct {
-	system.System
+	*system.System
+	db *db.DB
 }
 
-func New(system system.System) *MovieCopier {
-	return &MovieCopier{system}
+func New(db *db.DB) *MovieCopier {
+	system := system.New("copier")
+	return &MovieCopier{
+		System: system,
+		db: db,
+	}
 }
 
 func (app *MovieCopier) Run() error {
-	logfile, err := os.OpenFile("moviecopier.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	defer logfile.Close()
-	logger := log.New(logfile, "", log.Ldate | log.Ltime)
+	defer app.System.Start()()
 
 	for {
-		logger.Println("getting next movie ID...")
-		id, err := app.DB.GetMovieIDToImport()
+		app.Printf("getting next movie ID...")
+		id, err := app.db.GetMovieIDToImport()
 		if err != nil {
-			logger.Println(err)
+			app.Println(err)
 			return err
 		}
 
-		logger.Println("getting next movie...")
-		movie, err := app.DB.Get(id)
+		app.Println("getting next movie...")
+		movie, err := app.db.GetMovie(id)
 		if err != nil {
-			logger.Println(err)
+			app.Println(err)
 			return err
 		}
 		if movie == nil {
-			logger.Println("no movies to import")
+			app.Println("no movies to import")
 			return nil
 		}
-		logger.Println("got", movie.Title)
+		app.Println("got", movie.Title)
 
-		logger.Println("copying movie...")
-		if err := app.CopyFile(movie.ImportedFromPath, movie.LibraryPath); err != nil {
-			logger.Println(err)
+		app.Println("copying movie...")
+		if err := copyFile(movie.ImportedFromPath, movie.LibraryPath); err != nil {
+			app.Println(err)
 			return err
 		}
 
-		logger.Println("marking as imported...")
-		if err := app.DB.MarkMovieAsImported(movie.ID); err != nil {
-			logger.Println(err)
+		app.Println("marking as imported...")
+		if err := app.db.MarkMovieAsImported(movie.ID); err != nil {
+			app.Println(err)
 			return err
 		}
-		logger.Printf("imported '%s' from '%s' to '%s'", movie.Title, movie.ImportedFromPath, movie.LibraryPath)
+		app.Printf("imported '%s' from '%s' to '%s'", movie.Title, movie.ImportedFromPath, movie.LibraryPath)
 	}
+}
+
+func copyFile(src, dest string) error {
+	srcStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !srcStat.Mode().IsRegular() {
+		return fmt.Errorf("cannot copy irregular file '%s'", src)
+	}
+
+	srcF, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("error opening file '%s': %w", src, err)
+	}
+	defer srcF.Close()
+
+	destF, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("error creating file '%s': %w", dest, err)
+	}
+	defer destF.Close()
+
+	if _, err := io.Copy(destF, srcF); err != nil {
+		return fmt.Errorf("error copying file from '%s' to '%s': %w", src, dest, err)
+	}
+
+	return nil
 }

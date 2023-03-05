@@ -1,5 +1,5 @@
 sys.log
-moviecopier.log
-movietagger.log
+*.log
 data
+.movies.db*
 

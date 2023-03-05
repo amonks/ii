@@ -8,25 +8,22 @@ import (
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/moviecopier"
 	"monks.co/movietagger/movietagger"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 func main() {
-	system := system.System{
-		DB:   db.New("/mypool/tank/movies/.movies.db"),
-		TMDB: tmdb.New("88f973483e2dc73cfb5053bc059ae33b"),
-	}
+	tmdb := tmdb.New("88f973483e2dc73cfb5053bc059ae33b")
+	db := db.New(".movies.db")
 
 	fmt.Printf("migrating...")
-	if err := system.Start(); err != nil {
+	if err := db.Start(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	fmt.Printf(" ok\n")
 
-	mt := movietagger.New(system)
-	mc := moviecopier.New(system)
+	mt := movietagger.New(tmdb, db)
+	mc := moviecopier.New(db)
 
 	var wg sync.WaitGroup
 
@@ -53,4 +50,11 @@ func main() {
 	}()
 
 	wg.Wait()
+
+	fmt.Println("moviecopier: second pass")
+	if err := mc.Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("all done.")
 }

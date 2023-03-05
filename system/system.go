@@ -1,46 +1,37 @@
 package system
 
 import (
-	"fmt"
-	"io"
+	"log"
 	"os"
-
-	"monks.co/movietagger/db"
-	"monks.co/movietagger/tmdb"
 )
 
 type System struct {
-	DB      *db.DB
-	TMDB    *tmdb.Client
+	name   string
+	logger *log.Logger
 }
 
-func (s *System) Start() error {
-	return s.DB.Start()
+func New(name string) *System {
+	return &System{name: name}
 }
 
-func (_ *System) CopyFile(src, dest string) error {
-	srcStat, err := os.Stat(src)
+func (s *System) Start() func() {
+	logfile, err := os.OpenFile(s.name+".log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		return err
+		os.Exit(1)
 	}
-	if !srcStat.Mode().IsRegular() {
-		return fmt.Errorf("cannot copy irregular file '%s'", src)
-	}
+	
+	s.logger = log.New(logfile, s.name, log.Ldate|log.Ltime)
 
-	srcF, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("error opening file '%s': %w", src, err)
+	return func() {
+		logfile.Close()
 	}
-	defer srcF.Close()
-
-	destF, err := os.Create(dest)
-	if err != nil {
-		return fmt.Errorf("error creating file '%s': %w", dest, err)
-	}
-
-	if _, err := io.Copy(destF, srcF); err != nil {
-		return fmt.Errorf("error copying file from '%s' to '%s': %w", src, dest, err)
-	}
-
-	return nil
 }
+
+func (s *System) Println(v ...interface{}) {
+	s.logger.Println(v...)
+}
+
+func (s *System) Printf(format string, v ...interface{}) {
+	s.logger.Printf(format, v...)
+}
+
