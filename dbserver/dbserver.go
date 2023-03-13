@@ -6,22 +6,29 @@ import (
 	"log"
 	"net/http"
 
+	"co.monks.monks.co/logger"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )
 
 type DBServer struct {
-	mux  *http.ServeMux
-	name string
-	db   *sqlitex.Pool
+	mux    *http.ServeMux
+	name   string
+	logger logger.Logger
+	db     *sqlitex.Pool
 }
 
 func New(name string) *DBServer {
 	return &DBServer{
-		mux:  http.NewServeMux(),
-		name: name,
-		db:   nil,
+		mux:    http.NewServeMux(),
+		logger: logger.New(name),
+		name:   name,
+		db:     nil,
 	}
+}
+
+func (s *DBServer) Logf(msg string, args ...interface{}) {
+	s.logger.Logf(msg, args...)
 }
 
 func (s *DBServer) Init(migrate func(conn *sqlite.Conn) error) {
@@ -53,8 +60,20 @@ func (s *DBServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s.mux.ServeHTTP(w, req)
 }
 
+func (s *DBServer) Handle(pattern string, h http.Handler) {
+	s.mux.HandleFunc(pattern, func(w http.ResponseWriter, req *http.Request) {
+		s.Logf("url: %s", req.URL.String())
+		if s.db == nil {
+			s.InternalServerErrorf(w, req, "Internal error")
+			return
+		}
+
+		h.ServeHTTP(w, req)
+	})
+}
 func (s *DBServer) HandleFunc(pattern string, f func(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)) {
 	s.mux.HandleFunc(pattern, func(w http.ResponseWriter, req *http.Request) {
+		s.Logf("url: %s", req.URL.String())
 		if s.db == nil {
 			s.InternalServerErrorf(w, req, "Internal error")
 			return

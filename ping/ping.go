@@ -39,6 +39,7 @@ func Server() *server {
 
 	s.HandleFunc("/ping/", s.ListPeople)
 	s.HandleFunc("/ping/person/", s.ShowPerson)
+	s.HandleFunc("/ping/commands/bump", s.Bump)
 	s.HandleFunc("/ping/commands/ping-person", s.PingPerson)
 	s.HandleFunc("/ping/commands/add-person", s.AddPerson)
 	s.HandleFunc("/ping/commands/update-person", s.UpdatePerson)
@@ -161,6 +162,15 @@ func (s *server) UpdatePerson(conn *sqlite.Conn, w http.ResponseWriter, req *htt
 	}
 
 	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), 302)
+}
+
+func (s *server) Bump(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+	if err := beeminder.Insert(beeminder.Datapoint{User: "ajm", Goal: "ping", Value: 1, Comment: "bump"}); err != nil {
+		s.InternalServerError(w, req, err)
+		return
+	}
+
+	http.Redirect(w, req, "/ping", 302)
 }
 
 func (s *server) PingPerson(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {

@@ -3,7 +3,6 @@ package golink
 import (
 	"embed"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 
@@ -55,10 +54,10 @@ func (s *server) Migrate(conn *sqlite.Conn) error {
 }
 
 func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	log.Println("->", req.Method, req.URL)
+	s.Logf("-> %s %s", req.Method, req.URL)
 
 	if req.Method == "GET" && req.URL.Path == "/go/" {
-		log.Println("path: list")
+		s.Logf("path: list")
 		urls, err := List(req.Context(), conn)
 		if err != nil {
 			s.InternalServerError(w, req, err)
@@ -75,7 +74,7 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	}
 
 	if req.Method == "POST" {
-		log.Println("path: post")
+		s.Logf("path: post")
 		if err := req.ParseForm(); err != nil {
 			s.Error(w, req, http.StatusBadRequest, err)
 			return
@@ -100,7 +99,7 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	}
 
 	if req.Method == "DELETE" {
-		log.Println("path: del")
+		s.Logf("path: del")
 		key := strings.Trim(req.URL.Path, "/go/")
 
 		if err := Delete(req.Context(), conn, key); err != nil {
@@ -113,17 +112,19 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	}
 
 	if req.Method == "GET" {
-		log.Println("path: get")
+		s.Logf("path: get '%s'", req.URL.Path)
 		key := strings.Trim(req.URL.Path, "/go/")
 
 		url, err := Get(req.Context(), conn, key)
 		if err != nil {
+			s.Logf("no such link: '%s'", key)
 			s.InternalServerError(w, req, err)
 			return
 		}
 
 		if url == "" {
-			s.InternalServerError(w, req, err)
+			s.Logf("no match for key: '%s'", key)
+			s.Error(w, req, http.StatusNotFound, err)
 			return
 		}
 

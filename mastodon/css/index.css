@@ -1,0 +1,8 @@
+/* base */
+@tailwind base;
+
+/* utilities */
+@tailwind utilities;
+
+/* components */
+@tailwind components;

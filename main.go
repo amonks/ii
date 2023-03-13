@@ -1,37 +1,49 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 
+	"co.monks.monks.co/auth"
 	"co.monks.monks.co/golink"
 	"co.monks.monks.co/ping"
 	"co.monks.monks.co/places"
 	"co.monks.monks.co/promises"
-	"tailscale.com/client/tailscale"
+	"co.monks.monks.co/weblog"
+	"github.com/caddyserver/certmagic"
+	"github.com/libdns/route53"
 )
 
 func main() {
 	mux := http.NewServeMux()
 
-	mux.Handle("/promises/", promises.Server())
-	mux.Handle("/ping/", ping.Server())
-	mux.Handle("/places/", places.Server())
-	mux.Handle("/go/", golink.Server())
+	mux.Handle("/promises/", auth.InternalHandler(promises.Server()))
+	mux.Handle("/ping/", auth.InternalHandler(ping.Server()))
+	mux.Handle("/places/", auth.InternalHandler(places.Server()))
+	mux.Handle("/go/", auth.InternalHandler(golink.Server()))
 
-	mux.Handle("/", http.FileServer(http.Dir("./static")))
+	mux.Handle("/", weblog.Server())
 
-	s := &http.Server{
-		TLSConfig: &tls.Config{
-			GetCertificate: tailscale.GetCertificate,
-		},
-		Handler: mux,
+	go func() {
+		err := serveTLS([]string{"brigid.ss.cx"}, mux)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	fmt.Println("listening for HTTP requests on :1337")
+	log.Fatal(http.ListenAndServe(":1337", mux))
+}
+
+func serveTLS(domains []string, mux http.Handler) error {
+	certmagic.DefaultACME.Agreed = true
+	certmagic.DefaultACME.Email = "a@monks.co"
+	certmagic.DefaultACME.CA = certmagic.LetsEncryptProductionCA
+
+	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
+		DNSProvider: &route53.Provider{},
 	}
 
-	fmt.Println("listening for TLS requests")
-	if err := s.ListenAndServeTLS("", ""); err != nil {
-		log.Fatal(err)
-	}
+	return certmagic.HTTPS(domains, mux)
 }

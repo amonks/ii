@@ -35,6 +35,7 @@ type server struct {
 func Server() *server {
 	s := &server{
 		DBServer: dbserver.New("places"),
+		model: NewModel(),
 	}
 
 	s.HandleFunc("/places/index.js", s.JSServer("./places/ts/index.ts"))

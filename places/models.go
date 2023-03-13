@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	"co.monks.monks.co/googlemaps"
+	"co.monks.monks.co/logger"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )
@@ -61,7 +61,15 @@ func (p Place) DisplayName() (string, error) {
 	return "", fmt.Errorf("could not create display name for '%s'", p.GoogleMapsURL)
 }
 
-type model struct{}
+type model struct{
+	logger.Logger
+}
+
+func NewModel() *model {
+	return &model{
+		Logger: logger.New("places model"),
+	}
+}
 
 func (m *model) migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
@@ -319,11 +327,11 @@ func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 		return err
 	}
 
-	log.Printf("importing %d places\n", len(savedPlaces.Features))
+	m.Logf("importing %d places\n", len(savedPlaces.Features))
 
 	places := []Place{}
 	for _, savedPlace := range savedPlaces.Features {
-		log.Printf("importing %s", savedPlace.Properties.GoogleMapsURL)
+		m.Logf("importing %s", savedPlace.Properties.GoogleMapsURL)
 		place := Place{
 			GoogleMapsURL: savedPlace.Properties.GoogleMapsURL,
 			IsPublic:      true,
@@ -350,17 +358,17 @@ func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 	}
 
 	for _, place := range places {
-		log.Printf("fetching %s", place.GoogleMapsURL)
+		m.Logf("fetching %s", place.GoogleMapsURL)
 		got, err := m.getPlace(conn, place.GoogleMapsURL)
 		if err != nil {
-			log.Printf("ERROR fetching %s", place.GoogleMapsURL)
+			m.Logf("ERROR fetching %s", place.GoogleMapsURL)
 			return err
 		}
 		if got != nil {
-			log.Printf("ERROR fetching [already exists] %s", place.GoogleMapsURL)
+			m.Logf("ERROR fetching [already exists] %s", place.GoogleMapsURL)
 			continue
 		}
-		log.Printf("inserting %s", place.GoogleMapsURL)
+		m.Logf("inserting %s", place.GoogleMapsURL)
 		if err := m.insertPlace(conn, place); err != nil {
 			return err
 		}
