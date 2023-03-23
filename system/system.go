@@ -20,7 +20,7 @@ func (s *System) Start() func() {
 		os.Exit(1)
 	}
 	
-	s.logger = log.New(logfile, s.name, log.Ldate|log.Ltime)
+	s.logger = log.New(logfile, s.name+": ", log.Ldate|log.Ltime)
 
 	return func() {
 		logfile.Close()

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"sync"
+	"strings"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/moviecopier"
@@ -25,36 +29,70 @@ func main() {
 	mt := movietagger.New(tmdb, db)
 	mc := moviecopier.New(db)
 
-	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
 
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		for {
+			if err := mt.Run(ctx); err != nil {
+				fmt.Println(err)
+				cancel()
+			}
 
-		fmt.Println("moviecopier: start")
-		if err := mc.Run(); err != nil {
-			fmt.Println(err)
+			time.Sleep(1 * time.Minute)
 		}
-		fmt.Println("moviecopier: done")
 	}()
 
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-
-		fmt.Println("movietagger: start")
-		if err := mt.Run(); err != nil {
+	run:
+		if err := mc.Run(ctx); err != nil {
 			fmt.Println(err)
+			cancel()
 		}
-		fmt.Println("movietagger: done")
+
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case <-mt.Subscribe():
+				goto run
+			}
+		}
 	}()
 
-	wg.Wait()
+	go func() {
+		w, err := fsnotify.NewWatcher()
+		if err != nil {
+			fmt.Println("error watching for kill file", err)
+			cancel()
+		}
 
-	fmt.Println("moviecopier: second pass")
-	if err := mc.Run(); err != nil {
-		fmt.Println(err)
-	}
+		if err := w.Add("."); err != nil {
+			fmt.Println("error watching for kill file", err)
+			cancel()
+		}
 
-	fmt.Println("all done.")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case event, ok := <-w.Events:
+				if !ok {
+					return
+				}
+				if !strings.HasSuffix(event.Name, "cancel.stamp") {
+					continue
+				}
+				fmt.Println("got cancellation stamp; cancelling")
+				cancel()
+			case err, ok := <-w.Errors:
+				if !ok {
+					return
+				}
+				fmt.Println("file watcher failed; cancelling", err)
+				cancel()
+			}
+		}
+	}()
+
+	<-ctx.Done()
 }

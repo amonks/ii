@@ -1,12 +1,14 @@
 package movietagger
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/system"
@@ -18,6 +20,39 @@ type MovieTagger struct {
 	*system.System
 	tmdb *tmdb.Client
 	db   *db.DB
+
+	mutex         sync.Mutex
+	subscriptions []chan *db.Movie
+}
+
+func (app *MovieTagger) Subscribe() chan *db.Movie {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+
+	c := make(chan *db.Movie)
+	app.subscriptions = append(app.subscriptions, c)
+	return c
+}
+
+func (app *MovieTagger) notify(m *db.Movie) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+
+	for _, c := range app.subscriptions {
+		c <- m
+		close(c)
+	}
+
+	app.subscriptions = nil
+}
+
+func (app *MovieTagger) close() {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+
+	for _, c := range app.subscriptions {
+		close(c)
+	}
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieTagger {
@@ -29,16 +64,20 @@ func New(tmdb *tmdb.Client, db *db.DB) *MovieTagger {
 	}
 }
 
-func (app *MovieTagger) Run() error {
+func (app *MovieTagger) Run(ctx context.Context) error {
 	defer app.System.Start()()
 
-	fmt.Println("sanitizing filenames")
+	fmt.Println("movietagger: start")
+
 	if err := app.sanitizeFilenames(); err != nil {
 		return err
 	}
-	fmt.Println("done sanitizing filenames")
 
 	if err := filepath.Walk("/mypool/data/mirror/whatbox/files/movies", func(path string, info os.FileInfo, err error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		if !info.Mode().IsRegular() {
 			return nil
 		}
@@ -140,13 +179,16 @@ func (app *MovieTagger) Run() error {
 			fmt.Printf(" OK\n")
 		}
 
+		app.notify(movie)
 		fmt.Printf("Done\n")
 		return nil
 	}); err != nil {
+		app.close()
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
+	fmt.Println("movietagger: done")
 	return nil
 }
 
