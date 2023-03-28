@@ -20,8 +20,9 @@ func main() {
 
 	mux.Handle("/promises/", auth.InternalHandler(promises.Server()))
 	mux.Handle("/ping/", auth.InternalHandler(ping.Server()))
-	mux.Handle("/places/", auth.InternalHandler(places.Server()))
 	mux.Handle("/go/", auth.InternalHandler(golink.Server()))
+
+	mux.Handle("/places/", places.Server())
 
 	mux.Handle("/", weblog.Server())
 
