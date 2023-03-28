@@ -11,8 +11,8 @@ import (
 	"co.monks.monks.co/places"
 	"co.monks.monks.co/promises"
 	"co.monks.monks.co/weblog"
-	"github.com/caddyserver/certmagic"
-	"github.com/libdns/route53"
+	// "github.com/caddyserver/certmagic"
+	// "github.com/libdns/route53"
 )
 
 func main() {
@@ -26,25 +26,25 @@ func main() {
 
 	mux.Handle("/", weblog.Server())
 
-	go func() {
-		err := serveTLS([]string{"brigid.ss.cx"}, mux)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	// go func() {
+	// 	err := serveTLS([]string{"brigid.ss.cx"}, mux)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }()
 
-	fmt.Println("listening for HTTP requests on :1337")
-	log.Fatal(http.ListenAndServe(":1337", mux))
+	fmt.Println("listening for HTTP requests on :8080")
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
-func serveTLS(domains []string, mux http.Handler) error {
-	certmagic.DefaultACME.Agreed = true
-	certmagic.DefaultACME.Email = "a@monks.co"
-	certmagic.DefaultACME.CA = certmagic.LetsEncryptProductionCA
+// func serveTLS(domains []string, mux http.Handler) error {
+// 	certmagic.DefaultACME.Agreed = true
+// 	certmagic.DefaultACME.Email = "a@monks.co"
+// 	certmagic.DefaultACME.CA = certmagic.LetsEncryptProductionCA
 
-	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
-		DNSProvider: &route53.Provider{},
-	}
+// 	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
+// 		DNSProvider: &route53.Provider{},
+// 	}
 
-	return certmagic.HTTPS(domains, mux)
-}
+// 	return certmagic.HTTPS(domains, mux)
+// }
