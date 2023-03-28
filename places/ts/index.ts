@@ -15,11 +15,14 @@ function initMap() {
     throw Error("no places found in html");
   }
 
+  // h-mart is a reasonably good place to center the map
+  const center = places.find((p) => p.Title === "H Mart Chicago")!;
+
   const div = document.getElementById("map")!;
   const map = new google.maps.Map(div, {
     mapId: "da4892bae6f26cb6",
     zoom: 13,
-    center: { lat: Number(places[0].Lat), lng: Number(places[0].Lng) },
+    center: { lat: Number(center.Lat), lng: Number(center.Lng) },
     streetViewControl: false,
     mapTypeControl: false,
     zoomControl: false,
