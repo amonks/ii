@@ -8,6 +8,7 @@
 - deselect all
 - select "Maps (your places)"
 - select "Saved"
+- "Next Step"
 
 ** Importing data
 

@@ -2,5 +2,7 @@
 
 cd places/css
 yarn
-fd -e css | entr -r npx tailwindcss -i ./index.css -o ../static/index.css
+
+cd ..
+fd -e css -e gohtml | entr -r bash -c "cd css; npx tailwindcss -i ./index.css -o ../static/index.css"
 

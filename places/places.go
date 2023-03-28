@@ -35,7 +35,7 @@ type server struct {
 func Server() *server {
 	s := &server{
 		DBServer: dbserver.New("places"),
-		model: NewModel(),
+		model:    NewModel(),
 	}
 
 	s.HandleFunc("/places/index.js", s.JSServer("./places/ts/index.ts"))
@@ -71,7 +71,7 @@ func (s *server) places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Requ
 		Place: place,
 	}
 
-	isAdmin := true
+	isAdmin := false
 	template := "details.gohtml"
 	if isAdmin {
 		template = "form.gohtml"
@@ -91,7 +91,7 @@ func (s *server) placesList(conn *sqlite.Conn, w http.ResponseWriter, req *http.
 	}
 
 	googleMapsImportURL := fmt.Sprintf(
-		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=weekly",
+		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=beta&libraries=marker",
 		credentials.PlacesBrowserAPIKey,
 	)
 

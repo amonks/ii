@@ -9,16 +9,23 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"co.monks.monks.co/credentials"
 )
 
 type Place struct {
-	PlaceID        string
-	BusinessStatus string
-	Address        string
-	Lat            string
-	Lng            string
-	URL            string
-	Name           string
+	PlaceID          string
+	BusinessStatus   string
+	Address          string
+	Lat              string
+	Lng              string
+	URL              string
+	Name             string
+	PriceLevel       int
+	Types            []string
+	OpeningHours     []string
+	EditorialSummary string
+	DetailsJSON      string
 }
 
 func GetPlaceDetailsByURL(u string) (*Place, error) {
@@ -43,7 +50,7 @@ func GetPlaceDetailsByCID(cid string) (Place, error) {
 }
 
 func getPlaceDetails(key, value string) (Place, error) {
-	const apiKey = "AIzaSyCLWItTcQzyy2V2t1Q6qca4aJmGQQQYMfc"
+	const apiKey = credentials.PlacesBackendAPIKey
 	fieldList := strings.Join([]string{
 		"place_id",
 		"formatted_address",
@@ -52,6 +59,10 @@ func getPlaceDetails(key, value string) (Place, error) {
 		"geometry/location/lng",
 		"url",
 		"name",
+		"opening_hours",
+		"type",
+		"editorial_summary",
+		"price_level",
 	}, ",")
 	fields := url.QueryEscape(fieldList)
 	url := fmt.Sprintf("https://maps.googleapis.com/maps/api/place/details/json?fields=%s&%s=%s&key=%s", fields, key, value, apiKey)
@@ -79,21 +90,46 @@ func getPlaceDetails(key, value string) (Place, error) {
 
 	var response struct {
 		Result struct {
-			BusinessStatus    string `json:"business_status"`
-			FormatteddAddress string `json:"formatted_address"`
-			Geometry          struct {
+			Name              string   `json:"name"`
+			PlaceID           string   `json:"place_id"`
+			URL               string   `json:"url"`
+			Types             []string `json:"types"`
+			PriceLevel        int      `json:"price_level"`
+			BusinessStatus    string   `json:"business_status"`
+			FormatteddAddress string   `json:"formatted_address"`
+
+			OpeningHours struct {
+				WeekdayText []string `json:"weekday_text"`
+				Periods     []struct {
+					Open struct {
+					} `json:"open"`
+					Close struct {
+						Day  int    `json:"day"`
+						Time string `json:"time"`
+					} `json:"close"`
+				} `json:"periods"`
+			} `json:"opening_hours"`
+
+			Geometry struct {
 				Location struct {
 					Lat float64 `json:"lat"`
 					Lng float64 `json:"lng"`
 				} `json:"location"`
 			} `json:"geometry"`
-			Name    string `json:"name"`
-			PlaceID string `json:"place_id"`
-			URL     string `json:"url"`
+
+			EditorialSummary struct {
+				Language string `json:"language"`
+				Overview string `json:"overview"`
+			} `json:"editorial_summary"`
 		} `json:"result"`
 		Status string `json:"status"`
 	}
 	if err = json.Unmarshal(body, &response); err != nil {
+		return place, err
+	}
+
+	detailsJson, err := json.Marshal(response)
+	if err != nil {
 		return place, err
 	}
 
@@ -104,6 +140,11 @@ func getPlaceDetails(key, value string) (Place, error) {
 	place.Lng = strconv.FormatFloat(response.Result.Geometry.Location.Lng, 'f', -1, 64)
 	place.URL = response.Result.URL
 	place.Name = response.Result.Name
+	place.PriceLevel = response.Result.PriceLevel
+	place.Types = response.Result.Types
+	place.EditorialSummary = response.Result.EditorialSummary.Overview
+	place.OpeningHours = response.Result.OpeningHours.WeekdayText
+	place.DetailsJSON = string(detailsJson)
 
 	return place, nil
 }

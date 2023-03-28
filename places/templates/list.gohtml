@@ -5,26 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ block "title" . }}places{{ end }}</title>
     <script type="module" src="./index.js"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.8"></script>
     <link rel="stylesheet" type="text/css" href="./index.css" />
   </head>
-  <body>
-    {{ block "body" . }}
-      <div class="flex flex-row">
-        {{ block "map" . }}
-          <div id="map" class="w-full sm:w-2/3"></div>
 
-          <script src="{{ .GoogleMapsImportURL }}" defer></script>
-          <script type="text/javascript">
-            window.places = {{.PlacesJSON}};
-          </script>
-        {{ end }}
+  <body class="show-restaurants show-cafes show-stores show-bars show-others">
+    <div class="flex flex-col h-screen overflow-hidden">
 
-
-        <div id="sidebar" class="h-screen overflow-scroll w-full sm:w-1/3">
-          {{ block "sidebar" . }}
-          {{ end }}
+      <header class="bg-gray-900 text-white w-full mx-auto flex items-center p-6 lg:px-8">
+        <div class="flex">
+          <a href="#" class="-m-1.5 p-1.5">
+            <span>Monks' Map</span>
+          </a>
         </div>
+
+        <div class="flex items-center mx-8">
+          <button _="on click toggle .show-bars on body" id="bar-toggle" type="button" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+          </button>
+          <span class="ml-3 text-sm">
+            <span class="font-medium">Bars</span>
+          </span>
+        </div>
+
+        <div class="flex items-center mx-8">
+          <button _="on click toggle .show-cafes on body" id="cafe-toggle" type="button" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+          </button>
+          <span class="ml-3 text-sm">
+            <span class="font-medium">Cafes</span>
+          </span>
+        </div>
+
+        <div class="flex items-center mx-8">
+          <button _="on click toggle .show-restaurants on body" id="restaurant-toggle" type="button" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+          </button>
+          <span class="ml-3 text-sm">
+            <span class="font-medium">Restaurants</span>
+          </span>
+        </div>
+
+        <div class="flex items-center mx-8">
+          <button _="on click toggle .show-stores on body" id="store-toggle" type="button" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+          </button>
+          <span class="ml-3 text-sm">
+            <span class="font-medium">Stores</span>
+          </span>
+        </div>
+
+        <div class="flex items-center mx-8">
+          <button _="on click toggle .show-others on body" id="other-toggle" type="button" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+          </button>
+          <span class="ml-3 text-sm">
+            <span class="font-medium">Other</span>
+          </span>
+        </div>
+
+      </header>
+
+      <div class="flex-grow relative">
+        <div id="sidebar" class="z-50 absolute right-0 bg-white opacity-80 w-1/4 h-full overflow-scroll"></div>
+        <div id="map" class="h-full w-full"></div>
       </div>
-    {{ end }}
+    </div>
+
+    <div id="markers" class="hidden">
+      {{ range .Places }}
+        <div 
+          id="marker-{{.GoogleMapsURL}}" 
+          class="marker translate-x-1/2" 
+          data-types="{{.Types}}"
+          data-operational="{{ if .IsOperational }}true{{ else }}false{{ end }}"
+        >
+          <span class="whitespace-nowrap opacity-70 shadow-sm text-white px-1
+                       {{ if .IsOperational }}bg-gray-800{{ else }}bg-red-800{{ end }}">
+            {{.Title}}
+          </span>
+          <img src="./dot.png" width="2" height="2" />
+        </div>
+      {{ end }}
+    </div>
+
+    <script src="{{ .GoogleMapsImportURL }}" defer></script>
+    <script type="text/javascript">
+      window.places = {{.PlacesJSON}};
+    </script>
   </body>
 </html>

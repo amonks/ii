@@ -1,10 +1,4 @@
-import "htmx.org";
-import { styles } from "./styles";
-
-type Htmx = typeof import("htmx.org");
-const htmx: Htmx = (window as any).htmx;
-
-console.log(htmx);
+import htmx from "htmx.org";
 
 (window as any).initMap = initMap;
 
@@ -21,28 +15,22 @@ function initMap() {
     throw Error("no places found in html");
   }
 
-  const div = document.getElementById("map");
+  const div = document.getElementById("map")!;
   const map = new google.maps.Map(div, {
+    mapId: "da4892bae6f26cb6",
     zoom: 13,
     center: { lat: Number(places[0].Lat), lng: Number(places[0].Lng) },
     streetViewControl: false,
     mapTypeControl: false,
     zoomControl: false,
     fullscreenControl: false,
-    styles,
   });
 
-  const icon = {
-    // size: new google.maps.Size(1, 1),
-    scaledSize: new google.maps.Size(8, 8),
-    url: "./dot.png",
-  };
-
   for (const place of places) {
-    const marker = new google.maps.Marker({
-      position: { lat: Number(place.Lat), lng: Number(place.Lng) },
-      icon,
+    const marker = new google.maps.marker.AdvancedMarkerView({
       map,
+      position: { lat: Number(place.Lat), lng: Number(place.Lng) },
+      content: document.getElementById(`marker-${place.GoogleMapsURL}`),
     });
     marker.addListener("click", () => {
       console.log(place);

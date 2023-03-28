@@ -46,6 +46,13 @@ type Place struct {
 	CountryCode  string
 	Address      string
 	Title        string
+
+	DetailsJSON string
+
+	EditorialSummary string
+	OpeningHours     []string
+	Types            []string
+	PriceLevel       int
 }
 
 func (p Place) DisplayName() (string, error) {
@@ -61,7 +68,7 @@ func (p Place) DisplayName() (string, error) {
 	return "", fmt.Errorf("could not create display name for '%s'", p.GoogleMapsURL)
 }
 
-type model struct{
+type model struct {
 	logger.Logger
 }
 
@@ -87,7 +94,12 @@ func (m *model) migrate(conn *sqlite.Conn) error {
 			business_name text,
 			country_code text,
 			address text,
-			title text
+			title text,
+			details_json text,
+			editorial_summary text,
+			opening_hours text,
+			types text,
+			price_level int
 		);`); err != nil {
 		return err
 	}
@@ -136,7 +148,12 @@ func (m *model) getPlace(conn *sqlite.Conn, googleMapsURL string) (*Place, error
 			business_name,
 			country_code,
 			address,
-			title
+			title,
+			details_json,
+			editorial_summary,
+			opening_hours,
+			types,
+			price_level
 		from places
 		where google_maps_url = ?;`
 
@@ -157,6 +174,11 @@ func (m *model) getPlace(conn *sqlite.Conn, googleMapsURL string) (*Place, error
 			CountryCode:              stmt.ColumnText(10),
 			Address:                  stmt.ColumnText(11),
 			Title:                    stmt.ColumnText(12),
+			DetailsJSON:              stmt.ColumnText(13),
+			EditorialSummary:         stmt.ColumnText(14),
+			OpeningHours:             strings.Split(stmt.ColumnText(15), "\n"),
+			Types:                    strings.Split(stmt.ColumnText(16), "\n"),
+			PriceLevel:               stmt.ColumnInt(17),
 		}
 		return nil
 	}
@@ -175,7 +197,10 @@ func (m *model) findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, e
 		from
 			places
 		where
-			address like '%?$'
+			google_maps_url like '%' || ? || '%'
+			or google_maps_url like '%' || ? || '%'
+			or address like '%' || ? || '%'
+			or title like '%' || ? || '%'
 		limit 1;`
 
 	var url *string
@@ -184,9 +209,11 @@ func (m *model) findPlaceByAddress(conn *sqlite.Conn, address string) (*Place, e
 		url = &got
 		return nil
 	}
-	if err := sqlitex.Exec(conn, query, onResult, address); err != nil {
+	if err := sqlitex.Exec(conn, query, onResult, address, strings.ReplaceAll(address, " ", "+"), address, address); err != nil {
+		fmt.Println("failed to match address:", address)
 		return nil, err
 	}
+	fmt.Println("address:", address, "url:", url)
 	if url == nil {
 		return nil, nil
 	}
@@ -216,10 +243,20 @@ func (m *model) insertPlace(conn *sqlite.Conn, place Place) error {
 				business_name,
 				country_code,
 				address,
-				title
+				title,
+				details_json,
+				editorial_summary,
+				opening_hours,
+				types,
+				price_level
 			)
 		values
 			(
+				?,
+				?,
+				?,
+				?,
+				?,
 				?,
 				?,
 				?,
@@ -249,7 +286,12 @@ func (m *model) insertPlace(conn *sqlite.Conn, place Place) error {
 		place.BusinessName,
 		place.CountryCode,
 		place.Address,
-		place.Title)
+		place.Title,
+		place.DetailsJSON,
+		place.EditorialSummary,
+		strings.Join(place.OpeningHours, "\n"),
+		strings.Join(place.Types, "\n"),
+		place.PriceLevel)
 	return err
 }
 
@@ -268,7 +310,12 @@ func (m *model) updatePlace(conn *sqlite.Conn, place Place) error {
 			business_name = ?,
 			country_code = ?,
 			address = ?,
-			title = ?
+			title = ?,
+			details_json = ?,
+			editorial_summary = ?,
+			opening_hours = ?,
+			types = ?,
+			price_level = ?
 		where
 			google_maps_url = ?;`
 	err := sqlitex.Exec(conn, query, nil,
@@ -284,6 +331,11 @@ func (m *model) updatePlace(conn *sqlite.Conn, place Place) error {
 		place.CountryCode,
 		place.Address,
 		place.Title,
+		place.DetailsJSON,
+		place.EditorialSummary,
+		strings.Join(place.OpeningHours, "\n"),
+		strings.Join(place.Types, "\n"),
+		place.PriceLevel,
 		place.GoogleMapsURL,
 	)
 	return err
@@ -331,7 +383,6 @@ func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 
 	places := []Place{}
 	for _, savedPlace := range savedPlaces.Features {
-		m.Logf("importing %s", savedPlace.Properties.GoogleMapsURL)
 		place := Place{
 			GoogleMapsURL: savedPlace.Properties.GoogleMapsURL,
 			IsPublic:      true,
@@ -346,31 +397,61 @@ func (m *model) importSavedPlaces(conn *sqlite.Conn) error {
 			Address:       savedPlace.Properties.Location.Address,
 			Title:         savedPlace.Properties.Title,
 		}
-		details, err := googlemaps.GetPlaceDetailsByURL(savedPlace.Properties.GoogleMapsURL)
+		places = append(places, place)
+	}
+
+	for _, place := range places {
+		// See if place exists
+		got, err := m.getPlace(conn, place.GoogleMapsURL)
 		if err != nil {
+			m.Logf("ERROR fetching %s", place.Title)
+			return err
+		}
+
+		// Skip if it exists and we already have details
+		// XXX: This means we'll never update BusinessStatus
+		if got != nil && got.GoogleMapsPlaceID != "" && got.EditorialSummary != "" {
+			continue
+		}
+
+		// Fetch place details
+		details, err := googlemaps.GetPlaceDetailsByURL(place.GoogleMapsURL)
+		if err != nil {
+			m.Logf("Error getting details for %s", place.Title)
 			return err
 		}
 		if details != nil {
 			place.GoogleMapsPlaceID = details.PlaceID
 			place.GoogleMapsBusinessStatus = details.BusinessStatus
+			place.DetailsJSON = details.DetailsJSON
+			place.EditorialSummary = details.EditorialSummary
+			place.OpeningHours = details.OpeningHours
+			place.Types = details.Types
+			place.PriceLevel = details.PriceLevel
 		}
-		places = append(places, place)
-	}
 
-	for _, place := range places {
-		m.Logf("fetching %s", place.GoogleMapsURL)
-		got, err := m.getPlace(conn, place.GoogleMapsURL)
-		if err != nil {
-			m.Logf("ERROR fetching %s", place.GoogleMapsURL)
-			return err
+		if got == nil {
+			m.Logf("inserting %s", place.Title)
+			if err := m.insertPlace(conn, place); err != nil {
+				return err
+			}
 		}
+
 		if got != nil {
-			m.Logf("ERROR fetching [already exists] %s", place.GoogleMapsURL)
-			continue
-		}
-		m.Logf("inserting %s", place.GoogleMapsURL)
-		if err := m.insertPlace(conn, place); err != nil {
-			return err
+			m.Logf("updating %s", place.Title)
+
+			// careful -- only set fields that are
+			// controlled by google maps
+			got.GoogleMapsBusinessStatus = place.GoogleMapsBusinessStatus
+			got.DetailsJSON = place.DetailsJSON
+			got.EditorialSummary = place.EditorialSummary
+			got.OpeningHours = place.OpeningHours
+			got.Types = place.Types
+			got.PriceLevel = place.PriceLevel
+
+			if err := m.updatePlace(conn, *got); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -435,4 +516,8 @@ func (m *model) annotatePeoplesPlaces(conn *sqlite.Conn) error {
 	}
 
 	return nil
+}
+
+func (p *Place) IsOperational() bool {
+	return p.GoogleMapsBusinessStatus == "" || p.GoogleMapsBusinessStatus == "OPERATIONAL"
 }
