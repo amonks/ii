@@ -1,0 +1,13 @@
+storage_path = "/data"
+
+[[services]]
+  port = 4433
+  protocol = "https"
+  is_admin = false
+  [services.acme]
+    production = true
+    domains = ["monks-go.fly.dev"]
+    [[services.acme.strategies]]
+      strategy = "alpn"
+      external_port = 443
+      internal_port = 4433

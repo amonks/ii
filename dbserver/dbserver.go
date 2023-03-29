@@ -6,9 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"monks.co/logger"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
+	"monks.co/config"
+	"monks.co/logger"
 )
 
 type DBServer struct {
@@ -31,8 +32,10 @@ func (s *DBServer) Logf(msg string, args ...interface{}) {
 	s.logger.Logf(msg, args...)
 }
 
+var dataPath string
+
 func (s *DBServer) Init(migrate func(conn *sqlite.Conn) error) {
-	db, err := sqlitex.Open(fmt.Sprintf("file:data/%s.db", s.name), 0, 10)
+	db, err := sqlitex.Open(fmt.Sprintf("file:%s/%s.db", config.Get().StoragePath, s.name), 0, 10)
 	if err != nil {
 		log.Fatal(err)
 	}
