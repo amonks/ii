@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"co.monks.monks.co/dbserver"
+	"monks.co/dbserver"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )

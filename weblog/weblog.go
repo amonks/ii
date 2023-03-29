@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"co.monks.monks.co/dbserver"
+	"monks.co/dbserver"
 	"crawshaw.io/sqlite"
 )
 

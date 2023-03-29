@@ -4,8 +4,8 @@ import (
 	"embed"
 	"html/template"
 
-	"co.monks.monks.co/dbserver"
-	"co.monks.monks.co/util"
+	"monks.co/dbserver"
+	"monks.co/util"
 )
 
 var (

@@ -1,4 +1,4 @@
-module co.monks.monks.co
+module monks.co
 
 go 1.18
 

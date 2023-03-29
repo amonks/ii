@@ -3,7 +3,7 @@ package dbserver
 import (
 	"net/http"
 
-	"co.monks.monks.co/util"
+	"monks.co/util"
 )
 
 func (s *DBServer) Errorf(w http.ResponseWriter, req *http.Request, statusCode int, msg string, args ...interface{}) {

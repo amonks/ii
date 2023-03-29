@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"co.monks.monks.co/logger"
+	"monks.co/logger"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )

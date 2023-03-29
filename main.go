@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"co.monks.monks.co/auth"
-	"co.monks.monks.co/golink"
-	"co.monks.monks.co/ping"
-	"co.monks.monks.co/places"
-	"co.monks.monks.co/promises"
-	"co.monks.monks.co/weblog"
+	"monks.co/auth"
+	"monks.co/golink"
+	"monks.co/ping"
+	"monks.co/places"
+	"monks.co/promises"
+	"monks.co/weblog"
 	// "github.com/caddyserver/certmagic"
 	// "github.com/libdns/route53"
 )

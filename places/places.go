@@ -7,9 +7,9 @@ import (
 	"html/template"
 	"net/http"
 
-	"co.monks.monks.co/credentials"
-	"co.monks.monks.co/dbserver"
-	"co.monks.monks.co/util"
+	"monks.co/credentials"
+	"monks.co/dbserver"
+	"monks.co/util"
 	"crawshaw.io/sqlite"
 )
 

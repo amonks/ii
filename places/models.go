@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"co.monks.monks.co/googlemaps"
-	"co.monks.monks.co/logger"
+	"monks.co/googlemaps"
+	"monks.co/logger"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )

@@ -1,7 +1,7 @@
 package weblog
 
 import (
-	"co.monks.monks.co/logger"
+	"monks.co/logger"
 	"crawshaw.io/sqlite"
 )
 

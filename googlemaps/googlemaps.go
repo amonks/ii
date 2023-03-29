@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"co.monks.monks.co/credentials"
+	"monks.co/credentials"
 )
 
 type Place struct {

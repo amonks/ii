@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"co.monks.monks.co/beeminder"
-	"co.monks.monks.co/dbserver"
-	"co.monks.monks.co/util"
+	"monks.co/beeminder"
+	"monks.co/dbserver"
+	"monks.co/util"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
 )
