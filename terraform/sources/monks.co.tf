@@ -117,12 +117,17 @@ resource "aws_route53_record" "monks-co-A" {
   name    = "monks.co"
   type    = "A"
 
+  records = ["66.51.122.238"]
+  ttl     = "300"
+}
 
-  alias {
-    name                   = aws_cloudfront_distribution.monks-co-distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.monks-co-distribution.hosted_zone_id
-    evaluate_target_health = false
-  }
+resource "aws_route53_record" "monks-co-AAAA" {
+  zone_id = aws_route53_zone.monks-co-public.zone_id
+  name    = "monks.co"
+  type    = "AAAA"
+
+  records = ["2a09:8280:1::f:478"]
+  ttl     = "300"
 }
 
 resource "aws_route53_record" "monks-co-MX" {
