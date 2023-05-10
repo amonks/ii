@@ -16,4 +16,4 @@ for file in zones/*
 	end
 end
 
-terraform fmt
+terraform1.4 fmt
