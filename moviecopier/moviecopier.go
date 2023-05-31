@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"monks.co/movietagger/config"
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/system"
 )
@@ -57,7 +58,7 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 		app.Println("got", movie.Title)
 
 		app.Println("copying movie...")
-		if err := copyFile(ctx, movie.ImportedFromPath, movie.LibraryPath); err != nil {
+		if err := copyFile(ctx, config.ImportDir+"/"+movie.ImportedFromPath, config.MoviesDir+"/"+movie.LibraryPath); err != nil {
 			app.Println(err)
 			return err
 		}

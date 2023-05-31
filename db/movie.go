@@ -59,16 +59,13 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 	return &movie
 }
 
-func (m *Movie) BuildLibraryPath() string {
-	releaseYear := m.ReleaseDate[0:4]
-	filename := sanitizeFilename(fmt.Sprintf("%s-%s%s", releaseYear, m.Title, m.Extension))
-	return "/mypool/tank/movies/"+filename
-}
-
 var illegalCharForFilename = regexp.MustCompile(`\/`)
 
-func sanitizeFilename(filename string) string {
-	return illegalCharForFilename.ReplaceAllString(filename, "-")
+func (m *Movie) BuildLibraryPath() string {
+	releaseYear := m.ReleaseDate[0:4]
+	filename := fmt.Sprintf("%s-%s%s", releaseYear, m.Title, m.Extension)
+	filename = illegalCharForFilename.ReplaceAllString(filename, "-")
+	return filename
 }
 
 func (d *DB) AddMovie(movie *Movie) error {
@@ -143,20 +140,16 @@ func (d *DB) ReplaceMovie(id int64, path string) error {
 	return nil
 }
 
-func (d *DB) RebuildLibraryPath(movie *Movie) error {
-	if movie.IsImported {
-		return errors.New("cannot rebuild path for imported movie")
-	}
-
+func (d *DB) DeleteMovie(id int64) error {
 	c, err := d.conn()
 	defer c.release()
 	if err != nil {
 		return err
 	}
 
-	const q = `update movies set library_path = ? where id = ?;`
-	if err := sqlitex.Exec(c.Conn, q, nil, movie.BuildLibraryPath(), movie.ID); err != nil {
-		return fmt.Errorf("failed to replace movie: %w", err)
+	const q = `delete from movies where id = ?`
+	if err := sqlitex.Exec(c.Conn, q, nil, id); err != nil {
+		return fmt.Errorf("failed to delete movie: %w", err)
 	}
 
 	return nil
@@ -208,7 +201,7 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 		return nil, err
 	}
 
-	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path from movies where id = ?;`
+	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported from movies where id = ?;`
 	var movie Movie
 	f := func(stmt *sqlite.Stmt) error {
 		var json []byte
@@ -227,6 +220,7 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 			Extension:        stmt.ColumnText(9),
 			LibraryPath:      stmt.ColumnText(10),
 			ImportedFromPath: stmt.ColumnText(11),
+			IsImported:       stmt.ColumnInt(12) == 1,
 		}
 		return nil
 	}

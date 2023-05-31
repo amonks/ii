@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"monks.co/movietagger/config"
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
@@ -69,12 +70,13 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 
 	fmt.Println("movietagger: start")
 
-	if err := app.sanitizeFilenames(); err != nil {
-		return err
-	}
-
-	if err := filepath.Walk("/mypool/data/mirror/whatbox/files/movies", func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(config.ImportDir, func(path string, info os.FileInfo, err error) error {
+		path = strings.TrimPrefix(path, config.ImportDir+"/")
 		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		if err != nil {
 			return err
 		}
 
@@ -189,40 +191,6 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 	}
 
 	fmt.Println("movietagger: done")
-	return nil
-}
-
-func (a *MovieTagger) sanitizeFilenames() error {
-	ids, err := a.db.AllMovies()
-	if err != nil {
-		return err
-	}
-
-	for _, id := range ids {
-		movie, err := a.db.GetMovie(id)
-		if err != nil {
-			return err
-		}
-
-		correctPath := movie.BuildLibraryPath()
-		if movie.LibraryPath != correctPath {
-			fmt.Printf("'%s' should be '%s'\n", movie.LibraryPath, correctPath)
-		prompt:
-			response := ui.Prompt("correct? [yes,no]")
-			switch response {
-			case "yes":
-				if err := a.db.RebuildLibraryPath(movie); err != nil {
-					return err
-				}
-				continue
-			case "no":
-				continue
-			default:
-				goto prompt
-			}
-		}
-	}
-
 	return nil
 }
 
