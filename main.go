@@ -17,7 +17,7 @@ import (
 
 func main() {
 	tmdb := tmdb.New("88f973483e2dc73cfb5053bc059ae33b")
-	db := db.New(".movies.db")
+	db := db.New("/mypool/tank/movies/.movies.db")
 
 	fmt.Printf("migrating...")
 	if err := db.Start(); err != nil {
