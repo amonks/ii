@@ -28,6 +28,9 @@ type Movie struct {
 	ImportedFromPath string
 
 	IsImported bool
+
+	TMDBJSON   string
+	PosterPath string
 }
 
 func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
@@ -54,6 +57,8 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 		ImportedFromPath: importedFromPath,
 
 		IsImported: false,
+
+		TMDBJSON: m.TMDBJSON,
 	}
 	movie.LibraryPath = movie.BuildLibraryPath()
 	return &movie
@@ -75,16 +80,46 @@ func (d *DB) AddMovie(movie *Movie) error {
 		return err
 	}
 
-	const q = `insert into movies (id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+	const q = `insert into movies (id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported, tmdb_json)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 	if err := sqlitex.Exec(c.Conn, q, nil,
-		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.Extension, movie.LibraryPath, movie.ImportedFromPath, false,
+		movie.ID, movie.Title, movie.OriginalTitle, movie.Tagline, movie.Overview, movie.Runtime, join(movie.Genres), join(movie.Languages), movie.ReleaseDate, movie.Extension, movie.LibraryPath, movie.ImportedFromPath, false, movie.TMDBJSON,
 	); err != nil {
 		sqliteError, isSqliteError := err.(sqlite.Error)
 		if isSqliteError && sqliteError.Code == sqlite.SQLITE_CONSTRAINT_UNIQUE {
 			err = errors.Join(err, ErrCollision)
 		}
 		return fmt.Errorf("failed to insert movie: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) AddMovieJSON(id int64, json string) error {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set tmdb_json = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, json, id); err != nil {
+		return fmt.Errorf("failed to set movie json: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) AddMoviePoster(id int64, posterPath string) error {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set poster_path = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, posterPath, id); err != nil {
+		return fmt.Errorf("failed to set movie poster: %w", err)
 	}
 
 	return nil
@@ -194,6 +229,10 @@ func (d *DB) AllMovies() ([]int64, error) {
 	return ids, nil
 }
 
+func (m *Movie) PosterURL() string {
+	return fmt.Sprintf("/poster?id=%d", m.ID)
+}
+
 func (d *DB) GetMovie(id int64) (*Movie, error) {
 	c, err := d.conn()
 	defer c.release()
@@ -201,7 +240,7 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 		return nil, err
 	}
 
-	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported from movies where id = ?;`
+	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported, tmdb_json, poster_path from movies where id = ?;`
 	var movie Movie
 	f := func(stmt *sqlite.Stmt) error {
 		var json []byte
@@ -221,6 +260,8 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 			LibraryPath:      stmt.ColumnText(10),
 			ImportedFromPath: stmt.ColumnText(11),
 			IsImported:       stmt.ColumnInt(12) == 1,
+			TMDBJSON:         stmt.ColumnText(13),
+			PosterPath:       stmt.ColumnText(14),
 		}
 		return nil
 	}
@@ -229,4 +270,3 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 	}
 	return &movie, nil
 }
-

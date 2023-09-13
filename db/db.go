@@ -90,11 +90,13 @@ func (db *DB) Start() error {
 			library_path       text unique,
 			imported_from_path text unique,
 
-			is_imported        integer
+			is_imported        integer,
+
+			tmdb_json          text,
+			poster_path        text
 		);`, nil); err != nil {
 		return fmt.Errorf("failed to create `movies` table: %w", err)
 	}
 
 	return nil
 }
-
