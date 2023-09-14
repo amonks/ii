@@ -241,7 +241,12 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 		w.Write([]byte("ok"))
 	})
 
-	s := &http.Server{Addr: "0.0.0.0:3333", Handler: mux}
+	wrapped := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		fmt.Println(req.URL.String())
+		mux.ServeHTTP(w, req)
+	})
+
+	s := &http.Server{Addr: "0.0.0.0:3333", Handler: wrapped}
 
 	errs := make(chan error)
 	go func() {
