@@ -296,3 +296,45 @@ func (c *Client) Get(id int64) (*Movie, error) {
 
 	return &movie, nil
 }
+
+type Credits struct {
+	Cast []Person `json:"cast"`
+	Crew []Person `json:"crew"`
+}
+
+type Person struct {
+	Name string `json:"name"`
+	Job  string `json:"job"`
+}
+
+func (c *Client) GetCredits(id int64) (*Credits, []byte, error) {
+	req, err := http.NewRequest(http.MethodGet, `https://api.themoviedb.org/3/movie/`+strconv.FormatInt(id, 10)+"/credits", nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("building tmdb credits request: %w", err)
+	}
+
+	qs := req.URL.Query()
+	qs.Add("api_key", c.apiKey)
+	req.URL.RawQuery = qs.Encode()
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making tmdb credits request: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, nil, fmt.Errorf("error code from tmdb credits request: %d", res.StatusCode)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response from tmdb credits request: %w", err)
+	}
+
+	var credits Credits
+	if err := json.Unmarshal(body, &credits); err != nil {
+		return nil, nil, fmt.Errorf("error decoding response from tmdb credits request: %w", err)
+	}
+
+	return &credits, body, nil
+}

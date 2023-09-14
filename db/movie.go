@@ -31,6 +31,11 @@ type Movie struct {
 
 	TMDBJSON   string
 	PosterPath string
+
+	TMDBCreditsJSON string
+	DirectorName    string
+
+	WriterName string
 }
 
 func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
@@ -105,6 +110,51 @@ func (d *DB) AddMovieJSON(id int64, json string) error {
 	const q = `update movies set tmdb_json = ? where id = ?;`
 	if err := sqlitex.Exec(c.Conn, q, nil, json, id); err != nil {
 		return fmt.Errorf("failed to set movie json: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) AddMovieCredits(id int64, creditsJSON []byte) error {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set tmdb_credits_json = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, creditsJSON, id); err != nil {
+		return fmt.Errorf("failed to set movie credits: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) AddMovieWriter(id int64, writerName string) error {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set writer_name = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, writerName, id); err != nil {
+		return fmt.Errorf("failed to set movie writer: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DB) AddMovieDirector(id int64, directorName string) error {
+	c, err := d.conn()
+	defer c.release()
+	if err != nil {
+		return err
+	}
+
+	const q = `update movies set director_name = ? where id = ?;`
+	if err := sqlitex.Exec(c.Conn, q, nil, directorName, id); err != nil {
+		return fmt.Errorf("failed to set movie director: %w", err)
 	}
 
 	return nil
@@ -240,7 +290,7 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 		return nil, err
 	}
 
-	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported, tmdb_json, poster_path from movies where id = ?;`
+	const q = `select id, title, original_title, tagline, overview, runtime, genres, languages, release_date, extension, library_path, imported_from_path, is_imported, tmdb_json, poster_path, tmdb_credits_json, director_name, writer_name from movies where id = ?;`
 	var movie Movie
 	f := func(stmt *sqlite.Stmt) error {
 		var json []byte
@@ -260,8 +310,13 @@ func (d *DB) GetMovie(id int64) (*Movie, error) {
 			LibraryPath:      stmt.ColumnText(10),
 			ImportedFromPath: stmt.ColumnText(11),
 			IsImported:       stmt.ColumnInt(12) == 1,
-			TMDBJSON:         stmt.ColumnText(13),
-			PosterPath:       stmt.ColumnText(14),
+
+			TMDBJSON:   stmt.ColumnText(13),
+			PosterPath: stmt.ColumnText(14),
+
+			TMDBCreditsJSON: stmt.ColumnText(15),
+			DirectorName:    stmt.ColumnText(16),
+			WriterName:      stmt.ColumnText(17),
 		}
 		return nil
 	}

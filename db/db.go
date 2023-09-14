@@ -93,7 +93,12 @@ func (db *DB) Start() error {
 			is_imported        integer,
 
 			tmdb_json          text,
-			poster_path        text
+			poster_path        text,
+
+			tmdb_credits_json  text,
+			director_name      text,
+
+			writer_name        text
 		);`, nil); err != nil {
 		return fmt.Errorf("failed to create `movies` table: %w", err)
 	}

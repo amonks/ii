@@ -10,6 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
+	"monks.co/movietagger/creditsfetcher"
 	"monks.co/movietagger/db"
 	"monks.co/movietagger/libraryserver"
 	"monks.co/movietagger/moviecopier"
@@ -38,6 +39,13 @@ func main() {
 	// run movie fetcher
 	mf := moviefetcher.New(tmdb, db)
 	if err := mf.Run(context.Background()); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// run credits fetcher
+	cf := creditsfetcher.New(tmdb, db)
+	if err := cf.Run(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}

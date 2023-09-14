@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -142,7 +143,9 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 				continue
 			}
 
-			if !strings.Contains(strings.ToLower(movie.Title), strings.ToLower(query)) {
+			if !strings.Contains(
+				strings.ToLower(movie.Title)+" "+strings.ToLower(movie.DirectorName)+" "+strings.ToLower(movie.WriterName),
+				strings.ToLower(query)) {
 				continue
 			}
 
@@ -195,8 +198,47 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 			return
 		}
 		movie, err := app.db.GetMovie(id)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("error"))
+			return
+		}
 		w.Header().Set("Cache-control", "public, max-age=604800, immutable")
 		http.ServeFile(w, req, movie.PosterPath)
+	})
+	mux.HandleFunc("/play", func(w http.ResponseWriter, req *http.Request) {
+		idStr := req.URL.Query().Get("id")
+		id, err := strconv.ParseInt(idStr, 10, 32)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("error"))
+			return
+		}
+		movie, err := app.db.GetMovie(id)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("error"))
+			return
+		}
+		for _, cmd := range []*exec.Cmd{
+			exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thor.ss.cx/mypool/tank/movies/%s'", movie.LibraryPath)),
+			exec.Command("ssh", "lugh", `osascript -e 'tell application "VLC" to activate' -e 'tell application "System Events" to keystroke "f" using {command down, control down}'`),
+		} {
+			cmd := cmd
+			if err := cmd.Start(); err != nil {
+				w.WriteHeader(500)
+				w.Write([]byte("error"))
+				return
+			}
+			go func() {
+				if err := cmd.Wait(); err != nil {
+					fmt.Println("MOVIE ERROR")
+					fmt.Println(err)
+				}
+			}()
+		}
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
 	})
 
 	s := &http.Server{Addr: "0.0.0.0:3333", Handler: mux}
