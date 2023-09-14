@@ -39,7 +39,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *LibraryServer {
 
 func (app *LibraryServer) Run(ctx context.Context) error {
 	defer app.System.Start()()
-
 	fmt.Println("libraryserver: start")
 
 	tmpl := template.New("movies")
@@ -51,10 +50,34 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
-		genres := q["genres"]
+
+		selectedGenres := q["genres"]
+		selectedGenresSet := map[string]struct{}{}
+		for _, g := range selectedGenres {
+			selectedGenresSet[g] = struct{}{}
+		}
+		allGenresSelected := false
+		if len(selectedGenres) == 0 {
+			allGenresSelected = true
+		}
+
 		minYear := q.Get("minYear")
 		maxYear := q.Get("maxYear")
+
 		query := q.Get("query")
+
+		sortBy := q.Get("sortBy")
+		sortDirection := q.Get("sortDirection")
+		if sortBy != "name" && sortBy != "date" && sortBy != "runtime" {
+			sortBy = "date"
+		}
+		if sortDirection != "asc" && sortDirection != "desc" {
+			if sortBy == "date" {
+				sortDirection = "desc"
+			} else {
+				sortDirection = "asc"
+			}
+		}
 
 		ids, err := app.db.AllMovies()
 		if err != nil {
@@ -64,7 +87,22 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 			return
 		}
 
-		var data struct{ Movies []*db.Movie }
+		type Genre struct {
+			Name       string
+			IsSelected bool
+		}
+		var data struct {
+			Movies        []*db.Movie
+			Genres        []Genre
+			Query         string
+			SortBy        string
+			SortDirection string
+		}
+		data.Query = query
+		data.SortBy = sortBy
+		data.SortDirection = sortDirection
+
+		allGenresSet := map[string]struct{}{}
 		for _, id := range ids {
 			movie, err := app.db.GetMovie(id)
 			if err != nil {
@@ -73,18 +111,20 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 				w.Write([]byte("error"))
 				return
 			}
-			genreMatch := true
-			if len(genres) > 0 {
-				genreMatch = false
-				for _, g := range movie.Genres {
-					for _, gg := range genres {
-						if g == gg {
-							genreMatch = true
-						}
+
+			genreMatch := false
+			for _, g := range movie.Genres {
+				if len(g) == 0 {
+					continue
+				}
+				allGenresSet[g] = struct{}{}
+				for _, gg := range selectedGenres {
+					if gg == g {
+						genreMatch = true
 					}
 				}
 			}
-			if !genreMatch {
+			if !genreMatch && !allGenresSelected {
 				continue
 			}
 
@@ -102,15 +142,44 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 				continue
 			}
 
-			if !strings.Contains(movie.Title, query) {
+			if !strings.Contains(strings.ToLower(movie.Title), strings.ToLower(query)) {
 				continue
 			}
 
 			data.Movies = append(data.Movies, movie)
 		}
 
+		for genre := range allGenresSet {
+			_, isSelected := selectedGenresSet[genre]
+			data.Genres = append(data.Genres, Genre{
+				Name:       genre,
+				IsSelected: !allGenresSelected && isSelected,
+			})
+		}
+		sort.Slice(data.Genres, func(a, b int) bool {
+			return data.Genres[a].Name < data.Genres[b].Name
+		})
+
 		sort.Slice(data.Movies, func(a, b int) bool {
-			return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
+			switch sortBy {
+			case "date":
+				if sortDirection == "desc" {
+					return data.Movies[a].ReleaseDate > data.Movies[b].ReleaseDate
+				}
+				return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
+			case "runtime":
+				if sortDirection == "desc" {
+					return data.Movies[a].Runtime > data.Movies[b].Runtime
+				}
+				return data.Movies[a].Runtime < data.Movies[b].Runtime
+			case "name":
+				fallthrough
+			default:
+				if sortDirection == "desc" {
+					return data.Movies[a].Title > data.Movies[b].Title
+				}
+				return data.Movies[a].Title < data.Movies[b].Title
+			}
 		})
 
 		if err := tmpl.Execute(w, data); err != nil {
