@@ -1,5 +1,20 @@
 storage_path = "./data"
 
+[[apps]]
+  name = "places"
+  path = "/places/"
+  is_public = false
+
+[[apps]]
+  name = "weblog"
+  path = "/"
+  is_public = false
+
+[[apps]]
+  name = "ping"
+  path = "/ping/"
+  is_public = false
+
 [[services]]
   port = 1337
   protocol = "http"
@@ -10,7 +25,7 @@ storage_path = "./data"
   protocol = "https"
   is_admin = false
   [services.acme]
-    production = false
+    production = true
     domains = ["brigid.ss.cx"]
     [[services.acme.strategies]]
       strategy = "dns"

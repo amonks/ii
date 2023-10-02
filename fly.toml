@@ -16,6 +16,25 @@ primary_region = "ord"
 [[services]]
   protocol = "tcp"
   processes = ["app"]
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "5s"
+    restart_limit = 0
+
+[[services]]
+  protocol = "tcp"
+  processes = ["app"]
   internal_port = 4433
 
   [[services.ports]]
