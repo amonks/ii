@@ -1,0 +1,25 @@
+[[task]]
+  id = "build"
+  type = "group"
+  dependencies = ["build-css"]
+
+[[task]]
+  id = "build-css"
+  type = "short"
+  dependencies = ["install-css"]
+  watch = [
+    "css/*.css",
+    "templates/*.gohtml"
+  ]
+  cmd = """
+    cd css
+    npx tailwindcss \
+      -i ./index.css \
+      -o ../static/index.css
+  """
+
+[[task]]
+  id = "install-css"
+  type = "short"
+  cmd = "cd css && yarn"
+

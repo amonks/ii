@@ -1,0 +1,25 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = [
+    "build-go",
+    "places/build",
+    "places/build-css"
+  ]
+  cmd = "./monks.co"
+
+[[task]]
+  id = "build-go"
+  type = "short"
+  cmd = "go build ."
+
+[[task]]
+  id = "tester"
+  type = "short"
+  cmd = "cat go.sum"
+
+[[task]]
+  id = "repeat"
+  type = "long"
+  cmd = "while true; do echo hello; sleep 1; done"
+

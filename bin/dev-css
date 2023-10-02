@@ -1,8 +1,0 @@
-#!/usr/bin/env fish
-
-cd places/css
-yarn
-
-cd ..
-fd -e css -e gohtml | entr -r bash -c "cd css; npx tailwindcss -i ./index.css -o ../static/index.css"
-
