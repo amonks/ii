@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"crawshaw.io/sqlite"
-	"github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
 func (s *DBServer) StaticServer(staticDir string) func(*sqlite.Conn, http.ResponseWriter, *http.Request) {
@@ -28,7 +28,7 @@ func (s *DBServer) JSServer(tsFilePath string) func(*sqlite.Conn, http.ResponseW
 }
 
 func (s *DBServer) ServeJS(w http.ResponseWriter, req *http.Request, tsfilepath string) {
-	result := api.Build(api.BuildOptions{
+	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints: []string{"./places/ts/index.ts"},
 		Bundle:      true,
 		Write:       false,

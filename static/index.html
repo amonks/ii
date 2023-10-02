@@ -4,107 +4,256 @@
     <meta charset="utf-8" />
     <title>Andrew Monks</title>
     <style>
+      /* 
+         visual stuff 
+       */
+
       body {
-        margin-left: auto;
-        margin-right: auto;
-        width: 36em;
-        max-width: 98%;
+        color: #1d062d; /* shadow tone sampled from headshot.png, reduced to 10% brightness */
+        font-family: Times New Roman, Times, serif;
       }
-      img {
-        height: 6em;
-        width: 6em;
+      abbr {
+        text-decoration-line: underline;
+        text-decoration-style: dotted;
       }
-      h1 {
-        margin-top: 0;
-        padding-top: 0;
+      abbr.no-underline {
+        text-decoration: none;
       }
-      blockquote {
+      h1 a {
+        color: inherit;
+        text-decoration: none;
+      }
+      h3 {
+        font-size: inherit;
+        font-weight: inherit;
         margin: 0;
       }
-      dl {
-        margin-bottom: 0;
+
+      /* 
+         grid, spacing 
+       */
+      body {
+        margin: 20px auto 20px;
+        font-size: 16px;
+        line-height: 20px; /* 20px baseline grid */
+        width: 720px;
+        max-width: 97%;
       }
-      dt {
-        grid-column-start: 1;
+      h1 {
+        line-height: 26px; /* magic numbers that make the baselines work */
+        font-size: 26px; /* magic numbers that make the baselines work */
+        margin-bottom: 0px;
       }
-      dd {
-        grid-column-start: 2;
+      div {
+        margin-top: 0;
+        margin-bottom: 20px; /* 20px baseline grid */
+      }
+
+      .flex-down {
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+      }
+      .square-block {
+        height: 120px; /* 20px baseline grid */
+        width: 120px;
+      }
+
+      /*
+         lists
+      */
+
+      ul.continuation-list {
+        list-style: "…" outside;
+      }
+      ul.continuation-list li::marker {
+        font-size: 16px;
+      }
+
+      ul.contact-list {
+        padding-left: 0;
+        margin: 0;
+      }
+      ul.contact-list > li a {
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      ul.contact-list > li {
+        display: inline;
+      }
+      ul.contact-list > li::after {
+        content: " ";
+      }
+      ul.contact-list > li:last-child::after {
+        content: "";
+      }
+
+      ol.location-history-list {
+        padding-left: 0;
+        margin: 0;
+        margin-bottom: 20px;
+      }
+      ol.location-history-list > li {
+        display: inline;
+      }
+      ol.location-history-list > li::after {
+        content: " ← ";
+      }
+      ol.location-history-list > li:last-child::after {
+        content: "";
+      }
+
+      dl.prose-definition-list > dd {
         margin-inline-start: 0;
       }
-      dl.columns {
+      dl.prose-definition-list > dd::before {
+        content: "…";
+      }
+
+      .columns {
         display: grid;
         grid-template-columns: 1fr 3fr;
         grid-template-rows: 1fr;
-        gap: 1em;
+        gap: 20px; /* 20px baseline grid */
+        margin-bottom: 20px; /* 20px baseline grid */
+        margin-top: 0;
       }
-      dl.prose-definition-list dd::before {
-        content: "…";
+      .columns > *:nth-child(odd)  /* dl */ {
+        min-width: 120px;
+      }
+      .columns > *:nth-child(even) /* dd */ {
+        margin-left: 0;
+      }
+      .columns > *:nth-child(even) /* dd */ > * {
+        margin-top: 0;
+        padding-left: 0;
+        margin-bottom: 20px;
+      }
+      .columns > *:nth-child(even) /* dd */ > *:last-child {
+        margin-bottom: 0;
       }
     </style>
   </head>
 
   <body class="h-card">
-    <img
-      class="u-photo"
-      alt="beautiful headshot"
-      src="/headshot.jpg"
-    />
+    <div class="columns">
+      <img
+        class="square-block u-photo"
+        alt="beautiful headshot"
+        src="/headshot.jpg"
+      />
 
-    <h1><a class="p-name u-url" href="https://monks.co">Andrew Monks</a></h1>
-
-    <div>
-      <span class="p-adr h-adr">
-        <span class="p-locality">Asheville</span>,
-        <abbr class="p-region" title="North Carolina">NC</abbr>
-      </span>
-      ←
-      <span class="p-adr h-adr">
-        <span class="p-locality">Atlanta</span>,
-        <abbr class="p-region" title="Georgia">GA</abbr>
-      </span>
-      ←
-      <span class="p-adr h-adr">
-        <span class="p-locality">San Francisco</span>,
-        <abbr class="p-region" title="California">CA</abbr>
-      </span>
-      ←
-      <span class="p-adr h-adr">
-        <span class="p-locality">Chicago</span>,
-        <abbr class="p-region" title="Illinois">IL</abbr>
-      </span>
+      <section class="flex-down" aria-label="Contact information">
+        <div>
+          <h1>
+            <a class="p-name u-url" href="https://monks.co">Andrew Monks</a>
+          </h1>
+          <ul class="contact-list">
+            <li><a class="u-email" href="mailto:a@monks.co">a@monks.co</a></li>
+            <li>
+              <a class="p-tel" href="tel:+19782541779">+1 978-254-1779</a>
+            </li>
+          </ul>
+        </div>
+      </section>
     </div>
 
-    <dl class="columns">
-      <dt>email</dt>
-      <dd><a class="u-email" href="mailto:a@monks.co">a@monks.co</a></dd>
+    <article aria-label="Places I have lived">
+      <ol class="location-history-list">
+        <li>
+          <span class="p-adr h-adr">
+            <span class="p-locality">Chicago</span>,
+            <abbr class="p-region no-underline" title="Illinois">IL</abbr>
+          </span>
+        </li>
 
-      <dt>phone</dt>
-      <dd><a class="p-tel" href="tel:+19782541779">+1 978-254-1779</a></dd>
+        <li>
+          Asheville, <abbr class="no-underline" title="North Carolina">NC</abbr>
+        </li>
 
-      <dt>occupation</dt>
-      <dd>
-        I am a <del>zoom attendee</del> <span class="p-job-title">staff engineer</span> at <span class="p-org h-card">Samsara Inc.</span>
-        I work on our mobile platform, on our hiring program, and on mechanisms like SOC2 and open source license compliance.
-        <dl class="p-note prose-definition-list">
-          <dt>I particularly enjoy,</dt>
+        <li>
+          San Francisco, <abbr class="no-underline" title="California">CA</abbr>
+        </li>
+
+        <li>Chicago, <abbr class="no-underline" title="Illinois">IL</abbr></li>
+
+        <li>
+          Boston, <abbr class="no-underline" title="Massachusetts">MA</abbr>
+        </li>
+      </ol>
+    </article>
+
+    <article aria-label="Work history" class="columns">
+      <label id="currently">currently,</label>
+      <section aria-labelledby="currently">
+        <p>I develop ice cream recipes and noodle on database software.</p>
+
+        <!-- <dl class="p-note prose-definition-list">
+          <dt>I am enjoying…</dt>
+          <dd>developing ice cream recipes,</dd>
+          <dd>noodling on database software, and,</dd>
+          <dd>spending more time outdoors during the day.</dd>
+        </dl> -->
+      </section>
+
+      <h3 id="previously">previously,</h3>
+      <section aria-labelledby="previously">
+        <p>
+          I was a
+          <abbr title="zoom attendee"
+            ><span class="p-job-title">staff engineer</span></abbr
+          >
+          at
+          <span class="p-org h-card"
+            ><a class="o-name u-url" href="https://samsara.com"
+              >Samsara Inc.</a
+            ></span
+          >, where I worked on the mobile app platform and the hiring program,
+          and occasionally on mechanisms like
+          <abbr
+            title="“System and Organization Controls” – I helped accountants understand distributed systems"
+            >SOC2</abbr
+          >
+          and open source license compliance.
+        </p>
+        <!-- <dl class="p-note prose-definition-list">
+          <dt>I particularly enjoyed,</dt>
           <dd>solving coordination problems across organizational units,</dd>
           <dd>investigating complex behavior in distributed systems,</dd>
           <dd>testing and documenting scary “legacy” code,</dd>
-          <dd>building highly-leveraged platform components, and</dd>
+          <dd>building highly-leveraged platform components, and,</dd>
           <dd>growing happy and productive engineering teams.</dd>
-        </dl>
-      </dd>
+        </dl> -->
+      </section>
 
-      <dt>previously</dt>
-      <dd>
-        I made sites and apps for brands like Apple, Spotify, Porsche, and
-        Walgreens.
-      </dd>
-
-      <dt>music videos</dt>
-      <dd><a href="https://vimeo.com/140711028/ae31053ae1">LEAFTYPE // estate of the salon</a></dd>
-      <dd><a href="https://vimeo.com/63618711/1887dad565">Modus // Mhmm</a></dd>
-      <dd><a href="https://vimeo.com/60306447/61063dfbe4">RYV // can-f</a></dd>
-    </dl>
+      <h3 id="before-that">before that, I…</h3>
+      <section aria-labelledby="before-that">
+        <ul class="continuation-list">
+          <li>
+            worked on sites and apps for
+            <abbr title="eg. Apple, Porsche, Walgreens">big brands</abbr>,
+          </li>
+          <li>
+            performed as a
+            <abbr title="“Video Jockey” – I made visuals for concerts">VJ</abbr
+            >,
+          </li>
+          <li>
+            made a few
+            <a href="https://vimeo.com/140711028/ae31053ae1">music videos</a>,
+          </li>
+          <li>got a degree in studio art,</li>
+          <li>operated a local record label,</li>
+          <li>published a newsmagazine,</li>
+          <li>
+            put on
+            <abbr title="Jesus Christ Super Star Wars">a parody opera</abbr>,
+            and,
+          </li>
+          <li>street-performed as a balloon twister.</li>
+        </ul>
+      </section>
+    </article>
   </body>
 </html>

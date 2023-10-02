@@ -4,22 +4,23 @@ import (
 	"log"
 	"net/http"
 
-	"monks.co/dbserver"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
+	"monks.co/dbserver"
 )
 
-func Server() *dbserver.DBServer {
-	a := &app{}
+type server struct {
+	*dbserver.DBServer
+}
 
-	s := dbserver.New("promises")
-	s.HandleFunc("/", a.GetPromise)
-	s.Init(a.Migrate)
+func New() *server {
+	dbs := dbserver.New("promises", migrate)
+	s := &server{DBServer: dbs}
+
+	s.HandleFunc("/", s.GetPromise)
 
 	return s
 }
-
-type app struct{}
 
 type promise struct {
 	slug          string
@@ -31,7 +32,7 @@ type promise struct {
 	isVoid        bool
 }
 
-func (p *app) Migrate(conn *sqlite.Conn) error {
+func migrate(conn *sqlite.Conn) error {
 	return sqlitex.ExecScript(conn, `
 		create table if not exists promises (
 			slug text primary key not null,
@@ -44,7 +45,7 @@ func (p *app) Migrate(conn *sqlite.Conn) error {
 		);`)
 }
 
-func (*app) GetPromise(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (*server) GetPromise(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Path
 
 	var p promise

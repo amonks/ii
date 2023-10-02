@@ -18,7 +18,7 @@ func GetRequester(r *http.Request) (bool, string) {
 	return true, fmt.Sprintf("%s (@%s)", who.UserProfile.DisplayName, who.Node.ComputedName)
 }
 
-func InternalHandler(h http.Handler) http.Handler {
+func InternalHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hasAuth, _ := GetRequester(r)
 		if !hasAuth {
@@ -26,7 +26,6 @@ func InternalHandler(h http.Handler) http.Handler {
 			w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
 			return
 		}
-
-		h.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
 }

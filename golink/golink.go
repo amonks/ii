@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"monks.co/dbserver"
-	"monks.co/util"
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
+	"monks.co/dbserver"
+	"monks.co/util"
 )
 
 var (
@@ -30,17 +30,18 @@ type server struct {
 	*dbserver.DBServer
 }
 
-func Server() *server {
+func New() *server {
 	s := &server{
-		dbserver.New("golink"),
+		dbserver.New("golink", migrate),
 	}
+
 	s.HandleFunc("/go", s.Handler)
 	s.HandleFunc("/go/", s.Handler)
-	s.Init(s.Migrate)
+
 	return s
 }
 
-func (s *server) Migrate(conn *sqlite.Conn) error {
+func migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
 		create table if not exists urls (
 			key text primary key not null,

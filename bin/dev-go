@@ -8,5 +8,5 @@ cd -
 begin
 	fd -e go -e gohtml
 	echo places/ts/index.ts
-end | entr -r go run ./...
+end | entr -r go run .
 

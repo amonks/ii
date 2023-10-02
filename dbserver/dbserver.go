@@ -3,7 +3,6 @@ package dbserver
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"crawshaw.io/sqlite"
@@ -13,18 +12,24 @@ import (
 )
 
 type DBServer struct {
-	mux    *http.ServeMux
-	name   string
-	logger logger.Logger
-	db     *sqlitex.Pool
+	mux        *http.ServeMux
+	name       string
+	logger     logger.Logger
+	db         *sqlitex.Pool
+	migrate    func(conn *sqlite.Conn) error
+	middleware []HTTPMiddleware
 }
 
-func New(name string) *DBServer {
+type HTTPMiddleware func(http.Handler) http.Handler
+
+func New(name string, migrate func(conn *sqlite.Conn) error) *DBServer {
 	return &DBServer{
-		mux:    http.NewServeMux(),
-		logger: logger.New(name),
-		name:   name,
-		db:     nil,
+		mux:        http.NewServeMux(),
+		logger:     logger.New(name),
+		name:       name,
+		db:         nil,
+		migrate:    migrate,
+		middleware: nil,
 	}
 }
 
@@ -32,35 +37,54 @@ func (s *DBServer) Logf(msg string, args ...interface{}) {
 	s.logger.Logf(msg, args...)
 }
 
-var dataPath string
+func (s *DBServer) AddMiddleware(mw func(http.Handler) http.Handler) {
+	s.middleware = append(s.middleware, mw)
+}
 
-func (s *DBServer) Init(migrate func(conn *sqlite.Conn) error) {
+func (s *DBServer) Start(ctx context.Context) error {
 	db, err := sqlitex.Open(fmt.Sprintf("file:%s/%s.db", config.Get().StoragePath, s.name), 0, 10)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	s.db = db
 
-	conn := db.Get(context.Background())
+	conn := db.Get(ctx)
 	if conn == nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to get connection")
 	}
 	defer db.Put(conn)
 
 	if err := sqlitex.Exec(conn, `PRAGMA journal_mode=wal;`, nil); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if err := migrate(conn); err != nil {
-		log.Fatal(err)
+	if err := sqlitex.Exec(conn, `PRAGMA synchronous=normal;`, nil); err != nil {
+		return err
 	}
+
+	if err := s.migrate(conn); err != nil {
+		return err
+	}
+
 	s.Logf("initialized")
+	return nil
+}
+
+func (s *DBServer) Stop() error {
+	return s.db.Close()
 }
 
 func (s *DBServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s.Logf("serving: %s", req.URL.Path)
-	s.mux.ServeHTTP(w, req)
+
+	var h http.Handler
+	h = s.mux
+	for _, mw := range s.middleware {
+		h = mw(h)
+	}
+
+	h.ServeHTTP(w, req)
 }
 
 func (s *DBServer) Handle(pattern string, h http.Handler) {
@@ -74,6 +98,7 @@ func (s *DBServer) Handle(pattern string, h http.Handler) {
 		h.ServeHTTP(w, req)
 	})
 }
+
 func (s *DBServer) HandleFunc(pattern string, f func(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request)) {
 	s.mux.HandleFunc(pattern, func(w http.ResponseWriter, req *http.Request) {
 		s.Logf("url: %s", req.URL.String())

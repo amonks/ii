@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"crawshaw.io/sqlite"
+	"crawshaw.io/sqlite/sqlitex"
 	"monks.co/beeminder"
 	"monks.co/dbserver"
 	"monks.co/util"
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
 )
 
 var (
@@ -32,9 +32,9 @@ type server struct {
 	*dbserver.DBServer
 }
 
-func Server() *server {
+func New() *server {
 	s := &server{
-		dbserver.New("ping"),
+		dbserver.New("ping", migrate),
 	}
 
 	s.HandleFunc("/ping/", s.ListPeople)
@@ -44,11 +44,10 @@ func Server() *server {
 	s.HandleFunc("/ping/commands/add-person", s.AddPerson)
 	s.HandleFunc("/ping/commands/update-person", s.UpdatePerson)
 
-	s.Init(s.Migrate)
 	return s
 }
 
-func (s *server) Migrate(conn *sqlite.Conn) error {
+func migrate(conn *sqlite.Conn) error {
 	if err := sqlitex.ExecScript(conn, `
 		create table if not exists people (
 			slug text primary key not null

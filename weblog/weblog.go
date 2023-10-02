@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"monks.co/dbserver"
 	"crawshaw.io/sqlite"
+	"monks.co/dbserver"
 )
 
 type server struct {
@@ -14,16 +14,15 @@ type server struct {
 	model *model
 }
 
-func Server() *server {
+func New() (*server) {
+	m := NewModel()
 	s := &server{
-		DBServer: dbserver.New("weblog"),
-		model:    NewModel(),
+		DBServer: dbserver.New("weblog", m.migrate),
+		model:    m,
 	}
 
 	s.HandleFunc("/.well-known/webfinger", s.serveWebfinger)
 	s.HandleFunc("/", s.serveRoot)
-
-	s.Init(s.model.migrate)
 
 	return s
 }

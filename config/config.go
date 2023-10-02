@@ -10,6 +10,7 @@ import (
 type Config struct {
 	StoragePath string    `toml:"storage_path"`
 	Services    []Service `toml:"services"`
+	Apps        []App     `toml:"apps"`
 }
 
 type Service struct {
@@ -20,15 +21,23 @@ type Service struct {
 }
 
 type ACME struct {
-	Strategies []ACMEStrategy `toml:"strategies"`
-	Domains    []string       `toml:"domains"`
-	Production bool           `toml:"production"`
+	StoragePath *string        `toml:"storage_path"`
+	Strategies  []ACMEStrategy `toml:"strategies"`
+	Domains     []string       `toml:"domains"`
+	Production  bool           `toml:"production"`
 }
 
 type ACMEStrategy struct {
 	Strategy     string `toml:"strategy"`
 	ExternalPort int    `toml:"external_port"`
 	InternalPort int    `toml:"internal_port"`
+}
+
+type App struct {
+	Name     string   `toml:"name"`
+	Path     string   `toml:"path"`
+	IsPublic bool     `toml:"is_public"`
+	Hosts    []string `toml:"hosts"`
 }
 
 var config *Config

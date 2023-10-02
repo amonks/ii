@@ -7,10 +7,10 @@ import (
 	"html/template"
 	"net/http"
 
+	"crawshaw.io/sqlite"
 	"monks.co/credentials"
 	"monks.co/dbserver"
 	"monks.co/util"
-	"crawshaw.io/sqlite"
 )
 
 var (
@@ -32,10 +32,11 @@ type server struct {
 	model *model
 }
 
-func Server() *server {
+func New() *server {
+	m := NewModel()
 	s := &server{
-		DBServer: dbserver.New("places"),
-		model:    NewModel(),
+		DBServer: dbserver.New("places", m.migrate),
+		model:    m,
 	}
 
 	s.HandleFunc("/places/index.js", s.JSServer("./places/ts/index.ts"))
@@ -48,7 +49,6 @@ func Server() *server {
 	s.HandleFunc("/places/commands/import-saved-places", s.importSavedPlaces)
 	s.HandleFunc("/places/commands/annotate-peoples-places", s.annotatePeoplesPlaces)
 
-	s.Init(s.model.migrate)
 	return s
 }
 
