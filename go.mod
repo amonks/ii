@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	crawshaw.io/sqlite v0.3.2
-	github.com/BurntSushi/toml v1.1.0
 	github.com/caddyserver/certmagic v0.17.2
 	github.com/evanw/esbuild v0.15.8
 	github.com/go-ap/activitypub v0.0.0-20221209114049-1ceafda50f9f

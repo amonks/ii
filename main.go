@@ -7,18 +7,26 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
-	"monks.co/config"
-	"monks.co/confrunner"
-	"monks.co/tls"
+	"monks.co/pkg/auth"
+	"monks.co/pkg/config"
+	"monks.co/pkg/service"
+	"monks.co/pkg/tls"
 )
 
 func main() {
 	ctx, cancel := context.WithCancelCause(context.Background())
+
+	// We'll populate this WaitGroup with:
+	//  - Service.Start() for each of [config.Current.Apps]
+	//  - Listen() for each of [config.Service]
+	//  - cancel handlers for some of the above (XXX: [why] is this necessary?)
 	var wg sync.WaitGroup
 
+	// Handle SIGTERM
 	interrupt := make(chan os.Signal)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -26,9 +34,12 @@ func main() {
 		cancel(context.Canceled)
 	}()
 
+	// Populate an http.ServeMux based on config.Apps.
+	// Also start all the services in config.Apps.
+	// Also set up context-cancel handlers for each service.
 	mux := http.NewServeMux()
-	for _, a := range config.Get().Apps {
-		h := confrunner.NewServer(a)
+	for _, a := range config.Current.Apps {
+		h := ApplyConfiguration(a, a.Service)
 
 		if err := h.Start(ctx); err != nil {
 			cancel(err)
@@ -47,7 +58,9 @@ func main() {
 		}()
 	}
 
-	for _, s := range config.Get().Services {
+	// Using our http.ServeMux from before, start a listening http.Server
+	// for each service in config.Services.
+	for _, s := range config.Current.Services {
 		if ctx.Err() != nil {
 			break
 		}
@@ -59,6 +72,7 @@ func main() {
 			addr := fmt.Sprintf(":%d", service.Port)
 			srv := &http.Server{Addr: addr, Handler: mux}
 
+			// Start the server.
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -70,6 +84,7 @@ func main() {
 				fmt.Println("stopped listening for HTTP requests on " + addr)
 			}()
 
+			// Wait for cancel signal.
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -130,4 +145,23 @@ func main() {
 
 	wg.Wait()
 	fmt.Println(context.Cause(ctx))
+}
+
+func ApplyConfiguration(c config.App, s service.Service) service.Service {
+	// hack
+	s.AddMiddleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.Host, "belgianman.com") || strings.Contains(r.Host, "blgn.mn") {
+				http.Redirect(w, r, "https://music.belgianman.com", http.StatusMovedPermanently)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+
+	if !c.IsPublic {
+		s.AddMiddleware(auth.InternalHandler)
+	}
+
+	return s
 }
