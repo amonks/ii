@@ -1,0 +1,36 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "go run . -port=3006"
+
+[[task]]
+  id = "build"
+  type = "short"
+  # dependencies = ["build-css"]
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/map"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/map -port=3006"
+
+[[task]]
+  id = "build-css"
+  type = "short"
+  dependencies = ["install-css"]
+  watch = [
+    "css/*.css",
+    "templates/*.gohtml"
+  ]
+  cmd = """
+    cd css
+    npx tailwindcss \
+      -i ./index.css \
+      -o ../static/index.css
+  """
+
+[[task]]
+  id = "install-css"
+  type = "short"
+  cmd = "cd css && yarn"
+

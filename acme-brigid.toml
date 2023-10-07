@@ -1,0 +1,7 @@
+storage_path = "cache"
+production = true
+domains = ["brigid.ss.cx"]
+
+[[strategies]]
+  strategy = "dns"
+

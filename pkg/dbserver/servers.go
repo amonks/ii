@@ -3,7 +3,9 @@ package dbserver
 import (
 	"bytes"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"crawshaw.io/sqlite"
@@ -29,12 +31,12 @@ func (s *DBServer) JSServer(tsFilePath string) func(*sqlite.Conn, http.ResponseW
 
 func (s *DBServer) ServeJS(w http.ResponseWriter, req *http.Request, tsfilepath string) {
 	result := esbuild.Build(esbuild.BuildOptions{
-		EntryPoints: []string{"./places/ts/index.ts"},
+		EntryPoints: []string{filepath.Join(os.Getenv("MONKS_ROOT"), "apps/map/ts/index.ts")},
 		Bundle:      true,
 		Write:       false,
 	})
 	if len(result.Errors) > 0 {
-		s.InternalServerErrorf(w, req, "%s", result.Errors[0])
+		s.InternalServerErrorf(w, req, "%s", result.Errors[0].Text)
 		return
 	}
 	if len(result.OutputFiles) != 1 {

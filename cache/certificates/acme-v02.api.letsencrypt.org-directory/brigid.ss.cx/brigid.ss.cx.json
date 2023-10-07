@@ -1,0 +1,8 @@
+{
+	"sans": [
+		"brigid.ss.cx"
+	],
+	"issuer_data": {
+		"url": "https://acme-v02.api.letsencrypt.org/acme/cert/045effb487d913b499f9638400381538acc7"
+	}
+}

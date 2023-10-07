@@ -1,4 +1,4 @@
-package golink
+package main
 
 import (
 	"embed"
@@ -35,8 +35,7 @@ func New() *server {
 		dbserver.New("golink", migrate),
 	}
 
-	s.HandleFunc("/go", s.Handler)
-	s.HandleFunc("/go/", s.Handler)
+	s.HandleFunc("/", s.Handler)
 
 	return s
 }
@@ -57,7 +56,7 @@ func migrate(conn *sqlite.Conn) error {
 func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
 	s.Logf("-> %s %s", req.Method, req.URL)
 
-	if req.Method == "GET" && req.URL.Path == "/go/" {
+	if req.Method == "GET" && req.URL.Path == "/" {
 		s.Logf("path: list")
 		urls, err := List(req.Context(), conn)
 		if err != nil {
@@ -114,7 +113,7 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 
 	if req.Method == "GET" {
 		s.Logf("path: get '%s'", req.URL.Path)
-		key := strings.Trim(req.URL.Path, "/go/")
+		key := strings.TrimPrefix(req.URL.Path, "/")
 
 		url, err := Get(req.Context(), conn, key)
 		if err != nil {

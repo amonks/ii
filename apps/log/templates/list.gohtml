@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ block "title" . }}places{{ end }}</title>
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="index.js"></script>
     <script src="https://unpkg.com/hyperscript.org@0.9.8"></script>
-    <link rel="stylesheet" type="text/css" href="./index.css" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
   </head>
 
   <body class="show-restaurants show-cafes show-stores show-bars show-others">
@@ -74,9 +74,9 @@
 
     <div id="markers" class="hidden">
       {{ range .Places }}
-        <div 
-          id="marker-{{.GoogleMapsURL}}" 
-          class="marker translate-x-1/2" 
+        <div
+          id="marker-{{.GoogleMapsURL}}"
+          class="marker translate-x-1/2"
           data-types="{{.Types}}"
           data-operational="{{ if .IsOperational }}true{{ else }}false{{ end }}"
         >

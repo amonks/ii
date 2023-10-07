@@ -7,7 +7,8 @@ primary_region = "ord"
   dockerfile = "Dockerfile"
 
 [env]
-  MONKSCO_ENV = "fly"
+  MONKS_ROOT="/app"
+  MONKS_DATA="/data"
 
 [[mounts]]
   source = "data"

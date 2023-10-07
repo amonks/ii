@@ -9,5 +9,7 @@
   --authkey=${TAILSCALE_AUTHKEY} \
   --hostname=monks-co
 
-/app/monks.co
+cd /app
+cp data/map.db /data/map.db
+bin/run fly
 

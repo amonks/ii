@@ -1,0 +1,4 @@
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/proxy"

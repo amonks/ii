@@ -1,0 +1,97 @@
+<dl class="space-y-8 sm:space-y-0 sm:divide-y sm:divide-gray-200">
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Name
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.Title }}
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Summary
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.EditorialSummary }}
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Types
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      <ul>
+	{{ range .Place.Types }}
+	  <li>{{ . }}</li>
+	{{ end }}
+      </ul>
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Address
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.Address }}
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Opening Hours
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      <ul>
+	{{ range .Place.OpeningHours }}
+	  <li>{{ . }}</li>
+	{{ end }}
+      </ul>
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Price Level
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.PriceLevel }}
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Status
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.GoogleMapsBusinessStatus }}
+    </dd>
+  </div>
+
+  <div class="sm:flex sm:px-6 sm:py-5">
+    <dt
+      class="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0 lg:w-48"
+    >
+      Notes
+    </dt>
+    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 sm:ml-6">
+      {{ .Place.Notes }}
+    </dd>
+  </div>
+</dl>

@@ -1,0 +1,15 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && go run ./apps/ping -port=3005"
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/ping"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/ping -port=3005"
+

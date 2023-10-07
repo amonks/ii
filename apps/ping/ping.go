@@ -1,4 +1,4 @@
-package ping
+package main
 
 import (
 	"embed"
@@ -37,12 +37,12 @@ func New() *server {
 		dbserver.New("ping", migrate),
 	}
 
-	s.HandleFunc("/ping/", s.ListPeople)
-	s.HandleFunc("/ping/person/", s.ShowPerson)
-	s.HandleFunc("/ping/commands/bump", s.Bump)
-	s.HandleFunc("/ping/commands/ping-person", s.PingPerson)
-	s.HandleFunc("/ping/commands/add-person", s.AddPerson)
-	s.HandleFunc("/ping/commands/update-person", s.UpdatePerson)
+	s.HandleFunc("/", s.ListPeople)
+	s.HandleFunc("/person/", s.ShowPerson)
+	s.HandleFunc("/commands/bump", s.Bump)
+	s.HandleFunc("/commands/ping-person", s.PingPerson)
+	s.HandleFunc("/commands/add-person", s.AddPerson)
+	s.HandleFunc("/commands/update-person", s.UpdatePerson)
 
 	return s
 }

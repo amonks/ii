@@ -1,0 +1,15 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && go run ./apps/golink -port=3007"
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/golink"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/golink -port=3007"
+
