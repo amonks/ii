@@ -1,0 +1,26 @@
+[[task]]
+  id = "templ"
+  type = "short"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate"
+
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && go run ./apps/posts -port=3009"
+  dependencies = [
+    "templ"
+  ]
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/traffic"
+  dependencies = [
+    "templ"
+  ]
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/traffic -port=3009"
+

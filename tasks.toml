@@ -5,6 +5,8 @@
     "apps/ping/dev",
     "apps/map/dev",
     "apps/golink/dev",
+    "apps/traffic/dev",
+    "apps/posts/dev",
   ]
   cmd = """
     go run ./apps/proxy \
@@ -13,7 +15,9 @@
       -acmeConfig=acme-brigid.toml \
       ping:3005 \
       map:3006 \
-      golink:3007
+      golink:3007 \
+      traffic:3008 \
+      posts:3009
   """
 
 [[task]]
@@ -21,13 +25,15 @@
   type = "long"
   dependencies = [
     "apps/map/start",
+    "apps/traffic/start",
   ]
   cmd = """
     ./bin/proxy \
       -httpRedirectAddress=0.0.0.0:8080 \
       -httpsAddress=0.0.0.0:4433 \
       -acmeConfig=acme-fly.toml \
-      map:3006
+      map:3006 \
+      traffic:3008
   """
 
 
@@ -39,5 +45,7 @@
     "apps/ping/build",
     "apps/map/build",
     "apps/golink/build",
+    "apps/traffic/build",
+    "apps/posts/build",
   ]
 

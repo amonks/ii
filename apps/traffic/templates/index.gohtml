@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+
+<head>
+<title>traffic</title>
+<style>
+  td {
+    font-family: monospace;
+  }
+  td.num {
+    text-align: right;
+  }
+  table {
+    border-spacing: 1em 0;
+  }
+</style>
+</head>
+
+<body>
+  <h1>traffic</h1>
+
+  <table>
+    <tr>
+      <th>Date</th>
+
+      <th>URL</th>
+
+      <th>StatusCode</th>
+      <th>Duration</th>
+
+      <th>RemoteAddr</th>
+      <th>Referer</th>
+      <th>UserAgent</th>
+    </tr>
+    {{ range . }}
+      <tr>
+	<td>{{ .PrintDate }}</td>
+
+	<td>{{ .PrintURL }}</td>
+
+	<td>{{ .StatusCode }}</td>
+	<td class="num">{{ .PrintDuration }}</td>
+
+	<td>{{ .RemoteAddr }}</td>
+	<td>{{ .Referer }}</td>
+	<td>{{ .PrintUserAgent }}</td>
+      </tr>
+    {{ end }}
+  </table>
+</body>
+
+</html>

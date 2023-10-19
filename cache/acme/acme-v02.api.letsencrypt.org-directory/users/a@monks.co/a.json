@@ -1,9 +1,0 @@
-{
-	"status": "valid",
-	"contact": [
-		"mailto:a@monks.co"
-	],
-	"termsOfServiceAgreed": true,
-	"orders": "",
-	"location": "https://acme-v02.api.letsencrypt.org/acme/acct/1347718346"
-}

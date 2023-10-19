@@ -1,99 +1,14 @@
 package main
 
 import (
-	"context"
-	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"monks.co/pkg/tls"
-	"monks.co/pkg/traffic"
 )
-
-var (
-	httpRedirectAddress = flag.String("httpRedirectAddress", "0.0.0.0:80", "address to listen at for http->https redirect, default: 0.0.0.0:80")
-	httpsAddress        = flag.String("httpsAddress", "0.0.0.0:443", "address to listen at (https), default: 0.0.0.0:443")
-	acmeConfig          = flag.String("acmeConfig", "", "acme config file path")
-)
-
-func main() {
-	flag.Parse()
-	ctx, cancel := context.WithCancel(context.Background())
-
-	routes, err := parseRoutes(flag.Args())
-	if err != nil {
-		panic(err)
-	}
-
-	httpsServer, err := newHTTPSServer(ctx, routes)
-	if err != nil {
-		panic(err)
-	}
-
-	httpServer, err := newHTTPServer(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	exit := make(chan error)
-
-	go func() {
-		fmt.Println("listening at " + *httpsAddress)
-		exit <- httpsServer.ListenAndServeTLS("", "")
-	}()
-
-	go func() {
-		fmt.Println("listening at " + *httpRedirectAddress)
-		exit <- httpServer.ListenAndServe()
-	}()
-
-	err = <-exit
-	cancel()
-	<-exit
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func newHTTPServer(ctx context.Context) (*http.Server, error) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		u := req.URL
-		u.Host = net.JoinHostPort(req.Host, "443")
-		u.Scheme = "https"
-		http.Redirect(w, req, u.String(), 301)
-	})
-	srv := &http.Server{
-		Addr:    *httpRedirectAddress,
-		Handler: handler,
-	}
-	return srv, nil
-}
-
-func newHTTPSServer(ctx context.Context, routes map[string]int) (*http.Server, error) {
-	p, err := traffic.New(*httpsAddress, &proxy{routes})
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig, _, err := tls.ReadTLSConfig(context.Background(), *acmeConfig)
-	if err != nil {
-		return nil, err
-	}
-	srv := &http.Server{
-		Addr:      *httpsAddress,
-		Handler:   p,
-		TLSConfig: tlsConfig,
-	}
-
-	return srv, nil
-}
 
 type proxy struct {
 	routes map[string]int

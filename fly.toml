@@ -21,17 +21,12 @@ primary_region = "ord"
 
   [[services.ports]]
     port = 80
+    handlers = ["proxy_proto"]
 
   [services.concurrency]
     type = "connections"
     hard_limit = 25
     soft_limit = 20
-
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "5s"
-    restart_limit = 0
 
 [[services]]
   protocol = "tcp"
@@ -40,15 +35,10 @@ primary_region = "ord"
 
   [[services.ports]]
     port = 443
+    handlers = ["proxy_proto"]
 
   [services.concurrency]
     type = "connections"
     hard_limit = 25
     soft_limit = 20
-
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "5s"
-    restart_limit = 0
 
