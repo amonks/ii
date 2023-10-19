@@ -11,6 +11,7 @@ import (
 
 	proxyproto "github.com/pires/go-proxyproto"
 
+	"monks.co/pkg/gzip"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
 )
@@ -94,7 +95,7 @@ func (a *app) httpsServer(ctx context.Context) *server {
 	srv := &http.Server{
 		ConnContext: connContext,
 		Addr:        *httpsAddress,
-		Handler:     GzipHandler(BMRRedirectorHandler(p)),
+		Handler:     gzip.GzipHandler(BMRRedirectorHandler(p)),
 		TLSConfig:   tlsConfig,
 	}
 
@@ -107,6 +108,7 @@ type server struct {
 }
 
 func (s *server) serve() error {
+	fmt.Println("will listen on", s.Addr)
 	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return err
@@ -116,10 +118,10 @@ func (s *server) serve() error {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	defer proxyListener.Close()
+	fmt.Println("listening on", s.Addr)
 	if s.tls {
 		return s.ServeTLS(proxyListener, "", "")
 	} else {
 		return s.Serve(proxyListener)
 	}
 }
-

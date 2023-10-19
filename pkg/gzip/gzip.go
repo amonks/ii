@@ -1,4 +1,4 @@
-package main
+package gzip
 
 import (
 	"compress/gzip"
@@ -10,10 +10,23 @@ import (
 type gzipResponseWriter struct {
 	io.Writer
 	http.ResponseWriter
+
+	isZipped bool
+}
+
+func (w gzipResponseWriter) WriteHeader(code int) {
+	if w.ResponseWriter.Header().Get("Content-Encoding") == "gzip" {
+		w.isZipped = true
+	}
+	w.ResponseWriter.WriteHeader(code)
 }
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
+	if w.isZipped {
+		return w.ResponseWriter.Write(b)
+	} else {
+		return w.Writer.Write(b)
+	}
 }
 
 func GzipHandler(h http.Handler) http.Handler {

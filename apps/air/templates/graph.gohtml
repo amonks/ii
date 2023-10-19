@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+<title>air</title>
+</head>
+
+<body>
+
+<div id="graphs"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+
+<script>
+{{ .JSON }}
+
+container = document.getElementById("graphs")
+function graph(id, getField) {
+  const h1 = document.createElement("h1");
+  h1.innerText = id;
+  container.appendChild(h1);
+
+  const canvas = document.createElement("canvas");
+  canvas.id = id;
+  container.appendChild(canvas);
+
+  new Chart(document.getElementById(id), {
+      type: 'line',
+      data: {
+          datasets: [{
+              data: data.map(d => ({x: d.CreatedAt, y: getField(d)}))
+          }],
+      },
+      options: {
+          borderWidth: 1,
+          pointRadius: 1,
+          showLine: false,
+          plugins: {
+              legend: false
+          },
+          scales: {
+              x: {
+                  unit: "minute",
+                  type: "time",
+              }
+          }
+      }
+  });
+}
+
+graph("dust", d => d.Dust);
+graph("temperature", d => d.Temperature);
+graph("humidity", d => d.Humidity);
+
+graph("fanSpeed", d => d.FanRPM);
+graph("waterLevel", d => d.WaterLevel);
+
+graph("relState0", d => d.RelState0);
+graph("relState1", d => d.RelState1);
+graph("relState2", d => d.RelState2);
+graph("relState3", d => d.RelState3);
+
+graph("cleanMode", d => d.CleanMode ? 1 : 0);
+
+graph("modiCategory", d => {
+    switch (d.ModiCategory) {
+        case "Turbo":
+            return 3;
+        case "Summer":
+            return 2;
+        case "Relax":
+            return 1;
+        case "":
+            return 0;
+        default:
+            return -1;
+    }
+});
+
+function spy(x) { console.log("spy", x); return x }
+</script>
+</body>
+</html>
+

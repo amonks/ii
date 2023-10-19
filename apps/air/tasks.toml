@@ -1,0 +1,15 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && go run ./apps/air -port=3010 -mode=serve"
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/air"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/air -port=3010 -mode=serve"
+

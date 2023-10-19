@@ -1,5 +1,29 @@
 [[task]]
-  id = "local"
+  id = "thor"
+  type = "long"
+  dependencies = [
+    "apps/ping/dev",
+    "apps/map/dev",
+    "apps/golink/dev",
+    "apps/traffic/dev",
+    "apps/posts/dev",
+    "apps/air/dev",
+  ]
+  cmd = """
+    go run ./apps/proxy \
+      -httpRedirectAddress=0.0.0.0:8080 \
+      -httpsAddress=0.0.0.0:4433 \
+      -acmeConfig=acme-thor.toml \
+      ping:3005 \
+      map:3006 \
+      golink:3007 \
+      traffic:3008 \
+      posts:3009 \
+      air:3010
+  """
+
+[[task]]
+  id = "brigid"
   type = "long"
   dependencies = [
     "apps/ping/dev",
