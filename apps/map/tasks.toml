@@ -2,6 +2,7 @@
   id = "dev"
   type = "long"
   cmd = "go run . -port=3006"
+  watch = ["**/*.go", "*.go"]
   dependencies = ["build-css"]
 
 [[task]]

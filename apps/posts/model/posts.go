@@ -33,6 +33,10 @@ type PostFrontmatter struct {
 	Title string
 }
 
+func (ps *Posts) Get(slug string) *Post {
+	return ps.BySlug[slug]
+}
+
 func LoadPosts(dir string) (*Posts, error) {
 	gm := goldmark.New(
 		goldmark.WithExtensions(

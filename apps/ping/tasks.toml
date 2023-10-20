@@ -1,6 +1,7 @@
 [[task]]
   id = "dev"
   type = "long"
+  watch = ["**/*", "*"]
   cmd = "cd $MONKS_ROOT && go run ./apps/ping -port=3005"
 
 [[task]]

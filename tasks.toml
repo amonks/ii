@@ -9,6 +9,7 @@
     "apps/posts/dev",
     "apps/air/dev",
   ]
+  watch = ["apps/proxy/**"]
   cmd = """
     go run ./apps/proxy \
       -httpRedirectAddress=0.0.0.0:8080 \
@@ -32,6 +33,7 @@
     "apps/traffic/dev",
     "apps/posts/dev",
   ]
+  watch = ["apps/proxy/**"]
   cmd = """
     go run ./apps/proxy \
       -httpRedirectAddress=0.0.0.0:80 \

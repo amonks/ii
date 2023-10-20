@@ -1,5 +1,5 @@
 ---
-title: Something or other
+title: Something or other!
 draft: false
 ---
 

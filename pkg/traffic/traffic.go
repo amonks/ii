@@ -46,10 +46,7 @@ func (r *Request) PrintURL() string {
 }
 
 func (r *Request) PrintUserAgent() string {
-	if len(r.UserAgent) < 16 {
-		return r.UserAgent
-	}
-	return r.UserAgent[:16]
+	return r.UserAgent
 }
 
 type TrafficLogger struct {

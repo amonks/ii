@@ -2,51 +2,45 @@
 <html>
 
 <head>
-<title>traffic</title>
-<style>
-  td {
-    font-family: monospace;
-  }
-  td.num {
-    text-align: right;
-  }
-  table {
-    border-spacing: 1em 0;
-  }
-</style>
+<title>Traffic</title>
+<link rel="stylesheet" type="text/css" href="./index.css" />
 </head>
 
 <body>
-  <h1>traffic</h1>
-
-  <table>
-    <tr>
-      <th>Date</th>
-
-      <th>URL</th>
-
-      <th>StatusCode</th>
-      <th>Duration</th>
-
-      <th>RemoteAddr</th>
-      <th>Referer</th>
-      <th>UserAgent</th>
-    </tr>
-    {{ range . }}
-      <tr>
-	<td>{{ .PrintDate }}</td>
-
-	<td>{{ .PrintURL }}</td>
-
-	<td>{{ .StatusCode }}</td>
-	<td class="num">{{ .PrintDuration }}</td>
-
-	<td>{{ .RemoteAddr }}</td>
-	<td>{{ .Referer }}</td>
-	<td>{{ .PrintUserAgent }}</td>
-      </tr>
-    {{ end }}
-  </table>
+  <div class="px-4 sm:px-6 lg:px-8">
+    <div class="mt-8 flow-root">
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+	  <table class="min-w-full divide-y divide-gray-300">
+	    <thead>
+	      <tr>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">URL</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">StatusCode</th>
+		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Duration</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RemoteAddr</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Referer</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">UserAgent</th>
+	      </tr>
+	    </thead>
+	    <tbody class="divide-y divide-gray-200">
+	      {{ range . }}
+		<tr>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintDate }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm"><a class="text-blue-500" href="//{{ .PrintURL }}">{{ .PrintURL }}</a></td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ .StatusCode }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-right">{{ .PrintDuration }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .RemoteAddr }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .Referer }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintUserAgent }}</td>
+		</tr>
+	      {{ end }}
+	    </tbody>
+	  </table>
+	</div>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

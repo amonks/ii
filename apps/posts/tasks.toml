@@ -2,11 +2,17 @@
   id = "templ"
   type = "short"
   cmd = "go run github.com/a-h/templ/cmd/templ generate"
+  watch = ["templates/*.templ"]
 
 [[task]]
   id = "dev"
   type = "long"
   cmd = "cd $MONKS_ROOT && go run ./apps/posts -port=3009"
+  watch = [
+    "**/*.go",
+    "*.go",
+    "posts/*.md",
+  ]
   dependencies = [
     "templ"
   ]

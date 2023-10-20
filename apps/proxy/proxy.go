@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"monks.co/pkg/gzip"
 )
 
 type proxy struct {
@@ -20,8 +22,16 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		// I'm getting redirect loops from this sometimes. I wonder why
-		// I added it?
+		// We need to visit the subsites at a url that ends in a "/",
+		// otherwise relative links within the subsite won't use the
+		// subsite's prefix.
+		//
+		// That is, if you click a link with href="page", there are two
+		// places you might go. If you're currently on `/map/`, the
+		// link takes you to `/map/page`. If you're on `/map`, without
+		// the trailing slash, it'll take you to '/page'.
+		//
+		// TODO: I'm getting redirect loops from this sometimes.
 		if req.URL.Path == prefix {
 			http.Redirect(w, req, req.URL.String()+"/", 301)
 			return
@@ -32,7 +42,9 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	path := filepath.Join(os.Getenv("MONKS_ROOT"), "static", req.URL.Path)
-	http.ServeFile(w, req, path)
+	gzip.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, path)
+	})).ServeHTTP(w, req)
 }
 
 func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req *http.Request) {

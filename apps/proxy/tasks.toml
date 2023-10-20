@@ -1,4 +1,5 @@
 [[task]]
   id = "build"
   type = "short"
+  watch = ["**/*", "*"]
   cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/proxy"

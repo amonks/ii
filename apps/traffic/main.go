@@ -9,6 +9,7 @@ import (
 
 	"gorm.io/gorm"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/traffic"
 	"monks.co/pkg/util"
 )
@@ -22,10 +23,14 @@ func main() {
 		panic(err)
 	}
 	app := &App{db}
-	http.Handle("/", gzip.GzipHandler(app))
+
+	mux := http.NewServeMux()
+	mux.Handle("/index.css", serve.StaticServer("./static/"))
+	mux.Handle("/", app)
+
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	fmt.Println("listening on", addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	if err := http.ListenAndServe(addr, gzip.GzipHandler(mux)); err != nil {
 		panic(err)
 	}
 }
@@ -52,6 +57,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		util.HTTPError("traffic", w, req, 500, "failed to read logs: %s", tx.Error)
 		return
 	}
+	w.Header().Set("Content-type", "text/html; charset=utf-8")
 	if err := templates["index.gohtml"].Execute(w, requests); err != nil {
 		util.HTTPError("traffic", w, req, 500, "failed to read template: %s", err)
 		return

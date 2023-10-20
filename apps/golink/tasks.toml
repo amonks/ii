@@ -1,6 +1,7 @@
 [[task]]
   id = "dev"
   type = "long"
+  watch = ["**/*", "*"]
   cmd = "cd $MONKS_ROOT && go run ./apps/golink -port=3007"
 
 [[task]]

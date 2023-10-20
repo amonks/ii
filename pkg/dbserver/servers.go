@@ -4,23 +4,18 @@ import (
 	"bytes"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
 	"crawshaw.io/sqlite"
 	esbuild "github.com/evanw/esbuild/pkg/api"
+	"monks.co/pkg/serve"
 )
 
-func (s *DBServer) StaticServer(staticDir string) func(*sqlite.Conn, http.ResponseWriter, *http.Request) {
-	return func(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-		s.ServeStatic(w, req, staticDir)
+func (s *DBServer) StaticServer(staticDir string) func(_ *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+	return func(_ *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+		serve.Static(w, req, staticDir)
 	}
-}
-
-func (s *DBServer) ServeStatic(w http.ResponseWriter, req *http.Request, staticDir string) {
-	path := path.Join(staticDir, path.Base(req.URL.Path))
-	http.ServeFile(w, req, path)
 }
 
 func (s *DBServer) JSServer(tsFilePath string) func(*sqlite.Conn, http.ResponseWriter, *http.Request) {
@@ -45,3 +40,5 @@ func (s *DBServer) ServeJS(w http.ResponseWriter, req *http.Request, tsfilepath 
 	}
 	http.ServeContent(w, req, "index.js", time.Now(), bytes.NewReader(result.OutputFiles[0].Contents))
 }
+
+

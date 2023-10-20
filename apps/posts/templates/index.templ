@@ -5,16 +5,17 @@ import (
 )
 
 templ Index(posts *model.Posts) {
-	@page("posts") {
+	@page("Posts") {
 		<ul>
 			for _, post := range posts.List {
 				if !post.IsDraft {
 					<li>
-						<a href={templ.SafeURL(post.Slug)}></a>
-						<em>
-							{ post.Date }
-						</em>
-						{ post.Title }
+						<a href={ templ.SafeURL(post.Slug) }>
+							<em>
+								{ post.Date }
+							</em>
+							{ post.Title }
+						</a>
 					</li>
 				}
 			}
