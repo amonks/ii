@@ -19,10 +19,14 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if !strings.HasPrefix(req.URL.Path, prefix) {
 			continue
 		}
+
+		// I'm getting redirect loops from this sometimes. I wonder why
+		// I added it?
 		if req.URL.Path == prefix {
 			http.Redirect(w, req, req.URL.String()+"/", 301)
 			return
 		}
+
 		p.proxyRequest(prefix, port, w, req)
 		return
 	}
@@ -38,6 +42,7 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 			req.Out.URL.Host = fmt.Sprintf("0.0.0.0:%d", port)
 			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, prefix)
 			req.Out.Host = req.Out.URL.Host
+			fmt.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},
 	}
 	proxy.ServeHTTP(w, req)

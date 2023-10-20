@@ -26,7 +26,7 @@
           <!-- prettier-ignore -->
           {{ if .IsLongestUnpinged }}</strong>{{ end }}
 
-          <a hx-boost="true" href="/ping/person?slug={{ .Slug }}"
+          <a hx-boost="true" href="/ping/person/?slug={{ .Slug }}"
             >{{ .Slug }}</a
           >
 

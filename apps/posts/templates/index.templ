@@ -10,8 +10,10 @@ templ Index(posts *model.Posts) {
 			for _, post := range posts.List {
 				if !post.IsDraft {
 					<li>
-						<code>{ post.Slug }</code>
-						{ post.Date },
+						<a href={templ.SafeURL(post.Slug)}></a>
+						<em>
+							{ post.Date }
+						</em>
 						{ post.Title }
 					</li>
 				}

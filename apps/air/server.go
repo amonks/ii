@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"gorm.io/gorm"
+	"monks.co/pkg/gzip"
 )
 
 var (
@@ -62,7 +63,7 @@ func serve(db *gorm.DB, addr string) error {
 		}
 	})
 
-	s := &http.Server{Addr: addr, Handler: mux}
+	s := &http.Server{Addr: addr, Handler: gzip.GzipHandler(mux)}
 
 	fmt.Println("listening at", addr)
 	if err := s.ListenAndServe(); err != nil {

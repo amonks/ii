@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"crawshaw.io/sqlite"
@@ -23,7 +24,7 @@ func List(ctx context.Context, conn *sqlite.Conn) ([]Shortening, error) {
 			Key: stmt.ColumnText(0),
 			URL: stmt.ColumnText(1),
 		}
-		createdAt, err := time.Parse("2006-09-02 15:04:05", stmt.ColumnText(2))
+		createdAt, err := time.Parse("2006-01-02 15:04:05", stmt.ColumnText(2))
 		if err != nil {
 			return err
 		}
@@ -67,6 +68,7 @@ func Set(ctx context.Context, conn *sqlite.Conn, key, url string) error {
 
 func Delete(ctx context.Context, conn *sqlite.Conn, key string) error {
 	const query = `delete from urls where key = ?`
+	fmt.Println(query, key)
 
 	if err := sqlitex.Exec(conn, query, nil, key); err != nil {
 		return err

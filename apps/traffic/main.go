@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"gorm.io/gorm"
+	"monks.co/pkg/gzip"
 	"monks.co/pkg/traffic"
 	"monks.co/pkg/util"
 )
@@ -21,7 +22,7 @@ func main() {
 		panic(err)
 	}
 	app := &App{db}
-	http.Handle("/", app)
+	http.Handle("/", gzip.GzipHandler(app))
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	fmt.Println("listening on", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {

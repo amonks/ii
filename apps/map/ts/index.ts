@@ -38,7 +38,7 @@ function initMap() {
     marker.addListener("click", () => {
       console.log(place);
       const id = encodeURIComponent(place.GoogleMapsURL);
-      const path = `/places?url=${id}`;
+      const path = `/map/?url=${id}`;
       htmx.ajax("get", path, {
         target: "#sidebar",
         source: "#sidebar",

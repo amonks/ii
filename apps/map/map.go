@@ -41,8 +41,8 @@ func New() *server {
 
 	s.HandleFunc("/index.js", s.JSServer("./ts/index.ts"))
 
-	s.HandleFunc("/index.css", s.StaticServer("./apps/map/static/"))
-	s.HandleFunc("/dot.png", s.StaticServer("./apps/map/static/"))
+	s.HandleFunc("/index.css", s.StaticServer("./static/"))
+	s.HandleFunc("/dot.png", s.StaticServer("./static/"))
 
 	s.HandleFunc("/", s.places)
 

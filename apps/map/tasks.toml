@@ -2,11 +2,12 @@
   id = "dev"
   type = "long"
   cmd = "go run . -port=3006"
+  dependencies = ["build-css"]
 
 [[task]]
   id = "build"
   type = "short"
-  # dependencies = ["build-css"]
+  dependencies = ["build-css"]
   cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/map"
 
 [[task]]

@@ -11,7 +11,6 @@ import (
 
 	proxyproto "github.com/pires/go-proxyproto"
 
-	"monks.co/pkg/gzip"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
 )
@@ -95,7 +94,7 @@ func (a *app) httpsServer(ctx context.Context) *server {
 	srv := &http.Server{
 		ConnContext: connContext,
 		Addr:        *httpsAddress,
-		Handler:     gzip.GzipHandler(BMRRedirectorHandler(p)),
+		Handler:     BMRRedirectorHandler(p),
 		TLSConfig:   tlsConfig,
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/a-h/templ"
 	"monks.co/apps/posts/model"
 	"monks.co/apps/posts/templates"
+	"monks.co/pkg/gzip"
 )
 
 var port = flag.Int("port", 3000, "port")
@@ -31,7 +32,7 @@ func run() error {
 
 	fmt.Println("title:", posts.List[0].Title)
 
-	http.Handle("/", templ.Handler(templates.Index(posts)))
+	http.Handle("/", gzip.GzipHandler(templ.Handler(templates.Index(posts))))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	fmt.Println("listening on", addr)

@@ -7,7 +7,7 @@
     <h1>Redirector</h1>
     <section>
       <h1>Create A Redirect</h1>
-      <form method="post" action="/go/">
+      <form method="post" action="/golink/">
         <label for="key">Key</label> <input name="key" />
         <label for="url">URL</label> <input name="url" type="url" />
         <button>submit</button>
@@ -23,7 +23,7 @@
               data-hx-confirm="really delete?"
               data-hx-target="closest li"
               data-hx-swap="outerHTML"
-              data-hx-delete="/go/{{ .Key }}"
+              data-hx-delete="/golink/{{ .Key }}"
             >
               delete
             </button>
