@@ -73,5 +73,6 @@
     "apps/golink/build",
     "apps/traffic/build",
     "apps/posts/build",
+    "apps/air/build",
   ]
 

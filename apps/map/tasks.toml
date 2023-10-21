@@ -14,7 +14,7 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "cd $MONKS_ROOT && ./bin/map -port=3006"
+  cmd = "$MONKS_ROOT/bin/map -port=3006"
 
 [[task]]
   id = "build-css"
@@ -34,5 +34,5 @@
 [[task]]
   id = "install-css"
   type = "short"
-  cmd = "cd css && yarn"
+  cmd = "cd css && npm install"
 

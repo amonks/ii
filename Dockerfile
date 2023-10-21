@@ -7,7 +7,7 @@ FROM alpine as tailscale
 FROM golang:alpine as gobuild
   ENV MONKS_ROOT=/app
   RUN apk update
-  RUN apk add build-base gcc bash
+  RUN apk add build-base gcc bash nodejs npm
   RUN rm -rf /var/cache/apk/*
 
   RUN go install github.com/amonks/run/cmd/run@latest
@@ -16,6 +16,7 @@ FROM golang:alpine as gobuild
   COPY . .
   RUN ls
   RUN run build
+  RUN ls
 
 FROM alpine
   ENV MONKS_ROOT=/app

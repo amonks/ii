@@ -9,6 +9,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"monks.co/pkg/color"
 )
 
 var RemoteAddrKey = &struct{}{}
@@ -43,6 +44,10 @@ func (r *Request) PrintURL() string {
 		return r.Host + r.Path
 	}
 	return r.Host + r.Path + "?" + r.Query
+}
+
+func (r *Request) ColorRemoteAddr() string {
+	return color.Hash(r.RemoteAddr)
 }
 
 func (r *Request) PrintUserAgent() string {
@@ -89,7 +94,7 @@ func (tl *TrafficLogger) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		RemoteAddr: getRemoteAddr(req),
 		UserAgent:  req.UserAgent(),
-		Referer: req.Header.Get("Referer"),
+		Referer:    req.Header.Get("Referer"),
 
 		StatusCode: ww.status,
 		Duration:   dur,
