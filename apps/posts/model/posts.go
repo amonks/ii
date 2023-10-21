@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/a-h/templ"
 	"github.com/yuin/goldmark"
@@ -54,7 +55,7 @@ func LoadPosts(dir string) (*Posts, error) {
 			continue
 		}
 		filename := p.Name()
-		date, slug := filename[:10], filename[11:len(filename)-3]
+		date, slug := filename[:10], filename[:len(filename)-3]
 		bs, err := os.ReadFile(filepath.Join(dir, filename))
 		if err != nil {
 			return nil, err
@@ -80,6 +81,10 @@ func LoadPosts(dir string) (*Posts, error) {
 	for _, p := range posts.List {
 		posts.BySlug[p.Slug] = p
 	}
+
+	sort.Slice(posts.List, func(a, b int) bool {
+		return posts.List[a].Date > posts.List[b].Date
+	})
 
 	return posts, nil
 }

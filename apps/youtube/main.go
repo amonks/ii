@@ -6,11 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/a-h/templ"
-	"monks.co/apps/posts/model"
-	"monks.co/apps/posts/templates"
+	"monks.co/apps/youtube/model"
+	"monks.co/apps/youtube/templates"
 	"monks.co/pkg/gzip"
 )
 
@@ -26,21 +25,16 @@ func main() {
 func run() error {
 	flag.Parse()
 
-	posts, err := model.LoadPosts("apps/posts/posts")
+	history, err := model.LoadHistory("histories")
 	if err != nil {
 		return err
 	}
 
 	http.Handle("/", gzip.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "" || req.URL.Path == "/" {
-			h := templ.Handler(templates.Index(posts))
-			h.ServeHTTP(w, req)
-			return
-		}
-		slug := strings.TrimPrefix(req.URL.Path, "/")
-		post := posts.Get(slug)
-		h := templ.Handler(templates.Post(post))
+		h := templ.Handler(templates.Index(history))
+		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)
+		return
 	})))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)

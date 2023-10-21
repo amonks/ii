@@ -1,78 +1,35 @@
-[[task]]
-  id = "thor"
-  type = "long"
-  dependencies = [
-    "apps/ping/dev",
-    "apps/map/dev",
-    "apps/golink/dev",
-    "apps/traffic/dev",
-    "apps/posts/dev",
-    "apps/air/dev",
-  ]
-  watch = ["apps/proxy/**"]
-  cmd = """
-    go run ./apps/proxy \
-      -httpRedirectAddress=0.0.0.0:8080 \
-      -httpsAddress=0.0.0.0:4433 \
-      -acmeConfig=acme-thor.toml \
-      ping:3005 \
-      map:3006 \
-      golink:3007 \
-      traffic:3008 \
-      posts:3009 \
-      air:3010
-  """
 
 [[task]]
-  id = "brigid"
-  type = "long"
-  dependencies = [
-    "apps/ping/dev",
-    "apps/map/dev",
-    "apps/golink/dev",
-    "apps/traffic/dev",
-    "apps/posts/dev",
-  ]
-  watch = ["apps/proxy/**"]
-  cmd = """
-    go run ./apps/proxy \
-      -httpRedirectAddress=0.0.0.0:80 \
-      -httpsAddress=0.0.0.0:443 \
-      -acmeConfig=acme-brigid.toml \
-      ping:3005 \
-      map:3006 \
-      golink:3007 \
-      traffic:3008 \
-      posts:3009
-  """
+  cmd = "go run ./cmd/taskmaker"
+  dependencies = []
+  id = "taskmaker"
+  type = "short"
+  watch = []
 
 [[task]]
-  id = "fly"
-  type = "long"
-  dependencies = [
-    "apps/map/start",
-    "apps/traffic/start",
-  ]
-  cmd = """
-    ./bin/proxy \
-      -httpRedirectAddress=0.0.0.0:8080 \
-      -httpsAddress=0.0.0.0:4433 \
-      -acmeConfig=acme-fly.toml \
-      map:3006 \
-      traffic:3008
-  """
-
-
-[[task]]
+  cmd = ""
+  dependencies = ["apps/ping/build", "apps/map/build", "apps/golink/build", "apps/traffic/build", "apps/posts/build", "apps/air/build", "apps/youtube/build"]
   id = "build"
   type = "group"
-  dependencies = [
-    "apps/proxy/build",
-    "apps/ping/build",
-    "apps/map/build",
-    "apps/golink/build",
-    "apps/traffic/build",
-    "apps/posts/build",
-    "apps/air/build",
-  ]
+  watch = []
 
+[[task]]
+  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:8080 \\\n-httpsAddress=0.0.0.0:4433 \\\n-acmeConfig=acme-thor.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nair:3010 \\\nyoutube:3011"
+  dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/air/dev", "apps/youtube/dev"]
+  id = "thor"
+  type = "long"
+  watch = ["apps/proxy/**", "apps/proxy/*"]
+
+[[task]]
+  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-brigid.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nposts:3009 \\\nyoutube:3011"
+  dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/posts/dev", "apps/youtube/dev"]
+  id = "brigid"
+  type = "long"
+  watch = ["apps/proxy/**", "apps/proxy/*"]
+
+[[task]]
+  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:8080 \\\n-httpsAddress=0.0.0.0:4433 \\\n-acmeConfig=acme-fly.toml \\\nmap:3006 \\\ntraffic:3008"
+  dependencies = ["apps/map/start", "apps/traffic/start"]
+  id = "fly"
+  type = "long"
+  watch = ["apps/proxy/**", "apps/proxy/*"]

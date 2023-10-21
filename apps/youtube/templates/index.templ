@@ -1,0 +1,25 @@
+package templates
+
+import (
+	"monks.co/apps/youtube/model"
+)
+
+templ Index(history []*model.HistoryEntry) {
+	@page("History") {
+		<ul>
+			for _, entry := range history {
+				<li>
+					if entry.TitleUrl != "" {
+						<a href={ templ.SafeURL(entry.TitleUrl) }>
+							<em>{ entry.Time }</em>
+							{ entry.Title }
+						</a>
+					} else {
+						<em>{ entry.Time }</em>
+						{ entry.Title }
+					}
+				</li>
+			}
+		</ul>
+	}
+}
