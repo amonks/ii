@@ -55,6 +55,9 @@ func run() error {
 			"-httpsAddress=0.0.0.0:" + machine.httpsPort,
 			"-acmeConfig=acme-" + machine.name + ".toml",
 		}
+		if machine.mode == "dev" {
+			cmd[0] = "go run ./apps/proxy"
+		}
 		for _, app := range apps.byMachine[machine.name] {
 			cmd = append(cmd, app.name+":"+app.port)
 			switch machine.mode {
