@@ -1,10 +1,30 @@
 ---
-title: Something or other!
+title: log
 draft: false
 ---
 
-This is a post.
+Today, I,
 
-- Markdown,
-- _markdown_,
-- **markdown**.
+- took sudafed
+- cleaned up for the cleaning lady
+- got JT's
+- got a car cable for the new phone
+- fixed a gzip issue on monks.go
+- watched Andor with Maurice
+- had some reheat vietnamese soup
+- went to jewel for ice cream
+- made cookie dough
+- added some css to traffic in monks.go
+
+Tomorrow, maybe I should,
+
+- work on hermit
+- bring back tagtime
+- mastodon server
+- use-viking/request
+- unearth the office
+- unearth the bedroom
+- unearth the woodshop
+- video synth
+- make lasagna
+- work on Run
