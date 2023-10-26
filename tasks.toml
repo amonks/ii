@@ -8,20 +8,20 @@
 
 [[task]]
   cmd = ""
-  dependencies = ["apps/ping/build", "apps/map/build", "apps/golink/build", "apps/traffic/build", "apps/posts/build", "apps/air/build", "apps/youtube/build"]
+  dependencies = ["apps/map/build", "apps/golink/build", "apps/traffic/build", "apps/posts/build", "apps/air/build", "apps/youtube/build", "apps/ping/build"]
   id = "build"
   type = "group"
   watch = []
 
 [[task]]
-  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:8080 \\\n-httpsAddress=0.0.0.0:4433 \\\n-acmeConfig=acme-thor.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nair:3010 \\\nyoutube:3011"
+  cmd = "go run ./apps/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-thor.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nair:3010 \\\nyoutube:3011"
   dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/air/dev", "apps/youtube/dev"]
   id = "thor"
   type = "long"
   watch = ["apps/proxy/**", "apps/proxy/*"]
 
 [[task]]
-  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-brigid.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nposts:3009 \\\nyoutube:3011"
+  cmd = "go run ./apps/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-brigid.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nposts:3009 \\\nyoutube:3011"
   dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/posts/dev", "apps/youtube/dev"]
   id = "brigid"
   type = "long"

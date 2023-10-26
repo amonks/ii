@@ -6,7 +6,7 @@ import (
 )
 
 func NewDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("/mypool/tank/venta/venta.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("/data/tank/venta/venta.db"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
