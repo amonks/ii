@@ -1,0 +1,4 @@
+bandcamp 300 IN CNAME bandcamp-pirate.herokuapp.com.
+brianeno 300 IN CNAME oblique-strategies-api.herokuapp.com.
+divvy 300 IN CNAME divvy-json.herokuapp.com.
+doge 300 IN CNAME amonks.github.io.

@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "setup": "cd terraform; terraform1.4 init",
+    "format": "terraform1.4 fmt",
+    "convert-zones": "fish convert-zones.fish",
+    "plan": "cd terraform; terraform1.4 plan",
+    "apply": "cd terraform; terraform1.4 apply",
+    "destroy": "cd terraform; terraform1.4 destroy",
+    "go": "yarn convert-zones && yarn noninteractive-apply && yarn invalidate-cache",
+    "invalidate-cache": "aws cloudfront create-invalidation --distribution-id E33O8785IAZ2F9 --paths '/index.html'",
+    "noninteractive-apply": "cd terraform; yes yes | terraform1.4 apply"
+  }
+}

@@ -4,4 +4,6 @@ bin
 .log
 monks.co
 data
+**/.terraform/*
+*.tfvars
 

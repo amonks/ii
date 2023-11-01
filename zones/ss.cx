@@ -1,0 +1,8 @@
+wifi 300 IN A 35.247.99.86
+b 300 IN CNAME cross-origin-bouncer.herokuapp.com.
+calder 300 IN A 100.85.55.109
+lugh 300 IN A 100.84.171.132
+nencatacoa 300 IN A 100.65.172.95
+thor 300 IN A 100.83.137.16
+brigid 300 IN A 100.103.217.4
+*.brigid 300 IN A 100.103.217.4
