@@ -35,8 +35,9 @@ func run() error {
 		Cmd:  "go run ./cmd/taskmaker",
 	})
 
-	// add build task
+	// add build tasks
 	var buildDependencies []string
+	buildDependencies = append(buildDependencies, "apps/proxy/build")
 	for name := range apps.byName {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}

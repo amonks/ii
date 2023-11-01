@@ -63,7 +63,7 @@ func serve(db *gorm.DB, addr string) error {
 		}
 	})
 
-	s := &http.Server{Addr: addr, Handler: gzip.GzipHandler(mux)}
+	s := &http.Server{Addr: addr, Handler: gzip.Handler(mux)}
 
 	fmt.Println("listening at", addr)
 	if err := s.ListenAndServe(); err != nil {

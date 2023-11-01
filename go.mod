@@ -1,6 +1,8 @@
 module monks.co
 
-go 1.18
+go 1.21
+
+toolchain go1.21.3
 
 require (
 	crawshaw.io/sqlite v0.3.2
@@ -11,8 +13,10 @@ require (
 	github.com/evanw/esbuild v0.15.8
 	github.com/go-ap/activitypub v0.0.0-20221209114049-1ceafda50f9f
 	github.com/libdns/route53 v1.3.1
+	github.com/pelletier/go-toml v1.9.5
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/sqlc-dev/sqlc v1.22.0
+	github.com/twilio/twilio-go v1.15.0
 	github.com/yuin/goldmark v1.5.4
 	go.abhg.dev/goldmark/frontmatter v0.1.0
 	gorm.io/driver/sqlite v1.5.3
@@ -154,6 +158,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/cel-go v0.18.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
@@ -231,7 +236,6 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
-	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pganalyze/pg_query_go/v4 v4.2.3 // indirect
 	github.com/pingcap/errors v0.11.5-0.20210425183316-da1aaba5fb63 // indirect

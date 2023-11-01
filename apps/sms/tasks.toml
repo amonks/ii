@@ -1,0 +1,17 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  watch = ["**/*", "*"]
+  cmd = "go run . -port=3012 -mode=serve"
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/sms -port=3012 -mode=serve"
+
+
