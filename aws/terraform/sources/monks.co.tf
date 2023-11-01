@@ -11,105 +11,12 @@ resource "aws_acm_certificate" "monks-co-certificate" {
 }
 
 
-resource "aws_cloudfront_distribution" "monks-co-distribution" {
-  origin {
-    custom_origin_config {
-      http_port              = "80"
-      https_port             = "443"
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
-    }
-
-    domain_name = aws_s3_bucket.monks-co-bucket.website_endpoint
-    origin_id   = "monks.co"
-  }
-
-  enabled             = true
-  default_root_object = "index.html"
-
-  default_cache_behavior {
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "monks.co"
-    min_ttl                = 0
-    default_ttl            = 86400
-    max_ttl                = 31536000
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-  }
-
-  aliases = ["monks.co"]
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.monks-co-certificate.arn
-    ssl_support_method  = "sni-only"
-  }
-}
-
 resource "aws_route53_record" "now-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "_now.monks.co"
   type    = "TXT"
   records = ["b3f39bbd3640c48b8335292201c1deff27525728caa8e8807b313040bbf78118"]
   ttl     = "300"
-}
-
-resource "aws_s3_bucket_object" "monks-co-headshot-jpg" {
-  bucket       = "monks.co"
-  content_type = "image/jpeg"
-  key          = "headshot.jpg"
-  source       = "../public/monks.co/headshot.jpg"
-  etag         = filemd5("../public/monks.co/headshot.jpg")
-  cache_control = "max-age=31536000"
-}
-
-resource "aws_s3_bucket_object" "monks-co-monks-jpg" {
-  bucket       = "monks.co"
-  content_type = "image/jpeg"
-  key          = "monks.jpg"
-  source       = "../public/monks.co/monks.jpg"
-  etag         = filemd5("../public/monks.co/monks.jpg")
-  cache_control = "max-age=31536000"
-}
-
-resource "aws_s3_bucket_object" "monks-co-old-html" {
-  bucket       = "monks.co"
-  content_type = "text/html; charset=utf-8"
-  key          = "old.html"
-  source       = "../public/monks.co/old.html"
-  etag         = md5(file("../public/monks.co/old.html"))
-}
-
-resource "aws_s3_bucket_object" "monks-co-index-html" {
-  bucket       = "monks.co"
-  # content_type = "text/plain; charset=utf-8"
-  content_type = "text/html; charset=utf-8"
-  key          = "index.html"
-  source       = "../public/monks.co/index.html"
-  # etag         = "plain-${md5(file("../public/monks.co/index.html"))}"
-  etag         = "rich-${md5(file("../public/monks.co/index.html"))}"
-}
-
-resource "aws_s3_bucket" "monks-co-bucket" {
-  bucket = "monks.co"
-  acl    = "public-read"
-
-  website {
-    index_document = "index.html"
-  }
 }
 
 resource "aws_route53_record" "monks-co-A" {

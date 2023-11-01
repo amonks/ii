@@ -2,4 +2,5 @@ cache
 .git
 .envrc
 bin
+aws
 
