@@ -2,6 +2,22 @@ resource "aws_route53_zone" "belgianman-com" {
   name = "belgianman.com"
 }
 
+resource "aws_route53_record" "www-belgianman-com-AAAA" {
+  zone_id = aws_route53_zone.belgianman-com.zone_id
+  name    = "www.belgianman.com."
+  type    = "AAAA"
+  ttl     = "300"
+  records = ["2a09:8280:1::f:478"]
+}
+
+resource "aws_route53_record" "www-belgianman-com-A" {
+  zone_id = aws_route53_zone.belgianman-com.zone_id
+  name    = "www.belgianman.com."
+  type    = "A"
+  ttl     = "300"
+  records = ["66.51.122.238"]
+}
+
 resource "aws_route53_record" "old-belgianman-com-CNAME" {
   zone_id = aws_route53_zone.belgianman-com.zone_id
   name    = "old.belgianman.com."

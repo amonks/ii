@@ -31,7 +31,7 @@ resource "aws_route53_record" "lugh-ss-cx-A" {
   name    = "lugh.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.84.31.13"]
+  records = ["100.84.171.132"]
 }
 
 resource "aws_route53_record" "calder-ss-cx-A" {
