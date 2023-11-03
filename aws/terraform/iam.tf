@@ -31,8 +31,8 @@ resource "aws_iam_policy" "send_ss_cx_emails" {
 EOF
 }
 
-resource "aws_iam_policy" "write_ss_cx_records" {
-  name = "write_dns_records_for_ss_cx_acme_challenge"
+resource "aws_iam_policy" "write_dns_records" {
+  name = "write_dns_records_for_acme_challenge"
 
   policy = <<EOF
 {
@@ -47,7 +47,7 @@ resource "aws_iam_policy" "write_ss_cx_records" {
         "route53:ChangeResourceRecordSets"
       ],
       "Resource": [
-        "arn:aws:route53:::hostedzone/Z1NBZRVGMI91Y9",
+        "arn:aws:route53:::hostedzone/*",
         "arn:aws:route53:::change/*"
       ]
     },
@@ -65,8 +65,8 @@ resource "aws_iam_policy" "write_ss_cx_records" {
 EOF
 }
 
-resource "aws_iam_user_policy_attachment" "monks-go_iam_user_write_ss_cx_records" {
+resource "aws_iam_user_policy_attachment" "monks-go_iam_user_write_dns_records" {
   user       = aws_iam_user.monks-go.name
-  policy_arn = aws_iam_policy.write_ss_cx_records.arn
+  policy_arn = aws_iam_policy.write_dns_records.arn
 }
 

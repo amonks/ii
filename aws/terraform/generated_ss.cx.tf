@@ -18,12 +18,20 @@ resource "aws_route53_record" "thor-ss-cx-A" {
   records = ["100.83.137.16"]
 }
 
-resource "aws_route53_record" "nencatacoa-ss-cx-A" {
+resource "aws_route53_record" "qaynan-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "nencatacoa.ss.cx."
+  name    = "qaynan.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.65.172.95"]
+  records = ["100.87.233.36"]
+}
+
+resource "aws_route53_record" "oehlen-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "oehlen.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.113.84.10"]
 }
 
 resource "aws_route53_record" "lugh-ss-cx-A" {
@@ -32,6 +40,14 @@ resource "aws_route53_record" "lugh-ss-cx-A" {
   type    = "A"
   ttl     = "300"
   records = ["100.84.171.132"]
+}
+
+resource "aws_route53_record" "go-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "go.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.84.224.155"]
 }
 
 resource "aws_route53_record" "calder-ss-cx-A" {

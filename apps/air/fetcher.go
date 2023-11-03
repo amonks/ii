@@ -20,8 +20,17 @@ func fetch(db *gorm.DB) error {
 	}
 	params.ModiCategory = modiCategory
 
-	if tx := db.Create(params); tx.Error != nil {
-		return tx.Error
+	var last Parameters
+	if err := db.
+		Table("parameters").
+		Order("created_at desc").
+		First(&last).
+		Error; err != nil {
+		return err
+	}
+	handleChange(&last, params)
+	if err := db.Create(params).Error; err != nil {
+		return err
 	}
 
 	return nil

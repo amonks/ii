@@ -26,9 +26,12 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		req.ParseForm()
+		subj := req.Form.Get("subject")
+		body := req.Form.Get("body")
 		if err := email.EmailMe(email.Message{
-			Subject: "test",
-			Body:    "Just testing.",
+			Subject: subj,
+			Body:    body,
 		}); err != nil {
 			util.HTTPError("mailer", w, req, http.StatusInternalServerError, "%s", err)
 		}

@@ -20,7 +20,7 @@ mode = "dev"
 [acme]
   storage_path = "cache"
   production = true
-  domains = ["brigid.ss.cx"]
+  domains = ["brigid.ss.cx", "belgianman.com"]
 
   [[acme.strategies]]
     strategy = "dns"

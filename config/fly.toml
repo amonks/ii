@@ -24,10 +24,8 @@ mode = "prod"
 [acme]
   storage_path = "/data"
   production = true
-  domains = ["monks.co"]
+  domains = ["monks.co", "blgn.mn"]
 
   [[acme.strategies]]
-    strategy = "alpn"
-    external_port = 443
-    internal_port = 4433
+    strategy = "dns"
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -20,7 +22,10 @@ func NewDB() (*gorm.DB, error) {
 }
 
 type Parameters struct {
-	gorm.Model
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 
 	ModiCategory string
 
