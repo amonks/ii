@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
 
-	"github.com/BurntSushi/toml"
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/route53"
 )
@@ -22,18 +20,6 @@ type ACMEStrategy struct {
 	Strategy     string
 	ExternalPort int `toml:"external_port"`
 	InternalPort int `toml:"internal_port"`
-}
-
-func ReadTLSConfig(ctx context.Context, filepath string) (*tls.Config, func(), error) {
-	c, err := os.ReadFile(filepath)
-	if err != nil {
-		panic(err)
-	}
-	var config ACME
-	if err := toml.Unmarshal(c, &config); err != nil {
-		panic(err)
-	}
-	return NewTLSConfig(context.Background(), config)
 }
 
 func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), error) {

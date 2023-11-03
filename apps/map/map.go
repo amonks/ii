@@ -3,15 +3,37 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"crawshaw.io/sqlite"
 	"monks.co/credentials"
-	"monks.co/pkg/dbserver"
+	"monks.co/pkg/gzip"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
+
+var port = flag.Int("port", 3000, "port")
+
+func main() {
+	if err := run(); err != nil {
+		panic(err)
+	}
+}
+
+func run() error {
+	flag.Parse()
+	s, err := newServer()
+	if err != nil {
+		return fmt.Errorf("creating server: %w", err)
+	}
+	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	if err := http.ListenAndServe(addr, gzip.Handler(s)); err != nil {
+		return fmt.Errorf("serving http: %w", err)
+	}
+	return nil
+}
 
 var (
 	//go:embed templates/*
@@ -28,40 +50,41 @@ func init() {
 }
 
 type server struct {
-	*dbserver.DBServer
+	*http.ServeMux
 	model *model
 }
 
-func New() *server {
-	m := NewModel()
-	s := &server{
-		DBServer: dbserver.New("map", m.migrate),
-		model:    m,
+func newServer() (*server, error) {
+	m, err := NewModel()
+	if err != nil {
+		return nil, fmt.Errorf("constructing model: %w", err)
 	}
 
-	s.HandleFunc("/index.js", s.JSServer("./ts/index.ts"))
+	s := &server{http.NewServeMux(), m}
 
-	s.HandleFunc("/index.css", s.StaticServer("./static/"))
-	s.HandleFunc("/dot.png", s.StaticServer("./static/"))
+	s.Handle("/index.js", serve.JSServer("./ts/index.ts"))
+
+	s.Handle("/index.css", serve.StaticServer("./static/"))
+	s.Handle("/dot.png", serve.StaticServer("./static/"))
 
 	s.HandleFunc("/", s.places)
 
 	s.HandleFunc("/commands/import-saved-places", s.importSavedPlaces)
 	s.HandleFunc("/commands/annotate-peoples-places", s.annotatePeoplesPlaces)
 
-	return s
+	return s, nil
 }
 
-func (s *server) places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
+func (s *server) places(w http.ResponseWriter, req *http.Request) {
 	id := req.URL.Query().Get("url")
 	if id == "" {
-		s.placesList(conn, w, req)
+		s.placesList(w, req)
 		return
 	}
 
-	place, err := s.model.getPlace(conn, id)
+	place, err := s.model.getPlace(id)
 	if err != nil {
-		s.InternalServerError(w, req, err)
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -78,15 +101,15 @@ func (s *server) places(conn *sqlite.Conn, w http.ResponseWriter, req *http.Requ
 	}
 
 	if err := templates[template].Execute(w, placeTemplateData); err != nil {
-		s.InternalServerError(w, req, err)
+		serve.InternalServerError(w, req, err)
 		return
 	}
 }
 
-func (s *server) placesList(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	places, err := s.model.listPlaces(conn)
+func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
+	places, err := s.model.listPlaces()
 	if err != nil {
-		s.InternalServerError(w, req, err)
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -97,7 +120,7 @@ func (s *server) placesList(conn *sqlite.Conn, w http.ResponseWriter, req *http.
 
 	placesJSON, err := json.Marshal(places)
 	if err != nil {
-		s.InternalServerError(w, req, err)
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -111,23 +134,23 @@ func (s *server) placesList(conn *sqlite.Conn, w http.ResponseWriter, req *http.
 		PlacesJSON:          template.JS(placesJSON),
 	}
 	if err := templates["list.gohtml"].Execute(w, placesTemplateData); err != nil {
-		s.InternalServerError(w, req, err)
+		serve.InternalServerError(w, req, err)
 		return
 	}
 }
 
-func (s *server) importSavedPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	if err := s.model.importSavedPlaces(conn); err != nil {
-		s.InternalServerError(w, req, err)
+func (s *server) importSavedPlaces(w http.ResponseWriter, req *http.Request) {
+	if err := s.model.importSavedPlaces(); err != nil {
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
 	http.Redirect(w, req, "/places", 302)
 }
 
-func (s *server) annotatePeoplesPlaces(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	if err := s.model.annotatePeoplesPlaces(conn); err != nil {
-		s.InternalServerError(w, req, err)
+func (s *server) annotatePeoplesPlaces(w http.ResponseWriter, req *http.Request) {
+	if err := s.model.annotatePeoplesPlaces(); err != nil {
+		serve.InternalServerError(w, req, err)
 		return
 	}
 

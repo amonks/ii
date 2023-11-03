@@ -1,0 +1,25 @@
+mode = "dev"
+
+[[service]]
+  type = "redirect-to-https"
+  addr = "0.0.0.0:80"
+
+[[service]]
+  type = "https"
+  addr = "0.0.0.0:443"
+  apps = [
+    "ping",
+    "map",
+    "golink",
+    "traffic",
+    "youtube"
+  ]
+
+[acme]
+  storage_path = "cache"
+  production = true
+  domains = ["thor.ss.cx"]
+
+  [[acme.strategies]]
+    strategy = "dns"
+

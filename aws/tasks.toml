@@ -11,7 +11,7 @@
 [[task]]
   id = "format"
   type = "short"
-  cmd = "terraform fmt"
+  cmd = "cd terraform && terraform fmt"
   dependencies = ["convert-zones"]
 
 [[task]]

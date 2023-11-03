@@ -1,35 +1,74 @@
+[[task]]
+id = 'taskmaker'
+type = 'short'
+cmd = 'go run ./cmd/taskmaker'
 
 [[task]]
-  cmd = "go run ./cmd/taskmaker"
-  dependencies = []
-  id = "taskmaker"
-  type = "short"
-  watch = []
+id = 'build'
+type = 'group'
+dependencies = [
+  'apps/proxy/build',
+  'apps/posts/build',
+  'apps/youtube/build',
+  'apps/mailer/build',
+  'apps/map/build',
+  'apps/golink/build',
+  'apps/traffic/build',
+  'apps/air/build',
+  'apps/sms/build',
+  'apps/ping/build'
+]
 
 [[task]]
-  cmd = ""
-  dependencies = ["apps/proxy/build", "apps/youtube/build", "apps/ping/build", "apps/map/build", "apps/golink/build", "apps/traffic/build", "apps/posts/build", "apps/air/build"]
-  id = "build"
-  type = "group"
-  watch = []
+id = 'brigid'
+type = 'group'
+dependencies = [
+  'brigid-proxy',
+  'apps/sms/dev',
+  'apps/ping/dev',
+  'apps/map/dev',
+  'apps/golink/dev',
+  'apps/traffic/dev',
+  'apps/posts/dev',
+  'apps/youtube/dev'
+]
 
 [[task]]
-  cmd = "go run ./apps/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-brigid.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nposts:3009 \\\nyoutube:3011"
-  dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/posts/dev", "apps/youtube/dev"]
-  id = "brigid"
-  type = "long"
-  watch = ["apps/proxy/**", "apps/proxy/*"]
+id = 'brigid-proxy'
+type = 'long'
+watch = ['apps/proxy/**', 'apps/proxy/*']
+cmd = 'go run ./apps/proxy -machine=brigid'
 
 [[task]]
-  cmd = "./bin/proxy \\\n-httpRedirectAddress=0.0.0.0:8080 \\\n-httpsAddress=0.0.0.0:4433 \\\n-acmeConfig=acme-fly.toml \\\nmap:3006 \\\ntraffic:3008"
-  dependencies = ["apps/map/start", "apps/traffic/start"]
-  id = "fly"
-  type = "long"
-  watch = ["apps/proxy/**", "apps/proxy/*"]
+id = 'fly'
+type = 'group'
+dependencies = [
+  'fly-proxy',
+  'apps/map/start',
+  'apps/traffic/start',
+  'apps/mailer/start'
+]
 
 [[task]]
-  cmd = "go run ./apps/proxy \\\n-httpRedirectAddress=0.0.0.0:80 \\\n-httpsAddress=0.0.0.0:443 \\\n-acmeConfig=acme-thor.toml \\\nping:3005 \\\nmap:3006 \\\ngolink:3007 \\\ntraffic:3008 \\\nair:3010 \\\nyoutube:3011"
-  dependencies = ["apps/ping/dev", "apps/map/dev", "apps/golink/dev", "apps/traffic/dev", "apps/air/dev", "apps/youtube/dev"]
-  id = "thor"
-  type = "long"
-  watch = ["apps/proxy/**", "apps/proxy/*"]
+id = 'fly-proxy'
+type = 'long'
+watch = ['apps/proxy/**', 'apps/proxy/*']
+cmd = './bin/proxy -machine=fly'
+
+[[task]]
+id = 'thor'
+type = 'group'
+dependencies = [
+  'thor-proxy',
+  'apps/ping/dev',
+  'apps/map/dev',
+  'apps/golink/dev',
+  'apps/traffic/dev',
+  'apps/youtube/dev'
+]
+
+[[task]]
+id = 'thor-proxy'
+type = 'long'
+watch = ['apps/proxy/**', 'apps/proxy/*']
+cmd = 'go run ./apps/proxy -machine=thor'

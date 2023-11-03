@@ -1,0 +1,33 @@
+mode = "prod"
+
+[[service]]
+  type = "redirect-to-https"
+  addr = "0.0.0.0:8080"
+
+[[service]]
+  type = "https"
+  addr = "0.0.0.0:4433"
+  apps = [
+    "map",
+    "traffic",
+  ]
+
+[[service]]
+  type = "tsnet"
+  addr = ":80"
+  storage_path = "/data"
+  apps = [
+    "mailer",
+    "traffic"
+  ]
+
+[acme]
+  storage_path = "/data"
+  production = true
+  domains = ["monks.co"]
+
+  [[acme.strategies]]
+    strategy = "alpn"
+    external_port = 443
+    internal_port = 4433
+

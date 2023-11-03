@@ -30,7 +30,7 @@ func main() {
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	fmt.Println("listening on", addr)
-	if err := http.ListenAndServe(addr, gzip.GzipHandler(mux)); err != nil {
+	if err := http.ListenAndServe(addr, gzip.Handler(mux)); err != nil {
 		panic(err)
 	}
 }

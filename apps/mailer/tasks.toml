@@ -2,7 +2,7 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "go run . -port=3012"
+  cmd = "go run . -port=3013"
 
 [[task]]
   id = "build"
@@ -12,6 +12,6 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "../../bin/sms -port=3012"
+  cmd = "../../bin/mailer -port=3013"
 
 

@@ -18,7 +18,7 @@ type proxy struct {
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for prefix, port := range p.routes {
-		if !strings.HasPrefix(req.URL.Path, prefix) {
+		if !strings.HasPrefix(req.URL.Path, "/"+prefix) {
 			continue
 		}
 
@@ -32,7 +32,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// the trailing slash, it'll take you to '/page'.
 		//
 		// TODO: I'm getting redirect loops from this sometimes.
-		if req.URL.Path == prefix {
+		if req.URL.Path == "/"+prefix {
 			http.Redirect(w, req, req.URL.String()+"/", 301)
 			return
 		}
@@ -41,9 +41,9 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	path := filepath.Join(os.Getenv("MONKS_ROOT"), "static", req.URL.Path)
+	staticFilePath := filepath.Join(os.Getenv("MONKS_ROOT"), "static", req.URL.Path)
 	gzip.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		http.ServeFile(w, req, path)
+		http.ServeFile(w, req, staticFilePath)
 	})).ServeHTTP(w, req)
 }
 
@@ -52,7 +52,7 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 		Rewrite: func(req *httputil.ProxyRequest) {
 			req.Out.URL.Scheme = "http"
 			req.Out.URL.Host = fmt.Sprintf("0.0.0.0:%d", port)
-			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, prefix)
+			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/"+prefix)
 			req.Out.Host = req.Out.URL.Host
 			fmt.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},

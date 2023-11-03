@@ -1,9 +1,0 @@
-storage_path = "/data"
-production = true
-domains = ["monks.co"]
-
-[[strategies]]
-  strategy = "alpn"
-  external_port = 443
-  internal_port = 4433
-

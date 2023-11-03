@@ -1,0 +1,27 @@
+mode = "dev"
+
+[[service]]
+  type = "redirect-to-https"
+  addr = "0.0.0.0:80"
+
+[[service]]
+  type = "https"
+  addr = "0.0.0.0:443"
+  apps = [
+    "ping",
+    "map",
+    "golink",
+    "traffic",
+    "posts",
+    "youtube",
+    "sms"
+  ]
+
+[acme]
+  storage_path = "cache"
+  production = true
+  domains = ["brigid.ss.cx"]
+
+  [[acme.strategies]]
+    strategy = "dns"
+

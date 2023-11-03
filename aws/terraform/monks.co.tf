@@ -5,8 +5,8 @@ resource "aws_route53_zone" "monks-co-public" {
 }
 
 resource "aws_acm_certificate" "monks-co-certificate" {
-  domain_name       = "*.monks.co"
-  validation_method = "EMAIL"
+  domain_name               = "*.monks.co"
+  validation_method         = "EMAIL"
   subject_alternative_names = ["monks.co"]
 }
 

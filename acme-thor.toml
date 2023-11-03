@@ -1,7 +1,0 @@
-storage_path = "cache"
-production = true
-domains = ["thor.ss.cx"]
-
-[[strategies]]
-  strategy = "dns"
-

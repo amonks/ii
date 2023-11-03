@@ -7,50 +7,85 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	proxyproto "github.com/pires/go-proxyproto"
 
+	"monks.co/pkg/config"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
+	"tailscale.com/tsnet"
 )
 
 var (
-	httpRedirectAddress = flag.String("httpRedirectAddress", "0.0.0.0:80", "address to listen at for http->https redirect, default: 0.0.0.0:80")
-	httpsAddress        = flag.String("httpsAddress", "0.0.0.0:443", "address to listen at (https), default: 0.0.0.0:443")
-	acmeConfig          = flag.String("acmeConfig", "", "acme config file path")
+	machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
 )
 
 func main() {
-	flag.Parse()
-	ctx, cancel := context.WithCancel(context.Background())
-
-	routes, err := parseRoutes(flag.Args())
-	if err != nil {
+	if err := run(); err != nil {
 		panic(err)
 	}
+}
 
-	a := &app{routes}
+func run() error {
+	flag.Parse()
 
-	exit := make(chan error)
-
-	go func() { exit <- a.httpsServer(ctx).serve() }()
-	go func() { exit <- a.redirectServer(ctx).serve() }()
-
-	err = <-exit
-	cancel()
-	<-exit
+	config, err := config.Load(*machine)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
+
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancelCause(context.Background())
+	for _, service := range config.Services {
+		routes := map[string]int{}
+		for _, app := range service.Apps {
+			routes[app] = ports.Apps[app]
+		}
+		fmt.Println("routes", routes)
+
+		app := &app{routes, service}
+		var server *server
+		switch service.Type {
+		case "redirect-to-https":
+			server = app.redirectServer(ctx, service.Addr)
+		case "https":
+			server, err = app.httpsServer(ctx, service.Addr, config.ACME)
+			if err != nil {
+				return err
+			}
+		case "tsnet":
+			server, err = app.tsnetServer(ctx, service.Addr)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unsupported service type '%s'", service.Type)
+		}
+
+		wg.Add(1)
+		go func() {
+			if err := server.serve(); err != nil {
+				fmt.Println("error:", err)
+			}
+			server.stop()
+			cancel(err)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	return nil
 }
 
 type app struct {
-	routes map[string]int
+	routes  map[string]int
+	service config.Service
 }
 
-func (a *app) redirectServer(ctx context.Context) *server {
+func (a *app) redirectServer(ctx context.Context, addr string) *server {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		u := req.URL
 		u.Host = net.JoinHostPort(req.Host, "443")
@@ -59,10 +94,13 @@ func (a *app) redirectServer(ctx context.Context) *server {
 	})
 	srv := &http.Server{
 		ConnContext: connContext,
-		Addr:        *httpRedirectAddress,
+		Addr:        addr,
 		Handler:     handler,
 	}
-	return &server{srv, false}
+	listen := func() (net.Listener, error) {
+		return net.Listen("tcp", addr)
+	}
+	return &server{srv, listen, false, func() {}}
 }
 
 func connContext(ctx context.Context, conn net.Conn) context.Context {
@@ -70,45 +108,78 @@ func connContext(ctx context.Context, conn net.Conn) context.Context {
 		if conn.LocalAddr() == nil {
 			fmt.Printf("couldn't retrieve local address")
 		}
-		fmt.Printf("local address: %q", conn.LocalAddr().String())
 		if conn.RemoteAddr() == nil {
 			fmt.Printf("couldn't retrieve remote address")
 		}
-		fmt.Printf("remote address: %q", conn.RemoteAddr().String())
 
 		return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
 	}
 	return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
 }
 
-func (a *app) httpsServer(ctx context.Context) *server {
-	p, err := traffic.New(*httpsAddress, &proxy{a.routes})
+func (a *app) httpsServer(ctx context.Context, addr string, acme tls.ACME) (*server, error) {
+	p, err := traffic.New(addr, &proxy{a.routes})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
-	tlsConfig, _, err := tls.ReadTLSConfig(context.Background(), *acmeConfig)
+	tlsConfig, stop, err := tls.NewTLSConfig(ctx, acme)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	srv := &http.Server{
 		ConnContext: connContext,
-		Addr:        *httpsAddress,
+		Addr:        addr,
 		Handler:     BMRRedirectorHandler(p),
 		TLSConfig:   tlsConfig,
 	}
 
-	return &server{srv, true}
+	listen := func() (net.Listener, error) {
+		return net.Listen("tcp", addr)
+	}
+
+	return &server{srv, listen, true, stop}, nil
+}
+
+func (a *app) tsnetServer(ctx context.Context, addr string) (*server, error) {
+	srv := &tsnet.Server{
+		Hostname:  "monksgo",
+		Dir:       a.service.StoragePath,
+		Ephemeral: true,
+		AuthKey:   os.Getenv("TS_AUTHKEY"),
+	}
+	p, err := traffic.New(addr, &proxy{a.routes})
+	if err != nil {
+		return nil, fmt.Errorf("error starting traffic logger: %w", err)
+	}
+	httpSrv := &http.Server{
+		ConnContext: connContext,
+		Addr:        addr,
+		Handler:     BMRRedirectorHandler(p),
+	}
+
+	listen := func() (net.Listener, error) {
+		ln, err := srv.Listen("tcp", ":80")
+		if err != nil {
+			return nil, fmt.Errorf("error listening on tsnet: %w", err)
+		}
+		return ln, nil
+	}
+
+	stop := func() {}
+
+	return &server{httpSrv, listen, false, stop}, nil
 }
 
 type server struct {
 	*http.Server
-	tls bool
+	listen func() (net.Listener, error)
+	tls    bool
+	stop   func()
 }
 
 func (s *server) serve() error {
 	fmt.Println("will listen on", s.Addr)
-	ln, err := net.Listen("tcp", s.Addr)
+	ln, err := s.listen()
 	if err != nil {
 		return err
 	}
@@ -119,8 +190,12 @@ func (s *server) serve() error {
 	defer proxyListener.Close()
 	fmt.Println("listening on", s.Addr)
 	if s.tls {
-		return s.ServeTLS(proxyListener, "", "")
+		err = s.ServeTLS(proxyListener, "", "")
 	} else {
-		return s.Serve(proxyListener)
+		err = s.Serve(proxyListener)
 	}
+	if err != nil {
+		return fmt.Errorf("error in serve: %w", err)
+	}
+	return nil
 }

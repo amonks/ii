@@ -1,13 +1,3 @@
-output "monks-go_iam_user_access_key_id" {
-  value = aws_iam_access_key.monks-go.id
-}
-
-output "monks-go_iam_user_secret_access_key" {
-  value = aws_iam_access_key.monks-go.secret
-}
-
-
-
 resource "aws_iam_user" "monks-go" {
   name = "monks-go_iam_user"
 }
@@ -19,6 +9,27 @@ resource "aws_iam_access_key" "monks-go" {
 }
 
 
+resource "aws_iam_policy" "send_ss_cx_emails" {
+  name = "send_ss_cx_emails"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendRawEmail"
+      ],
+      "Resource": [
+        "arn:aws:ses:us-east-1:558796306206:identity/no-reply@mail.ss.cx"
+      ]
+    }
+  ]
+}
+EOF
+}
 
 resource "aws_iam_policy" "write_ss_cx_records" {
   name = "write_dns_records_for_ss_cx_acme_challenge"

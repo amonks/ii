@@ -31,7 +31,7 @@ func run() error {
 		return err
 	}
 
-	http.Handle("/", gzip.GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	http.Handle("/", gzip.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "" || req.URL.Path == "/" {
 			h := templ.Handler(templates.Index(posts))
 			h.ServeHTTP(w, req)

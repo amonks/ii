@@ -2,19 +2,40 @@ provider "aws" {
   region = "us-east-1"
 }
 
-module converted_zones {
-  source = "./converted-zones/"
+module "ss-cx-mailer" {
+  source = "./mailer/"
+
+  domain  = "ss.cx"
+  zone_id = aws_route53_zone.ss-cx.id
 }
 
-module sources {
-  source = "./sources/"
+terraform {
+  required_providers {
+    gandi = {
+      version = ">= 2.1.0"
+      source  = "go-gandi/gandi"
+    }
+  }
+}
+
+provider "gandi" {
+  key = "FqMaynWbzxKKhj56kDaNcXX1"
 }
 
 output "monks-go_iam_user_access_key_id" {
-  value = module.sources.monks-go_iam_user_access_key_id
+  value = aws_iam_access_key.monks-go.id
 }
 
 output "monks-go_iam_user_secret_access_key" {
-  value = module.sources.monks-go_iam_user_secret_access_key
+  value     = aws_iam_access_key.monks-go.secret
+  sensitive = true
+}
+
+output "smtp_username" {
+  value = module.ss-cx-mailer.smtp_username
+}
+
+output "smtp_password" {
+  value     = module.ss-cx-mailer.smtp_password
   sensitive = true
 }

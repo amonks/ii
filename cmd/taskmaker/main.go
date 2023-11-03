@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
+	"monks.co/pkg/config"
+	"monks.co/pkg/ports"
 )
 
 func main() {
@@ -16,14 +18,18 @@ func main() {
 }
 
 func run() error {
-	apps, err := loadApps("config/apps")
+	machines, err := config.ListMachines()
 	if err != nil {
 		return err
 	}
 
-	machines, err := loadMachines("config/machines")
-	if err != nil {
-		return err
+	machineConfigs := make(map[string]*config.Config, len(machines))
+	for _, machine := range machines {
+		config, err := config.Load(machine)
+		if err != nil {
+			return err
+		}
+		machineConfigs[machine] = config
 	}
 
 	var tasks []*task
@@ -38,7 +44,7 @@ func run() error {
 	// add build tasks
 	var buildDependencies []string
 	buildDependencies = append(buildDependencies, "apps/proxy/build")
-	for name := range apps.byName {
+	for name := range ports.Apps {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}
 	tasks = append(tasks, &task{
@@ -48,34 +54,35 @@ func run() error {
 	})
 
 	// add run tasks
-	for _, machine := range machines {
-		var dependencies []string
-		cmd := []string{
+	for machineName, machine := range machineConfigs {
+		group := []string{machineName + "-proxy"}
+		proxyCmd := []string{
 			"./bin/proxy",
-			"-httpRedirectAddress=0.0.0.0:" + machine.httpPort,
-			"-httpsAddress=0.0.0.0:" + machine.httpsPort,
-			"-acmeConfig=acme-" + machine.name + ".toml",
+			"-machine=" + machineName,
 		}
-		if machine.mode == "dev" {
-			cmd[0] = "go run ./apps/proxy"
+		if machine.Mode == "dev" {
+			proxyCmd[0] = "go run ./apps/proxy"
 		}
-		for _, app := range apps.byMachine[machine.name] {
-			cmd = append(cmd, app.name+":"+app.port)
-			switch machine.mode {
+		for _, app := range machine.Apps() {
+			switch machine.Mode {
 			case "dev":
-				dependencies = append(dependencies, "apps/"+app.name+"/dev")
+				group = append(group, "apps/"+app+"/dev")
 			case "prod":
-				dependencies = append(dependencies, "apps/"+app.name+"/start")
+				group = append(group, "apps/"+app+"/start")
 			default:
-				return fmt.Errorf("unexpected machine mode '%s'", machine.mode)
+				return fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
 			}
 		}
 		tasks = append(tasks, &task{
-			Id:           machine.name,
-			Type:         "long",
-			Dependencies: dependencies,
-			Watch:        []string{"apps/proxy/**", "apps/proxy/*"},
-			Cmd:          strings.Join(cmd, " \\\n"),
+			Id:           machineName,
+			Dependencies: group,
+			Type:         "group",
+		})
+		tasks = append(tasks, &task{
+			Id:    machineName + "-proxy",
+			Type:  "long",
+			Watch: []string{"apps/proxy/**", "apps/proxy/*"},
+			Cmd:   strings.Join(proxyCmd, " "),
 		})
 	}
 
@@ -96,9 +103,9 @@ func run() error {
 type task struct {
 	Id           string   `toml:"id"`
 	Type         string   `toml:"type"`
-	Dependencies []string `toml:"dependencies"`
-	Watch        []string `toml:"watch"`
-	Cmd          string   `toml:"cmd"`
+	Dependencies []string `toml:"dependencies,multiline,omitempty"`
+	Watch        []string `toml:"watch,omitempty"`
+	Cmd          string   `toml:"cmd,multiline,omitempty"`
 }
 
 type machine struct {

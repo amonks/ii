@@ -36,7 +36,7 @@ func New(name string, migrate func(conn *sqlite.Conn) error) *DBServer {
 }
 
 func (s *DBServer) Listen(ctx context.Context, port int) error {
-	srv := http.Server{Handler: gzip.GzipHandler(s), Addr: fmt.Sprintf("0.0.0.0:%d", port)}
+	srv := http.Server{Handler: gzip.Handler(s), Addr: fmt.Sprintf("0.0.0.0:%d", port)}
 
 	done := make(chan error)
 	go func() {
