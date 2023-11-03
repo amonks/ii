@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -47,6 +48,7 @@ func run() error {
 	for name := range ports.Apps {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}
+	sort.Strings(buildDependencies)
 	tasks = append(tasks, &task{
 		Id:           "build",
 		Type:         "group",
@@ -73,6 +75,7 @@ func run() error {
 				return fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
 			}
 		}
+		sort.Strings(group)
 		tasks = append(tasks, &task{
 			Id:           machineName,
 			Dependencies: group,
@@ -85,6 +88,10 @@ func run() error {
 			Cmd:   strings.Join(proxyCmd, " "),
 		})
 	}
+
+	sort.Slice(tasks, func(a, b int) bool {
+		return tasks[a].Id < tasks[b].Id
+	})
 
 	bs, err := toml.Marshal(struct {
 		Task []*task `toml:"task"`
