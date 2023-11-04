@@ -19,6 +19,7 @@ require (
 	github.com/twilio/twilio-go v1.15.0
 	github.com/yuin/goldmark v1.5.4
 	go.abhg.dev/goldmark/frontmatter v0.1.0
+	gorm.io/datatypes v1.2.0
 	gorm.io/driver/sqlite v1.5.3
 	gorm.io/gorm v1.25.4
 	tailscale.com v1.52.1
@@ -352,6 +353,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/mysql v1.4.7 // indirect
 	gvisor.dev/gvisor v0.0.0-20230928000133-4fe30062272c // indirect
 	honnef.co/go/tools v0.4.6 // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect

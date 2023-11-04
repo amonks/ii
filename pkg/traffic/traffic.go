@@ -3,13 +3,11 @@ package traffic
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"monks.co/pkg/color"
+	"monks.co/pkg/database"
 )
 
 var RemoteAddrKey = &struct{}{}
@@ -55,21 +53,21 @@ func (r *Request) PrintUserAgent() string {
 }
 
 type TrafficLogger struct {
-	db      *gorm.DB
+	model   *Model
 	host    string
 	handler http.Handler
 }
 
-func Open() (*gorm.DB, error) {
-	dbPath := filepath.Join(os.Getenv("MONKS_DATA"), "traffic.db")
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+type Model struct {
+	*database.DB
+}
+
+func Open() (*Model, error) {
+	db, err := database.Open("traffic.db")
 	if err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&Request{}); err != nil {
-		return nil, err
-	}
-	return db, nil
+	return &Model{db}, nil
 }
 
 func New(host string, handler http.Handler) (*TrafficLogger, error) {
@@ -80,6 +78,10 @@ func New(host string, handler http.Handler) (*TrafficLogger, error) {
 	return &TrafficLogger{db, host, handler}, nil
 }
 
+func (tl *TrafficLogger) Close() error {
+	return tl.model.Close()
+}
+
 func (tl *TrafficLogger) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	ww := &StatusRecorder{w, 0}
 
@@ -87,7 +89,7 @@ func (tl *TrafficLogger) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	tl.handler.ServeHTTP(ww, req)
 	dur := time.Since(start)
 
-	if tx := tl.db.Create(&Request{
+	if tx := tl.model.Create(&Request{
 		Host:  req.Host,
 		Path:  req.URL.Path,
 		Query: req.URL.RawQuery,

@@ -12,6 +12,9 @@ func NewDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := db.Exec("pragma journal_mode='wal';").Error; err != nil {
+		return nil, err
+	}
 
 	// Migrate the schema
 	if err := db.AutoMigrate(&Parameters{}); err != nil {

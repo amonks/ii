@@ -2,65 +2,59 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
+	"monks.co/pkg/database"
 )
 
 type Person struct {
-	Slug              string
-	IsLongestUnpinged bool
-	IsActive          bool
-	LastPingAt        string
-	LastPingAtMS      int64
-	LastPingNotes     string
+	Slug     string `gorm:"primaryKey"`
+	IsActive bool
 }
 
 type Ping struct {
 	PersonSlug string
-	At         string
+	At         time.Time
 	Notes      string
 }
 
-func listPeople(conn *sqlite.Conn) ([]Person, error) {
-	people := []Person{}
-	const query = `
-		select
-			p.slug,
-			p.is_active,
-			ping.at_ms as last_pinged_at_ms,
-			ping.notes as last_ping_notes
-		from people p
-		left join pings ping
-			on p.slug = ping.person_slug
-			and ping.at_ms = (select max(at_ms) from pings where person_slug = p.slug)
-		order by last_pinged_at_ms asc, slug asc;`
+type AnnotatedPerson struct {
+	Person
+	LastPingAt        time.Time
+	LastPingNotes     string
+	IsLongestUnpinged bool
+}
 
-	oldestActivePing := time.Now().UnixMilli()
+type model struct {
+	*database.DB
+}
 
-	onResult := func(stmt *sqlite.Stmt) error {
-		isActive := stmt.ColumnInt(1) == 1
-		pingAtMs := stmt.ColumnInt64(2)
-		if isActive && pingAtMs <= oldestActivePing {
-			oldestActivePing = pingAtMs
-		}
-
-		people = append(people, Person{
-			Slug:          stmt.ColumnText(0),
-			IsActive:      isActive,
-			LastPingAt:    formatTimeMs(pingAtMs),
-			LastPingAtMS:  pingAtMs,
-			LastPingNotes: stmt.ColumnText(3),
-		})
-		return nil
-	}
-	if err := sqlitex.Exec(conn, query, onResult); err != nil {
+func NewModel() (*model, error) {
+	db, err := database.Open("ping.db")
+	if err != nil {
 		return nil, err
 	}
+	return &model{db}, nil
+}
 
+func (m *model) listPeople() ([]AnnotatedPerson, error) {
+	people := []AnnotatedPerson{}
+	if err := m.DB.Table("people").
+		Select("people.slug, people.is_active, pings.at as last_ping_at, pings.notes as last_ping_notes, false as is_longest_unpinged").
+		Joins("left join pings on people.slug = pings.person_slug and pings.at = (select max(at) from pings where person_slug = people.slug)").
+		Scan(&people).Error; err != nil {
+		return nil, fmt.Errorf("error finding people: %w", err)
+	}
+
+	oldestActivePing := time.Now()
+	for _, person := range people {
+		if person.IsActive && time.Time(person.LastPingAt).Before(oldestActivePing) {
+			oldestActivePing = time.Time(person.LastPingAt)
+		}
+	}
 	for i, person := range people {
-		if person.IsActive && person.LastPingAtMS == oldestActivePing {
+		if person.IsActive && time.Time(person.LastPingAt) == oldestActivePing {
 			people[i].IsLongestUnpinged = true
 		}
 	}
@@ -68,57 +62,55 @@ func listPeople(conn *sqlite.Conn) ([]Person, error) {
 	return people, nil
 }
 
-func addPerson(conn *sqlite.Conn, slug string) error {
-	const query = `
-		insert into people
-			(slug, is_active)
-		values
-			(?, 1)`
-
-	return sqlitex.Exec(conn, query, nil, slug)
+func (m *model) addPerson(slug string) error {
+	if err := m.DB.Create(Person{
+		Slug:     slug,
+		IsActive: true,
+	}).Error; err != nil {
+		return fmt.Errorf("error adding person: %w", err)
+	}
+	return nil
 }
 
-func updatePerson(conn *sqlite.Conn, slug string, isActive bool) error {
-	const query = `
-		update people
-		set is_active = ?
-		where slug = ?`
+func (m *model) updatePerson(slug string, isActive bool) error {
+	if err := m.DB.Save(Person{
+		Slug:     slug,
+		IsActive: isActive,
+	}).Error; err != nil {
+		return fmt.Errorf("error updating person: %w", err)
+	}
+	return nil
+}
 
-	setter := 0
-	if isActive {
-		setter = 1
+func (m *model) addPing(slug string, notes string) error {
+	if err := m.DB.Create(Ping{
+		PersonSlug: slug,
+		Notes:      notes,
+		At:         time.Now(),
+	}).Error; err != nil {
+		return fmt.Errorf("error inserting ping: %w", err)
+	}
+	return nil
+}
+
+func (m *model) showPerson(slug string) (AnnotatedPerson, []Ping, error) {
+	person, err := m.getPerson(slug)
+	if err != nil {
+		return AnnotatedPerson{}, nil, err
 	}
 
-	return sqlitex.Exec(conn, query, nil, setter, slug)
-}
-
-func addPing(conn *sqlite.Conn, slug string, notes string) error {
-	const query = `
-		insert into pings
-			(person_slug, at_ms, notes)
-		values
-			(?, ?, ?)`
-	return sqlitex.Exec(conn, query, nil, slug, time.Now().UnixMilli(), notes)
-}
-
-func showPerson(conn *sqlite.Conn, slug string) (Person, []Ping, error) {
-	person, err := getPerson(conn, slug)
+	pings, err := m.getPersonPings(slug)
 	if err != nil {
-		return Person{}, nil, err
-	}
-
-	pings, err := getPersonPings(conn, slug)
-	if err != nil {
-		return Person{}, nil, err
+		return AnnotatedPerson{}, nil, err
 	}
 
 	return person, pings, nil
 }
 
-func getPerson(conn *sqlite.Conn, slug string) (Person, error) {
-	people, err := listPeople(conn)
+func (m *model) getPerson(slug string) (AnnotatedPerson, error) {
+	people, err := m.listPeople()
 	if err != nil {
-		return Person{}, err
+		return AnnotatedPerson{}, err
 	}
 
 	for _, pr := range people {
@@ -127,29 +119,17 @@ func getPerson(conn *sqlite.Conn, slug string) (Person, error) {
 		}
 	}
 
-	return Person{}, errors.New("no such person")
+	return AnnotatedPerson{}, errors.New("no such person")
 }
 
-func getPersonPings(conn *sqlite.Conn, slug string) ([]Ping, error) {
+func (m *model) getPersonPings(slug string) ([]Ping, error) {
 	pings := []Ping{}
-	const query = `
-		select
-			at_ms,
-			notes
-		from pings
-		where person_slug = ?
-		order by at_ms desc;`
-	onResult := func(stmt *sqlite.Stmt) error {
-		pings = append(pings, Ping{
-			At:    formatTimeMs(stmt.ColumnInt64(0)),
-			Notes: stmt.ColumnText(1),
-		})
-		return nil
-	}
-	if err := sqlitex.Exec(conn, query, onResult, slug); err != nil {
+	if err := m.DB.Table("pings").
+		Where("person_slug = ?", slug).
+		Find(&pings).
+		Error; err != nil {
 		return nil, err
 	}
-
 	return pings, nil
 }
 

@@ -3,37 +3,14 @@ package main
 import (
 	"embed"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
 
 	"monks.co/credentials"
-	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
-
-var port = flag.Int("port", 3000, "port")
-
-func main() {
-	if err := run(); err != nil {
-		panic(err)
-	}
-}
-
-func run() error {
-	flag.Parse()
-	s, err := newServer()
-	if err != nil {
-		return fmt.Errorf("creating server: %w", err)
-	}
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
-	if err := http.ListenAndServe(addr, gzip.Handler(s)); err != nil {
-		return fmt.Errorf("serving http: %w", err)
-	}
-	return nil
-}
 
 var (
 	//go:embed templates/*
@@ -54,12 +31,7 @@ type server struct {
 	model *model
 }
 
-func newServer() (*server, error) {
-	m, err := NewModel()
-	if err != nil {
-		return nil, fmt.Errorf("constructing model: %w", err)
-	}
-
+func NewServer(m *model) (*server) {
 	s := &server{http.NewServeMux(), m}
 
 	s.Handle("/index.js", serve.JSServer("./ts/index.ts"))
@@ -72,7 +44,7 @@ func newServer() (*server, error) {
 	s.HandleFunc("/commands/import-saved-places", s.importSavedPlaces)
 	s.HandleFunc("/commands/annotate-peoples-places", s.annotatePeoplesPlaces)
 
-	return s, nil
+	return s
 }
 
 func (s *server) places(w http.ResponseWriter, req *http.Request) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"monks.co/pkg/config"
 	"monks.co/pkg/ports"
+	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
 	"tailscale.com/tsnet"
@@ -34,45 +36,27 @@ func run() error {
 
 	config, err := config.Load(*machine)
 	if err != nil {
-		return err
+		return fmt.Errorf("error loading config: %w", err)
 	}
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancelCause(context.Background())
-	for _, service := range config.Services {
-		routes := map[string]int{}
-		for _, app := range service.Apps {
-			routes[app] = ports.Apps[app]
-		}
-		fmt.Println("routes", routes)
+	ctx, cancel := sigctx.NewWithCancel()
 
-		app := &app{routes, service}
-		var server *server
-		switch service.Type {
-		case "redirect-to-https":
-			server = app.redirectServer(ctx, service.Addr)
-		case "https":
-			server, err = app.httpsServer(ctx, service.Addr, config.ACME)
-			if err != nil {
-				return err
-			}
-		case "tsnet":
-			server, err = app.tsnetServer(ctx, service.Addr)
-			if err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unsupported service type '%s'", service.Type)
-		}
-
+	for _, serviceConfig := range config.Services {
 		wg.Add(1)
+		serviceConfig := serviceConfig
 		go func() {
-			if err := server.serve(); err != nil {
-				fmt.Println("error:", err)
+			defer wg.Done()
+			routes := map[string]int{}
+			for _, app := range serviceConfig.Apps {
+				routes[app] = ports.Apps[app]
 			}
-			server.stop()
-			cancel(err)
-			wg.Done()
+			service := &Service{routes, serviceConfig, config.ACME}
+
+			log.Printf("listening at %s", serviceConfig.Addr)
+			if err := service.ListenAndServe(ctx); err != nil {
+				cancel(err)
+			}
 		}()
 	}
 
@@ -80,12 +64,26 @@ func run() error {
 	return nil
 }
 
-type app struct {
+type Service struct {
 	routes  map[string]int
 	service config.Service
+	acme    tls.ACME
 }
 
-func (a *app) redirectServer(ctx context.Context, addr string) *server {
+func (s *Service) ListenAndServe(ctx context.Context) error {
+	switch s.service.Type {
+	case "redirect-to-https":
+		return s.listenAndServeRedirects(ctx)
+	case "https":
+		return s.listenAndServeHTTPS(ctx)
+	case "tsnet":
+		return s.listenAndServeTSNet(ctx)
+	default:
+		return fmt.Errorf("unsupported service type: '%s'", s.service.Type)
+	}
+}
+
+func (s *Service) listenAndServeRedirects(ctx context.Context) error {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		u := req.URL
 		u.Host = net.JoinHostPort(req.Host, "443")
@@ -93,17 +91,120 @@ func (a *app) redirectServer(ctx context.Context, addr string) *server {
 		http.Redirect(w, req, u.String(), 301)
 	})
 	srv := &http.Server{
-		ConnContext: connContext,
-		Addr:        addr,
+		ConnContext: deriveConnectionContext,
+		Addr:        s.service.Addr,
 		Handler:     handler,
 	}
-	listen := func() (net.Listener, error) {
-		return net.Listen("tcp", addr)
+
+	ln, err := net.Listen("tcp", s.service.Addr)
+	if err != nil {
+		return err
 	}
-	return &server{srv, listen, false, func() {}}
+
+	proxyListener := &proxyproto.Listener{
+		Listener:          ln,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	defer proxyListener.Close()
+
+	errs := make(chan error)
+	go func() {
+		errs <- srv.Serve(proxyListener)
+	}()
+	select {
+	case err := <-errs:
+		return err
+	case <-ctx.Done():
+		return srv.Shutdown(context.Background())
+	}
 }
 
-func connContext(ctx context.Context, conn net.Conn) context.Context {
+func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
+	tlsConfig, stopTLS, err := tls.NewTLSConfig(ctx, s.acme)
+	if err != nil {
+		return fmt.Errorf("error creating tls config: %w", err)
+	}
+	defer stopTLS()
+
+	handler, err := traffic.New(s.service.Addr, &proxy{s.routes})
+	if err != nil {
+		return fmt.Errorf("error starting traffic logger: %w", err)
+	}
+	defer handler.Close()
+
+	srv := &http.Server{
+		ConnContext: deriveConnectionContext,
+		Addr:        s.service.Addr,
+		Handler:     BMRRedirectorHandler(handler),
+		TLSConfig:   tlsConfig,
+	}
+
+	ln, err := net.Listen("tcp", s.service.Addr)
+	if err != nil {
+		return err
+	}
+
+	proxyListener := &proxyproto.Listener{
+		Listener:          ln,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	defer proxyListener.Close()
+
+	errs := make(chan error)
+	go func() {
+		errs <- srv.ServeTLS(proxyListener, "", "")
+	}()
+	select {
+	case err := <-errs:
+		return err
+	case <-ctx.Done():
+		return srv.Shutdown(context.Background())
+	}
+}
+
+func (s *Service) listenAndServeTSNet(ctx context.Context) error {
+	handler, err := traffic.New(s.service.Addr, &proxy{s.routes})
+	if err != nil {
+		return fmt.Errorf("error starting traffic logger: %w", err)
+	}
+	defer handler.Close()
+	httpSrv := &http.Server{
+		ConnContext: deriveConnectionContext,
+		Addr:        s.service.Addr,
+		Handler:     BMRRedirectorHandler(handler),
+	}
+
+	tsSrv := &tsnet.Server{
+		Hostname:  "monksgo",
+		Dir:       s.service.StoragePath,
+		Ephemeral: true,
+		AuthKey:   os.Getenv("TS_AUTHKEY"),
+	}
+
+	ln, err := tsSrv.Listen("tcp", ":80")
+	if err != nil {
+		return fmt.Errorf("error listening on tsnet: %w", err)
+	}
+
+	proxyListener := &proxyproto.Listener{
+		Listener:          ln,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	defer proxyListener.Close()
+
+	errs := make(chan error)
+	go func() {
+		errs <- httpSrv.Serve(proxyListener)
+	}()
+	select {
+	case err := <-errs:
+		return err
+	case <-ctx.Done():
+		return httpSrv.Shutdown(context.Background())
+	}
+}
+
+func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {
 		if conn.LocalAddr() == nil {
 			fmt.Printf("couldn't retrieve local address")
@@ -115,87 +216,4 @@ func connContext(ctx context.Context, conn net.Conn) context.Context {
 		return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
 	}
 	return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
-}
-
-func (a *app) httpsServer(ctx context.Context, addr string, acme tls.ACME) (*server, error) {
-	p, err := traffic.New(addr, &proxy{a.routes})
-	if err != nil {
-		return nil, err
-	}
-	tlsConfig, stop, err := tls.NewTLSConfig(ctx, acme)
-	if err != nil {
-		return nil, err
-	}
-	srv := &http.Server{
-		ConnContext: connContext,
-		Addr:        addr,
-		Handler:     BMRRedirectorHandler(p),
-		TLSConfig:   tlsConfig,
-	}
-
-	listen := func() (net.Listener, error) {
-		return net.Listen("tcp", addr)
-	}
-
-	return &server{srv, listen, true, stop}, nil
-}
-
-func (a *app) tsnetServer(ctx context.Context, addr string) (*server, error) {
-	srv := &tsnet.Server{
-		Hostname:  "monksgo",
-		Dir:       a.service.StoragePath,
-		Ephemeral: true,
-		AuthKey:   os.Getenv("TS_AUTHKEY"),
-	}
-	p, err := traffic.New(addr, &proxy{a.routes})
-	if err != nil {
-		return nil, fmt.Errorf("error starting traffic logger: %w", err)
-	}
-	httpSrv := &http.Server{
-		ConnContext: connContext,
-		Addr:        addr,
-		Handler:     BMRRedirectorHandler(p),
-	}
-
-	listen := func() (net.Listener, error) {
-		ln, err := srv.Listen("tcp", ":80")
-		if err != nil {
-			return nil, fmt.Errorf("error listening on tsnet: %w", err)
-		}
-		return ln, nil
-	}
-
-	stop := func() {}
-
-	return &server{httpSrv, listen, false, stop}, nil
-}
-
-type server struct {
-	*http.Server
-	listen func() (net.Listener, error)
-	tls    bool
-	stop   func()
-}
-
-func (s *server) serve() error {
-	fmt.Println("will listen on", s.Addr)
-	ln, err := s.listen()
-	if err != nil {
-		return err
-	}
-	proxyListener := &proxyproto.Listener{
-		Listener:          ln,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
-	defer proxyListener.Close()
-	fmt.Println("listening on", s.Addr)
-	if s.tls {
-		err = s.ServeTLS(proxyListener, "", "")
-	} else {
-		err = s.Serve(proxyListener)
-	}
-	if err != nil {
-		return fmt.Errorf("error in serve: %w", err)
-	}
-	return nil
 }

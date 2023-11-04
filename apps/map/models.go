@@ -8,8 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"monks.co/pkg/database"
 	"monks.co/pkg/googlemaps"
 )
 
@@ -67,22 +66,20 @@ func (p Place) DisplayName() (string, error) {
 }
 
 type model struct {
-	db *gorm.DB
+	*database.DB
 }
 
 func NewModel() (*model, error) {
-	dbPath := filepath.Join(os.Getenv("MONKS_DATA"), "map.db")
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := database.Open("map.db")
 	if err != nil {
-		return nil, fmt.Errorf("opening database: %w", err)
+		return nil, err
 	}
-
 	return &model{db}, nil
 }
 
 func (m *model) listPlaces() ([]Place, error) {
 	places := []Place{}
-	tx := m.db.Table("places").Find(&places)
+	tx := m.DB.Table("places").Find(&places)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -91,7 +88,7 @@ func (m *model) listPlaces() ([]Place, error) {
 
 func (m *model) getPlace(googleMapsURL string) (*Place, error) {
 	var place Place
-	if err := m.db.
+	if err := m.DB.
 		Table("places").
 		Where(&Place{GoogleMapsURL: googleMapsURL}).
 		First(&place).
@@ -103,7 +100,7 @@ func (m *model) getPlace(googleMapsURL string) (*Place, error) {
 
 func (m *model) findPlaceByAddress(address string) (*Place, error) {
 	var place Place
-	if err := m.db.
+	if err := m.DB.
 		Where("google_maps_url like '%' || ? || '%'", address).
 		Or("google_maps_url like '%' || ? || '%''", strings.ReplaceAll(address, " ", "+")).
 		Or("address like '%' || ? || '%'", address).
@@ -116,14 +113,14 @@ func (m *model) findPlaceByAddress(address string) (*Place, error) {
 }
 
 func (m *model) insertPlace(place Place) error {
-	if err := m.db.Create(place).Error; err != nil {
+	if err := m.DB.Create(place).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *model) updatePlace(place Place) error {
-	if err := m.db.Save(place).Error; err != nil {
+	if err := m.DB.Save(place).Error; err != nil {
 		return err
 	}
 	return nil

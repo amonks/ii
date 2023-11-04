@@ -3,12 +3,11 @@ package main
 import (
 	"embed"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
-	"monks.co/pkg/dbserver"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
 
@@ -27,46 +26,30 @@ func init() {
 }
 
 type server struct {
-	*dbserver.DBServer
+	*http.ServeMux
+	model *model
 }
 
-func New() *server {
-	s := &server{
-		dbserver.New("golink", migrate),
-	}
-
+func NewServer(m *model) *server {
+	s := &server{http.NewServeMux(), m}
 	s.HandleFunc("/", s.Handler)
-
 	return s
 }
 
-func migrate(conn *sqlite.Conn) error {
-	if err := sqlitex.ExecScript(conn, `
-		create table if not exists urls (
-			key text primary key not null,
-			url text,
-			created_at datetime
-		);`,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Request) {
-	s.Logf("-> %s %s", req.Method, req.URL)
+func (s *server) Handler(w http.ResponseWriter, req *http.Request) {
+	log.Printf("-> %s %s", req.Method, req.URL)
 
 	if req.Method == "GET" && req.URL.Path == "/" {
-		s.Logf("path: list")
-		urls, err := List(req.Context(), conn)
+		log.Printf("path: list")
+		urls, err := s.model.List()
 		if err != nil {
-			s.InternalServerError(w, req, err)
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
 		v := struct{ Shortlinks []Shortening }{Shortlinks: urls}
 		if err := templates["index.gohtml"].Execute(w, v); err != nil {
-			s.InternalServerError(w, req, err)
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
@@ -74,9 +57,9 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	}
 
 	if req.Method == "POST" {
-		s.Logf("path: post")
+		log.Printf("path: post")
 		if err := req.ParseForm(); err != nil {
-			s.Error(w, req, http.StatusBadRequest, err)
+			serve.Error(w, req, http.StatusBadRequest, err)
 			return
 		}
 
@@ -84,26 +67,26 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 		url := req.Form.Get("url")
 
 		if key == "" || url == "" {
-			s.Errorf(w, req, http.StatusBadRequest, "key or url is required")
+			serve.Errorf(w, req, http.StatusBadRequest, "key or url is required")
 			return
 		}
 
-		err := Set(req.Context(), conn, key, url)
+		err := s.model.Set(key, url)
 		if err != nil {
-			s.InternalServerError(w, req, err)
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
-		http.Redirect(w, req, "/go", 302)
+		http.Redirect(w, req, "/golink", 302)
 		return
 	}
 
 	if req.Method == "DELETE" {
-		s.Logf("path: del")
-		key := strings.Trim(req.URL.Path, "/go/")
+		log.Printf("path: del")
+		key := strings.Trim(req.URL.Path, "/golink/")
 
-		if err := Delete(req.Context(), conn, key); err != nil {
-			s.InternalServerError(w, req, err)
+		if err := s.model.Delete(key); err != nil {
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
@@ -112,19 +95,19 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 	}
 
 	if req.Method == "GET" {
-		s.Logf("path: get '%s'", req.URL.Path)
+		log.Printf("path: get '%s'", req.URL.Path)
 		key := strings.TrimPrefix(req.URL.Path, "/")
 
-		url, err := Get(req.Context(), conn, key)
+		url, err := s.model.Get(key)
 		if err != nil {
-			s.Logf("no such link: '%s'", key)
-			s.InternalServerError(w, req, err)
+			log.Printf("no such link: '%s'", key)
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
 		if url == "" {
-			s.Logf("no match for key: '%s'", key)
-			s.Error(w, req, http.StatusNotFound, err)
+			log.Printf("no match for key: '%s'", key)
+			serve.Error(w, req, http.StatusNotFound, err)
 			return
 		}
 
@@ -132,5 +115,5 @@ func (s *server) Handler(conn *sqlite.Conn, w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	s.Errorf(w, req, http.StatusNotFound, "no such path")
+	serve.Errorf(w, req, http.StatusNotFound, "no such path")
 }
