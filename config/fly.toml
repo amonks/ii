@@ -24,7 +24,7 @@ mode = "prod"
 [acme]
   storage_path = "/data"
   production = true
-  domains = ["monks.co", "blgn.mn"]
+  domains = ["monks.co", "blgn.mn", "belgianman.com"]
 
   [[acme.strategies]]
     strategy = "dns"
