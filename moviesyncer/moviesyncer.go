@@ -18,7 +18,7 @@ type MovieSyncer struct {
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieSyncer {
-	system := system.New("syncer")
+	system := system.New("moviesyncer")
 	return &MovieSyncer{
 		System: system,
 		tmdb:   tmdb,
@@ -29,8 +29,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *MovieSyncer {
 func (app *MovieSyncer) Run(ctx context.Context) error {
 	defer app.System.Start()()
 
-	fmt.Println("moviesyncer: start")
-
 	if err := app.tmdb.AuthorizeV4WriteAPI(); err != nil {
 		return err
 	}
@@ -39,8 +37,6 @@ func (app *MovieSyncer) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("%d movies in the library\n", len(movies))
 
 	const listID = 8269679
 
@@ -55,16 +51,14 @@ func (app *MovieSyncer) Run(ctx context.Context) error {
 
 	fmt.Printf("%d movies in the tmdb list\n", len(tmdbList))
 
-	for _, id := range movies {
-		if _, has := tmdbSet[id]; !has {
-			fmt.Println("adding", id, "to list")
-			if err := app.tmdb.AddToList(listID, id); err != nil {
+	for _, movie := range movies {
+		if _, has := tmdbSet[movie.ID]; !has {
+			fmt.Println("adding", movie.ID, "to list")
+			if err := app.tmdb.AddToList(listID, movie.ID); err != nil {
 				return err
 			}
 		}
 	}
-
-	fmt.Println("moviesyncer done")
 
 	return nil
 }

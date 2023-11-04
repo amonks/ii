@@ -1,22 +1,24 @@
 package db
 
 import (
-	"context"
-	"errors"
 	"fmt"
+	"log"
+	"os"
 	"sync"
+	"time"
 
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var ErrCollision = fmt.Errorf("collision")
 
 type DB struct {
 	path string
-	pool *sqlitex.Pool
 
 	wMu sync.Mutex
+	db  *gorm.DB
 }
 
 func New(path string) *DB {
@@ -25,83 +27,38 @@ func New(path string) *DB {
 	}
 }
 
-type conn struct {
-	*sqlite.Conn
-	db *DB
-}
-
-func (conn *conn) release() {
-	conn.db.pool.Put(conn.Conn)
-	conn.db.wMu.Unlock()
-}
-
-func (db *DB) conn() (*conn, error) {
-	db.wMu.Lock()
-
-	if db.pool == nil {
-		return nil, errors.New("db not started")
-	}
-
-	c := db.pool.Get(context.Background())
-	if c == nil {
-		return nil, errors.New("could not get connection")
-	}
-
-	return &conn{Conn: c, db: db}, nil
-}
-
 func (db *DB) Start() error {
-	pool, err := sqlitex.Open(fmt.Sprintf("file:%s", db.path), 0, 10)
+	gormdb, err := gorm.Open(sqlite.Open(db.path), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stderr, "\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             time.Second,
+				LogLevel:                  logger.Warn,
+				IgnoreRecordNotFoundError: true,
+				ParameterizedQueries:      true,
+				Colorful:                  true,
+			},
+		),
+	})
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	db.pool = pool
 
-	c, err := db.conn()
-	defer c.release()
+	if tx := gormdb.Exec(`PRAGMA journal_mode=wal;`); tx.Error != nil {
+		return tx.Error
+	}
+
+	db.db = gormdb
+	return nil
+}
+
+func (db *DB) Stop() error {
+	sqldb, err := db.db.DB()
 	if err != nil {
-		return err
+		return fmt.Errorf("error accessing database connection: %w", err)
 	}
-
-	if err := sqlitex.Exec(c.Conn, `PRAGMA journal_mode=wal;`, nil); err != nil {
-		return fmt.Errorf("failed to enable wal mode: %w", err)
+	if err := sqldb.Close(); err != nil {
+		return fmt.Errorf("error closing connection: %w", err)
 	}
-
-	if err := sqlitex.Exec(c.Conn, `
-		create table if not exists ignores (
-			path text unique
-		);`, nil); err != nil {
-		return fmt.Errorf("failed to create `ignores` table: %w", err)
-	}
-
-	if err := sqlitex.Exec(c.Conn, `
-		create table if not exists movies (
-			id                 int primary key,
-			title              text,
-			original_title     text,
-			tagline            text,
-			overview           text,
-			runtime            int,
-			genres             text,
-			languages          text,
-			release_date       text,
-
-			extension          text,
-			library_path       text unique,
-			imported_from_path text unique,
-
-			is_imported        integer,
-
-			tmdb_json          text,
-			poster_path        text,
-
-			tmdb_credits_json  text,
-			director_name      text,
-
-			writer_name        text
-		);`, nil); err != nil {
-		return fmt.Errorf("failed to create `movies` table: %w", err)
-	}
-
 	return nil
 }

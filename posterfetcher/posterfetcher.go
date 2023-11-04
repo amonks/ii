@@ -23,7 +23,7 @@ type PosterFetcher struct {
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {
-	system := system.New("fetcher")
+	system := system.New("posterfetcher")
 	return &PosterFetcher{
 		System: system,
 		tmdb:   tmdb,
@@ -32,19 +32,14 @@ func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {
 }
 
 func (app *PosterFetcher) Run(ctx context.Context) error {
-	defer app.System.Start()()
-
-	fmt.Println("posterfetcher: start")
+	defer app.System.Start().Stop()
 
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%d movies in the library\n", len(movies))
-
-	for _, id := range movies {
-		movie, err := app.db.GetMovie(id)
+	for _, movie := range movies {
 		if len(movie.PosterPath) != 0 {
 			continue
 		}
@@ -57,28 +52,32 @@ func (app *PosterFetcher) Run(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println("fetching poster for", id, movie.Title)
+		fmt.Println("fetching poster for", movie.ID, movie.Title)
 
-		posterPath := path.Clean("/mypool/tank/movies/posters/" + tmdbJSON.PosterPath)
+		app.Println("creating file")
+		posterPath := path.Clean("/data/tank/movies/posters/" + tmdbJSON.PosterPath)
 		f, err := os.Create(posterPath)
 		if err != nil {
 			return err
 		}
+
+		app.Println("fetching poster")
 		resp, err := http.Get("https://image.tmdb.org/t/p/original" + tmdbJSON.PosterPath)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
+
+		app.Println("copying poster data")
 		if _, err := io.Copy(f, resp.Body); err != nil {
 			return err
 		}
 
-		if err := app.db.AddMoviePoster(id, posterPath); err != nil {
-			return fmt.Errorf("error updating %d (%s): %w", id, movie.Title, err)
+		app.Println("adding movie poster")
+		if err := app.db.AddMoviePoster(movie, posterPath); err != nil {
+			return fmt.Errorf("error updating %d (%s): %w", movie.ID, movie.Title, err)
 		}
 	}
-
-	fmt.Println("posterfetcher done")
 
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"monks.co/movietagger/config"
 	"monks.co/movietagger/db"
@@ -17,7 +18,7 @@ type MovieCopier struct {
 }
 
 func New(db *db.DB) *MovieCopier {
-	system := system.New("copier")
+	system := system.New("moviecopier")
 	return &MovieCopier{
 		System: system,
 		db:     db,
@@ -25,9 +26,7 @@ func New(db *db.DB) *MovieCopier {
 }
 
 func (app *MovieCopier) Run(ctx context.Context) error {
-	defer app.System.Start()()
-
-	fmt.Println("moviecopier: start")
+	defer app.System.Start().Stop()
 
 	for {
 		if err := ctx.Err(); err != nil {
@@ -58,13 +57,13 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 		app.Println("got", movie.Title)
 
 		app.Println("copying movie...")
-		if err := copyFile(ctx, config.ImportDir+"/"+movie.ImportedFromPath, config.MoviesDir+"/"+movie.LibraryPath); err != nil {
+		if err := app.copyFile(ctx, config.MovieImportDir+"/"+movie.ImportedFromPath, config.MovieLibraryDir+"/"+movie.LibraryPath); err != nil {
 			app.Println(err)
 			return err
 		}
 
 		app.Println("marking as imported...")
-		if err := app.db.MarkMovieAsImported(movie.ID); err != nil {
+		if err := app.db.SetMovieImportedAt(movie, time.Now()); err != nil {
 			app.Println(err)
 			return err
 		}
@@ -72,10 +71,10 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 	}
 }
 
-func copyFile(ctx context.Context, src, dest string) error {
+func (app *MovieCopier) copyFile(ctx context.Context, src, dest string) error {
 	srcStat, err := os.Stat(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("copy: error reading source file '%s': %w", src, err)
 	}
 	if !srcStat.Mode().IsRegular() {
 		return fmt.Errorf("cannot copy irregular file '%s'", src)
@@ -87,7 +86,8 @@ func copyFile(ctx context.Context, src, dest string) error {
 	}
 	defer srcF.Close()
 
-	srcFReader := NewCancelReader(ctx, srcF)
+	var rdr io.Reader = NewCancelReader(ctx, srcF)
+	rdr = io.TeeReader(rdr, &ProgressWriter{logger: app, totalSize: int(srcStat.Size())})
 
 	destF, err := os.Create(dest)
 	if err != nil {
@@ -95,11 +95,47 @@ func copyFile(ctx context.Context, src, dest string) error {
 	}
 	defer destF.Close()
 
-	if _, err := io.Copy(destF, srcFReader); err != nil {
+	buf := make([]byte, 8)
+	if _, err := io.CopyBuffer(destF, rdr, buf); err != nil {
 		return fmt.Errorf("error copying file from '%s' to '%s': %w", src, dest, err)
 	}
 
 	return nil
+}
+
+type ProgressWriter struct {
+	nextPrint time.Time
+	progress  int
+	totalSize int
+	logger    interface {
+		Printf(string, ...interface{})
+	}
+}
+
+func (pw *ProgressWriter) Write(data []byte) (int, error) {
+	pw.progress += len(data)
+	if time.Now().After(pw.nextPrint) {
+		pw.logger.Printf("progress: %.2f%%\t%s / %s",
+			100*float64(pw.progress)/float64(pw.totalSize),
+			byteCount(pw.progress),
+			byteCount(pw.totalSize))
+		pw.nextPrint = time.Now().Add(10 * time.Second)
+	}
+	return len(data), nil
+}
+
+func byteCount(b int) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%dB", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f%cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
 type CancelReader struct {
@@ -122,4 +158,3 @@ func (cr *CancelReader) Read(b []byte) (int, error) {
 		return cr.base.Read(b)
 	}
 }
-

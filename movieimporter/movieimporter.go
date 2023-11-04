@@ -1,4 +1,4 @@
-package movietagger
+package movieimporter
 
 import (
 	"context"
@@ -17,7 +17,17 @@ import (
 	"monks.co/movietagger/ui"
 )
 
-type MovieTagger struct {
+func New(tmdb *tmdb.Client, db *db.DB) *MovieImporter {
+	system := system.New("movieimporter")
+
+	return &MovieImporter{
+		System: system,
+		tmdb:   tmdb,
+		db:     db,
+	}
+}
+
+type MovieImporter struct {
 	*system.System
 	tmdb *tmdb.Client
 	db   *db.DB
@@ -26,7 +36,7 @@ type MovieTagger struct {
 	subscriptions []chan *db.Movie
 }
 
-func (app *MovieTagger) Subscribe() chan *db.Movie {
+func (app *MovieImporter) Subscribe() chan *db.Movie {
 	app.mutex.Lock()
 	defer app.mutex.Unlock()
 
@@ -35,7 +45,7 @@ func (app *MovieTagger) Subscribe() chan *db.Movie {
 	return c
 }
 
-func (app *MovieTagger) notify(m *db.Movie) {
+func (app *MovieImporter) notify(m *db.Movie) {
 	app.mutex.Lock()
 	defer app.mutex.Unlock()
 
@@ -47,7 +57,7 @@ func (app *MovieTagger) notify(m *db.Movie) {
 	app.subscriptions = nil
 }
 
-func (app *MovieTagger) close() {
+func (app *MovieImporter) close() {
 	app.mutex.Lock()
 	defer app.mutex.Unlock()
 
@@ -56,27 +66,18 @@ func (app *MovieTagger) close() {
 	}
 }
 
-func New(tmdb *tmdb.Client, db *db.DB) *MovieTagger {
-	system := system.New("tagger")
-	return &MovieTagger{
-		System: system,
-		tmdb:   tmdb,
-		db:     db,
-	}
-}
+func (app *MovieImporter) Run(ctx context.Context) error {
+	defer app.System.Start().Stop()
 
-func (app *MovieTagger) Run(ctx context.Context) error {
-	defer app.System.Start()()
-
-	fmt.Println("movietagger: start")
-
-	if err := filepath.Walk(config.ImportDir, func(path string, info os.FileInfo, err error) error {
-		path = strings.TrimPrefix(path, config.ImportDir+"/")
+	if err := filepath.Walk(config.MovieImportDir, func(path string, info os.FileInfo, err error) error {
+		path = strings.TrimPrefix(path, config.MovieImportDir+"/")
 		if err := ctx.Err(); err != nil {
+			app.Printf("canceled")
 			return err
 		}
 
 		if err != nil {
+			app.Println("passed an error:", err)
 			return err
 		}
 
@@ -90,6 +91,7 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 		}
 
 		if ignored, err := app.db.PathIsIgnored(path); err != nil {
+			app.Printf("err checking ignore")
 			return err
 		} else if ignored {
 			app.Printf("ignore %s", path)
@@ -97,6 +99,7 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 		}
 
 		if exists, err := app.db.MovieExistsFromPath(path); err != nil {
+			app.Printf("err checking exists")
 			return err
 		} else if exists {
 			app.Printf("duplicate %s", path)
@@ -159,7 +162,7 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 			switch response {
 			case "yes":
 				fmt.Println("ok. overwriting.")
-				if err := app.db.ReplaceMovie(movie.ID, movie.ImportedFromPath); err != nil {
+				if err := app.db.ReplaceMovie(movie, movie.ImportedFromPath); err != nil {
 					return err
 				}
 				return nil
@@ -185,16 +188,22 @@ func (app *MovieTagger) Run(ctx context.Context) error {
 		fmt.Printf("Done\n")
 		return nil
 	}); err != nil {
+		// If a file is deleted between the readdir and the lstat,
+		// filepath.Walk exits with an error. That's fine; we must be
+		// downloading torrents. Just exit successfully and expect to
+		// be retried eventually.
+		if str := err.Error(); strings.HasPrefix(str, "lstat") && strings.HasSuffix(str, "no such file or directory") {
+			return nil
+		}
 		app.close()
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println("movietagger: done")
 	return nil
 }
 
-func (a *MovieTagger) buildSearchQuery(path string) (string, int64, error) {
+func (a *MovieImporter) buildSearchQuery(path string) (string, int64, error) {
 	fmt.Println("locating " + path)
 
 	yearQ := ui.Prompt("year")
@@ -214,7 +223,7 @@ func (a *MovieTagger) buildSearchQuery(path string) (string, int64, error) {
 var errRetry = errors.New("retry")
 var errSkip = errors.New("skip")
 
-func (a *MovieTagger) search(titleQ string, yearQ int64) (int64, error) {
+func (a *MovieImporter) search(titleQ string, yearQ int64) (int64, error) {
 	ress, err := a.tmdb.Search(titleQ, yearQ)
 	if err != nil {
 		return 0, err

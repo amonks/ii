@@ -1,47 +1,29 @@
 package db
 
 import (
-	"crawshaw.io/sqlite"
-	"crawshaw.io/sqlite/sqlitex"
+	"errors"
+
+	"gorm.io/gorm"
 )
 
 type Ignore struct {
-	ImportedFromPath string
+	ImportedFromPath string `gorm:"column:path;primaryKey"`
 }
 
 func (db *DB) PathIsIgnored(path string) (bool, error) {
-	c, err := db.conn()
-	defer c.release()
-	if err != nil {
+	var ignore Ignore
+	tx := db.db.Where(&Ignore{ImportedFromPath: path}).First(&ignore)
+	if err := tx.Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
-
-	var ignore bool
-	const q = `select true from ignores where path = ?;`
-	f := func(_ *sqlite.Stmt) error {
-		ignore = true
-		return nil
-	}
-	if err := sqlitex.Exec(c.Conn, q, f, path); err != nil {
-		return false, err
-	}
-
-	return ignore, nil
+	return true, nil
 }
 
 func (db *DB) IgnorePath(path string) error {
-	c, err := db.conn()
-	defer c.release()
-	if err != nil {
+	if err := db.db.Create(&Ignore{ImportedFromPath: path}).Error; err != nil {
 		return err
 	}
-
-	const q = `insert into ignores (path) values (?);`
-	if err := sqlitex.Exec(c.Conn, q, nil, path); err != nil {
-		return err
-	}
-
 	return nil
 }
-
-

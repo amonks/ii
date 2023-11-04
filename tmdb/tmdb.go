@@ -182,7 +182,7 @@ func (c *Client) AddToList(listId, movieID int64) error {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("error code from tmdb list request: %d", res.StatusCode)
+		return fmt.Errorf("error code from tmdb add to list request: %d", res.StatusCode)
 	}
 	return nil
 }

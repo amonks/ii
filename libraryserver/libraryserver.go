@@ -39,8 +39,7 @@ func New(tmdb *tmdb.Client, db *db.DB) *LibraryServer {
 }
 
 func (app *LibraryServer) Run(ctx context.Context) error {
-	defer app.System.Start()()
-	fmt.Println("libraryserver: start")
+	defer app.System.Start().Stop()
 
 	tmpl := template.New("movies")
 	tmpl, err := tmpl.Parse(tmplSrc)
@@ -50,6 +49,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		app.Println("req /")
 		q := req.URL.Query()
 
 		selectedGenres := q["genres"]
@@ -69,18 +69,18 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 
 		sortBy := q.Get("sortBy")
 		sortDirection := q.Get("sortDirection")
-		if sortBy != "name" && sortBy != "date" && sortBy != "runtime" {
+		if sortBy != "name" && sortBy != "date" && sortBy != "runtime" && sortBy != "importDate" {
 			sortBy = "date"
 		}
 		if sortDirection != "asc" && sortDirection != "desc" {
-			if sortBy == "date" {
+			if sortBy == "date" || sortBy == "importDate" {
 				sortDirection = "desc"
 			} else {
 				sortDirection = "asc"
 			}
 		}
 
-		ids, err := app.db.AllMovies()
+		movies, err := app.db.AllMovies()
 		if err != nil {
 			fmt.Println(err)
 			w.WriteHeader(500)
@@ -104,8 +104,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 		data.SortDirection = sortDirection
 
 		allGenresSet := map[string]struct{}{}
-		for _, id := range ids {
-			movie, err := app.db.GetMovie(id)
+		for _, movie := range movies {
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(500)
@@ -170,6 +169,16 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 					return data.Movies[a].ReleaseDate > data.Movies[b].ReleaseDate
 				}
 				return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
+			case "importDate":
+				if data.Movies[a].ImportedAt == "" {
+					return true
+				} else if data.Movies[b].ImportedAt == "" {
+					return true
+				}
+				if sortDirection == "desc" {
+					return data.Movies[a].ImportedAt > data.Movies[b].ImportedAt
+				}
+				return data.Movies[a].ImportedAt < data.Movies[b].ImportedAt
 			case "runtime":
 				if sortDirection == "desc" {
 					return data.Movies[a].Runtime > data.Movies[b].Runtime
@@ -190,15 +199,19 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 		}
 	})
 	mux.HandleFunc("/poster", func(w http.ResponseWriter, req *http.Request) {
+		app.Println("req /poster")
+
 		idStr := req.URL.Query().Get("id")
 		id, err := strconv.ParseInt(idStr, 10, 32)
 		if err != nil {
+			app.Println("parseInt error:", err)
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
 		}
 		movie, err := app.db.GetMovie(id)
 		if err != nil {
+			app.Println("getMovie error:", err)
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -207,33 +220,36 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 		http.ServeFile(w, req, movie.PosterPath)
 	})
 	mux.HandleFunc("/play", func(w http.ResponseWriter, req *http.Request) {
+		app.Println("req /play")
 		idStr := req.URL.Query().Get("id")
 		id, err := strconv.ParseInt(idStr, 10, 32)
 		if err != nil {
+			app.Println("parseInt error:", err)
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
 		}
 		movie, err := app.db.GetMovie(id)
 		if err != nil {
+			app.Println("getMovie error:", err)
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
 		}
 		for _, cmd := range []*exec.Cmd{
-			exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thor.ss.cx/mypool/tank/movies/%s'", movie.LibraryPath)),
+			exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thor.ss.cx/data/tank/movies/%s'", movie.LibraryPath)),
 			exec.Command("ssh", "lugh", `osascript -e 'tell application "VLC" to activate' -e 'tell application "System Events" to keystroke "f" using {command down, control down}'`),
 		} {
 			cmd := cmd
 			if err := cmd.Start(); err != nil {
+				app.Println("start on lugh error:", err)
 				w.WriteHeader(500)
 				w.Write([]byte("error"))
 				return
 			}
 			go func() {
 				if err := cmd.Wait(); err != nil {
-					fmt.Println("MOVIE ERROR")
-					fmt.Println(err)
+					app.Println("start on lugh error:", err)
 				}
 			}()
 		}
@@ -241,12 +257,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 		w.Write([]byte("ok"))
 	})
 
-	wrapped := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println(req.URL.String())
-		mux.ServeHTTP(w, req)
-	})
-
-	s := &http.Server{Addr: "0.0.0.0:3333", Handler: wrapped}
+	s := &http.Server{Addr: "0.0.0.0:3333", Handler: mux}
 
 	errs := make(chan error)
 	go func() {

@@ -1,4 +1,11 @@
 package config
 
-const ImportDir = "../mnt/whatbox/files/movies"
-const MoviesDir = "/mypool/tank/movies"
+const (
+	DBPath = "/data/tank/movies/.movies.db"
+
+	TVImportDir  = "../mnt/whatbox/files/tv"
+	TVLibraryDir = "/data/tank/tv"
+
+	MovieImportDir  = "/data/dmz/whatbox/files/movies"
+	MovieLibraryDir = "/data/tank/movies"
+)
