@@ -2,6 +2,22 @@ resource "aws_route53_zone" "ss-cx" {
   name = "ss.cx"
 }
 
+resource "aws_route53_record" "www-ss-cx-AAAA" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "www.ss.cx."
+  type    = "AAAA"
+  ttl     = "300"
+  records = ["2a09:8280:1::f:478"]
+}
+
+resource "aws_route53_record" "www-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "www.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["66.51.122.238"]
+}
+
 resource "aws_route53_record" "wifi-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "wifi.ss.cx."
@@ -16,6 +32,22 @@ resource "aws_route53_record" "thor-ss-cx-A" {
   type    = "A"
   ttl     = "300"
   records = ["100.83.137.16"]
+}
+
+resource "aws_route53_record" "ss-cx-AAAA" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "ss.cx."
+  type    = "AAAA"
+  ttl     = "300"
+  records = ["2a09:8280:1::f:478"]
+}
+
+resource "aws_route53_record" "ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["66.51.122.238"]
 }
 
 resource "aws_route53_record" "qaynan-ss-cx-A" {

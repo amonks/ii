@@ -5,13 +5,11 @@ go 1.21
 toolchain go1.21.3
 
 require (
-	crawshaw.io/sqlite v0.3.2
 	github.com/BurntSushi/toml v1.3.2
 	github.com/a-h/templ v0.2.408
 	github.com/amonks/run v1.0.0-beta.21
 	github.com/caddyserver/certmagic v0.17.2
 	github.com/evanw/esbuild v0.19.4
-	github.com/go-ap/activitypub v0.0.0-20221209114049-1ceafda50f9f
 	github.com/libdns/route53 v1.3.1
 	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/pires/go-proxyproto v0.7.0
@@ -19,7 +17,6 @@ require (
 	github.com/twilio/twilio-go v1.15.0
 	github.com/yuin/goldmark v1.5.4
 	go.abhg.dev/goldmark/frontmatter v0.1.0
-	gorm.io/datatypes v1.2.0
 	gorm.io/driver/sqlite v1.5.3
 	gorm.io/gorm v1.25.4
 	tailscale.com v1.52.1
@@ -35,7 +32,6 @@ require (
 	code.gitea.io/sdk/gitea v0.15.1 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
-	git.sr.ht/~mariusor/go-xsd-duration v0.0.0-20220703122237-02e73435a078 // indirect
 	github.com/AlekSi/pointer v1.2.0 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.6.1 // indirect
@@ -143,8 +139,6 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
-	github.com/go-ap/errors v0.0.0-20221205040414-01c1adfc98ea // indirect
-	github.com/go-ap/jsonld v0.0.0-20221030091449-f2a191312c73 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-git/go-git/v5 v5.8.1 // indirect
@@ -301,7 +295,6 @@ require (
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
 	github.com/u-root/uio v0.0.0-20230305220412-3e8cd9d6bf63 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/valyala/fastjson v1.6.3 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
@@ -353,7 +346,6 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/mysql v1.4.7 // indirect
 	gvisor.dev/gvisor v0.0.0-20230928000133-4fe30062272c // indirect
 	honnef.co/go/tools v0.4.6 // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect

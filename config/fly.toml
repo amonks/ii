@@ -25,16 +25,19 @@ mode = "prod"
   storage_path = "/data"
   production = true
   domains = [
+    "monks.co",
+
+    # "www.belgianman.com",
+    "belgianman.com",
+    "blgn.mn",
+
     "andrewmonks.com",
     "andrewmonks.net",
     "andrewmonks.org",
-    "belgianman.com",
-    "blgn.mn",
-    "monks.co",
-    "needsyourhelp.org",
     "docrimes.com",
-    "popefucker.com",
-    "ss.cx"
+    "needsyourhelp.org"
+    # "popefucker.com",
+    # "ss.cx"
   ]
 
   [[acme.strategies]]

@@ -43,6 +43,11 @@ resource "gandi_nameservers" "gandi_domain_needsyourhelp_org" {
   nameservers = aws_route53_zone.needsyourhelp-org.name_servers
 }
 
+resource "gandi_nameservers" "gandi_domain_popefucker_com" {
+  domain      = "popefucker.com"
+  nameservers = aws_route53_zone.popefucker-com.name_servers
+}
+
 resource "gandi_nameservers" "gandi_domain_ss_cx" {
   domain      = "ss.cx"
   nameservers = aws_route53_zone.ss-cx.name_servers

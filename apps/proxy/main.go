@@ -33,6 +33,7 @@ var hostRedirects = map[string]string{
 	"docrimes.com":      "https://monks.co/",
 	"needsyourhelp.org": "https://monks.co/",
 	"popefucker.com":    "https://monks.co/",
+	"ss.cx":             "https://monks.co/",
 }
 
 func main() {
@@ -138,7 +139,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer stopTLS()
 
-	handler, err := traffic.New(s.service.Addr, &proxy{s.routes})
+	handler, err := traffic.New(s.service.Addr, RedirectorHandler(hostRedirects, &proxy{s.routes}))
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}
@@ -147,7 +148,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
-		Handler:     RedirectorHandler(hostRedirects, handler),
+		Handler:     handler,
 		TLSConfig:   tlsConfig,
 	}
 
@@ -175,7 +176,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 }
 
 func (s *Service) listenAndServeTSNet(ctx context.Context) error {
-	handler, err := traffic.New(s.service.Addr, &proxy{s.routes})
+	handler, err := traffic.New(s.service.Addr, RedirectorHandler(hostRedirects, &proxy{s.routes}))
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}
@@ -183,7 +184,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	httpSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
-		Handler:     RedirectorHandler(hostRedirects, handler),
+		Handler:     handler,
 	}
 
 	tsSrv := &tsnet.Server{
