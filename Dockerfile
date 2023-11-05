@@ -7,10 +7,16 @@ FROM golang:alpine as gobuild
   RUN go install github.com/amonks/run/cmd/run@latest
 
   WORKDIR /app
-  COPY . .
-  RUN ls
+  COPY apps apps
+  COPY cmd cmd
+  COPY credentials credentials
+  COPY pkg pkg
+  COPY static static
+  COPY go.mod go.mod
+  COPY go.sum go.sum
+  COPY tasks.toml tasks.toml
+  COPY tools.go tools.go
   RUN run build
-  RUN ls
 
 FROM alpine
   ENV MONKS_ROOT=/app
