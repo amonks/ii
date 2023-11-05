@@ -86,7 +86,13 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 	acmeIssuer := certmagic.NewACMEIssuer(config, acmeIssuerConfig)
 	config.Issuers = []certmagic.Issuer{acmeIssuer}
 
-	err := config.ManageSync(ctx, acmeConfig.Domains)
+	var domains []string
+	for _, domain := range acmeConfig.Domains {
+		domains = append(domains, domain)
+		domains = append(domains, "*."+domain)
+	}
+
+	err := config.ManageSync(ctx, domains)
 	if err != nil {
 		cache.Stop()
 		return nil, nil, err

@@ -23,19 +23,6 @@ import (
 
 var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
 
-var hostRedirects = map[string]string{
-	"belgianman.com": "https://belgianman.bandcamp.com/",
-	"blgn.mn":        "https://belgianman.bandcamp.com/",
-
-	"andrewmonks.com":   "https://monks.co/",
-	"andrewmonks.net":   "https://monks.co/",
-	"andrewmonks.org":   "https://monks.co/",
-	"docrimes.com":      "https://monks.co/",
-	"needsyourhelp.org": "https://monks.co/",
-	"popefucker.com":    "https://monks.co/",
-	"ss.cx":             "https://monks.co/",
-}
-
 func main() {
 	if err := run(); err != nil {
 		panic(err)
@@ -62,7 +49,12 @@ func run() error {
 			for _, app := range serviceConfig.Apps {
 				routes[app] = ports.Apps[app]
 			}
-			service := &Service{routes, serviceConfig, config.ACME}
+			service := &Service{
+				routes:    routes,
+				service:   serviceConfig,
+				acme:      config.ACME,
+				redirects: config.Redirects,
+			}
 
 			log.Printf("listening at %s", serviceConfig.Addr)
 			if err := service.ListenAndServe(ctx); err != nil {
@@ -78,9 +70,10 @@ func run() error {
 }
 
 type Service struct {
-	routes  map[string]int
-	service config.Service
-	acme    tls.ACME
+	routes    map[string]int
+	service   config.Service
+	acme      tls.ACME
+	redirects map[string]string
 }
 
 func (s *Service) ListenAndServe(ctx context.Context) error {
@@ -139,7 +132,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer stopTLS()
 
-	handler, err := traffic.New(s.service.Addr, RedirectorHandler(hostRedirects, &proxy{s.routes}))
+	handler, err := traffic.New(s.service.Addr, RedirectorHandler(s.redirects, &proxy{s.routes}))
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}
@@ -176,7 +169,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 }
 
 func (s *Service) listenAndServeTSNet(ctx context.Context) error {
-	handler, err := traffic.New(s.service.Addr, RedirectorHandler(hostRedirects, &proxy{s.routes}))
+	handler, err := traffic.New(s.service.Addr, RedirectorHandler(s.redirects, &proxy{s.routes}))
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}

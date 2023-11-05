@@ -1,5 +1,9 @@
 mode = "dev"
 
+[redirects]
+  "belgianman.com" = "https://belgianman.bandcamp.com/"
+  "blgn.mn"        = "https://belgianman.bandcamp.com/"
+
 [[service]]
   type = "redirect-to-https"
   addr = "0.0.0.0:80"

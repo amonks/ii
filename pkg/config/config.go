@@ -10,9 +10,10 @@ import (
 )
 
 type Config struct {
-	Mode     string    `toml:"mode"`
-	Services []Service `toml:"service"`
-	ACME     tls.ACME  `toml:"acme"`
+	Mode      string            `toml:"mode"`
+	Services  []Service         `toml:"service"`
+	ACME      tls.ACME          `toml:"acme"`
+	Redirects map[string]string `toml:"redirects"`
 }
 
 func (c *Config) Apps() []string {

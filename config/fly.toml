@@ -1,5 +1,38 @@
 mode = "prod"
 
+[redirects]
+  "belgianman.com" = "https://belgianman.bandcamp.com/"
+  "blgn.mn"        = "https://belgianman.bandcamp.com/"
+
+  "andrewmonks.com"   = "https://monks.co/"
+  "andrewmonks.net"   = "https://monks.co/"
+  "andrewmonks.org"   = "https://monks.co/"
+  "docrimes.com"      = "https://monks.co/"
+  "needsyourhelp.org" = "https://monks.co/"
+  "popefucker.com"    = "https://monks.co/"
+  "ss.cx"             = "https://monks.co/"
+
+[acme]
+  storage_path = "/data"
+  production = true
+  domains = [
+    "monks.co",
+
+    "belgianman.com",
+    "blgn.mn",
+
+    "andrewmonks.com",
+    "andrewmonks.net",
+    "andrewmonks.org",
+    "docrimes.com",
+    "needsyourhelp.org",
+    "popefucker.com",
+    "ss.cx"
+  ]
+
+  [[acme.strategies]]
+    strategy = "dns"
+
 [[service]]
   type = "redirect-to-https"
   addr = "0.0.0.0:8080"
@@ -20,26 +53,4 @@ mode = "prod"
     "mailer",
     "traffic"
   ]
-
-[acme]
-  storage_path = "/data"
-  production = true
-  domains = [
-    "monks.co",
-
-    # "www.belgianman.com",
-    "belgianman.com",
-    "blgn.mn",
-
-    "andrewmonks.com",
-    "andrewmonks.net",
-    "andrewmonks.org",
-    "docrimes.com",
-    "needsyourhelp.org"
-    # "popefucker.com",
-    # "ss.cx"
-  ]
-
-  [[acme.strategies]]
-    strategy = "dns"
 
