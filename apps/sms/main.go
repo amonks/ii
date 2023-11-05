@@ -27,8 +27,13 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		msg := req.URL.Query().Get("message")
+		if msg == "" {
+			util.HTTPError("sms", w, req, http.StatusBadRequest, "'message' is required")
+			return
+		}
 		if err := twilio.SMSMe(msg); err != nil {
 			util.HTTPError("sms", w, req, http.StatusInternalServerError, "%s", err)
+			return
 		}
 	}))
 

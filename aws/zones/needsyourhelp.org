@@ -1,3 +1,7 @@
+@ 300 IN A 66.51.122.238
+@ 300 IN AAAA 2a09:8280:1::f:478
+www 300 IN A 66.51.122.238
+www 300 IN AAAA 2a09:8280:1::f:478
 bandcamp 300 IN CNAME bandcamp-pirate.herokuapp.com.
 brianeno 300 IN CNAME oblique-strategies-api.herokuapp.com.
 divvy 300 IN CNAME divvy-json.herokuapp.com.

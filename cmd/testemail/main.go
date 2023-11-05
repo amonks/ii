@@ -1,6 +1,9 @@
 package main
 
-import "monks.co/pkg/email"
+import (
+	"monks.co/pkg/email"
+	"monks.co/pkg/emailclient"
+)
 
 func main() {
 	if err := run(); err != nil {
@@ -9,7 +12,7 @@ func main() {
 }
 
 func run() error {
-	return email.EmailMe(email.Message{
+	return emailclient.EmailMe(email.Message{
 		Subject: "test",
 		Body:    "Just testing.",
 	})

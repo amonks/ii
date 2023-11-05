@@ -8,13 +8,13 @@ mode = "dev"
   type = "https"
   addr = "0.0.0.0:443"
   apps = [
-    "ping",
-    "map",
     "golink",
-    "traffic",
+    "map",
+    "ping",
     "posts",
-    "youtube",
-    "sms"
+    "sms",
+    "traffic",
+    "youtube"
   ]
 
 [acme]

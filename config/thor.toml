@@ -9,11 +9,7 @@ mode = "dev"
   addr = "0.0.0.0:443"
   apps = [
     "air",
-    "ping",
-    "map",
-    "golink",
-    "traffic",
-    "youtube"
+    "traffic"
   ]
 
 [acme]

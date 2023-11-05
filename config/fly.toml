@@ -9,7 +9,7 @@ mode = "prod"
   addr = "0.0.0.0:4433"
   apps = [
     "map",
-    "traffic",
+    "traffic"
   ]
 
 [[service]]
@@ -24,7 +24,14 @@ mode = "prod"
 [acme]
   storage_path = "/data"
   production = true
-  domains = ["monks.co", "blgn.mn", "belgianman.com"]
+  domains = [
+    "andrewmonks.com",
+    "andrewmonks.net",
+    "andrewmonks.org",
+    "belgianman.com",
+    "blgn.mn",
+    "monks.co"
+  ]
 
   [[acme.strategies]]
     strategy = "dns"

@@ -2,6 +2,7 @@ package emailclient
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,12 +15,14 @@ func EmailMe(message email.Message) error {
 	form.Set("subject", message.Subject)
 	form.Set("body", message.Body)
 
-	const url = "http://go.ss.cx/mailer"
+	const url = "http://go.ss.cx/mailer/"
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
+
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
 
 	hc := http.Client{}
 	res, err := hc.Do(req)
@@ -28,7 +31,11 @@ func EmailMe(message email.Message) error {
 	}
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("mailer error %d", res.StatusCode)
+		if bs, err := io.ReadAll(res.Body); err != nil {
+			return fmt.Errorf("mailer error %s", res.Status)
+		} else {
+			return fmt.Errorf("mailer error %d: %s", res.StatusCode, string(bs))
+		}
 	}
 
 	return nil

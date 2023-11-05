@@ -60,11 +60,7 @@ id = 'thor'
 type = 'group'
 dependencies = [
   'apps/air/dev',
-  'apps/golink/dev',
-  'apps/map/dev',
-  'apps/ping/dev',
   'apps/traffic/dev',
-  'apps/youtube/dev',
   'thor-proxy'
 ]
 

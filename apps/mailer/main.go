@@ -27,13 +27,23 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		req.ParseForm()
-		subj := req.Form.Get("subject")
-		body := req.Form.Get("body")
+		subject := req.FormValue("subject")
+		if subject == "" {
+			util.HTTPError("mailer", w, req, http.StatusBadRequest, "'subject' is required")
+			return
+		}
+		body := req.FormValue("body")
+		if body == "" {
+			util.HTTPError("mailer", w, req, http.StatusBadRequest, "'body' is required")
+			return
+		}
+
 		if err := email.EmailMe(email.Message{
-			Subject: subj,
+			Subject: subject,
 			Body:    body,
 		}); err != nil {
 			util.HTTPError("mailer", w, req, http.StatusInternalServerError, "%s", err)
+			return
 		}
 	}))
 

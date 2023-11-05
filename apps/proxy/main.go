@@ -21,9 +21,19 @@ import (
 	"tailscale.com/tsnet"
 )
 
-var (
-	machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
-)
+var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
+
+var hostRedirects = map[string]string{
+	"belgianman.com": "https://belgianman.bandcamp.com/",
+	"blgn.mn":        "https://belgianman.bandcamp.com/",
+
+	"andrewmonks.com":   "https://monks.co/",
+	"andrewmonks.net":   "https://monks.co/",
+	"andrewmonks.org":   "https://monks.co/",
+	"docrimes.com":      "https://monks.co/",
+	"needsyourhelp.org": "https://monks.co/",
+	"popefucker.com":    "https://monks.co/",
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -55,6 +65,8 @@ func run() error {
 
 			log.Printf("listening at %s", serviceConfig.Addr)
 			if err := service.ListenAndServe(ctx); err != nil {
+				fmt.Println(err)
+				log.Printf("service at '%s' failed; canceling run", service.service.Addr)
 				cancel(err)
 			}
 		}()
@@ -135,7 +147,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
-		Handler:     BMRRedirectorHandler(handler),
+		Handler:     RedirectorHandler(hostRedirects, handler),
 		TLSConfig:   tlsConfig,
 	}
 
@@ -171,7 +183,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	httpSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
-		Handler:     BMRRedirectorHandler(handler),
+		Handler:     RedirectorHandler(hostRedirects, handler),
 	}
 
 	tsSrv := &tsnet.Server{

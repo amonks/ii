@@ -31,12 +31,12 @@ type Server struct {
 
 func NewServer(m *traffic.Model) *Server {
 	s := &Server{http.NewServeMux(), m}
+	s.HandleFunc("/", s.serveTraffic)
 	s.Handle("/index.css", serve.StaticServer("./static/"))
-	s.Handle("/", s)
 	return s
 }
 
-func (app *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	var requests []traffic.Request
 	if tx := app.model.Order("created_at desc").Find(&requests); tx.Error != nil {
 		util.HTTPError("traffic", w, req, 500, "failed to read logs: %s", tx.Error)

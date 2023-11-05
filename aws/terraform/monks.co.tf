@@ -4,13 +4,6 @@ resource "aws_route53_zone" "monks-co-public" {
   tags = {}
 }
 
-resource "aws_acm_certificate" "monks-co-certificate" {
-  domain_name               = "*.monks.co"
-  validation_method         = "EMAIL"
-  subject_alternative_names = ["monks.co"]
-}
-
-
 resource "aws_route53_record" "now-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co-public.zone_id
   name    = "_now.monks.co"

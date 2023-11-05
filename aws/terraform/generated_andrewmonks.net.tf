@@ -10,12 +10,20 @@ resource "aws_route53_record" "yungfuture-andrewmonks-net-CNAME" {
   records = ["monks.co."]
 }
 
-resource "aws_route53_record" "www-andrewmonks-net-CNAME" {
+resource "aws_route53_record" "www-andrewmonks-net-AAAA" {
   zone_id = aws_route53_zone.andrewmonks-net.zone_id
   name    = "www.andrewmonks.net."
-  type    = "CNAME"
+  type    = "AAAA"
   ttl     = "300"
-  records = ["monks.co."]
+  records = ["2a09:8280:1::f:478"]
+}
+
+resource "aws_route53_record" "www-andrewmonks-net-A" {
+  zone_id = aws_route53_zone.andrewmonks-net.zone_id
+  name    = "www.andrewmonks.net."
+  type    = "A"
+  ttl     = "300"
+  records = ["66.51.122.238"]
 }
 
 resource "aws_route53_record" "oblique-andrewmonks-net-CNAME" {
@@ -106,18 +114,18 @@ resource "aws_route53_record" "andrewmonks-net-MX" {
   records = ["10 in1-smtp.messagingengine.com.", "20 in2-smtp.messagingengine.com."]
 }
 
+resource "aws_route53_record" "andrewmonks-net-AAAA" {
+  zone_id = aws_route53_zone.andrewmonks-net.zone_id
+  name    = "andrewmonks.net."
+  type    = "AAAA"
+  ttl     = "300"
+  records = ["2a09:8280:1::f:478"]
+}
+
 resource "aws_route53_record" "andrewmonks-net-A" {
   zone_id = aws_route53_zone.andrewmonks-net.zone_id
   name    = "andrewmonks.net."
   type    = "A"
   ttl     = "300"
-  records = ["217.70.184.38"]
-}
-
-resource "aws_route53_record" "a-andrewmonks-net-CNAME" {
-  zone_id = aws_route53_zone.andrewmonks-net.zone_id
-  name    = "a.andrewmonks.net."
-  type    = "CNAME"
-  ttl     = "300"
-  records = ["monks.co."]
+  records = ["66.51.122.238"]
 }
