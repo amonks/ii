@@ -55,5 +55,5 @@ resource "gandi_nameservers" "gandi_domain_ss_cx" {
 
 resource "gandi_nameservers" "gandi_domain_monks_co" {
   domain      = "monks.co"
-  nameservers = aws_route53_zone.monks-co-public.name_servers
+  nameservers = aws_route53_zone.monks-co.name_servers
 }

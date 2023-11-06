@@ -2,7 +2,6 @@ cache
 bin
 .envrc
 .log
-monks.co
 data
 **/.terraform/*
 *.tfvars
