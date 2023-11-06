@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	port int
+	port = flag.Int("port", 3000, "port")
 )
 
 func main() {
@@ -19,10 +19,9 @@ func main() {
 }
 
 func run() error {
-	flag.IntVar(&port, "port", 3000, "port")
 	flag.Parse()
 
-	addr := fmt.Sprintf("0.0.0.0:%d", port)
+	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	mux := http.NewServeMux()
 	http.ListenAndServe(addr, gzip.Middleware(mux))
 
