@@ -56,6 +56,27 @@ type = 'short'
 cmd = 'go run ./cmd/taskmaker'
 
 [[task]]
+id = 'terraform-apply'
+type = 'group'
+dependencies = [
+  'aws/apply'
+]
+
+[[task]]
+id = 'terraform-format'
+type = 'group'
+dependencies = [
+  'aws/format'
+]
+
+[[task]]
+id = 'terraform-plan'
+type = 'group'
+dependencies = [
+  'aws/plan'
+]
+
+[[task]]
 id = 'thor'
 type = 'group'
 dependencies = [

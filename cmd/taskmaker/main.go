@@ -35,12 +35,8 @@ func run() error {
 
 	var tasks []*task
 
-	// add taskmaker task
-	tasks = append(tasks, &task{
-		Id:   "taskmaker",
-		Type: "short",
-		Cmd:  "go run ./cmd/taskmaker",
-	})
+	// add base tasks
+	tasks = append(tasks, baseTasks...)
 
 	// add build tasks
 	var buildDependencies []string

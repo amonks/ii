@@ -26,10 +26,10 @@ resource "aws_route53_record" "processing-monks-co-CNAME" {
   records = ["amonks.github.io."]
 }
 
-resource "aws_route53_record" "monks-co-SPF" {
+resource "aws_route53_record" "monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "monks.co."
-  type    = "SPF"
+  type    = "TXT"
   ttl     = "300"
   records = ["v=spf1 include:spf.messagingengine.com ?all"]
 }
