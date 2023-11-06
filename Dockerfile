@@ -14,8 +14,9 @@ FROM golang:alpine as gobuild
   COPY static static
   COPY go.mod go.mod
   COPY go.sum go.sum
-  COPY tasks.toml tasks.toml
   COPY tools.go tools.go
+
+  COPY tasks.toml tasks.toml
   RUN run build
 
 FROM alpine

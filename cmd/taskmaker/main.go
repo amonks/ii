@@ -85,6 +85,14 @@ func run() error {
 		})
 	}
 
+	if err := writeTasks("tasks.toml", tasks); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeTasks(filename string, tasks []*task) error {
 	sort.Slice(tasks, func(a, b int) bool {
 		return tasks[a].Id < tasks[b].Id
 	})
@@ -98,7 +106,9 @@ func run() error {
 		return err
 	}
 
-	os.WriteFile("tasks.toml", bs, 0x644)
+	if err := os.WriteFile(filename, bs, 0644); err != nil {
+		return err
+	}
 
 	return nil
 }

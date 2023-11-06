@@ -1,4 +1,9 @@
 [[task]]
+id = 'aws-convert-zones'
+type = 'short'
+cmd = 'cd aws && fish convert-zones.fish'
+
+[[task]]
 id = 'brigid'
 type = 'group'
 dependencies = [
@@ -57,24 +62,23 @@ cmd = 'go run ./cmd/taskmaker'
 
 [[task]]
 id = 'terraform-apply'
-type = 'group'
-dependencies = [
-  'aws/apply'
-]
+type = 'short'
+cmd = 'cd aws/terraform && terraform apply'
 
 [[task]]
-id = 'terraform-format'
-type = 'group'
-dependencies = [
-  'aws/format'
-]
+id = 'terraform-fmt'
+type = 'short'
+cmd = 'cd aws/terraform && terraform fmt'
+
+[[task]]
+id = 'terraform-init'
+type = 'short'
+cmd = 'cd aws/terraform && terraform init'
 
 [[task]]
 id = 'terraform-plan'
-type = 'group'
-dependencies = [
-  'aws/plan'
-]
+type = 'short'
+cmd = 'cd aws/terraform && terraform plan'
 
 [[task]]
 id = 'thor'

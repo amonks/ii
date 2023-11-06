@@ -7,18 +7,29 @@ var baseTasks = []*task{
 		Cmd:  "go run ./cmd/taskmaker",
 	},
 	{
-		Id:           "terraform-plan",
-		Type:         "group",
-		Dependencies: []string{"aws/plan"},
+		Id:   "aws-convert-zones",
+		Type: "short",
+		Cmd:  "cd aws && fish convert-zones.fish",
 	},
 	{
-		Id:           "terraform-apply",
-		Type:         "group",
-		Dependencies: []string{"aws/apply"},
+		Id:   "terraform-init",
+		Type: "short",
+		Cmd:  "cd aws/terraform && terraform init",
 	},
 	{
-		Id:           "terraform-format",
-		Type:         "group",
-		Dependencies: []string{"aws/format"},
+		Id:   "terraform-plan",
+		Type: "short",
+		Cmd:  "cd aws/terraform && terraform plan",
+	},
+	{
+		Id:   "terraform-apply",
+		Type: "short",
+		Cmd:  "cd aws/terraform && terraform apply",
+	},
+	{
+		Id:   "terraform-fmt",
+		Type: "short",
+		Cmd:  "cd aws/terraform && terraform fmt",
 	},
 }
+

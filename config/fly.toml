@@ -8,6 +8,7 @@ mode = "prod"
   "andrewmonks.net"   = "https://monks.co/"
   "andrewmonks.org"   = "https://monks.co/"
   "docrimes.com"      = "https://monks.co/"
+  "fmail.email"       = "https://monks.co/"
   "needsyourhelp.org" = "https://monks.co/"
   "popefucker.com"    = "https://monks.co/"
   "ss.cx"             = "https://monks.co/"
@@ -25,6 +26,7 @@ mode = "prod"
     "andrewmonks.net",
     "andrewmonks.org",
     "docrimes.com",
+    "fmail.email",
     "needsyourhelp.org",
     "popefucker.com",
     "ss.cx"
