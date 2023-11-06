@@ -31,10 +31,11 @@ func (c *Config) Apps() []string {
 }
 
 type Service struct {
-	Type        string   `toml:"type"`
-	Addr        string   `toml:"addr"`
-	Apps        []string `toml:"apps"`
-	StoragePath string   `toml:"storage_path"`
+	Type        string         `toml:"type"`
+	Addr        string         `toml:"addr"`
+	Apps        []string       `toml:"apps"`
+	StoragePath string         `toml:"storage_path"`
+	ExtraRoutes map[string]int `toml:"extra_routes"`
 }
 
 var variables = map[string]func() (string, error){

@@ -11,6 +11,7 @@ mode = "dev"
     "air",
     "traffic"
   ]
+  extra_routes = { "movies" = 3333 }
 
 [acme]
   storage_path = "cache"
