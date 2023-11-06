@@ -1,0 +1,26 @@
+package templib
+
+templ Page(title string, config PageOptions) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8"/>
+			<title>{ title }</title>
+			for _, stylesheet := range config.Stylesheets {
+				<link rel="stylesheet" href={ stylesheet }/>
+			}
+		</head>
+		<body>
+			{ children... }
+			for _, script := range config.Scripts {
+				<script type="application/javascript" src={ script }></script>
+			}
+		</body>
+	</html>
+}
+
+type PageOptions struct {
+	Stylesheets []string
+	Scripts     []string
+}
+

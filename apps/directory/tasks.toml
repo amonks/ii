@@ -2,7 +2,7 @@
   id = "templ"
   type = "short"
   cmd = "go run github.com/a-h/templ/cmd/templ generate"
-  watch = ["templates/*.templ"]
+  watch = ["*.templ"]
 
 [[task]]
   id = "dev"
@@ -15,7 +15,7 @@
   id = "build"
   type = "short"
   cmd = "go build -o ../../bin/ ."
-  dependencies=["templ"]
+  dependencies = ["templ"]
 
 [[task]]
   id = "start"

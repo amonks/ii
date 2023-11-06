@@ -40,7 +40,10 @@ func run() error {
 
 	// add build tasks
 	var buildDependencies []string
-	buildDependencies = append(buildDependencies, "apps/proxy/build")
+	buildDependencies = append(buildDependencies,
+		"apps/proxy/build",
+		"pkg/templib/build",
+	)
 	for name := range ports.Apps {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}
@@ -60,6 +63,7 @@ func run() error {
 		}
 		if machine.Mode == "dev" {
 			proxyCmd[0] = "go run ./apps/proxy"
+			group = append(group, "pkg/templib/dev")
 		}
 		for _, app := range machine.Apps() {
 			switch machine.Mode {

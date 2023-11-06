@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
-	"monks.co/apps/directory/templates"
-	"monks.co/pkg/directory"
 	"monks.co/pkg/gzip"
 )
 
@@ -24,16 +22,15 @@ func main() {
 func run() error {
 	flag.Parse()
 
-	dir, err := directory.LoadTable()
+	dir, err := LoadTable()
 	if err != nil {
 		return err
 	}
 
-
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		h := templ.Handler(templates.Index(dir))
+		h := templ.Handler(IndexTempl(dir))
 		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)
 	})

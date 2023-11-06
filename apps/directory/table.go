@@ -1,6 +1,9 @@
-package directory
+package main
 
 import (
+	"fmt"
+	"sort"
+
 	"monks.co/pkg/config"
 	"monks.co/pkg/ports"
 )
@@ -29,14 +32,20 @@ func LoadTable() (Table, error) {
 		Headers: append([]string{""}, machines...),
 	}
 
+	var appNames []string
 	for app := range ports.Apps {
+		appNames = append(appNames, app)
+	}
+	sort.Strings(appNames)
+
+	for _, app := range appNames {
 		row := make([]string, len(machines)+1)
 		row[0] = app
 		for i, machine := range machines {
 			config := configs[machine]
 			for _, _app := range config.Apps() {
 				if app == _app {
-					row[i+1] = "/" + app
+					row[i+1] = fmt.Sprintf("https://%s.ss.cx/%s", machine, app)
 					break
 				}
 			}

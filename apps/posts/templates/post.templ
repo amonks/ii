@@ -1,17 +1,14 @@
 package templates
 
-import "monks.co/apps/posts/model"
+import (
+	"monks.co/apps/posts/model"
+	"monks.co/pkg/templib"
+)
 
 templ Post(post *model.Post) {
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>{ post.Title }</title>
-		</head>
-		<body>
-			<h1>{ post.Title }</h1>
-			<h2>{ post.Date }</h2>
-			{! post}
-		</body>
-	</html>
+	@templib.Page(post.Title, templib.PageOptions{}) {
+		<h1>{ post.Title }</h1>
+		<h2>{ post.Date }</h2>
+		{! post }
+	}
 }

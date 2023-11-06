@@ -32,4 +32,3 @@ var baseTasks = []*task{
 		Cmd:  "cd aws/terraform && terraform fmt",
 	},
 }
-

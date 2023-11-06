@@ -9,7 +9,6 @@ import (
 
 	"github.com/a-h/templ"
 	"monks.co/apps/youtube/model"
-	"monks.co/apps/youtube/templates"
 	"monks.co/pkg/gzip"
 )
 
@@ -31,7 +30,7 @@ func run() error {
 	}
 
 	http.Handle("/", gzip.Middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		h := templ.Handler(templates.Index(history))
+		h := templ.Handler(Index(history))
 		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)
 		return

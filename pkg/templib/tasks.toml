@@ -1,0 +1,11 @@
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate"
+  watch = ["*.templ"]
+
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate -watch"
+  watch = ["*.templ"]

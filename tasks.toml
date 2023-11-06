@@ -15,7 +15,8 @@ dependencies = [
   'apps/sms/dev',
   'apps/traffic/dev',
   'apps/youtube/dev',
-  'brigid-proxy'
+  'brigid-proxy',
+  'pkg/templib/dev'
 ]
 
 [[task]]
@@ -38,7 +39,8 @@ dependencies = [
   'apps/proxy/build',
   'apps/sms/build',
   'apps/traffic/build',
-  'apps/youtube/build'
+  'apps/youtube/build',
+  'pkg/templib/build'
 ]
 
 [[task]]
@@ -88,6 +90,7 @@ type = 'group'
 dependencies = [
   'apps/air/dev',
   'apps/traffic/dev',
+  'pkg/templib/dev',
   'thor-proxy'
 ]
 

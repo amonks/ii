@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -59,6 +60,8 @@ func ListMachines() ([]string, error) {
 			machines = append(machines, strings.TrimSuffix(name, ".toml"))
 		}
 	}
+
+	sort.Strings(machines)
 	return machines, nil
 }
 

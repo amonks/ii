@@ -2,10 +2,12 @@ package templates
 
 import (
 	"monks.co/apps/posts/model"
+	"monks.co/pkg/templib"
 )
 
 templ Index(posts *model.Posts) {
-	@page("Posts") {
+	@templib.Page("Posts", templib.PageOptions{}) {
+		<h1>Posts</h1>
 		<ul>
 			for _, post := range posts.List {
 				if !post.IsDraft {

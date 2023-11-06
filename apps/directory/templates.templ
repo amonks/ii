@@ -1,0 +1,36 @@
+package main
+
+import (
+	"strings"
+	"monks.co/pkg/templib"
+)
+
+templ IndexTempl(data Table) {
+	@templib.Page("Directory", templib.PageOptions{}) {
+		<h1>Directory</h1>
+		<table>
+			<thead>
+				<tr>
+					for _, h := range data.Headers {
+						<th scope="col">{ h }</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range data.Rows {
+					<tr>
+						for _, col := range row {
+							<td>
+								if strings.HasPrefix(col, "https://") {
+									<a href={ templ.SafeURL(col) }>{ col }</a>
+								} else if col != "" {
+									{ col }
+								}
+							</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

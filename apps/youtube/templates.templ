@@ -1,11 +1,12 @@
-package templates
+package main
 
 import (
 	"monks.co/apps/youtube/model"
+	"monks.co/pkg/templib"
 )
 
 templ Index(history []*model.HistoryEntry) {
-	@page("History") {
+	@templib.Page("History", templib.PageOptions{}) {
 		<ul>
 			for _, entry := range history {
 				<li>
