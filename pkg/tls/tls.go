@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/route53"
@@ -89,7 +90,13 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 	var domains []string
 	for _, domain := range acmeConfig.Domains {
 		domains = append(domains, domain)
-		domains = append(domains, "*."+domain)
+
+		// If this is a second-level domain, also get a wildcard
+		// certificate for `www.`
+		// XXX: counting periods fails here for, eg, .co.uk.
+		if len(strings.Split(domain, ".")) == 2 {
+			domains = append(domains, "*."+domain)
+		}
 	}
 
 	err := config.ManageSync(ctx, domains)
