@@ -2,6 +2,7 @@ package traffic
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -44,8 +45,16 @@ func (r *Request) PrintURL() string {
 	return r.Host + r.Path + "?" + r.Query
 }
 
+func (r *Request) PrintRemoteAddr() string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
 func (r *Request) ColorRemoteAddr() string {
-	return color.Hash(r.RemoteAddr)
+	return color.Hash(r.PrintRemoteAddr())
 }
 
 func (r *Request) PrintUserAgent() string {

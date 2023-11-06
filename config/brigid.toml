@@ -1,9 +1,5 @@
 mode = "dev"
 
-[redirects]
-  "belgianman.com" = "https://belgianman.bandcamp.com/"
-  "blgn.mn"        = "https://belgianman.bandcamp.com/"
-
 [[service]]
   type = "redirect-to-https"
   addr = "0.0.0.0:80"
@@ -24,7 +20,7 @@ mode = "dev"
 [acme]
   storage_path = "cache"
   production = true
-  domains = ["brigid.ss.cx", "belgianman.com"]
+  domains = ["brigid.ss.cx"]
 
   [[acme.strategies]]
     strategy = "dns"
