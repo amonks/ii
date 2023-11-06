@@ -45,7 +45,7 @@ var variables = map[string]func() (string, error){
 }
 
 func ListMachines() ([]string, error) {
-	listing, err := os.ReadDir("config")
+	listing, err := os.ReadDir(filepath.Join(os.Getenv("MONKS_ROOT"), "config"))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func ListMachines() ([]string, error) {
 }
 
 func Load(machine string) (*Config, error) {
-	path := filepath.Join("config", machine+".toml")
+	path := filepath.Join(os.Getenv("MONKS_ROOT"), "config", machine+".toml")
 	bs, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

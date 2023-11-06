@@ -3,6 +3,7 @@ package ports
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -16,7 +17,7 @@ func init() {
 }
 
 func run() error {
-	bs, err := os.ReadFile("config/ports")
+	bs, err := os.ReadFile(filepath.Join(os.Getenv("MONKS_ROOT"), "config/ports"))
 	if err != nil {
 		return err
 	}
