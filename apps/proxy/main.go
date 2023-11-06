@@ -14,6 +14,7 @@ import (
 	proxyproto "github.com/pires/go-proxyproto"
 
 	"monks.co/pkg/config"
+	"monks.co/pkg/middleware"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tls"
@@ -132,12 +133,14 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer stopTLS()
 
-	handler, err := traffic.New(s.service.Addr, RedirectorHandler(s.redirects, &proxy{s.routes}))
+	traf, err := traffic.New(s.service.Addr)
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}
-	defer handler.Close()
+	defer traf.Close()
 
+	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
+	handler := mw.ModifyHandler(&proxy{s.routes})
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
@@ -169,11 +172,14 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 }
 
 func (s *Service) listenAndServeTSNet(ctx context.Context) error {
-	handler, err := traffic.New(s.service.Addr, RedirectorHandler(s.redirects, &proxy{s.routes}))
+	traf, err := traffic.New(s.service.Addr)
 	if err != nil {
 		return fmt.Errorf("error starting traffic logger: %w", err)
 	}
-	defer handler.Close()
+	defer traf.Close()
+
+	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
+	handler := mw.ModifyHandler(&proxy{s.routes})
 	httpSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,

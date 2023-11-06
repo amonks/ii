@@ -30,7 +30,7 @@ func run() error {
 		return err
 	}
 
-	http.Handle("/", gzip.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	http.Handle("/", gzip.Middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		h := templ.Handler(templates.Index(history))
 		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)

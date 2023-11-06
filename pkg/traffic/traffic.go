@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"monks.co/pkg/color"
 	"monks.co/pkg/database"
+	"monks.co/pkg/middleware"
 )
 
 var RemoteAddrKey = &struct{}{}
@@ -61,10 +62,11 @@ func (r *Request) PrintUserAgent() string {
 	return r.UserAgent
 }
 
+var _ middleware.Middleware = &TrafficLogger{}
+
 type TrafficLogger struct {
-	model   *Model
-	host    string
-	handler http.Handler
+	model *Model
+	host  string
 }
 
 type Model struct {
@@ -79,39 +81,41 @@ func Open() (*Model, error) {
 	return &Model{db}, nil
 }
 
-func New(host string, handler http.Handler) (*TrafficLogger, error) {
+func New(host string) (*TrafficLogger, error) {
 	db, err := Open()
 	if err != nil {
 		return nil, err
 	}
-	return &TrafficLogger{db, host, handler}, nil
+	return &TrafficLogger{db, host}, nil
 }
 
 func (tl *TrafficLogger) Close() error {
 	return tl.model.Close()
 }
 
-func (tl *TrafficLogger) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ww := &StatusRecorder{w, 0}
+func (tl *TrafficLogger) ModifyHandler(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ww := &StatusRecorder{w, 0}
 
-	start := time.Now()
-	tl.handler.ServeHTTP(ww, req)
-	dur := time.Since(start)
+		start := time.Now()
+		handler.ServeHTTP(ww, req)
+		dur := time.Since(start)
 
-	if tx := tl.model.Create(&Request{
-		Host:  req.Host,
-		Path:  req.URL.Path,
-		Query: req.URL.RawQuery,
+		if tx := tl.model.Create(&Request{
+			Host:  req.Host,
+			Path:  req.URL.Path,
+			Query: req.URL.RawQuery,
 
-		RemoteAddr: getRemoteAddr(req),
-		UserAgent:  req.UserAgent(),
-		Referer:    req.Header.Get("Referer"),
+			RemoteAddr: getRemoteAddr(req),
+			UserAgent:  req.UserAgent(),
+			Referer:    req.Header.Get("Referer"),
 
-		StatusCode: ww.status,
-		Duration:   dur,
-	}); tx.Error != nil {
-		fmt.Println("error", tx.Error)
-	}
+			StatusCode: ww.status,
+			Duration:   dur,
+		}); tx.Error != nil {
+			fmt.Println("error", tx.Error)
+		}
+	})
 }
 
 type StatusRecorder struct {

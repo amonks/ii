@@ -5,18 +5,11 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"monks.co/pkg/middleware"
 )
 
-type gzipResponseWriter struct {
-	io.Writer
-	http.ResponseWriter
-}
-
-func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
-}
-
-func Handler(h http.Handler) http.Handler {
+var Middleware = middleware.MiddlewareFunc(func(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") {
 			h.ServeHTTP(w, req)
@@ -29,4 +22,13 @@ func Handler(h http.Handler) http.Handler {
 		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		h.ServeHTTP(gzw, req)
 	})
+})
+
+type gzipResponseWriter struct {
+	io.Writer
+	http.ResponseWriter
+}
+
+func (w gzipResponseWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
 }

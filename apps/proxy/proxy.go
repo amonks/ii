@@ -42,7 +42,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	staticFilePath := filepath.Join(os.Getenv("MONKS_ROOT"), "static", req.URL.Path)
-	gzip.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	gzip.Middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, staticFilePath)
 	})).ServeHTTP(w, req)
 }
