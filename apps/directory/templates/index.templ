@@ -1,0 +1,27 @@
+package templates
+
+import "monks.co/pkg/directory"
+
+templ Index(data directory.Table) {
+  @page("Directory") {
+    <table>
+      <thead>
+        <tr>
+          for _, h := range data.Headers {
+            <th scope="col">{ h }</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        for _, row := range data.Rows {
+          <tr>
+            for _, col := range row {
+              <td>{ col }</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
+

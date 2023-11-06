@@ -14,7 +14,8 @@ mode = "dev"
     "posts",
     "sms",
     "traffic",
-    "youtube"
+    "youtube",
+    "directory"
   ]
 
 [acme]

@@ -1,0 +1,25 @@
+[[task]]
+  id = "templ"
+  type = "short"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate"
+  watch = ["templates/*.templ"]
+
+[[task]]
+  id = "dev"
+  type = "long"
+  watch = ["**/*", "*"]
+  cmd = "go run . -port=3014"
+  dependencies=["templ"]
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "go build -o ../../bin/ ."
+  dependencies=["templ"]
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/template -port=3014"
+
+

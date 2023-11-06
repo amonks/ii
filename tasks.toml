@@ -7,6 +7,7 @@ cmd = 'cd aws && fish convert-zones.fish'
 id = 'brigid'
 type = 'group'
 dependencies = [
+  'apps/directory/dev',
   'apps/golink/dev',
   'apps/map/dev',
   'apps/ping/dev',
@@ -28,6 +29,7 @@ id = 'build'
 type = 'group'
 dependencies = [
   'apps/air/build',
+  'apps/directory/build',
   'apps/golink/build',
   'apps/mailer/build',
   'apps/map/build',
