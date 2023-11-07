@@ -25,6 +25,7 @@ func newServer(db *model) *Server {
 }
 
 func (s *Server) pageServer() http.Handler {
+	const postsPerPage = 1
 	tmpl := template.Must(template.ParseFiles("index.gohtml"))
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		n := req.URL.Query().Get("n")
@@ -35,13 +36,13 @@ func (s *Server) pageServer() http.Handler {
 		if err != nil {
 			serve.Error(res, req, http.StatusBadRequest, err)
 		}
-		posts, err := s.db.getPosts(1, int(offset))
+		posts, err := s.db.getPosts(postsPerPage, int(offset))
 		if err != nil {
 			panic(err)
 		}
 		tmpl.Execute(res, struct {
 			Posts []*Post
 			Next  int
-		}{posts, int(offset) + 1})
+		}{posts, int(offset) + postsPerPage})
 	})
 }
