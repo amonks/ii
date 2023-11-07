@@ -1,0 +1,93 @@
+package libraryserver
+
+import (
+	"fmt"
+
+	"monks.co/movietagger/db"
+)
+
+templ Prompt(data *PageData) {
+	if len(data.Stubs) > 0 {
+		@Stub(data.Stubs[0])
+	}
+}
+
+templ Stub(stub *db.Stub) {
+	<div id="prompt" data-importedfrompath={ stub.ImportedFromPath }>
+		<h2>{ stub.ImportedFromPath }</h2>
+		<label for="prompt-query">query</label>
+		<input id="prompt-query" type="text" value={ stub.Query }/>
+		<label for="prompt-year">year</label>
+		<input id="prompt-year" type="text" value={ stub.Year }/>
+		<button id="prompt-search">search</button>
+		<ul id="prompt-results">
+			for _, result := range stub.Results {
+				<li data-id={ fmt.Sprintf("%d", result.ID) }>
+					<button class="choose">choose</button>
+					<a href={ templ.SafeURL(fmt.Sprintf("https://www.themoviedb.org/movie/%d",result.ID)) }>
+						{ result.ReleaseDate }: { result.Title }
+					</a>
+				</li>
+			}
+			<li><button id="prompt-ignore">ignore</button></li>
+		</ul>
+	</div>
+	<script>
+		(function() {
+			const prompt = document.querySelector("#prompt");
+			const path = prompt.attributes["data-importedfrompath"].value;
+
+			const button = prompt.querySelector("#prompt-search");
+			button.addEventListener("click", async () => {
+				const query = prompt.querySelector("#prompt-query").value;
+				const year = prompt.querySelector("#prompt-year").value;
+
+				if (!path) {
+					throw Error("no path");
+				}
+				if (!query) {
+					throw Error("no query");
+				}
+
+				const params = new URLSearchParams();
+				params.append("query", query);
+				params.append("year", year);
+				params.append("path", path);
+
+				await fetch(`search?`+params.toString(), {method: "POST"});
+
+				location.reload();
+			});
+
+			const results = prompt.querySelectorAll("#prompt-results li");
+			for (const result of results) {
+				const button = result.querySelector("button.choose");
+				if (!result.attributes["data-id"]) {
+					continue
+				}
+				const id = result.attributes["data-id"].value;
+				button.addEventListener("click", async (ev) => {
+					if (!path) {
+						throw Error("no path");
+					}
+
+					const params = new URLSearchParams();
+					params.append("path", path);
+					params.append("id", id);
+
+					await fetch(`identify?`+params.toString(), { method: "POST" });
+
+					location.reload();
+				})
+			}
+
+			const ignoreButton = prompt.querySelector("#prompt-ignore")
+			ignoreButton.addEventListener("click", async (ev) => {
+				const params = new URLSearchParams();
+				params.append("path", path);
+				await fetch(`ignore?`+params.toString(), { method: "POST" });
+				location.reload();
+			})
+		})();
+	</script>
+}
