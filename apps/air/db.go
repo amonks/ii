@@ -3,20 +3,16 @@ package main
 import (
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"monks.co/pkg/database"
 )
 
-func NewDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("/data/tank/venta/venta.db"), &gorm.Config{})
+func NewDB() (*database.DB, error) {
+	db, err := database.Open("/data/tank/venta/venta.db")
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Exec("pragma journal_mode='wal';").Error; err != nil {
-		return nil, err
-	}
 
-	// Migrate the schema
 	if err := db.AutoMigrate(&Parameters{}); err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"gorm.io/gorm"
+	"monks.co/pkg/database"
 	"monks.co/pkg/gzip"
 )
 
@@ -30,7 +30,7 @@ func (d *Data) JSON() (template.JS, error) {
 	return template.JS("window.data = " + string(bs) + ";"), nil
 }
 
-func serve(db *gorm.DB, addr string) error {
+func serve(db *database.DB, addr string) error {
 	tmpl := template.New("movies")
 	tmpl, err := tmpl.Parse(tmplSrc)
 	if err != nil {

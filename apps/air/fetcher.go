@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"gorm.io/gorm"
+	"monks.co/pkg/database"
 )
 
-func fetch(db *gorm.DB) error {
+func fetch(db *database.DB) error {
 	params, err := getDeviceParameters("60:8A:10:B5:58:A0")
 	if err != nil {
 		return err

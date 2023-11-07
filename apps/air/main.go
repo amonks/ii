@@ -6,13 +6,11 @@ import (
 )
 
 var (
-	mode string
-	port int
+	port = flag.Int("port", 3000, "port")
+	mode = flag.String("mode", "fetch", "mode: fetch, serve")
 )
 
 func main() {
-	flag.IntVar(&port, "port", 3000, "port")
-	flag.StringVar(&mode, "mode", "fetch", "mode: fetch, serve")
 	flag.Parse()
 
 	db, err := NewDB()
@@ -20,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	switch mode {
+	switch *mode {
 	case "fetch":
 		if err := fetch(db); err != nil {
 			panic(err)
