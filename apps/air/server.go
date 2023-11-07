@@ -13,7 +13,6 @@ import (
 	"monks.co/pkg/database"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/sigctx"
 )
 
 var (
