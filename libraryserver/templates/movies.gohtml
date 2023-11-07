@@ -86,9 +86,11 @@
 	  <ul role="list" class="movies grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
 	    {{ range $movie := .Movies }}
             <li {{ if not .IsImported }}class="opacity-50"{{ end }} >
-                <div data-id="{{ .ID }}" class="{{ if .IsImported }}movie{{ end }} cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
-		  <img src="{{ .PosterURL }}" alt="" class="pointer-events-none object-cover group-hover:opacity-75">
-		</div>
+                {{ if .HasPoster }}
+                  <div data-id="{{ .ID }}" class="{{ if .IsImported }}movie{{ end }} cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
+                    <img src="{{ .PosterURL }}" alt="" class="pointer-events-none object-cover group-hover:opacity-75">
+                  </div>
+                {{ end }}
 		<p data-role="title"         class="block text-sm font-medium text-gray-900">{{ .Title }}</p>
                 {{ if not ( eq .WriterName "" ) }}<p data-role="writer"        class="block text-sm font-medium text-gray-900">By {{ .WriterName }}</p>{{ end }}
                 {{ if not ( eq .DirectorName "" ) }}<p data-role="director"      class="block text-sm font-medium text-gray-900">Dir {{ .DirectorName }}</p>{{ end }}
@@ -154,7 +156,7 @@
   for (const el of movies) {
     const id = el.attributes.getNamedItem("data-id").value;
     el.addEventListener("click", ev => {
-      void fetch("/play?id="+id);
+      void fetch("play?id="+id);
     })
   }
 </script>

@@ -166,8 +166,12 @@ func (d *DB) AllMovies() ([]*Movie, error) {
 	return movies, nil
 }
 
+func (m *Movie) HasPoster() bool {
+	return m.PosterPath != ""
+}
+
 func (m *Movie) PosterURL() string {
-	return fmt.Sprintf("/poster?id=%d", m.ID)
+	return fmt.Sprintf("poster?id=%d", m.ID)
 }
 
 func (d *DB) GetMovie(id int64) (*Movie, error) {
