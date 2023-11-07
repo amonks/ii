@@ -2,12 +2,13 @@ package serve
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
 func Errorf(w http.ResponseWriter, req *http.Request, statusCode int, msg string, args ...interface{}) {
 	msg = fmt.Sprintf(msg, args...)
-	fmt.Printf("[%d] %s: %s\n", statusCode, req.URL.Path, msg)
+	log.Printf("[%d] %s: %s\n", statusCode, req.URL.Path, msg)
 	http.Error(w, http.StatusText(statusCode), statusCode)
 }
 

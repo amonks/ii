@@ -34,6 +34,7 @@ dependencies = [
   'apps/golink/build',
   'apps/mailer/build',
   'apps/map/build',
+  'apps/movies/build',
   'apps/ping/build',
   'apps/posts/build',
   'apps/proxy/build',
@@ -89,6 +90,7 @@ id = 'thor'
 type = 'group'
 dependencies = [
   'apps/air/dev',
+  'apps/movies/dev',
   'apps/traffic/dev',
   'pkg/templib/dev',
   'thor-proxy'

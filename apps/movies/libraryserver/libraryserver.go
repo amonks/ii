@@ -3,6 +3,7 @@ package libraryserver
 import (
 	"context"
 	_ "embed"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 
 	"gorm.io/gorm"
 	"monks.co/apps/movies/db"
+	"monks.co/pkg/gzip"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/tmdb"
 )
 
@@ -44,7 +47,11 @@ func New(tmdb *tmdb.Client, db *db.DB) *LibraryServer {
 	}
 }
 
+var port = flag.Int("port", 3001, "port")
+
 func (app *LibraryServer) Run(ctx context.Context) error {
+	flag.Parse()
+
 	log.Println("libraryserver started")
 	defer log.Println("libraryserver done")
 
@@ -56,7 +63,8 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("/identify", app.serveIdentify)
 	mux.HandleFunc("/ignore", app.serveIgnore)
 
-	s := &http.Server{Addr: "0.0.0.0:3333", Handler: mux}
+	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
 
 	errs := make(chan error)
 	go func() {
@@ -110,9 +118,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 	movies, err := app.db.AllMovies()
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -122,9 +128,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	data.SortDirection = sortDirection
 
 	if stubs, err := app.db.AllStubs(); err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	} else {
 		data.Stubs = stubs
@@ -133,9 +137,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	allGenresSet := map[string]struct{}{}
 	for _, movie := range movies {
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(500)
-			w.Write([]byte("error"))
+			serve.InternalServerError(w, req, err)
 			return
 		}
 
@@ -157,9 +159,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 		year, err := strconv.ParseInt(movie.ReleaseDate[0:4], 10, 64)
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(500)
-			w.Write([]byte("error"))
+			serve.InternalServerError(w, req, err)
 			return
 		}
 		if minYear, err := strconv.ParseInt(minYear, 10, 64); err == nil && year < minYear {
@@ -232,16 +232,12 @@ func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) 
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		log.Println("parseInt error:", err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusBadRequest, "error parsing ID: %s", err)
 		return
 	}
 	movie, err := app.db.GetMovie(id)
 	if err != nil {
-		log.Println("getMovie error:", err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 	w.Header().Set("Cache-control", "public, max-age=604800, immutable")
@@ -254,16 +250,12 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		log.Println("parseInt error:", err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusBadRequest, "error parsing ID: %s", err)
 		return
 	}
 	movie, err := app.db.GetMovie(id)
 	if err != nil {
-		log.Println("getMovie error:", err)
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 	for _, cmd := range []*exec.Cmd{
@@ -272,9 +264,7 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 	} {
 		cmd := cmd
 		if err := cmd.Start(); err != nil {
-			log.Println("start on lugh error:", err)
-			w.WriteHeader(500)
-			w.Write([]byte("error"))
+			serve.InternalServerError(w, req, err)
 			return
 		}
 		go func() {
@@ -291,9 +281,7 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 	log.Println("req /search")
 
 	if req.Method != "POST" {
-		log.Println("bad request")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
 	}
 
@@ -305,27 +293,21 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 
 	stub, err := app.db.GetStub(path)
 	if err != nil {
-		log.Println("bad request: no such stub")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusNotFound, "no such stub: %s", err)
 		return
 	}
 
 	log.Println("search", query, year)
 	results, err := app.tmdb.Search(query, year)
 	if err != nil {
-		log.Println("search error")
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
 	stub.Results = results
 	log.Printf("%d results", len(results))
 	if err := app.db.SaveStub(stub); err != nil {
-		log.Println("save stub error")
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -337,9 +319,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 	log.Println("req /ignore")
 
 	if req.Method != "POST" {
-		log.Println("bad request")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
 	}
 
@@ -349,9 +329,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 
 	stub, err := app.db.GetStub(path)
 	if err != nil {
-		log.Println("bad request: no such stub")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusNotFound, "no such stub: %s", err)
 		return
 	}
 
@@ -365,9 +343,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 		}
 		return nil
 	}); err != nil {
-		log.Println("could not update db")
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -378,9 +354,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 	log.Println("req /identify")
 
 	if req.Method != "POST" {
-		log.Println("bad request")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
 	}
 
@@ -391,25 +365,19 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 
 	stub, err := app.db.GetStub(path)
 	if err != nil {
-		log.Println("bad request: no such stub")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusNotFound, "no such stub: %s", err)
 		return
 	}
 
 	parsedID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		log.Println("bad request: failed to parse ID")
-		w.WriteHeader(400)
-		w.Write([]byte("error"))
+		serve.Errorf(w, req, http.StatusBadRequest, "error parsing ID: %s", err)
 		return
 	}
 
 	tmdbMovie, err := app.tmdb.Get(parsedID)
 	if err != nil {
-		log.Println("could not find selection")
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
@@ -423,9 +391,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		}
 		return nil
 	}); err != nil {
-		log.Println("could not update db")
-		w.WriteHeader(500)
-		w.Write([]byte("error"))
+		serve.InternalServerError(w, req, err)
 		return
 	}
 
