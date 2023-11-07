@@ -1,15 +1,19 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 
 	"monks.co/pkg/database"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/serve"
+	"monks.co/pkg/sigctx"
 )
 
 var (
@@ -30,7 +34,7 @@ func (d *Data) JSON() (template.JS, error) {
 	return template.JS("window.data = " + string(bs) + ";"), nil
 }
 
-func serve(db *database.DB, addr string) error {
+func serveAir(ctx context.Context, db *database.DB, addr string) error {
 	tmpl := template.New("movies")
 	tmpl, err := tmpl.Parse(tmplSrc)
 	if err != nil {
@@ -40,33 +44,24 @@ func serve(db *database.DB, addr string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		cond := "created_at > date('now', '-3 day')"
-		fmt.Println(req.URL.String())
 		if q := req.URL.Query().Get("days"); q != "" {
-			fmt.Println("q", q)
 			if i, err := strconv.ParseInt(q, 10, 64); err == nil {
-				fmt.Println("i", i)
 				cond = fmt.Sprintf("created_at > date('now', '-%d day')", i)
 			}
 		}
-		fmt.Println(cond)
 
 		var ps []Parameters
 		if tx := db.Find(&ps, cond); tx.Error != nil {
 			w.WriteHeader(500)
 			return
-		} else {
-			fmt.Println("rows", tx.RowsAffected)
 		}
 
 		if err := tmpl.Execute(w, &Data{ps}); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	})
 
-	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
-
-	fmt.Println("listening at", addr)
-	if err := s.ListenAndServe(); err != nil {
+	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 
