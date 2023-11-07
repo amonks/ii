@@ -22,30 +22,56 @@ const (
 )
 
 type app struct {
-	db          *sql.DB
+	db *sql.DB
 }
 
 type post struct {
-	name      string
-	title     string
-	author    string
-	subreddit string
-	url       string
-	permalink string
+	Name      string `gorm:"primaryKey"`
+	Title     string
+	Author    string
+	Subreddit string
+	Url       string
+	Permalink string
 
-	json *[]byte
+	Json *[]byte
 
-	status      string
-	filetype    *string
-	archivepath *string
+	Status      string
+	Filetype    *string
+	Archivepath *string
+}
+
+func main() {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		fmt.Println("opening db failed:", err)
+		panic(err)
+	}
+	defer db.Close()
+
+	c := &app{db: db}
+	if err := c.migrate(); err != nil {
+		fmt.Println("migrate failed:", err)
+		os.Exit(1)
+	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		n := r.URL.Query().Get("n")
+		offset, _ := strconv.ParseInt(n, 10, 64)
+		c.servePage(1, int(offset), w, r)
+	})
+
+	fs := http.FileServer(http.Dir("/data/tank/mirror/reddit/"))
+	http.Handle("/media/", http.StripPrefix("/media/", fs))
+	fmt.Println("listening on :3334")
+	http.ListenAndServe(":3334", nil)
 }
 
 func (p *post) Embed() template.HTML {
-	if p.filetype == nil {
+	if p.Filetype == nil {
 		return "no"
 	}
-	src := strings.Replace(*p.archivepath, "/data/tank/mirror/reddit/", "media/", 1)
-	switch *p.filetype {
+	src := strings.Replace(*p.Archivepath, "/data/tank/mirror/reddit/", "media/", 1)
+	switch *p.Filetype {
 	case ".gif":
 		fallthrough
 	case ".jpg":
@@ -61,15 +87,15 @@ func (p *post) Embed() template.HTML {
 		tmpl.Execute(&w, struct{ Src string }{Src: src})
 		return template.HTML(w.String())
 	default:
-		return template.HTML("unexpected filetype: " + *p.filetype)
+		return template.HTML("unexpected filetype: " + *p.Filetype)
 	}
 }
 
 func (c *app) getPost(name string) (*post, error) {
 	var p post
-	p.name = name
+	p.Name = name
 	row := c.db.QueryRow("select title, author, subreddit, url, permalink, status, filetype, archivepath from posts where name = ?", name)
-	if err := row.Scan(&p.title, &p.author, &p.subreddit, &p.url, &p.permalink, &p.status, &p.filetype, &p.archivepath); err != nil {
+	if err := row.Scan(&p.Title, &p.Author, &p.Subreddit, &p.Url, &p.Permalink, &p.Status, &p.Filetype, &p.Archivepath); err != nil {
 		return nil, fmt.Errorf("error getting %s: %w", name, err)
 	}
 	return &p, nil
@@ -77,18 +103,18 @@ func (c *app) getPost(name string) (*post, error) {
 
 func (c *app) loadPostJson(p *post) error {
 	var bs []byte
-	row := c.db.QueryRow("select json from posts where name = ?", p.name)
+	row := c.db.QueryRow("select json from posts where name = ?", p.Name)
 	if err := row.Scan(&bs); err != nil {
 		return err
 	}
-	p.json = &bs
+	p.Json = &bs
 	return nil
 }
 
 func (c *app) updatePost(p *post) error {
 	if _, err := c.db.Exec("update posts set title=?, author=?, subreddit=?, url=?, permalink=?, filetype=?, status=?, archivepath=? where name = ?",
-		p.title, p.author, p.subreddit, p.url, p.permalink, p.filetype, p.status, p.archivepath, p.name); err != nil {
-		return fmt.Errorf("error updating %s: %w", p.name, err)
+		p.Title, p.Author, p.Subreddit, p.Url, p.Permalink, p.Filetype, p.Status, p.Archivepath, p.Name); err != nil {
+		return fmt.Errorf("error updating %s: %w", p.Name, err)
 	}
 	return nil
 }
@@ -97,12 +123,12 @@ var errCollision = errors.New("Collision")
 
 func (c *app) insertPost(p *post) error {
 	if _, err := c.db.Exec("insert into posts values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-		p.name, p.title, p.author, p.subreddit, p.url, p.permalink, p.json, p.status, p.filetype, p.archivepath,
+		p.Name, p.Title, p.Author, p.Subreddit, p.Url, p.Permalink, p.Json, p.Status, p.Filetype, p.Archivepath,
 	); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed: posts.name") {
 			return errCollision
 		}
-		return fmt.Errorf("error inserting %s: %w", p.name, err)
+		return fmt.Errorf("error inserting %s: %w", p.Name, err)
 	}
 	return nil
 }
@@ -131,29 +157,3 @@ var serverError = errors.New("server error")
 
 var errUnsupportedSource = errors.New("unsupported source")
 var errDeleted = errors.New("deleted")
-
-func main() {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		fmt.Println("opening db failed:", err)
-		panic(err)
-	}
-	defer db.Close()
-
-	c := &app{db: db}
-	if err := c.migrate(); err != nil {
-		fmt.Println("migrate failed:", err)
-		os.Exit(1)
-	}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		n := r.URL.Query().Get("n")
-		offset, _ := strconv.ParseInt(n, 10, 64)
-		c.servePage(1, int(offset), w, r)
-	})
-
-	fs := http.FileServer(http.Dir("/data/tank/mirror/reddit/"))
-	http.Handle("/media/", http.StripPrefix("/media/", fs))
-	fmt.Println("listening on :3334")
-	http.ListenAndServe(":3334", nil)
-}
