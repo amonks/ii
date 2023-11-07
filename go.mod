@@ -11,7 +11,9 @@ require (
 	github.com/caddyserver/certmagic v0.17.2
 	github.com/evanw/esbuild v0.19.4
 	github.com/libdns/route53 v1.3.1
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/pelletier/go-toml/v2 v2.0.8
+	github.com/pioz/tvdb v0.0.0-20221212235421-03519fb7a0e2
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/sqlc-dev/sqlc v1.22.0
 	github.com/twilio/twilio-go v1.15.0
@@ -222,7 +224,6 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-mastodon v0.0.6 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mdlayher/genetlink v1.3.2 // indirect
 	github.com/mdlayher/netlink v1.7.2 // indirect
 	github.com/mdlayher/sdnotify v1.0.0 // indirect
