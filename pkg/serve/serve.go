@@ -2,7 +2,6 @@ package serve
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -20,7 +19,6 @@ func StaticServer(staticDir string) http.Handler {
 
 func Static(w http.ResponseWriter, req *http.Request, staticDir string) {
 	path := filepath.Join(staticDir, path.Base(req.URL.Path))
-	fmt.Println("path", path)
 	http.ServeFile(w, req, path)
 }
 

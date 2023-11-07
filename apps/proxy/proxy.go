@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -54,7 +55,7 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 			req.Out.URL.Host = fmt.Sprintf("0.0.0.0:%d", port)
 			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/"+prefix)
 			req.Out.Host = req.Out.URL.Host
-			fmt.Println("proxy", req.In.URL.String(), req.Out.URL.String())
+			log.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},
 	}
 	proxy.ServeHTTP(w, req)

@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,7 +158,7 @@ func (m *model) importSavedPlaces() error {
 		return err
 	}
 
-	fmt.Printf("importing %d places\n", len(savedPlaces.Features))
+	log.Printf("importing %d places", len(savedPlaces.Features))
 
 	places := []Place{}
 	for _, savedPlace := range savedPlaces.Features {
@@ -182,7 +183,7 @@ func (m *model) importSavedPlaces() error {
 		// See if place exists
 		got, err := m.getPlace(place.GoogleMapsURL)
 		if err != nil {
-			fmt.Printf("ERROR fetching %s\n", place.Title)
+			log.Printf("ERROR fetching %s", place.Title)
 			return err
 		}
 
@@ -195,7 +196,7 @@ func (m *model) importSavedPlaces() error {
 		// Fetch place details
 		details, err := googlemaps.GetPlaceDetailsByURL(place.GoogleMapsURL)
 		if err != nil {
-			fmt.Printf("Error getting details for %s\n", place.Title)
+			log.Printf("Error getting details for %s", place.Title)
 			return err
 		}
 		if details != nil {
@@ -209,14 +210,14 @@ func (m *model) importSavedPlaces() error {
 		}
 
 		if got == nil {
-			fmt.Printf("inserting %s\n", place.Title)
+			log.Printf("inserting %s", place.Title)
 			if err := m.insertPlace(place); err != nil {
 				return err
 			}
 		}
 
 		if got != nil {
-			fmt.Printf("updating %s\n", place.Title)
+			log.Printf("updating %s", place.Title)
 
 			// careful -- only set fields that are
 			// controlled by google maps

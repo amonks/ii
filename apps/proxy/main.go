@@ -62,7 +62,7 @@ func run() error {
 
 			log.Printf("listening at %s", serviceConfig.Addr)
 			if err := service.ListenAndServe(ctx); err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				log.Printf("service at '%s' failed; canceling run", service.service.Addr)
 				cancel(err)
 			}
@@ -222,10 +222,10 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {
 		if conn.LocalAddr() == nil {
-			fmt.Printf("couldn't retrieve local address")
+			log.Printf("couldn't retrieve local address")
 		}
 		if conn.RemoteAddr() == nil {
-			fmt.Printf("couldn't retrieve remote address")
+			log.Printf("couldn't retrieve remote address")
 		}
 
 		return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())

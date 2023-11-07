@@ -2,6 +2,7 @@ package traffic
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -113,7 +114,7 @@ func (tl *TrafficLogger) ModifyHandler(handler http.Handler) http.Handler {
 			StatusCode: ww.status,
 			Duration:   dur,
 		}); tx.Error != nil {
-			fmt.Println("error", tx.Error)
+			log.Println("error", tx.Error)
 		}
 	})
 }

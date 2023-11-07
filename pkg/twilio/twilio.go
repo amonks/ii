@@ -3,6 +3,7 @@ package twilio
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	twilio "github.com/twilio/twilio-go"
 	api "github.com/twilio/twilio-go/rest/api/v2010"
@@ -29,6 +30,6 @@ func SMSMe(msg string) error {
 	}
 
 	response, _ := json.Marshal(*resp)
-	fmt.Println("Response: " + string(response))
+	log.Println("Response: " + string(response))
 	return nil
 }
