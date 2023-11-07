@@ -13,8 +13,8 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
-	"monks.co/movietagger/db"
-	"monks.co/movietagger/tmdb"
+	"monks.co/apps/movies/db"
+	"monks.co/pkg/tmdb"
 )
 
 type LibraryServer struct {

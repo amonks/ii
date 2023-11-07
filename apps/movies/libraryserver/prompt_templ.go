@@ -13,7 +13,7 @@ import "bytes"
 import (
 	"fmt"
 
-	"monks.co/movietagger/db"
+	"monks.co/apps/movies/db"
 )
 
 func Prompt(data *PageData) templ.Component {

@@ -10,16 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"monks.co/movietagger/config"
-	"monks.co/movietagger/creditsfetcher"
-	"monks.co/movietagger/db"
-	"monks.co/movietagger/libraryserver"
-	"monks.co/movietagger/loggingwaitgroup"
-	"monks.co/movietagger/moviecopier"
-	"monks.co/movietagger/movieimporter"
-	"monks.co/movietagger/moviemetadatafetcher"
-	"monks.co/movietagger/posterfetcher"
-	"monks.co/movietagger/tmdb"
+	"monks.co/apps/movies/config"
+	"monks.co/apps/movies/creditsfetcher"
+	"monks.co/apps/movies/db"
+	"monks.co/apps/movies/libraryserver"
+	"monks.co/apps/movies/moviecopier"
+	"monks.co/apps/movies/movieimporter"
+	"monks.co/apps/movies/moviemetadatafetcher"
+	"monks.co/apps/movies/posterfetcher"
+	"monks.co/pkg/loggingwaitgroup"
+	"monks.co/pkg/tmdb"
 )
 
 func main() {

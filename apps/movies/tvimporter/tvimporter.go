@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/pioz/tvdb"
-	"monks.co/movietagger/config"
-	"monks.co/movietagger/db"
+	"monks.co/apps/movies/config"
+	"monks.co/apps/movies/db"
 )
 
 func New(tvdb *tvdb.Client, db *db.DB) *TVImporter {

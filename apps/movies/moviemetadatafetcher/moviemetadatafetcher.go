@@ -6,8 +6,8 @@ import (
 	"log"
 	"sync"
 
-	"monks.co/movietagger/db"
-	"monks.co/movietagger/tmdb"
+	"monks.co/apps/movies/db"
+	"monks.co/pkg/tmdb"
 )
 
 type MovieMetadataFetcher struct {
@@ -18,8 +18,8 @@ type MovieMetadataFetcher struct {
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieMetadataFetcher {
 	return &MovieMetadataFetcher{
-		tmdb:   tmdb,
-		db:     db,
+		tmdb: tmdb,
+		db:   db,
 	}
 }
 

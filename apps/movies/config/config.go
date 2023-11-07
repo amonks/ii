@@ -3,7 +3,7 @@ package config
 const (
 	DBPath = "/data/tank/movies/.movies.db"
 
-	TVImportDir  = "../mnt/whatbox/files/tv"
+	TVImportDir  = "/data/dmz/whatbod/files/tv"
 	TVLibraryDir = "/data/tank/tv"
 
 	MovieImportDir  = "/data/dmz/whatbox/files/movies"

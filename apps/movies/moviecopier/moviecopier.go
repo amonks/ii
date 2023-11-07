@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"monks.co/movietagger/config"
-	"monks.co/movietagger/db"
+	"monks.co/apps/movies/config"
+	"monks.co/apps/movies/db"
 )
 
 type MovieCopier struct {

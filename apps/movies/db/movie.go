@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"monks.co/movietagger/tmdb"
+	"monks.co/pkg/tmdb"
 )
 
 type Movie struct {

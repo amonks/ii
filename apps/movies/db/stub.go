@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
-	"monks.co/movietagger/tmdb"
+	"monks.co/pkg/tmdb"
 )
 
 type Stub struct {

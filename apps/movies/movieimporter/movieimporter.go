@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"monks.co/movietagger/config"
-	"monks.co/movietagger/db"
-	"monks.co/movietagger/tmdb"
+	"monks.co/apps/movies/config"
+	"monks.co/apps/movies/db"
+	"monks.co/pkg/tmdb"
 )
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieImporter {
