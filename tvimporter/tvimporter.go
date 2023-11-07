@@ -2,25 +2,23 @@ package tvimporter
 
 import (
 	"context"
+	"log"
 	"os"
 	"sync"
 
 	"github.com/pioz/tvdb"
 	"monks.co/movietagger/config"
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 )
 
 func New(tvdb *tvdb.Client, db *db.DB) *TVImporter {
 	return &TVImporter{
-		System: system.New("tvimporter"),
-		db:     db,
-		tvdb:   tvdb,
+		db:   db,
+		tvdb: tvdb,
 	}
 }
 
 type TVImporter struct {
-	*system.System
 	db   *db.DB
 	tvdb *tvdb.Client
 
@@ -29,7 +27,8 @@ type TVImporter struct {
 }
 
 func (app *TVImporter) Run(ctx context.Context) error {
-	defer app.System.Start()()
+	log.Printf("tvimporter started")
+	defer log.Printf("tvimporter done")
 
 	dir, err := os.ReadDir(config.TVImportDir + "/")
 	if err != nil {

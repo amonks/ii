@@ -12,7 +12,7 @@ type Ignore struct {
 
 func (db *DB) PathIsIgnored(path string) (bool, error) {
 	var ignore Ignore
-	tx := db.db.Where(&Ignore{ImportedFromPath: path}).First(&ignore)
+	tx := db.Where(&Ignore{ImportedFromPath: path}).First(&ignore)
 	if err := tx.Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err != nil {
@@ -22,7 +22,7 @@ func (db *DB) PathIsIgnored(path string) (bool, error) {
 }
 
 func (db *DB) IgnorePath(path string) error {
-	if err := db.db.Create(&Ignore{ImportedFromPath: path}).Error; err != nil {
+	if err := db.Create(&Ignore{ImportedFromPath: path}).Error; err != nil {
 		return err
 	}
 	return nil

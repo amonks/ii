@@ -4,70 +4,68 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"time"
 
 	"monks.co/movietagger/config"
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 )
 
 type MovieCopier struct {
-	*system.System
 	db *db.DB
 }
 
 func New(db *db.DB) *MovieCopier {
-	system := system.New("moviecopier")
 	return &MovieCopier{
-		System: system,
-		db:     db,
+		db: db,
 	}
 }
 
 func (app *MovieCopier) Run(ctx context.Context) error {
-	defer app.System.Start().Stop()
+	log.Println("moviecopier started")
+	defer log.Println("moviecopier done")
 
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		app.Printf("getting next movie ID...")
+		log.Printf("getting next movie ID...")
 		id, err := app.db.GetMovieIDToImport()
 		if err != nil {
-			app.Println(err)
+			log.Println(err)
 			return err
 		}
 		if id == 0 {
-			app.Printf("no movies to copy.")
+			log.Printf("no movies to copy.")
 			return nil
 		}
 
-		app.Println("getting next movie...")
+		log.Println("getting next movie...")
 		movie, err := app.db.GetMovie(id)
 		if err != nil {
-			app.Println(err)
+			log.Println(err)
 			return err
 		}
 		if movie == nil {
-			app.Println("no movies to import")
+			log.Println("no movies to import")
 			return nil
 		}
-		app.Println("got", movie.Title)
+		log.Println("got", movie.Title)
 
-		app.Println("copying movie...")
+		log.Println("copying movie...")
 		if err := app.copyFile(ctx, config.MovieImportDir+"/"+movie.ImportedFromPath, config.MovieLibraryDir+"/"+movie.LibraryPath); err != nil {
-			app.Println(err)
+			log.Println(err)
 			return err
 		}
 
-		app.Println("marking as imported...")
+		log.Println("marking as imported...")
 		if err := app.db.SetMovieImportedAt(movie, time.Now()); err != nil {
-			app.Println(err)
+			log.Println(err)
 			return err
 		}
-		app.Printf("imported '%s' from '%s' to '%s'", movie.Title, movie.ImportedFromPath, movie.LibraryPath)
+		log.Printf("imported '%s' from '%s' to '%s'", movie.Title, movie.ImportedFromPath, movie.LibraryPath)
 	}
 }
 
@@ -87,7 +85,6 @@ func (app *MovieCopier) copyFile(ctx context.Context, src, dest string) error {
 	defer srcF.Close()
 
 	var rdr io.Reader = NewCancelReader(ctx, srcF)
-	rdr = io.TeeReader(rdr, &ProgressWriter{logger: app, totalSize: int(srcStat.Size())})
 
 	destF, err := os.Create(dest)
 	if err != nil {

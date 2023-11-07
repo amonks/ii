@@ -1,0 +1,17 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = ["watch-templates"]
+  watch = ["*.go"]
+  cmd = "go run ."
+
+[[task]]
+  id = "watch-templates"
+  type = "long"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate -watch"
+
+[[task]]
+  id = "build-templates"
+  type = "short"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate"
+

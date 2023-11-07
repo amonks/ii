@@ -2,32 +2,29 @@ package moviesyncer
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"sync"
 
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 type MovieSyncer struct {
-	*system.System
 	tmdb  *tmdb.Client
 	db    *db.DB
 	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieSyncer {
-	system := system.New("moviesyncer")
 	return &MovieSyncer{
-		System: system,
 		tmdb:   tmdb,
 		db:     db,
 	}
 }
 
 func (app *MovieSyncer) Run(ctx context.Context) error {
-	defer app.System.Start()()
+	log.Printf("moviesyncer started")
+	defer log.Printf("moviesyncer done")
 
 	if err := app.tmdb.AuthorizeV4WriteAPI(); err != nil {
 		return err
@@ -49,11 +46,11 @@ func (app *MovieSyncer) Run(ctx context.Context) error {
 		tmdbSet[m.ID] = struct{}{}
 	}
 
-	fmt.Printf("%d movies in the tmdb list\n", len(tmdbList))
+	log.Printf("%d movies in the tmdb list\n", len(tmdbList))
 
 	for _, movie := range movies {
 		if _, has := tmdbSet[movie.ID]; !has {
-			fmt.Println("adding", movie.ID, "to list")
+			log.Println("adding", movie.ID, "to list")
 			if err := app.tmdb.AddToList(listID, movie.ID); err != nil {
 				return err
 			}

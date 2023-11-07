@@ -1,0 +1,175 @@
+package libraryserver
+
+templ Filters(data *PageData) {
+	<div class="block">
+		<form class="space-y-10">
+			<div class="pb-4 pt-4">
+				<fieldset>
+					<div class="space-y-6">
+						<label for="query" class="block text-sm font-medium leading-6 text-gray-900">Search</label>
+						<input type="text" name="query" id="query" value={ data.Query } class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+					</div>
+				</fieldset>
+			</div>
+			<div class="pb-4 pt-4">
+				<label class="block text-sm font-medium leading-6 text-gray-900">Sort by</label>
+				<fieldset id="sort-by" class="mt-4">
+					<div class="space-y-4">
+						<div class="flex items-center">
+							<input
+ 								id="sort-date"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "date" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-date" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Release date</label>
+						</div>
+						<div class="flex items-center">
+							<input
+ 								id="sort-importDate"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "importDate" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-importDate" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Import date</label>
+						</div>
+						<div class="flex items-center">
+							<input
+ 								id="sort-name"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "name" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-name" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Name</label>
+						</div>
+						<div class="flex items-center">
+							<input
+ 								id="sort-runtime"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "runtime" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-runtime" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Runtime</label>
+						</div>
+					</div>
+				</fieldset>
+			</div>
+			<div class="pb-4 pt-4">
+				<label class="block text-sm font-medium leading-6 text-gray-900">Sort direction</label>
+				<fieldset id="sort-direction" class="mt-4">
+					<div class="space-y-4">
+						<div class="flex items-center">
+							<input
+ 								id="sort-direction-asc"
+ 								name="sort-direction"
+ 								type="radio"
+ 								if data.SortDirection == "asc" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-direction-asc" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Ascending</label>
+						</div>
+						<div class="flex items-center">
+							<input
+ 								id="sort-direction-desc"
+ 								name="sort-direction"
+ 								type="radio"
+ 								if data.SortDirection == "desc" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-direction-desc" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Descending</label>
+						</div>
+					</div>
+				</fieldset>
+			</div>
+			<div class="pb-4 pt-4">
+				<fieldset>
+					<legend class="block text-sm font-medium text-gray-900">Genre</legend>
+					<div class="space-y-3 pt-6">
+						for _, genre := range data.Genres {
+							<div class="flex items-center">
+								<input
+ 									id="genre-{{ $genre.Name }}"
+ 									name="genres[]"
+ 									value="{{ $genre.Name }}"
+ 									if genre.IsSelected {
+										checked
+									}
+ 									type="checkbox"
+ 									class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+								/>
+								<label for={ "genre-"+genre.Name } class="ml-3 text-sm text-gray-600">{  genre.Name  }</label>
+							</div>
+						}
+					</div>
+				</fieldset>
+			</div>
+		</form>
+	</div>
+	<script>
+		(function() {
+			const queryInput = document.querySelector('#query');
+			queryInput.addEventListener("blur", ev => {
+				console.log("Δ query");
+				const url = new URL(document.location);
+				url.searchParams.set("query", queryInput.value);
+				window.location = url.toString();
+			});
+
+			const sortByInputs = document.querySelectorAll('#sort-by input');
+			for (const el of sortByInputs) {
+				el.addEventListener("click", ev => {
+					console.log("Δ sortBy");
+					const value = el.id.replace("sort-", "");
+					console.log(el, value);
+					const url = new URL(document.location);
+					url.searchParams.set("sortBy", value);
+					window.location = url.toString();
+				});
+			}
+
+			const sortDirectionInputs = document.querySelectorAll('#sort-direction input');
+			for (const el of sortDirectionInputs) {
+				el.addEventListener("click", ev => {
+					console.log("Δ sortDirection");
+					const value = el.id.replace("sort-direction-", "");
+					console.log(el, value);
+					const url = new URL(document.location);
+					url.searchParams.set("sortDirection", value);
+					window.location = url.toString();
+				});
+			}
+
+			const genreInputs = document.querySelectorAll('input[name="genres[]"]');
+			for (const el of genreInputs) {
+				el.addEventListener("click", ev => {
+					console.log("Δ genres");
+					if (!el.checked) {
+						const url = new URL(document.location);
+						url.searchParams.delete("genres", el.value);
+						window.location = url.toString();
+					} else {
+						const url = new URL(document.location);
+						url.searchParams.append("genres", el.value);
+						window.location = url.toString();
+					}
+				});
+			}
+		})();
+	</script>
+}

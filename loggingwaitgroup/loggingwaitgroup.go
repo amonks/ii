@@ -1,11 +1,11 @@
 package loggingwaitgroup
 
 import (
-	"fmt"
+	"log"
 	"sync"
 )
 
-const log = false
+const shouldLog = false
 
 type WaitGroup struct {
 	sync.WaitGroup
@@ -13,15 +13,15 @@ type WaitGroup struct {
 }
 
 func (wg *WaitGroup) Add(name string) {
-	if log {
-		fmt.Println("add", name)
+	if shouldLog {
+		log.Println("add", name)
 	}
 	wg.WaitGroup.Add(1)
 }
 
 func (wg *WaitGroup) Done(name string) {
-	if log {
-		fmt.Println("done", name)
+	if shouldLog {
+		log.Println("done", name)
 	}
 	wg.WaitGroup.Done()
 }

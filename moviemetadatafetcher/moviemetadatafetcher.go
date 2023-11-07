@@ -3,31 +3,29 @@ package moviemetadatafetcher
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 type MovieMetadataFetcher struct {
-	*system.System
 	tmdb  *tmdb.Client
 	db    *db.DB
 	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieMetadataFetcher {
-	system := system.New("moviemetadatafetcher")
 	return &MovieMetadataFetcher{
-		System: system,
 		tmdb:   tmdb,
 		db:     db,
 	}
 }
 
 func (app *MovieMetadataFetcher) Run(ctx context.Context) error {
-	defer app.System.Start().Stop()
+	log.Println("moviemetadatafetcher started")
+	defer log.Println("moviemetadatafetcher done")
 
 	movies, err := app.db.AllMovies()
 	if err != nil {
@@ -39,7 +37,7 @@ func (app *MovieMetadataFetcher) Run(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println("fetching json for", movie.ID, movie.Title)
+		log.Println("fetching json for", movie.ID, movie.Title)
 
 		tmdbMovie, err := app.tmdb.Get(movie.ID)
 		if err != nil {

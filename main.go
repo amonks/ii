@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,22 +19,17 @@ import (
 	"monks.co/movietagger/movieimporter"
 	"monks.co/movietagger/moviemetadatafetcher"
 	"monks.co/movietagger/posterfetcher"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Printf("stopped: %s\n", err)
+		log.Printf("stopped: %s\n", err)
 		os.Exit(1)
 	}
 }
 
 func run() error {
-	if err := system.Start(); err != nil {
-		return err
-	}
-
 	// how to get a token from an api key:
 	// http://dev.travisbell.com/play/v4_auth.html
 	tmdb := tmdb.New(
@@ -49,7 +45,7 @@ func run() error {
 	if movies, err := db.AllMovies(); err != nil {
 		return err
 	} else {
-		fmt.Printf("%d movies in the library.\n", len(movies))
+		log.Printf("%d movies in the library.\n", len(movies))
 	}
 
 	wg := &loggingwaitgroup.WaitGroup{}
@@ -99,7 +95,7 @@ func run() error {
 				select {
 				case <-ctx.Done():
 					return
-				case <-mt.Subscribe():
+				case <-db.Subscribe():
 					goto run
 				}
 			}
@@ -132,7 +128,7 @@ func run() error {
 		case <-ctx.Done():
 			return
 		case sig := <-sigs:
-			fmt.Println("interrupt")
+			log.Println("interrupt")
 			cancel(fmt.Errorf("interrupt signal: %s", sig))
 			return
 		}
@@ -144,9 +140,5 @@ func run() error {
 	if err := db.Stop(); err != nil {
 		errs = errors.Join(errs, fmt.Errorf("failed to close db: %w", err))
 	}
-	if err := system.Stop(); err != nil {
-		errs = errors.Join(errs, fmt.Errorf("failed to stop logger: %w", err))
-	}
-
 	return errs
 }

@@ -129,7 +129,7 @@ func (l *Client) Search(q string) ([]Film, error) {
 		return nil, fmt.Errorf("error hitting letterboxd token endpoint: %w", err)
 	}
 
-	fmt.Println(res)
+	log.Println(res)
 
 	return nil, nil
 }

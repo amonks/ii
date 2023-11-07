@@ -5,34 +5,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
 	"sync"
 
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 type PosterFetcher struct {
-	*system.System
 	tmdb  *tmdb.Client
 	db    *db.DB
 	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {
-	system := system.New("posterfetcher")
 	return &PosterFetcher{
-		System: system,
 		tmdb:   tmdb,
 		db:     db,
 	}
 }
 
 func (app *PosterFetcher) Run(ctx context.Context) error {
-	defer app.System.Start().Stop()
+	log.Println("posterfetcher started")
+	defer log.Println("posterfetcher done")
 
 	movies, err := app.db.AllMovies()
 	if err != nil {
@@ -52,31 +50,33 @@ func (app *PosterFetcher) Run(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println("fetching poster for", movie.ID, movie.Title)
+		log.Println("fetching poster for", movie.ID, movie.Title)
 
-		app.Println("creating file")
+		log.Println("creating file")
 		posterPath := path.Clean("/data/tank/movies/posters/" + tmdbJSON.PosterPath)
 		f, err := os.Create(posterPath)
 		if err != nil {
 			return err
 		}
 
-		app.Println("fetching poster")
+		log.Println("fetching poster")
 		resp, err := http.Get("https://image.tmdb.org/t/p/original" + tmdbJSON.PosterPath)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
 
-		app.Println("copying poster data")
+		log.Println("copying poster data")
 		if _, err := io.Copy(f, resp.Body); err != nil {
 			return err
 		}
 
-		app.Println("adding movie poster")
+		log.Println("adding movie poster")
 		if err := app.db.AddMoviePoster(movie, posterPath); err != nil {
 			return fmt.Errorf("error updating %d (%s): %w", movie.ID, movie.Title, err)
 		}
+
+		log.Println("fetched poster for", movie.ID, movie.Title)
 	}
 
 	return nil

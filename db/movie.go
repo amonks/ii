@@ -38,7 +38,7 @@ type Movie struct {
 	WriterName string
 }
 
-func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
+func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error) {
 	var genres []string
 	var languages []string
 	for _, genre := range m.Genres {
@@ -64,7 +64,14 @@ func NewMovie(m *tmdb.Movie, importedFromPath string) *Movie {
 		TMDBJSON: m.TMDBJSON,
 	}
 	movie.LibraryPath = movie.BuildLibraryPath()
-	return &movie
+
+	if err := db.Create(&movie).Error; err != nil {
+		return nil, err
+	}
+
+	db.notify(&movie)
+
+	return &movie, nil
 }
 
 var illegalCharForFilename = regexp.MustCompile(`\/`)
@@ -82,7 +89,7 @@ func (m *Movie) IsImported() bool {
 
 func (d *DB) GetMovieIDToImport() (int64, error) {
 	var movie Movie
-	if err := d.db.Where("imported_at = ''").First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := d.Where("imported_at = ''").First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return 0, nil
 	} else if err != nil {
 		return 0, err
@@ -90,58 +97,81 @@ func (d *DB) GetMovieIDToImport() (int64, error) {
 	return movie.ID, nil
 }
 
-func (d *DB) AddMovie(movie *Movie) error {
-	if err := d.db.Create(movie).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *DB) SaveMovie(movie *Movie) error {
-	if err := d.db.Save(movie).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (d *DB) AddMovieCredits(movie *Movie, json []byte) error {
-	movie.TMDBCreditsJSON = string(json)
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{TMDBCreditsJSON: string(json)}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) AddMovieJSON(movie *Movie, json string) error {
-	movie.TMDBJSON = json
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{TMDBJSON: string(json)}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) AddMovieWriter(movie *Movie, writerName string) error {
-	movie.WriterName = writerName
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{WriterName: writerName}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) AddMovieDirector(movie *Movie, directorName string) error {
-	movie.DirectorName = directorName
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{DirectorName: directorName}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) AddMoviePoster(movie *Movie, posterPath string) error {
-	movie.PosterPath = posterPath
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{PosterPath: posterPath}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
-	movie.ImportedAt = importedAt.Format(time.DateTime)
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{ImportedAt: importedAt.Format(time.DateTime)}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) ReplaceMovie(movie *Movie, path string) error {
-	movie.ImportedAt = time.Now().Format(time.DateTime)
-	movie.ImportedFromPath = path
-	return d.SaveMovie(movie)
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(Movie{
+			ImportedAt:       time.Now().Format(time.DateTime),
+			ImportedFromPath: path,
+		}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) DeleteMovie(movie *Movie) error {
-	if err := d.db.Delete(movie).Error; err != nil {
+	if err := d.Delete(movie).Error; err != nil {
 		return err
 	}
 	return nil
@@ -149,7 +179,7 @@ func (d *DB) DeleteMovie(movie *Movie) error {
 
 func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
 	var movie Movie
-	if err := d.db.Where("imported_from_path = ?", importedFromPath).First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := d.Where("imported_from_path = ?", importedFromPath).First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -159,9 +189,8 @@ func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
 
 func (d *DB) AllMovies() ([]*Movie, error) {
 	movies := []*Movie{}
-	tx := d.db.Table("movies").Find(&movies)
-	if tx.Error != nil {
-		return nil, tx.Error
+	if err := d.Table("movies").Find(&movies).Error; err != nil {
+		return nil, err
 	}
 	return movies, nil
 }
@@ -176,7 +205,7 @@ func (m *Movie) PosterURL() string {
 
 func (d *DB) GetMovie(id int64) (*Movie, error) {
 	var movie Movie
-	if err := d.db.Where(&Movie{ID: id}).First(&movie).Error; err != nil {
+	if err := d.Where(&Movie{ID: id}).First(&movie).Error; err != nil {
 		return nil, err
 	}
 	return &movie, nil

@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
-
-	"monks.co/movietagger/ui"
 )
 
 type Movie struct {
@@ -65,7 +64,7 @@ func (c *Client) AuthorizeV4WriteAPI() error {
 		return err
 	}
 
-	fmt.Println(requestToken)
+	log.Println(requestToken)
 
 	if err := c.approveV4RequestToken(requestToken); err != nil {
 		return err
@@ -102,7 +101,7 @@ func (c *Client) getV4RequestToken() (string, error) {
 		return "", fmt.Errorf("error reading response from tmdb get-request-token request: %w", err)
 	}
 
-	fmt.Println(string(body))
+	log.Println(string(body))
 
 	var response struct {
 		RequestToken string `json:"request_token"`
@@ -115,8 +114,8 @@ func (c *Client) getV4RequestToken() (string, error) {
 }
 
 func (c *Client) approveV4RequestToken(token string) error {
-	fmt.Println("https://www.themoviedb.org/auth/access?request_token=" + token)
-	ui.Prompt("please approve the token")
+	log.Println("https://www.themoviedb.org/auth/access?request_token=" + token)
+	// ui.Prompt("please approve the token")
 	return nil
 }
 
@@ -143,7 +142,7 @@ func (c *Client) getV4WriteAccessToken(token string) error {
 		return fmt.Errorf("error reading response from tmdb get-write-token request: %w", err)
 	}
 
-	fmt.Println(string(body))
+	log.Println(string(body))
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("error code from tmdb get-write-token request: %d", res.StatusCode)
@@ -218,12 +217,12 @@ func (c *Client) List(listID int64) ([]SearchResult, error) {
 		return nil, fmt.Errorf("error decoding response from tmdb list: %w", err)
 	}
 
-	fmt.Println("tmdb list success")
+	log.Println("tmdb list success")
 
 	return response.Results, nil
 }
 
-func (c *Client) Search(q string, year int64) ([]SearchResult, error) {
+func (c *Client) Search(q, year string) ([]SearchResult, error) {
 	req, err := http.NewRequest(http.MethodGet, `https://api.themoviedb.org/3/search/movie`, nil)
 	if err != nil {
 		return nil, fmt.Errorf("building tmdb search request: %w", err)
@@ -232,8 +231,8 @@ func (c *Client) Search(q string, year int64) ([]SearchResult, error) {
 	qs := req.URL.Query()
 	qs.Add("api_key", c.apiKey)
 	qs.Add("query", q)
-	if year != 0 {
-		qs.Add("year", strconv.FormatInt(year, 10))
+	if year != "" {
+		qs.Add("year", year)
 	}
 
 	req.URL.RawQuery = qs.Encode()

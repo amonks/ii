@@ -3,31 +3,29 @@ package creditsfetcher
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"monks.co/movietagger/db"
-	"monks.co/movietagger/system"
 	"monks.co/movietagger/tmdb"
 )
 
 type CreditsFetcher struct {
-	*system.System
 	tmdb  *tmdb.Client
 	db    *db.DB
 	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *CreditsFetcher {
-	system := system.New("creditsfetcher")
 	return &CreditsFetcher{
-		System: system,
-		tmdb:   tmdb,
-		db:     db,
+		tmdb: tmdb,
+		db:   db,
 	}
 }
 
 func (app *CreditsFetcher) Run(ctx context.Context) error {
-	defer app.System.Start().Stop()
+	log.Printf("creditsfetcher started")
+	defer log.Printf("creditsfetcher done")
 
 	movies, err := app.db.AllMovies()
 	if err != nil {
@@ -39,7 +37,7 @@ func (app *CreditsFetcher) Run(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println("fetching credits for", movie.ID, movie.Title)
+		log.Println("fetching credits for", movie.ID, movie.Title)
 
 		credits, creditsJSON, err := app.tmdb.GetCredits(movie.ID)
 		if err != nil {
@@ -72,6 +70,8 @@ func (app *CreditsFetcher) Run(ctx context.Context) error {
 		if err := app.db.AddMovieCredits(movie, creditsJSON); err != nil {
 			return fmt.Errorf("error updating %d (%s): %w", movie.ID, movie.Title, err)
 		}
+
+		log.Println("fetched credits for", movie.ID, movie.Title)
 	}
 
 	return nil
