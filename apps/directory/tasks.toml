@@ -20,5 +20,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "../../bin/template -port=3014"
+  cmd = "../../bin/directory -port=3014"
 
