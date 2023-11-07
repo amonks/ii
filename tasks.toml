@@ -69,22 +69,31 @@ cmd = 'go run ./cmd/taskmaker'
 [[task]]
 id = 'terraform-apply'
 type = 'short'
-cmd = 'cd aws/terraform && terraform apply'
+dependencies = [
+  'aws-convert-zones'
+]
+cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
 
 [[task]]
 id = 'terraform-fmt'
 type = 'short'
-cmd = 'cd aws/terraform && terraform fmt'
+dependencies = [
+  'aws-convert-zones'
+]
+cmd = 'source aws/.envrc && cd aws/terraform && terraform fmt'
 
 [[task]]
 id = 'terraform-init'
 type = 'short'
-cmd = 'cd aws/terraform && terraform init'
+cmd = 'source aws/.envrc && cd aws/terraform && terraform init'
 
 [[task]]
 id = 'terraform-plan'
 type = 'short'
-cmd = 'cd aws/terraform && terraform plan'
+dependencies = [
+  'aws-convert-zones'
+]
+cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
 
 [[task]]
 id = 'thor'

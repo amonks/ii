@@ -82,6 +82,14 @@ resource "aws_route53_record" "go-ss-cx-A" {
   records = ["100.84.224.155"]
 }
 
+resource "aws_route53_record" "fly-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "fly.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.84.224.155"]
+}
+
 resource "aws_route53_record" "calder-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "calder.ss.cx."
