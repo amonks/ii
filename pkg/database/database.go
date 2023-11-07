@@ -12,9 +12,13 @@ type DB struct {
 	*gorm.DB
 }
 
+func OpenFromDataFolder(name string) (*DB, error) {
+	path := filepath.Join(os.Getenv("MONKS_DATA"), name+".db")
+	return Open(path)
+}
+
 func Open(path string) (*DB, error) {
-	dbPath := filepath.Join(os.Getenv("MONKS_DATA"), path)
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

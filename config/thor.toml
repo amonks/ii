@@ -10,9 +10,9 @@ mode = "dev"
   apps = [
     "air",
     "traffic",
-    "movies"
+    "movies",
+    "reddit"
   ]
-  extra_routes = { "reddit" = 3334 }
 
 [acme]
   storage_path = "cache"

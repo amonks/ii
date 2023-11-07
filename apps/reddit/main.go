@@ -35,7 +35,7 @@ func run() error {
 	var errs error
 
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
-	s := &Server{db: db}
+	s := newServer(db)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(s)); err != nil {
 		errs = errors.Join(errs, err)
 	}

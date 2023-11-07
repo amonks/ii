@@ -3,6 +3,7 @@ package serve
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -12,6 +13,7 @@ func ListenAndServe(ctx context.Context, addr string, handler http.Handler) erro
 	go func() {
 		errs <- srv.ListenAndServe()
 	}()
+	log.Printf("listening at %s", addr)
 	select {
 	case err := <-errs:
 		return err

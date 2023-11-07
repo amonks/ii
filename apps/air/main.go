@@ -25,7 +25,7 @@ func main() {
 		}
 		fmt.Println("done")
 	case "serve":
-		addr := fmt.Sprintf("0.0.0.0:%d", port)
+		addr := fmt.Sprintf("0.0.0.0:%d", *port)
 		if err := serve(db, addr); err != nil {
 			panic(err)
 		}

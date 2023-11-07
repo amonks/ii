@@ -15,9 +15,12 @@ type Server struct {
 
 func newServer(db *model) *Server {
 	s := &Server{http.NewServeMux(), db}
+
 	s.Handle("/", s.pageServer())
+
 	fs := http.FileServer(http.Dir(archivePath))
-	http.Handle("/media/", http.StripPrefix("/media/", fs))
+	s.Handle("/media/", http.StripPrefix("/media/", fs))
+
 	return s
 }
 
@@ -25,6 +28,9 @@ func (s *Server) pageServer() http.Handler {
 	tmpl := template.Must(template.ParseFiles("index.gohtml"))
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		n := req.URL.Query().Get("n")
+		if n == "" {
+			n = "1"
+		}
 		offset, err := strconv.ParseInt(n, 10, 64)
 		if err != nil {
 			serve.Error(res, req, http.StatusBadRequest, err)

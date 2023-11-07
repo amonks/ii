@@ -9,7 +9,7 @@ type model struct {
 }
 
 func NewModel() (*model, error) {
-	db, err := database.Open("golink.db")
+	db, err := database.Open("/data/tank/mirror/reddit/.reddit.db")
 	if err != nil {
 		return nil, err
 	}
@@ -18,7 +18,11 @@ func NewModel() (*model, error) {
 
 func (m *model) getPosts(limit, offset int) ([]*Post, error) {
 	posts := []*Post{}
-	if err := m.DB.Table("posts").Find(&posts).Offset(offset).Limit(limit).Error; err != nil {
+	if err := m.DB.Table("posts").
+		Offset(offset).
+		Limit(limit).
+		Find(&posts).
+		Error; err != nil {
 		return nil, err
 	}
 	return posts, nil

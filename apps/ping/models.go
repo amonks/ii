@@ -31,7 +31,7 @@ type model struct {
 }
 
 func NewModel() (*model, error) {
-	db, err := database.Open("ping.db")
+	db, err := database.OpenFromDataFolder("ping")
 	if err != nil {
 		return nil, err
 	}

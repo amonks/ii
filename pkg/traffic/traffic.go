@@ -74,7 +74,7 @@ type Model struct {
 }
 
 func Open() (*Model, error) {
-	db, err := database.Open("traffic.db")
+	db, err := database.OpenFromDataFolder("traffic")
 	if err != nil {
 		return nil, err
 	}

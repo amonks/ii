@@ -70,7 +70,7 @@ type model struct {
 }
 
 func NewModel() (*model, error) {
-	db, err := database.Open("map.db")
+	db, err := database.OpenFromDataFolder("map")
 	if err != nil {
 		return nil, err
 	}

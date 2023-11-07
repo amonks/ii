@@ -17,7 +17,7 @@ type model struct {
 }
 
 func NewModel() (*model, error) {
-	db, err := database.Open("golink.db")
+	db, err := database.OpenFromDataFolder("golink")
 	if err != nil {
 		return nil, err
 	}
