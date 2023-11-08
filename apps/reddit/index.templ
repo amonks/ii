@@ -1,0 +1,50 @@
+package main
+
+import (
+	"fmt"
+
+	"monks.co/pkg/templib"
+)
+
+templ Index(data *PageData) {
+	@templib.Page("Reddit", templib.PageOptions{}) {
+		for _, post := range data.Posts {
+			<div style="width: 100%; max-width: 1000px;">
+				@embed(post)
+			</div>
+		}
+		<a
+ 			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
+ 			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Prev)) }
+		>
+			Previous
+		</a>
+		<a
+ 			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
+ 			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Next)) }
+		>
+			Next
+		</a>
+	}
+}
+
+templ embed(p *Post) {
+	if p.Filetype == nil {
+		<div>no</div>
+	} else {
+		switch *p.Filetype {
+			case ".gif":
+				<img style="width: 100%;" src={ p.Src() }/>
+			case ".jpg":
+				<img style="width: 100%;" src={ p.Src() }/>
+			case ".png":
+				<img style="width: 100%;" src={ p.Src() }/>
+			case ".mp4":
+				<video style="width: 100%;" controls autoplay loop preload="auto">
+					<source src={ p.Src() }/>
+				</video>
+			default:
+				<div>unexpected filetype { *p.Filetype }</div>
+		}
+	}
+}
