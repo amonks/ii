@@ -23,6 +23,15 @@ type DB struct {
 	subscriptions []chan *Movie
 }
 
+//go:generate go run golang.org/x/tools/cmd/stringer -type MediaType
+type MediaType int
+
+const (
+	mediaTypeInvalid MediaType = iota
+	MediaTypeTV
+	MediaTypeMovie
+)
+
 func (db *DB) Subscribe() chan *Movie {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()

@@ -1,0 +1,103 @@
+package libraryserver
+
+import (
+	"fmt"
+
+	"monks.co/apps/movies/db"
+	"monks.co/pkg/templib"
+)
+
+templ Stubs(stubs []*db.Stub) {
+	for i, stub := range stubs {
+		@Stub(fmt.Sprintf("%d", i), stub)
+	}
+	<script>
+		(function() {
+			const stubs = document.querySelectorAll(".stub");
+			for (const stub of stubs) {
+				const path = stub.querySelector(".stub--path").innerText;
+				if (!path) throw Error("no path");
+
+				const searchButton = stub.querySelector(".stub--search");
+				searchButton.addEventListener("click", async () => {
+					const query = stub.querySelector(".stub--query").value;
+					const year = stub.querySelector(".stub--year").value;
+					if (!query) throw Error("no query");
+					const params = new URLSearchParams();
+					params.append("query", query);
+					params.append("year", year);
+					params.append("path", path);
+					await fetch(`search?`+params.toString(), {method: "POST"});
+					location.reload();
+				});
+
+				const results = stub.querySelectorAll(".stub--result");
+				for (const result of results) {
+					const button = result.querySelector(".stub--result--choose");
+					if (!result.attributes["data-id"]) {
+						continue
+					}
+					const id = result.attributes["data-id"].value;
+					button.addEventListener("click", async (ev) => {
+						const params = new URLSearchParams();
+						params.append("id", id);
+						await fetch(`identify?`+params.toString(), { method: "POST" });
+						location.reload();
+					})
+				}
+
+				const ignoreButton = stub.querySelector(".stub--ignore")
+				ignoreButton.addEventListener("click", async (ev) => {
+					const params = new URLSearchParams();
+					params.append("path", path);
+					await fetch(`ignore?`+params.toString(), { method: "POST" });
+					location.reload();
+				})
+			}
+		})();
+	</script>
+}
+
+templ Card() {
+}
+
+templ Stub(id string, stub *db.Stub) {
+	@templib.Card() {
+		@templib.Form(&templib.FormOptions{Title: stub.ImportedFromPath, Subtitle: stub.Type.String()}) {
+			@templib.Fields() {
+				@templib.Input(&templib.InputOptions{
+					ID: "stub-year-"+id,
+					Name: "year",
+					Class: "stub--year",
+					Width: 2,
+				})
+				@templib.Input(&templib.InputOptions{
+					ID: "stub-query-"+id,
+					Name: "query",
+					Class: "stub--query",
+					Width: 3,
+				})
+			}
+			@templib.ButtonGroup() {
+				@templib.ButtonSecondary(&templib.ButtonOptions{
+					Class: "stub--ignore",
+					Label: "ignore",
+				})
+				@templib.ButtonPrimary(&templib.ButtonOptions{
+					Class: "stub--search",
+					Label: "Search",
+				})
+			}
+		}
+		<ul>
+			for _, result := range stub.Results {
+				<li class="stub--result" data-id={ fmt.Sprintf("%d", result.ID) }>
+					<button class="stub--result--choose">choose</button>
+					<a href={ templ.SafeURL(fmt.Sprintf("https://www.themoviedb.org/movie/%d",result.ID)) }>
+						{ result.ReleaseDate }: { result.Title }
+					</a>
+				</li>
+			}
+		</ul>
+	}
+}

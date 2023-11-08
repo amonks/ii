@@ -9,6 +9,7 @@ import (
 
 type Stub struct {
 	ImportedFromPath string `gorm:"primaryKey"`
+	Type             MediaType
 	Year             string
 	Query            string
 	Results          []tmdb.SearchResult `gorm:"serializer:json"`
@@ -36,9 +37,10 @@ func (d *DB) GetStub(importedFromPath string) (*Stub, error) {
 	return stub, nil
 }
 
-func (d *DB) CreateStub(importedFromPath string) (*Stub, error) {
+func (d *DB) CreateStub(mediaType MediaType, importedFromPath string) (*Stub, error) {
 	stub := &Stub{
 		ImportedFromPath: importedFromPath,
+		Type:             mediaType,
 	}
 	if err := d.Create(stub).Error; err != nil {
 		return nil, err
@@ -60,9 +62,10 @@ func (d *DB) DeleteStub(stub *Stub) error {
 	return nil
 }
 
-func (d *DB) StubExistsFromPath(importedFromPath string) (bool, error) {
+func (d *DB) StubExistsFromPath(mediaType MediaType, importedFromPath string) (bool, error) {
 	var stub Stub
-	if err := d.Where("imported_from_path = ?", importedFromPath).
+	if err := d.Table("stubs").
+		Where(Stub{ImportedFromPath: importedFromPath, Type: mediaType}).
 		First(&stub).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err != nil {

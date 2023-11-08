@@ -76,8 +76,11 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
+		log.Println("shutting down server")
 		s.Shutdown(context.TODO())
+		log.Println("done")
 	case err := <-errs:
+		log.Println("got an err! hopefully we're already shut down.")
 		return err
 	}
 
@@ -334,7 +337,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 	}
 
 	if err := app.db.Transaction(func(tx *gorm.DB) error {
-		if err := (&db.DB{DB: tx}).IgnorePath(path); err != nil {
+		if err := (&db.DB{DB: tx}).IgnorePath(stub.Type, path); err != nil {
 			return err
 		}
 

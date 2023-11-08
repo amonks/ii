@@ -6,17 +6,18 @@ templ Page(data *PageData) {
 	<!DOCTYPE html>
 	<html>
 		<head>
+			<meta charset="utf-8" />
 			<title>movies</title>
 			<script src="https://cdn.tailwindcss.com"></script>
 		</head>
 		<body>
-			<div class="bg-white">
+			<div class="bg-slate-100">
 				<div>
 					<main class="mx-auto px-4 py-16 sm:px-6 sm:py-24 px-8">
 						if len(data.Stubs) > 0 {
 							<details open>
 								<summary>{ fmt.Sprintf("%d movies in the import queue", len(data.Stubs)) }</summary>
-								@Prompt(data)
+								@Stubs(data.Stubs)
 							</details>
 						}
 						@Movies(data)

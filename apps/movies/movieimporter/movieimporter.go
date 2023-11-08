@@ -49,14 +49,14 @@ func (app *MovieImporter) Run(ctx context.Context) error {
 			return nil
 		}
 
-		if ignored, err := app.db.PathIsIgnored(path); err != nil {
+		if ignored, err := app.db.PathIsIgnored(db.MediaTypeMovie, path); err != nil {
 			log.Printf("err checking ignore")
 			return err
 		} else if ignored {
 			return nil
 		}
 
-		if exists, err := app.db.StubExistsFromPath(path); err != nil {
+		if exists, err := app.db.StubExistsFromPath(db.MediaTypeMovie, path); err != nil {
 			log.Printf("err checking exists")
 			return err
 		} else if exists {
@@ -70,7 +70,7 @@ func (app *MovieImporter) Run(ctx context.Context) error {
 			return nil
 		}
 
-		if _, err := app.db.CreateStub(path); err != nil {
+		if _, err := app.db.CreateStub(db.MediaTypeMovie, path); err != nil {
 			return fmt.Errorf("error saving new stub: %w", err)
 		}
 
