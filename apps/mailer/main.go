@@ -47,7 +47,7 @@ func run() error {
 		}
 	}))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	http.ListenAndServe(addr, gzip.Middleware(mux))
 
 	return nil

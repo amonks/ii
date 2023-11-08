@@ -63,7 +63,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("/identify", app.serveIdentify)
 	mux.HandleFunc("/ignore", app.serveIgnore)
 
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
 
 	errs := make(chan error)

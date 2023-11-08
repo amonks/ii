@@ -27,7 +27,7 @@ func run() error {
 		return err
 	}
 
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		h := templ.Handler(IndexTempl(dir))

@@ -39,7 +39,7 @@ func run() error {
 	case "serve":
 		ctx := sigctx.New()
 
-		addr := fmt.Sprintf("0.0.0.0:%d", *port)
+		addr := fmt.Sprintf("127.0.0.1:%d", *port)
 		if err := serveAir(ctx, db, addr); err != nil {
 			errs = errors.Join(errs, err)
 		}

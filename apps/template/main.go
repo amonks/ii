@@ -21,7 +21,7 @@ func main() {
 func run() error {
 	flag.Parse()
 
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	mux := http.NewServeMux()
 	http.ListenAndServe(addr, gzip.Middleware(mux))
 

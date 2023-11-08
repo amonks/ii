@@ -41,7 +41,7 @@ func run() error {
 
 	ctx := sigctx.New()
 
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}

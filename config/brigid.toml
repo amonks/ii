@@ -2,11 +2,11 @@ mode = "dev"
 
 [[service]]
   type = "redirect-to-https"
-  addr = "0.0.0.0:80"
+  addr = "100.103.217.4:80"
 
 [[service]]
   type = "https"
-  addr = "0.0.0.0:443"
+  addr = "100.103.217.4:443"
   apps = [
     "golink",
     "map",
