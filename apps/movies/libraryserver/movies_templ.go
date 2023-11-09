@@ -56,10 +56,13 @@ func Movies(data *PageData) templ.Component {
 			const movies = document.querySelectorAll('.movie');
 			for (const el of movies) {
 				const id = el.attributes.getNamedItem("data-id").value;
-				el.addEventListener("click", ev => {
-					console.log("Δ play");
-					void fetch("play?id="+id);
-				})
+
+				for (const button of el.querySelectorAll(".click-to-play")) {
+					button.addEventListener("click", ev => {
+						console.log("Δ play");
+						void fetch("play?id="+id);
+					})
+				}
 			}
 		})();
 	`
@@ -104,7 +107,7 @@ func Movie(movie *db.Movie) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if movie.HasPoster() {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100\"><img src=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"click-to-play cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100\"><img src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -117,7 +120,7 @@ func Movie(movie *db.Movie) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p data-role=\"title\" class=\"block text-sm font-medium text-gray-900\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p data-role=\"title\" class=\"click-to-play cursor-pointer block text-sm font-medium text-gray-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
