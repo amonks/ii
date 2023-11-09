@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"monks.co/apps/map/model"
 	"monks.co/credentials"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
@@ -28,10 +29,10 @@ func init() {
 
 type server struct {
 	*http.ServeMux
-	model *model
+	model *model.Model
 }
 
-func NewServer(m *model) (*server) {
+func NewServer(m *model.Model) *server {
 	s := &server{http.NewServeMux(), m}
 
 	s.Handle("/index.js", serve.JSServer("./ts/index.ts"))
@@ -40,9 +41,6 @@ func NewServer(m *model) (*server) {
 	s.Handle("/dot.png", serve.StaticServer("./static/"))
 
 	s.HandleFunc("/", s.places)
-
-	s.HandleFunc("/commands/import-saved-places", s.importSavedPlaces)
-	s.HandleFunc("/commands/annotate-peoples-places", s.annotatePeoplesPlaces)
 
 	return s
 }
@@ -54,14 +52,14 @@ func (s *server) places(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	place, err := s.model.getPlace(id)
+	place, err := s.model.GetPlace(id)
 	if err != nil {
 		serve.InternalServerError(w, req, err)
 		return
 	}
 
 	placeTemplateData := struct {
-		Place *Place
+		Place *model.Place
 	}{
 		Place: place,
 	}
@@ -79,7 +77,7 @@ func (s *server) places(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
-	places, err := s.model.listPlaces()
+	places, err := s.model.ListPlaces()
 	if err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -98,7 +96,7 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 
 	placesTemplateData := struct {
 		GoogleMapsImportURL string
-		Places              []Place
+		Places              []model.Place
 		PlacesJSON          template.JS
 	}{
 		GoogleMapsImportURL: googleMapsImportURL,
@@ -109,22 +107,4 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 		serve.InternalServerError(w, req, err)
 		return
 	}
-}
-
-func (s *server) importSavedPlaces(w http.ResponseWriter, req *http.Request) {
-	if err := s.model.importSavedPlaces(); err != nil {
-		serve.InternalServerError(w, req, err)
-		return
-	}
-
-	http.Redirect(w, req, "/places", 302)
-}
-
-func (s *server) annotatePeoplesPlaces(w http.ResponseWriter, req *http.Request) {
-	if err := s.model.annotatePeoplesPlaces(); err != nil {
-		serve.InternalServerError(w, req, err)
-		return
-	}
-
-	http.Redirect(w, req, "/places", 302)
 }

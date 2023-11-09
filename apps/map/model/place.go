@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"encoding/csv"
@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"monks.co/pkg/database"
 	"monks.co/pkg/googlemaps"
 )
 
@@ -66,40 +65,7 @@ func (p Place) DisplayName() (string, error) {
 	return "", fmt.Errorf("could not create display name for '%s'", p.GoogleMapsURL)
 }
 
-type model struct {
-	*database.DB
-}
-
-func NewModel() (*model, error) {
-	db, err := database.OpenFromDataFolder("map")
-	if err != nil {
-		return nil, err
-	}
-	return &model{db}, nil
-}
-
-func (m *model) listPlaces() ([]Place, error) {
-	places := []Place{}
-	tx := m.DB.Table("places").Find(&places)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-	return places, nil
-}
-
-func (m *model) getPlace(googleMapsURL string) (*Place, error) {
-	var place Place
-	if err := m.DB.
-		Table("places").
-		Where(&Place{GoogleMapsURL: googleMapsURL}).
-		First(&place).
-		Error; err != nil {
-		return nil, err
-	}
-	return &place, nil
-}
-
-func (m *model) findPlaceByAddress(address string) (*Place, error) {
+func (m *Model) FindPlaceByAddress(address string) (*Place, error) {
 	var place Place
 	if err := m.DB.
 		Where("google_maps_url like '%' || ? || '%'", address).
@@ -113,21 +79,42 @@ func (m *model) findPlaceByAddress(address string) (*Place, error) {
 	return &place, nil
 }
 
-func (m *model) insertPlace(place Place) error {
+func (m *Model) ListPlaces() ([]Place, error) {
+	places := []Place{}
+	tx := m.DB.Table("places").Find(&places)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return places, nil
+}
+
+func (m *Model) GetPlace(googleMapsURL string) (*Place, error) {
+	var place Place
+	if err := m.DB.
+		Table("places").
+		Where(&Place{GoogleMapsURL: googleMapsURL}).
+		First(&place).
+		Error; err != nil {
+		return nil, err
+	}
+	return &place, nil
+}
+
+func (m *Model) InsertPlace(place Place) error {
 	if err := m.DB.Create(place).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *model) updatePlace(place Place) error {
+func (m *Model) UpdatePlace(place Place) error {
 	if err := m.DB.Save(place).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *model) importSavedPlaces() error {
+func (m *Model) ImportSavedPlaces() error {
 	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "map", "saved_places.json")
 	jsonBytes, err := os.ReadFile(filename)
 	if err != nil {
@@ -181,7 +168,7 @@ func (m *model) importSavedPlaces() error {
 
 	for _, place := range places {
 		// See if place exists
-		got, err := m.getPlace(place.GoogleMapsURL)
+		got, err := m.GetPlace(place.GoogleMapsURL)
 		if err != nil {
 			log.Printf("ERROR fetching %s", place.Title)
 			return err
@@ -211,7 +198,7 @@ func (m *model) importSavedPlaces() error {
 
 		if got == nil {
 			log.Printf("inserting %s", place.Title)
-			if err := m.insertPlace(place); err != nil {
+			if err := m.InsertPlace(place); err != nil {
 				return err
 			}
 		}
@@ -228,7 +215,7 @@ func (m *model) importSavedPlaces() error {
 			got.Types = place.Types
 			got.PriceLevel = place.PriceLevel
 
-			if err := m.updatePlace(*got); err != nil {
+			if err := m.UpdatePlace(*got); err != nil {
 				return err
 			}
 		}
@@ -236,7 +223,7 @@ func (m *model) importSavedPlaces() error {
 	return nil
 }
 
-func (m *model) annotatePeoplesPlaces() error {
+func (m *Model) AnnotatePeoplesPlaces() error {
 	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "places", "people.csv")
 
 	csvFile, err := os.Open(filename)
@@ -270,7 +257,7 @@ func (m *model) annotatePeoplesPlaces() error {
 		if record.Title == "" {
 			continue
 		}
-		place, err := m.findPlaceByAddress(record.Title)
+		place, err := m.FindPlaceByAddress(record.Title)
 		if err != nil {
 			return err
 		}
@@ -289,7 +276,7 @@ func (m *model) annotatePeoplesPlaces() error {
 			place.Notes += "\n\n"
 		}
 		place.Notes += note
-		if err := m.updatePlace(*place); err != nil {
+		if err := m.UpdatePlace(*place); err != nil {
 			return err
 		}
 	}

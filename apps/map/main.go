@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 
+	"monks.co/apps/map/model"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -21,7 +22,7 @@ func main() {
 func run() error {
 	flag.Parse()
 
-	db, err := NewModel()
+	db, err := model.NewModel()
 	if err != nil {
 		return fmt.Errorf("constructing model: %w", err)
 	}
