@@ -7,6 +7,12 @@ var baseTasks = []*task{
 		Cmd:  "go run ./cmd/taskmaker",
 	},
 	{
+		Id:    "templ",
+		Type:  "short",
+		Cmd:   "go run github.com/a-h/templ/cmd/templ generate",
+		Watch: []string{"**/*.templ"},
+	},
+	{
 		Id:   "aws-convert-zones",
 		Type: "short",
 		Cmd:  "cd aws && fish convert-zones.fish",

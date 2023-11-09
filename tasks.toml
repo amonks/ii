@@ -16,7 +16,7 @@ dependencies = [
   'apps/traffic/dev',
   'apps/youtube/dev',
   'brigid-proxy',
-  'pkg/templib/dev'
+  'templ'
 ]
 
 [[task]]
@@ -42,7 +42,7 @@ dependencies = [
   'apps/sms/build',
   'apps/traffic/build',
   'apps/youtube/build',
-  'pkg/templib/build'
+  'templ'
 ]
 
 [[task]]
@@ -52,7 +52,8 @@ dependencies = [
   'apps/mailer/start',
   'apps/map/start',
   'apps/traffic/start',
-  'fly-proxy'
+  'fly-proxy',
+  'templ'
 ]
 
 [[task]]
@@ -65,6 +66,12 @@ cmd = './bin/proxy -machine=fly'
 id = 'taskmaker'
 type = 'short'
 cmd = 'go run ./cmd/taskmaker'
+
+[[task]]
+id = 'templ'
+type = 'short'
+watch = ['**/*.templ']
+cmd = 'go run github.com/a-h/templ/cmd/templ generate'
 
 [[task]]
 id = 'terraform-apply'
@@ -103,7 +110,7 @@ dependencies = [
   'apps/movies/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',
-  'pkg/templib/dev',
+  'templ',
   'thor-proxy'
 ]
 
