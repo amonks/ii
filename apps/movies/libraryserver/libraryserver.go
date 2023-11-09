@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync"
 
-	"gorm.io/gorm"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
@@ -108,7 +107,11 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 	sortBy := q.Get("sortBy")
 	sortDirection := q.Get("sortDirection")
-	if sortBy != "name" && sortBy != "date" && sortBy != "runtime" && sortBy != "importDate" {
+	if sortBy != "name" &&
+		sortBy != "date" &&
+		sortBy != "runtime" &&
+		sortBy != "importDate" &&
+		sortBy != "mc" {
 		sortBy = "date"
 	}
 	if sortDirection != "asc" && sortDirection != "desc" {
@@ -214,6 +217,11 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				return data.Movies[a].Runtime > data.Movies[b].Runtime
 			}
 			return data.Movies[a].Runtime < data.Movies[b].Runtime
+		case "mc":
+			if sortDirection == "desc" {
+				return data.Movies[a].MetacriticRating > data.Movies[b].MetacriticRating
+			}
+			return data.Movies[a].MetacriticRating < data.Movies[b].MetacriticRating
 		case "name":
 			fallthrough
 		default:
@@ -336,12 +344,12 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	if err := app.db.Transaction(func(tx *gorm.DB) error {
-		if err := (&db.DB{DB: tx}).IgnorePath(stub.Type, path); err != nil {
+	if err := app.db.Transaction(func(tx *db.DB) error {
+		if err := tx.IgnorePath(stub.Type, path); err != nil {
 			return err
 		}
 
-		if err := (&db.DB{DB: tx}).DeleteStub(stub); err != nil {
+		if err := tx.DeleteStub(stub); err != nil {
 			return err
 		}
 		return nil
@@ -353,6 +361,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 	w.WriteHeader(200)
 	w.Write([]byte("ok"))
 }
+
 func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request) {
 	log.Println("req /identify")
 
@@ -364,7 +373,10 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 	req.ParseForm()
 
 	path := req.FormValue("path")
-	id := req.FormValue("id")
+	if path == "" {
+		serve.Errorf(w, req, http.StatusBadRequest, "no path given")
+		return
+	}
 
 	stub, err := app.db.GetStub(path)
 	if err != nil {
@@ -372,6 +384,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		return
 	}
 
+	id := req.FormValue("id")
 	parsedID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		serve.Errorf(w, req, http.StatusBadRequest, "error parsing ID: %s", err)
@@ -384,12 +397,12 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	if err := app.db.Transaction(func(tx *gorm.DB) error {
-		if _, err := (&db.DB{DB: tx}).CreateMovie(tmdbMovie, path); err != nil {
+	if err := app.db.Transaction(func(tx *db.DB) error {
+		if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
 			return err
 		}
 
-		if err := (&db.DB{DB: tx}).DeleteStub(stub); err != nil {
+		if err := tx.DeleteStub(stub); err != nil {
 			return err
 		}
 		return nil

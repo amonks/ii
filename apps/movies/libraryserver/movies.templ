@@ -44,16 +44,38 @@ templ Movie(movie *db.Movie) {
 				<img src={ movie.PosterURL() } alt="" class="pointer-events-none object-cover group-hover:opacity-75"/>
 			</div>
 		}
-		<p data-role="title" class="block text-sm font-medium text-gray-900">{ movie.Title }</p>
+		<p data-role="title" class="block text-sm font-medium text-gray-900">
+			{ movie.Title }
+		</p>
 		if movie.WriterName != "" {
-			<p data-role="writer" class="block text-sm font-medium text-gray-900">By { movie.WriterName }</p>
+			<p data-role="writer" class="block text-sm font-medium text-gray-900">
+				By { movie.WriterName }
+			</p>
 		}
-		if movie.DirectorName != "" {
-			<p data-role="director" class="block text-sm font-medium text-gray-900">Dir { movie.DirectorName }</p>
+		if movie.DirectorName != "" && movie.DirectorName != movie.WriterName {
+			<p data-role="director" class="block text-sm font-medium text-gray-900">
+				Dir { movie.DirectorName }
+			</p>
 		}
-		<p data-role="release-date" class="block text-sm font-medium text-gray-500">{ movie.ReleaseDate }</p>
-		<p data-role="tagline" class="block text-sm font-medium text-gray-500">{ movie.Tagline }</p>
-		<p data-role="genres" class="block text-sm font-medium text-gray-500">{ strings.Join(movie.Genres, " ") }</p>
-		<p data-role="runtime" class="block text-sm font-medium text-gray-500">{ fmt.Sprintf("%d", movie.Runtime) } minutes</p>
+		<p data-role="tagline" class="italic block text-sm font-medium text-gray-500">
+			{ movie.Tagline }
+		</p>
+		<p data-role="release-date" class="block text-sm font-medium text-gray-500">
+			{ movie.ReleaseDate }
+		</p>
+		if movie.MetacriticRating != 0 {
+			<p data-role="mc-rating" class="block text-sm font-medium text-gray-500">
+				<a href={ templ.SafeURL(movie.MetacriticURL) }>{ fmt.Sprintf("MC %d", movie.MetacriticRating) }</a>
+			</p>
+		}
+		<p data-role="genres" class="block text-sm font-medium text-gray-500">
+			{ strings.Join(movie.Genres, ", ") }
+		</p>
+		<p data-role="languages" class="block text-sm font-medium text-gray-500">
+			{ strings.Join(movie.Languages, ", ") }
+		</p>
+		<p data-role="runtime" class="block text-sm font-medium text-gray-500">
+			{ fmt.Sprintf("%d", movie.Runtime) } minutes
+		</p>
 	</li>
 }

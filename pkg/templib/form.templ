@@ -3,16 +3,18 @@ package templib
 import "fmt"
 
 type FormOptions struct {
-	Title    string
-	Subtitle string
+	Title      string
+	Subtitle   string
+	Class      string
+	TitleClass string
 }
 
 templ Form(opts *FormOptions) {
-	<form>
+	<form class={ opts.Class }>
 		<div class="space-y-12">
 			<div class="border-b border-gray-900/10 pb-12">
 				if opts.Title != "" {
-					<h2 class="text-base font-semibold leading-7 text-gray-900">
+					<h2 class={ opts.TitleClass + " text-base font-semibold leading-7 text-gray-900" }>
 						{ opts.Title }
 					</h2>
 				}

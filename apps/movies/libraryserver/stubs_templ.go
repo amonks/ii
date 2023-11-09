@@ -45,8 +45,9 @@ func Stubs(stubs []*db.Stub) templ.Component {
 			for (const stub of stubs) {
 				const path = stub.querySelector(".stub--path").innerText;
 				if (!path) throw Error("no path");
+				console.log(path);
 
-				const searchButton = stub.querySelector(".stub--search");
+				const searchButton = stub.querySelector(".stub--searchbutton");
 				searchButton.addEventListener("click", async () => {
 					const query = stub.querySelector(".stub--query").value;
 					const year = stub.querySelector(".stub--year").value;
@@ -55,6 +56,7 @@ func Stubs(stubs []*db.Stub) templ.Component {
 					params.append("query", query);
 					params.append("year", year);
 					params.append("path", path);
+					console.log("search", {query, year, path});
 					await fetch(` + "`" + `search?` + "`" + `+params.toString(), {method: "POST"});
 					location.reload();
 				});
@@ -69,6 +71,8 @@ func Stubs(stubs []*db.Stub) templ.Component {
 					button.addEventListener("click", async (ev) => {
 						const params = new URLSearchParams();
 						params.append("id", id);
+						params.append("path", path);
+						console.log("identify", {path, id});
 						await fetch(` + "`" + `identify?` + "`" + `+params.toString(), { method: "POST" });
 						location.reload();
 					})
@@ -78,6 +82,7 @@ func Stubs(stubs []*db.Stub) templ.Component {
 				ignoreButton.addEventListener("click", async (ev) => {
 					const params = new URLSearchParams();
 					params.append("path", path);
+					console.log("ignore", {path});
 					await fetch(` + "`" + `ignore?` + "`" + `+params.toString(), { method: "POST" });
 					location.reload();
 				})
@@ -203,7 +208,7 @@ func Stub(id string, stub *db.Stub) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					templ_7745c5c3_Err = templib.ButtonPrimary(&templib.ButtonOptions{
-						Class: "stub--search",
+						Class: "stub--searchbutton",
 						Label: "Search",
 					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
@@ -223,7 +228,11 @@ func Stub(id string, stub *db.Stub) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = templib.Form(&templib.FormOptions{Title: stub.ImportedFromPath, Subtitle: stub.Type.String()}).Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templib.Form(&templib.FormOptions{
+				Title:      stub.ImportedFromPath,
+				Subtitle:   stub.Type.String(),
+				TitleClass: "stub--path",
+			}).Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -291,7 +300,9 @@ func Stub(id string, stub *db.Stub) templ.Component {
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = templib.Card().Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templib.Card(&templib.CardOptions{
+			Class: "stub",
+		}).Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

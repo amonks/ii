@@ -21,6 +21,8 @@ type DB struct {
 
 	mutex         sync.Mutex
 	subscriptions []chan *Movie
+
+	parent *DB
 }
 
 //go:generate go run golang.org/x/tools/cmd/stringer -type MediaType
@@ -32,7 +34,24 @@ const (
 	MediaTypeMovie
 )
 
+func (db *DB) Transaction(f func(*DB) error) error {
+	if db.parent != nil {
+		panic("Transaction called on tx")
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		return f(&DB{
+			DB:     tx,
+			parent: db,
+		})
+	})
+}
+
 func (db *DB) Subscribe() chan *Movie {
+	if db.parent != nil {
+		return db.parent.Subscribe()
+	}
+
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -42,6 +61,11 @@ func (db *DB) Subscribe() chan *Movie {
 }
 
 func (db *DB) notify(m *Movie) {
+	if db.parent != nil {
+		db.parent.notify(m)
+		return
+	}
+
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -54,6 +78,10 @@ func (db *DB) notify(m *Movie) {
 }
 
 func (db *DB) close() {
+	if db.parent != nil {
+		panic("close called on tx")
+	}
+
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -69,6 +97,10 @@ func New(path string) *DB {
 }
 
 func (db *DB) Start() error {
+	if db.parent != nil {
+		panic("Start called on tx")
+	}
+
 	gormdb, err := gorm.Open(sqlite.Open(db.path), &gorm.Config{
 		Logger: logger.New(
 			log.New(os.Stderr, "\n", log.LstdFlags),
@@ -98,6 +130,10 @@ func (db *DB) Start() error {
 }
 
 func (db *DB) Stop() error {
+	if db.parent != nil {
+		panic("Stop called on tx")
+	}
+
 	sqldb, err := db.DB.DB()
 	if err != nil {
 		return fmt.Errorf("error accessing database connection: %w", err)

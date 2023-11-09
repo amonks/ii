@@ -17,6 +17,20 @@ templ Filters(data *PageData) {
 					<div class="space-y-4">
 						<div class="flex items-center">
 							<input
+ 								id="sort-mc"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "mc" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-mc" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								MC rating
+							</label>
+						</div>
+						<div class="flex items-center">
+							<input
  								id="sort-date"
  								name="sort-by"
  								type="radio"
@@ -25,7 +39,9 @@ templ Filters(data *PageData) {
 								}
  								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
 							/>
-							<label for="sort-date" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Release date</label>
+							<label for="sort-date" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								Release date
+							</label>
 						</div>
 						<div class="flex items-center">
 							<input
@@ -37,7 +53,9 @@ templ Filters(data *PageData) {
 								}
  								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
 							/>
-							<label for="sort-importDate" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Import date</label>
+							<label for="sort-importDate" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								Import date
+							</label>
 						</div>
 						<div class="flex items-center">
 							<input
@@ -49,7 +67,9 @@ templ Filters(data *PageData) {
 								}
  								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
 							/>
-							<label for="sort-name" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Name</label>
+							<label for="sort-name" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								Name
+							</label>
 						</div>
 						<div class="flex items-center">
 							<input
@@ -61,7 +81,9 @@ templ Filters(data *PageData) {
 								}
  								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
 							/>
-							<label for="sort-runtime" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Runtime</label>
+							<label for="sort-runtime" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								Runtime
+							</label>
 						</div>
 					</div>
 				</fieldset>

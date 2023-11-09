@@ -2,7 +2,6 @@ package tvimporter
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -56,16 +55,16 @@ func (app *TVImporter) Run(ctx context.Context) error {
 			return nil
 		}
 
-		if exists, err := app.db.TVSeriesExistsFromPath(path); err != nil {
-			log.Printf("err checking exists")
-			return err
-		} else if exists {
-			return nil
-		}
+		// if exists, err := app.db.TVSeriesExistsFromPath(path); err != nil {
+		// 	log.Printf("err checking exists")
+		// 	return err
+		// } else if exists {
+		// 	return nil
+		// }
 
-		if _, err := app.db.CreateTVSeriesStub(path); err != nil {
-			return fmt.Errorf("error saving new stub: %w", err)
-		}
+		// if _, err := app.db.CreateTVSeriesStub(path); err != nil {
+		// 	return fmt.Errorf("error saving new stub: %w", err)
+		// }
 
 		log.Printf("added stub: %s", path)
 	}

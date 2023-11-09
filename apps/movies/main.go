@@ -18,6 +18,7 @@ import (
 	"monks.co/apps/movies/movieimporter"
 	"monks.co/apps/movies/moviemetadatafetcher"
 	"monks.co/apps/movies/posterfetcher"
+	"monks.co/apps/movies/ratingfetcher"
 	"monks.co/pkg/loggingwaitgroup"
 	"monks.co/pkg/tmdb"
 )
@@ -43,6 +44,9 @@ func run() error {
 	}
 
 	if movies, err := db.AllMovies(); err != nil {
+		if stopErr := db.Stop(); stopErr != nil {
+			err = errors.Join(err, stopErr)
+		}
 		return err
 	} else {
 		log.Printf("%d movies in the library.\n", len(movies))
@@ -109,11 +113,13 @@ func run() error {
 	mc := moviecopier.New(db)
 	mf := moviemetadatafetcher.New(tmdb, db)
 	pf := posterfetcher.New(tmdb, db)
+	rf := ratingfetcher.New(db)
 	// ms := moviesyncer.New(tmdb, db)
 	runAfterImport("creditsfetcher", cf.Run)
 	runAfterImport("moviecopier", mc.Run)
 	runAfterImport("moviemetadatafetcher", mf.Run)
 	runAfterImport("posterfetcher", pf.Run)
+	runAfterImport("ratingfetcher", rf.Run)
 	// runAfterImport("moviesyncer", ms.Run)
 
 	// Handle signals. If we get one, kill the program.

@@ -6,14 +6,13 @@ toolchain go1.21.3
 
 require (
 	github.com/BurntSushi/toml v1.3.2
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/a-h/templ v0.2.408
 	github.com/amonks/run v1.0.0-beta.21
 	github.com/caddyserver/certmagic v0.17.2
 	github.com/evanw/esbuild v0.19.4
 	github.com/libdns/route53 v1.3.1
-	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/pelletier/go-toml/v2 v2.0.8
-	github.com/pioz/tvdb v0.0.0-20221212235421-03519fb7a0e2
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/sqlc-dev/sqlc v1.22.0
 	github.com/twilio/twilio-go v1.15.0
@@ -64,6 +63,7 @@ require (
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230321174746-8dcc6526cfb1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/atc0005/go-teams-notify/v2 v2.7.1 // indirect
@@ -224,6 +224,7 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-mastodon v0.0.6 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mdlayher/genetlink v1.3.2 // indirect
 	github.com/mdlayher/netlink v1.7.2 // indirect
 	github.com/mdlayher/sdnotify v1.0.0 // indirect

@@ -34,11 +34,18 @@ type Movie struct {
 
 	TMDBCreditsJSON string `gorm:"column:tmdb_credits_json"`
 	DirectorName    string
+	WriterName      string
 
-	WriterName string
+	MetacriticRating    int
+	MetacriticURL       string
+	MetacriticValidated bool
 }
 
 func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error) {
+	if importedFromPath == "" {
+		return nil, fmt.Errorf("invalid path")
+	}
+
 	var genres []string
 	var languages []string
 	for _, genre := range m.Genres {
@@ -131,6 +138,30 @@ func (d *DB) AddMovieDirector(movie *Movie, directorName string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
 		Updates(Movie{DirectorName: directorName}).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DB) SetMovieMetacriticValidated(movie *Movie, valid bool) error {
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Update("metacritic_validated", valid).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DB) AddMovieRating(movie *Movie, score int, metacriticURL string) error {
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(map[string]interface{}{
+			"metacritic_rating": score,
+			"metacritic_url": metacriticURL,
+			"metacritic_validated": false,
+		}).
 		Error; err != nil {
 		return err
 	}
