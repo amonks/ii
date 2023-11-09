@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"monks.co/pkg/database"
+	"monks.co/pkg/twilio"
 )
 
 func fetch(db *database.DB) error {
-	params, err := getDeviceParameters("60:8A:10:B5:58:A0")
+	next, err := getDeviceParameters("60:8A:10:B5:58:A0")
 	if err != nil {
 		return err
 	}
@@ -18,7 +19,7 @@ func fetch(db *database.DB) error {
 	if err != nil {
 		return err
 	}
-	params.ModiCategory = modiCategory
+	next.ModiCategory = modiCategory
 
 	var last Parameters
 	if err := db.
@@ -28,8 +29,10 @@ func fetch(db *database.DB) error {
 		Error; err != nil {
 		return err
 	}
-	handleChange(&last, params)
-	if err := db.Create(params).Error; err != nil {
+	if last.WaterLevel == 3 && next.WaterLevel == 1 {
+		twilio.SMSMe("alert: low water in air purifier")
+	}
+	if err := db.Create(next).Error; err != nil {
 		return err
 	}
 
