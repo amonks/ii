@@ -3,12 +3,14 @@ package model
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"gorm.io/gorm"
 	"monks.co/pkg/googlemaps"
 )
 
@@ -69,7 +71,7 @@ func (m *Model) FindPlaceByAddress(address string) (*Place, error) {
 	var place Place
 	if err := m.DB.
 		Where("google_maps_url like '%' || ? || '%'", address).
-		Or("google_maps_url like '%' || ? || '%''", strings.ReplaceAll(address, " ", "+")).
+		Or("google_maps_url like '%' || ? || '%'", strings.ReplaceAll(address, " ", "+")).
 		Or("address like '%' || ? || '%'", address).
 		Or("title like '%' || ? || '%'", address).
 		First(&place).
@@ -94,8 +96,10 @@ func (m *Model) GetPlace(googleMapsURL string) (*Place, error) {
 		Table("places").
 		Where(&Place{GoogleMapsURL: googleMapsURL}).
 		First(&place).
-		Error; err != nil {
+		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
 	return &place, nil
 }
@@ -123,23 +127,19 @@ func (m *Model) ImportSavedPlaces() error {
 
 	var savedPlaces struct {
 		Features []struct {
+			Geometry struct {
+				Coordinates []float64
+			}
 			Properties struct {
-				GoogleMapsURL string `json:"Google Maps URL"`
+				GoogleMapsURL string `json:"google_maps_url"`
 				Location      struct {
-					Address      string `json:"Address"`
-					BusinessName string `json:"Business Name"`
-					CountryCode  string `json:"Country Code"`
-					GeoCoords    struct {
-						Latitude  string `json:"Latitude"`
-						Longitude string `json:"Longitude"`
-					} `json:"Geo Coordinates"`
-				} `json:"Location"`
-				Published string `json:"Published"`
-				Title     string `json:"Title"`
-				Updated   string `json:"Updated"`
+					Address      string `json:"address"`
+					BusinessName string `json:"name"`
+					CountryCode  string `json:"country_code"`
+				} `json:"location"`
 			} `json:"properties"`
 			Type string `json:"type"`
-		} `json:"Features"`
+		} `json:"features"`
 	}
 	if err := json.Unmarshal(jsonBytes, &savedPlaces); err != nil {
 		return err
@@ -154,14 +154,12 @@ func (m *Model) ImportSavedPlaces() error {
 			IsPublic:      true,
 			Notes:         "",
 			Rating:        0,
-			CreatedAt:     savedPlace.Properties.Published,
-			UpdatedAt:     savedPlace.Properties.Updated,
-			Lat:           savedPlace.Properties.Location.GeoCoords.Latitude,
-			Lng:           savedPlace.Properties.Location.GeoCoords.Longitude,
+			Lat:           fmt.Sprintf("%f", savedPlace.Geometry.Coordinates[1]),
+			Lng:           fmt.Sprintf("%f", savedPlace.Geometry.Coordinates[0]),
 			BusinessName:  savedPlace.Properties.Location.BusinessName,
 			CountryCode:   savedPlace.Properties.Location.CountryCode,
 			Address:       savedPlace.Properties.Location.Address,
-			Title:         savedPlace.Properties.Title,
+			Title:         savedPlace.Properties.Location.BusinessName,
 		}
 		places = append(places, place)
 	}
@@ -224,18 +222,18 @@ func (m *Model) ImportSavedPlaces() error {
 }
 
 func (m *Model) AnnotatePeoplesPlaces() error {
-	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "places", "people.csv")
+	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "map", "people.csv")
 
 	csvFile, err := os.Open(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("error opening places.csv: %w", err)
 	}
 	defer csvFile.Close()
 
 	csvReader := csv.NewReader(csvFile)
 	rows, err := csvReader.ReadAll()
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading places.csv: %w", err)
 	}
 
 	type record struct {
@@ -259,7 +257,7 @@ func (m *Model) AnnotatePeoplesPlaces() error {
 		}
 		place, err := m.FindPlaceByAddress(record.Title)
 		if err != nil {
-			return err
+			return fmt.Errorf("error finding place by address '%s': %w", record.Title, err)
 		}
 		if place == nil {
 			return fmt.Errorf("could not find place: '%s'", record.Title)
@@ -277,7 +275,7 @@ func (m *Model) AnnotatePeoplesPlaces() error {
 		}
 		place.Notes += note
 		if err := m.UpdatePlace(*place); err != nil {
-			return err
+			return fmt.Errorf("error updating '%s': %w", record.Title, err)
 		}
 	}
 

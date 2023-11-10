@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -83,7 +82,7 @@ func getPlaceDetails(key, value string) (Place, error) {
 		return place, fmt.Errorf("google maps error [%d]: %s", resp.StatusCode, buf.String())
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return place, err
 	}
