@@ -14,6 +14,46 @@
 	  <table class="min-w-full divide-y divide-gray-300">
 	    <thead>
 	      <tr>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Top Clients</th>
+		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-200">Requests</th>
+	      </tr>
+	    </thead>
+	    <tbody class="divide-y divide-gray-500">
+	      {{ range .TopClients }}
+		<tr>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .Client }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-right text-sm">{{ .RequestCount }}</td>
+		</tr>
+	      {{ end }}
+	    </tbody>
+	  </table>
+	</div>
+      </div>
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+	  <table class="min-w-full divide-y divide-gray-300">
+	    <thead>
+	      <tr>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Top URLs</th>
+		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-200">Requests</th>
+	      </tr>
+	    </thead>
+	    <tbody class="divide-y divide-gray-500">
+	      {{ range .TopPages }}
+		<tr>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .URL }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-right text-sm">{{ .RequestCount }}</td>
+		</tr>
+	      {{ end }}
+	    </tbody>
+	  </table>
+	</div>
+      </div>
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+	  <table class="min-w-full divide-y divide-gray-300">
+	    <thead>
+	      <tr>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Date</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">URL</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">StatusCode</th>
@@ -24,7 +64,7 @@
 	      </tr>
 	    </thead>
 	    <tbody class="divide-y divide-gray-500">
-	      {{ range . }}
+	      {{ range .Log }}
 		<tr>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintDate }}</td>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm"><a class="text-blue-300" href="//{{ .PrintURL }}">{{ .PrintURL }}</a></td>

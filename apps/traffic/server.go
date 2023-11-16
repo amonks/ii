@@ -37,13 +37,68 @@ func NewServer(m *traffic.Model) *Server {
 }
 
 func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
-	var requests []traffic.Request
-	if tx := app.model.Order("created_at desc").Find(&requests); tx.Error != nil {
-		util.HTTPError("traffic", w, req, 500, "failed to read logs: %s", tx.Error)
+	var log []traffic.Request
+	if err := app.model.
+		Order("created_at desc").
+		Limit(50).
+		Find(&log).
+		Error; err != nil {
+		util.HTTPError("traffic", w, req, 500, "failed to read logs: %s", err)
 		return
 	}
+
+	var topClients []struct {
+		Client       string
+		RequestCount int
+	}
+	if err := app.model.Table("requests").
+		Select("case when instr(remote_addr, ']') then substr(remote_addr, 0, instr(remote_addr, ']')+1) when instr(remote_addr, ':') then substr(remote_addr, 0, instr(remote_addr, ':')) else remote_addr end as client, count(*) as request_count").
+		Where("created_at > datetime('now', '-7 day')").
+		Group("client").
+		Limit(20).
+		Order("request_count desc").
+		Find(&topClients).
+		Error; err != nil {
+		util.HTTPError("traffic", w, req, 500, "failed to read top clients: %s", err)
+		return
+	}
+
+	var topPages []struct {
+		URL          string
+		RequestCount int
+	}
+	if err := app.model.Table("requests").
+		Select("host || path as url, count(*) as request_count").
+		Where("created_at > datetime('now', '-7 day')").
+		Group("url").
+		Limit(20).
+		Order("request_count desc").
+		Find(&topPages).
+		Error; err != nil {
+		util.HTTPError("traffic", w, req, 500, "failed to read top pages: %s", err)
+		return
+	}
+
+	type PageData struct {
+		Log      []traffic.Request
+		TopPages []struct {
+			URL          string
+			RequestCount int
+		}
+		TopClients []struct {
+			Client       string
+			RequestCount int
+		}
+	}
+
+	pageData := PageData{
+		Log:        log,
+		TopPages:   topPages,
+		TopClients: topClients,
+	}
+
 	w.Header().Set("Content-type", "text/html; charset=utf-8")
-	if err := templates["index.gohtml"].Execute(w, requests); err != nil {
+	if err := templates["index.gohtml"].Execute(w, pageData); err != nil {
 		util.HTTPError("traffic", w, req, 500, "failed to read template: %s", err)
 		return
 	}
