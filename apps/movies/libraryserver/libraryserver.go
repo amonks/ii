@@ -176,7 +176,10 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if !strings.Contains(
-			strings.ToLower(movie.Title)+" "+strings.ToLower(movie.DirectorName)+" "+strings.ToLower(movie.WriterName),
+			strings.ToLower(movie.Title)+
+			" "+strings.ToLower(movie.DirectorName)+
+			" "+strings.ToLower(strings.Join(movie.Languages, " "))+
+			" "+strings.ToLower(movie.WriterName),
 			strings.ToLower(query)) {
 			continue
 		}
