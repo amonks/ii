@@ -115,7 +115,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		sortBy = "date"
 	}
 	if sortDirection != "asc" && sortDirection != "desc" {
-		if sortBy == "date" || sortBy == "importDate" {
+		if sortBy == "date" || sortBy == "importDate" || sortBy == "mc" {
 			sortDirection = "desc"
 		} else {
 			sortDirection = "asc"
