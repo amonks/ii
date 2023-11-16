@@ -126,9 +126,9 @@ templ Filters(data *PageData) {
 						for _, genre := range data.Genres {
 							<div class="flex items-center">
 								<input
- 									id="genre-{{ $genre.Name }}"
+ 									id={ "genre-"+genre.Name }
  									name="genres[]"
- 									value="{{ $genre.Name }}"
+ 									value={ genre.Name }
  									if genre.IsSelected {
 										checked
 									}
@@ -180,7 +180,7 @@ templ Filters(data *PageData) {
 			const genreInputs = document.querySelectorAll('input[name="genres[]"]');
 			for (const el of genreInputs) {
 				el.addEventListener("click", ev => {
-					console.log("Δ genres");
+					console.log("Δ genres", el.value);
 					if (!el.checked) {
 						const url = new URL(document.location);
 						url.searchParams.delete("genres", el.value);

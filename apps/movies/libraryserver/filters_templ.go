@@ -204,7 +204,23 @@ func Filters(data *PageData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, genre := range data.Genres {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex items-center\"><input id=\"genre-{{ $genre.Name }}\" name=\"genres[]\" value=\"{{ $genre.Name }}\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex items-center\"><input id=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("genre-" + genre.Name))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" name=\"genres[]\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(genre.Name))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -277,7 +293,7 @@ func Filters(data *PageData) templ.Component {
 			const genreInputs = document.querySelectorAll('input[name="genres[]"]');
 			for (const el of genreInputs) {
 				el.addEventListener("click", ev => {
-					console.log("Δ genres");
+					console.log("Δ genres", el.value);
 					if (!el.checked) {
 						const url = new URL(document.location);
 						url.searchParams.delete("genres", el.value);
