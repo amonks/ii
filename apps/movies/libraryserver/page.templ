@@ -6,8 +6,10 @@ templ Page(data *PageData) {
 	<!DOCTYPE html>
 	<html>
 		<head>
-			<meta charset="utf-8" />
-			<title>movies</title>
+			<meta charset="utf-8"/>
+			<title>
+				{ fmt.Sprintf("%d movies", len(data.Movies)) }
+			</title>
 			<script src="https://cdn.tailwindcss.com"></script>
 		</head>
 		<body>
