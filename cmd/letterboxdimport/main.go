@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +17,11 @@ func main() {
 		log.Printf("stopped: %s\n", err)
 		os.Exit(1)
 	}
+
+	log.Printf("done")
 }
+
+var errDuplicate = fmt.Errorf("duplicate")
 
 func run() error {
 	db := db.New(config.DBPath)
@@ -29,18 +34,18 @@ func run() error {
 		return err
 	}
 
-	entries, err := letterboxd.FetchDiary("amonks", 1, 10)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
+	err := letterboxd.FetchDiary("amonks", 1, 10, func(entry *letterboxd.Watch) error {
 		fmt.Println("adding", entry.MovieTitle)
 		if _, err := db.CreateWatch(entry); err != nil {
-			if !strings.Contains(err.Error(), "UNIQUE constraint failed: watches.letterboxd_url") {
-				return err
+			if strings.Contains(err.Error(), "UNIQUE constraint failed: watches.letterboxd_url") {
+				return errDuplicate
 			}
+			return err
 		}
+		return nil
+	})
+	if err != nil && !errors.Is(err, errDuplicate) {
+		return err
 	}
 
 	return nil

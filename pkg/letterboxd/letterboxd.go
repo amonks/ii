@@ -29,10 +29,13 @@ type Watch struct {
 	IsRewatch          bool
 }
 
-func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
-	var entries []*Watch
-
+func FetchDiary(username string, pageno, pagelimit int, cb func(*Watch) error) error {
+	var findErr error
 	for {
+		if findErr != nil {
+			return findErr
+		}
+
 		if pageno > pagelimit {
 			break
 		}
@@ -41,11 +44,14 @@ func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
 		fmt.Println("fetch ", url)
 		doc, err := fetch(url)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		var findErr error
 		if doc.Find("tr.diary-entry-row").Each(func(_ int, result *goquery.Selection) {
+			if findErr != nil {
+				return
+			}
+
 			row := &diaryRow{result, username}
 
 			date, err := row.Date()
@@ -84,7 +90,7 @@ func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
 				return
 			}
 
-			entries = append(entries, &Watch{
+			if err := cb(&Watch{
 				Date:          date,
 				Review:        review,
 				Rating:        rating,
@@ -95,9 +101,12 @@ func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
 				MovieTitle:         row.MovieTitle(),
 				MovieReleaseYear:   movieReleaseYear,
 				MovieLetterboxdURL: movieLetterboxdURL,
-			})
+			}); err != nil {
+				findErr = err
+				return
+			}
 		}); findErr != nil {
-			return nil, findErr
+			return findErr
 		}
 
 		hasNextPage := doc.Find(".pagination .paginate-nextprev > a.next").Length() != 0
@@ -108,7 +117,7 @@ func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
 		pageno++
 	}
 
-	return entries, nil
+	return nil
 }
 
 type diaryRow struct {
