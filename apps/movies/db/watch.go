@@ -1,6 +1,10 @@
 package db
 
-import "monks.co/pkg/letterboxd"
+import (
+	"log"
+
+	"monks.co/pkg/letterboxd"
+)
 
 type Watch = letterboxd.Watch
 
@@ -19,9 +23,13 @@ type Key struct {
 
 func (db *DB) AllWatches() ([]*Watch, error) {
 	watches := []*Watch{}
-	if err := db.Table("watches").Find(&watches).Error; err != nil {
+	if err := db.Table("watches").
+		Order("date desc").
+		Find(&watches).
+		Error; err != nil {
 		return nil, err
 	}
+	log.Printf("fetch %d watches", len(watches))
 	return watches, nil
 }
 
