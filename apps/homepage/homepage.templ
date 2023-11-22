@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"monks.co/apps/movies/db"
 )
 
@@ -28,7 +27,7 @@ templ Homepage(data *PageData) {
 				text-decoration-line: underline;
 				text-decoration-style: dotted;
 			}
-			abbr.no-underline {
+			.no-underline {
 				text-decoration: none;
 			}
 			h1 a {
@@ -119,9 +118,6 @@ templ Homepage(data *PageData) {
 			dl.prose-definition-list > dd {
 				margin-inline-start: 0;
 			}
-			dl.prose-definition-list > dd::before {
-				content: "…";
-			}
 
 			.columns {
 				display: grid;
@@ -192,20 +188,14 @@ templ Homepage(data *PageData) {
 				<label id="currently">currently,</label>
 				<section aria-labelledby="currently">
 					<p>I develop ice cream recipes and noodle on database software.</p>
-					<!--
-						<dl class="p-note prose-definition-list">
-							<dt>I am enjoying…</dt>
-							<dd>developing ice cream recipes,</dd>
-							<dd>noodling on database software, and,</dd>
-							<dd>spending more time outdoors during the day.</dd>
-						</dl>
-					-->
-					<p>
-						I watch a ton of movies. Recently,
-						<a href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }>{ fmt.Sprintf("%s (%.2f/5)", data.Watches[0].MovieTitle, data.Watches[0].Rating) }</a>,
-						<a href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }>{ fmt.Sprintf("%s (%.2f/5)", data.Watches[1].MovieTitle, data.Watches[1].Rating) }</a>, and
-						<a href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }>{ fmt.Sprintf("%s (%.2f/5)", data.Watches[2].MovieTitle, data.Watches[2].Rating) }</a>.
-					</p>
+					<dl class="p-note prose-definition-list">
+						<dt>I watch movies most days. Recently,</dt>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }>{ stars(data.Watches[0].Rating) } { data.Watches[0].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }>{ stars(data.Watches[1].Rating) } { data.Watches[1].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }>{ stars(data.Watches[2].Rating) } { data.Watches[2].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }>{ stars(data.Watches[3].Rating) } { data.Watches[3].MovieTitle }</a>, and,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }>{ stars(data.Watches[4].Rating) } { data.Watches[4].MovieTitle }</a>.</dd>
+					</dl>
 				</section>
 				<h3 id="previously">previously,</h3>
 				<section aria-labelledby="previously">
@@ -260,4 +250,33 @@ templ Homepage(data *PageData) {
 			</article>
 		</body>
 	</html>
+}
+
+func stars(i int) string {
+	switch i {
+	case 0:
+		return "unrated"
+	case 1:
+		return "☆"
+	case 2:
+		return "★"
+	case 3:
+		return "★☆"
+	case 4:
+		return "★★"
+	case 5:
+		return "★★☆"
+	case 6:
+		return "★★★"
+	case 7:
+		return "★★★☆"
+	case 8:
+		return "★★★★"
+	case 9:
+		return "★★★★☆"
+	case 10:
+		return "★★★★★"
+	default:
+		return "unrated"
+	}
 }

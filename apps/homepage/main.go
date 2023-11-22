@@ -4,8 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/a-h/templ"
+	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -24,8 +27,24 @@ func main() {
 func run() error {
 	flag.Parse()
 
+	dbPath := filepath.Join(os.Getenv("MONKS_DATA"), "movies.db")
+	db := db.New(dbPath)
+	if err := db.Start(); err != nil {
+		return err
+	}
+	defer db.Stop()
+
+	watches, err := db.AllWatches()
+	if err != nil {
+		return err
+	}
+
+	data := &PageData{
+		Watches: watches,
+	}
+
 	mux := http.NewServeMux()
-	mux.Handle("/", templ.Handler(Homepage()))
+	mux.Handle("/", templ.Handler(Homepage(data)))
 
 	ctx := sigctx.New()
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
