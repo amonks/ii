@@ -16,7 +16,8 @@ dependencies = [
   'apps/sms/dev',
   'apps/traffic/dev',
   'apps/youtube/dev',
-  'brigid-proxy'
+  'brigid-proxy',
+  'templ'
 ]
 
 [[task]]
@@ -54,8 +55,7 @@ dependencies = [
   'apps/mailer/start',
   'apps/map/start',
   'apps/traffic/start',
-  'fly-proxy',
-  'templ'
+  'fly-proxy'
 ]
 
 [[task]]
@@ -112,6 +112,7 @@ dependencies = [
   'apps/movies/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',
+  'templ',
   'thor-proxy'
 ]
 
