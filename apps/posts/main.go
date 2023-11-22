@@ -11,6 +11,7 @@ import (
 	"github.com/a-h/templ"
 	"monks.co/apps/posts/model"
 	"monks.co/apps/posts/templates"
+	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
@@ -48,7 +49,7 @@ func run() error {
 	ctx := sigctx.New()
 
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
-	if err := serve.ListenAndServe(ctx, addr, mux); err != nil {
+	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 	return nil
