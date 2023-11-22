@@ -58,7 +58,9 @@ func run() error {
 	for machineName, machine := range machineConfigs {
 		group := []string{
 			machineName + "-proxy",
-			"templ",
+		}
+		if machine.Mode == "prod" {
+			group = append(group, "templ")
 		}
 		proxyCmd := []string{
 			"./bin/proxy",
