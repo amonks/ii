@@ -28,6 +28,8 @@ func main() {
 func run() error {
 	flag.Parse()
 
+	ctx := sigctx.New()
+
 	posts, err := model.LoadPosts("apps/posts/posts")
 	if err != nil {
 		return err
@@ -45,8 +47,6 @@ func run() error {
 		h := templ.Handler(templates.Post(post))
 		h.ServeHTTP(w, req)
 	})
-
-	ctx := sigctx.New()
 
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
