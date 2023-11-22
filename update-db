@@ -1,16 +1,34 @@
 #!/usr/bin/env expect -f
 
-spawn scp ajm@thor.ss.cx:/data/tank/movies/.movies.db /Users/ajm/monks.go/data/movies.db
-expect eof
+set dbname [lindex $argv 0];
+set host [lindex $argv 1];
+
+if {$host == "thor"} {
+	spawn scp ajm@thor.ss.cx:/data/tank/$dbname/.$dbname.db /Users/ajm/monks.go/data/$dbname.db
+	expect eof
+	close $spawn_id
+
+	spawn scp ajm@thor.ss.cx:/data/tank/$dbname/.$dbname.db-shm /Users/ajm/monks.go/data/$dbname.db-shm
+	expect eof
+	close $spawn_id
+
+	spawn scp ajm@thor.ss.cx:/data/tank/$dbname/.$dbname.db-wal /Users/ajm/monks.go/data/$dbname.db-wal
+	expect eof
+	close $spawn_id
+}
 
 spawn fly ssh console
 expect "/app#"
-send "rm /data/movies*\r"
+send "rm /data/$dbname*\r"
 expect "/app#"
 close $spawn_id
 
 spawn fly sftp shell
-send "put data/movies.db /data/movies.db\r"
+send "put data/$dbname.db /data/$dbname.db\r"
+expect "bytes written"
+send "put data/$dbname.db-wal /data/$dbname.db-wal\r"
+expect "bytes written"
+send "put data/$dbname.db-shm /data/$dbname.db-shm\r"
 expect "bytes written"
 close $spawn_id
 
