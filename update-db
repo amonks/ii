@@ -1,0 +1,16 @@
+#!/usr/bin/env expect -f
+
+spawn scp ajm@thor.ss.cx:/data/tank/movies/.movies.db /Users/ajm/monks.go/data/movies.db
+expect eof
+
+spawn fly ssh console
+expect "/app#"
+send "rm /data/movies*\r"
+expect "/app#"
+close $spawn_id
+
+spawn fly sftp shell
+send "put data/movies.db /data/movies.db\r"
+expect "bytes written"
+close $spawn_id
+
