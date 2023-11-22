@@ -1,136 +1,220 @@
+// Letterboxd implements a scraper for the letterboxd website.
+//
+// They also have a documented API, but it isn't public. This package
+// implemented a client for that API at commit,
+//
+//	cd28e26a6110e819c3c923d2cc8dd37117ec05fc
 package letterboxd
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"net/url"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-type Film struct {
-	ID               string               `json:"id"`
-	Name             string               `json:"name"`
-	OriginalName     string               `json:"originalName"`
-	SortingName      string               `json:"sortingName"`
-	AlternativeNames []string             `json:"alternativeNames"`
-	ReleaseYear      string               `json:"releaseYear"`
-	Directors        []ContributorSummary `json:"directors"`
-	Genres           []Genre              `json:"genres"`
-	Tagline          string               `json:"tagline"`
-	Description      string               `json:"description"`
-	RunTime          int64                `json:"runTime"`
-	OriginalLanguage Language             `json:"originalLanguage"`
-	Languages        []Language           `json:"languages"`
+type Watch struct {
+	Date               time.Time
+	Review             string
+	MovieTitle         string
+	Rating             int
+	LetterboxdURL      string `gorm:"primaryKey"`
+	MovieReleaseYear   int
+	MovieLetterboxdURL string
+	IsLiked            bool
+	IsRewatch          bool
 }
 
-type ContributorSummary struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
+func FetchDiary(username string, pageno, pagelimit int) ([]*Watch, error) {
+	var entries []*Watch
 
-type Genre struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
+	for {
+		if pageno > pagelimit {
+			break
+		}
 
-type Language struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
-}
+		url := fmt.Sprintf("https://letterboxd.com/%s/films/diary/page/%d/", username, pageno)
+		fmt.Println("fetch ", url)
+		doc, err := fetch(url)
+		if err != nil {
+			return nil, err
+		}
 
-type AccessTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int64  `json:"expires_in"`
-	Issuer       string `json:"issuer"`
-}
+		var findErr error
+		if doc.Find("tr.diary-entry-row").Each(func(_ int, result *goquery.Selection) {
+			row := &diaryRow{result, username}
 
-type accessToken struct {
-	token        string
-	refreshToken string
-	expiresAt    time.Time
-}
+			date, err := row.Date()
+			if err != nil {
+				findErr = err
+				return
+			}
 
-type Client struct {
-	httpClient  *http.Client
-	accessToken *accessToken
-}
+			review, err := row.Review()
+			if err != nil {
+				findErr = err
+				return
+			}
 
-func New() *Client {
-	return &Client{
-		httpClient: &http.Client{},
+			movieReleaseYear, err := row.MovieReleaseYear()
+			if err != nil {
+				findErr = err
+				return
+			}
+
+			rating, err := row.Rating()
+			if err != nil {
+				findErr = err
+				return
+			}
+
+			letterboxdURL, err := row.LetterboxdURL()
+			if err != nil {
+				findErr = err
+				return
+			}
+
+			movieLetterboxdURL, err := row.MovieLetterboxdURL()
+			if err != nil {
+				findErr = err
+				return
+			}
+
+			entries = append(entries, &Watch{
+				Date:          date,
+				Review:        review,
+				Rating:        rating,
+				LetterboxdURL: letterboxdURL,
+				IsLiked:       row.IsLiked(),
+				IsRewatch:     row.IsRewatch(),
+
+				MovieTitle:         row.MovieTitle(),
+				MovieReleaseYear:   movieReleaseYear,
+				MovieLetterboxdURL: movieLetterboxdURL,
+			})
+		}); findErr != nil {
+			return nil, findErr
+		}
+
+		hasNextPage := doc.Find(".pagination .paginate-nextprev > a.next").Length() != 0
+		if !hasNextPage {
+			break
+		}
+
+		pageno++
 	}
+
+	return entries, nil
 }
 
-const apiPrefix = `https://api.letterboxd.com/api/v0/`
+type diaryRow struct {
+	*goquery.Selection
+	username string
+}
 
-func (l *Client) SignIn(username, password string) error {
-	data := url.Values{}
-	data.Set("grant_type", "password")
-	data.Set("username", "username")
-	data.Set("password", "password")
+func (s *diaryRow) Date() (time.Time, error) {
+	dateStr := strings.TrimSuffix(
+		strings.TrimPrefix(
+			s.Find("td.td-day.diary-day > a").AttrOr("href", ""),
+			fmt.Sprintf("/%s/films/diary/for/", s.username),
+		),
+		"/",
+	)
+	if dateStr == "" {
+		return time.Time{}, nil
+	}
 
-	req, err := http.NewRequest(http.MethodPost, apiPrefix+"auth/token", strings.NewReader(data.Encode()))
+	date, err := time.Parse("2006/01/02", dateStr)
 	if err != nil {
-		return err
+		return time.Time{}, fmt.Errorf("error parsing date '%s': %w", dateStr, err)
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-
-	res, err := l.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("error hitting letterboxd token endpoint: %w", err)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("error code from letterboxd token endpoint: %d", res.StatusCode)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response from letterboxd token endpoint: %w", err)
-	}
-
-	var accessTokenResponse AccessTokenResponse
-	json.Unmarshal(body, &accessTokenResponse)
-
-	l.accessToken = &accessToken{
-		token: accessTokenResponse.AccessToken,
-		refreshToken: accessTokenResponse.RefreshToken,
-		expiresAt: time.Now().Add(time.Duration(accessTokenResponse.ExpiresIn) * time.Second),
-	}
-
-	return nil
+	return date, nil
 }
 
-func (l *Client) Search(q string) ([]Film, error) {
-	if l.accessToken == nil {
-		return nil, errors.New("must sign in first")
+func (s *diaryRow) Review() (string, error) {
+	path, found := s.Find("td.td-review > a").Attr("href")
+	if !found {
+		return "", nil
 	}
 
-	data := url.Values{}
-	data.Set("input", q)
+	url := "https://letterboxd.com" + path
+	doc, err := fetch(url)
+	if err != nil {
+		return "", err
+	}
 
-	req, err := http.NewRequest(http.MethodPost, apiPrefix+"search", strings.NewReader(data.Encode()))
+	return doc.Find("div.review.body-text").Text(), nil
+}
+
+func (s *diaryRow) LetterboxdURL() (string, error) {
+	href, got := s.Find("td.td-film-details > h3 > a").Attr("href")
+	if !got {
+		return "", fmt.Errorf("could not find letterboxd url")
+	}
+	return "https://letterboxd.com" + href, nil
+}
+
+func (s *diaryRow) Rating() (int, error) {
+	str := s.Find("td.td-rating > .editable-rating > input").AttrOr("value", "0")
+	rating, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(rating), nil
+}
+
+func (s *diaryRow) IsLiked() bool {
+	return s.Find("td.td-like > span.icon-liked").Length() > 0
+}
+
+func (s *diaryRow) IsRewatch() bool {
+	return s.Find("td.td-rewatch.icon-status-off").Length() == 0
+}
+
+func (s *diaryRow) MovieTitle() string {
+	return s.Find("td.td-film-details > h3").Text()
+}
+
+func (s *diaryRow) MovieReleaseYear() (int, error) {
+	str := s.Find("td.td-released").Text()
+	year, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(year), nil
+}
+
+func (s *diaryRow) MovieLetterboxdURL() (string, error) {
+	href, got := s.Find("td.td-film-details > h3 > a").Attr("href")
+	if !got {
+		return "", fmt.Errorf("could not find letterboxd url")
+	}
+	return "https://letterboxd.com" + strings.TrimPrefix(href, fmt.Sprintf("/%s", s.username)), nil
+}
+
+func fetch(url string) (*goquery.Document, error) {
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-
-	res, err := l.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error hitting letterboxd token endpoint: %w", err)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
+			return nil, fmt.Errorf("http error %s", resp.Status)
+		} else {
+			return nil, fmt.Errorf("http error %s: %s", resp.Status, string(bs))
+		}
 	}
 
-	log.Println(res)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return doc, nil
 }

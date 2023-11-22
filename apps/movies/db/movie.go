@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -94,7 +95,7 @@ func (m *Movie) IsImported() bool {
 	return m.ImportedAt != ""
 }
 
-func (d *DB) GetMovieIDToImport() (int64, error) {
+func (d *DB) GetMovieIDToCopy() (int64, error) {
 	var movie Movie
 	if err := d.Where("imported_at = ''").First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return 0, nil
@@ -159,8 +160,7 @@ func (d *DB) AddMovieRating(movie *Movie, score int, metacriticURL string) error
 		Where("id = ?", movie.ID).
 		Updates(map[string]interface{}{
 			"metacritic_rating": score,
-			"metacritic_url": metacriticURL,
-			"metacritic_validated": false,
+			"metacritic_url":    metacriticURL,
 		}).
 		Error; err != nil {
 		return err
@@ -191,9 +191,9 @@ func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
 func (d *DB) ReplaceMovie(movie *Movie, path string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Updates(Movie{
-			ImportedAt:       time.Now().Format(time.DateTime),
-			ImportedFromPath: path,
+		Updates(map[string]string{
+			"imported_at":        "",
+			"imported_from_path": path,
 		}).
 		Error; err != nil {
 		return err
@@ -210,12 +210,15 @@ func (d *DB) DeleteMovie(movie *Movie) error {
 
 func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
 	var movie Movie
-	if err := d.Where("imported_from_path = ?", importedFromPath).First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := d.
+		Where("imported_from_path = ?", importedFromPath).
+		First(&movie).
+		Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err
 	}
-	return movie.ID != 0, nil
+	return true, nil
 }
 
 func (d *DB) AllMovies() ([]*Movie, error) {
@@ -224,6 +227,14 @@ func (d *DB) AllMovies() ([]*Movie, error) {
 		return nil, err
 	}
 	return movies, nil
+}
+
+func (m *Movie) Key() Key {
+	i, err := strconv.ParseInt(m.ReleaseDate[:4], 10, 64)
+	if err != nil {
+		return Key{m.Title, 0}
+	}
+	return Key{m.Title, int(i)}
 }
 
 func (m *Movie) HasPoster() bool {

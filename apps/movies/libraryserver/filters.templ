@@ -31,6 +31,34 @@ templ Filters(data *PageData) {
 						</div>
 						<div class="flex items-center">
 							<input
+ 								id="sort-myRating"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "myRating" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-myRating" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								My rating
+							</label>
+						</div>
+						<div class="flex items-center">
+							<input
+ 								id="sort-watchDate"
+ 								name="sort-by"
+ 								type="radio"
+ 								if data.SortBy == "watchDate" {
+									checked
+								}
+ 								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+							/>
+							<label for="sort-watchDate" class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+								Watch date
+							</label>
+						</div>
+						<div class="flex items-center">
+							<input
  								id="sort-date"
  								name="sort-by"
  								type="radio"

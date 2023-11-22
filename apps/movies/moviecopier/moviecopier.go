@@ -32,7 +32,7 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 		}
 
 		log.Printf("getting next movie ID...")
-		id, err := app.db.GetMovieIDToImport()
+		id, err := app.db.GetMovieIDToCopy()
 		if err != nil {
 			log.Println(err)
 			return err
@@ -85,6 +85,7 @@ func (app *MovieCopier) copyFile(ctx context.Context, src, dest string) error {
 	defer srcF.Close()
 
 	var rdr io.Reader = NewCancelReader(ctx, srcF)
+	rdr = io.TeeReader(rdr, &ProgressWriter{totalSize: int(srcStat.Size())})
 
 	destF, err := os.Create(dest)
 	if err != nil {
@@ -104,19 +105,16 @@ type ProgressWriter struct {
 	nextPrint time.Time
 	progress  int
 	totalSize int
-	logger    interface {
-		Printf(string, ...interface{})
-	}
 }
 
 func (pw *ProgressWriter) Write(data []byte) (int, error) {
 	pw.progress += len(data)
 	if time.Now().After(pw.nextPrint) {
-		pw.logger.Printf("progress: %.2f%%\t%s / %s",
+		log.Printf("progress: %.2f%%\t%s / %s",
 			100*float64(pw.progress)/float64(pw.totalSize),
 			byteCount(pw.progress),
 			byteCount(pw.totalSize))
-		pw.nextPrint = time.Now().Add(10 * time.Second)
+		pw.nextPrint = time.Now().Add(1 * time.Second)
 	}
 	return len(data), nil
 }

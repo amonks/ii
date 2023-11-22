@@ -16,7 +16,7 @@ import (
 	"monks.co/pkg/templib"
 )
 
-func Stubs(stubs []*db.Stub) templ.Component {
+func MetacriticValidations(movies []*db.Movie) templ.Component {
 	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -29,8 +29,8 @@ func Stubs(stubs []*db.Stub) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
-		for i, stub := range stubs {
-			templ_7745c5c3_Err = Stub(fmt.Sprintf("%d", i), stub).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		for i, movie := range movies {
+			templ_7745c5c3_Err = MetacriticValidation(fmt.Sprintf("mc-%d", i), movie).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -41,51 +41,8 @@ func Stubs(stubs []*db.Stub) templ.Component {
 		}
 		templ_7745c5c3_Var2 := `
 		(function() {
-			const stubs = document.querySelectorAll(".stub");
-			for (const stub of stubs) {
-				const path = stub.querySelector(".stub--path").innerText;
-				if (!path) throw Error("no path");
-				console.log(path);
-
-				const searchButton = stub.querySelector(".stub--searchbutton");
-				searchButton.addEventListener("click", async () => {
-					const query = stub.querySelector(".stub--query").value;
-					const year = stub.querySelector(".stub--year").value;
-					if (!query) throw Error("no query");
-					const params = new URLSearchParams();
-					params.append("query", query);
-					params.append("year", year);
-					params.append("path", path);
-					console.log("search", {query, year, path});
-					await fetch(` + "`" + `search?` + "`" + `+params.toString(), {method: "POST"});
-					location.reload();
-				});
-
-				const results = stub.querySelectorAll(".stub--result");
-				for (const result of results) {
-					const button = result.querySelector(".stub--result--choose");
-					if (!result.attributes["data-id"]) {
-						continue
-					}
-					const id = result.attributes["data-id"].value;
-					button.addEventListener("click", async (ev) => {
-						const params = new URLSearchParams();
-						params.append("id", id);
-						params.append("path", path);
-						console.log("identify", {path, id});
-						await fetch(` + "`" + `identify?` + "`" + `+params.toString(), { method: "POST" });
-						location.reload();
-					})
-				}
-
-				const ignoreButton = stub.querySelector(".stub--ignore")
-				ignoreButton.addEventListener("click", async (ev) => {
-					const params = new URLSearchParams();
-					params.append("path", path);
-					console.log("ignore", {path});
-					await fetch(` + "`" + `ignore?` + "`" + `+params.toString(), { method: "POST" });
-					location.reload();
-				})
+			const movies = document.querySelectorAll(".mc-validation");
+			for (const movie of movies) {
 			}
 		})();
 	`
@@ -104,7 +61,7 @@ func Stubs(stubs []*db.Stub) templ.Component {
 	})
 }
 
-func Stub(id string, stub *db.Stub) templ.Component {
+func MetacriticValidation(id string, movie *db.Movie) templ.Component {
 	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -136,10 +93,10 @@ func Stub(id string, stub *db.Stub) templ.Component {
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
 					templ_7745c5c3_Err = templib.Input(&templib.InputOptions{
-						ID:    "stub-year-" + id,
-						Name:  "year",
-						Class: "stub--year",
-						Width: 2,
+						ID:    "mc-url-" + movie.ImportedFromPath,
+						Name:  "Metacritic URL",
+						Width: 3,
+						Value: movie.MetacriticURL,
 					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -149,10 +106,24 @@ func Stub(id string, stub *db.Stub) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					templ_7745c5c3_Err = templib.Input(&templib.InputOptions{
-						ID:    "stub-query-" + id,
-						Name:  "query",
-						Class: "stub--query",
-						Width: 3,
+						ID:    "mc-rating-" + movie.ImportedFromPath,
+						Name:  "Rating",
+						Width: 1,
+						Value: fmt.Sprintf("%d", movie.MetacriticRating),
+					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templib.Input(&templib.InputOptions{
+						Hidden: true,
+						ID:     "mc-rating-" + movie.ImportedFromPath,
+						Name:   "Movie ID",
+						Width:  1,
+						Value:  fmt.Sprintf("%d", movie.ID),
 					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -177,8 +148,9 @@ func Stub(id string, stub *db.Stub) templ.Component {
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
 					templ_7745c5c3_Err = templib.ButtonSecondary(&templib.ButtonOptions{
-						Class: "stub--ignore",
-						Label: "ignore",
+						Class:  "mc--ignore",
+						Label:  "Ignore",
+						HxPost: "validate-metacritic",
 					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -188,8 +160,9 @@ func Stub(id string, stub *db.Stub) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					templ_7745c5c3_Err = templib.ButtonPrimary(&templib.ButtonOptions{
-						Class: "stub--searchbutton",
-						Label: "Search",
+						Class:  "mc--submit",
+						Label:  "Submit",
+						HxPost: "validate-metacritic",
 					}).Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -209,69 +182,8 @@ func Stub(id string, stub *db.Stub) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = templib.Form(&templib.FormOptions{
-				Title:      stub.ImportedFromPath,
-				Subtitle:   stub.Type.String(),
-				TitleClass: "stub--path",
+				Title: movie.Title,
 			}).Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <ul>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, result := range stub.Results {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li class=\"stub--result\" data-id=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", result.ID)))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><button class=\"stub--result--choose\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Var8 := `choose`
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button> <a href=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var9 templ.SafeURL = templ.SafeURL(fmt.Sprintf("https://www.themoviedb.org/movie/%d", result.ID))
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var9)))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var10 string = result.ReleaseDate
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Var11 := `: `
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var12 string = result.Title
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></li>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -281,7 +193,7 @@ func Stub(id string, stub *db.Stub) templ.Component {
 			return templ_7745c5c3_Err
 		})
 		templ_7745c5c3_Err = templib.Card(&templib.CardOptions{
-			Class: "stub",
+			Class: "mc-validation",
 		}).Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

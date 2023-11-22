@@ -3,6 +3,7 @@ package libraryserver
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"gorm.io/gorm"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
@@ -26,12 +28,14 @@ type LibraryServer struct {
 }
 
 type PageData struct {
-	Stubs         []*db.Stub
-	Movies        []*db.Movie
-	Genres        []Genre
-	Query         string
-	SortBy        string
-	SortDirection string
+	Watches               map[db.Key]*db.Watch
+	MetacriticValidations []*db.Movie
+	Stubs                 []*db.Stub
+	Movies                []*db.Movie
+	Genres                []Genre
+	Query                 string
+	SortBy                string
+	SortDirection         string
 }
 
 type Genre struct {
@@ -61,6 +65,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("/search", app.serveSearch)
 	mux.HandleFunc("/identify", app.serveIdentify)
 	mux.HandleFunc("/ignore", app.serveIgnore)
+	mux.HandleFunc("/validate-metacritic", app.serveValidateMetacritic)
 
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
@@ -87,7 +92,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 }
 
 func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /")
+	log.Println("serveIndex")
 	q := req.URL.Query()
 
 	selectedGenres := q["genres"]
@@ -111,11 +116,13 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		sortBy != "date" &&
 		sortBy != "runtime" &&
 		sortBy != "importDate" &&
-		sortBy != "mc" {
+		sortBy != "mc" &&
+		sortBy != "myRating" &&
+		sortBy != "watchDate" {
 		sortBy = "date"
 	}
 	if sortDirection != "asc" && sortDirection != "desc" {
-		if sortBy == "date" || sortBy == "importDate" || sortBy == "mc" {
+		if sortBy == "date" || sortBy == "importDate" || sortBy == "mc" || sortBy == "watchDate" || sortBy == "myRating" {
 			sortDirection = "desc"
 		} else {
 			sortDirection = "asc"
@@ -128,7 +135,14 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	watches, err := app.db.AllWatchesMap()
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
 	var data PageData
+	data.Watches = watches
 	data.Query = query
 	data.SortBy = sortBy
 	data.SortDirection = sortDirection
@@ -142,9 +156,20 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 	allGenresSet := map[string]struct{}{}
 	for _, movie := range movies {
-		if err != nil {
-			serve.InternalServerError(w, req, err)
-			return
+		if !movie.MetacriticValidated && movie.MetacriticURL != "" {
+			data.MetacriticValidations = append(data.MetacriticValidations, movie)
+		}
+
+		if sortBy == "watchDate" || sortBy == "myRating" {
+			if _, isWatched := watches[movie.Key()]; !isWatched {
+				continue
+			}
+		}
+
+		if sortBy == "myRating" {
+			if watch := watches[movie.Key()]; watch.Rating == 0 {
+				continue
+			}
 		}
 
 		genreMatch := false
@@ -177,9 +202,9 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 		if !strings.Contains(
 			strings.ToLower(movie.Title)+
-			" "+strings.ToLower(movie.DirectorName)+
-			" "+strings.ToLower(strings.Join(movie.Languages, " "))+
-			" "+strings.ToLower(movie.WriterName),
+				" "+strings.ToLower(movie.DirectorName)+
+				" "+strings.ToLower(strings.Join(movie.Languages, " "))+
+				" "+strings.ToLower(movie.WriterName),
 			strings.ToLower(query)) {
 			continue
 		}
@@ -215,6 +240,13 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				return data.Movies[a].ImportedAt > data.Movies[b].ImportedAt
 			}
 			return data.Movies[a].ImportedAt < data.Movies[b].ImportedAt
+		case "watchDate":
+			watchA, _ := data.Watches[data.Movies[a].Key()]
+			watchB, _ := data.Watches[data.Movies[b].Key()]
+			if sortDirection == "desc" {
+				return watchA.Date.After(watchB.Date)
+			}
+			return watchB.Date.After(watchA.Date)
 		case "runtime":
 			if sortDirection == "desc" {
 				return data.Movies[a].Runtime > data.Movies[b].Runtime
@@ -225,6 +257,13 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				return data.Movies[a].MetacriticRating > data.Movies[b].MetacriticRating
 			}
 			return data.Movies[a].MetacriticRating < data.Movies[b].MetacriticRating
+		case "myRating":
+			watchA, _ := data.Watches[data.Movies[a].Key()]
+			watchB, _ := data.Watches[data.Movies[b].Key()]
+			if sortDirection == "desc" {
+				return watchA.Rating > watchB.Rating
+			}
+			return watchA.Rating < watchB.Rating
 		case "name":
 			fallthrough
 		default:
@@ -325,8 +364,7 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
+	app.serveIndex(w, req)
 }
 
 func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) {
@@ -361,8 +399,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
+	app.serveIndex(w, req)
 }
 
 func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request) {
@@ -396,16 +433,79 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 
 	tmdbMovie, err := app.tmdb.Get(parsedID)
 	if err != nil {
-		serve.InternalServerError(w, req, err)
+		serve.InternalServerErrorf(w, req, "error getting movie metadata from tmdb %w", err)
 		return
 	}
 
 	if err := app.db.Transaction(func(tx *db.DB) error {
-		if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
-			return err
+		movie, err := tx.GetMovie(tmdbMovie.ID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("error getting movie with id %d: %w", tmdbMovie.ID, err)
+		}
+
+		if movie != nil {
+			// movie already exists; replace
+			fmt.Println("replace")
+			if err := tx.ReplaceMovie(movie, path); err != nil {
+				return fmt.Errorf("error replacing movie: %w", err)
+			}
+		} else {
+			// new movie; create
+			fmt.Println("create", movie)
+			if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
+				return fmt.Errorf("error creating movie: %w", err)
+			}
 		}
 
 		if err := tx.DeleteStub(stub); err != nil {
+			return fmt.Errorf("error deleting movie: %w", err)
+		}
+		return nil
+	}); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	app.serveIndex(w, req)
+}
+
+func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *http.Request) {
+	log.Println("req /validate-metacritic")
+
+	if req.Method != "POST" {
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+		return
+	}
+
+	req.ParseForm()
+
+	idStr := req.FormValue("Movie ID")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+	url := req.FormValue("Metacritic URL")
+	ratingStr := req.FormValue("Rating")
+	rating, err := strconv.ParseInt(ratingStr, 10, 64)
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	movie, err := app.db.GetMovie(id)
+	if err != nil {
+		serve.Errorf(w, req, http.StatusNotFound, "no such movie: %s", err)
+		return
+	}
+
+	fmt.Println(movie.Title, url, id, rating)
+
+	if err := app.db.Transaction(func(tx *db.DB) error {
+		if err := tx.SetMovieMetacriticValidated(movie, true); err != nil {
+			return err
+		}
+		if err := tx.AddMovieRating(movie, int(rating), url); err != nil {
 			return err
 		}
 		return nil
@@ -414,6 +514,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
+	fmt.Println("written", movie.ID)
+
+	app.serveIndex(w, req)
 }

@@ -63,9 +63,6 @@ templ Stubs(stubs []*db.Stub) {
 	</script>
 }
 
-templ Card() {
-}
-
 templ Stub(id string, stub *db.Stub) {
 	@templib.Card(&templib.CardOptions{
 		Class: "stub",

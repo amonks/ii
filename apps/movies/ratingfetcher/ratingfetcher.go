@@ -33,6 +33,9 @@ func (app *RatingFetcher) Run(ctx context.Context) error {
 		if movie.MetacriticValidated {
 			continue
 		}
+		if movie.MetacriticRating != 0 {
+			continue
+		}
 		results, err := metacritic.SearchMovies(movie.Title)
 		if err != nil {
 			log.Println(fmt.Errorf("error looking for '%s': %w", movie.Title, err))

@@ -50,22 +50,20 @@ func (app *MovieImporter) Run(ctx context.Context) error {
 		}
 
 		if ignored, err := app.db.PathIsIgnored(db.MediaTypeMovie, path); err != nil {
-			log.Printf("err checking ignore")
-			return err
+			return fmt.Errorf("error checking if ignore exists from path '%s': %w", path, err)
 		} else if ignored {
 			return nil
 		}
 
 		if exists, err := app.db.StubExistsFromPath(db.MediaTypeMovie, path); err != nil {
-			log.Printf("err checking exists")
-			return err
+			return fmt.Errorf("error checking if stub exists from path '%s': %w", path, err)
 		} else if exists {
 			return nil
 		}
 
 		if exists, err := app.db.MovieExistsFromPath(path); err != nil {
 			log.Printf("err checking exists")
-			return err
+			return fmt.Errorf("error checking if movie exists from path '%s': %w", path, err)
 		} else if exists {
 			return nil
 		}

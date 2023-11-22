@@ -1,6 +1,9 @@
 package templib
 
-import "fmt"
+import (
+	"fmt"
+	"encoding/json"
+)
 
 type FormOptions struct {
 	Title      string
@@ -36,26 +39,39 @@ templ Fields() {
 }
 
 type InputOptions struct {
-	ID    string
-	Name  string
-	Class string
-	Width int
+	ID     string
+	Name   string
+	Class  string
+	Width  int
+	Value  string
+	Hidden bool
 }
 
 templ Input(opts *InputOptions) {
-	<div class={ fmt.Sprintf("sm:col-span-%d", opts.Width) }>
-		<label for={ opts.ID } class="block text-sm font-medium leading-6 text-gray-900">
-			{ opts.Name }
-		</label>
-		<div class="mt-2">
-			<input
- 				id={ opts.ID }
- 				name={ opts.Name }
- 				type="text"
- 				class={ opts.Class +" block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
-			/>
+	if opts.Hidden {
+		<input
+ 			id={ opts.ID }
+ 			name={ opts.Name }
+ 			type="hidden"
+ 			value={ opts.Value }
+ 			class={ opts.Class +" block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
+		/>
+	} else {
+		<div class={ fmt.Sprintf("sm:col-span-%d", opts.Width) }>
+			<label for={ opts.ID } class="block text-sm font-medium leading-6 text-gray-900">
+				{ opts.Name }
+			</label>
+			<div class="mt-2">
+				<input
+ 					id={ opts.ID }
+ 					name={ opts.Name }
+ 					type="text"
+ 					value={ opts.Value }
+ 					class={ opts.Class +" block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
+				/>
+			</div>
 		</div>
-	</div>
+	}
 }
 
 templ ButtonGroup() {
@@ -68,22 +84,41 @@ type ButtonOptions struct {
 	ID    string
 	Class string
 	Label string
+	Attrs map[string]string
+
+	HxPost string
+	HxVals map[string]interface{}
+	HxSwap string
 }
 
 templ ButtonSecondary(opts *ButtonOptions) {
 	<button
  		id={ opts.ID }
  		type="button"
+ 		hx-post={ opts.HxPost }
+ 		hx-vals={ mustMarshal(opts.HxVals) }
+ 		hx-target="body"
  		class={ opts.Class + " text-sm font-semibold leading-6 text-gray-900" }
 	>
 		{ opts.Label }
 	</button>
 }
 
+func mustMarshal(v map[string]interface{}) string {
+	if bs, err := json.Marshal(v); err != nil {
+		return ""
+	} else {
+		return string(bs)
+	}
+}
+
 templ ButtonPrimary(opts *ButtonOptions) {
 	<button
  		id={ opts.ID }
  		type="button"
+ 		hx-post={ opts.HxPost }
+ 		hx-vals={ mustMarshal(opts.HxVals) }
+ 		hx-target="body"
  		class={ opts.Class + " rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" }
 	>
 		{ opts.Label }
