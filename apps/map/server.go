@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"monks.co/apps/map/model"
@@ -82,6 +83,8 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 		serve.InternalServerError(w, req, err)
 		return
 	}
+
+	log.Printf("%d places", len(places))
 
 	googleMapsImportURL := fmt.Sprintf(
 		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=beta&libraries=marker",
