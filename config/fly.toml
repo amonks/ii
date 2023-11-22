@@ -1,8 +1,5 @@
 mode = "prod"
 
-[routes]
-  "/index.html" = "/homepage/index.html"
-
 [redirects]
   "belgianman.com" = "https://belgianman.bandcamp.com/"
   "blgn.mn"        = "https://belgianman.bandcamp.com/"
@@ -45,6 +42,7 @@ mode = "prod"
 [[service]]
   type = "https"
   addr = "0.0.0.0:4433"
+  rewrites = { "/" = "/homepage/" }
   apps = [
     "map",
     "traffic",
