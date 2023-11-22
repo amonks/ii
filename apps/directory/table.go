@@ -53,18 +53,6 @@ func LoadTable() (Table, error) {
 		data.Rows = append(data.Rows, row)
 	}
 
-	for i, machine := range machines {
-		config := configs[machine]
-		for _, service := range config.Services {
-			for app := range service.ExtraRoutes {
-				row := make([]string, len(machines)+1)
-				row[0] = app
-				row[i+1] = fmt.Sprintf("https://%s.ss.cx/%s", machine, app)
-				data.Rows = append(data.Rows, row)
-			}
-		}
-	}
-
 	sort.Slice(data.Rows, func(a, b int) bool {
 		return data.Rows[a][0] < data.Rows[b][0]
 	})

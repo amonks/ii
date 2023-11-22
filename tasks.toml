@@ -9,6 +9,7 @@ type = 'group'
 dependencies = [
   'apps/directory/dev',
   'apps/golink/dev',
+  'apps/homepage/dev',
   'apps/map/dev',
   'apps/ping/dev',
   'apps/posts/dev',
@@ -32,6 +33,7 @@ dependencies = [
   'apps/air/build',
   'apps/directory/build',
   'apps/golink/build',
+  'apps/homepage/build',
   'apps/mailer/build',
   'apps/map/build',
   'apps/movies/build',
@@ -49,6 +51,7 @@ dependencies = [
 id = 'fly'
 type = 'group'
 dependencies = [
+  'apps/homepage/start',
   'apps/mailer/start',
   'apps/map/start',
   'apps/traffic/start',

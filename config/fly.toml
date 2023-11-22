@@ -1,5 +1,8 @@
 mode = "prod"
 
+[routes]
+  "/index.html" = "/homepage/index.html"
+
 [redirects]
   "belgianman.com" = "https://belgianman.bandcamp.com/"
   "blgn.mn"        = "https://belgianman.bandcamp.com/"
@@ -44,7 +47,8 @@ mode = "prod"
   addr = "0.0.0.0:4433"
   apps = [
     "map",
-    "traffic"
+    "traffic",
+    "homepage"
   ]
 
 [[service]]

@@ -14,15 +14,17 @@ import (
 )
 
 type proxy struct {
-	routes map[string]int
+	routes   map[string]int
+	rewrites map[string]string
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	for prefix, port := range p.routes {
-		if !strings.HasPrefix(req.URL.Path, "/"+prefix) {
-			continue
-		}
+	if to, hasRewrite := p.rewrites[req.URL.Path]; hasRewrite {
+		req.URL.Path = to
+	}
 
+	firstSegment := strings.Split(req.URL.Path, "/")[1]
+	if port, hasRoute := p.routes[firstSegment]; hasRoute {
 		// We need to visit the subsites at a url that ends in a "/",
 		// otherwise relative links within the subsite won't use the
 		// subsite's prefix.
@@ -33,12 +35,12 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// the trailing slash, it'll take you to '/page'.
 		//
 		// TODO: I'm getting redirect loops from this sometimes.
-		if req.URL.Path == "/"+prefix {
+		if req.URL.Path == "/"+firstSegment {
 			http.Redirect(w, req, req.URL.String()+"/", 301)
 			return
 		}
 
-		p.proxyRequest(prefix, port, w, req)
+		p.proxyRequest(firstSegment, port, w, req)
 		return
 	}
 

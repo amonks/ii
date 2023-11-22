@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/a-h/templ"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -24,6 +25,7 @@ func run() error {
 	flag.Parse()
 
 	mux := http.NewServeMux()
+	mux.Handle("/", templ.Handler(Homepage()))
 
 	ctx := sigctx.New()
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)

@@ -50,9 +50,6 @@ func run() error {
 			for _, app := range serviceConfig.Apps {
 				routes[app] = ports.Apps[app]
 			}
-			for k, v := range serviceConfig.ExtraRoutes {
-				routes[k] = v
-			}
 			service := &Service{
 				routes:    routes,
 				service:   serviceConfig,
@@ -143,7 +140,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	defer traf.Close()
 
 	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes})
+	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites})
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
@@ -182,7 +179,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	defer traf.Close()
 
 	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes})
+	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites})
 	httpSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
