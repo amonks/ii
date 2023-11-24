@@ -196,6 +196,12 @@ templ Homepage(data *PageData) {
 						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }>{ stars(data.Watches[3].Rating) } { data.Watches[3].MovieTitle }</a>, and,</dd>
 						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }>{ stars(data.Watches[4].Rating) } { data.Watches[4].MovieTitle }</a>.</dd>
 					</dl>
+					<p>
+						I love exploring. I made a <a href="/map">nice map</a> of places I
+						have opinions about. It doesn't say what the opinions are, so
+						you'll have to make your own. The map scrolls pretty slow; it used
+						to be faster.
+					</p>
 				</section>
 				<h3 id="previously">previously,</h3>
 				<section aria-labelledby="previously">
@@ -212,14 +218,6 @@ templ Homepage(data *PageData) {
 						>SOC2</abbr>
 						and open source license compliance.
 					</p>
-					<!-- <dl class="p-note prose-definition-list">
-					<dt>I particularly enjoyed,</dt>
-					<dd>solving coordination problems across organizational units,</dd>
-					<dd>investigating complex behavior in distributed systems,</dd>
-					<dd>testing and documenting scary “legacy” code,</dd>
-					<dd>building highly-leveraged platform components, and,</dd>
-					<dd>growing happy and productive engineering teams.</dd>
-				</dl> -->
 				</section>
 				<h3 id="before-that">before that, I…</h3>
 				<section aria-labelledby="before-that">
