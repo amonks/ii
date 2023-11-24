@@ -21,7 +21,7 @@ function initMap() {
   const div = document.getElementById("map")!;
   const map = new google.maps.Map(div, {
     mapId: "da4892bae6f26cb6",
-    zoom: 13,
+    zoom: 11,
     center: { lat: Number(center.Lat), lng: Number(center.Lng) },
     streetViewControl: false,
     mapTypeControl: false,
