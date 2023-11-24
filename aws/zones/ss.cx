@@ -7,10 +7,11 @@ b 300 IN CNAME cross-origin-bouncer.herokuapp.com.
 brigid 300 IN A 100.103.217.4
 *.brigid 300 IN A 100.103.217.4
 calder 300 IN A 100.85.55.109
-go 300 IN A 100.84.224.155
 fly 300 IN A 100.84.224.155
+go 300 IN A 100.84.224.155
 lugh 300 IN A 100.84.171.132
 oehlen 300 IN A 100.113.84.10
 qaynan 300 IN A 100.87.233.36
 thor 300 IN A 100.83.137.16
+w 300 IN A 72.21.17.85
 wifi 300 IN A 35.247.99.86

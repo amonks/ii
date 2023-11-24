@@ -26,6 +26,14 @@ resource "aws_route53_record" "wifi-ss-cx-A" {
   records = ["35.247.99.86"]
 }
 
+resource "aws_route53_record" "w-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "w.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["72.21.17.85"]
+}
+
 resource "aws_route53_record" "thor-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "thor.ss.cx."
