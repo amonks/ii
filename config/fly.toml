@@ -46,7 +46,8 @@ mode = "prod"
   apps = [
     "map",
     "traffic",
-    "homepage"
+    "homepage",
+    "posts"
   ]
 
 [[service]]

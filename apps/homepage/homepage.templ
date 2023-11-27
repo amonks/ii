@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"monks.co/apps/movies/db"
+	"monks.co/apps/posts/model"
 )
 
 type PageData struct {
 	Watches []*db.Watch
+	Posts   *model.Posts
 }
 
 templ Homepage(data *PageData) {
@@ -202,6 +205,14 @@ templ Homepage(data *PageData) {
 						you'll have to make your own. The map scrolls pretty slow; it used
 						to be faster.
 					</p>
+					<dl class="p-note prose-definition-list">
+						<dt>Sometimes I write about what I'm up to. Recently,</dt>
+						for _, post := range data.Posts.List {
+							if !post.IsDraft {
+								<dd><a class="no-underline" href={ templ.SafeURL(fmt.Sprintf("/posts/%s", post.Slug) ) }>{ post.Title }</a>,</dd>
+							}
+						}
+					</dl>
 				</section>
 				<h3 id="previously">previously,</h3>
 				<section aria-labelledby="previously">

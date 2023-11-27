@@ -12,6 +12,7 @@ import (
 
 	"github.com/a-h/templ"
 	"monks.co/apps/movies/db"
+	"monks.co/apps/posts/model"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -37,6 +38,11 @@ func run() error {
 	}
 	defer db.Stop()
 
+	posts, err := model.LoadPosts("../posts/posts")
+	if err != nil {
+		return err
+	}
+
 	fetcher := periodically(db.AllWatches)
 	defer fetcher.stop()
 
@@ -48,6 +54,7 @@ func run() error {
 			return
 		}
 		h := templ.Handler(Homepage(&PageData{
+			Posts:   posts,
 			Watches: v,
 		}))
 		h.ServeHTTP(w, req)
