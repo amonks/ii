@@ -6,7 +6,7 @@ import (
 )
 
 templ Post(post *model.Post) {
-	@templib.Page(post.Title, templib.PageOptions{Style: `body { max-width: 8em; }`}) {
+	@templib.Page(post.Title, templib.PageOptions{}) {
 		<h1>{ post.Title }</h1>
 		{! post }
 	}

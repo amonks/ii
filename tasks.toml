@@ -5,7 +5,7 @@ cmd = 'cd aws && fish convert-zones.fish'
 
 [[task]]
 id = 'brigid'
-type = 'group'
+type = 'long'
 dependencies = [
   'apps/directory/dev',
   'apps/golink/dev',
@@ -28,7 +28,7 @@ cmd = 'go run ./apps/proxy -machine=brigid'
 
 [[task]]
 id = 'build'
-type = 'group'
+type = 'long'
 dependencies = [
   'apps/air/build',
   'apps/directory/build',
@@ -50,11 +50,12 @@ dependencies = [
 
 [[task]]
 id = 'fly'
-type = 'group'
+type = 'long'
 dependencies = [
   'apps/homepage/start',
   'apps/mailer/start',
   'apps/map/start',
+  'apps/posts/start',
   'apps/traffic/start',
   'fly-proxy'
 ]
@@ -77,14 +78,6 @@ watch = ['**/*.templ']
 cmd = 'go run github.com/a-h/templ/cmd/templ generate'
 
 [[task]]
-id = 'terraform-apply'
-type = 'short'
-dependencies = [
-  'aws-convert-zones'
-]
-cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
-
-[[task]]
 id = 'terraform-fmt'
 type = 'short'
 dependencies = [
@@ -103,11 +96,19 @@ type = 'short'
 dependencies = [
   'aws-convert-zones'
 ]
-cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
+cmd = 'source aws/.envrc && cd aws/terraform && terraform plan -out=.plan'
+
+[[task]]
+id = 'terraform-apply'
+type = 'short'
+dependencies = [
+  'aws-convert-zones'
+]
+cmd = 'source aws/.envrc && cd aws/terraform && terraform apply .plan && rm .plan'
 
 [[task]]
 id = 'thor'
-type = 'group'
+type = 'long'
 dependencies = [
   'apps/air/dev',
   'apps/dogs/dev',

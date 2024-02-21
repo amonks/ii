@@ -28,5 +28,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "cd $MONKS_ROOT && ./bin/traffic -port=3009"
+  cmd = "cd $MONKS_ROOT && ./bin/posts -port=3009"
 
