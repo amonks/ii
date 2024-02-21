@@ -89,3 +89,11 @@ resource "aws_route53_record" "_keybase-monks-co-TXT" {
   ttl     = "300"
   records = ["keybase-site-verification=JZj7vchXA6vfSV8oa5QQyGmnI8CKDRgQIHYIFPl5sF0"]
 }
+
+resource "aws_route53_record" "_atproto-monks-co-TXT" {
+  zone_id = aws_route53_zone.monks-co.zone_id
+  name    = "_atproto.monks.co."
+  type    = "TXT"
+  ttl     = "300"
+  records = ["did=did:plc:yfekcz5g5oabfem5icfcjj3d"]
+}

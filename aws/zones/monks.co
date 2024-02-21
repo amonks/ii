@@ -14,4 +14,6 @@ fm3._domainkey 300 IN CNAME fm3.monks.co.dkim.fmhosted.com.
 
 _keybase 300 IN TXT "keybase-site-verification=JZj7vchXA6vfSV8oa5QQyGmnI8CKDRgQIHYIFPl5sF0"
 
+_atproto 300 IN TXT "did=did:plc:yfekcz5g5oabfem5icfcjj3d"
+
 processing 300 IN CNAME amonks.github.io.
