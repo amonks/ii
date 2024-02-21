@@ -8,6 +8,7 @@ id = 'brigid'
 type = 'long'
 dependencies = [
   'apps/directory/dev',
+  'apps/dogs/dev',
   'apps/golink/dev',
   'apps/homepage/dev',
   'apps/map/dev',
@@ -28,7 +29,7 @@ cmd = 'go run ./apps/proxy -machine=brigid'
 
 [[task]]
 id = 'build'
-type = 'long'
+type = 'short'
 dependencies = [
   'apps/air/build',
   'apps/directory/build',
@@ -78,6 +79,14 @@ watch = ['**/*.templ']
 cmd = 'go run github.com/a-h/templ/cmd/templ generate'
 
 [[task]]
+id = 'terraform-apply'
+type = 'short'
+dependencies = [
+  'aws-convert-zones'
+]
+cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
+
+[[task]]
 id = 'terraform-fmt'
 type = 'short'
 dependencies = [
@@ -96,15 +105,7 @@ type = 'short'
 dependencies = [
   'aws-convert-zones'
 ]
-cmd = 'source aws/.envrc && cd aws/terraform && terraform plan -out=.plan'
-
-[[task]]
-id = 'terraform-apply'
-type = 'short'
-dependencies = [
-  'aws-convert-zones'
-]
-cmd = 'source aws/.envrc && cd aws/terraform && terraform apply .plan && rm .plan'
+cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
 
 [[task]]
 id = 'thor'

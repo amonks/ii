@@ -1,4 +1,4 @@
-create table entries (
+create table if not exists entries (
   number                integer primary key,
   date                  text,
   count                 real,
@@ -9,7 +9,7 @@ create table entries (
   wordcount             integer
 );
 
-create index eater_date on entries (eater, date);
-create index date on entries (date);
-create index wordcount on entries (wordcount);
+create index if not exists eater_date on entries (eater, date);
+create index if not exists date on entries (date);
+create index if not exists wordcount on entries (wordcount);
 

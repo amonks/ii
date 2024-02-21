@@ -17,7 +17,8 @@ mode = "dev"
     "traffic",
     "youtube",
     "directory",
-    "homepage"
+    "homepage",
+    "dogs"
   ]
 
 [acme]

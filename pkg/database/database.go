@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -20,7 +21,7 @@ func OpenFromDataFolder(name string) (*DB, error) {
 func Open(path string) (*DB, error) {
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
 	if err := db.Exec("pragma journal_mode='wal';").Error; err != nil {
 		return nil, err

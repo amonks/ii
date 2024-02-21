@@ -34,12 +34,22 @@ func run() error {
 	} else if err != nil {
 		return err
 	}
+	if err := os.MkdirAll(filepath.Join(archiveDir, "images"), os.ModePerm); err != nil {
+		return err
+	}
 
 	flag.Parse()
 
 	db, err := dogs.NewDB(archiveDir)
-
 	if err != nil {
+		return err
+	}
+
+	migrate, err := os.ReadFile("migrate.sql")
+	if err != nil {
+		return err
+	}
+	if err := db.DB.Exec(string(migrate)).Error; err != nil {
 		return err
 	}
 

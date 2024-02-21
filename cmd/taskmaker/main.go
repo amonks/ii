@@ -50,7 +50,7 @@ func run() error {
 	sort.Strings(buildDependencies)
 	tasks = append(tasks, &task{
 		Id:           "build",
-		Type:         "group",
+		Type:         "short",
 		Dependencies: buildDependencies,
 	})
 
@@ -85,7 +85,7 @@ func run() error {
 		tasks = append(tasks, &task{
 			Id:           machineName,
 			Dependencies: group,
-			Type:         "group",
+			Type:         "long",
 		})
 		tasks = append(tasks, &task{
 			Id:    machineName + "-proxy",
