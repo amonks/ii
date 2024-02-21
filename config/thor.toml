@@ -11,7 +11,8 @@ mode = "dev"
     "air",
     "traffic",
     "movies",
-    "reddit"
+    "reddit",
+    "dogs"
   ]
 
 [acme]

@@ -32,6 +32,7 @@ type = 'group'
 dependencies = [
   'apps/air/build',
   'apps/directory/build',
+  'apps/dogs/build',
   'apps/golink/build',
   'apps/homepage/build',
   'apps/mailer/build',
@@ -109,6 +110,7 @@ id = 'thor'
 type = 'group'
 dependencies = [
   'apps/air/dev',
+  'apps/dogs/dev',
   'apps/movies/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',

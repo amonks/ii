@@ -1,0 +1,16 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "go run . -port=3018"
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/dogs -port=3018"
+
+

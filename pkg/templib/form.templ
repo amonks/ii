@@ -124,3 +124,86 @@ templ ButtonPrimary(opts *ButtonOptions) {
 		{ opts.Label }
 	</button>
 }
+
+templ Fieldset() {
+	<div class="pt-4 pb-2">
+		<fieldset>
+			{ children... }
+		</fieldset>
+	</div>
+}
+
+type Checkbox struct {
+	Label      string
+	IsSelected bool
+}
+
+script onClickCheckbox(groupName string, item Checkbox) {
+	const url = new URL(document.location);
+	if (item.IsSelected) {
+		url.searchParams.delete(groupName, item.Label);
+	} else {
+		url.searchParams.append(groupName, item.Label);
+	}
+	window.location = url.toString();
+}
+
+templ Checklist(name string, items []Checkbox) {
+	<legend class="block text-sm font-medium text-gray-900">{ name }</legend>
+	<div class="space-y-3 pt-2">
+		for _, item := range items {
+			<div class="flex items-center">
+				<input
+ 					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+ 					id={ fmt.Sprintf("%s-%s", name, item.Label) }
+ 					type="checkbox"
+ 					name={ fmt.Sprintf("%s[]", name) }
+ 					value={ item.Label }
+ 					onclick={ onClickCheckbox(name, item) }
+ 					if item.IsSelected {
+						checked
+					}
+				/>
+				<label
+ 					class="ml-3 text-sm text-gray-600"
+ 					for={ fmt.Sprintf("%s-%s", name, item.Label) }
+				>
+					{ item.Label }
+				</label>
+			</div>
+		}
+	</div>
+}
+
+script onClickRadio(groupName string, item string) {
+	const url = new URL(document.location);
+	url.searchParams.set(groupName, item);
+	window.location = url.toString();
+}
+
+templ Radio(name string, items []Checkbox) {
+	<legend class="block text-sm font-medium text-gray-900">{ name }</legend>
+	<div class="space-y-3 pt-2">
+		for _, item := range items {
+			<div class="flex items-center">
+				<input
+ 					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+ 					id={ fmt.Sprintf("%s-%s", name, item.Label) }
+ 					type="radio"
+ 					name={ fmt.Sprintf("%s", name) }
+ 					value={ item.Label }
+ 					onclick={ onClickRadio(name, item.Label) }
+ 					if item.IsSelected {
+						checked
+					}
+				/>
+				<label
+ 					class="ml-3 text-sm text-gray-600"
+ 					for={ fmt.Sprintf("%s-%s", name, item.Label) }
+				>
+					{ item.Label }
+				</label>
+			</div>
+		}
+	</div>
+}

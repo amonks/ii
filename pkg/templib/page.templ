@@ -9,6 +9,9 @@ templ Page(title string, config PageOptions) {
 			for _, stylesheet := range config.Stylesheets {
 				<link rel="stylesheet" href={ stylesheet }/>
 			}
+			for _, script := range config.HeadScripts {
+				<script type="application/javascript" src={ script }></script>
+			}
 		</head>
 		<body>
 			{ children... }
@@ -22,5 +25,5 @@ templ Page(title string, config PageOptions) {
 type PageOptions struct {
 	Stylesheets []string
 	Scripts     []string
+	HeadScripts []string
 }
-
