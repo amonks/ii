@@ -53,6 +53,7 @@ dependencies = [
 id = 'fly'
 type = 'long'
 dependencies = [
+  'apps/dogs/start',
   'apps/homepage/start',
   'apps/mailer/start',
   'apps/map/start',

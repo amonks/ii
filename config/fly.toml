@@ -47,7 +47,8 @@ mode = "prod"
     "map",
     "traffic",
     "homepage",
-    "posts"
+    "posts",
+    "dogs"
   ]
 
 [[service]]
