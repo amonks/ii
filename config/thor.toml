@@ -2,11 +2,11 @@ mode = "dev"
 
 [[service]]
   type = "redirect-to-https"
-  addr = "100.83.137.16:80"
+  addr = "0.0.0.0:80"
 
 [[service]]
   type = "https"
-  addr = "100.83.137.16:443"
+  addr = "0.0.0.0:443"
   apps = [
     "air",
     "traffic",
