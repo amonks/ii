@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -53,7 +55,8 @@ func run() error {
 		return err
 	}
 
-	if err := db.Import(archiveDir); err != nil {
+	imp, err := dogs.NewImporter(db, archiveDir)
+	if err != nil {
 		return err
 	}
 
@@ -111,16 +114,34 @@ func run() error {
 			return
 		}
 
-		if err := dogs.Page(entries, filters).Render(req.Context(), w); err != nil {
+		if err := dogs.Page(entries, filters, imp.String()).Render(req.Context(), w); err != nil {
 			log.Println(err)
 		}
 	})
 
 	ctx := sigctx.New()
+	ctx, cancel := context.WithCancel(ctx)
+	errs := make(chan error)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
-	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
-		return err
-	}
-	return nil
+	go func() {
+		err := imp.Start(ctx)
+		if !errors.Is(err, context.Canceled) {
+			cancel()
+		}
+		errs <- err
+	}()
+
+	go func() {
+		addr := fmt.Sprintf("127.0.0.1:%d", *port)
+		err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux))
+		if !errors.Is(err, context.Canceled) {
+			cancel()
+		}
+		errs <- err
+	}()
+
+	err = <-errs
+	err = errors.Join(err, <-errs)
+
+	return err
 }

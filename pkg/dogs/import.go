@@ -2,6 +2,7 @@ package dogs
 
 import (
 	"archive/zip"
+	"context"
 	"errors"
 	"fmt"
 	"html"
@@ -13,10 +14,107 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"gorm.io/gorm/clause"
 )
+
+type Importer struct {
+	db         *DB
+	archiveDir string
+
+	mu    sync.Mutex
+	state importerState
+}
+
+type importerState struct {
+	// "", "importing", "waiting"
+	label        string
+	importedAt   time.Time
+	startedAt    time.Time
+	nextImportAt time.Time
+}
+
+func (imp *Importer) set(state importerState) {
+	imp.mu.Lock()
+	defer imp.mu.Unlock()
+	imp.state = state
+}
+
+func (imp *Importer) get() importerState {
+	imp.mu.Lock()
+	defer imp.mu.Unlock()
+	return imp.state
+}
+
+func (imp *Importer) importNow() error {
+	last := imp.get().importedAt
+	imp.set(importerState{
+		label:        "importing",
+		importedAt:   last,
+		startedAt:    time.Now(),
+		nextImportAt: time.Time{},
+	})
+
+	err := imp.db.Import(imp.archiveDir)
+	if err == nil {
+		last = time.Now()
+	}
+	imp.set(importerState{
+		label:        "waiting",
+		importedAt:   last,
+		startedAt:    time.Time{},
+		nextImportAt: time.Now().Add(time.Hour),
+	})
+	return err
+}
+
+func (imp *Importer) String() string {
+	imp.mu.Lock()
+	defer imp.mu.Unlock()
+
+	switch imp.state.label {
+	case "":
+		return "starting"
+	case "waiting":
+		return fmt.Sprintf("imported at %s, next import in %s",
+			imp.state.importedAt.Format(time.Stamp),
+			time.Until(imp.state.nextImportAt).Round(time.Second))
+	case "importing":
+		return fmt.Sprintf("last import at %s, import started %s ago",
+			imp.state.importedAt.Format("Jan _2 15:04:05 MST"),
+			time.Since(imp.state.startedAt).Round(time.Second))
+	default:
+		panic("importer error")
+	}
+}
+
+func NewImporter(db *DB, archiveDir string) (*Importer, error) {
+	imp := &Importer{
+		db:         db,
+		archiveDir: archiveDir,
+	}
+	return imp, imp.importNow()
+}
+
+func (imp *Importer) Start(ctx context.Context) error {
+	for {
+		next := imp.get().nextImportAt
+
+		select {
+		case <-ctx.Done():
+			return context.Canceled
+
+		case <-time.After(time.Until(next)):
+		}
+
+		if err := imp.importNow(); err != nil {
+			return err
+		}
+	}
+}
 
 const downloadURL = "https://docs.google.com/spreadsheets/d/1qWoxtqSUGb4qnO_ZVyxV_yJUG01kpIBbEJByOXgjEVI/export?format=zip&id=1qWoxtqSUGb4qnO_ZVyxV_yJUG01kpIBbEJByOXgjEVI"
 
