@@ -509,7 +509,7 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 	fmt.Println(movie.Title, url, id, rating)
 
 	if err := app.db.Transaction(func(tx *db.DB) error {
-		if err := tx.SetMovieMetacriticValidated(movie, true); err != nil {
+		if err := tx.ValidateMovieMetacriticData(movie, url, int(rating)); err != nil {
 			return err
 		}
 		if err := tx.AddMovieRating(movie, int(rating), url); err != nil {

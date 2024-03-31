@@ -145,10 +145,14 @@ func (d *DB) AddMovieDirector(movie *Movie, directorName string) error {
 	return nil
 }
 
-func (d *DB) SetMovieMetacriticValidated(movie *Movie, valid bool) error {
+func (d *DB) ValidateMovieMetacriticData(movie *Movie, url string, score int) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Update("metacritic_validated", valid).
+		Updates(map[string]any{
+			"metacritic_validated": true,
+			"metacritic_url":       url,
+			"metacritic_rating":    score,
+		}).
 		Error; err != nil {
 		return err
 	}
