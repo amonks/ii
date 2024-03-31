@@ -1,0 +1,29 @@
+package libraryserver
+
+import (
+	"fmt"
+
+	"monks.co/apps/movies/db"
+)
+
+type ImportPageData struct {
+	MetacriticValidations []*db.Movie
+	Stubs                 []*db.Stub
+}
+
+templ Import(data *ImportPageData) {
+	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + len(data.Stubs))) {
+		if len(data.MetacriticValidations) > 0 {
+			<details open>
+				<summary>{ fmt.Sprintf("%d movies in the metacritic validation queue", len(data.MetacriticValidations)) }</summary>
+				@MetacriticValidations(data.MetacriticValidations)
+			</details>
+		}
+		if len(data.Stubs) > 0 {
+			<details open>
+				<summary>{ fmt.Sprintf("%d movies in the import queue", len(data.Stubs)) }</summary>
+				@Stubs(data.Stubs)
+			</details>
+		}
+	}
+}

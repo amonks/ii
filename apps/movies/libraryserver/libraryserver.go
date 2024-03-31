@@ -27,17 +27,6 @@ type LibraryServer struct {
 	mutex sync.Mutex
 }
 
-type PageData struct {
-	Watches               map[db.Key]*db.Watch
-	MetacriticValidations []*db.Movie
-	Stubs                 []*db.Stub
-	Movies                []*db.Movie
-	Genres                []Genre
-	Query                 string
-	SortBy                string
-	SortDirection         string
-}
-
 type Genre struct {
 	Name       string
 	IsSelected bool
@@ -60,6 +49,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.serveIndex)
+	mux.HandleFunc("/import", app.serveImport)
 	mux.HandleFunc("/poster", app.servePoster)
 	mux.HandleFunc("/play", app.servePlayButton)
 	mux.HandleFunc("/search", app.serveSearch)
@@ -141,7 +131,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var data PageData
+	var data MoviesPageData
 	data.Watches = watches
 	data.Query = query
 	data.SortBy = sortBy
@@ -156,10 +146,6 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 	allGenresSet := map[string]struct{}{}
 	for _, movie := range movies {
-		if !movie.MetacriticValidated && movie.MetacriticURL != "" {
-			data.MetacriticValidations = append(data.MetacriticValidations, movie)
-		}
-
 		if sortBy == "watchDate" || sortBy == "myRating" {
 			if _, isWatched := watches[movie.Key()]; !isWatched {
 				continue
@@ -274,14 +260,36 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		}
 	})
 
-	if err := Page(&data).Render(req.Context(), w); err != nil {
+	if err := Movies(&data).Render(req.Context(), w); err != nil {
+		log.Println(err)
+	}
+}
+
+func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) {
+	log.Println("serveImport")
+
+	var data ImportPageData
+
+	if metacriticValidations, err := app.db.PendingMetacriticValidations(); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	} else {
+		data.MetacriticValidations = metacriticValidations
+	}
+
+	if stubs, err := app.db.AllStubs(); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	} else {
+		data.Stubs = stubs
+	}
+
+	if err := Import(&data).Render(req.Context(), w); err != nil {
 		log.Println(err)
 	}
 }
 
 func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /poster")
-
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
@@ -445,9 +453,8 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 
 		if movie != nil {
 			// movie already exists; replace
-			fmt.Println("replace")
 			if err := tx.ReplaceMovie(movie, path); err != nil {
-				return fmt.Errorf("error replacing movie: %w", err)
+				return fmt.Errorf("error replacing movie: %w (tmdb id %s)", err, tmdbMovie.ID)
 			}
 		} else {
 			// new movie; create
@@ -466,7 +473,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	app.serveIndex(w, req)
+	app.serveImport(w, req)
 }
 
 func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *http.Request) {
@@ -516,5 +523,5 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 
 	fmt.Println("written", movie.ID)
 
-	app.serveIndex(w, req)
+	app.serveImport(w, req)
 }

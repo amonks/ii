@@ -11,13 +11,6 @@ templ MetacriticValidations(movies []*db.Movie) {
 	for i, movie := range movies {
 		@MetacriticValidation(fmt.Sprintf("mc-%d", i), movie)
 	}
-	<script>
-		(function() {
-			const movies = document.querySelectorAll(".mc-validation");
-			for (const movie of movies) {
-			}
-		})();
-	</script>
 }
 
 templ MetacriticValidation(id string, movie *db.Movie) {
@@ -25,7 +18,7 @@ templ MetacriticValidation(id string, movie *db.Movie) {
 		Class: "mc-validation",
 	}) {
 		@templib.Form(&templib.FormOptions{
-			Title: movie.Title,
+			Title: fmt.Sprintf("%s (%s)", movie.Title, movie.ReleaseDate),
 		}) {
 			@templib.Fields() {
 				@templib.Input(&templib.InputOptions{

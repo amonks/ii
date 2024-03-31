@@ -36,10 +36,6 @@ func MetacriticValidations(movies []*db.Movie) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n\t\t(function() {\n\t\t\tconst movies = document.querySelectorAll(\".mc-validation\");\n\t\t\tfor (const movie of movies) {\n\t\t\t}\n\t\t})();\n\t</script>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		if !templ_7745c5c3_IsBuffer {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
@@ -168,7 +164,7 @@ func MetacriticValidation(id string, movie *db.Movie) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = templib.Form(&templib.FormOptions{
-				Title: movie.Title,
+				Title: fmt.Sprintf("%s (%s)", movie.Title, movie.ReleaseDate),
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

@@ -221,6 +221,17 @@ func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
 	return true, nil
 }
 
+func (d *DB) PendingMetacriticValidations() ([]*Movie, error) {
+	movies := []*Movie{}
+	if err := d.Table("movies").
+		Where("metacritic_validated = false and metacritic_rating > 0").
+		Find(&movies).
+		Error; err != nil {
+		return nil, err
+	}
+	return movies, nil
+}
+
 func (d *DB) AllMovies() ([]*Movie, error) {
 	movies := []*Movie{}
 	if err := d.Table("movies").Find(&movies).Error; err != nil {

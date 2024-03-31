@@ -17,8 +17,12 @@ type SearchResult struct {
 	Score int
 }
 
+var sanitize = strings.NewReplacer(
+	"/", "",
+	"?", "")
+
 func SearchMovies(query string) ([]*SearchResult, error) {
-	encodedQuery := url.QueryEscape(strings.ReplaceAll(query, "/", ""))
+	encodedQuery := url.QueryEscape(sanitize.Replace(query))
 	res, err := http.Get(fmt.Sprintf(`https://www.metacritic.com/search/%s/?page=1&category=1`, encodedQuery))
 	if err != nil {
 		return nil, err
