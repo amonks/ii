@@ -454,7 +454,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		if movie != nil {
 			// movie already exists; replace
 			if err := tx.ReplaceMovie(movie, path); err != nil {
-				return fmt.Errorf("error replacing movie: %w (tmdb id %s)", err, tmdbMovie.ID)
+				return fmt.Errorf("error replacing movie: %w (tmdb id %d)", err, tmdbMovie.ID)
 			}
 		} else {
 			// new movie; create
