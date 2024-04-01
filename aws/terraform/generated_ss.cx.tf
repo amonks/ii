@@ -18,20 +18,20 @@ resource "aws_route53_record" "www-ss-cx-A" {
   records = ["66.51.122.238"]
 }
 
-resource "aws_route53_record" "wifi-ss-cx-A" {
+resource "aws_route53_record" "wifi-ss-cx-CNAME" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "wifi.ss.cx."
-  type    = "A"
+  type    = "CNAME"
   ttl     = "300"
-  records = ["35.247.99.86"]
+  records = ["p428.cloudunifi.com.ss.cx."]
 }
 
-resource "aws_route53_record" "w-ss-cx-A" {
+resource "aws_route53_record" "w-ss-cx-CNAME" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "w.ss.cx."
-  type    = "A"
+  type    = "CNAME"
   ttl     = "300"
-  records = ["72.21.17.85"]
+  records = ["lemon.whatbox.ca.ss.cx."]
 }
 
 resource "aws_route53_record" "thor-ss-cx-A" {
@@ -63,15 +63,7 @@ resource "aws_route53_record" "qaynan-ss-cx-A" {
   name    = "qaynan.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.87.233.36"]
-}
-
-resource "aws_route53_record" "oehlen-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "oehlen.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.113.84.10"]
+  records = ["100.82.39.94"]
 }
 
 resource "aws_route53_record" "lugh-ss-cx-A" {
@@ -79,7 +71,7 @@ resource "aws_route53_record" "lugh-ss-cx-A" {
   name    = "lugh.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.84.171.132"]
+  records = ["100.85.208.103"]
 }
 
 resource "aws_route53_record" "go-ss-cx-A" {
@@ -103,7 +95,7 @@ resource "aws_route53_record" "calder-ss-cx-A" {
   name    = "calder.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.85.55.109"]
+  records = ["100.126.181.120"]
 }
 
 resource "aws_route53_record" "brigid-ss-cx-A" {
