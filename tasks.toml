@@ -1,5 +1,5 @@
 [[task]]
-id = 'aws-convert-zones'
+id = 'convert-zones'
 type = 'short'
 cmd = 'cd aws && fish convert-zones.fish'
 
@@ -83,7 +83,7 @@ cmd = 'go run github.com/a-h/templ/cmd/templ generate'
 id = 'terraform-apply'
 type = 'short'
 dependencies = [
-  'aws-convert-zones'
+  'convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
 
@@ -91,7 +91,7 @@ cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
 id = 'terraform-fmt'
 type = 'short'
 dependencies = [
-  'aws-convert-zones'
+  'convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && terraform fmt'
 
@@ -104,7 +104,7 @@ cmd = 'source aws/.envrc && cd aws/terraform && terraform init'
 id = 'terraform-plan'
 type = 'short'
 dependencies = [
-  'aws-convert-zones'
+  'convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
 
