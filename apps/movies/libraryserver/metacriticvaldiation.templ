@@ -22,34 +22,34 @@ templ MetacriticValidation(id string, movie *db.Movie) {
 		}) {
 			@templib.Fields() {
 				@templib.Input(&templib.InputOptions{
-					ID: "mc-url-"+movie.ImportedFromPath,
-					Name: "Metacritic URL",
+					ID:    "mc-url-" + movie.ImportedFromPath,
+					Name:  "Metacritic URL",
 					Width: 3,
 					Value: movie.MetacriticURL,
 				})
 				@templib.Input(&templib.InputOptions{
-					ID: "mc-rating-"+movie.ImportedFromPath,
-					Name: "Rating",
+					ID:    "mc-rating-" + movie.ImportedFromPath,
+					Name:  "Rating",
 					Width: 1,
 					Value: fmt.Sprintf("%d", movie.MetacriticRating),
 				})
 				@templib.Input(&templib.InputOptions{
 					Hidden: true,
-					ID: "mc-rating-"+movie.ImportedFromPath,
-					Name: "Movie ID",
-					Width: 1,
-					Value: fmt.Sprintf("%d", movie.ID),
+					ID:     "mc-rating-" + movie.ImportedFromPath,
+					Name:   "Movie ID",
+					Width:  1,
+					Value:  fmt.Sprintf("%d", movie.ID),
 				})
 			}
 			@templib.ButtonGroup() {
 				@templib.ButtonSecondary(&templib.ButtonOptions{
-					Class: "mc--ignore",
-					Label: "Ignore",
+					Class:  "mc--ignore",
+					Label:  "Ignore",
 					HxPost: "validate-metacritic",
 				})
 				@templib.ButtonPrimary(&templib.ButtonOptions{
-					Class: "mc--submit",
-					Label: "Submit",
+					Class:  "mc--submit",
+					Label:  "Submit",
 					HxPost: "validate-metacritic",
 				})
 			}

@@ -68,20 +68,20 @@ templ Stub(id string, stub *db.Stub) {
 		Class: "stub",
 	}) {
 		@templib.Form(&templib.FormOptions{
-			Title: stub.ImportedFromPath,
-			Subtitle: stub.Type.String(),
+			Title:      stub.ImportedFromPath,
+			Subtitle:   stub.Type.String(),
 			TitleClass: "stub--path",
 		}) {
 			@templib.Fields() {
 				@templib.Input(&templib.InputOptions{
-					ID: "stub-year-"+id,
-					Name: "year",
+					ID:    "stub-year-" + id,
+					Name:  "year",
 					Class: "stub--year",
 					Width: 2,
 				})
 				@templib.Input(&templib.InputOptions{
-					ID: "stub-query-"+id,
-					Name: "query",
+					ID:    "stub-query-" + id,
+					Name:  "query",
 					Class: "stub--query",
 					Width: 3,
 				})
@@ -101,7 +101,7 @@ templ Stub(id string, stub *db.Stub) {
 			for _, result := range stub.Results {
 				<li class="stub--result" data-id={ fmt.Sprintf("%d", result.ID) }>
 					<button class="stub--result--choose">choose</button>
-					<a href={ templ.SafeURL(fmt.Sprintf("https://www.themoviedb.org/movie/%d",result.ID)) }>
+					<a href={ templ.SafeURL(fmt.Sprintf("https://www.themoviedb.org/movie/%d", result.ID)) }>
 						{ result.ReleaseDate }: { result.Title }
 					</a>
 				</li>

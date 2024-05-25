@@ -14,14 +14,14 @@ templ Index(data *PageData) {
 			</div>
 		}
 		<a
- 			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
- 			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Prev)) }
+			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
+			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Prev)) }
 		>
 			Previous
 		</a>
 		<a
- 			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
- 			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Next)) }
+			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
+			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Next)) }
 		>
 			Next
 		</a>

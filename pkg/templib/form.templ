@@ -50,11 +50,11 @@ type InputOptions struct {
 templ Input(opts *InputOptions) {
 	if opts.Hidden {
 		<input
- 			id={ opts.ID }
- 			name={ opts.Name }
- 			type="hidden"
- 			value={ opts.Value }
- 			class={ opts.Class +" block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
+			id={ opts.ID }
+			name={ opts.Name }
+			type="hidden"
+			value={ opts.Value }
+			class={ opts.Class + " block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
 		/>
 	} else {
 		<div class={ fmt.Sprintf("sm:col-span-%d", opts.Width) }>
@@ -63,11 +63,11 @@ templ Input(opts *InputOptions) {
 			</label>
 			<div class="mt-2">
 				<input
- 					id={ opts.ID }
- 					name={ opts.Name }
- 					type="text"
- 					value={ opts.Value }
- 					class={ opts.Class +" block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
+					id={ opts.ID }
+					name={ opts.Name }
+					type="text"
+					value={ opts.Value }
+					class={ opts.Class + " block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" }
 				/>
 			</div>
 		</div>
@@ -93,12 +93,12 @@ type ButtonOptions struct {
 
 templ ButtonSecondary(opts *ButtonOptions) {
 	<button
- 		id={ opts.ID }
- 		type="button"
- 		hx-post={ opts.HxPost }
- 		hx-vals={ mustMarshal(opts.HxVals) }
- 		hx-target="body"
- 		class={ opts.Class + " text-sm font-semibold leading-6 text-gray-900" }
+		id={ opts.ID }
+		type="button"
+		hx-post={ opts.HxPost }
+		hx-vals={ mustMarshal(opts.HxVals) }
+		hx-target="body"
+		class={ opts.Class + " text-sm font-semibold leading-6 text-gray-900" }
 	>
 		{ opts.Label }
 	</button>
@@ -114,12 +114,12 @@ func mustMarshal(v map[string]interface{}) string {
 
 templ ButtonPrimary(opts *ButtonOptions) {
 	<button
- 		id={ opts.ID }
- 		type="button"
- 		hx-post={ opts.HxPost }
- 		hx-vals={ mustMarshal(opts.HxVals) }
- 		hx-target="body"
- 		class={ opts.Class + " rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" }
+		id={ opts.ID }
+		type="button"
+		hx-post={ opts.HxPost }
+		hx-vals={ mustMarshal(opts.HxVals) }
+		hx-target="body"
+		class={ opts.Class + " rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" }
 	>
 		{ opts.Label }
 	</button>
@@ -154,19 +154,19 @@ templ Checklist(name string, items []Checkbox) {
 		for _, item := range items {
 			<div class="flex items-center">
 				<input
- 					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
- 					id={ fmt.Sprintf("%s-%s", name, item.Label) }
- 					type="checkbox"
- 					name={ fmt.Sprintf("%s[]", name) }
- 					value={ item.Label }
- 					onclick={ onClickCheckbox(name, item) }
- 					if item.IsSelected {
+					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+					id={ fmt.Sprintf("%s-%s", name, item.Label) }
+					type="checkbox"
+					name={ fmt.Sprintf("%s[]", name) }
+					value={ item.Label }
+					onclick={ onClickCheckbox(name, item) }
+					if item.IsSelected {
 						checked
 					}
 				/>
 				<label
- 					class="ml-3 text-sm text-gray-600"
- 					for={ fmt.Sprintf("%s-%s", name, item.Label) }
+					class="ml-3 text-sm text-gray-600"
+					for={ fmt.Sprintf("%s-%s", name, item.Label) }
 				>
 					{ item.Label }
 				</label>
@@ -187,19 +187,19 @@ templ Radio(name string, items []Checkbox) {
 		for _, item := range items {
 			<div class="flex items-center">
 				<input
- 					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
- 					id={ fmt.Sprintf("%s-%s", name, item.Label) }
- 					type="radio"
- 					name={ fmt.Sprintf("%s", name) }
- 					value={ item.Label }
- 					onclick={ onClickRadio(name, item.Label) }
- 					if item.IsSelected {
+					class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+					id={ fmt.Sprintf("%s-%s", name, item.Label) }
+					type="radio"
+					name={ fmt.Sprintf("%s", name) }
+					value={ item.Label }
+					onclick={ onClickRadio(name, item.Label) }
+					if item.IsSelected {
 						checked
 					}
 				/>
 				<label
- 					class="ml-3 text-sm text-gray-600"
- 					for={ fmt.Sprintf("%s-%s", name, item.Label) }
+					class="ml-3 text-sm text-gray-600"
+					for={ fmt.Sprintf("%s-%s", name, item.Label) }
 				>
 					{ item.Label }
 				</label>

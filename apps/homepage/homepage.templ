@@ -149,9 +149,9 @@ templ Homepage(data *PageData) {
 		<body class="h-card">
 			<div class="columns">
 				<img
- 					class="square-block u-photo"
- 					alt="beautiful headshot"
- 					src="/headshot.jpg"
+					class="square-block u-photo"
+					alt="beautiful headshot"
+					src="/headshot.jpg"
 				/>
 				<section class="flex-down" aria-label="Contact information">
 					<div>
@@ -209,7 +209,7 @@ templ Homepage(data *PageData) {
 						<dt>Sometimes I write about what I'm up to. Recently,</dt>
 						for _, post := range data.Posts.List {
 							if !post.IsDraft {
-								<dd><a class="no-underline" href={ templ.SafeURL(fmt.Sprintf("/posts/%s", post.Slug) ) }>{ post.Title }</a>,</dd>
+								<dd><a class="no-underline" href={ templ.SafeURL(fmt.Sprintf("/posts/%s", post.Slug)) }>{ post.Title }</a>,</dd>
 							}
 						}
 					</dl>
@@ -225,7 +225,7 @@ templ Homepage(data *PageData) {
 						</span>, where I worked on the mobile app platform and the hiring program,
 						and occasionally on mechanisms like
 						<abbr
- 							title="“System and Organization Controls” – I helped accountants understand distributed systems"
+							title="“System and Organization Controls” – I helped accountants understand distributed systems"
 						>SOC2</abbr>
 						and open source license compliance.
 					</p>

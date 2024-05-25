@@ -14,6 +14,7 @@ import (
 	"monks.co/apps/movies/db"
 	"monks.co/apps/posts/model"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/letterboxd"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
@@ -43,12 +44,12 @@ func run() error {
 		return err
 	}
 
-	fetcher := periodically(db.AllWatches)
-	defer fetcher.stop()
+	watchlog := periodically(time.Hour, lastFiveWatches)
+	defer watchlog.stop()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		v, err := fetcher.get()
+		v, err := watchlog.get()
 		if err != nil {
 			serve.InternalServerError(w, req, err)
 			return
@@ -69,6 +70,17 @@ func run() error {
 	return nil
 }
 
+func lastFiveWatches() ([]*letterboxd.Watch, error) {
+	var watches []*letterboxd.Watch
+	if err := letterboxd.FetchDiary("amonks", 1, 5, func(entry *letterboxd.Watch) error {
+		watches = append(watches, entry)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return watches, nil
+}
+
 type periodic[T any] struct {
 	stopped bool
 	mu      sync.Mutex
@@ -79,7 +91,7 @@ type periodic[T any] struct {
 
 var errUnset = fmt.Errorf("unset")
 
-func periodically[T any](f func() (T, error)) *periodic[T] {
+func periodically[T any](dur time.Duration, f func() (T, error)) *periodic[T] {
 	p := &periodic[T]{
 		err: errUnset,
 	}
@@ -92,7 +104,7 @@ func periodically[T any](f func() (T, error)) *periodic[T] {
 			val, err := f()
 			p.set(val, err)
 
-			time.Sleep(30 * time.Second)
+			time.Sleep(dur)
 		}
 	}()
 	return p

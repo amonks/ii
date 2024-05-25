@@ -119,6 +119,11 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	show := q.Get("show")
+	if show != "all" && show != "watched" && show != "unwatched" {
+		show = "all"
+	}
+
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		serve.InternalServerError(w, req, err)
@@ -136,6 +141,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	data.Query = query
 	data.SortBy = sortBy
 	data.SortDirection = sortDirection
+	data.Show = show
 
 	if stubs, err := app.db.AllStubs(); err != nil {
 		serve.InternalServerError(w, req, err)
@@ -184,6 +190,17 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		}
 		if maxYear, err := strconv.ParseInt(maxYear, 10, 64); err == nil && year > maxYear {
 			continue
+		}
+
+		switch show {
+		case "unwatched":
+			if _, hasWatch := data.Watches[movie.Key()]; hasWatch {
+				continue
+			}
+		case "watched":
+			if _, hasWatch := data.Watches[movie.Key()]; !hasWatch {
+				continue
+			}
 		}
 
 		if !strings.Contains(

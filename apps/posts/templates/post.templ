@@ -8,6 +8,6 @@ import (
 templ Post(post *model.Post) {
 	@templib.Page(post.Title, templib.PageOptions{}) {
 		<h1>{ post.Title }</h1>
-		{! post }
+		@post
 	}
 }

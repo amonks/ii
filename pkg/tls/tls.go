@@ -60,7 +60,10 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 		switch strategy.Strategy {
 		case "dns":
 			acmeIssuerConfig.DNS01Solver = &certmagic.DNS01Solver{
-				DNSProvider: &route53.Provider{},
+				DNSManager: certmagic.DNSManager{
+					DNSProvider: &route53.Provider{},
+					Resolvers:   []string{"8.8.8.8"},
+				},
 			}
 
 		case "alpn":

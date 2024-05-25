@@ -12,7 +12,7 @@ type ImportPageData struct {
 }
 
 templ Import(data *ImportPageData) {
-	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + len(data.Stubs))) {
+	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations)+len(data.Stubs))) {
 		if len(data.MetacriticValidations) > 0 {
 			<details open>
 				<summary>{ fmt.Sprintf("%d movies in the metacritic validation queue", len(data.MetacriticValidations)) }</summary>
