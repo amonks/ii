@@ -18,20 +18,20 @@ resource "aws_route53_record" "www-ss-cx-A" {
   records = ["66.51.122.238"]
 }
 
-resource "aws_route53_record" "wifi-ss-cx-CNAME" {
+resource "aws_route53_record" "wifi-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "wifi.ss.cx."
-  type    = "CNAME"
+  type    = "A"
   ttl     = "300"
-  records = ["p428.cloudunifi.com.ss.cx."]
+  records = ["104.168.77.185"]
 }
 
-resource "aws_route53_record" "w-ss-cx-CNAME" {
+resource "aws_route53_record" "w-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "w.ss.cx."
-  type    = "CNAME"
+  type    = "A"
   ttl     = "300"
-  records = ["lemon.whatbox.ca.ss.cx."]
+  records = ["72.21.17.85"]
 }
 
 resource "aws_route53_record" "thor-ss-cx-A" {
@@ -104,14 +104,6 @@ resource "aws_route53_record" "brigid-ss-cx-A" {
   type    = "A"
   ttl     = "300"
   records = ["100.103.217.4"]
-}
-
-resource "aws_route53_record" "b-ss-cx-CNAME" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "b.ss.cx."
-  type    = "CNAME"
-  ttl     = "300"
-  records = ["cross-origin-bouncer.herokuapp.com."]
 }
 
 resource "aws_route53_record" "wildcard-brigid-ss-cx-A" {

@@ -2,6 +2,17 @@ provider "aws" {
   region = "us-east-1"
 }
 
+terraform {
+  backend "s3" {
+    bucket = "monks-co-tfstate"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+
+    dynamodb_table = "monks-co-tfstate-lock"
+    encrypt        = true
+  }
+}
+
 module "ss-cx-mailer" {
   source = "./mailer/"
 

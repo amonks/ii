@@ -18,12 +18,28 @@ resource "aws_route53_record" "www-monks-co-A" {
   records = ["66.51.122.238"]
 }
 
+resource "aws_route53_record" "updates-monks-co-CNAME" {
+  zone_id = aws_route53_zone.monks-co.zone_id
+  name    = "updates.monks.co."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["murmuring-bedbug-xc9fvm5sklejkr3tlrhfat80.herokudns.com."]
+}
+
 resource "aws_route53_record" "processing-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "processing.monks.co."
   type    = "CNAME"
   ttl     = "300"
   records = ["amonks.github.io."]
+}
+
+resource "aws_route53_record" "pm-bounces-monks-co-CNAME" {
+  zone_id = aws_route53_zone.monks-co.zone_id
+  name    = "pm-bounces.monks.co."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["pm.mtasv.net."]
 }
 
 resource "aws_route53_record" "monks-co-TXT" {
@@ -82,12 +98,12 @@ resource "aws_route53_record" "fm1-_domainkey-monks-co-CNAME" {
   records = ["fm1.monks.co.dkim.fmhosted.com."]
 }
 
-resource "aws_route53_record" "_keybase-monks-co-TXT" {
+resource "aws_route53_record" "_dmarc-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co.zone_id
-  name    = "_keybase.monks.co."
+  name    = "_dmarc.monks.co."
   type    = "TXT"
   ttl     = "300"
-  records = ["keybase-site-verification=JZj7vchXA6vfSV8oa5QQyGmnI8CKDRgQIHYIFPl5sF0"]
+  records = ["v=DMARC1; p=quarantine; rua=mailto:940f0c149d7a65a4c6b0f32e5246f6fa@inbound.postmarkapp.com; aspf=r; pct=100"]
 }
 
 resource "aws_route53_record" "_atproto-monks-co-TXT" {
@@ -96,4 +112,12 @@ resource "aws_route53_record" "_atproto-monks-co-TXT" {
   type    = "TXT"
   ttl     = "300"
   records = ["did=did:plc:yfekcz5g5oabfem5icfcjj3d"]
+}
+
+resource "aws_route53_record" "_20240417205709pm-_domainkey-monks-co-TXT" {
+  zone_id = aws_route53_zone.monks-co.zone_id
+  name    = "20240417205709pm._domainkey.monks.co."
+  type    = "TXT"
+  ttl     = "300"
+  records = ["k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCs6NQjBs0P6Nzq6uJxle+3nf7doYeNr7MsxNYF/YfZsJ24X3RlEjsg79uZOLnrQMJ/bhxZSyxyP/52VC+NZawQwoemILsyDAC4nILz6SGt5YrEGEW/SdsSqjqkFUTu2fHBbJFLFYHb83RMIvk1sy5KDs+B8WNewI4p3pT+rfaKgwIDAQAB"]
 }

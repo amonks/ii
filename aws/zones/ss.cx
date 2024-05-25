@@ -5,9 +5,8 @@ www 300 IN A 66.51.122.238
 www 300 IN AAAA 2a09:8280:1::f:478
 
 ;; third-party hosts
-w 300 IN CNAME lemon.whatbox.ca
-wifi 300 IN CNAME p428.cloudunifi.com
-b 300 IN CNAME cross-origin-bouncer.herokuapp.com.
+w 300 IN A 72.21.17.85
+wifi 300 IN A 104.168.77.185
 
 ;; tailnet
 brigid 300 IN A 100.103.217.4

@@ -10,7 +10,7 @@ mode = "prod"
   "docrimes.com"      = "https://monks.co/"
   "fmail.email"       = "https://monks.co/"
   "needsyourhelp.org" = "https://monks.co/"
-  "popefucker.com"    = "https://monks.co/"
+  # "popefucker.com"    = "https://monks.co/"
   "ss.cx"             = "https://monks.co/"
 
 [acme]
@@ -28,7 +28,7 @@ mode = "prod"
     "docrimes.com",
     "fmail.email",
     "needsyourhelp.org",
-    "popefucker.com",
+    # "popefucker.com",
     "ss.cx"
   ]
 
