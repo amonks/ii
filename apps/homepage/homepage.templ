@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"monks.co/apps/movies/db"
 	"monks.co/apps/posts/model"
 )
@@ -32,6 +31,9 @@ templ Homepage(data *PageData) {
 			}
 			.no-underline {
 				text-decoration: none;
+			}
+			.mono {
+				font-family: AppleMyungjo, mono
 			}
 			h1 a {
 				color: inherit;
@@ -190,14 +192,14 @@ templ Homepage(data *PageData) {
 			<article aria-label="Work history" class="columns">
 				<label id="currently">currently,</label>
 				<section aria-labelledby="currently">
-					<p>I develop ice cream recipes and noodle on database software.</p>
+					<p>I develop ice cream recipes and noodle on database software. I’m also helping out a bit at <a href="https://www.resinrecyclables.com">Resin Recyclables</a>.</p>
 					<dl class="p-note prose-definition-list">
 						<dt>I watch movies most days. Recently,</dt>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }>{ stars(data.Watches[0].Rating) } { data.Watches[0].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }>{ stars(data.Watches[1].Rating) } { data.Watches[1].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }>{ stars(data.Watches[2].Rating) } { data.Watches[2].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }>{ stars(data.Watches[3].Rating) } { data.Watches[3].MovieTitle }</a>, and,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }>{ stars(data.Watches[4].Rating) } { data.Watches[4].MovieTitle }</a>.</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }><span class="mono">{ stars(data.Watches[0].Rating) }</span> { data.Watches[0].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }><span class="mono">{ stars(data.Watches[1].Rating) }</span> { data.Watches[1].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }><span class="mono">{ stars(data.Watches[2].Rating) }</span> { data.Watches[2].MovieTitle }</a>,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }><span class="mono">{ stars(data.Watches[3].Rating) }</span> { data.Watches[3].MovieTitle }</a>, and,</dd>
+						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }><span class="mono">{ stars(data.Watches[4].Rating) }</span> { data.Watches[4].MovieTitle }</a>.</dd>
 					</dl>
 					<p>
 						I love exploring. I made a <a href="/map">nice map</a> of places I
@@ -205,14 +207,6 @@ templ Homepage(data *PageData) {
 						you'll have to make your own. The map scrolls pretty slow; it used
 						to be faster.
 					</p>
-					<dl class="p-note prose-definition-list">
-						<dt>Sometimes I write about what I'm up to. Recently,</dt>
-						for _, post := range data.Posts.List {
-							if !post.IsDraft {
-								<dd><a class="no-underline" href={ templ.SafeURL(fmt.Sprintf("/posts/%s", post.Slug)) }>{ post.Title }</a>,</dd>
-							}
-						}
-					</dl>
 				</section>
 				<h3 id="previously">previously,</h3>
 				<section aria-labelledby="previously">
@@ -266,23 +260,23 @@ func stars(i int) string {
 	case 0:
 		return "unrated"
 	case 1:
-		return "☆"
+		return "½☆☆☆☆"
 	case 2:
-		return "★"
+		return "★☆☆☆☆"
 	case 3:
-		return "★☆"
+		return "★½☆☆☆"
 	case 4:
-		return "★★"
+		return "★★☆☆☆"
 	case 5:
-		return "★★☆"
+		return "★★½☆☆"
 	case 6:
-		return "★★★"
+		return "★★★☆☆"
 	case 7:
-		return "★★★☆"
+		return "★★★½☆"
 	case 8:
-		return "★★★★"
-	case 9:
 		return "★★★★☆"
+	case 9:
+		return "★★★★½"
 	case 10:
 		return "★★★★★"
 	default:

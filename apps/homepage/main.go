@@ -72,7 +72,7 @@ func run() error {
 
 func lastFiveWatches() ([]*letterboxd.Watch, error) {
 	var watches []*letterboxd.Watch
-	if err := letterboxd.FetchDiary("amonks", 1, 5, func(entry *letterboxd.Watch) error {
+	if err := letterboxd.FetchDiary("amonks", 1, 1, func(entry *letterboxd.Watch) error {
 		watches = append(watches, entry)
 		return nil
 	}); err != nil {
@@ -92,19 +92,21 @@ type periodic[T any] struct {
 var errUnset = fmt.Errorf("unset")
 
 func periodically[T any](dur time.Duration, f func() (T, error)) *periodic[T] {
+	val, err := f()
 	p := &periodic[T]{
-		err: errUnset,
+		err: err,
+		v:   val,
 	}
 	go func() {
 		for {
+			time.Sleep(dur)
+
 			log.Println("reload")
 			if p.isStopped() {
 				return
 			}
 			val, err := f()
 			p.set(val, err)
-
-			time.Sleep(dur)
 		}
 	}()
 	return p
