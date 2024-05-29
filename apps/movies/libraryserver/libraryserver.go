@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os/exec"
 	"sort"
@@ -95,20 +96,21 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		allGenresSelected = true
 	}
 
-	minYear := q.Get("minYear")
-	maxYear := q.Get("maxYear")
+	minYear := q.Get("min-year")
+	maxYear := q.Get("max-year")
 
 	query := q.Get("query")
 
-	sortBy := q.Get("sortBy")
-	sortDirection := q.Get("sortDirection")
+	sortBy := q.Get("sort-by")
+	sortDirection := q.Get("sort-direction")
 	if sortBy != "name" &&
 		sortBy != "date" &&
 		sortBy != "runtime" &&
 		sortBy != "importDate" &&
 		sortBy != "mc" &&
 		sortBy != "myRating" &&
-		sortBy != "watchDate" {
+		sortBy != "watchDate" &&
+		sortBy != "shuffle" {
 		sortBy = "date"
 	}
 	if sortDirection != "asc" && sortDirection != "desc" {
@@ -142,6 +144,8 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	data.SortBy = sortBy
 	data.SortDirection = sortDirection
 	data.Show = show
+	data.MinYear = minYear
+	data.MaxYear = maxYear
 
 	if stubs, err := app.db.AllStubs(); err != nil {
 		serve.InternalServerError(w, req, err)
@@ -226,56 +230,62 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		return data.Genres[a].Name < data.Genres[b].Name
 	})
 
-	sort.Slice(data.Movies, func(a, b int) bool {
-		switch sortBy {
-		case "date":
-			if sortDirection == "desc" {
-				return data.Movies[a].ReleaseDate > data.Movies[b].ReleaseDate
+	if sortBy == "shuffle" {
+		rand.Shuffle(len(data.Movies), func(a, b int) {
+			data.Movies[a], data.Movies[b] = data.Movies[b], data.Movies[a]
+		})
+	} else {
+		sort.Slice(data.Movies, func(a, b int) bool {
+			switch sortBy {
+			case "date":
+				if sortDirection == "desc" {
+					return data.Movies[a].ReleaseDate > data.Movies[b].ReleaseDate
+				}
+				return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
+			case "importDate":
+				if data.Movies[a].ImportedAt == "" {
+					return true
+				} else if data.Movies[b].ImportedAt == "" {
+					return true
+				}
+				if sortDirection == "desc" {
+					return data.Movies[a].ImportedAt > data.Movies[b].ImportedAt
+				}
+				return data.Movies[a].ImportedAt < data.Movies[b].ImportedAt
+			case "watchDate":
+				watchA, _ := data.Watches[data.Movies[a].Key()]
+				watchB, _ := data.Watches[data.Movies[b].Key()]
+				if sortDirection == "desc" {
+					return watchA.Date.After(watchB.Date)
+				}
+				return watchB.Date.After(watchA.Date)
+			case "runtime":
+				if sortDirection == "desc" {
+					return data.Movies[a].Runtime > data.Movies[b].Runtime
+				}
+				return data.Movies[a].Runtime < data.Movies[b].Runtime
+			case "mc":
+				if sortDirection == "desc" {
+					return data.Movies[a].MetacriticRating > data.Movies[b].MetacriticRating
+				}
+				return data.Movies[a].MetacriticRating < data.Movies[b].MetacriticRating
+			case "myRating":
+				watchA, _ := data.Watches[data.Movies[a].Key()]
+				watchB, _ := data.Watches[data.Movies[b].Key()]
+				if sortDirection == "desc" {
+					return watchA.Rating > watchB.Rating
+				}
+				return watchA.Rating < watchB.Rating
+			case "name":
+				fallthrough
+			default:
+				if sortDirection == "desc" {
+					return data.Movies[a].Title > data.Movies[b].Title
+				}
+				return data.Movies[a].Title < data.Movies[b].Title
 			}
-			return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
-		case "importDate":
-			if data.Movies[a].ImportedAt == "" {
-				return true
-			} else if data.Movies[b].ImportedAt == "" {
-				return true
-			}
-			if sortDirection == "desc" {
-				return data.Movies[a].ImportedAt > data.Movies[b].ImportedAt
-			}
-			return data.Movies[a].ImportedAt < data.Movies[b].ImportedAt
-		case "watchDate":
-			watchA, _ := data.Watches[data.Movies[a].Key()]
-			watchB, _ := data.Watches[data.Movies[b].Key()]
-			if sortDirection == "desc" {
-				return watchA.Date.After(watchB.Date)
-			}
-			return watchB.Date.After(watchA.Date)
-		case "runtime":
-			if sortDirection == "desc" {
-				return data.Movies[a].Runtime > data.Movies[b].Runtime
-			}
-			return data.Movies[a].Runtime < data.Movies[b].Runtime
-		case "mc":
-			if sortDirection == "desc" {
-				return data.Movies[a].MetacriticRating > data.Movies[b].MetacriticRating
-			}
-			return data.Movies[a].MetacriticRating < data.Movies[b].MetacriticRating
-		case "myRating":
-			watchA, _ := data.Watches[data.Movies[a].Key()]
-			watchB, _ := data.Watches[data.Movies[b].Key()]
-			if sortDirection == "desc" {
-				return watchA.Rating > watchB.Rating
-			}
-			return watchA.Rating < watchB.Rating
-		case "name":
-			fallthrough
-		default:
-			if sortDirection == "desc" {
-				return data.Movies[a].Title > data.Movies[b].Title
-			}
-			return data.Movies[a].Title < data.Movies[b].Title
-		}
-	})
+		})
+	}
 
 	if err := Movies(&data).Render(req.Context(), w); err != nil {
 		log.Println(err)

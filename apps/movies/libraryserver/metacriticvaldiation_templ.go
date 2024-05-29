@@ -129,18 +129,6 @@ func MetacriticValidation(id string, movie *db.Movie) templ.Component {
 						templ_7745c5c3_Buffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
-					templ_7745c5c3_Err = templib.ButtonSecondary(&templib.ButtonOptions{
-						Class:  "mc--ignore",
-						Label:  "Ignore",
-						HxPost: "validate-metacritic",
-					}).Render(ctx, templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
 					templ_7745c5c3_Err = templib.ButtonPrimary(&templib.ButtonOptions{
 						Class:  "mc--submit",
 						Label:  "Submit",

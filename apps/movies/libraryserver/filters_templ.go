@@ -23,164 +23,35 @@ func Filters(data *MoviesPageData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"block\"><form class=\"space-y-10\"><div class=\"pb-4 pt-4\"><fieldset><div class=\"space-y-6\"><label for=\"query\" class=\"block text-sm font-medium leading-6 text-gray-900\">Search</label> <input type=\"text\" name=\"query\" id=\"query\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"block\"><form class=\"space-y-10\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.Query)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 10, Col: 67}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		templ_7745c5c3_Err = TextInput("search", "Search", data.Query).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6\"></div></fieldset></div><div class=\"pb-4 pt-4\"><label class=\"block text-sm font-medium leading-6 text-gray-900\">Sort by</label><fieldset id=\"sort-by\" class=\"mt-4\"><div class=\"space-y-4\">")
+		templ_7745c5c3_Err = TextInput("min-year", "Min Year", data.MinYear).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, sortable := range []struct {
-			id   string
-			name string
-		}{{id: "mc", name: "MC Rating"}, {id: "myRating", name: "My Rating"}, {id: "watchDate", name: "Watch Date"}, {id: "date", name: "Release Date"}, {id: "importDate", name: "Import Date"}, {id: "name", name: "Name"}, {id: "runtime", name: "Runtime"}} {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex items-center\"><input id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("sort-" + sortable.id)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 21, Col: 35}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" name=\"sort-by\" type=\"radio\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if data.SortBy == sortable.id {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600\"> <label for=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("sort-" + sortable.id)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 29, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"ml-3 block text-sm font-medium leading-6 text-gray-900\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(sortable.name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 30, Col: 24}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></fieldset></div><div class=\"pb-4 pt-4\"><label class=\"block text-sm font-medium leading-6 text-gray-900\">Sort direction</label><fieldset id=\"sort-direction\" class=\"mt-4\"><div class=\"space-y-4\"><div class=\"flex items-center\"><input id=\"sort-direction-asc\" name=\"sort-direction\" type=\"radio\"")
+		templ_7745c5c3_Err = TextInput("max-year", "Max Year", data.MaxYear).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.SortDirection == "asc" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600\"> <label for=\"sort-direction-asc\" class=\"ml-3 block text-sm font-medium leading-6 text-gray-900\">Ascending</label></div><div class=\"flex items-center\"><input id=\"sort-direction-desc\" name=\"sort-direction\" type=\"radio\"")
+		templ_7745c5c3_Err = RadioSet("sort-by", "Sort by", data.SortBy, sortByOptions).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.SortDirection == "desc" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600\"> <label for=\"sort-direction-desc\" class=\"ml-3 block text-sm font-medium leading-6 text-gray-900\">Descending</label></div></div></fieldset></div><div class=\"pb-4 pt-4\"><fieldset id=\"show\"><legend class=\"block text-sm font-medium text-gray-900\">Filter</legend><div class=\"space-y-3 pt-6\">")
+		templ_7745c5c3_Err = RadioSet("sort-direction", "Sort Direction", data.SortDirection, sortDirectionOptions).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, sortable := range []struct {
-			id   string
-			name string
-		}{{id: "all", name: "Show All"}, {id: "unwatched", name: "Hide Watched"}, {id: "watched", name: "Hide Unwatched"}} {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex items-center\"><input id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("show-" + sortable.id)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 75, Col: 35}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" name=\"show\" type=\"radio\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if data.Show == sortable.id {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600\"> <label for=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("show-" + sortable.id)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 83, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"ml-3 block text-sm font-medium leading-6 text-gray-900\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(sortable.name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 84, Col: 24}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = RadioSet("show", "Filter", data.Show, showOptions).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></fieldset></div><div class=\"pb-4 pt-4\"><fieldset><legend class=\"block text-sm font-medium text-gray-900\">Genre</legend><div class=\"space-y-3 pt-6\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"pb-4 pt-4\"><fieldset><legend class=\"block text-sm font-medium text-gray-900\">Genre</legend><div class=\"space-y-3 pt-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -189,12 +60,12 @@ func Filters(data *MoviesPageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("genre-" + genre.Name)
+			var templ_7745c5c3_Var2 string
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("genre-" + genre.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 98, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 19, Col: 36}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -202,12 +73,12 @@ func Filters(data *MoviesPageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(genre.Name)
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(genre.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 100, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 21, Col: 28}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -225,12 +96,12 @@ func Filters(data *MoviesPageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("genre-" + genre.Name)
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("genre-" + genre.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 107, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 28, Col: 42}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -238,12 +109,12 @@ func Filters(data *MoviesPageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(genre.Name)
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(genre.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 107, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 28, Col: 93}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -252,7 +123,297 @@ func Filters(data *MoviesPageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></fieldset></div></form></div><script>\n\t\t(function() {\n\t\t\t{\n\t\t\t\tconst queryInput = document.querySelector('#query');\n\t\t\t\tqueryInput.addEventListener(\"blur\", ev => {\n\t\t\t\t\tconsole.log(\"Δ query\");\n\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\turl.searchParams.set(\"query\", queryInput.value);\n\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t});\n\t\t\t};\n\n\t\t\t{\n\t\t\t\tconst sortByInputs = document.querySelectorAll('#sort-by input');\n\t\t\t\tfor (const el of sortByInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ sortBy\");\n\t\t\t\t\t\tconst value = el.id.replace(\"sort-\", \"\");\n\t\t\t\t\t\tconsole.log(el, value);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(\"sortBy\", value);\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\n\t\t\t{\n\t\t\t\tconst sortDirectionInputs = document.querySelectorAll('#sort-direction input');\n\t\t\t\tfor (const el of sortDirectionInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ sortDirection\");\n\t\t\t\t\t\tconst value = el.id.replace(\"sort-direction-\", \"\");\n\t\t\t\t\t\tconsole.log(el, value);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(\"sortDirection\", value);\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\n\t\t\t{\n\t\t\t\tconst showInputs = document.querySelectorAll('#show input');\n\t\t\t\tfor (const el of showInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"∆ show\");\n\t\t\t\t\t\tconst value = el.id.replace(\"show-\", \"\");\n\t\t\t\t\t\tconsole.log(el, value);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(\"show\", value);\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t})\n\t\t\t\t}\n\t\t\t};\n\n\t\t\t{\n\t\t\t\tconst genreInputs = document.querySelectorAll('input[name=\"genres[]\"]');\n\t\t\t\tfor (const el of genreInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ genres\", el.value);\n\t\t\t\t\t\tif (!el.checked) {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.delete(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.append(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\t\t})();\n\t</script>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></fieldset></div></form></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInputScript().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = RadioSetScript().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n\t\t(function() {\n\t\t\t{\n\t\t\t\tconst genreInputs = document.querySelectorAll('input[name=\"genres[]\"]');\n\t\t\t\tfor (const el of genreInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ genres\", el.value);\n\t\t\t\t\t\tif (!el.checked) {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.delete(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.append(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+var sortByOptions = []RadioOption{
+	{ID: "mc", Name: "MC Rating"},
+	{ID: "myRating", Name: "My Rating"},
+	{ID: "watchDate", Name: "Watch Date"},
+	{ID: "date", Name: "Release Date"},
+	{ID: "importDate", Name: "Import Date"},
+	{ID: "name", Name: "Name"},
+	{ID: "runtime", Name: "Runtime"},
+	{ID: "shuffle", Name: "Shuffle"},
+}
+
+var sortDirectionOptions = []RadioOption{
+	{ID: "desc", Name: "Descending"},
+	{ID: "asc", Name: "Ascending"},
+}
+
+var showOptions = []RadioOption{
+	{ID: "all", Name: "Show All"},
+	{ID: "unwatched", Name: "Hide Watched"},
+	{ID: "watched", Name: "Hide Unwatched"},
+}
+
+var shuffleOptions = []RadioOption{
+	{ID: "on", Name: "On"},
+	{ID: "off", Name: "Off"},
+}
+
+func TextInput(id, title, value string) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"pb-4 pt-4\"><fieldset class=\"text-input\"><label for=\"query\" class=\"block text-sm font-medium leading-6 text-gray-900\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 91, Col: 87}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label> <input type=\"text\" name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(id)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 92, Col: 31}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(id)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 92, Col: 41}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 92, Col: 57}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6\"></fieldset></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func TextInputScript() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n\t\t{\n\t\t\tconst textInputs = document.querySelectorAll('.text-input input');\n\t\t\tfor (const textInput of textInputs) {\n\t\t\t\tconst id = textInput.id;\n\t\t\t\tconsole.log(`text-input ${id}`);\n\t\t\t\ttextInput.addEventListener(\"blur\", ev => {\n\t\t\t\t\tconst value = textInput.value;\n\t\t\t\t\tconsole.log(\"Δ text-input ${id} → ${value}\");\n\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t});\n\t\t\t}\n\t\t};\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+type RadioOption struct {
+	ID   string
+	Name string
+}
+
+func RadioSet(id, title, selected string, options []RadioOption) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var12 == nil {
+			templ_7745c5c3_Var12 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"pb-4 pt-4\"><fieldset class=\"radio-set\" id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(id)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 123, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><legend class=\"block text-sm font-medium text-gray-900\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 124, Col: 66}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</legend><div class=\"space-y-3 pt-3\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, option := range options {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex items-center\"><input id=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 129, Col: 33}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" name=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(id)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 130, Col: 17}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" type=\"radio\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if selected == option.ID {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600\"> <label for=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 137, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"ml-3 block text-sm font-medium leading-6 text-gray-900\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(option.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 138, Col: 20}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</label></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></fieldset></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func RadioSetScript() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n\t\t{\n\t\t\tconst radioSets = document.querySelectorAll(\".radio-set\");\n\t\t\tfor (const set of radioSets) {\n\t\t\t\tconst id = set.id;\n\t\t\t\tconsole.log(`radio-set: ${id}`);\n\t\t\t\tconst inputs = document.querySelectorAll(`#${id} input`);\n\t\t\t\tfor (const el of inputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconst value = el.id.replace(id + \"-\", \"\");\n\t\t\t\t\t\tconsole.log(`∆ ${id} → ${value}`);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t})\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

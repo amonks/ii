@@ -13,6 +13,7 @@ import (
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/creditsfetcher"
 	"monks.co/apps/movies/db"
+	"monks.co/apps/movies/letterboxdimporter"
 	"monks.co/apps/movies/libraryserver"
 	"monks.co/apps/movies/moviecopier"
 	"monks.co/apps/movies/movieimporter"
@@ -63,6 +64,24 @@ func run() error {
 		if err := ls.Run(ctx); err != nil {
 			cancel(fmt.Errorf("libraryserver error: %w", err))
 			return
+		}
+	}()
+
+	// Launch mcimporter, running every minute.
+	li := letterboxdimporter.New(db)
+	wg.Add("letterboxdimporter")
+	go func() {
+		defer wg.Done("letterboxdimporter")
+		for {
+			if err := li.Run(); err != nil {
+				cancel(fmt.Errorf("letterboxdimporter error: %w", err))
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(30 * time.Minute):
+			}
 		}
 	}()
 

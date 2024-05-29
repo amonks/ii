@@ -42,11 +42,6 @@ templ MetacriticValidation(id string, movie *db.Movie) {
 				})
 			}
 			@templib.ButtonGroup() {
-				@templib.ButtonSecondary(&templib.ButtonOptions{
-					Class:  "mc--ignore",
-					Label:  "Ignore",
-					HxPost: "validate-metacritic",
-				})
 				@templib.ButtonPrimary(&templib.ButtonOptions{
 					Class:  "mc--submit",
 					Label:  "Submit",

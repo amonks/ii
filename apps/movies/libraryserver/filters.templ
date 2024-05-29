@@ -3,106 +3,27 @@ package libraryserver
 templ Filters(data *MoviesPageData) {
 	<div class="block">
 		<form class="space-y-10">
-			<div class="pb-4 pt-4">
-				<fieldset>
-					<div class="space-y-6">
-						<label for="query" class="block text-sm font-medium leading-6 text-gray-900">Search</label>
-						<input type="text" name="query" id="query" value={ data.Query } class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
-					</div>
-				</fieldset>
-			</div>
-			<div class="pb-4 pt-4">
-				<label class="block text-sm font-medium leading-6 text-gray-900">Sort by</label>
-				<fieldset id="sort-by" class="mt-4">
-					<div class="space-y-4">
-						for _, sortable := range []struct{id string; name string} {{ id: "mc", name: "MC Rating" },{ id: "myRating", name: "My Rating" }, { id: "watchDate", name: "Watch Date" }, { id: "date", name: "Release Date" }, { id: "importDate", name: "Import Date" }, { id: "name", name: "Name" }, { id: "runtime", name: "Runtime" } } {
-							<div class="flex items-center">
-								<input
-									id={ "sort-" + sortable.id }
-									name="sort-by"
-									type="radio"
-									if data.SortBy == sortable.id {
-										checked
-									}
-									class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-								/>
-								<label for={ "sort-" + sortable.id } class="ml-3 block text-sm font-medium leading-6 text-gray-900">
-									{ sortable.name }
-								</label>
-							</div>
-						}
-					</div>
-				</fieldset>
-			</div>
-			<div class="pb-4 pt-4">
-				<label class="block text-sm font-medium leading-6 text-gray-900">Sort direction</label>
-				<fieldset id="sort-direction" class="mt-4">
-					<div class="space-y-4">
-						<div class="flex items-center">
-							<input
-								id="sort-direction-asc"
-								name="sort-direction"
-								type="radio"
-								if data.SortDirection == "asc" {
-									checked
-								}
-								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-							/>
-							<label for="sort-direction-asc" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Ascending</label>
-						</div>
-						<div class="flex items-center">
-							<input
-								id="sort-direction-desc"
-								name="sort-direction"
-								type="radio"
-								if data.SortDirection == "desc" {
-									checked
-								}
-								class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-							/>
-							<label for="sort-direction-desc" class="ml-3 block text-sm font-medium leading-6 text-gray-900">Descending</label>
-						</div>
-					</div>
-				</fieldset>
-			</div>
-			<div class="pb-4 pt-4">
-				<fieldset id="show">
-					<legend class="block text-sm font-medium text-gray-900">Filter</legend>
-					<div class="space-y-3 pt-6">
-						for _, sortable := range []struct{id string; name string} {{ id: "all", name: "Show All" }, { id: "unwatched", name: "Hide Watched" }, { id: "watched", name: "Hide Unwatched" } } {
-							<div class="flex items-center">
-								<input
-									id={ "show-" + sortable.id }
-									name="show"
-									type="radio"
-									if data.Show == sortable.id {
-										checked
-									}
-									class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-								/>
-								<label for={ "show-" + sortable.id } class="ml-3 block text-sm font-medium leading-6 text-gray-900">
-									{ sortable.name }
-								</label>
-							</div>
-						}
-					</div>
-				</fieldset>
-			</div>
+			@TextInput("search", "Search", data.Query)
+			@TextInput("min-year", "Min Year", data.MinYear)
+			@TextInput("max-year", "Max Year", data.MaxYear)
+			@RadioSet("sort-by", "Sort by", data.SortBy, sortByOptions)
+			@RadioSet("sort-direction", "Sort Direction", data.SortDirection, sortDirectionOptions)
+			@RadioSet("show", "Filter", data.Show, showOptions)
 			<div class="pb-4 pt-4">
 				<fieldset>
 					<legend class="block text-sm font-medium text-gray-900">Genre</legend>
-					<div class="space-y-3 pt-6">
+					<div class="space-y-3 pt-3">
 						for _, genre := range data.Genres {
 							<div class="flex items-center">
 								<input
-									id={ "genre-" + genre.Name }
-									name="genres[]"
-									value={ genre.Name }
-									if genre.IsSelected {
+ 									id={ "genre-" + genre.Name }
+ 									name="genres[]"
+ 									value={ genre.Name }
+ 									if genre.IsSelected {
 										checked
 									}
-									type="checkbox"
-									class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+ 									type="checkbox"
+ 									class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
 								/>
 								<label for={ "genre-" + genre.Name } class="ml-3 text-sm text-gray-600">{  genre.Name }</label>
 							</div>
@@ -112,60 +33,10 @@ templ Filters(data *MoviesPageData) {
 			</div>
 		</form>
 	</div>
+	@TextInputScript()
+	@RadioSetScript()
 	<script>
 		(function() {
-			{
-				const queryInput = document.querySelector('#query');
-				queryInput.addEventListener("blur", ev => {
-					console.log("Δ query");
-					const url = new URL(document.location);
-					url.searchParams.set("query", queryInput.value);
-					window.location = url.toString();
-				});
-			};
-
-			{
-				const sortByInputs = document.querySelectorAll('#sort-by input');
-				for (const el of sortByInputs) {
-					el.addEventListener("click", ev => {
-						console.log("Δ sortBy");
-						const value = el.id.replace("sort-", "");
-						console.log(el, value);
-						const url = new URL(document.location);
-						url.searchParams.set("sortBy", value);
-						window.location = url.toString();
-					});
-				}
-			};
-
-			{
-				const sortDirectionInputs = document.querySelectorAll('#sort-direction input');
-				for (const el of sortDirectionInputs) {
-					el.addEventListener("click", ev => {
-						console.log("Δ sortDirection");
-						const value = el.id.replace("sort-direction-", "");
-						console.log(el, value);
-						const url = new URL(document.location);
-						url.searchParams.set("sortDirection", value);
-						window.location = url.toString();
-					});
-				}
-			};
-
-			{
-				const showInputs = document.querySelectorAll('#show input');
-				for (const el of showInputs) {
-					el.addEventListener("click", ev => {
-						console.log("∆ show");
-						const value = el.id.replace("show-", "");
-						console.log(el, value);
-						const url = new URL(document.location);
-						url.searchParams.set("show", value);
-						window.location = url.toString();
-					})
-				}
-			};
-
 			{
 				const genreInputs = document.querySelectorAll('input[name="genres[]"]');
 				for (const el of genreInputs) {
@@ -184,5 +55,113 @@ templ Filters(data *MoviesPageData) {
 				}
 			};
 		})();
+	</script>
+}
+
+var sortByOptions = []RadioOption{
+	{ID: "mc", Name: "MC Rating"},
+	{ID: "myRating", Name: "My Rating"},
+	{ID: "watchDate", Name: "Watch Date"},
+	{ID: "date", Name: "Release Date"},
+	{ID: "importDate", Name: "Import Date"},
+	{ID: "name", Name: "Name"},
+	{ID: "runtime", Name: "Runtime"},
+	{ID: "shuffle", Name: "Shuffle"},
+}
+
+var sortDirectionOptions = []RadioOption{
+	{ID: "desc", Name: "Descending"},
+	{ID: "asc", Name: "Ascending"},
+}
+
+var showOptions = []RadioOption{
+	{ID: "all", Name: "Show All"},
+	{ID: "unwatched", Name: "Hide Watched"},
+	{ID: "watched", Name: "Hide Unwatched"},
+}
+
+var shuffleOptions = []RadioOption{
+	{ID: "on", Name: "On"},
+	{ID: "off", Name: "Off"},
+}
+
+templ TextInput(id, title, value string) {
+	<div class="pb-4 pt-4">
+		<fieldset class="text-input">
+			<label for="query" class="block text-sm font-medium leading-6 text-gray-900">{ title }</label>
+			<input type="text" name={ id } id={ id } value={ value } class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+		</fieldset>
+	</div>
+}
+
+templ TextInputScript() {
+	<script>
+		{
+			const textInputs = document.querySelectorAll('.text-input input');
+			for (const textInput of textInputs) {
+				const id = textInput.id;
+				console.log(`text-input ${id}`);
+				textInput.addEventListener("blur", ev => {
+					const value = textInput.value;
+					console.log("Δ text-input ${id} → ${value}");
+					const url = new URL(document.location);
+					url.searchParams.set(id, value);
+					window.location = url.toString();
+				});
+			}
+		};
+	</script>
+}
+
+type RadioOption struct {
+	ID   string
+	Name string
+}
+
+templ RadioSet(id, title, selected string, options []RadioOption) {
+	<div class="pb-4 pt-4">
+		<fieldset class="radio-set" id={ id }>
+			<legend class="block text-sm font-medium text-gray-900">{ title }</legend>
+			<div class="space-y-3 pt-3">
+				for _, option := range options {
+					<div class="flex items-center">
+						<input
+ 							id={ id + "-" + option.ID }
+ 							name={ id }
+ 							type="radio"
+ 							if selected == option.ID {
+								checked
+							}
+ 							class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+						/>
+						<label for={ id + "-" + option.ID } class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+							{ option.Name }
+						</label>
+					</div>
+				}
+			</div>
+		</fieldset>
+	</div>
+}
+
+templ RadioSetScript() {
+	<script>
+		{
+			const radioSets = document.querySelectorAll(".radio-set");
+			for (const set of radioSets) {
+				const id = set.id;
+				console.log(`radio-set: ${id}`);
+				const inputs = document.querySelectorAll(`#${id} input`);
+				for (const el of inputs) {
+					el.addEventListener("click", ev => {
+						const value = el.id.replace(id + "-", "");
+						console.log(`∆ ${id} → ${value}`);
+						const url = new URL(document.location);
+						url.searchParams.set(id, value);
+						window.location = url.toString();
+					})
+				}
+			}
+		}
 	</script>
 }
