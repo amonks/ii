@@ -99,7 +99,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	minYear := q.Get("min-year")
 	maxYear := q.Get("max-year")
 
-	query := q.Get("query")
+	query := q.Get("search")
 
 	sortBy := q.Get("sort-by")
 	sortDirection := q.Get("sort-direction")
@@ -157,13 +157,17 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	allGenresSet := map[string]struct{}{}
 	for _, movie := range movies {
 		if sortBy == "watchDate" || sortBy == "myRating" {
-			if _, isWatched := watches[movie.Key()]; !isWatched {
+			if _, isWatched := watches[movie.Title]; !isWatched {
 				continue
 			}
 		}
 
 		if sortBy == "myRating" {
-			if watch := watches[movie.Key()]; watch.Rating == 0 {
+			maxRating := 0
+			for _, watch := range watches[movie.Title] {
+				maxRating = max(maxRating, watch.Rating)
+			}
+			if maxRating == 0 {
 				continue
 			}
 		}
@@ -198,11 +202,11 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 
 		switch show {
 		case "unwatched":
-			if _, hasWatch := data.Watches[movie.Key()]; hasWatch {
+			if _, hasWatch := data.Watches[movie.Title]; hasWatch {
 				continue
 			}
 		case "watched":
-			if _, hasWatch := data.Watches[movie.Key()]; !hasWatch {
+			if _, hasWatch := data.Watches[movie.Title]; !hasWatch {
 				continue
 			}
 		}
@@ -253,12 +257,12 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				}
 				return data.Movies[a].ImportedAt < data.Movies[b].ImportedAt
 			case "watchDate":
-				watchA, _ := data.Watches[data.Movies[a].Key()]
-				watchB, _ := data.Watches[data.Movies[b].Key()]
+				lastWatchA := data.Watches.LastWatch(data.Movies[a].Title)
+				lastWatchB := data.Watches.LastWatch(data.Movies[b].Title)
 				if sortDirection == "desc" {
-					return watchA.Date.After(watchB.Date)
+					return lastWatchA.Date.After(lastWatchB.Date)
 				}
-				return watchB.Date.After(watchA.Date)
+				return lastWatchB.Date.After(lastWatchA.Date)
 			case "runtime":
 				if sortDirection == "desc" {
 					return data.Movies[a].Runtime > data.Movies[b].Runtime
@@ -270,8 +274,8 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				}
 				return data.Movies[a].MetacriticRating < data.Movies[b].MetacriticRating
 			case "myRating":
-				watchA, _ := data.Watches[data.Movies[a].Key()]
-				watchB, _ := data.Watches[data.Movies[b].Key()]
+				watchA := data.Watches.LastWatch(data.Movies[a].Title)
+				watchB := data.Watches.LastWatch(data.Movies[b].Title)
 				if sortDirection == "desc" {
 					return watchA.Rating > watchB.Rating
 				}

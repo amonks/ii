@@ -6,6 +6,16 @@ import (
 	"monks.co/pkg/letterboxd"
 )
 
+type WatchHistory map[string][]*Watch
+
+func (wl WatchHistory) LastWatch(title string) *Watch {
+	watches, hasWatched := wl[title]
+	if !hasWatched {
+		return nil
+	}
+	return watches[len(watches)-1]
+}
+
 type Watch = letterboxd.Watch
 
 func (db *DB) CreateWatch(entry *letterboxd.Watch) (*Watch, error) {
@@ -14,11 +24,6 @@ func (db *DB) CreateWatch(entry *letterboxd.Watch) (*Watch, error) {
 		return nil, err
 	}
 	return watch, nil
-}
-
-type Key struct {
-	title string
-	year  int
 }
 
 func (db *DB) AllWatches() ([]*Watch, error) {
@@ -33,24 +38,24 @@ func (db *DB) AllWatches() ([]*Watch, error) {
 	return watches, nil
 }
 
-func (db *DB) AllWatchesMap() (map[Key]*Watch, error) {
+func (db *DB) AllWatchesMap() (WatchHistory, error) {
 	watches, err := db.AllWatches()
 	if err != nil {
 		return nil, err
 	}
 
-	m := map[Key]*Watch{}
+	m := map[string][]*Watch{}
 	for _, w := range watches {
-		key := Key{w.MovieTitle, w.MovieReleaseYear}
-		existing, has := m[key]
+		key := w.MovieTitle
+		existings, has := m[key]
 		if !has {
-			m[key] = w
+			m[key] = []*Watch{w}
 			continue
 		}
-		if existing.Date.After(w.Date) {
+		if existings[len(existings)-1].Date.After(w.Date) {
 			continue
 		}
-		m[key] = w
+		m[key] = append(existings, w)
 	}
 
 	return m, nil

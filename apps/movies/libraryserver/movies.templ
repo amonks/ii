@@ -8,7 +8,7 @@ import (
 )
 
 type MoviesPageData struct {
-	Watches       map[db.Key]*db.Watch
+	Watches       db.WatchHistory
 	Stubs         []*db.Stub
 	Movies        []*db.Movie
 	Genres        []Genre
@@ -22,15 +22,15 @@ type MoviesPageData struct {
 }
 
 templ Movies(data *MoviesPageData) {
-	@Page(fmt.Sprintf("%d movies", len(data.Movies))) {
-		<div class="pt-12 grid grid-cols-6 gap-x-8">
-			<aside>
+	@Page(fmt.Sprintf("%d Movies", len(data.Movies))) {
+		<div class="px-6 sm:px-8 grid grid-cols-6 gap-x-8">
+			<aside class="col-span-6 sm:col-span-2 md:col-span-1">
 				@Filters(data)
 			</aside>
-			<div class="mt-6 col-span-5 mt-0">
+			<div class="col-span-6 sm:col-span-4 md:col-span-5">
 				<ul role="list" class="movies grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
 					for _, movie := range data.Movies {
-						@Movie(movie, data.Watches[movie.Key()])
+						@Movie(movie, data.Watches.LastWatch(movie.Title))
 					}
 				</ul>
 			</div>

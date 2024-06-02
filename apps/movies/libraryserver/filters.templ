@@ -4,8 +4,10 @@ templ Filters(data *MoviesPageData) {
 	<div class="block">
 		<form class="space-y-10">
 			@TextInput("search", "Search", data.Query)
-			@TextInput("min-year", "Min Year", data.MinYear)
-			@TextInput("max-year", "Max Year", data.MaxYear)
+			<div>
+				@TextInput("min-year", "Min Year", data.MinYear)
+				@TextInput("max-year", "Max Year", data.MaxYear)
+			</div>
 			@RadioSet("sort-by", "Sort by", data.SortBy, sortByOptions)
 			@RadioSet("sort-direction", "Sort Direction", data.SortDirection, sortDirectionOptions)
 			@RadioSet("show", "Filter", data.Show, showOptions)
@@ -86,12 +88,10 @@ var shuffleOptions = []RadioOption{
 }
 
 templ TextInput(id, title, value string) {
-	<div class="pb-4 pt-4">
-		<fieldset class="text-input">
-			<label for="query" class="block text-sm font-medium leading-6 text-gray-900">{ title }</label>
-			<input type="text" name={ id } id={ id } value={ value } class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
-		</fieldset>
-	</div>
+	<fieldset class="text-input">
+		<label for="query" class="block text-sm font-medium leading-6 text-gray-900">{ title }</label>
+		<input type="text" name={ id } id={ id } value={ value } class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+	</fieldset>
 }
 
 templ TextInputScript() {
@@ -119,29 +119,27 @@ type RadioOption struct {
 }
 
 templ RadioSet(id, title, selected string, options []RadioOption) {
-	<div class="pb-4 pt-4">
-		<fieldset class="radio-set" id={ id }>
-			<legend class="block text-sm font-medium text-gray-900">{ title }</legend>
-			<div class="space-y-3 pt-3">
-				for _, option := range options {
-					<div class="flex items-center">
-						<input
- 							id={ id + "-" + option.ID }
- 							name={ id }
- 							type="radio"
- 							if selected == option.ID {
-								checked
-							}
- 							class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-						/>
-						<label for={ id + "-" + option.ID } class="ml-3 block text-sm font-medium leading-6 text-gray-900">
-							{ option.Name }
-						</label>
-					</div>
-				}
-			</div>
-		</fieldset>
-	</div>
+	<fieldset class="radio-set" id={ id }>
+		<legend class="block text-sm font-medium text-gray-900">{ title }</legend>
+		<div class="space-y-3 pt-3">
+			for _, option := range options {
+				<div class="flex items-center">
+					<input
+ 						id={ id + "-" + option.ID }
+ 						name={ id }
+ 						type="radio"
+ 						if selected == option.ID {
+							checked
+						}
+ 						class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+					/>
+					<label for={ id + "-" + option.ID } class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+						{ option.Name }
+					</label>
+				</div>
+			}
+		</div>
+	</fieldset>
 }
 
 templ RadioSetScript() {

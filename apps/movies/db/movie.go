@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -242,14 +241,6 @@ func (d *DB) AllMovies() ([]*Movie, error) {
 		return nil, err
 	}
 	return movies, nil
-}
-
-func (m *Movie) Key() Key {
-	i, err := strconv.ParseInt(m.ReleaseDate[:4], 10, 64)
-	if err != nil {
-		return Key{m.Title, 0}
-	}
-	return Key{m.Title, int(i)}
 }
 
 func (m *Movie) HasPoster() bool {

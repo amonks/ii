@@ -18,7 +18,7 @@ import (
 )
 
 type MoviesPageData struct {
-	Watches       map[db.Key]*db.Watch
+	Watches       db.WatchHistory
 	Stubs         []*db.Stub
 	Movies        []*db.Movie
 	Genres        []Genre
@@ -50,7 +50,7 @@ func Movies(data *MoviesPageData) templ.Component {
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"pt-12 grid grid-cols-6 gap-x-8\"><aside>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"px-6 sm:px-8 grid grid-cols-6 gap-x-8\"><aside class=\"col-span-6 sm:col-span-2 md:col-span-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -58,12 +58,12 @@ func Movies(data *MoviesPageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</aside><div class=\"mt-6 col-span-5 mt-0\"><ul role=\"list\" class=\"movies grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</aside><div class=\"col-span-6 sm:col-span-4 md:col-span-5\"><ul role=\"list\" class=\"movies grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, movie := range data.Movies {
-				templ_7745c5c3_Err = Movie(movie, data.Watches[movie.Key()]).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = Movie(movie, data.Watches.LastWatch(movie.Title)).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -77,7 +77,7 @@ func Movies(data *MoviesPageData) templ.Component {
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = Page(fmt.Sprintf("%d movies", len(data.Movies))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Page(fmt.Sprintf("%d Movies", len(data.Movies))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
