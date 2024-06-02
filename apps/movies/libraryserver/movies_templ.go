@@ -68,7 +68,7 @@ func Movies(data *MoviesPageData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div></div><script>\n\t\t\t(function() {\n\t\t\t\tconst movies = document.querySelectorAll('.movie');\n\t\t\t\tfor (const el of movies) {\n\t\t\t\t\tconst id = el.attributes.getNamedItem(\"data-id\").value;\n\n\t\t\t\t\tfor (const button of el.querySelectorAll(\".click-to-play\")) {\n\t\t\t\t\t\tbutton.addEventListener(\"click\", ev => {\n\t\t\t\t\t\t\tconsole.log(\"Δ play\");\n\t\t\t\t\t\t\tvoid fetch(\"play?id=\"+id);\n\t\t\t\t\t\t})\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div></div><script>\n\t\t\t(function() {\n\t\t\t\tconst movies = document.querySelectorAll('.movie');\n\t\t\t\tfor (const el of movies) {\n\t\t\t\t\tconst id = el.attributes.getNamedItem(\"data-id\").value;\n\n\t\t\t\t\tfor (const button of el.querySelectorAll(\".click-to-enqueue\")) {\n\t\t\t\t\t\tbutton.addEventListener(\"click\", ev => {\n\t\t\t\t\t\t\tconsole.log(\"Δ enqueue\");\n\t\t\t\t\t\t\tvoid fetch(\"enqueue?id=\"+id);\n\t\t\t\t\t\t})\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -119,7 +119,7 @@ func Movie(movie *db.Movie, watch *db.Watch) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if movie.HasPoster() {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"click-to-play cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100\"><img src=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"click-to-enqueue cursor-pointer group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100\"><img src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

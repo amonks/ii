@@ -30,6 +30,13 @@ func (li *LetterboxdImporter) Run() error {
 			}
 			return err
 		}
+		if movie, err := li.db.FindMovieByName(entry.MovieTitle); err != nil {
+			return err
+		} else if movie != nil {
+			if err := li.db.RemoveFromQueue(movie.ID); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	if err != nil && !errors.Is(err, ErrDuplicate) {

@@ -121,7 +121,13 @@ func (db *DB) Start() error {
 		return fmt.Errorf("error activating WAL: %w", tx.Error)
 	}
 
-	if err := gormdb.AutoMigrate(&Movie{}, &Ignore{}, &Stub{}, &Watch{}); err != nil {
+	if err := gormdb.AutoMigrate(
+		&Movie{},
+		&Ignore{},
+		&Stub{},
+		&Watch{},
+		&QueuedMovie{},
+	); err != nil {
 		return fmt.Errorf("migration error: %w", err)
 	}
 

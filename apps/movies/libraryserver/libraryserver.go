@@ -53,6 +53,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("/import", app.serveImport)
 	mux.HandleFunc("/poster", app.servePoster)
 	mux.HandleFunc("/play", app.servePlayButton)
+	mux.HandleFunc("/enqueue", app.serveEnqueueButton)
 	mux.HandleFunc("/search", app.serveSearch)
 	mux.HandleFunc("/identify", app.serveIdentify)
 	mux.HandleFunc("/ignore", app.serveIgnore)
@@ -110,7 +111,8 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		sortBy != "mc" &&
 		sortBy != "myRating" &&
 		sortBy != "watchDate" &&
-		sortBy != "shuffle" {
+		sortBy != "shuffle" &&
+		sortBy != "queue" {
 		sortBy = "date"
 	}
 	if sortDirection != "asc" && sortDirection != "desc" {
@@ -122,7 +124,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	}
 
 	show := q.Get("show")
-	if show != "all" && show != "watched" && show != "unwatched" {
+	if show != "all" && show != "watched" && show != "unwatched" && show != "queue" {
 		show = "all"
 	}
 
@@ -133,6 +135,12 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	}
 
 	watches, err := app.db.AllWatchesMap()
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	queue, err := app.db.Queue()
 	if err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -154,10 +162,20 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		data.Stubs = stubs
 	}
 
+	// loop,
+	// - applying filters
+	// - collecting genres
+	// - populating data.Movies
 	allGenresSet := map[string]struct{}{}
 	for _, movie := range movies {
 		if sortBy == "watchDate" || sortBy == "myRating" {
 			if _, isWatched := watches[movie.Title]; !isWatched {
+				continue
+			}
+		}
+
+		if sortBy == "queue" || show == "queue" {
+			if queued := queue.Get(movie.ID); queued == nil {
 				continue
 			}
 		}
@@ -209,6 +227,10 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 			if _, hasWatch := data.Watches[movie.Title]; !hasWatch {
 				continue
 			}
+		case "queue":
+			if queued := queue.Get(movie.ID); queued == nil {
+				continue
+			}
 		}
 
 		if !strings.Contains(
@@ -223,6 +245,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		data.Movies = append(data.Movies, movie)
 	}
 
+	// make genre options
 	for genre := range allGenresSet {
 		_, isSelected := selectedGenresSet[genre]
 		data.Genres = append(data.Genres, Genre{
@@ -234,6 +257,7 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 		return data.Genres[a].Name < data.Genres[b].Name
 	})
 
+	// sort!
 	if sortBy == "shuffle" {
 		rand.Shuffle(len(data.Movies), func(a, b int) {
 			data.Movies[a], data.Movies[b] = data.Movies[b], data.Movies[a]
@@ -280,6 +304,13 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 					return watchA.Rating > watchB.Rating
 				}
 				return watchA.Rating < watchB.Rating
+			case "queue":
+				queuePositionA := queue.Get(data.Movies[a].ID)
+				queuePositionB := queue.Get(data.Movies[b].ID)
+				if sortDirection == "desc" {
+					return queuePositionB.Less(queuePositionA)
+				}
+				return queuePositionA.Less(queuePositionB)
 			case "name":
 				fallthrough
 			default:
@@ -334,6 +365,30 @@ func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) 
 	}
 	w.Header().Set("Cache-control", "public, max-age=604800, immutable")
 	http.ServeFile(w, req, movie.PosterPath)
+}
+
+func (app *LibraryServer) serveEnqueueButton(w http.ResponseWriter, req *http.Request) {
+	log.Println("req /enqueue")
+
+	idStr := req.URL.Query().Get("id")
+	id, err := strconv.ParseInt(idStr, 10, 32)
+	if err != nil {
+		serve.Errorf(w, req, http.StatusBadRequest, "error parsing ID: %s", err)
+		return
+	}
+	movie, err := app.db.GetMovie(id)
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	if err := app.db.QueueMovie(movie.ID); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte("ok"))
 }
 
 func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Request) {

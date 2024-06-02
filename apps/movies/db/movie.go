@@ -251,9 +251,17 @@ func (m *Movie) PosterURL() string {
 	return fmt.Sprintf("poster?id=%d", m.ID)
 }
 
-func (d *DB) GetMovie(id int64) (*Movie, error) {
+func (db *DB) GetMovie(id int64) (*Movie, error) {
 	var movie Movie
-	if err := d.Where(&Movie{ID: id}).First(&movie).Error; err != nil {
+	if err := db.Where(&Movie{ID: id}).First(&movie).Error; err != nil {
+		return nil, err
+	}
+	return &movie, nil
+}
+
+func (db *DB) FindMovieByName(title string) (*Movie, error) {
+	var movie Movie
+	if err := db.Where(&Movie{Title: title}).First(&movie).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 	return &movie, nil

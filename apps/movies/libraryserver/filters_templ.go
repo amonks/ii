@@ -163,6 +163,7 @@ var sortByOptions = []RadioOption{
 	{ID: "name", Name: "Name"},
 	{ID: "runtime", Name: "Runtime"},
 	{ID: "shuffle", Name: "Shuffle"},
+	{ID: "queue", Name: "Queue Order"},
 }
 
 var sortDirectionOptions = []RadioOption{
@@ -172,8 +173,9 @@ var sortDirectionOptions = []RadioOption{
 
 var showOptions = []RadioOption{
 	{ID: "all", Name: "Show All"},
-	{ID: "unwatched", Name: "Hide Watched"},
-	{ID: "watched", Name: "Hide Unwatched"},
+	{ID: "queue", Name: "Show Queue"},
+	{ID: "unwatched", Name: "Show Unwatched"},
+	{ID: "watched", Name: "Show Watched"},
 }
 
 var shuffleOptions = []RadioOption{
@@ -201,7 +203,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 92, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 94, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -214,7 +216,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 93, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -227,7 +229,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 93, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -240,7 +242,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 93, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -306,7 +308,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 122, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 124, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -319,7 +321,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 123, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 125, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -337,7 +339,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 128, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 130, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -350,7 +352,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 129, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 131, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -373,7 +375,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 136, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 138, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -386,7 +388,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(option.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 137, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 139, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
