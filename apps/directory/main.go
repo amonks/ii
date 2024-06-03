@@ -1,16 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/a-h/templ"
 	"monks.co/pkg/gzip"
-)
-
-var (
-	port = flag.Int("port", 3000, "port")
+	"monks.co/pkg/ports"
 )
 
 func main() {
@@ -20,14 +16,14 @@ func main() {
 }
 
 func run() error {
-	flag.Parse()
+	port := ports.Apps["directory"]
 
 	dir, err := LoadTable()
 	if err != nil {
 		return err
 	}
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		h := templ.Handler(IndexTempl(dir))

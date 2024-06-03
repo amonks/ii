@@ -187,7 +187,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	}
 
 	tsSrv := &tsnet.Server{
-		Hostname:  "monksgo",
+		Hostname:  "monks.co",
 		Dir:       s.service.StoragePath,
 		Ephemeral: true,
 		AuthKey:   os.Getenv("TS_AUTHKEY"),

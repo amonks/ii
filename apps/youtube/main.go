@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,11 +9,10 @@ import (
 	"github.com/a-h/templ"
 	"monks.co/apps/youtube/model"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
-
-var port = flag.Int("port", 3000, "port")
 
 func main() {
 	if err := run(); err != nil {
@@ -24,7 +22,7 @@ func main() {
 }
 
 func run() error {
-	flag.Parse()
+	port := ports.Apps["youtube"]
 
 	history, err := model.LoadHistory("histories")
 	if err != nil {
@@ -41,7 +39,7 @@ func run() error {
 
 	ctx := sigctx.New()
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}

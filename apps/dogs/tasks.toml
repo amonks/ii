@@ -1,7 +1,7 @@
 [[task]]
   id = "dev"
   type = "long"
-  cmd = "go run . -port=3018"
+  cmd = "go run ."
 
 [[task]]
   id = "build"
@@ -11,6 +11,6 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "../../bin/dogs -port=3018"
+  cmd = "../../bin/dogs"
 
 

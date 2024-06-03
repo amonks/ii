@@ -1,17 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/twilio"
 	"monks.co/pkg/util"
-)
-
-var (
-	port int
 )
 
 func main() {
@@ -21,8 +17,7 @@ func main() {
 }
 
 func run() error {
-	flag.IntVar(&port, "port", 3000, "port")
-	flag.Parse()
+	port := ports.Apps["sms"]
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

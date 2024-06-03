@@ -1,7 +1,7 @@
 [[task]]
   id = "dev"
   type = "long"
-  cmd = "go run . -port=3006"
+  cmd = "go run ."
   watch = ["**/*.go", "*.go"]
   dependencies = ["build-css"]
 
@@ -14,7 +14,7 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "$MONKS_ROOT/bin/map -port=3006"
+  cmd = "$MONKS_ROOT/bin/map"
 
 [[task]]
   id = "build-css"

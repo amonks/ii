@@ -164,7 +164,6 @@ func (db *DB) Import(archiveDir string) error {
 
 		var entry Entry
 		entry.Number = r - 1
-		log.Printf("entry %d", entry.Number)
 		var colsLoopErr error
 		row.Find("td").EachWithBreak(func(c int, col *goquery.Selection) bool {
 			switch c {

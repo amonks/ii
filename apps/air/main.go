@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log"
 
+	"monks.co/pkg/ports"
 	"monks.co/pkg/sigctx"
 )
 
 var (
-	port = flag.Int("port", 3000, "port")
 	mode = flag.String("mode", "fetch", "mode: fetch, serve")
 )
 
@@ -23,6 +23,8 @@ func main() {
 
 func run() error {
 	flag.Parse()
+
+	port := ports.Apps["air"]
 
 	db, err := NewDB()
 	if err != nil {
@@ -39,7 +41,7 @@ func run() error {
 	case "serve":
 		ctx := sigctx.New()
 
-		addr := fmt.Sprintf("127.0.0.1:%d", *port)
+		addr := fmt.Sprintf("127.0.0.1:%d", port)
 		if err := serveAir(ctx, db, addr); err != nil {
 			errs = errors.Join(errs, err)
 		}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,12 +14,9 @@ import (
 	"monks.co/apps/posts/model"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
-)
-
-var (
-	port = flag.Int("port", 3000, "port")
 )
 
 func main() {
@@ -30,7 +26,7 @@ func main() {
 }
 
 func run() error {
-	flag.Parse()
+	port := ports.Apps["homepage"]
 
 	dbPath := filepath.Join(os.Getenv("MONKS_DATA"), "movies.db")
 	db := db.New(dbPath)
@@ -62,7 +58,7 @@ func run() error {
 	})
 
 	ctx := sigctx.New()
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}

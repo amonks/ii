@@ -2,7 +2,7 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "cd $MONKS_ROOT && go run ./apps/golink -port=3007"
+  cmd = "cd $MONKS_ROOT && go run ./apps/golink"
 
 [[task]]
   id = "build"
@@ -12,5 +12,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "cd $MONKS_ROOT && ./bin/golink -port=3007"
+  cmd = "cd $MONKS_ROOT && ./bin/golink"
 

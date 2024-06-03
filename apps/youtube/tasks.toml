@@ -7,7 +7,7 @@
 [[task]]
   id = "dev"
   type = "long"
-  cmd = "go run . -port=3011"
+  cmd = "go run ."
   watch = [
     "**/*.go",
     "*.go",
@@ -28,5 +28,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "$MONKS_ROOT/bin/youtube -port=3011"
+  cmd = "$MONKS_ROOT/bin/youtube"
 

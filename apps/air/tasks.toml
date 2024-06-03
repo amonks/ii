@@ -2,7 +2,7 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "cd $MONKS_ROOT && go run ./apps/air -port=3010 -mode=serve"
+  cmd = "cd $MONKS_ROOT && go run ./apps/air -mode=serve"
 
 [[task]]
   id = "build"
@@ -12,5 +12,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "cd $MONKS_ROOT && ./bin/air -port=3010 -mode=serve"
+  cmd = "cd $MONKS_ROOT && ./bin/air -mode=serve"
 

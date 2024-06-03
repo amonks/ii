@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -18,6 +17,7 @@ import (
 	"gorm.io/gorm"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/tmdb"
 )
@@ -40,10 +40,8 @@ func New(tmdb *tmdb.Client, db *db.DB) *LibraryServer {
 	}
 }
 
-var port = flag.Int("port", 3001, "port")
-
 func (app *LibraryServer) Run(ctx context.Context) error {
-	flag.Parse()
+	port := ports.Apps["movies"]
 
 	log.Println("libraryserver started")
 	defer log.Println("libraryserver done")
@@ -59,7 +57,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("/ignore", app.serveIgnore)
 	mux.HandleFunc("/validate-metacritic", app.serveValidateMetacritic)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
 
 	errs := make(chan error)

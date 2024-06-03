@@ -8,7 +8,7 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "go run . -port=3014"
+  cmd = "go run ."
   dependencies = ["templ"]
 
 [[task]]
@@ -20,5 +20,5 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "../../bin/directory -port=3014"
+  cmd = "../../bin/directory"
 
