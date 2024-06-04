@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"time"
 
-	"monks.co/pkg/database"
 	"monks.co/pkg/twilio"
 )
 
-func fetch(db *database.DB) error {
+func fetch(db *DB) error {
 	next, err := getDeviceParameters("60:8A:10:B5:58:A0")
 	if err != nil {
 		return err
@@ -21,19 +22,15 @@ func fetch(db *database.DB) error {
 	}
 	next.ModiCategory = modiCategory
 
-	var last Parameters
-	if err := db.
-		Table("parameters").
-		Order("created_at desc").
-		First(&last).
-		Error; err != nil {
+	last, err := db.Last()
+	if err != nil {
 		return err
 	}
 	if last.WaterLevel == 3 && next.WaterLevel == 1 {
 		twilio.SMSMe("alert: low water in air purifier")
 	}
-	if err := db.Create(next).Error; err != nil {
-		return err
+	if err := db.Insert(next); err != nil {
+		return fmt.Errorf("error inserting fetched parameters: %w", err)
 	}
 
 	return nil
@@ -112,6 +109,8 @@ func getDeviceParameters(deviceMAC string) (*Parameters, error) {
 		return nil, err
 	}
 	return &Parameters{
+		CreatedAt: time.Now(),
+
 		DeviceType: parameters.Header.DeviceType,
 		MacAddress: parameters.Header.MacAdress,
 		Error:      parameters.Header.Error,

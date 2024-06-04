@@ -16,7 +16,7 @@
 {{ .JSON }}
 
 container = document.getElementById("graphs")
-function graph(id, getField) {
+function graph(id, data) {
   const h1 = document.createElement("h1");
   h1.innerText = id;
   container.appendChild(h1);
@@ -28,14 +28,26 @@ function graph(id, getField) {
   new Chart(document.getElementById(id), {
       type: 'line',
       data: {
-          datasets: [{
-              data: data.map(d => ({x: d.CreatedAt, y: getField(d)}))
-          }],
+          datasets: [
+              {
+                  label: "max",
+                  data: data.map(d => ({x: d.WindowStartAt, y: d.Max})),
+                  fill: 2,
+                  below: "rgb(255,0,0)",
+              }, {
+                  label: "mean",
+                  data: data.map(d => ({x: d.WindowStartAt, y: d.Mean})),
+              }, {
+                  label: "min",
+                  data: data.map(d => ({x: d.WindowStartAt, y: d.Min})),
+              }
+          ],
       },
       options: {
+          animation: false,
           borderWidth: 1,
           pointRadius: 1,
-          showLine: false,
+          showLine: true,
           plugins: {
               legend: false
           },
@@ -49,36 +61,9 @@ function graph(id, getField) {
   });
 }
 
-graph("dust", d => d.Dust);
-graph("temperature", d => d.Temperature);
-graph("humidity", d => d.Humidity);
-
-graph("fanSpeed", d => d.FanRPM);
-graph("waterLevel", d => d.WaterLevel);
-
-graph("relState0", d => d.RelState0);
-graph("relState1", d => d.RelState1);
-graph("relState2", d => d.RelState2);
-graph("relState3", d => d.RelState3);
-
-graph("cleanMode", d => d.CleanMode ? 1 : 0);
-
-graph("modiCategory", d => {
-    switch (d.ModiCategory) {
-        case "Turbo":
-            return 3;
-        case "Summer":
-            return 2;
-        case "Relax":
-            return 1;
-        case "":
-            return 0;
-        default:
-            return -1;
-    }
-});
-
-function spy(x) { console.log("spy", x); return x }
+graph("dust", data.Dust);
+graph("temperature", data.Temperature);
+graph("humidity", data.Humidity);
 </script>
 </body>
 </html>

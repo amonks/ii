@@ -38,6 +38,11 @@ func run() error {
 			errs = errors.Join(errs, err)
 		}
 
+	case "aggregates":
+		if err := db.calculateAggregates(); err != nil {
+			errs = errors.Join(errs, err)
+		}
+
 	case "serve":
 		ctx := sigctx.New()
 

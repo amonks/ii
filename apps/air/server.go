@@ -4,13 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 
-	"monks.co/pkg/database"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
 )
@@ -21,11 +20,13 @@ var (
 )
 
 type Data struct {
-	parameters []Parameters
+	Dust        []Aggregate
+	Temperature []Aggregate
+	Humidity    []Aggregate
 }
 
 func (d *Data) JSON() (template.JS, error) {
-	bs, err := json.Marshal(d.parameters)
+	bs, err := json.Marshal(d)
 	if err != nil {
 		return "", err
 	}
@@ -33,7 +34,7 @@ func (d *Data) JSON() (template.JS, error) {
 	return template.JS("window.data = " + string(bs) + ";"), nil
 }
 
-func serveAir(ctx context.Context, db *database.DB, addr string) error {
+func serveAir(ctx context.Context, db *DB, addr string) error {
 	tmpl := template.New("movies")
 	tmpl, err := tmpl.Parse(tmplSrc)
 	if err != nil {
@@ -42,20 +43,42 @@ func serveAir(ctx context.Context, db *database.DB, addr string) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		cond := "created_at > date('now', '-3 day')"
+		days := int64(3)
 		if q := req.URL.Query().Get("days"); q != "" {
 			if i, err := strconv.ParseInt(q, 10, 64); err == nil {
-				cond = fmt.Sprintf("created_at > date('now', '-%d day')", i)
+				days = i
 			}
 		}
 
-		var ps []Parameters
-		if tx := db.Find(&ps, cond); tx.Error != nil {
+		var errs error
+
+		dust, err := db.Aggregate(AggregateIDDust, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+
+		temperature, err := db.Aggregate(AggregateIDTemperature, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+
+		humidity, err := db.Aggregate(AggregateIDHumidity, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+
+		if errs != nil {
+			log.Println(errs)
 			w.WriteHeader(500)
+			w.Write([]byte(errs.Error()))
 			return
 		}
 
-		if err := tmpl.Execute(w, &Data{ps}); err != nil {
+		if err := tmpl.Execute(w, &Data{
+			Dust:        dust,
+			Temperature: temperature,
+			Humidity:    humidity,
+		}); err != nil {
 			log.Println(err)
 		}
 	})
