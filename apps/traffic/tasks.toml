@@ -5,7 +5,7 @@
     "**/*.go", "*.go",
     "**/*.gohtml", "*.gohtml",
   ]
-  cmd = "go run . -port=3008"
+  cmd = "go run ."
   dependencies = ["build-css"]
 
 [[task]]
@@ -17,7 +17,7 @@
 [[task]]
   id = "start"
   type = "long"
-  cmd = "$MONKS_ROOT/bin/traffic -port=3008"
+  cmd = "$MONKS_ROOT/bin/traffic"
 
 [[task]]
   id = "build-css"

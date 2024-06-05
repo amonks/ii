@@ -1,8 +1,11 @@
 package db
 
 import (
-	"log"
+	"errors"
+	"fmt"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"monks.co/pkg/letterboxd"
 )
 
@@ -18,45 +21,85 @@ func (wl WatchHistory) LastWatch(title string) *Watch {
 
 type Watch = letterboxd.Watch
 
+// virtual fts4 table
+type WatchTitle struct {
+	LetterboxdURL string // references watches.letterboxd_url
+	Title         string // references watches.movie_title
+}
+
+// join
+type MovieWatch struct {
+	ID            int64  // references movies.id
+	LetterboxdURL string // references watches.letterboxd_url
+}
+
 func (db *DB) CreateWatch(entry *letterboxd.Watch) (*Watch, error) {
 	watch := entry
 	if err := db.Create(watch).Error; err != nil {
 		return nil, err
 	}
+	if err := db.Create(&WatchTitle{LetterboxdURL: watch.LetterboxdURL, Title: watch.MovieTitle}).Error; err != nil {
+		return nil, err
+	}
+	if movie, err := db.FindMovieByTitle(watch.MovieTitle); err != nil {
+		return nil, err
+	} else if movie != nil {
+		if err := db.Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
+			return nil, err
+		}
+	}
 	return watch, nil
 }
 
-func (db *DB) AllWatches() ([]*Watch, error) {
-	watches := []*Watch{}
-	if err := db.Table("watches").
-		Order("date desc").
-		Find(&watches).
-		Error; err != nil {
+func (db *DB) Watches(movieID int64) ([]Watch, error) {
+	movieWatches := []MovieWatch{}
+	if err := db.Where(&MovieWatch{ID: movieID}).Find(&movieWatches).Error; err != nil {
 		return nil, err
 	}
-	log.Printf("fetch %d watches", len(watches))
+	var watches []Watch
+	for _, mw := range movieWatches {
+		watch := &Watch{}
+		if err := db.Where(&Watch{LetterboxdURL: mw.LetterboxdURL}).Find(watch).Error; err != nil {
+			return nil, err
+		}
+		watches = append(watches, *watch)
+	}
 	return watches, nil
 }
 
-func (db *DB) AllWatchesMap() (WatchHistory, error) {
-	watches, err := db.AllWatches()
-	if err != nil {
+func (db *DB) FindWatchByTitle(title string) (*Watch, error) {
+	sanitized := nonAlpha.ReplaceAllString(title, " ")
+	var watchTitle WatchTitle
+	if err := db.Where("title match ?", sanitized).First(&watchTitle).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
-
-	m := map[string][]*Watch{}
-	for _, w := range watches {
-		key := w.MovieTitle
-		existings, has := m[key]
-		if !has {
-			m[key] = []*Watch{w}
-			continue
-		}
-		if existings[len(existings)-1].Date.After(w.Date) {
-			continue
-		}
-		m[key] = append(existings, w)
+	var watch Watch
+	if err := db.Where(&Watch{LetterboxdURL: watchTitle.LetterboxdURL}).First(&watch).Error; err != nil {
+		return nil, err
 	}
+	return &watch, nil
+}
 
-	return m, nil
+func (db *DB) PopulateMovieWatches() error {
+	watches := []*Watch{}
+	if err := db.Table("watches").Find(&watches).Error; err != nil {
+		return fmt.Errorf("err finding watch: %w", err)
+	}
+	for _, watch := range watches {
+		if movie, err := db.FindMovieByTitle(watch.MovieTitle); err != nil {
+			return fmt.Errorf("err finding movie: %w", err)
+		} else if movie != nil {
+			if err := db.Clauses(clause.OnConflict{DoNothing: true}).
+				Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).
+				Error; err != nil {
+				return fmt.Errorf("err creating moviewatch: %w", err)
+			}
+		} else {
+			fmt.Println("no matching movie for ", watch.MovieTitle)
+		}
+	}
+	return nil
 }

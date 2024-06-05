@@ -12,7 +12,7 @@ import (
 )
 
 type Movie struct {
-	ID int64 `gorm:"column:id;primaryKey"`
+	ID int64 `gorm:"primaryKey"`
 
 	Title         string
 	OriginalTitle string
@@ -39,6 +39,14 @@ type Movie struct {
 	MetacriticRating    int
 	MetacriticURL       string
 	MetacriticValidated bool
+
+	Watches []Watch `gorm:"-:all"`
+}
+
+// virtual fts4 table
+type MovieTitle struct {
+	ID    int64  // references movies.id
+	Title string // references movies.title
 }
 
 func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error) {
@@ -74,6 +82,16 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 
 	if err := db.Create(&movie).Error; err != nil {
 		return nil, err
+	}
+	if err := db.Create(&MovieTitle{ID: movie.ID, Title: movie.Title}).Error; err != nil {
+		return nil, err
+	}
+	if watch, err := db.FindWatchByTitle(movie.Title); err != nil {
+		return nil, err
+	} else if watch != nil {
+		if err := db.Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	db.notify(&movie)
@@ -191,7 +209,7 @@ func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
 	return nil
 }
 
-func (d *DB) ReplaceMovie(movie *Movie, path string) error {
+func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
 		Updates(map[string]string{
@@ -235,10 +253,17 @@ func (d *DB) PendingMetacriticValidations() ([]*Movie, error) {
 	return movies, nil
 }
 
-func (d *DB) AllMovies() ([]*Movie, error) {
+func (db *DB) AllMovies() ([]*Movie, error) {
 	movies := []*Movie{}
-	if err := d.Table("movies").Find(&movies).Error; err != nil {
+	if err := db.Find(&movies).Error; err != nil {
 		return nil, err
+	}
+	for _, movie := range movies {
+		watches, err := db.Watches(movie.ID)
+		if err != nil {
+			return nil, err
+		}
+		movie.Watches = watches
 	}
 	return movies, nil
 }
@@ -253,16 +278,30 @@ func (m *Movie) PosterURL() string {
 
 func (db *DB) GetMovie(id int64) (*Movie, error) {
 	var movie Movie
-	if err := db.Where(&Movie{ID: id}).First(&movie).Error; err != nil {
+	if err := db.
+		Where(&Movie{ID: id}).
+		First(&movie).
+		Error; err != nil {
+		return nil, fmt.Errorf("error getting momvie: %w", err)
+	}
+	watches, err := db.Watches(movie.ID)
+	if err != nil {
 		return nil, err
 	}
+	movie.Watches = watches
 	return &movie, nil
 }
 
-func (db *DB) FindMovieByName(title string) (*Movie, error) {
-	var movie Movie
-	if err := db.Where(&Movie{Title: title}).First(&movie).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+var nonAlpha = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+
+func (db *DB) FindMovieByTitle(title string) (*Movie, error) {
+	sanitized := nonAlpha.ReplaceAllString(title, " ")
+	var movieTitle MovieTitle
+	if err := db.Where("title match ?", sanitized).First(&movieTitle).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return &movie, nil
+	return db.GetMovie(movieTitle.ID)
 }

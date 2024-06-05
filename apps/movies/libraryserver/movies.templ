@@ -8,7 +8,6 @@ import (
 )
 
 type MoviesPageData struct {
-	Watches       db.WatchHistory
 	Stubs         []*db.Stub
 	Movies        []*db.Movie
 	Genres        []Genre
@@ -30,7 +29,7 @@ templ Movies(data *MoviesPageData) {
 			<div class="col-span-6 sm:col-span-4 md:col-span-5">
 				<ul role="list" class="movies grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
 					for _, movie := range data.Movies {
-						@Movie(movie, data.Watches.LastWatch(movie.Title))
+						@Movie(movie)
 					}
 				</ul>
 			</div>
@@ -53,7 +52,7 @@ templ Movies(data *MoviesPageData) {
 	}
 }
 
-templ Movie(movie *db.Movie, watch *db.Watch) {
+templ Movie(movie *db.Movie) {
 	<li
  		class="movie"
  		data-id={ fmt.Sprintf("%d", movie.ID) }
@@ -76,13 +75,13 @@ templ Movie(movie *db.Movie, watch *db.Watch) {
 				Dir { movie.DirectorName }
 			</p>
 		}
-		if watch == nil {
+		if len(movie.Watches) == 0 {
 			<p data-role="unwatched" class="block text-sm font-medium text-gray-900">
 				Never logged.
 			</p>
 		} else {
 			<p data-role="watch-date" class="block text-sm font-medium text-gray-900">
-				Last logged on { watch.Date.Format("2006-01-02") }
+				Last logged on { movie.Watches[0].Date.Format("2006-01-02") }
 			</p>
 		}
 		<p data-role="tagline" class="italic block text-sm font-medium text-gray-500">
@@ -91,10 +90,10 @@ templ Movie(movie *db.Movie, watch *db.Watch) {
 		<p data-role="release-date" class="block text-sm font-medium text-gray-500">
 			{ movie.ReleaseDate }
 		</p>
-		if watch != nil {
-			if watch.Rating != 0 {
+		if len(movie.Watches) != 0 {
+			if movie.Watches[0].Rating != 0 {
 				<p data-role="my-rating" class="block text-sm font-medium text-gray-500">
-					<a href={ templ.SafeURL(watch.LetterboxdURL) }>{ fmt.Sprintf("My Rating: %.1f", float32(watch.Rating) / 2.0) }</a>
+					<a href={ templ.SafeURL(movie.Watches[0].LetterboxdURL) }>{ fmt.Sprintf("My Rating: %.1f", float32(movie.Watches[0].Rating) / 2.0) }</a>
 				</p>
 			}
 		}

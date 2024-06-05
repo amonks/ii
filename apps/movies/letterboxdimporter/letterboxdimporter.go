@@ -30,12 +30,15 @@ func (li *LetterboxdImporter) Run() error {
 			}
 			return err
 		}
-		if movie, err := li.db.FindMovieByName(entry.MovieTitle); err != nil {
+		if movie, err := li.db.FindMovieByTitle(entry.MovieTitle); err != nil {
 			return err
 		} else if movie != nil {
+			log.Printf("removing '%s' from queue", entry.MovieTitle)
 			if err := li.db.RemoveFromQueue(movie.ID); err != nil {
 				return err
 			}
+		} else {
+			log.Printf("could not find movie '%s' for queue removal", entry.MovieTitle)
 		}
 		return nil
 	})

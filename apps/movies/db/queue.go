@@ -13,7 +13,7 @@ func (queue *Queue) Get(id int64) *QueuedMovie {
 }
 
 type QueuedMovie struct {
-	ID       int64 `gorm:"column:privateKey"`
+	ID       int64 `gorm:"primaryKey"`
 	QueuedAt string
 }
 
@@ -22,7 +22,7 @@ func (qm *QueuedMovie) Less(other *QueuedMovie) bool {
 }
 
 func (db *DB) RemoveFromQueue(id int64) error {
-	if err := db.Create(&QueuedMovie{ID: id, QueuedAt: time.Now().Format(time.DateTime)}).Error; err != nil {
+	if err := db.Delete(&QueuedMovie{ID: id}).Error; err != nil {
 		return err
 	}
 	return nil
