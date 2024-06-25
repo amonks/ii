@@ -531,7 +531,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 		if movie != nil {
 			// movie already exists; replace
 			if err := tx.ReplaceMovieFile(movie, path); err != nil {
-				return fmt.Errorf("error replacing movie: %w (tmdb id %d)", err, tmdbMovie.ID)
+				return fmt.Errorf("error replacing movie file '%s': %w (tmdb id %d) (movie id %d)", path, err, tmdbMovie.ID, movie.ID)
 			}
 		} else {
 			// new movie; create
@@ -562,16 +562,9 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 	}
 
 	req.ParseForm()
-
 	idStr := req.FormValue("Movie ID")
+
 	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		serve.InternalServerError(w, req, err)
-		return
-	}
-	url := req.FormValue("Metacritic URL")
-	ratingStr := req.FormValue("Rating")
-	rating, err := strconv.ParseInt(ratingStr, 10, 64)
 	if err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -580,6 +573,25 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 	movie, err := app.db.GetMovie(id)
 	if err != nil {
 		serve.Errorf(w, req, http.StatusNotFound, "no such movie: %s", err)
+		return
+	}
+
+	url := req.FormValue("Metacritic URL")
+	ratingStr := req.FormValue("Rating")
+
+	if url == "" && url == "" {
+		if err := app.db.ValidateMovieMetacriticData(movie, "", 0); err != nil {
+			serve.Errorf(w, req, http.StatusInternalServerError, "error: %s", err)
+			return
+		} else {
+			app.serveImport(w, req)
+			return
+		}
+	}
+
+	rating, err := strconv.ParseInt(ratingStr, 10, 64)
+	if err != nil {
+		serve.InternalServerError(w, req, err)
 		return
 	}
 

@@ -75,6 +75,7 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 
 		Extension:        filepath.Ext(importedFromPath),
 		ImportedFromPath: importedFromPath,
+		ImportedAt:       time.Now().Format(time.DateTime),
 
 		TMDBJSON: m.TMDBJSON,
 	}
@@ -212,7 +213,7 @@ func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
 func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Updates(map[string]string{
+		Updates(map[string]interface{}{
 			"imported_at":        "",
 			"imported_from_path": path,
 		}).
