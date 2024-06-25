@@ -33,6 +33,8 @@ func fetch(db *DB) error {
 		return fmt.Errorf("error inserting fetched parameters: %w", err)
 	}
 
+	fmt.Printf("temp: %f, humid: %f\n", next.Temperature, next.Humidity)
+
 	return nil
 }
 
