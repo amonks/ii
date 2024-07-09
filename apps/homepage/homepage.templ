@@ -193,14 +193,16 @@ templ Homepage(data *PageData) {
 				<label id="currently">currently,</label>
 				<section aria-labelledby="currently">
 					<p>I develop ice cream recipes and noodle on database software. I’m also helping out a bit at <a href="https://www.resinrecyclables.com">Resin Recyclables</a>.</p>
-					<dl class="p-note prose-definition-list">
-						<dt>I watch movies most days. Recently,</dt>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }><span class="mono">{ stars(data.Watches[0].Rating) }</span> { data.Watches[0].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }><span class="mono">{ stars(data.Watches[1].Rating) }</span> { data.Watches[1].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }><span class="mono">{ stars(data.Watches[2].Rating) }</span> { data.Watches[2].MovieTitle }</a>,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }><span class="mono">{ stars(data.Watches[3].Rating) }</span> { data.Watches[3].MovieTitle }</a>, and,</dd>
-						<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }><span class="mono">{ stars(data.Watches[4].Rating) }</span> { data.Watches[4].MovieTitle }</a>.</dd>
-					</dl>
+					if data.Watches != nil {
+						<dl class="p-note prose-definition-list">
+							<dt>I watch movies most days. Recently,</dt>
+							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[0].LetterboxdURL) }><span class="mono">{ stars(data.Watches[0].Rating) }</span> { data.Watches[0].MovieTitle }</a>,</dd>
+							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[1].LetterboxdURL) }><span class="mono">{ stars(data.Watches[1].Rating) }</span> { data.Watches[1].MovieTitle }</a>,</dd>
+							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[2].LetterboxdURL) }><span class="mono">{ stars(data.Watches[2].Rating) }</span> { data.Watches[2].MovieTitle }</a>,</dd>
+							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[3].LetterboxdURL) }><span class="mono">{ stars(data.Watches[3].Rating) }</span> { data.Watches[3].MovieTitle }</a>, and,</dd>
+							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }><span class="mono">{ stars(data.Watches[4].Rating) }</span> { data.Watches[4].MovieTitle }</a>.</dd>
+						</dl>
+					}
 					<p>
 						I love exploring. I made a <a href="/map">nice map</a> of places I
 						have opinions about. It doesn't say what the opinions are, so

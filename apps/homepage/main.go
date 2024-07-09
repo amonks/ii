@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
-	"time"
 
 	"github.com/a-h/templ"
 	"monks.co/apps/movies/db"
@@ -40,19 +38,21 @@ func run() error {
 		return err
 	}
 
-	watchlog := periodically(time.Hour, lastFiveWatches)
-	defer watchlog.stop()
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		v, err := watchlog.get()
+		diary, err := letterboxd.FetchDiary()
 		if err != nil {
-			serve.InternalServerError(w, req, err)
+			log.Printf("letterboxd diary error: %s\n", err)
+			h := templ.Handler(Homepage(&PageData{
+				Posts:   posts,
+				Watches: nil,
+			}))
+			h.ServeHTTP(w, req)
 			return
 		}
 		h := templ.Handler(Homepage(&PageData{
 			Posts:   posts,
-			Watches: v,
+			Watches: diary,
 		}))
 		h.ServeHTTP(w, req)
 	})
@@ -68,66 +68,11 @@ func run() error {
 
 func lastFiveWatches() ([]*letterboxd.Watch, error) {
 	var watches []*letterboxd.Watch
-	if err := letterboxd.FetchDiary("amonks", 1, 1, func(entry *letterboxd.Watch) error {
-		watches = append(watches, entry)
-		return nil
-	}); err != nil {
-		return nil, err
+	watches, err := letterboxd.FetchDiary()
+	if err != nil {
+		return nil, fmt.Errorf("error fetching last 5 watches: %w", err)
 	}
 	return watches, nil
 }
 
-type periodic[T any] struct {
-	stopped bool
-	mu      sync.Mutex
-
-	v   T
-	err error
-}
-
 var errUnset = fmt.Errorf("unset")
-
-func periodically[T any](dur time.Duration, f func() (T, error)) *periodic[T] {
-	val, err := f()
-	p := &periodic[T]{
-		err: err,
-		v:   val,
-	}
-	go func() {
-		for {
-			time.Sleep(dur)
-
-			log.Println("reload")
-			if p.isStopped() {
-				return
-			}
-			val, err := f()
-			p.set(val, err)
-		}
-	}()
-	return p
-}
-
-func (p *periodic[T]) isStopped() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.stopped
-}
-
-func (p *periodic[T]) stop() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.stopped = true
-}
-
-func (p *periodic[T]) get() (T, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.v, p.err
-}
-
-func (p *periodic[T]) set(v T, err error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.v, p.err = v, err
-}

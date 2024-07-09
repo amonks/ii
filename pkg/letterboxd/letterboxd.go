@@ -7,14 +7,20 @@
 package letterboxd
 
 import (
+	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"monks.co/pkg/flock"
 )
 
 type Watch struct {
@@ -29,95 +35,156 @@ type Watch struct {
 	IsRewatch          bool
 }
 
-func FetchDiary(username string, pageno, pagelimit int, cb func(*Watch) error) error {
-	var findErr error
-	for {
-		if findErr != nil {
-			return findErr
-		}
+var (
+	diaryCacheFile       = filepath.Join(os.Getenv("MONKS_DATA"), "letterboxd-diary.gob")
+	diaryLockFile        = filepath.Join(os.Getenv("MONKS_DATA"), "letterboxd-diary.lock")
+	diaryCacheExpiration = time.Hour * 6
+)
 
-		if pageno > pagelimit {
-			break
-		}
+func init() {
+	mustHaveFile(diaryCacheFile)
+	mustHaveFile(diaryLockFile)
+}
 
-		url := fmt.Sprintf("https://letterboxd.com/%s/films/diary/page/%d/", username, pageno)
-		fmt.Println("fetch ", url)
-		doc, err := fetch(url)
+func mustHaveFile(filename string) {
+	if _, err := os.Stat(filename); err != nil && !errors.Is(err, os.ErrNotExist) {
+		panic(err)
+	} else if err != nil {
+		f, err := os.Create(diaryCacheFile)
 		if err != nil {
-			return err
+			panic(err)
+		}
+		f.Close()
+	}
+}
+
+type diaryResult struct {
+	Diary []*Watch
+	Err   string
+}
+
+func FetchDiary() ([]*Watch, error) {
+	lock, err := flock.Lock(diaryLockFile)
+	if err != nil {
+		return nil, err
+	}
+	defer lock.Unlock()
+
+	if fileinfo, err := os.Stat(diaryCacheFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	} else if err == nil && fileinfo.ModTime().After(time.Now().Add(-diaryCacheExpiration)) && fileinfo.Size() > 0 {
+		log.Printf("using letterboxd diary from cache")
+		cachefile, err := os.Open(diaryCacheFile)
+		if err != nil {
+			return nil, err
+		}
+		dec := gob.NewDecoder(cachefile)
+		var cached diaryResult
+		if err := dec.Decode(&cached); err != nil {
+			return nil, err
+		}
+		if cached.Err != "" {
+			return nil, errors.New(cached.Err)
+		}
+		return cached.Diary, nil
+	} else {
+		log.Printf("fetching letterboxd diary")
+		diary, err := fetchDiary()
+		var result diaryResult
+		if err != nil {
+			result = diaryResult{Err: err.Error()}
+		} else {
+			result = diaryResult{Diary: diary}
+		}
+		cache, err := os.OpenFile(diaryCacheFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+		if err != nil {
+			return nil, err
+		}
+		enc := gob.NewEncoder(cache)
+		if err := enc.Encode(result); err != nil {
+			return nil, err
 		}
 
-		if doc.Find("tr.diary-entry-row").Each(func(_ int, result *goquery.Selection) {
-			if findErr != nil {
-				return
-			}
-
-			row := &diaryRow{result, username}
-
-			date, err := row.Date()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			review, err := row.Review()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			movieReleaseYear, err := row.MovieReleaseYear()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			rating, err := row.Rating()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			letterboxdURL, err := row.LetterboxdURL()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			movieLetterboxdURL, err := row.MovieLetterboxdURL()
-			if err != nil {
-				findErr = err
-				return
-			}
-
-			if err := cb(&Watch{
-				Date:          date,
-				Review:        review,
-				Rating:        rating,
-				LetterboxdURL: letterboxdURL,
-				IsLiked:       row.IsLiked(),
-				IsRewatch:     row.IsRewatch(),
-
-				MovieTitle:         row.MovieTitle(),
-				MovieReleaseYear:   movieReleaseYear,
-				MovieLetterboxdURL: movieLetterboxdURL,
-			}); err != nil {
-				findErr = err
-				return
-			}
-		}); findErr != nil {
-			return findErr
+		if result.Err != "" {
+			return nil, errors.New(result.Err)
+		} else {
+			return result.Diary, nil
 		}
+	}
+}
 
-		hasNextPage := doc.Find(".pagination .paginate-nextprev > a.next").Length() != 0
-		if !hasNextPage {
-			break
-		}
+func fetchDiary() ([]*Watch, error) {
+	const username = "amonks"
+	const pageno = 1
 
-		pageno++
+	url := fmt.Sprintf("https://letterboxd.com/%s/films/diary/page/%d/", username, pageno)
+	fmt.Println("fetch ", url)
+	doc, err := fetch(url)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	var diary []*Watch
+	var findErr error
+	if doc.Find("tr.diary-entry-row").Each(func(_ int, result *goquery.Selection) {
+		if findErr != nil {
+			return
+		}
+
+		row := &diaryRow{result, username}
+
+		date, err := row.Date()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		review, err := row.Review()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		movieReleaseYear, err := row.MovieReleaseYear()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		rating, err := row.Rating()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		letterboxdURL, err := row.LetterboxdURL()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		movieLetterboxdURL, err := row.MovieLetterboxdURL()
+		if err != nil {
+			findErr = err
+			return
+		}
+
+		diary = append(diary, &Watch{
+			Date:          date,
+			Review:        review,
+			Rating:        rating,
+			LetterboxdURL: letterboxdURL,
+			IsLiked:       row.IsLiked(),
+			IsRewatch:     row.IsRewatch(),
+
+			MovieTitle:         row.MovieTitle(),
+			MovieReleaseYear:   movieReleaseYear,
+			MovieLetterboxdURL: movieLetterboxdURL,
+		})
+	}); findErr != nil {
+		return nil, findErr
+	}
+	return diary, nil
 }
 
 type diaryRow struct {
@@ -207,7 +274,12 @@ func (s *diaryRow) MovieLetterboxdURL() (string, error) {
 }
 
 func fetch(url string) (*goquery.Document, error) {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36`)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,11 @@ var ErrDuplicate = fmt.Errorf("duplicate")
 
 func (li *LetterboxdImporter) Run() error {
 	log.Println("letterboxdimporter started")
-	err := letterboxd.FetchDiary("amonks", 1, 10, func(entry *letterboxd.Watch) error {
+	watches, err := letterboxd.FetchDiary()
+	if err != nil {
+		return err
+	}
+	for _, entry := range watches {
 		fmt.Println("adding", entry.MovieTitle)
 		if _, err := li.db.CreateWatch(entry); err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed: watches.letterboxd_url") {
@@ -41,7 +45,7 @@ func (li *LetterboxdImporter) Run() error {
 			log.Printf("could not find movie '%s' for queue removal", entry.MovieTitle)
 		}
 		return nil
-	})
+	}
 	if err != nil && !errors.Is(err, ErrDuplicate) {
 		return err
 	}
