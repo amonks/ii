@@ -58,6 +58,14 @@ resource "aws_route53_record" "ss-cx-A" {
   records = ["66.51.122.238"]
 }
 
+resource "aws_route53_record" "shemihazah-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "shemihazah.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.85.64.69"]
+}
+
 resource "aws_route53_record" "qaynan-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "qaynan.ss.cx."
