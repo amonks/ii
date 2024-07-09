@@ -1,6 +1,7 @@
 package db
 
 import (
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,11 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+)
+
+var (
+	//go:embed schema.sql
+	schema string
 )
 
 var ErrCollision = fmt.Errorf("collision")
@@ -122,6 +128,10 @@ func (db *DB) Start() error {
 	}
 
 	db.DB = gormdb
+
+	if err := gormdb.Exec(schema).Error; err != nil {
+		return fmt.Errorf("error migrating: %w", err)
+	}
 
 	if err := db.PopulateMovieWatches(); err != nil {
 		return err

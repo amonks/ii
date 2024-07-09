@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/a-h/templ v0.2.697
+	github.com/andybalholm/brotli v1.1.0
 	github.com/caddyserver/certmagic v0.21.2
 	github.com/evanw/esbuild v0.21.4
 	github.com/libdns/route53 v1.3.3
@@ -15,6 +16,7 @@ require (
 	github.com/twilio/twilio-go v1.21.0
 	github.com/yuin/goldmark v1.7.1
 	go.abhg.dev/goldmark/frontmatter v0.2.0
+	golang.org/x/sys v0.20.0
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.10
 	tailscale.com v1.52.1
@@ -26,7 +28,6 @@ require (
 	github.com/a-h/protocol v0.0.0-20230224160810-b4eec67c1c22 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230321174746-8dcc6526cfb1 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.27.0 // indirect
@@ -141,7 +142,6 @@ require (
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
