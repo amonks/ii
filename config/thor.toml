@@ -12,7 +12,8 @@ mode = "dev"
     "traffic",
     "movies",
     "reddit",
-    "dogs"
+    "dogs",
+    "monitor"
   ]
 
 [acme]
