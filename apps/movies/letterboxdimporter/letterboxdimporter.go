@@ -1,7 +1,6 @@
 package letterboxdimporter
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -30,7 +29,8 @@ func (li *LetterboxdImporter) Run() error {
 		fmt.Println("adding", entry.MovieTitle)
 		if _, err := li.db.CreateWatch(entry); err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed: watches.letterboxd_url") {
-				return ErrDuplicate
+				// done
+				break
 			}
 			return err
 		}
@@ -45,9 +45,6 @@ func (li *LetterboxdImporter) Run() error {
 			log.Printf("could not find movie '%s' for queue removal", entry.MovieTitle)
 		}
 		return nil
-	}
-	if err != nil && !errors.Is(err, ErrDuplicate) {
-		return err
 	}
 	log.Println("letterboxdimporter done")
 	return nil

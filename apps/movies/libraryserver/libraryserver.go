@@ -535,7 +535,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 			}
 		} else {
 			// new movie; create
-			fmt.Println("create", movie)
+			log.Println("create", movie)
 			if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
 				return fmt.Errorf("error creating movie: %w", err)
 			}
@@ -595,8 +595,6 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 		return
 	}
 
-	fmt.Println(movie.Title, url, id, rating)
-
 	if err := app.db.Transaction(func(tx *db.DB) error {
 		if err := tx.ValidateMovieMetacriticData(movie, url, int(rating)); err != nil {
 			return err
@@ -609,8 +607,6 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 		serve.InternalServerError(w, req, err)
 		return
 	}
-
-	fmt.Println("written", movie.ID)
 
 	app.serveImport(w, req)
 }
