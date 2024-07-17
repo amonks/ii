@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,13 +16,30 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	if err := run(); err != nil && !errors.Is(err, context.Canceled) {
 		panic(err)
 	}
 }
 
 var reporter = monitor.Reporter{
-	"2cf481a128": monitor.NewHTTPMonitor("https://monks.co", monitor.WithRegexpCheck()),
+	"7135661159": monitor.NewHTTPMonitor("https://belgianman.com", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
+	"cf01c434ed": monitor.NewHTTPMonitor("https://blgn.mn", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
+
+	"cf89105615": monitor.NewHTTPMonitor("https://andrewmonks.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"927132497c": monitor.NewHTTPMonitor("https://andrewmonks.net", monitor.WithRedirectCheck("https://monks.co/")),
+	"10e94a97f5": monitor.NewHTTPMonitor("https://andrewmonks.org", monitor.WithRedirectCheck("https://monks.co/")),
+	"230cd6a1c7": monitor.NewHTTPMonitor("https://docrimes.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"2e2a54d014": monitor.NewHTTPMonitor("https://fmail.email", monitor.WithRedirectCheck("https://monks.co/")),
+	"a24120b740": monitor.NewHTTPMonitor("https://needsyourhelp.org", monitor.WithRedirectCheck("https://monks.co/")),
+	"1e4c151574": monitor.NewHTTPMonitor("https://popefucker.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"e34a530a1c": monitor.NewHTTPMonitor("https://ss.cx", monitor.WithRedirectCheck("https://monks.co/")),
+
+	"2cf481a128": monitor.NewHTTPMonitor("https://monks.co", monitor.WithBodyCheck(
+		monitor.LiteralCheck(`I watch movies most days.`),
+	)),
+	"3927514be4": monitor.NewHTTPMonitor("https://piano.computer", monitor.WithBodyCheck(
+		monitor.LiteralCheck(`6 pianists`),
+	)),
 }
 
 func run() error {
@@ -28,7 +47,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		w.Write([]byte("ok"))
+		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", 301)
 	})
 
 	ctx, cancel := sigctx.NewWithCancel()
@@ -53,4 +72,3 @@ func run() error {
 
 	return wg.Wait()
 }
-

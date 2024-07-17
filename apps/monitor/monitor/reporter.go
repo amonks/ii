@@ -12,7 +12,7 @@ type Reporter map[string]Monitor
 
 func (rep Reporter) Run(ctx context.Context, dur time.Duration) error {
 	if err := rep.Report(); err != nil {
-		return err
+		return fmt.Errorf("monitor reporting error: %w", err)
 	}
 	tick := time.NewTicker(dur)
 	for {
@@ -21,23 +21,24 @@ func (rep Reporter) Run(ctx context.Context, dur time.Duration) error {
 			return nil
 		case <-tick.C:
 			if err := rep.Report(); err != nil {
-				return err
+				return fmt.Errorf("monitor reporting error: %w", err)
 			}
 		}
 	}
 }
 
 func (rep Reporter) Report() error {
+	start := time.Now()
 	for snitch, mon := range rep {
 		if err := mon.Check(); err == nil {
-			log.Printf("success: '%s'", snitch)
 			if err := rep.snitch(snitch); err != nil {
-				return fmt.Errorf("error snitching to '%s': %w", snitch, err)
+				return fmt.Errorf("error snitching on %s to '%s': %w", mon.Name(), snitch, err)
 			}
 		} else {
-			log.Printf("fail: '%s': %s", snitch, err)
+			log.Printf("%s", err)
 		}
 	}
+	log.Printf("report complete in %s", time.Now().Sub(start).Truncate(time.Millisecond))
 	return nil
 }
 
