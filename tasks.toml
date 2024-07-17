@@ -1,5 +1,5 @@
 [[task]]
-id = 'convert-zones'
+id = 'aws-convert-zones'
 type = 'short'
 cmd = 'cd aws && fish convert-zones.fish'
 
@@ -38,6 +38,7 @@ dependencies = [
   'apps/homepage/build',
   'apps/mailer/build',
   'apps/map/build',
+  'apps/monitor/build',
   'apps/movies/build',
   'apps/ping/build',
   'apps/posts/build',
@@ -83,7 +84,7 @@ cmd = 'go run github.com/a-h/templ/cmd/templ generate'
 id = 'terraform-apply'
 type = 'short'
 dependencies = [
-  'convert-zones'
+  'aws-convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
 
@@ -91,7 +92,7 @@ cmd = 'source aws/.envrc && cd aws/terraform && yes yes | terraform apply'
 id = 'terraform-fmt'
 type = 'short'
 dependencies = [
-  'convert-zones'
+  'aws-convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && terraform fmt'
 
@@ -104,7 +105,7 @@ cmd = 'source aws/.envrc && cd aws/terraform && terraform init'
 id = 'terraform-plan'
 type = 'short'
 dependencies = [
-  'convert-zones'
+  'aws-convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
 
@@ -114,6 +115,7 @@ type = 'long'
 dependencies = [
   'apps/air/dev',
   'apps/dogs/dev',
+  'apps/monitor/dev',
   'apps/movies/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',
