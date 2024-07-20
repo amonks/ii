@@ -61,7 +61,9 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 		case "dns":
 			acmeIssuerConfig.DNS01Solver = &certmagic.DNS01Solver{
 				DNSManager: certmagic.DNSManager{
-					DNSProvider: &route53.Provider{},
+					DNSProvider: &route53.Provider{
+						Region: "us-east-1",
+					},
 					Resolvers:   []string{"8.8.8.8"},
 				},
 			}
@@ -101,6 +103,8 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 			domains = append(domains, "*."+domain)
 		}
 	}
+
+	config.OnDemand = &certmagic.OnDemandConfig{}
 
 	err := config.ManageSync(ctx, domains)
 	if err != nil {
