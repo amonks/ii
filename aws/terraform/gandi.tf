@@ -33,6 +33,11 @@ resource "gandi_nameservers" "gandi_domain_fmail_email" {
   nameservers = aws_route53_zone.fmail-email.name_servers
 }
 
+resource "gandi_nameservers" "gandi_domain_fuckedcars_com" {
+  domain      = "fuckedcars.com"
+  nameservers = aws_route53_zone.fuckedcars-com.name_servers
+}
+
 resource "gandi_nameservers" "gandi_domain_lyrics_gy" {
   domain      = "lyrics.gy"
   nameservers = aws_route53_zone.lyrics-gy.name_servers
