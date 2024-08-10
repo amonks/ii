@@ -59,6 +59,7 @@ mode = "prod"
   storage_path = "/data"
   apps = [
     "mailer",
-    "traffic"
+    "traffic",
+    "errlog"
   ]
 

@@ -1,0 +1,85 @@
+package model
+
+import (
+	_ "embed"
+	"fmt"
+
+	"github.com/google/uuid"
+	"monks.co/pkg/database"
+	"monks.co/pkg/errlogger"
+)
+
+//go:embed schema.sql
+var schema string
+
+type DB struct {
+	db *database.DB
+}
+
+func New() (*DB, error) {
+	db, err := database.OpenFromDataFolder("errlog")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Exec(schema); err != nil {
+		return nil, fmt.Errorf("migration err: %w", err)
+	}
+
+	return &DB{db}, nil
+}
+
+type ErrorReport struct {
+	UUID    string
+	Machine string
+	Report  errlogger.ErrorReport `gorm:"embed"`
+}
+
+type ErrorReportSearch struct {
+	UUID    string
+	App     string
+	Machine string
+	Report  string
+}
+
+func (db *DB) Capture(report *ErrorReport) error {
+	if report.UUID == "" {
+		report.UUID = uuid.NewString()
+	}
+
+	if err := db.db.
+		Create(report).
+		Error; err != nil {
+		return fmt.Errorf("error inserting error report: %w", err)
+	}
+
+	if err := db.db.
+		Create(&ErrorReportSearch{
+			UUID:    report.UUID,
+			Machine: report.Machine,
+
+			App:    report.Report.App,
+			Report: report.Report.Report,
+		}).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) LastN(n int) ([]ErrorReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (db *DB) LastNForAppOnMachine(n int, app, machine string) ([]ErrorReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (db *DB) LastNForApp(n int, app string) ([]ErrorReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (db *DB) LastNForMachine(n int, machine string) ([]ErrorReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
