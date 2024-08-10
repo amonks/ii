@@ -28,6 +28,7 @@ type Movie struct {
 	ImportedFromPath string
 
 	ImportedAt string
+	IsCopied   bool
 
 	TMDBJSON   string `gorm:"column:tmdb_json"`
 	PosterPath string
@@ -115,12 +116,26 @@ func (m *Movie) IsImported() bool {
 
 func (d *DB) GetMovieIDToCopy() (int64, error) {
 	var movie Movie
-	if err := d.Where("imported_at = ''").First(&movie).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := d.
+		Where("is_copied = false").
+		First(&movie).
+		Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return 0, nil
 	} else if err != nil {
 		return 0, err
 	}
 	return movie.ID, nil
+}
+
+func (d *DB) SetMovieIsCopied(movie *Movie) error {
+	if err := d.
+		Table("movies").
+		Where("id = ?", movie.ID).
+		Updates(map[string]interface{}{"is_copied": true}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *DB) AddMovieCredits(movie *Movie, json []byte) error {
@@ -201,6 +216,15 @@ func (d *DB) AddMoviePoster(movie *Movie, posterPath string) error {
 }
 
 func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
+	if importedAt.IsZero() {
+		if err := d.Model(&Movie{}).
+			Where("id = ?", movie.ID).
+			Updates(map[string]interface{}{"imported_at": ""}).
+			Error; err != nil {
+			return err
+		}
+		return nil
+	}
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
 		Updates(Movie{ImportedAt: importedAt.Format(time.DateTime)}).

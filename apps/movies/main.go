@@ -56,6 +56,44 @@ func run() error {
 	wg := &loggingwaitgroup.WaitGroup{}
 	ctx, cancel := context.WithCancelCause(context.Background())
 
+	runAfterImport := func(name string, run func(ctx context.Context) error) {
+		wg.Add(name)
+		go func() {
+			defer wg.Done(name)
+		run:
+			if err := run(ctx); err != nil {
+				err := fmt.Errorf("%s error: %w", name, err)
+				cancel(err)
+				return
+			}
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-db.Subscribe():
+					goto run
+				}
+			}
+		}()
+	}
+
+	// For each post-import task, launch it, then wait. If the context is
+	// canceled, exit. If movieimporter updates, rerun it, waiting again
+	// when it exits.
+	cf := creditsfetcher.New(tmdb, db)
+	mc := moviecopier.New(db)
+	mmf := moviemetadatafetcher.New(tmdb, db)
+	pf := posterfetcher.New(tmdb, db)
+	rf := ratingfetcher.New(db)
+	// ms := moviesyncer.New(tmdb, db)
+	runAfterImport("creditsfetcher", cf.Run)
+	runAfterImport("moviecopier", mc.Run)
+	runAfterImport("moviemetadatafetcher", mmf.Run)
+	runAfterImport("posterfetcher", pf.Run)
+	runAfterImport("ratingfetcher", rf.Run)
+	// runAfterImport("moviesyncer", ms.Run)
+
 	// Run library server
 	ls := libraryserver.New(tmdb, db)
 	wg.Add("libraryserver")
@@ -86,12 +124,12 @@ func run() error {
 	}()
 
 	// Launch movieimporter, rerunning every minute.
-	mt := movieimporter.New(tmdb, db)
+	mi := movieimporter.New(tmdb, db)
 	wg.Add("movieimporter")
 	go func() {
 		defer wg.Done("movieimporter")
 		for {
-			if err := mt.Run(ctx); err != nil {
+			if err := mi.Run(ctx); err != nil {
 				cancel(fmt.Errorf("movieimporter error: %w", err))
 				return
 			}
@@ -103,43 +141,6 @@ func run() error {
 			}
 		}
 	}()
-
-	runAfterImport := func(name string, run func(ctx context.Context) error) {
-		wg.Add(name)
-		go func() {
-			defer wg.Done(name)
-		run:
-			if err := run(ctx); err != nil {
-				cancel(fmt.Errorf("%s error: %w", name, err))
-				return
-			}
-
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-db.Subscribe():
-					goto run
-				}
-			}
-		}()
-	}
-
-	// For each post-import task, launch it, then wait. If the context is
-	// canceled, exit. If movieimporter updates, rerun it, waiting again
-	// when it exits.
-	cf := creditsfetcher.New(tmdb, db)
-	mc := moviecopier.New(db)
-	mf := moviemetadatafetcher.New(tmdb, db)
-	pf := posterfetcher.New(tmdb, db)
-	rf := ratingfetcher.New(db)
-	// ms := moviesyncer.New(tmdb, db)
-	runAfterImport("creditsfetcher", cf.Run)
-	runAfterImport("moviecopier", mc.Run)
-	runAfterImport("moviemetadatafetcher", mf.Run)
-	runAfterImport("posterfetcher", pf.Run)
-	runAfterImport("ratingfetcher", rf.Run)
-	// runAfterImport("moviesyncer", ms.Run)
 
 	// Handle signals. If we get one, kill the program.
 	wg.Add("signalhandler")

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"monks.co/apps/movies/config"
@@ -13,6 +14,7 @@ import (
 )
 
 type MovieCopier struct {
+	mu sync.Mutex
 	db *db.DB
 }
 
@@ -23,6 +25,9 @@ func New(db *db.DB) *MovieCopier {
 }
 
 func (app *MovieCopier) Run(ctx context.Context) error {
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
 	log.Println("moviecopier started")
 	defer log.Println("moviecopier done")
 
@@ -45,7 +50,6 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 		log.Println("getting next movie...")
 		movie, err := app.db.GetMovie(id)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 		if movie == nil {
@@ -56,13 +60,11 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 
 		log.Println("copying movie...")
 		if err := app.copyFile(ctx, config.MovieImportDir+"/"+movie.ImportedFromPath, config.MovieLibraryDir+"/"+movie.LibraryPath); err != nil {
-			log.Println(err)
 			return err
 		}
 
 		if movie.ImportedAt == "" {
-			if err := app.db.SetMovieImportedAt(movie, time.Now()); err != nil {
-				log.Println(err)
+			if err := app.db.SetMovieIsCopied(movie); err != nil {
 				return err
 			}
 		}
@@ -115,7 +117,7 @@ func (pw *ProgressWriter) Write(data []byte) (int, error) {
 			100*float64(pw.progress)/float64(pw.totalSize),
 			byteCount(pw.progress),
 			byteCount(pw.totalSize))
-		pw.nextPrint = time.Now().Add(1 * time.Second)
+		pw.nextPrint = time.Now().Add(30 * time.Second)
 	}
 	return len(data), nil
 }
