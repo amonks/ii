@@ -18,7 +18,8 @@ mode = "dev"
     "youtube",
     "directory",
     "homepage",
-    "dogs"
+    "dogs",
+    "scrobbles"
   ]
 
 [acme]

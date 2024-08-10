@@ -1,0 +1,17 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  watch = ["**/*", "*"]
+  cmd = "go run ."
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/scrobbles"
+
+
