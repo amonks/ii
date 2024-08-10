@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
+
+	"monks.co/pkg/snitch"
 )
 
 type Reporter map[string]Monitor
@@ -29,22 +30,15 @@ func (rep Reporter) Run(ctx context.Context, dur time.Duration) error {
 
 func (rep Reporter) Report() error {
 	start := time.Now()
-	for snitch, mon := range rep {
+	for id, mon := range rep {
 		if err := mon.Check(); err == nil {
-			if err := rep.snitch(snitch); err != nil {
-				return fmt.Errorf("error snitching on %s to '%s': %w", mon.Name(), snitch, err)
+			if err := snitch.OK(id); err != nil {
+				return fmt.Errorf("error snitching on %s to '%s': %w", mon.Name(), id, err)
 			}
 		} else {
 			log.Printf("%s", err)
 		}
 	}
 	log.Printf("report complete in %s", time.Now().Sub(start).Truncate(time.Millisecond))
-	return nil
-}
-
-func (rep Reporter) snitch(snitch string) error {
-	if _, err := http.Get("https://nosnch.in/" + snitch); err != nil {
-		return err
-	}
 	return nil
 }
