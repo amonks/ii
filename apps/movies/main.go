@@ -20,12 +20,17 @@ import (
 	"monks.co/apps/movies/moviemetadatafetcher"
 	"monks.co/apps/movies/posterfetcher"
 	"monks.co/apps/movies/ratingfetcher"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/loggingwaitgroup"
 	"monks.co/pkg/tmdb"
 )
 
 func main() {
 	if err := run(); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			errlogger.ReportError("movies", err)
+		}
+
 		log.Printf("stopped: %s\n", err)
 		os.Exit(1)
 	}
