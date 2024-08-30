@@ -63,10 +63,8 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 			return err
 		}
 
-		if movie.ImportedAt == "" {
-			if err := app.db.SetMovieIsCopied(movie); err != nil {
-				return err
-			}
+		if err := app.db.SetMovieIsCopied(movie); err != nil {
+			return err
 		}
 		log.Printf("imported '%s' from '%s' to '%s'", movie.Title, movie.ImportedFromPath, movie.LibraryPath)
 	}

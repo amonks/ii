@@ -262,10 +262,8 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 				}
 				return data.Movies[a].ReleaseDate < data.Movies[b].ReleaseDate
 			case "importDate":
-				if data.Movies[a].ImportedAt == "" {
-					return true
-				} else if data.Movies[b].ImportedAt == "" {
-					return true
+				if data.Movies[a].ImportedAt == data.Movies[b].ImportedAt {
+					return false
 				}
 				if sortDirection == "desc" {
 					return data.Movies[a].ImportedAt > data.Movies[b].ImportedAt

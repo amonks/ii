@@ -84,6 +84,9 @@ templ Movie(movie *db.Movie) {
 				Last logged on { movie.Watches[0].Date.Format("2006-01-02") }
 			</p>
 		}
+		<p data-role="watch-date" class="block text-sm font-medium text-gray-900">
+			Imported at { movie.ImportedAt }
+		</p>
 		<p data-role="tagline" class="italic block text-sm font-medium text-gray-500">
 			{ movie.Tagline }
 		</p>

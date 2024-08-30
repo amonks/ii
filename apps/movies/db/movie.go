@@ -82,16 +82,16 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 	}
 	movie.LibraryPath = movie.BuildLibraryPath()
 
-	if err := db.Create(&movie).Error; err != nil {
+	if err := db.Table("movies").Create(&movie).Error; err != nil {
 		return nil, err
 	}
-	if err := db.Create(&MovieTitle{ID: movie.ID, Title: movie.Title}).Error; err != nil {
+	if err := db.Table("movies").Create(&MovieTitle{ID: movie.ID, Title: movie.Title}).Error; err != nil {
 		return nil, err
 	}
 	if watch, err := db.FindWatchByTitle(movie.Title); err != nil {
 		return nil, err
 	} else if watch != nil {
-		if err := db.Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
+		if err := db.Table("movie_watches").Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -215,30 +215,10 @@ func (d *DB) AddMoviePoster(movie *Movie, posterPath string) error {
 	return nil
 }
 
-func (d *DB) SetMovieImportedAt(movie *Movie, importedAt time.Time) error {
-	if importedAt.IsZero() {
-		if err := d.Model(&Movie{}).
-			Where("id = ?", movie.ID).
-			Updates(map[string]interface{}{"imported_at": ""}).
-			Error; err != nil {
-			return err
-		}
-		return nil
-	}
-	if err := d.Model(&Movie{}).
-		Where("id = ?", movie.ID).
-		Updates(Movie{ImportedAt: importedAt.Format(time.DateTime)}).
-		Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
 		Updates(map[string]interface{}{
-			"imported_at":        "",
 			"imported_from_path": path,
 		}).
 		Error; err != nil {
@@ -322,7 +302,7 @@ var nonAlpha = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 func (db *DB) FindMovieByTitle(title string) (*Movie, error) {
 	sanitized := nonAlpha.ReplaceAllString(title, " ")
 	var movieTitle MovieTitle
-	if err := db.Where("title match ?", sanitized).First(&movieTitle).Error; err != nil {
+	if err := db.Table("movie_titles").Where("title match ?", sanitized).First(&movieTitle).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

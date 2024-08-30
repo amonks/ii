@@ -52,12 +52,10 @@ CREATE TABLE IF NOT EXISTS "queued_movies" (
 	queued_at text
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS movie_titles using fts4(
-	id primary key references movies.id,
-	title text
+	id,
+	title
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS watch_titles using fts4(
-	letterboxd_url text primary key references watches.letterboxd_url,
-	title text
+	letterboxd_url,
+	title
 );
-INSERT OR IGNORE INTO movie_titles SELECT id, title FROM MOVIES;
-INSERT OR IGNORE INTO watch_titles SELECT letterboxd_url, movie_title as title FROM WATCHES;

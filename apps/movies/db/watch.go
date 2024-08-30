@@ -33,18 +33,17 @@ type MovieWatch struct {
 	LetterboxdURL string // references watches.letterboxd_url
 }
 
-func (db *DB) CreateWatch(entry *letterboxd.Watch) (*Watch, error) {
-	watch := entry
-	if err := db.Create(watch).Error; err != nil {
+func (db *DB) CreateWatch(watch *letterboxd.Watch) (*Watch, error) {
+	if err := db.Table("watches").Create(watch).Error; err != nil {
 		return nil, err
 	}
-	if err := db.Create(&WatchTitle{LetterboxdURL: watch.LetterboxdURL, Title: watch.MovieTitle}).Error; err != nil {
+	if err := db.Table("watch_titles").Create(&WatchTitle{LetterboxdURL: watch.LetterboxdURL, Title: watch.MovieTitle}).Error; err != nil {
 		return nil, err
 	}
 	if movie, err := db.FindMovieByTitle(watch.MovieTitle); err != nil {
 		return nil, err
 	} else if movie != nil {
-		if err := db.Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
+		if err := db.Table("movie_watches").Create(&MovieWatch{ID: movie.ID, LetterboxdURL: watch.LetterboxdURL}).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -53,13 +52,13 @@ func (db *DB) CreateWatch(entry *letterboxd.Watch) (*Watch, error) {
 
 func (db *DB) Watches(movieID int64) ([]Watch, error) {
 	movieWatches := []MovieWatch{}
-	if err := db.Where(&MovieWatch{ID: movieID}).Find(&movieWatches).Error; err != nil {
+	if err := db.Table("movie_watches").Where(&MovieWatch{ID: movieID}).Find(&movieWatches).Error; err != nil {
 		return nil, err
 	}
 	var watches []Watch
 	for _, mw := range movieWatches {
 		watch := &Watch{}
-		if err := db.Where(&Watch{LetterboxdURL: mw.LetterboxdURL}).Find(watch).Error; err != nil {
+		if err := db.Table("watches").Where(&Watch{LetterboxdURL: mw.LetterboxdURL}).Find(watch).Error; err != nil {
 			return nil, err
 		}
 		watches = append(watches, *watch)
