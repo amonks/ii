@@ -31,7 +31,7 @@ type PageData struct {
 }
 
 func (s *Server) pageServer() http.Handler {
-	const postsPerPage = 5
+	const postsPerPage = 2
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		n := req.URL.Query().Get("n")
 		if n == "" {

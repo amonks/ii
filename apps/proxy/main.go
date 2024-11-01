@@ -50,6 +50,10 @@ func run() error {
 			for _, app := range serviceConfig.Apps {
 				routes[app] = ports.Apps[app]
 			}
+			for path, port := range serviceConfig.ExtraRoutes {
+				log.Printf("extra route %s %d", path, port)
+				routes[path] = port
+			}
 			service := &Service{
 				routes:    routes,
 				service:   serviceConfig,

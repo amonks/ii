@@ -535,7 +535,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 			// new movie; create
 			log.Println("create", movie)
 			if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
-				return fmt.Errorf("error creating movie: %w", err)
+				return fmt.Errorf("error creating movie '%d': %w", tmdbMovie.ID, err)
 			}
 		}
 

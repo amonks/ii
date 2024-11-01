@@ -85,7 +85,7 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 	if err := db.Table("movies").Create(&movie).Error; err != nil {
 		return nil, err
 	}
-	if err := db.Table("movies").Create(&MovieTitle{ID: movie.ID, Title: movie.Title}).Error; err != nil {
+	if err := db.Table("movie_titles").Create(&MovieTitle{ID: movie.ID, Title: movie.Title}).Error; err != nil {
 		return nil, err
 	}
 	if watch, err := db.FindWatchByTitle(movie.Title); err != nil {

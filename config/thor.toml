@@ -15,6 +15,7 @@ mode = "dev"
     "dogs",
     "monitor"
   ]
+  extra_routes = { "genres" = 9999 }
 
 [acme]
   storage_path = "cache"

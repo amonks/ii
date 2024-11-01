@@ -35,6 +35,7 @@ type Service struct {
 	Type        string            `toml:"type"`
 	Addr        string            `toml:"addr"`
 	Apps        []string          `toml:"apps"`
+	ExtraRoutes map[string]int    `toml:"extra_routes"`
 	StoragePath string            `toml:"storage_path"`
 	Rewrites    map[string]string `toml:"rewrites"`
 }
