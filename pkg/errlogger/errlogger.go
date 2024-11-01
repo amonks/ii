@@ -55,7 +55,7 @@ func Report(statusCode int, app, report string) {
 }
 
 func sendReport(report *ErrorReport) error {
-	const url = "http://fly.ss.cx/errlog"
+	const url = "http://fly.ss.cx/errlog/"
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(report); err != nil {

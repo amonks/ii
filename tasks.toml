@@ -35,6 +35,7 @@ dependencies = [
   'apps/air/build',
   'apps/directory/build',
   'apps/dogs/build',
+  'apps/errlog/build',
   'apps/golink/build',
   'apps/homepage/build',
   'apps/mailer/build',
@@ -57,6 +58,7 @@ id = 'fly'
 type = 'long'
 dependencies = [
   'apps/dogs/start',
+  'apps/errlog/start',
   'apps/homepage/start',
   'apps/mailer/start',
   'apps/map/start',
