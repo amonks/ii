@@ -4,6 +4,7 @@ mode = "prod"
   "belgianman.com" = "https://belgianman.bandcamp.com/"
   "blgn.mn"        = "https://belgianman.bandcamp.com/"
 
+  "amonks.co"         = "https://monks.co/"
   "andrewmonks.com"   = "https://monks.co/"
   "andrewmonks.net"   = "https://monks.co/"
   "andrewmonks.org"   = "https://monks.co/"
@@ -23,6 +24,7 @@ mode = "prod"
     "belgianman.com",
     "blgn.mn",
 
+    "amonks.co",
     "andrewmonks.com",
     "andrewmonks.net",
     "andrewmonks.org",

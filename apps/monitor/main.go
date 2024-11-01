@@ -25,6 +25,7 @@ var reporter = monitor.Reporter{
 	"7135661159": monitor.NewHTTPMonitor("https://belgianman.com", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
 	"cf01c434ed": monitor.NewHTTPMonitor("https://blgn.mn", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
 
+	"e2b6c2c6d3": monitor.NewHTTPMonitor("https://amonks.co", monitor.WithRedirectCheck("https://monks.co/")),
 	"cf89105615": monitor.NewHTTPMonitor("https://andrewmonks.com", monitor.WithRedirectCheck("https://monks.co/")),
 	"927132497c": monitor.NewHTTPMonitor("https://andrewmonks.net", monitor.WithRedirectCheck("https://monks.co/")),
 	"10e94a97f5": monitor.NewHTTPMonitor("https://andrewmonks.org", monitor.WithRedirectCheck("https://monks.co/")),

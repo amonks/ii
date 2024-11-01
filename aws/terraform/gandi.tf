@@ -1,3 +1,8 @@
+resource "gandi_nameservers" "gandi_domain_amonks_co" {
+  domain      = "amonks.co"
+  nameservers = aws_route53_zone.amonks-co.name_servers
+}
+
 resource "gandi_nameservers" "gandi_domain_andrewmonks_com" {
   domain      = "andrewmonks.com"
   nameservers = aws_route53_zone.andrewmonks-com.name_servers
