@@ -1,4 +1,4 @@
-create or replace table error_reports (
+create table if not exists error_reports (
 	uuid text primary key not null,
 
 	app         text     not null,
@@ -21,14 +21,14 @@ create virtual table if not exists error_report_search using fts4(
         notindexed=uuid
 );
 
-create index if not exists ams   on error_reports (app, machine, status_code, happened_at);
-create index if not exists am    on error_reports (app, machine,              happened_at);
-create index if not exists a     on error_reports (app,                       happened_at);
+create index if not exists ams_time   on error_reports (app, machine, status_code, happened_at);
+create index if not exists am_time    on error_reports (app, machine,              happened_at);
+create index if not exists a_time     on error_reports (app,                       happened_at);
 
-create index if not exists as    on error_reports (app,          status_code, happened_at);
-create index if not exists a     on error_reports (app,                       happened_at);
+create index if not exists as_time    on error_reports (app,          status_code, happened_at);
+create index if not exists a_time     on error_reports (app,                       happened_at);
 
-create index if not exists ms    on error_reports (     machine, status_code, happened_at);
-create index if not exists m     on error_reports (     machine,              happened_at);
+create index if not exists ms_time    on error_reports (     machine, status_code, happened_at);
+create index if not exists m_time     on error_reports (     machine,              happened_at);
 
-create index if not exists time  on error_reports (                           happened_at);
+create index if not exists time_time  on error_reports (                           happened_at);

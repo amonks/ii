@@ -1,6 +1,6 @@
 module monks.co
 
-go 1.22.3
+go 1.23.0
 
 require (
 	github.com/BurntSushi/toml v1.4.0
@@ -9,6 +9,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/caddyserver/certmagic v0.21.3
 	github.com/evanw/esbuild v0.23.0
+	github.com/google/uuid v1.6.0
 	github.com/libdns/route53 v1.4.0
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/pires/go-proxyproto v0.7.0
@@ -75,7 +76,6 @@ require (
 	github.com/google/cel-go v0.18.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/nftables v0.2.1-0.20240414091927-5e242ec57806 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/csrf v1.7.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hdevalence/ed25519consensus v0.2.0 // indirect

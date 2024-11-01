@@ -30,7 +30,7 @@ terraform {
 }
 
 provider "gandi" {
-  key = "FqMaynWbzxKKhj56kDaNcXX1"
+  personal_access_token = "6383dc14d928bac69851e85e90f27ac7cff34090"
 }
 
 output "monks-go_iam_user_access_key_id" {

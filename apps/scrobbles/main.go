@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -36,23 +37,21 @@ func run() error {
 
 	fetch := func() error {
 		var count int
-		var fetchErr error
-		if err := lfm.FetchRecentScrobbles("andrewmonks", func(scrobble *lastfm.Scrobble) bool {
+		for scrobble, err := range lfm.FetchRecentScrobbles("andrewmonks") {
+			if err != nil {
+				return err
+			}
+
 			if err := db.AddScrobble(scrobble); err != nil && errors.Is(err, ErrDuplicate) {
-				return false
+				break
 			} else if err != nil && errors.Is(err, ErrStillListening) {
-				return true
+				continue
 			} else if err != nil {
-				fetchErr = err
-				return false
+				return err
 			} else {
 				count += 1
-				return true
+				continue
 			}
-		}); err != nil {
-			return err
-		} else if fetchErr != nil {
-			return fetchErr
 		}
 		log.Printf("fetched %d scrobbles", count)
 		if err := snitch.OK("537206854d"); err != nil {
@@ -63,7 +62,11 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		w.Write([]byte("ok"))
+		scrobbles, err := db.GetScrobbles(1000, 0)
+		if err != nil {
+			serve.InternalServerError(w, req, err)
+		}
+		Index(scrobbles).Render(context.Background(), w)
 	})
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 

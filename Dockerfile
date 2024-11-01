@@ -1,4 +1,4 @@
-FROM golang:alpine as gobuild
+FROM golang:alpine AS gobuild
   ENV MONKS_ROOT=/app
   RUN apk update
   RUN apk add build-base gcc bash nodejs npm

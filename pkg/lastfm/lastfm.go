@@ -3,6 +3,7 @@ package lastfm
 import (
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -95,23 +96,23 @@ type scrobblesResponse struct {
 	} `json:"recenttracks"`
 }
 
-func (lastfm *Lastfm) FetchRecentScrobbles(user string, cb func(scrobble *Scrobble) bool) error {
-main:
-	for page := 1; true; page += 1 {
-		scrobs, pagination, err := lastfm.fetchRecentScrobblesPageWithRetry(user, page)
-		if err != nil {
-			return err
-		}
-		for _, scrob := range scrobs {
-			if !cb(&scrob) {
-				break main
+func (lastfm *Lastfm) FetchRecentScrobbles(user string) iter.Seq2[*Scrobble, error] {
+	return func(yield func(*Scrobble, error) bool) {
+		for page := 1; true; page += 1 {
+			scrobs, pagination, err := lastfm.fetchRecentScrobblesPageWithRetry(user, page)
+			if err != nil {
+				yield(nil, err)
+			}
+			for _, scrob := range scrobs {
+				if !yield(&scrob, nil) {
+					return
+				}
+			}
+			if pagination.page() >= pagination.totalPages() {
+				return
 			}
 		}
-		if pagination.page() >= pagination.totalPages() {
-			break
-		}
 	}
-	return nil
 }
 
 func (lastfm *Lastfm) fetchRecentScrobblesPageWithRetry(user string, pageno int) ([]Scrobble, *paginationInfo, error) {
@@ -159,6 +160,12 @@ func (lastfm *Lastfm) fetchRecentScrobblesPage(user string, pageno int) ([]Scrob
 	if err := decoder.Decode(&data); err != nil {
 		return nil, nil, err
 	}
+
+	// bs, err := json.MarshalIndent(data, "", "  ")
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+	// fmt.Println(string(bs))
 
 	return data.RecentTracks.Track, &data.RecentTracks.Attr, nil
 }

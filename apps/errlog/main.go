@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"monks.co/apps/errlog/model"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -28,7 +30,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", func(w http.ResponseWriter, req *http.Request) {
-		var report model.ErrorReport
+		var report errlogger.ErrorReport
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		defer req.Body.Close()
@@ -37,7 +39,11 @@ func run() error {
 			return
 		}
 
-		if err := db.Capture(&report); err != nil {
+		if err := db.Capture(&model.ErrorReport{
+			UUID:    uuid.NewString(),
+			Machine: "unknown",
+			Report:  report,
+		}); err != nil {
 			serve.Error(w, req, 500, err)
 			return
 		}

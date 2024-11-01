@@ -22,16 +22,18 @@ func OpenFromDataFolder(name string) (*DB, error) {
 }
 
 func Open(path string) (*DB, error) {
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.New(
-		log.New(os.Stderr, "\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Warn,
-			IgnoreRecordNotFoundError: true,
-			ParameterizedQueries:      true,
-			Colorful:                  true,
-		},
-	)})
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stderr, "\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             time.Second,
+				LogLevel:                  logger.Warn,
+				IgnoreRecordNotFoundError: true,
+				ParameterizedQueries:      true,
+				Colorful:                  true,
+			},
+		),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}

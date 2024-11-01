@@ -22,7 +22,7 @@ func New() (*DB, error) {
 		return nil, err
 	}
 
-	if err := db.Exec(schema); err != nil {
+	if err := db.Exec(schema).Error; err != nil {
 		return nil, fmt.Errorf("migration err: %w", err)
 	}
 
@@ -32,7 +32,7 @@ func New() (*DB, error) {
 type ErrorReport struct {
 	UUID    string
 	Machine string
-	Report  errlogger.ErrorReport `gorm:"embed"`
+	Report  errlogger.ErrorReport `gorm:"embedded"`
 }
 
 type ErrorReportSearch struct {
