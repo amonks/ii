@@ -7,7 +7,7 @@
 [[task]]
   id = "dev"
   type = "long"
-  cmd = "go run ."
+  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
   watch = [
     "**/*.go",
     "*.go",
@@ -20,7 +20,7 @@
 [[task]]
   id = "build"
   type = "short"
-  cmd = "go build -o $MONKS_ROOT/bin/ ."
+  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go build -o $MONKS_ROOT/bin/ ."
   dependencies = [
     "templ"
   ]

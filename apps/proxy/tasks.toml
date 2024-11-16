@@ -2,4 +2,4 @@
   id = "build"
   type = "short"
   watch = ["**/*", "*"]
-  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/proxy"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/proxy"

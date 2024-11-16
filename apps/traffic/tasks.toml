@@ -5,13 +5,13 @@
     "**/*.go", "*.go",
     "**/*.gohtml", "*.gohtml",
   ]
-  cmd = "go run ."
+  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
   dependencies = ["build-css"]
 
 [[task]]
   id = "build"
   type = "short"
-  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/traffic"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/traffic"
   dependencies = ["build-css"]
 
 [[task]]

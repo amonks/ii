@@ -2,12 +2,12 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "go run ."
+  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
 
 [[task]]
   id = "build"
   type = "short"
-  cmd = "go build -o ../../bin/ ."
+  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ../../bin/ ."
 
 [[task]]
   id = "start"

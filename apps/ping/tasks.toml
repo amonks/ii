@@ -2,12 +2,12 @@
   id = "dev"
   type = "long"
   watch = ["**/*", "*"]
-  cmd = "cd $MONKS_ROOT && go run ./apps/ping"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 SQLITE_ENABLE_LOCKING_STYLE=1 go run ./apps/ping"
 
 [[task]]
   id = "build"
   type = "short"
-  cmd = "cd $MONKS_ROOT && go build -o ./bin/ ./apps/ping"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/ping"
 
 [[task]]
   id = "start"
