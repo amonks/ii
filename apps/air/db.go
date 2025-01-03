@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -42,16 +41,17 @@ func (db *DB) Aggregate(param AggregateID, days int64) ([]Aggregate, error) {
 	return points, nil
 }
 
-func (db *DB) Last() (*Parameters, error) {
-	var last Parameters
+func (db *DB) LastN(n int) ([]Parameters, error) {
+	var last []Parameters
 	if err := db.
 		Table("parameters").
 		Order("created_at desc").
-		First(&last).
+		Limit(n).
+		Find(&last).
 		Error; err != nil {
 		return nil, fmt.Errorf("error getting last aggregate: %w", err)
 	}
-	return &last, nil
+	return last, nil
 }
 
 func (db *DB) calculateAggregates() error {
@@ -61,7 +61,7 @@ func (db *DB) calculateAggregates() error {
 	}
 	for i, p := range all {
 		if i%100 == 0 {
-			log.Println(p.CreatedAt)
+			fmt.Println(p.CreatedAt)
 		}
 		if err := db.updateAggregates(p); err != nil {
 			return err
@@ -99,6 +99,9 @@ func (db *DB) updateAggregates(parameters *Parameters) error {
 	if err := db.updateAggregate(AggregateIDHumidity, time.Hour*24, dayStart, parameters.Humidity); err != nil {
 		return fmt.Errorf("error updating daily humidity aggregate: %w", err)
 	}
+	if err := db.updateAggregate(AggregateIDWaterLevel, time.Hour*24, dayStart, float64(parameters.WaterLevel)); err != nil {
+		return fmt.Errorf("error updating daily water level aggregate: %w", err)
+	}
 
 	hourStart := parameters.CreatedAt.Truncate(time.Hour)
 	if err := db.updateAggregate(AggregateIDDust, time.Hour, hourStart, float64(parameters.Dust)); err != nil {
@@ -109,6 +112,9 @@ func (db *DB) updateAggregates(parameters *Parameters) error {
 	}
 	if err := db.updateAggregate(AggregateIDHumidity, time.Hour, hourStart, parameters.Humidity); err != nil {
 		return fmt.Errorf("error updating hourly humidity aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDWaterLevel, time.Hour, hourStart, float64(parameters.WaterLevel)); err != nil {
+		return fmt.Errorf("error updating hourly waterLevel aggregate: %w", err)
 	}
 
 	return nil
@@ -170,6 +176,7 @@ const (
 	AggregateIDTemperature
 	AggregateIDHumidity
 	AggregateIDDust
+	AggregateIDWaterLevel
 )
 
 type Aggregate struct {
@@ -220,6 +227,19 @@ type Parameters struct {
 	FanRPM      int
 	Temperature float64
 	Dust        int
-	WaterLevel  int
+	WaterLevel  WaterLevel
 	Humidity    float64
+}
+
+type WaterLevel int
+
+const (
+	WaterLevelError WaterLevel = 0
+	WaterLevelFull  WaterLevel = 3
+	WaterLevelLow   WaterLevel = 1
+	WaterLevelEmpty WaterLevel = 2
+)
+
+func (wl WaterLevel) IsFull() bool {
+	return wl == WaterLevelFull
 }

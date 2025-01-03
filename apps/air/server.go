@@ -23,6 +23,7 @@ type Data struct {
 	Dust        []Aggregate
 	Temperature []Aggregate
 	Humidity    []Aggregate
+	WaterLevel  []Aggregate
 }
 
 func (d *Data) JSON() (template.JS, error) {
@@ -67,6 +68,11 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 			errs = errors.Join(errs, err)
 		}
 
+		waterLevel, err := db.Aggregate(AggregateIDWaterLevel, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+
 		if errs != nil {
 			log.Println(errs)
 			w.WriteHeader(500)
@@ -78,6 +84,7 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 			Dust:        dust,
 			Temperature: temperature,
 			Humidity:    humidity,
+			WaterLevel:  waterLevel,
 		}); err != nil {
 			log.Println(err)
 		}

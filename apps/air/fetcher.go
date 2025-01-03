@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -22,18 +23,24 @@ func fetch(db *DB) error {
 	}
 	next.ModiCategory = modiCategory
 
-	last, err := db.Last()
+	// Notify if it stopped being full and stayed stably not-full for 2
+	// consecutive checks.
+	last2, err := db.LastN(2)
 	if err != nil {
 		return err
 	}
-	if last.WaterLevel == 3 && next.WaterLevel == 1 {
-		twilio.SMSMe("alert: low water in air purifier")
+	back1, back2 := last2[0], last2[1]
+	if back2.WaterLevel.IsFull() && !back1.WaterLevel.IsFull() && !next.WaterLevel.IsFull() {
+		if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
+			log.Printf("twilio error: %s", err)
+		}
 	}
+
 	if err := db.Insert(next); err != nil {
 		return fmt.Errorf("error inserting fetched parameters: %w", err)
 	}
 
-	fmt.Printf("temp: %f, humid: %f\n", next.Temperature, next.Humidity)
+	fmt.Printf("temp: %f, humid: %f, water: %d\n", next.Temperature, next.Humidity, next.WaterLevel)
 
 	return nil
 }
@@ -144,7 +151,7 @@ func getDeviceParameters(deviceMAC string) (*Parameters, error) {
 		FanRPM:      parameters.Measure.FanRpm,
 		Temperature: parameters.Measure.Temperature,
 		Dust:        parameters.Measure.Dust,
-		WaterLevel:  parameters.Measure.WaterLevel,
+		WaterLevel:  WaterLevel(parameters.Measure.WaterLevel),
 		Humidity:    parameters.Measure.Humidity,
 	}, nil
 }
