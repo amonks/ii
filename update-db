@@ -4,7 +4,7 @@ set dbname [lindex $argv 0];
 set host [lindex $argv 1];
 
 if {$host == "thor"} {
-	spawn scp ajm@thor.ss.cx:/data/tank/$dbname/.$dbname.db /Users/ajm/monks.co/data/$dbname.db
+	spawn scp ajm@thor.ss.cx:/data/tank/$dbname/.$dbname.db /Users/ajm/Work/monks.co/data/$dbname.db
 	expect eof
 	close $spawn_id
 }
