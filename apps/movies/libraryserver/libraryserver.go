@@ -577,7 +577,7 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 	url := req.FormValue("Metacritic URL")
 	ratingStr := req.FormValue("Rating")
 
-	if url == "" && url == "" {
+	if url == "" {
 		if err := app.db.ValidateMovieMetacriticData(movie, "", 0); err != nil {
 			serve.Errorf(w, req, http.StatusInternalServerError, "error: %s", err)
 			return

@@ -16,6 +16,8 @@ require (
 	github.com/sqlc-dev/sqlc v1.22.0
 	github.com/twilio/twilio-go v1.22.3
 	github.com/yuin/goldmark v1.7.4
+	github.com/yuin/goldmark-meta v1.1.0
+	go.abhg.dev/goldmark/anchor v0.1.1
 	go.abhg.dev/goldmark/frontmatter v0.2.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.22.0
@@ -160,6 +162,7 @@ require (
 	google.golang.org/grpc v1.58.2 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gvisor.dev/gvisor v0.0.0-20240306221502-ee1e1f6070e3 // indirect
 	honnef.co/go/tools v0.4.7 // indirect

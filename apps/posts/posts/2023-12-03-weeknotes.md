@@ -1,6 +1,6 @@
 ---
 title: Weeknotes 12/03/2023
-draft: true
+published: false
 ---
 
 ## Ballotine resolved, periodic resolution

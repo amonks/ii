@@ -9,7 +9,7 @@ templ Index(posts *model.Posts) {
 	@templib.Page("Posts", templib.PageOptions{}) {
 		<h1>Posts</h1>
 		<ul>
-			for _, post := range posts.List {
+			for post := range posts.All() {
 				if !post.IsDraft {
 					<li>
 						<a href={ templ.SafeURL(post.Slug) }>

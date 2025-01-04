@@ -9,11 +9,12 @@ mode = "dev"
   addr = "0.0.0.0:443"
   apps = [
     "air",
-    "traffic",
-    "movies",
-    "reddit",
     "dogs",
-    "monitor"
+    "monitor",
+    "movies",
+    "posts",
+    "reddit",
+    "traffic"
   ]
   extra_routes = { "genres" = 9999 }
 

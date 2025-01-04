@@ -1,6 +1,6 @@
 ---
 title: Weeknotes 11/26/2023
-draft: false
+published: false
 ---
 
 I have a few projects in flight this week.

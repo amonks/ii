@@ -1,22 +1,19 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/a-h/templ"
 	"monks.co/apps/posts/model"
 	"monks.co/apps/posts/templates"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
-
-var port = flag.Int("port", 3000, "port")
 
 func main() {
 	if err := run(); err != nil {
@@ -26,8 +23,6 @@ func main() {
 }
 
 func run() error {
-	flag.Parse()
-
 	ctx := sigctx.New()
 
 	posts, err := model.LoadPosts("apps/posts/posts")
@@ -36,19 +31,24 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "" || req.URL.Path == "/" {
-			h := templ.Handler(templates.Index(posts))
-			h.ServeHTTP(w, req)
+	mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
+		h := templ.Handler(templates.Index(posts))
+		h.ServeHTTP(w, req)
+	})
+	mux.HandleFunc("/{slug}", func(w http.ResponseWriter, req *http.Request) {
+		slug := req.PathValue("slug")
+		post := posts.Get(slug)
+		if post == nil {
+			serve.Errorf(w, req, http.StatusNotFound, "post '%s' not found", slug)
 			return
 		}
-		slug := strings.TrimPrefix(req.URL.Path, "/")
-		post := posts.Get(slug)
-		h := templ.Handler(templates.Post(post))
+		component := templates.Post(post)
+		h := templ.Handler(component)
 		h.ServeHTTP(w, req)
 	})
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	port := ports.Apps["posts"]
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}

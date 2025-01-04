@@ -50,7 +50,7 @@ func WithSuccessCheck() func(*HTTPMonitor) {
 	return func(mon *HTTPMonitor) {
 		mon.checks = append(mon.checks, func(resp *http.Response) error {
 			if err := request.Error(resp); err != nil {
-				return fmt.Errorf("error response: %w", mon.Name(), err)
+				return fmt.Errorf("[%s] error response: %w", mon.Name(), err)
 			}
 			return nil
 		})
