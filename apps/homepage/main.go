@@ -23,7 +23,7 @@ func main() {
 func run() error {
 	port := ports.Apps["homepage"]
 
-	posts, err := posts.Load("../../posts")
+	posts, err := posts.Load("../../writing")
 	if err != nil {
 		return err
 	}
