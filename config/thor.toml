@@ -12,7 +12,7 @@ mode = "dev"
     "dogs",
     "monitor",
     "movies",
-    "posts",
+    "writing",
     "reddit",
     "traffic"
   ]

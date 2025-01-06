@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
-	"monks.co/apps/posts/model"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
 	"monks.co/pkg/ports"
+	"monks.co/pkg/posts"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
@@ -23,13 +23,13 @@ func main() {
 func run() error {
 	port := ports.Apps["homepage"]
 
-	posts, err := model.LoadPosts("../posts/posts")
+	posts, err := posts.Load("../../posts")
 	if err != nil {
 		return err
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
 		fmt.Println("diary:", diary)
 		if err != nil {

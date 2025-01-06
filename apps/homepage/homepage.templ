@@ -2,12 +2,12 @@ package main
 
 import (
 	"monks.co/apps/movies/db"
-	"monks.co/apps/posts/model"
+	"monks.co/pkg/posts"
 )
 
 type PageData struct {
 	Watches []*db.Watch
-	Posts   *model.Posts
+	Posts   *posts.Posts
 }
 
 templ Homepage(data *PageData) {

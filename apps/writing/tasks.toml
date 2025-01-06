@@ -1,0 +1,31 @@
+[[task]]
+  id = "templ"
+  type = "short"
+  cmd = "go run github.com/a-h/templ/cmd/templ generate"
+  watch = ["*.templ"]
+
+[[task]]
+  id = "dev"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 go run ./apps/writing -port=3009"
+  watch = [
+    "**/*.go",
+    "*.go"
+  ]
+  dependencies = [
+    "templ"
+  ]
+
+[[task]]
+  id = "build"
+  type = "short"
+  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/writing"
+  dependencies = [
+    "templ"
+  ]
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "cd $MONKS_ROOT && ./bin/writing -port=3009"
+

@@ -13,10 +13,10 @@ dependencies = [
   'apps/homepage/dev',
   'apps/map/dev',
   'apps/ping/dev',
-  'apps/posts/dev',
   'apps/scrobbles/dev',
   'apps/sms/dev',
   'apps/traffic/dev',
+  'apps/writing/dev',
   'apps/youtube/dev',
   'brigid-proxy',
   'templ'
@@ -44,12 +44,12 @@ dependencies = [
   'apps/monitor/build',
   'apps/movies/build',
   'apps/ping/build',
-  'apps/posts/build',
   'apps/proxy/build',
   'apps/reddit/build',
   'apps/scrobbles/build',
   'apps/sms/build',
   'apps/traffic/build',
+  'apps/writing/build',
   'apps/youtube/build',
   'templ'
 ]
@@ -63,8 +63,8 @@ dependencies = [
   'apps/homepage/start',
   'apps/mailer/start',
   'apps/map/start',
-  'apps/posts/start',
   'apps/traffic/start',
+  'apps/writing/start',
   'fly-proxy'
 ]
 
@@ -122,9 +122,9 @@ dependencies = [
   'apps/dogs/dev',
   'apps/monitor/dev',
   'apps/movies/dev',
-  'apps/posts/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',
+  'apps/writing/dev',
   'templ',
   'thor-proxy'
 ]

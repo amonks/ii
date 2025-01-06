@@ -10,12 +10,12 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"monks.co/apps/movies/db"
-	"monks.co/apps/posts/model"
+	"monks.co/pkg/posts"
 )
 
 type PageData struct {
 	Watches []*db.Watch
-	Posts   *model.Posts
+	Posts   *posts.Posts
 }
 
 func Homepage(data *PageData) templ.Component {
