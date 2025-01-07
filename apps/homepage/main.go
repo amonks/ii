@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
 	"monks.co/pkg/ports"
@@ -23,7 +24,7 @@ func main() {
 func run() error {
 	port := ports.Apps["homepage"]
 
-	posts, err := posts.Load("../../writing")
+	posts, err := posts.Load(env.InMonksRoot("writing"))
 	if err != nil {
 		return err
 	}
@@ -31,7 +32,6 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
-		fmt.Println("diary:", diary)
 		if err != nil {
 			log.Printf("letterboxd diary error: %s\n", err)
 			h := templ.Handler(Homepage(&PageData{

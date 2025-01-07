@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"gorm.io/gorm"
+	"monks.co/pkg/env"
 	"monks.co/pkg/googlemaps"
 )
 
@@ -119,7 +119,7 @@ func (m *Model) UpdatePlace(place Place) error {
 }
 
 func (m *Model) ImportSavedPlaces() error {
-	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "map", "saved_places.json")
+	filename := env.InMonksRoot("apps", "map", "saved_places.json")
 	jsonBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -222,7 +222,7 @@ func (m *Model) ImportSavedPlaces() error {
 }
 
 func (m *Model) AnnotatePeoplesPlaces() error {
-	filename := filepath.Join(os.Getenv("MONKS_ROOT"), "apps", "map", "people.csv")
+	filename := env.InMonksRoot("apps", "map", "people.csv")
 
 	csvFile, err := os.Open(filename)
 	if err != nil {

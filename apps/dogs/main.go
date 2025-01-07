@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"monks.co/pkg/dogs"
+	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -32,7 +33,7 @@ var (
 
 func run() error {
 	if _, err := os.Stat(archiveDir); os.IsNotExist(err) {
-		archiveDir = filepath.Join(os.Getenv("MONKS_DATA"), "dogs")
+		archiveDir = env.InMonksData("dogs")
 	} else if err != nil {
 		return err
 	}

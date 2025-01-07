@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"monks.co/pkg/env"
 	"monks.co/pkg/image"
 
 	"github.com/yuin/goldmark"
@@ -54,7 +55,7 @@ func (*astTransformer) Transform(doc *ast.Document, r text.Reader, ctx parser.Co
 
 		filename := string(imgNode.Destination)
 
-		imgPath := filepath.Join("writing", dir, filename)
+		imgPath := env.InMonksRoot("writing", dir, filename)
 		f, err := os.Open(imgPath)
 		if err != nil {
 			err := fmt.Errorf("opening '%s' for post '%s': %w", imgPath, slug, err)
@@ -93,4 +94,3 @@ func (*astTransformer) Transform(doc *ast.Document, r text.Reader, ctx parser.Co
 		return ast.WalkContinue, nil
 	})
 }
-

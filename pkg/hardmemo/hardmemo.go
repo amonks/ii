@@ -5,9 +5,9 @@ import (
 	"errors"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
+	"monks.co/pkg/env"
 	"monks.co/pkg/flock"
 )
 
@@ -21,7 +21,7 @@ func Memoize[T any](name string, dur time.Duration, fn FuncOf[T]) FuncOf[T] {
 	var zero T
 
 	var (
-		filename  = filepath.Join(os.Getenv("MONKS_DATA"), name)
+		filename  = env.InMonksData(name)
 		lockfile  = filename + ".lock"
 		cachefile = filename + ".gob"
 	)

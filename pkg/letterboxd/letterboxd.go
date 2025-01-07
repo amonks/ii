@@ -8,14 +8,13 @@ package letterboxd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"monks.co/pkg/aschrome"
+	"monks.co/pkg/env"
 	"monks.co/pkg/hardmemo"
 )
 
@@ -32,8 +31,8 @@ type Watch struct {
 }
 
 var (
-	diaryCacheFile       = filepath.Join(os.Getenv("MONKS_DATA"), "letterboxd-diary.gob")
-	diaryLockFile        = filepath.Join(os.Getenv("MONKS_DATA"), "letterboxd-diary.lock")
+	diaryCacheFile       = env.InMonksData("letterboxd-diary.gob")
+	diaryLockFile        = env.InMonksData("letterboxd-diary.lock")
 	diaryCacheExpiration = time.Hour * 6
 )
 

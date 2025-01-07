@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"monks.co/pkg/env"
 )
 
 type DB struct {
@@ -17,7 +17,7 @@ type DB struct {
 }
 
 func OpenFromDataFolder(name string) (*DB, error) {
-	path := filepath.Join(os.Getenv("MONKS_DATA"), name+".db")
+	path := env.InMonksData(name + ".db")
 	return Open(path)
 }
 

@@ -3,12 +3,12 @@ package serve
 import (
 	"bytes"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"time"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
+	"monks.co/pkg/env"
 )
 
 func StaticServer(staticDir string) http.Handler {
@@ -30,7 +30,7 @@ func JSServer(tsFilePath string) http.Handler {
 
 func ServeJS(w http.ResponseWriter, req *http.Request, tsfilepath string) {
 	result := esbuild.Build(esbuild.BuildOptions{
-		EntryPoints: []string{filepath.Join(os.Getenv("MONKS_ROOT"), "apps/map/ts/index.ts")},
+		EntryPoints: []string{env.InMonksRoot("apps/map/ts/index.ts")},
 		Bundle:      true,
 		Write:       false,
 	})

@@ -5,11 +5,10 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
+	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
 )
 
@@ -44,7 +43,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	staticFilePath := filepath.Join(os.Getenv("MONKS_ROOT"), "static", req.URL.Path)
+	staticFilePath := env.InMonksRoot("static", req.URL.Path)
 	gzip.Middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, staticFilePath)
 	})).ServeHTTP(w, req)

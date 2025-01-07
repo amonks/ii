@@ -3,9 +3,10 @@ package ports
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
+
+	"monks.co/pkg/env"
 )
 
 var Apps = map[string]int{}
@@ -17,7 +18,7 @@ func init() {
 }
 
 func run() error {
-	bs, err := os.ReadFile(filepath.Join(os.Getenv("MONKS_ROOT"), "config/ports"))
+	bs, err := os.ReadFile(env.InMonksRoot("config/ports"))
 	if err != nil {
 		return err
 	}
