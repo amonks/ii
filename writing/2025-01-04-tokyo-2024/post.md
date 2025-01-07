@@ -13,11 +13,12 @@ I had enough points saved up for a business class seat on a JAL nonstop flight
 from Chicago to Haneda. Pretty swank!
 
 I ate "the Japanese meal" (pictured), put my seat into lie-flat position, and
-got 8 hours of shut-eye.
+got 8 hours of sleep.
 
 When I woke up, I had a beer and a "pastrami sandwich" (not pictured) on the
-theory that one must always try the weirdest thing on the menu. The sandwich was
-no good at all, but fortunately it was actually just half a sandwich.
+theory that if there is one thing on the menu which is unlike the other things
+on the menu, one must always order it. The sandwich is no good at all, but
+fortunately it was actually just half a sandwich.
 
 <photo-set>
 
@@ -29,21 +30,22 @@ no good at all, but fortunately it was actually just half a sandwich.
 
 </photo-set>
 
-The plane landed, I went through customs (not that confusing!), and made my way
-out of the airport.
+The plane lands, and I go through customs. It's confusing, but not _that_
+confusing. I try to find my way out of the airport.
 
-Google Maps said there was a bus from Haneda to my hotel every hour, and from
-Haneda to Shinjuku station every 20 minutes. I'd have to wait nearly an hour for
-the next direct-to-hotel bus, so I used the bus ticket machine and got on the
-next bus to Shinjuku.
+Google Maps says there is a bus from Haneda to my hotel every hour, and from
+Haneda to Shinjuku Station every 15 minutes. I've just missed the
+direct-to-hotel bus, so I want the bus to Shinjuku Station. I approach the bus
+ticket machine.
 
-Charlie had previously walked me through setting up a Suica card on my phone,
-which was _very helpful_--I used it to pay for the bus ticket, and subsequently
-all other transportation on the trip.
+Charlie has previously walked me through setting up a Suica card on my phone,
+which is _very helpful_--I use it to pay for the bus ticket, and subsequently
+all other transportation on the trip, plus some small purchases at bars and
+convenience stores.
 
-I stayed at the Bellustar in Kabukicho. It was very fancy! I ended up getting
-into the room around 6pm, and despite sleeping on the plane, I was pretty
-exhausted, so I took a melatonin and went to bed.
+I'm staying at the Bellustar in Kabukicho. It's very fancy! I end up getting
+into the room around 6pm, and despite sleeping on the plane, I'm pretty
+exhausted, so I take a melatonin and go to bed.
 
 <photo-set>
 
@@ -56,33 +58,36 @@ exhausted, so I took a melatonin and went to bed.
 ## Shinjuku Day
 
 In the morning, I set out to explore Shinjuku! What an overwhelming
-neighborhood. My gosh!
-
-I basically spent the whole day just walking increasingly large concentric
-circles around the hotel, trying to get my bearings.
+neighborhood. My gosh! I basically spend the whole day walking increasingly
+large concentric circles around the hotel, trying to get my bearings.
 
 (Shinjuku Station map by Tomoyuki Tanaka).
 
 <photo-set>
 
+- ![Shinjuku Station map](2-shinjuku-6.jpeg)
 - ![I'm ready to face the day](2-shinjuku-1.jpeg)
 - ![Overwhelming architecture](2-shinjuku-2.jpeg)
 - ![Overwhelming architecture](2-shinjuku-3.jpeg)
 - ![Overwhelming konbini](2-shinjuku-4.jpeg)
 - ![Overwhelming konbini](2-shinjuku-5.jpeg)
-- ![Shinjuku Station map](2-shinjuku-6.jpeg)
 
 </photo-set>
 
-I'm not sure who recommended it, but I saw that I had a [gyukatsu
-place](https://maps.app.goo.gl/knuk9jZV6LK38dUn7) in the neighborhood in my
-Google Maps Saved Places, so I went there for lunch. You cook the little fried
-beef strips on the slab grill in the back. Tasty!
+I'm not sure who recommended it, but I see on Google Maps that I've saved a
+[gyukatsu place](https://maps.app.goo.gl/knuk9jZV6LK38dUn7) in the neighborhood.
+That's where I'll go for lunch. It's in a basement, which takes me a while to find.
 
-It was in a basement, which took me a few minutes to find successfully. The most
-striking thing about Shinjuku for me was the z-axis of it all: Google Maps
-displays an extra widget for selecting what floor level to look at, and much of
-the neighborhood has business from B2 up to 4 or higher.
+The most striking thing about Shinjuku for me is the z-axis of it all: Google
+Maps displays an extra widget for selecting what floor level to look at, and
+much of the neighborhood has business from B2 through 4 or higher. A lot of the
+basements are connected to the train station, and a lot aren't.
+
+The gyukatsu is delicious. They've somehow managed to deep-fry these two thin
+steaks, but keep the beef raw. You take a piece and sear it on the little fire
+slab in the back, then dip it in one of the sauces. There's a soy one, a spicy
+one, grated yam, herby peppers, and wasabi. It's served with rice, soup, salad
+(it's just shredded cabbage; that's the salad), and cold barley tea.
 
 <photo-set>
 
@@ -90,31 +95,48 @@ the neighborhood has business from B2 up to 4 or higher.
 
 </photo-set>
 
-When Charlie finally got off work, we met up at his office and went to [an
-izakaya](https://maps.app.goo.gl/hbJBcN9FY82B4skr9) he'd heard about for dinner.
-We first tried to go to a different place (up some stairs, in an alley, above
-what I'm told is called a "ripe women" bar), but they said they were closing
-early and didn't let us in. There's no way in a million years I would have found
-this place: it was up a flight of stairs, and not obviously marked from the
-street. We ate,
+When Charlie finally gets off work, we met up at his office and head to dinner.
+He has a place in mind, and then a backup place if that doesn't work out.
+
+It's a good thing he has a plan: Shinjuku is a _very_ touristy neighborhood.
+Most of the places I walk past seem kind of... not good. I think there are two
+kinds of restaurant in the world:
+
+- restaurants that focus on getting people in the door, and,
+- restaurants that focus on getting people _back_ in the door.
+
+Any restaurant with a big sign (or worse: that employs someone to accost
+tourists in the street) is the first kind. It's the _other_ kind that has good
+food.
+
+Anyway, we try the first place. It's on the fourth floor, up some barely-marked
+stairs. The third floor, he tells me, is a "ripe women bar". It has "no
+foreigners" signs. The fourth floor is our izakaya, but they tell us they're
+closing early.
+
+We go to [the backup place](https://maps.app.goo.gl/hbJBcN9FY82B4skr9), which
+Charlie heard about from some friend or another. It's _also_ up some stairs, in
+an alley. There's no way in a million years I would have found it. Charlie's
+impressed: it's darn good. We order,
 
 - corn highballs (weird as hell; extremely corn)
 - oden (radish, hard-boiled egg, fishcake, konnyaku, all simmered in broth)
 - pickled ginger tempura
 - agedashi tofu
 - a bowl of fried garlic cloves
-- gizzards on a stick
 - quail eggs on a stick
 - cheese bacon on a stick
+- chicken gizzards on a stick
 - chicken skin on a stick
 - chicken nugget on a stick
 - chicken livers on a stick
 
-I loved the konnyaku in particular: it had a very unfamiliar texture. Normally
-when you chew food, it gradually softens and breaks down. Not so with konnyaku!
-Each mastication just slices the dense block into two same-textured pieces.
-Apparently for a while there was a snack where you sucked konnyaku through a
-kind of straw, and a lot of people choked on it.
+I love the konnyaku in particular: it has a very unfamiliar texture. Normally
+when you chew food, it gradually softens and breaks down. Not so with konnyaku.
+Each mastication just slices the dense slippery block into two same-textured
+pieces. You repeat this until the pieces are small. Apparently for a while there
+was a snack where you sucked konnyaku through a kind of straw, and a lot of
+people choked on it. This is easy to believe. I've never had anything like it.
 
 <photo-set>
 
@@ -125,9 +147,9 @@ kind of straw, and a lot of people choked on it.
 
 ## "First Day In Japan" Tourism Day
 
-Charlie had some recent experience guiding visitors through Tokyo, and he was
+Charlie's had some recent experience guiding visitors through Tokyo, and he's
 kind enough to give me an itinerary for my first _real_ day of exploration,
-which would take me from Nogizaka Station through Minamiaoyama, Kita-Aoyama, and
+which will take me from Nogizaka Station through Minamiaoyama, Kita-Aoyama, and
 culminate in Harajuku.
 
 <photo-set>
@@ -136,12 +158,14 @@ culminate in Harajuku.
 
 </photo-set>
 
-I started by walking from the station through [Aoyama
-Cemetery](https://maps.app.goo.gl/KREB4VCaPU4kCxNTA), which was nice: I dressed
-too warm on this day, and the meandering walk was a good way to cool off.
-Temperature regulation was a pretty big issue on the trip: walking outside was
-chilly, but each day also involved a lot of speedwalking through very hot train
-stations. I eventually settled on ditching the coat entirely.
+I start by walking from the station through [Aoyama
+Cemetery](https://maps.app.goo.gl/KREB4VCaPU4kCxNTA), which is nice: I dressed
+too warm, and the meandering walk is a good way to cool off.
+
+Temperature regulation is a pretty big issue on the trip: walking outside is
+chilly, but each day also involves a lot of speedwalking through very hot train
+stations. I eventually settle on ditching the coat entirely. Breathable natural
+fibers, like everyone says.
 
 <photo-set>
 
@@ -153,12 +177,14 @@ stations. I eventually settled on ditching the coat entirely.
 
 </photo-set>
 
-From the cemetery, I went to [Cres.
-Coffee](https://maps.app.goo.gl/y9W2Lnfo3puidUs17), on Omotesandō avenue, which
-Charlie had recommended. What a lovely place! It's a specialty coffee and wine
-bar. I tried an anaerobic-fermented Ethiopian bean, which tasted like
-passionfruit, and had a very nice conversation with the proprietor, who had
-studied film in Los Angeles. Wonderful.
+From the cemetery, I awlk to [Cres.
+Coffee](https://maps.app.goo.gl/y9W2Lnfo3puidUs17) on Omotesandō avenue, which
+Charlie has recommended. What a lovely place! It's a specialty coffee and wine
+bar. I try an anaerobic-fermented Ethiopian bean, which tastes like
+passionfruit. Not, like, "tastes mostly like coffee, but in a manner that,
+perhaps, slightly evokes passionfruit". Not that at all. It _tastes like
+passionfruit_. I have a very nice conversation with the proprietor, who studied
+film in Los Angeles. Wonderful.
 
 <photo-set>
 
@@ -166,10 +192,16 @@ studied film in Los Angeles. Wonderful.
 
 </photo-set>
 
-I walked around the design district, browsing some fancy home goods. The
-highlight was a gallery of fine woodworking, [箸製造 マルナオ青山 |
-渋谷区神宮前](https://maps.app.goo.gl/wXBJfcqhJm9N22Jf6), where I got my folks a
-set of handmade wooden cups.
+I walk around the design district, browsing some fancy home goods. The highlight
+is a gallery of fine woodworking, [箸製造 マルナオ青山 |
+渋谷区神宮前](https://maps.app.goo.gl/wXBJfcqhJm9N22Jf6). There's a room with a
+display of hand chisels. Apparently they do all their work with hand chisels.
+The [oldest business in the world](https://en.wikipedia.org/wiki/Kongō_Gumi) is
+a Japanese woodworking company. They build (and rebuild) Shinto shrines. Their
+1500th anniversary is coming up. This isn't that company, but the woodworking is
+very nice.
+
+I get my folks a set of handmade wooden cups and some chopsticks.
 
 <photo-set>
 
@@ -181,21 +213,24 @@ set of handmade wooden cups.
 
 </photo-set>
 
-For lunch, Charlie had recommended [Tonkatsu Maisen
-Aoyama](https://maps.app.goo.gl/HmRd9e9iCenA7XFw8), which was located in a
-converted old bathhouse. It's well-known to tourists, so I had to wait in a bit
-of a line. But the pork was excellent. I got the Kagoshima Berkshire pork, which
-came with a special apple sauce.
+For lunch, Charlie recommended [Tonkatsu Maisen
+Aoyama](https://maps.app.goo.gl/HmRd9e9iCenA7XFw8), which is situated in an old
+converted bathhouse. It's well-known to tourists, so I have to wait in a bit of
+a line. But the pork is excellent. I order the Kagoshima Berkshire pork, which
+comes with a special apple sauce, and fried oysters. It's served with rice,
+soup, a bit of pickled cabbage, and a salad of only shredded cabbage. This salad
+is really growing on me: who needs other ingredients, anyway?
 
-After lunch, I saw a line outside a very nondescript business on a residential
-street. Lines can either mean a place is touristy _or_ it's very good, or both.
-I got the sense this one might be good and queued up. It was a [coffee
-roaster](https://maps.app.goo.gl/dtTSMCWT7HjaTtAg9)! They had a wide variety of
-beans, and took a great deal of pride in talking through each customer's palate
-to establish a recommendation. The man I spoke to asked where I get my coffee in
-Chicago, and when I said [4LW](https://maps.app.goo.gl/MKxi9hCxZXFr9GJ68), he
-spoke very highly of Kevin, the proprietor, who apparently always pops in when
-he's in Tokyo. Small world!
+After lunch, I see a line outside a very nondescript business on a residential
+street. Lines can mean a place is touristy, _or_ it's very good, or, of course, both. I think this is both.
+
+I queue up. It's a [coffee roaster](https://maps.app.goo.gl/dtTSMCWT7HjaTtAg9)!
+They have a wide variety of beans, and take a great deal of apparent pride in
+talking through each customer's palate to establish a recommendation. The man I
+speak to asks where I get my coffee in Chicago, and when I say
+[4LW](https://maps.app.goo.gl/MKxi9hCxZXFr9GJ68), he says, "Of course! Kevin
+always comes in here when he's in Tokyo. Let me recommend some other coffee
+places here that you might like." Small world!
 
 <photo-set>
 
@@ -205,44 +240,56 @@ he's in Tokyo. Small world!
 
 </photo-set>
 
-From there, I walked through a hilly sort of hypebeast neighborhood and popped
-into the Roland store. I don't know what I was expecting, but it was... a Roland
-store. They had the Roland gear. Not much else to say about it.
+From there, I walk through a hilly sort of hypebeast neighborhood and pop into
+the Roland store, which is on my todo list. I don't know what I was expecting,
+but it's... a Roland store. They have all the Roland gear. Not much else to say
+about it.
 
-I made my way back to Shinjuku via to Harajuku station, walking through a
-horrible disneyland-style tourist hellstreet to get there.
+I make my way to Harajuku station, walking through a horrible disneyland tourism
+hellstreet to get there. This is Harajuku. I take the train back to Shinjuku.
 
 ---
 
-In the evening, I took the Keio New Line to Hatagaya station to meet up with
+In the evening, I take the Keio New Line to Hatagaya station to meet up with
 Charlie. Charlie has a Thursday routine: he gets pad Thai at
-[LaLaChai](https://maps.app.goo.gl/wX1za4jdr3QPLah3A), then attends
+[LaLaChai](https://maps.app.goo.gl/wX1za4jdr3QPLah3A) ("I think it's the best
+pad Thai in the world"), and then attends
 [ideala](https://x.com/ideala_jpn?lang=en) at
 [forestlimit](https://maps.app.goo.gl/GZay7RZDjdMWuweV8).
 
-On our way to LaLaChai, we saw across the street that there wasn't a line to get
-into [特麺コツ一丁ラーメン](https://maps.app.goo.gl/hgW6fS3PHqWi6oZf7), which is
-apparently unusual. The reason: on Thursdays, the only thing they offer is a
+On our way to LaLaChai, we see across the street that there isn't a line to get
+into [特麺コツ一丁ラーメン](https://maps.app.goo.gl/hgW6fS3PHqWi6oZf7), which
+is, apparently unusual. The reason: on Thursdays, the only thing they offer is a
 dish they call 交響麺, aka "symphony noodles", aka kyu kyu men. It's a dry ramen
-topped with a pork fat sauce. I wasn't ready for the ramen machine, so Charlie
-ordered for both of us: 交響麺, plus quail egg, plus several cloves each of
-garlic-pressed garlic to put on top (not pictured).
+topped with a pork backfat sauce.
+
+At ramen places, you order with a machine. You
+use the machine to buy tickets describing the foods you want, and then when you
+sit down, you put the tickets on the counter in front of you. You do this in
+silence. I'm not ready to use the machine, so Charlie orders for both of us:
+交響麺, plus quail egg, plus several cloves each of garlic-pressed garlic to put
+on top (not pictured).
 
 Holy cow! Now this is some ramen. I don't think I've ever had noodles with this
 texture. And the garlic! It's so... strong! Not like anything I've had before.
+Really delicious. Wonderful.
 
 <photo-set>
 
 - ![交響麺](3-ramen-1.jpeg)
+- ![交響麺](3-ramen-3.jpeg)
 
 </photo-set>
 
-We had some time to kill before ideala, so we walked back to the train station
-to visit [Gremlin](https://maps.app.goo.gl/L27zMkah2edRRFum9), a craft beer bar
-in the basement of the station. I love these liminal spaces! I wish Chicago's
-train stations had room for small businesses: it'd be nice in the winter.
+We still have some time before ideala, so we walk back to Hatagaya Station to
+visit [Gremlin](https://maps.app.goo.gl/L27zMkah2edRRFum9), a craft beer bar in
+the basement. I love these liminal spaces! I wish Chicago's train stations had
+room for small businesses: it'd be nice in the winter.
 
-On the way was an (apparently very good) amusing cheesesteak place.
+On the way, we pass an (apparently very good) cheesesteak place. The
+proprietor's obsessed with American food, but has never been to America. I hope
+he gets to go some time. Charlie used to come here a lot, but not as much since
+they raised the prices.
 
 <photo-set>
 
@@ -251,7 +298,11 @@ On the way was an (apparently very good) amusing cheesesteak place.
 
 </photo-set>
 
-We ended the night at ideala. A blast.
+We end the night at ideala. A blast. This club would be _so illegal_ in the
+States. It's a small square basement room, with a bar on one side, a table with
+turntables in the middle, and storage around the edges. DJs are playing Chicago
+House, which isn't really my jam, but they're very good at it. Charlie
+introduces me to several friends. We talk about old times.
 
 <photo-set>
 
@@ -262,10 +313,11 @@ We ended the night at ideala. A blast.
 
 ## Meguro & Nakameguro day
 
-On Friday, I woke up early to meet Charlie at Freeman Shokudo for breakfast, but
-their Instagram said they were closed, so we went to LUG instead. It had been on
-my list: it's a restaurant operated by the best bike shop in the world (the Blue
-Lug).
+On Friday, I wake up early to meet Charlie at Freeman Shokudo for breakfast.
+Charlie goes there every Friday. They have a wonderful omelette. But their
+Instagram says they're closed, so we go to LUG instead. Coincidentally, LUG has
+been on my list: it's a restaurant operated by the Blue Lug, the best bike shop
+in the world. They also operate a barber and a flower shop.
 
 <photo-set>
 
@@ -273,9 +325,9 @@ Lug).
 
 </photo-set>
 
-Charlie gave me an itinerary for the day--we'd gotten through the tourist
-"must-do"s, and he suggested I walk around Nakameguro for a taste of something a
-bit more residential.
+During breakfast, Charlie talks me an itinerary for the day--I spent yesterday
+on tourist "must-do"s, so he suggests I walk around Nakameguro for a change of
+pace. A taste of something a bit more residential.
 
 <photo-set>
 
@@ -285,14 +337,21 @@ bit more residential.
 
 </photo-set>
 
-He had me start at a [Picasso](https://maps.app.goo.gl/7NzJyXBtpLGpJfET9) (Don
-Quijote spinoff) at Meguro Station, but I didn't really see the draw: it's just
-a store.
+The plan has me start at a [Picasso](https://maps.app.goo.gl/7NzJyXBtpLGpJfET9)
+(which is a spinoff of Don Quijote, which is a popular discount store) at Meguro
+Station, but I didn't really see the draw: it's just a store. I've been to
+stores.
 
-Next stop was the [Meguro Parasitological
-Museum](https://maps.app.goo.gl/EbmbgjENGsvCb3nw6); a 50-year-old local museum
-dedicated to the study of parasites. Apparently it started as one guy's
-collection of samples and drawings, and grew from there.
+Next stop is the [Meguro Parasitological
+Museum](https://maps.app.goo.gl/EbmbgjENGsvCb3nw6); a 71-year-old local museum
+dedicated to the study of parasites. The signs say it started as one guy's
+collection of samples and drawings, and grew from there. Later, I'm told that
+for a while in the 90s, this was the most popular spot for high schoolers to go
+on dates in all of Tokyo. I wonder how you'd measure that. They have the world's
+largest tapeworm, which is easier to measure.
+
+I love what this place represents: how can a free museum about such a niche
+subject stay open for so long?
 
 <photo-set>
 
@@ -307,16 +366,18 @@ collection of samples and drawings, and grew from there.
 
 </photo-set>
 
-On the way to Nakameguro, I spent a few hours at the zine shop [ONLY FREE
+On the way to Nakameguro, I spend a few hours at the zine shop [ONLY FREE
 PAPER](https://maps.app.goo.gl/fWi6k7ounQquCABeA) looking at posters and artist
-books.
+books. I buy some to take home. They'll make good gifts.
 
-Then I spent an hour at [epulor](https://maps.app.goo.gl/3iBm1xRhPpL1dxar8)
+Then I spend an hour at [epulor](https://maps.app.goo.gl/3iBm1xRhPpL1dxar8)
 (photo by Google Maps user ニックネーム) drinking coffee and listening to
-records. Very vibey store: the proprietor was DJing old records, playing a song
-or two from each: Rosemary Clooney, Wilton Crawley, Leon Redbone, the Japanese
-group Shogun. You got the impression that he would have been doing the same
-thing even if there was nobody in the store.
+records. It's a very vibey store: the proprietor was DJing old records, playing
+a song or two from each: Rosemary Clooney, Wilton Crawley, Leon Redbone, the
+Japanese group Shogun. I get the impression that he would have been doing the
+same thing even if there was nobody in the store. It's a coffee bar and also a
+wine bar. There are some Germans on the other side of the bar from me drinking
+wine. I enjoy the music.
 
 <photo-set>
 
@@ -324,30 +385,35 @@ thing even if there was nobody in the store.
 
 </photo-set>
 
-From there to [GENERAL STORE](https://maps.app.goo.gl/KJAcheGu5hDzaWw39), a
-Henry David Thoreau themed anarchist-mountaineering fashion-and-camping brand
-(!). Surreal to see that in Japan, having grown up down the street from Walden
-Pond.
+From there I head to [GENERAL STORE](https://maps.app.goo.gl/KJAcheGu5hDzaWw39),
+a Henry David Thoreau themed anarchist-mountaineering fashion-and-camping
+brand(!). Surreal to see that in Japan, having grown up down the street from
+Walden Pond. I buy a hat. The guy working is thrilled.
 
 Finally [COW BOOKS 中目黒](https://maps.app.goo.gl/9iQ7ErMpuRiwQoyQA), a store
-specializing in art and culture books from the Shōwa period, curated by the
-author [Yataro Matsuura](https://www.muji.com/us/compactlife/column001.html).
+specializing in art and culture books from the Shōwa period (that is, the 20s
+through the 80s), curated by the author [Yataro
+Matsuura](https://www.muji.com/us/compactlife/column001.html). It kind of feels
+like someone's personal library. All of the books are in Japanese, and a lot of
+them are about American artists.
 
 ---
 
-For dinner, I met up with Charlie in Hatagaya. We went to the trendy restaurant
-[ミクロとくじら](https://maps.app.goo.gl/jJbaKyUXXZHmmAVD6). A cool place with
-subway tile, very low stools, edgy-looking staff, and stuffed animals in rope
-bondage hanging from the ceiling. We had,
+For dinner, I meet up with Charlie in Hatagaya. We go to the trendy restaurant
+[ミクロとくじら](https://maps.app.goo.gl/jJbaKyUXXZHmmAVD6). It's a cool place
+with subway tile, very low stools, edgy-looking staff, and stuffed animals in
+rope bondage hanging from the ceiling. We order,
 
-- Spice Highballs (mostly tasted like ginger ale)
-- Jiro-style ramen (no broth. Also, no noodles? Kind of a salad)
-- Fried eggplant
+- Spice Highballs (which taste chiefly of ginger ale)
+- Jiro-style ramen (which has no broth. Also no noodles. It's kind of a salad)
+- Fried eggplant (delicious)
 - Chicken of the Southern Barbarians (topped with "tartar sauce", which was more
   like egg salad)
 
-Apparently, "Southern Barbarians" is a Japanese term for Europeans, since the
-Portuguese set up port in the southern part of Japan)
+The chicken is delicious. Dark meat. Perfectly fried. Charlie tells me that
+"Southern Barbarians" is a Japanese term for Europeans, since the Portuguese who
+came to Japan in the 1500s set up their port in the most southern part of the
+Japanese archipelago.
 
 <photo-set>
 
@@ -358,9 +424,14 @@ Portuguese set up port in the southern part of Japan)
 
 </photo-set>
 
-Then we walked to Sasazuka's Jugo Dori Shopping Street to visit [Sasazuka Source
-Stand](https://maps.app.goo.gl/2ViXzxZSjH5vZzjy8), a stand bar (tiny bar where
-you eat standing up at the counter) specializing in Osaka-style squid pancakes.
+Then we walk to Sasazuka's Jugo Dori Shopping Street to visit [Sasazuka Source
+Stand](https://maps.app.goo.gl/2ViXzxZSjH5vZzjy8), a "stand bar" (a tiny bar
+where you eat standing up at the counter) specializing in Osaka-style squid
+pancakes. We drink highballs and talk about people we knew in high school.
+
+I drink a lot of highballs on the trip. It's great: they aren't strong enough
+that you get drunk, but they're large enough that you stay hydrated. And every
+place has a ton of different ones. And they're cheap.
 
 <photo-set>
 
@@ -370,36 +441,37 @@ you eat standing up at the counter) specializing in Osaka-style squid pancakes.
 
 </photo-set>
 
-We ended the night at [Pintology](https://maps.app.goo.gl/P3T4ruPRnUNS62xb6),
-where a few things happened:
+We end the night at [Pintology](https://maps.app.goo.gl/P3T4ruPRnUNS62xb6), a
+craft beer bar run by a Japanese-and-American couple with an unusual crowd. It's
+a pretty even mix of expats (like Charlie) and locals. A few things happen:
 
-- I met several of Charlie's friends, all captains of creative industries
-- One invited us to a Sofubi show at his art store the next day (see below)
-- I gave one of those friends some advice
-- He said, "Bring out the list!", and Kyle-the-proprietor pulled out a piece of
-  paper from behind the counter with 9 names listed on it, and instructed me to
-  add my name.
+- I meet several of Charlie's friends, all captains of creative industries.
+- One of them invites us to a Sofubi show at his art store the next day.
+- I give another friend some professional advice.
 
-Apparently, the friend to whom I gave advice is _best friends_ with the
-proprietor of a _very well-liked ramen place_ where one normally has to line up
-at 7am for lunch. Every month, it opens on an off-day, and the advised can bring
-in a group of folks to walk right in with no line. Scroll 7 days later to see
-the ramen.
+He says, "Bring out the list!", and the bartender pulls out a piece of paper
+from behind the counter with 9 names listed on it, instructing me to add my
+name. I oblige, although I don't really know what's going on.
+
+I'm informed: the friend to whom I gave advice is _best friends_ with the owner
+of a _very well-liked ramen place_ where one normally has to line up at 7am for
+lunch. Every month, it opens on an off-day, and this friend can bring in a group
+of folks to walk right in with no line. This is the invite list. I'm honored.
 
 ## Food Tour Day
 
-This was a _big day_.
+This is a _big day_.
 
-Ever since moving to the neighborhood, Charlie had been conceptualizing the
-_perfect food day_. The most places. The best places. The route. How to pack
-it all in. My visit was an opportunity: we'd do it.
+Ever since moving to the neighborhood, Charlie has been conceptualizing the
+perfect food day. The most places. The best places. The route. How to pack it
+all in. My visit is an opportunity: we'll do it.
 
-We started near Sasazuka Station with some Michelin-noted (Bib Gourmand)
+We start near Sasazuka Station with some Michelin-noted (Bib Gourmand)
 _extremely inexpensive_ sushi at the stand bar [立食い鮨
-鮨川](https://maps.app.goo.gl/cUvxXpMvxfYsYAe26). The gentlemen standing next to
-us were doing an all-you-can-drink thing, which was... entertaining. Wonderful
-uni. Google Translate had an amusingly difficult time translating the fish
-kanji.
+鮨川](https://maps.app.goo.gl/cUvxXpMvxfYsYAe26). It's excellent. Wonderful uni.
+Google translate struggles with fish kanji, so Charlie orders. The gentlemen
+standing next to us were doing an all-you-can-drink thing, and they're having a
+blast, which is... entertaining.
 
 <photo-set>
 
@@ -407,14 +479,15 @@ kanji.
 
 </photo-set>
 
-From there, we went to [Sailosaibin](https://maps.app.goo.gl/Ka5pHaL8Nh6A8qzP9),
-where some friends of Charlie's sell design books and _objets d'art_, and on this
-day was having a Sofubi show. I got a hat!
+From there, we go to the Sofubi show at
+[Sailosaibin](https://maps.app.goo.gl/Ka5pHaL8Nh6A8qzP9), a store run by two
+more of Charlie's friends, where they sell design books and _objets d'art_. I
+get a hat!
 
-Then we went across the street to
-[Menotti's](https://maps.app.goo.gl/obsPsrw1V5fX3wcB8) for coffee. I got a
-Spanish latte (since I'd never heard of that). Turns out it just means "with
-cinnamon". Not bad!
+We go across the street to
+[Menotti's](https://maps.app.goo.gl/obsPsrw1V5fX3wcB8) for coffee. I get a
+Spanish latte, since I've never heard of that. Turns out it just means "with
+cinnamon". Still! A good latte.
 
 <photo-set>
 
@@ -426,11 +499,22 @@ cinnamon". Not bad!
 </photo-set>
 
 Next stop: [串かつ 名代 (なしろ)](https://maps.app.goo.gl/xUF7jpM8Ha4ZaWa97)
-back at Hatagaya station for their Happy Set: $2.69 gets you four sticks with
-fried things on them, plus a reasonably strong drink. We did two each, and I
-drank beni-shoga highballs. We finished out the meal with "Chicken Salad Of The
-Proprietor Here, Who Ordinarily Hates Chicken Salad", which was wonderfully
-studded with pork and cucumber.
+back at Hatagaya station for their Happy Set: $2.69 gets you three
+fried-things-onna-stick, a bit of cabbage, and a drink. We do two each. I
+drink beni shoga highballs, which are full of red pickled ginger. We end out the
+meal with "Potato Salad Of The Proprietor Here, Who Ordinarily Hates Potato
+Salad", which is loaded with bacon and cucumber.
+
+The fried sticks are,
+
+- quail egg,
+- pork,
+- mushroom,
+- hot dog,
+- beef, and,
+- onion.
+
+The vegetable ones are the best.
 
 <photo-set>
 
@@ -442,11 +526,12 @@ studded with pork and cucumber.
 </photo-set>
 
 Following a pit-stop at a Tokyo Toilet (like in [Perfect
-Days](https://letterboxd.com/film/perfect-days-2023/)!), we went to
+Days](https://letterboxd.com/film/perfect-days-2023/)!), we go to
 [Kasiki](https://maps.app.goo.gl/GZ2XmEKR7cd6hF1Q9), a trendy ice-cream-and-wine
 bar. I tired the pear-and-tea and the persimmon-and-tea ice cream flavors.
 Personally I would have gone for a wetter texture, and I would have balanced a
-bit less tea and a bit more fruit, but it wasn't entirely bad.
+bit less tea and a bit more fruit, but it isn't entirely bad. We talk about ice
+cream recipes.
 
 <photo-set>
 
@@ -456,17 +541,17 @@ bit less tea and a bit more fruit, but it wasn't entirely bad.
 
 </photo-set>
 
-We went into [Commune Press](https://maps.app.goo.gl/Ehe3Y6CvS63SHmqz7) to look
-at some art, and I got a nice tenugui and a photo zine.
+We go into [Commune Press](https://maps.app.goo.gl/Ehe3Y6CvS63SHmqz7) to look
+at some art, and I get a nice tenugui and a photo zine.
 
 Then: [Ji Sakeya](https://maps.app.goo.gl/AVsjNN9CzWZiNiZT8) for a big Nihonshu
-tasting. We talked about work stuff. It was just us, the owner, and two older
-ladies in the store. When Charlie was in the bathroom, one of the ladies _(1)_
-asked me, "how are you liking Japan?". Her companion _(2)_ said, "I'm too drunk
-and embarrassed to speak English right now, but please talk to my friend", and so
-we started a conversation. Turns out _1_ used to be a COBOL mainframe programmer
-for banks! She quit because it was too much work, and now _1_ and _2_ work
-together at a music school.
+tasting. We talk about work stuff. In the store is just us, the owner, and two
+older ladies. When Charlie's in the bathroom, one of the ladies asks me, "how
+are you liking Japan?". Her companion says, "I'm too drunk and embarrassed to
+speak English right now, but please talk to my friend. I'll listen", and so we
+start a conversation. Turns out she used to be a COBOL mainframe programmer for
+banks! She quit because it was too much work, and now they work together at a
+music school.
 
 <photo-set>
 
@@ -475,12 +560,14 @@ together at a music school.
 
 </photo-set>
 
-After all that drinking we needed to eat something, and the next stop was,
+After all that drinking we need to eat something, and the next stop is,
 accordingly, [Raccos Bar](https://maps.app.goo.gl/ntcDN8wbTr4cZqSo7) (first
 photo by Google Maps user Maria Armellin).
 
-What an endearing place! Apparently Racco is a bassist in a significant punk
-band, and he runs this little 5-seat bar on the side. He made us,
+What an endearing place! Racco is the bassist in a significant punk band, and he
+runs this little 5-seat bar on the side. The menu is comprised of little scraps
+of cardboard pinned to the walls, where he's drawn, in Sharpie, cartoons of the
+food. We have,
 
 - salad,
 - dashi tamago maki,
@@ -489,12 +576,12 @@ band, and he runs this little 5-seat bar on the side. He made us,
 - smoked turnip, and,
 - shiso leaf tempura.
 
-The hotaru ike no shiokara was particularly fascinating: apparently shiokara
-("salty-spicy", meaning something more like "so salty that it's spicy") is a
-style of salted-fermented seafood, and hotaruika-no is a particularly choice
-variety made from the guts of firefly squid. This right here was the most
-unfamiliar flavor of the trip. Delicious. I pledged to bring some home, which
-became my white whale.
+The hotaruika no shiokara is particularly fascinating: shiokara (lit.
+"salty-spicy", meaning something more like "so salty that it's spicy") is a
+style of salted-and-fermented seafood, and hotaruika-no is a particularly choice
+variety made from the guts of firefly squid. This right here is the most
+unfamiliar flavor of the trip. Delicious. I pledge to bring some home. This is
+my white whale.
 
 <photo-set>
 
@@ -504,34 +591,38 @@ became my white whale.
 
 </photo-set>
 
-Done eating, and a bit tired, the next stop was [MEM Coffee
+Done eating, and a bit tired, the next stop is [MEM Coffee
 Bar](https://maps.app.goo.gl/5pEQDW3ikEcY3PPS6) (first two photos by Google Maps
-users Amir Dholakia and りょーたんまん). My favorite business of the trip. The
-proprietor does his own custom metalwork for the coffee brewing apparatus, had a
-number of infusions in the works, played music only through his modular
-synthesizer, and offered a menu of his own coffee-based cocktails. I don't even
-like coffee cocktails, but these were somehow excellent.
+users Amir Dholakia and りょーたんまん). It's my favorite business of the trip.
+The bar is full of metal fixtures which the proprietor welded himself, and he
+has a bunch of infusions in the works, plays music only through his modular
+synthesizer, and offers a menu containing only coffee-based cocktails of his own
+design. I don't even like coffee cocktails, but these are excellent. I have two.
 
-We finished the night at Gremlin, where I had a tasty (and _extremely_-sour peach
-kölsch.
+We finish the night at Gremlin—the beer bar in the train station--where I have a
+tasty (and _extremely_-sour peach kölsch. The Chinese restaurant next to Gremlin
+has a display of dried animal penises in their window.
 
 <photo-set>
 
 - ![MEM](5-mem-1.jpeg)
 - ![MEM](5-mem-2.jpeg)
+- ![penises](5-penises-1.jpeg)
 
 </photo-set>
 
 ## Violetta and Florilege Day
 
-We got a pretty late start on Sunday. We met up in Hatagaya to go to a [curry
+We get a pretty late start on Sunday. We meet up in Hatagaya to go to a [curry
 place](https://maps.app.goo.gl/9uSkU4Dng3mcL3rw5) that Charlie goes to every
-week. He got me the chicken-and-beef combo, and the chicken was pretty spicy. I
-think it was my first time seeing a fork! The proprietress was very friendly.
+week. He gets me the chicken-and-beef combo, and the chicken is pretty spicy. I
+think this is my first time seeing a fork! The proprietress was very friendly.
+The salad is nice, too, if a bit overdressed. The orange wedge is very welcome.
 
-Then, we made our way to [Violetta](https://maps.app.goo.gl/h8WkVMhqTFEiFwJS9),
-where some friends of Charlie's were DJing. One particularly interesting DJ was
-doing both IDM sort of stuff _and_ koto-oriented Japanese traditional music.
+Then, we make our way to [Violetta](https://maps.app.goo.gl/h8WkVMhqTFEiFwJS9),
+where some friends of Charlie's are DJing. One particularly interesting DJ is
+playing a mix of IDM and koto-oriented Japanese traditional music. There's video
+of someone painting the stripes onto a road.
 
 <photo-set>
 
@@ -541,34 +632,40 @@ doing both IDM sort of stuff _and_ koto-oriented Japanese traditional music.
 
 </photo-set>
 
+---
+
 Before visiting a new city, I like to check the [World's 50 Best Restaurants
 List](https://www.theworlds50best.com/list/1-50) (which ought to be called "50
-theatrical tasting menus in neighborhoods with Aesop stores", but that's a fun
-vibe once in a while) and, if any of those restaurants are in the city, see if I
+arbitrarily-chosen tasting menus in neighborhoods with Aesop stores", but that's
+another conversation) and, if any of those restaurants are in the city, see if I
 can get a reservation at one.
 
-I got a seat at Florilège in Roppongi. As one might expect, the clientele was a
-primarily tourists: many from China, and a few from the US, Korea, and England.
-Plus one older Japanese couple.
+This time, I have a seat at Florilège in Roppongi. I'm the one of the first
+people seated. The restaurant is one huge communal table, but the seats are
+pretty far apart. As one might expect, the clientele is primarily tourists:
+many from China, and a few from the US, Korea, and England. Plus one older
+Japanese couple.
 
-The meal was quite produce-oriented, which was nice.
+The meal is quite produce-oriented, which is nice.
 
-The most remarkable thing about the meal was the drinks: I went for a
-non-alcoholic cocktail pairing option. Non-alcoholic ("spiritfree") pairings are
-exciting because they're extremely difficult to execute well, so I'll always
-order one when it's available.
+The most remarkable thing about the meal is the beverage program. They offer a
+wine/nihonshu pairing, and a non-alcoholic cocktail pairing. Non-alcoholic
+("spiritfree") pairings are exciting because they're extremely difficult to
+execute well, so I'll always opt for one when it's available.
 
-The first hard part is that you want the drinks to _drink like_ alcohol: drinks
-that want to be sipped rather than chugged. Cheap tricks are making the drinks
-spicy or serving them very hot. A better move is to lean on tannic and
+The first hard part is that you want the drinks to _drink like alcohol_:
+cocktails want to be sipped rather than chugged, but it's hard to make a
+non-alcoholic drink with that quality. Some cheap tricks are making the drinks
+spicy or serving them very hot. A better option is to lean on tannic and
 astringent ingredients, often teas, but you can't serve 12 cups of tea.
 
 That's the second hard part: you want the drinks to all taste different. Diners
-expect each of their wine pairings to taste primarily of grapes, but to be
-served a string of teas is disappointing.
+expect each of their wine pairings to taste chiefly of grapes, but to be served
+a string of all teas is disappointing.
 
-Florilège's pairing was very dynamic. Some drinks used herbal flavors, one was
-very acidic, a couple used tea, and one was spicy,
+Florilège's pairing is very dynamic. Some drinks use herbal flavors, one is very
+acidic, a couple use tea, and only one is spicy. There's even a simulacrum of
+wine, with black and pink pepper, burdock root, and grape juice.
 
 <details>
 <summary>Here's the full menu, as I recorded it</summary>
@@ -658,16 +755,17 @@ very acidic, a couple used tea, and one was spicy,
 
 ## Laundry Day
 
-Monday was primarily a Shinjuku Day. In the morning, I...
+Monday is primarily a Shinjuku Day. In the morning, I...
 
-- used a laundromat near the hotel
-- bought a suitcase
+- use a laundromat near the hotel
+- buy a suitcase
 - shopped for gifts at a couple department stores
-- had konbini lunch
+- ask for shiokara at those department stores, but am out of luck
+- have konbini lunch
 
-In the evening, I met up with Charlie for Chinese food at
-[Kōya](https://maps.app.goo.gl/oAnzrPQzFwx5oJNy9). We had eggplant, fried rice,
-and dumplings. The dumplings were especially good.
+In the evening, I meet up with Charlie for Chinese food at
+[Kōya](https://maps.app.goo.gl/oAnzrPQzFwx5oJNy9). We eat eggplant, fried rice,
+and dumplings. The dumplings are especially good.
 
 <photo-set>
 
@@ -676,16 +774,17 @@ and dumplings. The dumplings were especially good.
 
 </photo-set>
 
-Then, we went to [OOTONG Rum Hall](https://maps.app.goo.gl/xhDZKN9BvHFT8M6h8); a
-nicely decorated place with an island theme. The proprietor wore a straw hat and
-made rum drinks and gave us dried banana slices.
+Then, we go to [OOTONG Rum Hall](https://maps.app.goo.gl/xhDZKN9BvHFT8M6h8),
+which is nicely-decorated along an island theme. The proprietor wears a straw hat,
+makes rum drinks, and gives us dried banana slices and pistachios.
 
-We ended the night at [Owl 2nd
-Floor](https://maps.app.goo.gl/cbTH6UmjnZBUXsmM6), which has such incredibly
-weird energy. Kind of a Twin Peaks Black Lodge vibe. We drank awamori and ate
-“drug egg” and listened to such classic American folk songs as “jingle bell
-rock” and “there’s a new kid down in Bethlehem” and “little drummer boy (dub
-remix)”.
+We end the night at [Owl 2nd Floor](https://maps.app.goo.gl/cbTH6UmjnZBUXsmM6).
+It's supposed to be a very good omurice restaurant during the day, but at night
+it's a cheap bar. It has the most delightfully weird energy. Kind of a Twin
+Peaks Black Lodge vibe. The art on the walls is unusually naïve. We drink
+awamori and eat "drug egg" and listen to such classic American folk songs as
+"jingle bell rock", "there’s a new kid down in Bethlehem" and "little drummer
+boy (dub remix)".
 
 <photo-set>
 
@@ -694,35 +793,40 @@ remix)”.
 
 </photo-set>
 
-## Nakano and Koenji Day
+## Nakano & Koenji Day
 
-Tuesday's itinerary took me to Nakano, Koenji, and Shin-Koenji. I started with
-Nakano Broadway, reportedly "the true heart of character culture", but I must
-have done it wrong because to me it just seemed like a mall where all the goods
-were a bit shoddy. I did stop at the Daiso there and get a little coin purse,
-which was GAME CHANGING. I really ought to have done so sooner.
+Tuesday's itinerary takes me to Nakano, Koenji, and Shin-Koenji. I start with
+Nakano Broadway, reportedly "the true heart of character culture", but I must do
+it wrong, because to me it just seems like a mall where all the goods are a bit
+shoddy. I do pick up a little plastic coin purse at the Daiso there, which is
+GAME CHANGING. I ought to have done this sooner.
 
-After walking around Nakano for a while, I got a goth latte (with charcoal for
-blackness) and a transcendent canelé at
-[Butter](https://maps.app.goo.gl/XNi4WqmtdGi8Ka5T8). While I was in there, a guy
-passed by on a very cool bicycle, but I didn't get a picture.
+Japan is a very cash-oriented culture, and the coins go up to the equivalent of
+five dollars, so most transactions can be done with coins only. There's no
+tipping, and paying the exact change is convenient and appreciated.
 
-Next I walked through the Meiji University campus to Koenji, and loitered for a
-while by the station. Walking around Koenji, it seemed like a great place for
-restaurants: lots of fun little places, but I wasn't hungry. I'd like to go back
-and explore more. I spent a long time shopping at
-[cotogoto](https://maps.app.goo.gl/EmXEZWKHDpwGNu8Z6): they had a really wide
-variety of housewares, including some beautiful ceramics.
+After walking around Nakano for a while, I get a goth latte (with charcoal for
+blackness) and a _transcendent_ canelé at
+[Butter](https://maps.app.goo.gl/XNi4WqmtdGi8Ka5T8). While I'm in there, a guy
+passes by on a very cool bicycle, but I'm too slow to get a picture.
 
-Charlie had recommended a [falafel
-place](https://maps.app.goo.gl/VGyVcLhuZtvEtvEv5) in Shin-Koenji--he said they
-had bad falafel, made with exceptional care. The man running the place was very
-kind.
+I walked through the Meiji University campus, people-watch, and admire some
+construction. I end up in Koenji, and loiter for a while by the station. Walking
+around, it seems like a great place to eat: lots of fun little restaurants, but
+I'm not hungry yet. I'd like to go back and explore more some day. I spend a
+long time shopping at [cotogoto](https://maps.app.goo.gl/EmXEZWKHDpwGNu8Z6), a
+home goods store with some beautiful ceramics.
 
-I finished the excursion at [Kohitsoji
-Coffee](https://maps.app.goo.gl/ZrTVAy4pADYLSzaJ7). They're reportedly known for
-their espresso, but I got drip coffee. My bag from cotogoto was pretty heavy, so
-at this point I got on the train back to Shinjuku.
+Charlie recommended a [falafel place](https://maps.app.goo.gl/VGyVcLhuZtvEtvEv5)
+in Shin-Koenji--he said they have bad falafel, but that it's made with
+exceptional care. It's gotten him through many a rough night. I get a sandwich
+there. The recommendation is correct: the man running the place is very kind.
+
+I complete the excursion at [Kohitsoji
+Coffee](https://maps.app.goo.gl/ZrTVAy4pADYLSzaJ7) (photo by Google Maps user
+Horatio Caine). They're reportedly known for their espresso, but I forget this
+and get drip coffee. It's still pretty good. My bag from cotogoto is starting to
+feel pretty heavy, so I get on the train back to Shinjuku.
 
 <photo-set>
 
@@ -730,17 +834,19 @@ at this point I got on the train back to Shinjuku.
 - ![goth latte](8-nakano-koenji-1.jpeg)
 - ![cotogoto](8-nakano-koenji-2.jpeg)
 - ![falafel](8-nakano-koenji-3.jpeg)
-- ![kohitsuji coffee (photo by Google Maps user Horatio Caine)](8-nakano-koenji-4.jpeg)
+- ![kohitsuji coffee](8-nakano-koenji-4.jpeg)
 
 </photo-set>
 
 ---
 
-For dinner, Charlie and I went to the country-style restaurant
-[こたつ](https://maps.app.goo.gl/GULcEt8E7pYS6nqs5), which reminded him of his
-years in Aomori. We had oden, cod sperm, rice with natto, and a big bowl of
-fried chicken cartilage. I drank a coffee-and-milk highball, which used shitty
-bottled coffee and excellent milk.
+For dinner, Charlie and I go to the country-style restaurant
+[こたつ](https://maps.app.goo.gl/GULcEt8E7pYS6nqs5), which reminds him of his
+years in Aomori. We eat oden, cod sperm, rice with natto, and a big bowl of
+fried chicken cartilage. This is my first natto in Japan. Everyone makes such a
+big deal about how gross non-Japanese find it, but it just tastes beany and
+fermenty and sticky, not scary at all. I drink a coffee-and-milk highball, which
+is made with shitty bottled coffee and excellent milk.
 
 <photo-set>
 
@@ -753,8 +859,12 @@ bottled coffee and excellent milk.
 
 </photo-set>
 
-We finished the night with an umeboshi highball at the whiskey bar [Sasazuka
-753](https://maps.app.goo.gl/YRNwnRTqcD7akbBc7).
+We get an umeboshi highball at the whiskey bar [Sasazuka
+753](https://maps.app.goo.gl/YRNwnRTqcD7akbBc7). A salarymen down the bar just
+got back from Osaka, and he shares packaged pieces of Osakan snack food.
+
+We end the night at Charlie's apartment. He plays some music he's been working
+on. We drink beer.
 
 <photo-set>
 
@@ -764,17 +874,17 @@ We finished the night with an umeboshi highball at the whiskey bar [Sasazuka
 
 ## Ginza Day
 
-Charlie had work stuff to do on Wednesday, and I was pretty exhausted from a
-busy week, so I took the day to myself.
+Charlie has work stuff to do on Wednesday, and for my part I'm pretty exhausted
+from a busy week, so I take the day to myself.
 
-I started with sushi at the fancy sushi restaurant in my hotel. I was the only
-person in there at lunch time, but they still pulled out all the stops. The chef
-specialized in monkfish liver, which is probably not good for you, but tasted
-delicious.
+I start with sushi at the fancy sushi restaurant in my hotel. I'm the only
+person in there at lunch time, but they still pull out all the stops. The chef
+tells me he specializes in monkfish liver, which is probably not good for you,
+but tastes delicious.
 
-When I made the reservation, I opted for a Nihonshu-and-wine pairing. When I sat
-down, I realized this was probably unwise (pairings have a way of getting one a
-bit hammered), but I toughed it out.
+When I made the reservation, I opted for a Nihonshu-and-wine pairing. When I sit
+down, I realize this is probably unwise (pairings always get me a bit hammered),
+but I power through it.
 
 <photo-set>
 
@@ -790,29 +900,37 @@ bit hammered), but I toughed it out.
 
 </photo-set>
 
-I wasn't especially looking forward to Ginza--that kind of neighborhood is the
-same everywhere--but it's a Thing One Must Do, so I did. I _did_ want to go to
-the flagship MUJI store, and I _did_ need to do some more gift shopping.
+---
 
-I started at an [incense store](https://maps.app.goo.gl/FuqCKr71Sv4nyHZj8),
-which was a great place for gifts: Japan has a big "you must bring everyone
-something back from your travels" culture, so a lot of stores had gift options
-ready to go at a range of price points.
+To be honest, I haven't been especially looking forward to Ginza--that kind of
+neighborhood is the same everywhere--but it's a Thing One Must Do, and so I do
+it. I _do_ want to go to the flagship MUJI store, and I _do_ need to buy some
+more gifts.
 
-Next was an [art and craft supply
-store](https://maps.app.goo.gl/jbYdPNXvVmq5M4Xw5). 12 stories of stuff. I took
-the elevator to 12 and walked down. Look at all these paints! I got a few
-bottles of fountain pen ink. The upper levels had a bit of _serious art stuff_,
-so I was disappointed when the lower levels had mostly trinkets and notebook
-covers. It's no Pearl Paint, I tell you what. Next time I'm in Japan, I'd like
-to do some more research and find some art/craft/woodworking shops that are more
-practicioner-oriented.
+I start at an [incense store](https://maps.app.goo.gl/FuqCKr71Sv4nyHZj8), which
+is a great place for gifts. Japan has a big "you must bring everyone something
+back from your travels" tradition, so a lot of stores have gift options ready to
+go at a range of price points. The incense store is no exception: they have gift
+kits where I can choose a tray, a holder, and a box of incense, and they wrap
+them beautifully.
 
-My last stop in Ginza was the [5-story flagship MUJI
-store](https://maps.app.goo.gl/QJjUs396QFcmSjx57). Incredible! I got a ton of
-things here. I was surprised how much space they devoted to freeze-dried meals,
-which I didn't find especially appealing (I mean, how good can they be...). I
-did find some really beautiful ceramic mugs.
+I walk into an [art and craft supply
+store](https://maps.app.goo.gl/jbYdPNXvVmq5M4Xw5). 12 stories of goods. I take
+the elevator to 12 and walk down. Look at all these paints! The upper levels had
+a bit of _serious art stuff_, so I was disappointed when the lower levels had
+mostly trinkets and notebook covers. It's no Pearl Paint, I tell you what.
+Still, I get a few bottles of fountain pen ink, which writes very nicely. Next
+time I'm in Japan, I'd like to do some more research and find some
+art/craft/woodworking shops that are more practitioner-oriented.
+
+My last stop in Ginza is the [5-story flagship MUJI
+store](https://maps.app.goo.gl/QJjUs396QFcmSjx57). It's really something. I get
+a ton of things here: beautifully marbled ceramic mugs, nail clippers, a pen
+case, chocolate, toothbrush holders, rolls of tape.
+
+I'm surprised how much space is devoted to freeze-dried meals, which I don't
+find especially appealing (I mean, how good can they be, they're
+freeze-dried...). But they do seem very popular.
 
 <photo-set>
 
@@ -820,13 +938,17 @@ did find some really beautiful ceramic mugs.
 
 </photo-set>
 
-For dinner, I returned to Shinjuku to cross another item off the checklist: a
-Real Unagi Place. This was delicious, but to be honest, I don't think I have the
-palate to appreciate this meal commensurate with the price: it wasn't _that
-much_ better than the frozen unagi you can get in the states, and it was one of
-the most expensive meals I had in Tokyo. What redeemed it for me was the
-skewers: I got some belly and some liver, which you certainly can not get in the
-states.
+I return to Shinjuku. I stop at a couple more stores on the way and ask about
+hotaruika no shiokara. No luck.
+
+For dinner, I cross another item off the checklist: a Real Unagi Place. This is
+delicious, but to be honest, I don't think I have the palate to appreciate this
+meal commensurate with the price: it isn't _that much_ better than the frozen
+unagi you can get in the States, and it's one of the most expensive meals of the
+trip. What redeems it for me are the skewers: I get an eel belly with lemon, and
+an eel liver, and they are excellent, and you certainly can not get them in
+America. The guy next to me gets a bowl of fried eel-spines, which I'm a bit
+envious of. I watch the eels wriggle slowly in their ice bucket.
 
 <photo-set>
 
@@ -838,9 +960,9 @@ states.
 
 </photo-set>
 
-## Kichijōji and Ogikubo day
+## Kichijōji & Ogikubo Day
 
-Thursday's journey took me from Kichijōji to Ogikubo.
+Thursday's journey takes me from Kichijōji to Ogikubo.
 
 <photo-set>
 
@@ -848,20 +970,22 @@ Thursday's journey took me from Kichijōji to Ogikubo.
 
 </photo-set>
 
-I started, around lunchtime, at Daps Original Hood Joint, which was
-_incredible_. It's a Harlem-themed restaurant(!) specializing in American
-classics like Chicken Over Rice, Authentic Chopped Cheese ("It's New Drug From
-Harlem USA"), Brooklyn-Style Lobster Roll, and Piña Colada.
+I start, around lunchtime, at Daps Original Hood Joint, which is _incredible_.
+It's a Harlem-themed restaurant(!) specializing in American classics like
+Chicken Over Rice, Authentic Chopped Cheese ("It's New Drug From Harlem USA"),
+Brooklyn-Style Lobster Roll, and Piña Colada.
 
-The decor was impeccable. The proprietor was a big hip-hop head—he had Purple
-Haze on vinyl—and he was selling a variety of American import products (Old
-Spice stick deodorant, blunt wrap, authentic glass rose). While I was waiting
-for my chopped cheese and piña colada, I perused a zine in Japanese that a
-friend of his had written about the history of hip hop. I wish I bought it: at
-the time, I couldn't think of who in my life would appreciate it enough as a
-gift, but, duh, _I'm_ that person. Oops. Next time.
+The decor is impeccable. The proprietor is a big hip-hop head—he had Purple Haze
+on vinyl—and he sells a variety of American import products (Old Spice stick
+deodorant, blunt wrap, authentic glass rose). While I was waiting for my chopped
+cheese and piña colada, I peruse a manga zine in Japanese drawn by a friend of
+his about the history of hip hop.
 
-The chopped cheese was legitimately the best I've ever had. I think the trick is
+In hindsight, I wish I'd bought it: at the time, I couldn't think of who in my
+life would appreciate it enough as a gift, but, duh, _I'm_ that person. Oops.
+Next time.
+
+The chopped cheese is legitimately the best I've ever had. I think the trick is
 twofold:
 
 1. unlike in the US, they use ingredients that shouldn't be in the trash, and,
@@ -875,13 +999,13 @@ twofold:
 
 </photo-set>
 
-I strolled through [Inokashira Park](https://maps.app.goo.gl/nr4xszft12iYty3M9)
-to the picturesque coffee shop
-[Thomnecogo](https://maps.app.goo.gl/zjvUFr9obFwQF46U6). I poked my head in,
-and—this is embarrassing— honestly: I was too intimidated by the perfect vibe to
-go in; I felt I would spoil it. I've never had that feeling before.
+I stroll through [Inokashira Park](https://maps.app.goo.gl/nr4xszft12iYty3M9) to
+the picturesque coffee shop
+[Thomnecogo](https://maps.app.goo.gl/zjvUFr9obFwQF46U6). I poke my head in,
+and—this is embarrassing—honestly: I am too intimidated by the perfect vibe to
+go in; I feel I would spoil it. I've never had that feeling before.
 
-Days like this made me _so happy_ to have a sherpa in Charlie. I can easily
+Days like this make me _so happy_ to have a sherpa in Charlie. I can easily
 imagine a different trip to Japan, where I'd have stayed in Shinjuku, spent my
 time in, like, Harajuku or something, and mostly found myself in places with
 English menus. In that parallel world, I'd feel I was exploring! Seeing Japan!
@@ -902,21 +1026,20 @@ TMBC, & スナイデル)
 
 </photo-set>
 
-A bit hungry, I meandered up from the park to [Tony's New York Pizza Since
+A bit hungry, I meander up from the park to [Tony's New York Pizza Since
 1968](https://maps.app.goo.gl/KfbtLF1h3QAkfPVo6). Tony was inspired by Kennedy's
 election to get on a ship to New York in 1962, and became, briefly, a
-journalist. Devastated by the assassination, he returned to Japan and opened a
-pizza shop.
+journalist. Devastated by the assassination a year later, he returned to Japan
+and opened a pizza shop.
 
-The pizza was, let's say, not exemplary of New York style as I am familiar with
-it. But while it might not have been successful as New York pizza, it was
-delicious as food. One must cater to one's clientele, I suppose. A very old man
-with a very small wife, Tony was very happy when I told him his pizza was
-oishii.
+The pizza is, let's say, not exemplary of New York style as I am familiar with
+it. But while it might not be successful as New York pizza, it is _delicious_ as
+food. One must cater to one's clientele, I suppose. A very old man with a very
+small wife, Tony is very happy when I tell him his pizza is oishii.
 
-I ate my cheesy pizza with a glass of loquat-and-vinegar juice, and proceeded
-east towards Ogikubo, where I stopped at a bakery for a delicious pastry, and
-then Nishi-Ogikubo, where I got the train back to Shinjuku.
+I eat my cheesy pizza with a glass of loquat-and-vinegar juice, and proceed east
+towards Ogikubo, where I stop at a bakery for a delicious pastry, and then
+Nishi-Ogikubo, where I get the train back to Shinjuku.
 
 <photo-set>
 
@@ -928,46 +1051,47 @@ then Nishi-Ogikubo, where I got the train back to Shinjuku.
 
 </photo-set>
 
-At dinner time, I met Charlie at Koenji station and we went to a [Fukuoka-style
+At dinner time, I meet Charlie at Koenji station and we go to a [Fukuoka-style
 Izakaya](https://maps.app.goo.gl/JEqxUF7Czs1URfM7A) to meet up with his friend
-Yagi. We had natto and fried chicken and beni-shoga and milk highballs. When
-Yagi arrived we had oden.
+Yagi. We have natto, and fried chicken, and beni shoga, and milk highballs. When
+Yagi arrives, we have oden.
 
-We went with Yagi to [Knock](https://maps.app.goo.gl/McBSjEkyYZyZCpLV7), where
-Charlie runs a monthly event, to watch some jazz DJs. We talked to Yagi about
+We go with Yagi to [Knock](https://maps.app.goo.gl/McBSjEkyYZyZCpLV7), where
+Charlie runs a monthly event, to watch some jazz DJs. We talk to Yagi about
 work. He's moving to Vancouver soon.
 
 <photo-set>
 
-- ![](10-fukuoka-1.jpeg)
-- ![](10-fukuoka-2.jpeg)
-- ![](10-knock-1.jpeg)
+- ![fukuokan food](10-fukuoka-1.jpeg)
+- ![fukuokan food](10-fukuoka-2.jpeg)
+- ![knock](10-knock-1.jpeg)
 
 </photo-set>
 
 ## Ramen Day
 
 The time has come. Remember "The List" from the end of [Meguro & Nakameguro
-Day](#meguro--nakameguro-day)? My ramen appointment has arrived.
+Day](#meguro--nakameguro-day)? The ramen appointment has arrived.
 
-I took the train, got to the [ramen
-place](https://maps.app.goo.gl/m7DPt5T3QpLW8cek8) at the appointed hour,
-operated the ticket machine, and took my seat at the counter. I ordered the
-shoyu ramen with all the fixins, although some people said the salt ramen was
-better. The pork! 6 different cuts of slow-cooked pork in this dish, lovingly
-assembled. I can see why people wait all morning for this. I'm glad I don't have
-to.
+I take the train, got to the [ramen
+place](https://maps.app.goo.gl/m7DPt5T3QpLW8cek8) at the appointed hour, operate
+the ticket machine, and take my seat at the counter. I order the shoyu ramen
+with all the fixins, although some people say the salt ramen is better. That's
+hard to believe. This pork! 6 different cuts of slow-cooked pork in this dish,
+lovingly assembled. I can see why people wait all morning for this. I'm glad I
+don't have to.
 
-I walked from there back to Hatagaya, along a scenic greenway. I love these
+I walk from there back to Hatagaya, along a scenic greenway. I love these
 greenways! A very nice urban feature. When I get there, I make my pilgrimage to
 the aforementioned greatest bike shop in the world: [The Blue
 Lug](https://maps.app.goo.gl/T8A3vFZwtgFwKyep9). The staff are very nice to me,
-despite my broken Japanese. They have a frame pump I'd been looking for. I buy a
+despite my broken Japanese. They have a frame pump I've been looking for. I buy a
 lot of things.
 
-I get a ham thingy at [Bakery SASA](https://maps.app.goo.gl/i4LrMiduzRYssnUr7).
-The proprietor recognizes my hat, which I got at Sailosaibin on [Food Tour
-Day](#food-tour-day). We discuss the artist.
+I get a ham croissant at [Bakery
+SASA](https://maps.app.goo.gl/i4LrMiduzRYssnUr7). The proprietor recognizes that
+my hat is from Sailosaibin (I got it on [Food Tour Day](#food-tour-day)). We
+discuss the artist.
 
 I make my way to Yoyogi station and take the train back to Shinjuku.
 
@@ -996,7 +1120,8 @@ not the best in the world: I've made better.
 
 It's Thursday, and (you'll recall) Charlie always goes to ideala at forestlimit
 on Thursdays, but this particular Thursday we decide not to go to ideala:
-they're doing something weird. (Well, more like: not weird enough).
+they're doing something weird. (Well, more like: not weird enough, which is
+weird for them).
 
 We go back to MEM and meet a [rakugo](https://en.wikipedia.org/wiki/Rakugo)
 performer who was born in California but moved to Japan as a child. MEM is
@@ -1026,12 +1151,12 @@ Bowl](https://maps.app.goo.gl/Qrtk5Mqn9LbQuEWCA) to celebrate the launch of
 their new beer. Charlie has some friends playing there.
 
 We'll make our way over there eventually, but first: it's lunch time. Charlie's
-been talking up Freeman Shokudo, a place run by a friend of his who moved from
-New York, for a while: we tried to go there for breakfast _last_ Friday before
-going to LUG. When I was talking to the guy at Daps Original Hood Joint about
-American food in Tokyo, he said I _have to_ go to Freeman. Among Japanese
-restaurateurs, the vibe seems to be "Of course I know Jeremy, but I don't think
-he knows me." It's a Thing.
+been talking up Freeman Shokudo for a while: it's a place run by a friend of his
+who moved from New York. We'd tried to go there for breakfast the day we went to
+LUG. When I was talking to the guy at Daps Original Hood Joint about American
+food in Tokyo, he said I _have to_ go to Freeman. Among Japanese restaurateurs,
+the vibe seems to be "Of course I know Jeremy, but I don't think he knows me."
+It's a Thing.
 
 There's reggae music playing. "Jeremy used to run a reggae record store in New
 York City". The server is a notable Japanese rapper. We order the pastrami. "Do
@@ -1040,11 +1165,13 @@ a fresh pastrami," Jeremy says. We oblige, and get a shepherd's pie and a
 cucumber salad for the meanwhile.
 
 Let me tell you: this is a fucking delicious pastrami sandwich. The best I've
-ever had, and I seek out pastrami. I've had it in Chicago, in Los Angeles,
+ever had, and I'm a pastrami person. I've had it in Chicago, in Los Angeles,
 Boston, San Francisco, New York. This is better. I tell Jeremy. "There hasn't
 been good pastrami in New York City since Gitlitz's closed in '78," he explains.
-"When I started making pastrami here, I wanted to make good pastrami. I hadn't
-had any good pastrami in a long time." **This** is good pastrami.
+"When I started making pastrami here, I wanted to make _good_ pastrami. I hadn't
+had any good pastrami in a long time."
+
+**This** is good pastrami.
 
 <photo-set>
 
@@ -1077,7 +1204,9 @@ are excellent, a few are not.
 For dinner, we cross the street to [Mampuku
 Shokudo](https://maps.app.goo.gl/BsjfYHTwNcsohgG17). I get tuna Hamburg steak,
 which also has beef and pork. It's good! Real fill-you-up food, and for cheap.
-We drink two of their very strong tea highballs, which is almost too many.
+We drink two of their very strong tea highballs, which is almost too many. We go
+back to Sasazuka Bowl for some more DJs. It's getting pretty packed in there. A
+house DJ is incredibly skilled. We leave after her set.
 
 <photo-set>
 
@@ -1086,13 +1215,13 @@ We drink two of their very strong tea highballs, which is almost too many.
 
 </photo-set>
 
-We end the night at Pintology, and who's there but Jeremy from Freeman! It's his
+We end the night at Pintology, and who do we find? Jeremy from Freeman! It's his
 birthday! We get to talking: he lived in Chicago for a while in the 90s while
 his then-girlfriend went to SAIC. He started a reggae night at the Empty Bottle.
 I go there often! He knows a lot of people. We drink Malört.
 
 We meet Satotsu, who is the bassist of the thrash band Endall. He's been to
-Chicago, too! He played at Reggie's. They even had Sapporo! No rock club in
+Chicago, too. He played at Reggie's. They even had Sapporo! No rock club in
 Japan has a big selection of beer.
 
 ## Shiokara Day
@@ -1114,17 +1243,17 @@ name. How odd. Maybe it's prestigious.
 
 </photo-set>
 
-I meet Charlie back at my hotel, and we go up to the fancy hotel bar. I get a
+I meet Charlie back at the hotel, and we go up to the fancy hotel bar. I get a
 whiskey drink and he gets a mushroom soup cocktail. He gets a fruity gin drink
 and I get a dashi martini. It's all very ambitious. There's an excellent view of
 the sunset; we can see Mount Fuji.
 
 <photo-set>
 
+- ![cocktails](13-bellustar-4.jpeg)
 - ![cocktails](13-bellustar-1.jpeg)
 - ![cocktails](13-bellustar-2.jpeg)
 - ![cocktails](13-bellustar-3.jpeg)
-- ![cocktails](13-bellustar-4.jpeg)
 
 </photo-set>
 
@@ -1143,12 +1272,12 @@ needs refridgeration. My suitcase is getting full anyway. We make it to our
 reservation.
 
 We order an assortment of 20 different shiokaras, working our way down the menu,
-with no bread, rice, or nothin'. Just shiokara. The people working think we're
-crazy. They look at us funny. Normally one just has a bit of shiokara with some
-rice, but that's not what we're doing: we're going for it.
+with no bread, no rice, nothin'. Just shiokara. The people working think we're
+crazy. They look at us funny. Normally you just has a bit of shiokara with some
+rice, but that's not what we're doing: we're going for it. All shiokara.
 
-"So salty it's spicy" is right. My face starts hurting less than halfway through
-the meal. I run out of beer. A few minutes later I'm tripping. I feel crazy. We
+"So salty it's spicy" is right. We're less than halfway through and my face is
+tingling. I run out of beer. A few minutes later I'm tripping. I feel crazy. We
 both feel crazy. This is insane. You shouldn't eat like this. We lose our sense
 of taste. It's delicious. Transcendent. Otherworldly.
 
@@ -1156,8 +1285,8 @@ We stumble out and get a beer at the Hitachino brewery next door.
 
 <photo-set>
 
-- ![shiokara](13-shiokara-1)
-- ![shiokara](13-shiokara-2)
+- ![shiokara](13-shiokara-1.jpeg)
+- ![shiokara](13-shiokara-2.jpeg)
 
 </photo-set>
 

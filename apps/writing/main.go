@@ -82,7 +82,7 @@ func run() error {
 
 		resized := imaging.Resize(img, int(width), 0, imaging.Box)
 
-		w.Header().Add("Cache-Control", "max-age=31536000")
+		w.Header().Add("Cache-Control", "max-age=31536000, immutable")
 
 		switch filepath.Ext(mediafilename) {
 		case ".jpg", ".jpeg":
