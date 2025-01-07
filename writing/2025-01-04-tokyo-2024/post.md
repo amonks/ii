@@ -476,7 +476,7 @@ together at a music school.
 </photo-set>
 
 After all that drinking we needed to eat something, and the next stop was,
-accordingly, [Racco's Bar](https://maps.app.goo.gl/ntcDN8wbTr4cZqSo7) (first
+accordingly, [Raccos Bar](https://maps.app.goo.gl/ntcDN8wbTr4cZqSo7) (first
 photo by Google Maps user Maria Armellin).
 
 What an endearing place! Apparently Racco is a bassist in a significant punk
@@ -861,11 +861,17 @@ friend of his had written about the history of hip hop. I wish I bought it: at
 the time, I couldn't think of who in my life would appreciate it enough as a
 gift, but, duh, _I'm_ that person. Oops. Next time.
 
+The chopped cheese was legitimately the best I've ever had. I think the trick is
+twofold:
+
+1. unlike in the US, they use ingredients that shouldn't be in the trash, and,
+2. unlike in the US, the only person working owns the place and gives a shit.
+
 <photo-set>
 
 - ![Daps Original Hood Joint](10-daps-1.jpeg)
 - ![Authentic Chopped Cheese](10-daps-2.jpeg)
-- ![American imports](10-daps-2.jpeg)
+- ![American imports](10-daps-3.jpeg)
 
 </photo-set>
 
@@ -988,15 +994,18 @@ the world", as we _almost_ had on [the first
 day](#first-day-in-japan-tourism-day). It _is_ pretty good pad Thai, but it's
 not the best in the world: I've made better.
 
-We decide not to go to ideala: they're doing something weird. (Well, more like:
-not weird enough). We go back to MEM and meet a
-[rakugo](https://en.wikipedia.org/wiki/Rakugo) performer who was born in
-California but moved to Japan as a child. MEM is playing The Books. We all get
-to talking about art, about rakugo, about culture. I learn that rakugo is sort
-of like a traditional form of stand-up comedy, except you do it sitting down,
-and you tell stories from a repertoire of standards. The language used is so
-archaic that most people in the audience don't understand what's being said, but
-still: the performance is dynamic enough that they laugh anyway. I can relate.
+It's Thursday, and (you'll recall) Charlie always goes to ideala at forestlimit
+on Thursdays, but this particular Thursday we decide not to go to ideala:
+they're doing something weird. (Well, more like: not weird enough).
+
+We go back to MEM and meet a [rakugo](https://en.wikipedia.org/wiki/Rakugo)
+performer who was born in California but moved to Japan as a child. MEM is
+playing The Books on the stereo. We all get to talking about art, about rakugo,
+about culture. I learn that rakugo is sort of like a traditional form of
+stand-up comedy, except you do it sitting down, and you tell stories from a
+repertoire of standards. The language used is so archaic that most people in the
+audience don't understand what's being said, but still: the performance is
+dynamic enough that they laugh anyway. I can relate.
 
 We end the night back at Pintology and drink absinthe cocktails.
 
@@ -1011,25 +1020,156 @@ We end the night back at Pintology and drink absinthe cocktails.
 
 ## DJ Bowling Day
 
-- Freeman shokudo
-- Doughnuts at harrits
-- Coffee and big shoes and laundry koffehuis
-- Djs at bowling for loop beer, meet mai, Mr blunts
-- Pukeman shokudo, tuna burger steak
-- Pintology with Chicago Jeremy; malort; satotsu of endall thrash band, he knew Reggie’s!
+It's gonna be a big Friday: [loom](https://maps.app.goo.gl/T3q7xdzf39mgWRnt5) is
+having an all-day DJ event at [Sasazuka
+Bowl](https://maps.app.goo.gl/Qrtk5Mqn9LbQuEWCA) to celebrate the launch of
+their new beer. Charlie has some friends playing there.
+
+We'll make our way over there eventually, but first: it's lunch time. Charlie's
+been talking up Freeman Shokudo, a place run by a friend of his who moved from
+New York, for a while: we tried to go there for breakfast _last_ Friday before
+going to LUG. When I was talking to the guy at Daps Original Hood Joint about
+American food in Tokyo, he said I _have to_ go to Freeman. Among Japanese
+restaurateurs, the vibe seems to be "Of course I know Jeremy, but I don't think
+he knows me." It's a Thing.
+
+There's reggae music playing. "Jeremy used to run a reggae record store in New
+York City". The server is a notable Japanese rapper. We order the pastrami. "Do
+you guys have a few minutes? I want you to have a fresh pastrami. Let me put on
+a fresh pastrami," Jeremy says. We oblige, and get a shepherd's pie and a
+cucumber salad for the meanwhile.
+
+Let me tell you: this is a fucking delicious pastrami sandwich. The best I've
+ever had, and I seek out pastrami. I've had it in Chicago, in Los Angeles,
+Boston, San Francisco, New York. This is better. I tell Jeremy. "There hasn't
+been good pastrami in New York City since Gitlitz's closed in '78," he explains.
+"When I started making pastrami here, I wanted to make good pastrami. I hadn't
+had any good pastrami in a long time." **This** is good pastrami.
+
+<photo-set>
+
+- ![set dressing](12-freeman-1.jpeg)
+- ![good pastrami](12-freeman-2.jpeg)
+
+</photo-set>
+
+We have some more time to kill, and we go to
+[Harrits](https://maps.app.goo.gl/2c9SgezyrPdUcX9u9) for a doughnut. There's a
+long line. We bring it to [Yoyogi Ōyama
+Park](https://maps.app.goo.gl/ZAjL7sbWunWwQjXFA) and eat it by the baseball
+diamond. It isn't a very good doughnut.
+
+I feel myself getting a bit grumpy: I could use some coffee. Charlie takes me to
+[Laundry Koffiehuis](https://maps.app.goo.gl/vAnBQKKQL3nNNqX66), which is in a
+former laundromat, and also sells hypebeast clothes and deadstock basketball
+shoes. The coffee is very good.
+
+<photo-set>
+
+- ![the line for Harrits](12-harrits-1.jpeg)
+
+</photo-set>
+
+It's time for the [DJ thing](https://www.instagram.com/p/DDv58quSK80/). We've
+missed Charlie's friend Mai ("PLASTICMAI") but catch several other DJs. A few
+are excellent, a few are not.
+
+For dinner, we cross the street to [Mampuku
+Shokudo](https://maps.app.goo.gl/BsjfYHTwNcsohgG17). I get tuna Hamburg steak,
+which also has beef and pork. It's good! Real fill-you-up food, and for cheap.
+We drink two of their very strong tea highballs, which is almost too many.
+
+<photo-set>
+
+- ![loom](12-loom-1.jpeg)
+- ![tuna steak](12-mampuku-1.jpeg)
+
+</photo-set>
+
+We end the night at Pintology, and who's there but Jeremy from Freeman! It's his
+birthday! We get to talking: he lived in Chicago for a while in the 90s while
+his then-girlfriend went to SAIC. He started a reggae night at the Empty Bottle.
+I go there often! He knows a lot of people. We drink Malört.
+
+We meet Satotsu, who is the bassist of the thrash band Endall. He's been to
+Chicago, too! He played at Reggie's. They even had Sapporo! No rock club in
+Japan has a big selection of beer.
 
 ## Shiokara Day
 
-- Laundry
-- Broke the machine
-- Aoyama Goban
-- Bar bellustar
-- Gourmet grocery store
-- Shiokara restaurant
-- Beers and black thunder at the hotel
-- YouTube: Japanese rap, Okinawan music
+It's my last day in Tokyo, and it's laundry day again. The machine I'm using at
+the laundromat breaks--throws an error code--so I finish the load in the other
+machine.
 
-## Reflections
+Before meeting up with Charlie, I have one last checklist item I'd like to
+complete: picking up some nicer go stones. I rush to [Aoyama
+Goban-ten](https://maps.app.goo.gl/JQhuCLdqRBWLg84TA), which is not in Aoyama.
+It seems like a lot of things that aren't in Aoyama still have Aoyama in the
+name. How odd. Maybe it's prestigious.
 
-- small businesses
-- going with a sherpa
+<photo-set>
+
+- ![go stones](13-stones-1.jpeg)
+- ![go stones](13-stones-2.jpeg)
+
+</photo-set>
+
+I meet Charlie back at my hotel, and we go up to the fancy hotel bar. I get a
+whiskey drink and he gets a mushroom soup cocktail. He gets a fruity gin drink
+and I get a dashi martini. It's all very ambitious. There's an excellent view of
+the sunset; we can see Mount Fuji.
+
+<photo-set>
+
+- ![cocktails](13-bellustar-1.jpeg)
+- ![cocktails](13-bellustar-2.jpeg)
+- ![cocktails](13-bellustar-3.jpeg)
+- ![cocktails](13-bellustar-4.jpeg)
+
+</photo-set>
+
+Charlie's put together a real treat for me. I loved the hotaruika no shiokara at
+Raccos last week, and I haven't found any to take home yet, so here's the plan:
+
+- We'll go to a [gourmet specialty food
+  store](https://maps.app.goo.gl/AuTvp73HsnFy8bVN6), which is certain to have
+  shiokara
+- We have a reservation at a [shiokara-specific restaurant and
+  bar](https://maps.app.goo.gl/yifjmCkKVd4pBLFN9) afterwards. They have 64
+  different shiokaras.
+
+I find a lot of good stuff at the food store, but all the shiokara is fresh and
+needs refridgeration. My suitcase is getting full anyway. We make it to our
+reservation.
+
+We order an assortment of 20 different shiokaras, working our way down the menu,
+with no bread, rice, or nothin'. Just shiokara. The people working think we're
+crazy. They look at us funny. Normally one just has a bit of shiokara with some
+rice, but that's not what we're doing: we're going for it.
+
+"So salty it's spicy" is right. My face starts hurting less than halfway through
+the meal. I run out of beer. A few minutes later I'm tripping. I feel crazy. We
+both feel crazy. This is insane. You shouldn't eat like this. We lose our sense
+of taste. It's delicious. Transcendent. Otherworldly.
+
+We stumble out and get a beer at the Hitachino brewery next door.
+
+<photo-set>
+
+- ![shiokara](13-shiokara-1)
+- ![shiokara](13-shiokara-2)
+
+</photo-set>
+
+We get Black Thunder ice cream bars and some beer at a 7-eleven. There are two
+worthy ice cream bars, Charlie tells me. When you're looking for quantity, to be
+sated, you get Choko Monaka Jumbo. When you're looking for quality, you get
+Black Thunder.
+
+We go back to the hotel and listen to Japanese music.
+
+I pack.
+
+I go home.
+
+That's Japan.
