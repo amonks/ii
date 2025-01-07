@@ -82,15 +82,17 @@ func run() error {
 
 		resized := imaging.Resize(img, int(width), 0, imaging.Box)
 
+		w.Header().Add("Cache-Control", "max-age=31536000")
+
 		switch filepath.Ext(mediafilename) {
 		case ".jpg", ".jpeg":
-			w.Header().Add("content-type", "image/jpeg")
+			w.Header().Add("Content-Type", "image/jpeg")
 			if err := imaging.Encode(w, resized, imaging.JPEG); err != nil {
 				log.Printf("jpeg encoding error on '%s': %w", mediafilename, err)
 			}
 
 		case ".png":
-			w.Header().Add("content-type", "image/png")
+			w.Header().Add("Content-Type", "image/png")
 			if err := imaging.Encode(w, resized, imaging.PNG); err != nil {
 				log.Printf("png encoding error on '%s': %w", mediafilename, err)
 			}
