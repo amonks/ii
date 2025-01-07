@@ -39,6 +39,9 @@ func run() error {
 	// 	h := templ.Handler(templates.Index(posts))
 	// 	h.ServeHTTP(w, req)
 	// })
+	mux.HandleFunc("/{slug}", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, fmt.Sprintf("/writing/%s/", req.PathValue("slug")), http.StatusMovedPermanently)
+	})
 	mux.HandleFunc("/{slug}/{$}", func(w http.ResponseWriter, req *http.Request) {
 		slug := req.PathValue("slug")
 		post := posts.Get(slug)
