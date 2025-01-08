@@ -39,7 +39,7 @@ resource "aws_route53_record" "thor-ss-cx-A" {
   name    = "thor.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.83.137.16"]
+  records = ["100.93.23.97"]
 }
 
 resource "aws_route53_record" "ss-cx-AAAA" {
@@ -58,52 +58,12 @@ resource "aws_route53_record" "ss-cx-A" {
   records = ["66.51.122.238"]
 }
 
-resource "aws_route53_record" "shemihazah-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "shemihazah.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.85.64.69"]
-}
-
-resource "aws_route53_record" "qaynan-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "qaynan.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.82.39.94"]
-}
-
 resource "aws_route53_record" "lugh-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "lugh.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.85.208.103"]
-}
-
-resource "aws_route53_record" "go-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "go.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.84.224.155"]
-}
-
-resource "aws_route53_record" "fly-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "fly.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.84.224.155"]
-}
-
-resource "aws_route53_record" "calder-ss-cx-A" {
-  zone_id = aws_route53_zone.ss-cx.zone_id
-  name    = "calder.ss.cx."
-  type    = "A"
-  ttl     = "300"
-  records = ["100.126.181.120"]
+  records = ["100.75.168.50"]
 }
 
 resource "aws_route53_record" "brigid-ss-cx-A" {
@@ -111,7 +71,7 @@ resource "aws_route53_record" "brigid-ss-cx-A" {
   name    = "brigid.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.103.217.4"]
+  records = ["100.85.200.70"]
 }
 
 resource "aws_route53_record" "wildcard-brigid-ss-cx-A" {
@@ -119,5 +79,5 @@ resource "aws_route53_record" "wildcard-brigid-ss-cx-A" {
   name    = "*.brigid.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.103.217.4"]
+  records = ["100.85.200.70"]
 }
