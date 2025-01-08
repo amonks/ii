@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"log"
 	"net/http"
 	"os"
@@ -75,6 +76,23 @@ func run() error {
 		width, err := strconv.ParseInt(widthStr, 10, 64)
 		if err != nil {
 			serve.Errorf(w, req, http.StatusBadRequest, "invalid width '%s': %w", widthStr, err)
+			return
+		}
+
+		f, err := os.Open(media.Path)
+		if err != nil {
+			serve.Errorf(w, req, http.StatusInternalServerError, "opening '%s': %w", media.Path, err)
+			return
+		}
+		header, _, err := image.DecodeConfig(f)
+		if err != nil {
+			serve.Errorf(w, req, http.StatusInternalServerError, "decoding '%s': %w", media.Path, err)
+			return
+		}
+		originalWidth := header.Width
+		_ = f.Close()
+		if int(width) >= originalWidth {
+			http.ServeFile(w, req, media.Path)
 			return
 		}
 
