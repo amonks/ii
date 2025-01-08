@@ -86,6 +86,7 @@ func run() error {
 			serve.InternalServerErrorf(w, req, "opening '%s': %w", media.Path, err)
 			return
 		}
+		// f is closed after this next stanza
 		header, _, err := image.DecodeConfig(f)
 		if err != nil {
 			serve.InternalServerErrorf(w, req, "decoding '%s': %w", media.Path, err)

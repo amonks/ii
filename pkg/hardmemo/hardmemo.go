@@ -45,6 +45,7 @@ func Memoize[T any](name string, dur time.Duration, fn FuncOf[T]) FuncOf[T] {
 			if err != nil {
 				return zero, err
 			}
+			defer cachefile.Close()
 			dec := gob.NewDecoder(cachefile)
 			var cached Cached[T]
 			if err := dec.Decode(&cached); err != nil {
@@ -69,6 +70,7 @@ func Memoize[T any](name string, dur time.Duration, fn FuncOf[T]) FuncOf[T] {
 			if err != nil {
 				return zero, err
 			}
+			defer cachefile.Close()
 			enc := gob.NewEncoder(cachefile)
 			if err := enc.Encode(cache); err != nil {
 				return zero, err
