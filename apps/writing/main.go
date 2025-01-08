@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"golang.org/x/sync/semaphore"
 	"monks.co/apps/writing/templates"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
@@ -54,6 +55,7 @@ func run() error {
 		h := templ.Handler(component)
 		h.ServeHTTP(w, req)
 	})
+	transcodeLimiter := semaphore.NewWeighted(16)
 	mux.HandleFunc("/{slug}/media/{mediafilename}", func(w http.ResponseWriter, req *http.Request) {
 		slug := req.PathValue("slug")
 		post := posts.Get(slug)
@@ -95,6 +97,12 @@ func run() error {
 			http.ServeFile(w, req, media.Path)
 			return
 		}
+
+		if err := transcodeLimiter.Acquire(req.Context(), 1); err != nil {
+			serve.InternalServerErrorf(w, req, "semaphore error: %w", err)
+			return
+		}
+		defer transcodeLimiter.Release(1)
 
 		img, err := imaging.Open(media.Path, imaging.AutoOrientation(true))
 		if err != nil {
