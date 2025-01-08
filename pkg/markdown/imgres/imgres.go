@@ -62,6 +62,7 @@ func (*astTransformer) Transform(doc *ast.Document, r text.Reader, ctx parser.Co
 			fmt.Println("fileread error", err)
 			return ast.WalkStop, err
 		}
+		defer f.Close()
 
 		image, _, err := image.DecodeConfig(f)
 		if err != nil {
