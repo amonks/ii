@@ -83,12 +83,12 @@ func run() error {
 
 		f, err := os.Open(media.Path)
 		if err != nil {
-			serve.Errorf(w, req, http.StatusInternalServerError, "opening '%s': %w", media.Path, err)
+			serve.InternalServerErrorf(w, req, "opening '%s': %w", media.Path, err)
 			return
 		}
 		header, _, err := image.DecodeConfig(f)
 		if err != nil {
-			serve.Errorf(w, req, http.StatusInternalServerError, "decoding '%s': %w", media.Path, err)
+			serve.InternalServerErrorf(w, req, "decoding '%s': %w", media.Path, err)
 			return
 		}
 		originalWidth := header.Width
@@ -106,7 +106,8 @@ func run() error {
 
 		img, err := imaging.Open(media.Path, imaging.AutoOrientation(true))
 		if err != nil {
-			serve.Errorf(w, req, http.StatusInternalServerError, "opening image '%s' on post '%s'", mediafilename, slug)
+			serve.InternalServerErrorf(w, req, "opening image '%s' on post '%s'", mediafilename, slug)
+			return
 		}
 
 		resized := imaging.Resize(img, int(width), 0, imaging.Box)
@@ -118,16 +119,19 @@ func run() error {
 			w.Header().Add("Content-Type", "image/jpeg")
 			if err := imaging.Encode(w, resized, imaging.JPEG); err != nil {
 				log.Printf("jpeg encoding error on '%s': %w", mediafilename, err)
+				return
 			}
 
 		case ".png":
 			w.Header().Add("Content-Type", "image/png")
 			if err := imaging.Encode(w, resized, imaging.PNG); err != nil {
 				log.Printf("png encoding error on '%s': %w", mediafilename, err)
+				return
 			}
 
 		default:
 			serve.Errorf(w, req, http.StatusInternalServerError, "unsupported extension on '%s' on post '%s'", mediafilename, slug)
+			return
 		}
 	})
 
