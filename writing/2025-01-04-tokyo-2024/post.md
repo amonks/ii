@@ -9,16 +9,16 @@ my ol' pal Charlie. Here's a report on everything I did.
 
 ## Travel Day
 
-I had enough points saved up for a business class seat on a JAL nonstop flight
-from Chicago to Haneda. Pretty swank!
+I had enough credit card points saved up for a business class seat on a JAL
+nonstop flight from Chicago to Haneda. Pretty swank!
 
-I ate "the Japanese meal" (pictured), put my seat into lie-flat position, and
-got 8 hours of sleep.
+I eat "the Japanese meal" (pictured), put my seat into lie-flat position, and
+get 8 hours of sleep.
 
-When I woke up, I had a beer and a "pastrami sandwich" (not pictured) on the
+When I wake up, I have a beer and a "pastrami sandwich" (not pictured) on the
 theory that if there is one thing on the menu which is unlike the other things
 on the menu, one must always order it. The sandwich is no good at all, but
-fortunately it was actually just half a sandwich.
+fortunately it's actually just half a sandwich.
 
 <photo-set>
 
@@ -33,7 +33,7 @@ fortunately it was actually just half a sandwich.
 The plane lands, and I go through customs. It's confusing, but not _that_
 confusing. I try to find my way out of the airport.
 
-Google Maps says there is a bus from Haneda to my hotel every hour, and from
+Google Maps says there's a bus from Haneda to my hotel every hour, and from
 Haneda to Shinjuku Station every 15 minutes. I've just missed the
 direct-to-hotel bus, so I want the bus to Shinjuku Station. I approach the bus
 ticket machine.
