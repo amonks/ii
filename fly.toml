@@ -16,7 +16,7 @@ primary_region = "ord"
 
 [[vm]]
   size = "shared-cpu-8x"
-  memory = "16gb"
+  memory = "2gb"
 
 [[services]]
   protocol = "tcp"
