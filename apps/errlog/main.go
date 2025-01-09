@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
@@ -51,7 +52,20 @@ func run() error {
 		w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
-		cmds, err := db.All()
+		var where model.ErrorReport
+		if machine := req.URL.Query().Get("machine"); machine != "" {
+			where.Report.Machine = machine
+		}
+		if app := req.URL.Query().Get("app"); app != "" {
+			where.Report.App = app
+		}
+		if status_code := req.URL.Query().Get("status_code"); status_code != "" {
+			if status_code, err := strconv.ParseInt(status_code, 10, 64); err == nil {
+				where.Report.StatusCode = int(status_code)
+			}
+		}
+
+		cmds, err := db.LastN(1000, where)
 		if err != nil {
 			serve.Error(w, req, 500, err)
 			return

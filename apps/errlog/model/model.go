@@ -71,28 +71,15 @@ func (db *DB) Capture(report *ErrorReport) error {
 	return nil
 }
 
-func (db *DB) All() ([]ErrorReport, error) {
+func (db *DB) LastN(n int, where ErrorReport) ([]ErrorReport, error) {
 	var reports []ErrorReport
 	if err := db.db.Table("error_reports").
 		Find(&reports).
+		Where(where).
+		Order("happened_at desc").
 		Error; err != nil {
 		return nil, err
 	}
 	return reports, nil
 }
 
-func (db *DB) LastN(n int) ([]ErrorReport, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (db *DB) LastNForAppOnMachine(n int, app, machine string) ([]ErrorReport, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (db *DB) LastNForApp(n int, app string) ([]ErrorReport, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (db *DB) LastNForMachine(n int, machine string) ([]ErrorReport, error) {
-	return nil, fmt.Errorf("not implemented")
-}
