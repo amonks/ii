@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,12 +23,20 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Fprintln(os.Stderr, "succeeded after %s", time.Now().Sub(startAt))
+	fmt.Fprintf(os.Stderr, "succeeded after %s\n", time.Now().Sub(startAt))
 }
 
 func run() error {
 	ctx := sigctx.New()
-	return localDeploy(ctx)
+
+	isRemote := flag.Bool("remote", false, "use remote builder")
+	flag.Parse()
+
+	if *isRemote {
+		return remoteDeploy(ctx)
+	} else {
+		return localDeploy(ctx)
+	}
 }
 
 func remoteDeploy(ctx context.Context) error {
