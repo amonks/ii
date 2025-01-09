@@ -30,8 +30,8 @@ func New() (*DB, error) {
 }
 
 type ErrorReport struct {
-	UUID    string
-	Report  errlogger.ErrorReport `gorm:"embedded"`
+	UUID   string
+	Report errlogger.ErrorReport `gorm:"embedded"`
 }
 
 type ErrorReportSearch struct {
@@ -69,6 +69,16 @@ func (db *DB) Capture(report *ErrorReport) error {
 	}
 
 	return nil
+}
+
+func (db *DB) All() ([]ErrorReport, error) {
+	var reports []ErrorReport
+	if err := db.db.Table("error_reports").
+		Find(&reports).
+		Error; err != nil {
+		return nil, err
+	}
+	return reports, nil
 }
 
 func (db *DB) LastN(n int) ([]ErrorReport, error) {

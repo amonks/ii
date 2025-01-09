@@ -1,0 +1,34 @@
+package main
+
+import (
+	"fmt"
+	"monks.co/apps/errlog/model"
+	"monks.co/pkg/templib"
+)
+
+templ index(reports []model.ErrorReport) {
+	@templib.Page("Errors", templib.PageOptions{}) {
+		<table>
+			<thead>
+				<th>uuid</th>
+				<th>app</th>
+				<th>machine</th>
+				<th>status_code</th>
+				<th>happened_at</th>
+				<th>report</th>
+			</thead>
+			<tbody>
+				for _, report := range reports {
+					<tr>
+						<td>{ report.UUID }</td>
+						<td>{ report.Report.App }</td>
+						<td>{ report.Report.Machine }</td>
+						<td>{ fmt.Sprintf("%d", report.Report.StatusCode) }</td>
+						<td>{ fmt.Sprintf("%s", report.Report.HappenedAt) }</td>
+						<td>{ report.Report.Report }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

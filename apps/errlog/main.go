@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/a-h/templ"
 	"github.com/google/uuid"
 	"monks.co/apps/errlog/model"
 	"monks.co/pkg/errlogger"
@@ -40,14 +41,22 @@ func run() error {
 		}
 
 		if err := db.Capture(&model.ErrorReport{
-			UUID:    uuid.NewString(),
-			Report:  report,
+			UUID:   uuid.NewString(),
+			Report: report,
 		}); err != nil {
 			serve.Error(w, req, 500, err)
 			return
 		}
 
 		w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
+		cmds, err := db.All()
+		if err != nil {
+			serve.Error(w, req, 500, err)
+			return
+		}
+		templ.Handler(index(cmds)).ServeHTTP(w, req)
 	})
 
 	ctx := sigctx.New()
