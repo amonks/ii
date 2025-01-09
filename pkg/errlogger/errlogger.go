@@ -28,10 +28,10 @@ func ReportPanic(err error) {
 		return
 	}
 	if err := sendReport(&ErrorReport{
+		HappenedAt: time.Now(),
 		App:        meta.AppName(),
 		StatusCode: -1,
-
-		HappenedAt: time.Now(),
+		Report:     err.Error(),
 	}); err != nil {
 		log.Println(fmt.Errorf("error-reporting error: %w", err))
 	}
@@ -39,10 +39,10 @@ func ReportPanic(err error) {
 
 func ReportError(err error) {
 	if err := sendReport(&ErrorReport{
+		HappenedAt: time.Now(),
 		App:        meta.AppName(),
 		StatusCode: 500,
-
-		HappenedAt: time.Now(),
+		Report:     err.Error(),
 	}); err != nil {
 		log.Println(fmt.Errorf("error-reporting error: %w", err))
 	}
@@ -50,11 +50,10 @@ func ReportError(err error) {
 
 func Report(statusCode int, report string) {
 	if err := sendReport(&ErrorReport{
+		HappenedAt: time.Now(),
 		App:        meta.AppName(),
 		Machine:    meta.MachineName(),
 		StatusCode: statusCode,
-
-		HappenedAt: time.Now(),
 		Report:     report,
 	}); err != nil {
 		log.Println(fmt.Errorf("error-reporting error: %w", err))
