@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+
+	"monks.co/pkg/errlogger"
 )
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

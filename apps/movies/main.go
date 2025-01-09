@@ -27,9 +27,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		if !errors.Is(err, context.Canceled) {
-			errlogger.ReportError("movies", err)
-		}
+		errlogger.ReportPanic(err)
 
 		log.Printf("stopped: %s\n", err)
 		os.Exit(1)

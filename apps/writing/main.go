@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/sync/semaphore"
 	"monks.co/apps/writing/templates"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/posts"
@@ -23,6 +24,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		log.Println(err.Error())
 		os.Exit(1)
 	}
@@ -119,14 +121,14 @@ func run() error {
 		case ".jpg", ".jpeg":
 			w.Header().Add("Content-Type", "image/jpeg")
 			if err := imaging.Encode(w, resized, imaging.JPEG); err != nil {
-				log.Printf("jpeg encoding error on '%s': %w", mediafilename, err)
+				log.Printf("jpeg encoding error on '%s': %s", mediafilename, err)
 				return
 			}
 
 		case ".png":
 			w.Header().Add("Content-Type", "image/png")
 			if err := imaging.Encode(w, resized, imaging.PNG); err != nil {
-				log.Printf("png encoding error on '%s': %w", mediafilename, err)
+				log.Printf("png encoding error on '%s': %s", mediafilename, err)
 				return
 			}
 

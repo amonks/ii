@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"monks.co/apps/monitor/monitor"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	if err := run(); err != nil && !errors.Is(err, context.Canceled) {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

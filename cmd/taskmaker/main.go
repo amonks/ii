@@ -8,11 +8,13 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/ports"
 )
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		fmt.Println(err)
 		os.Exit(1)
 	}

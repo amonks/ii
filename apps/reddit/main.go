@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -17,6 +18,7 @@ const (
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

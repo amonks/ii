@@ -31,7 +31,6 @@ func New() (*DB, error) {
 
 type ErrorReport struct {
 	UUID    string
-	Machine string
 	Report  errlogger.ErrorReport `gorm:"embedded"`
 }
 
@@ -40,6 +39,10 @@ type ErrorReportSearch struct {
 	App     string
 	Machine string
 	Report  string
+}
+
+func (ers *ErrorReportSearch) TableName() string {
+	return `error_report_search`
 }
 
 func (db *DB) Capture(report *ErrorReport) error {
@@ -55,11 +58,11 @@ func (db *DB) Capture(report *ErrorReport) error {
 
 	if err := db.db.
 		Create(&ErrorReportSearch{
-			UUID:    report.UUID,
-			Machine: report.Machine,
+			UUID: report.UUID,
 
-			App:    report.Report.App,
-			Report: report.Report.Report,
+			Machine: report.Report.Machine,
+			App:     report.Report.App,
+			Report:  report.Report.Report,
 		}).
 		Error; err != nil {
 		return err

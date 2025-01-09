@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/templ"
 	"monks.co/apps/youtube/model"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -16,6 +17,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		log.Println(err.Error())
 		os.Exit(1)
 	}

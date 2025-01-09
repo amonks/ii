@@ -15,7 +15,6 @@ create virtual table if not exists error_report_search using fts4(
 
 	app     text not null,
 	machine text not null,
-
 	report  text not null,
 
         notindexed=uuid

@@ -41,7 +41,6 @@ func run() error {
 
 		if err := db.Capture(&model.ErrorReport{
 			UUID:    uuid.NewString(),
-			Machine: "unknown",
 			Report:  report,
 		}); err != nil {
 			serve.Error(w, req, 500, err)

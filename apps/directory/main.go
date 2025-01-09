@@ -5,12 +5,14 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 )
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

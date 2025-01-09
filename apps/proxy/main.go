@@ -14,6 +14,7 @@ import (
 	proxyproto "github.com/pires/go-proxyproto"
 
 	"monks.co/pkg/config"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/middleware"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/sigctx"
@@ -26,6 +27,7 @@ var machine = flag.String("machine", "", "machine name; must have a correspondin
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportError(err)
 		panic(err)
 	}
 }

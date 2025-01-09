@@ -12,6 +12,7 @@ import (
 
 	"monks.co/pkg/dogs"
 	"monks.co/pkg/env"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
@@ -22,6 +23,7 @@ import (
 func main() {
 	log.Printf("start")
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		log.Fatal(err)
 	}
 	log.Printf("done")

@@ -2,38 +2,44 @@ package errlogger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"monks.co/pkg/meta"
 	"monks.co/pkg/request"
 )
 
-type AppReporter struct {
-	App string
-}
-
-func (rep *AppReporter) ReportError(string, err error) {
-	ReportError(rep.App, err)
-}
-
-func (rep *AppReporter) Report(statusCode int, report string) {
-	Report(statusCode, rep.App, report)
-}
-
 type ErrorReport struct {
 	App        string `json:"app"`
+	Machine    string `json:"machine"`
 	StatusCode int    `json:"status_code"`
 
 	HappenedAt time.Time `json:"happened_at"`
 	Report     string    `json:"report"`
 }
 
-func ReportError(app string, err error) {
+func ReportPanic(err error) {
+	if errors.Is(err, context.Canceled) {
+		return
+	}
 	if err := sendReport(&ErrorReport{
-		App:        app,
+		App:        meta.AppName(),
+		StatusCode: -1,
+
+		HappenedAt: time.Now(),
+	}); err != nil {
+		log.Println(fmt.Errorf("error-reporting error: %w", err))
+	}
+}
+
+func ReportError(err error) {
+	if err := sendReport(&ErrorReport{
+		App:        meta.AppName(),
 		StatusCode: 500,
 
 		HappenedAt: time.Now(),
@@ -42,9 +48,10 @@ func ReportError(app string, err error) {
 	}
 }
 
-func Report(statusCode int, app, report string) {
+func Report(statusCode int, report string) {
 	if err := sendReport(&ErrorReport{
-		App:        app,
+		App:        meta.AppName(),
+		Machine:    meta.MachineName(),
 		StatusCode: statusCode,
 
 		HappenedAt: time.Now(),

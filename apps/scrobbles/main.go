@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/lastfm"
 	"monks.co/pkg/periodically"
@@ -21,6 +22,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

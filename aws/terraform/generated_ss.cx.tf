@@ -66,6 +66,14 @@ resource "aws_route53_record" "lugh-ss-cx-A" {
   records = ["100.75.168.50"]
 }
 
+resource "aws_route53_record" "fly-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "fly.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.107.86.52"]
+}
+
 resource "aws_route53_record" "brigid-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "brigid.ss.cx."

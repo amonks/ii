@@ -7,6 +7,11 @@ var baseTasks = []*task{
 		Cmd:  "go run ./cmd/taskmaker",
 	},
 	{
+		Id:   "deploy",
+		Type: "short",
+		Cmd:  "go run ./cmd/deploy",
+	},
+	{
 		Id:    "templ",
 		Type:  "short",
 		Cmd:   "go run github.com/a-h/templ/cmd/templ generate",

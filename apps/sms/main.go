@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/twilio"
@@ -12,6 +13,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

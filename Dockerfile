@@ -23,7 +23,7 @@ FROM alpine
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/data
   RUN apk update
-  RUN apk add ca-certificates iptables ip6tables bash
+  RUN apk add ca-certificates iptables ip6tables bash sqlite
   RUN rm -rf /var/cache/apk/*
 
   WORKDIR /app

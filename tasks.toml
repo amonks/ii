@@ -55,6 +55,11 @@ dependencies = [
 ]
 
 [[task]]
+id = 'deploy'
+type = 'short'
+cmd = 'go run ./cmd/deploy'
+
+[[task]]
 id = 'fly'
 type = 'long'
 dependencies = [
