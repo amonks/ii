@@ -30,6 +30,7 @@ func ReportPanic(err error) {
 	if err := sendReport(&ErrorReport{
 		HappenedAt: time.Now(),
 		App:        meta.AppName(),
+		Machine:    meta.MachineName(),
 		StatusCode: -1,
 		Report:     err.Error(),
 	}); err != nil {
@@ -41,6 +42,7 @@ func ReportError(err error) {
 	if err := sendReport(&ErrorReport{
 		HappenedAt: time.Now(),
 		App:        meta.AppName(),
+		Machine:    meta.MachineName(),
 		StatusCode: 500,
 		Report:     err.Error(),
 	}); err != nil {
