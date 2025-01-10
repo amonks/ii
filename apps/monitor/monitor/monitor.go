@@ -34,7 +34,12 @@ func (mon *HTTPMonitor) Check() error {
 			return http.ErrUseLastResponse
 		},
 	}
-	resp, err := client.Get(mon.url)
+	req, err := http.NewRequest(http.MethodGet, mon.url, nil)
+	if err != nil {
+		return fmt.Errorf("error creating http request to %s: %w", mon.Name(), err)
+	}
+	req.Header.Add("User-agent", "monks-co-monitor")
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error requesting %s: %w", mon.Name(), err)
 	}

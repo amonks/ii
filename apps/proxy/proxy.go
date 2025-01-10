@@ -75,7 +75,13 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 	proxy.ServeHTTP(lis, req)
 	dur := time.Now().Sub(startAt)
 
-	labels := []string{req.URL.Hostname(), req.URL.Path, fmt.Sprintf("%d", lis.code)}
+	labels := []string{
+		req.Host,
+		strings.Split(req.URL.Path, "/")[1],
+		req.URL.Path,
+		fmt.Sprintf("%d", lis.code),
+		req.Header.Get("user-agent"),
+	}
 	requestDurationsMetric.WithLabelValues(labels...).Observe(float64(dur.Milliseconds()))
 	requestsMetric.WithLabelValues(labels...).Inc()
 }
