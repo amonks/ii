@@ -13,9 +13,6 @@
     "*.go",
     "youtube/*.md",
   ]
-  dependencies = [
-    "templ"
-  ]
 
 [[task]]
   id = "build"

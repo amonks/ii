@@ -12,9 +12,6 @@
     "**/*.go",
     "*.go"
   ]
-  dependencies = [
-    "templ"
-  ]
 
 [[task]]
   id = "build"

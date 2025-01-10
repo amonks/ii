@@ -9,7 +9,6 @@ type = 'long'
 dependencies = [
   'apps/directory/dev',
   'apps/dogs/dev',
-  'apps/errlog/dev',
   'apps/golink/dev',
   'apps/homepage/dev',
   'apps/map/dev',
@@ -130,7 +129,6 @@ dependencies = [
   'apps/movies/dev',
   'apps/reddit/dev',
   'apps/traffic/dev',
-  'apps/writing/dev',
   'templ',
   'thor-proxy'
 ]

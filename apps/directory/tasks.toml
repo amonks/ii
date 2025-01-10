@@ -9,7 +9,6 @@
   type = "long"
   watch = ["**/*", "*"]
   cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
-  dependencies = ["templ"]
 
 [[task]]
   id = "build"
