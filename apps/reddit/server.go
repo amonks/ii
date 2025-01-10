@@ -9,12 +9,12 @@ import (
 )
 
 type Server struct {
-	*http.ServeMux
+	*serve.Mux
 	db *model
 }
 
 func newServer(db *model) *Server {
-	s := &Server{http.NewServeMux(), db}
+	s := &Server{serve.NewMux(), db}
 
 	s.Handle("/", s.pageServer())
 

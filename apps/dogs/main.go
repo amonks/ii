@@ -64,7 +64,7 @@ func run() error {
 		return err
 	}
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
 

@@ -62,7 +62,7 @@ func run() error {
 		return nil
 	}
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		scrobbles, err := db.GetScrobbles(1000, 0)
 		if err != nil {

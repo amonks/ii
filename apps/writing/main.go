@@ -38,7 +38,7 @@ func run() error {
 		return fmt.Errorf("loading posts: %w", err)
 	}
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	// mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
 	// 	h := templ.Handler(templates.Index(posts))
 	// 	h.ServeHTTP(w, req)

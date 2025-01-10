@@ -25,12 +25,12 @@ func init() {
 }
 
 type Server struct {
-	*http.ServeMux
+	*serve.Mux
 	model *traffic.Model
 }
 
 func NewServer(m *traffic.Model) *Server {
-	s := &Server{http.NewServeMux(), m}
+	s := &Server{serve.NewMux(), m}
 	s.HandleFunc("/", s.serveTraffic)
 	s.Handle("/index.css", serve.StaticServer("./static/"))
 	return s
@@ -43,7 +43,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		Limit(50).
 		Find(&log).
 		Error; err != nil {
-		util.HTTPError("traffic", w, req, 500, "failed to read logs: %s", err)
+		serve.Errorf(w, req, 500, "failed to read logs: %s", err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		Order("request_count desc").
 		Find(&topClients).
 		Error; err != nil {
-		util.HTTPError("traffic", w, req, 500, "failed to read top clients: %s", err)
+		serve.Errorf(w, req, 500, "failed to read top clients: %s", err)
 		return
 	}
 
@@ -75,7 +75,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		Order("request_count desc").
 		Find(&topPages).
 		Error; err != nil {
-		util.HTTPError("traffic", w, req, 500, "failed to read top pages: %s", err)
+		serve.Errorf(w, req, 500, "failed to read top pages: %s", err)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-type", "text/html; charset=utf-8")
 	if err := templates["index.gohtml"].Execute(w, pageData); err != nil {
-		util.HTTPError("traffic", w, req, 500, "failed to read template: %s", err)
+		serve.Errorf(w, req, 500, "failed to read template: %s", err)
 		return
 	}
 }

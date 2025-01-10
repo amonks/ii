@@ -7,8 +7,8 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/twilio"
-	"monks.co/pkg/util"
 )
 
 func main() {
@@ -21,15 +21,15 @@ func main() {
 func run() error {
 	port := ports.Apps["sms"]
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		msg := req.URL.Query().Get("message")
 		if msg == "" {
-			util.HTTPError("sms", w, req, http.StatusBadRequest, "'message' is required")
+			serve.Errorf(w, req, http.StatusBadRequest, "'message' is required")
 			return
 		}
 		if err := twilio.SMSMe(msg); err != nil {
-			util.HTTPError("sms", w, req, http.StatusInternalServerError, "%s", err)
+			serve.Errorf(w, req, http.StatusInternalServerError, "%s", err)
 			return
 		}
 	}))

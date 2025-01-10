@@ -29,12 +29,12 @@ func init() {
 }
 
 type server struct {
-	*http.ServeMux
+	*serve.Mux
 	model *model.Model
 }
 
 func NewServer(m *model.Model) *server {
-	s := &server{http.NewServeMux(), m}
+	s := &server{serve.NewMux(), m}
 
 	s.Handle("/index.js", serve.JSServer("./ts/index.ts"))
 

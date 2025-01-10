@@ -78,7 +78,7 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 	labels := []string{
 		req.Host,
 		strings.Split(req.URL.Path, "/")[1],
-		req.URL.Path,
+		w.Header().Get("x-mux-route"),
 		fmt.Sprintf("%d", lis.code),
 		req.Header.Get("user-agent"),
 	}

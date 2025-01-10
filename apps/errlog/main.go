@@ -30,7 +30,7 @@ func run() error {
 		return err
 	}
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("POST /", func(w http.ResponseWriter, req *http.Request) {
 		var report errlogger.ErrorReport
 		dec := json.NewDecoder(req.Body)

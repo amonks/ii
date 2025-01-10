@@ -8,6 +8,7 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
 
@@ -21,17 +22,17 @@ func main() {
 func run() error {
 	port := ports.Apps["mailer"]
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		req.ParseForm()
 		subject := req.FormValue("subject")
 		if subject == "" {
-			util.HTTPError("mailer", w, req, http.StatusBadRequest, "'subject' is required")
+			serve.Errorf(w, req, http.StatusBadRequest, "'subject' is required")
 			return
 		}
 		body := req.FormValue("body")
 		if body == "" {
-			util.HTTPError("mailer", w, req, http.StatusBadRequest, "'body' is required")
+			serve.Errorf(w, req, http.StatusBadRequest, "'body' is required")
 			return
 		}
 
@@ -39,7 +40,7 @@ func run() error {
 			Subject: subject,
 			Body:    body,
 		}); err != nil {
-			util.HTTPError("mailer", w, req, http.StatusInternalServerError, "%s", err)
+			serve.Errorf(w, req, http.StatusInternalServerError, "%s", err)
 			return
 		}
 	}))

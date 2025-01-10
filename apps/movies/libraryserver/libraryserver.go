@@ -46,7 +46,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	log.Println("libraryserver started")
 	defer log.Println("libraryserver done")
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("/", app.serveIndex)
 	mux.HandleFunc("/import", app.serveImport)
 	mux.HandleFunc("/poster", app.servePoster)

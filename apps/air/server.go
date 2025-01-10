@@ -42,7 +42,7 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 		return err
 	}
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		days := int64(3)
 		if q := req.URL.Query().Get("days"); q != "" {

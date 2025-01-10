@@ -50,7 +50,7 @@ var reporter = monitor.Reporter{
 func run() error {
 	port := ports.Apps["monitor"]
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", 301)
 	})

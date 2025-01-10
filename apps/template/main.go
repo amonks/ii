@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
@@ -21,7 +20,7 @@ func main() {
 func run() error {
 	port := ports.Apps["template"]
 
-	mux := http.NewServeMux()
+	mux := serve.NewMux()
 
 	ctx := sigctx.New()
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
