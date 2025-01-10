@@ -33,7 +33,7 @@ func main() {
 func run() error {
 	ctx := sigctx.New()
 
-	posts, err := posts.Load("./writing")
+	posts, err := posts.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("loading posts: %w", err)
 	}

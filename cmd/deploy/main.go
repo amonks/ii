@@ -19,7 +19,7 @@ func main() {
 
 	if err := run(); err != nil {
 		errlogger.ReportPanic(err)
-		fmt.Fprintln(os.Stderr, "failed after %s", time.Now().Sub(startAt))
+		fmt.Fprintf(os.Stderr, "failed after %s\n", time.Now().Sub(startAt))
 		panic(err)
 	}
 

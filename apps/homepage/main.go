@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
-	"monks.co/pkg/env"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
@@ -24,9 +23,9 @@ func main() {
 }
 
 func run() error {
-	port := ports.Apps["homepage"]
+	ctx := sigctx.New()
 
-	posts, err := posts.Load(env.InMonksRoot("writing"))
+	posts, err := posts.Load(ctx)
 	if err != nil {
 		return err
 	}
@@ -50,7 +49,7 @@ func run() error {
 		h.ServeHTTP(w, req)
 	})
 
-	ctx := sigctx.New()
+	port := ports.Apps["homepage"]
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err

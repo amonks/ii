@@ -74,9 +74,9 @@ func (db *DB) Capture(report *ErrorReport) error {
 func (db *DB) LastN(n int, where ErrorReport) ([]ErrorReport, error) {
 	var reports []ErrorReport
 	if err := db.db.Table("error_reports").
-		Find(&reports).
 		Where(where).
 		Order("happened_at desc").
+		Find(&reports).
 		Error; err != nil {
 		return nil, err
 	}

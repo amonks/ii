@@ -9,6 +9,7 @@ type = 'long'
 dependencies = [
   'apps/directory/dev',
   'apps/dogs/dev',
+  'apps/errlog/dev',
   'apps/golink/dev',
   'apps/homepage/dev',
   'apps/map/dev',

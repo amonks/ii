@@ -18,6 +18,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"go.abhg.dev/goldmark/anchor"
 	"go.abhg.dev/goldmark/frontmatter"
+	"monks.co/pkg/env"
 	"monks.co/pkg/markdown/ampersand"
 	"monks.co/pkg/markdown/imgres"
 )
@@ -90,7 +91,8 @@ var gm = goldmark.New(
 	),
 )
 
-func Load(dir string) (*Posts, error) {
+func Load(ctx context.Context) (*Posts, error) {
+	dir := env.InMonksRoot("writing")
 	ps, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("reading posts dir: %w", err)
@@ -98,6 +100,9 @@ func Load(dir string) (*Posts, error) {
 
 	posts := &Posts{bySlug: map[string]*Post{}}
 	for _, p := range ps {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		var date, slug, mdpath string
 		media := map[string]Media{}
 		if p.IsDir() {

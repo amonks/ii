@@ -3,4 +3,5 @@ cache
 .envrc
 bin
 aws
+node_modules
 

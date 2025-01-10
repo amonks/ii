@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -53,24 +54,33 @@ func run() error {
 	})
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		var where model.ErrorReport
-		if machine := req.URL.Query().Get("machine"); machine != "" {
+
+		q := req.URL.Query()
+		if machine := q.Get("machine"); machine != "" {
 			where.Report.Machine = machine
 		}
-		if app := req.URL.Query().Get("app"); app != "" {
+		if app := q.Get("app"); app != "" {
 			where.Report.App = app
 		}
-		if status_code := req.URL.Query().Get("status_code"); status_code != "" {
+		if status_code := q.Get("status_code"); status_code != "" {
 			if status_code, err := strconv.ParseInt(status_code, 10, 64); err == nil {
 				where.Report.StatusCode = int(status_code)
 			}
 		}
+		count := 1000
+		if n := q.Get("n"); n != "" {
+			if n, err := strconv.ParseInt(n, 10, 64); err == nil {
+				count = int(n)
+			}
+		}
 
-		cmds, err := db.LastN(1000, where)
+		cmds, err := db.LastN(count, where)
 		if err != nil {
 			serve.Error(w, req, 500, err)
 			return
 		}
-		templ.Handler(index(cmds)).ServeHTTP(w, req)
+
+		templ.Handler(index(cmds, where)).ServeHTTP(w, req)
 	})
 
 	ctx := sigctx.New()
