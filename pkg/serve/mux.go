@@ -1,6 +1,8 @@
 package serve
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Mux struct {
 	http.ServeMux
@@ -11,7 +13,28 @@ func NewMux() *Mux {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("x-mux-route", req.Pattern)
-	m.ServeMux.ServeHTTP(w, req)
+	m.ServeMux.ServeHTTP(&smuggler{w, false, req}, req)
 }
 
+type smuggler struct {
+	http.ResponseWriter
+	hasSmuggled bool
+	req         *http.Request
+}
+
+func (sm *smuggler) Write(bs []byte) (int, error) {
+	if !sm.hasSmuggled {
+		sm.smuggle()
+	}
+	return sm.ResponseWriter.Write(bs)
+}
+
+func (sm *smuggler) smuggle() {
+	sm.hasSmuggled = true
+	sm.ResponseWriter.Header().Set("x-mux-route", sm.req.Pattern)
+}
+
+func (sm *smuggler) WriteHeader(code int) {
+	sm.smuggle()
+	sm.ResponseWriter.WriteHeader(code)
+}

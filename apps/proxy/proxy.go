@@ -11,6 +11,7 @@ import (
 
 	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/prometh"
 )
 
 type proxy struct {
@@ -50,14 +51,17 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	})).ServeHTTP(w, req)
 }
 
-type statusListener struct {
+type StatusCodeWriter struct {
 	http.ResponseWriter
-	code int
+	code  int
+	route string
 }
 
-func (s *statusListener) WriteHeader(code int) {
-	s.code = code
-	s.ResponseWriter.WriteHeader(code)
+func (w *StatusCodeWriter) WriteHeader(code int) {
+	w.code = code
+	w.route = w.Header().Get("x-mux-route")
+	w.Header().Del("x-mux-route")
+	w.ResponseWriter.WriteHeader(code)
 }
 
 func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req *http.Request) {
@@ -71,17 +75,17 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 		},
 	}
 	startAt := time.Now()
-	lis := &statusListener{ResponseWriter: w}
-	proxy.ServeHTTP(lis, req)
+	scw := &StatusCodeWriter{ResponseWriter: w}
+	proxy.ServeHTTP(scw, req)
 	dur := time.Now().Sub(startAt)
 
-	labels := []string{
-		req.Host,
-		strings.Split(req.URL.Path, "/")[1],
-		w.Header().Get("x-mux-route"),
-		fmt.Sprintf("%d", lis.code),
-		req.Header.Get("user-agent"),
-	}
+	labels := prometh.SanitizeLabels(
+		"host_"+req.Host,
+		"app_"+strings.Split(req.URL.Path, "/")[1],
+		"route_"+scw.route,
+		fmt.Sprintf("status_%d", scw.code),
+		"ua_"+req.Header.Get("user-agent"),
+	)
 	requestDurationsMetric.WithLabelValues(labels...).Observe(float64(dur.Milliseconds()))
 	requestsMetric.WithLabelValues(labels...).Inc()
 }
