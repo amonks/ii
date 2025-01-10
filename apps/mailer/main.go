@@ -9,7 +9,6 @@ import (
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/util"
 )
 
 func main() {
