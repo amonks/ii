@@ -11,6 +11,7 @@ mode = "prod"
   "docrimes.com"      = "https://monks.co/"
   "fmail.email"       = "https://monks.co/"
   "fuckedcars.com"    = "https://monks.co/"
+  "lyrics.gy"         = "https://monks.co"
   "needsyourhelp.org" = "https://monks.co/"
   "popefucker.com"    = "https://monks.co/"
   "ss.cx"             = "https://monks.co/"
@@ -31,6 +32,7 @@ mode = "prod"
     "docrimes.com",
     "fmail.email",
     "fuckedcars.com",
+    "lyrics.gy",
     "needsyourhelp.org",
     "popefucker.com",
     "ss.cx"
