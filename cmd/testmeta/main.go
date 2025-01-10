@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	fmt.Println(meta.AppName())
 	fmt.Println(meta.MachineName())
+	fmt.Println(meta.AppName())
 }
