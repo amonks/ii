@@ -27,15 +27,16 @@ var reporter = monitor.Reporter{
 	"7135661159": monitor.NewHTTPMonitor("https://belgianman.com", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
 	"cf01c434ed": monitor.NewHTTPMonitor("https://blgn.mn", monitor.WithRedirectCheck("https://belgianman.bandcamp.com/")),
 
-	"e2b6c2c6d3": monitor.NewHTTPMonitor("https://amonks.co", monitor.WithRedirectCheck("https://monks.co/")),
-	"cf89105615": monitor.NewHTTPMonitor("https://andrewmonks.com", monitor.WithRedirectCheck("https://monks.co/")),
-	"927132497c": monitor.NewHTTPMonitor("https://andrewmonks.net", monitor.WithRedirectCheck("https://monks.co/")),
 	"10e94a97f5": monitor.NewHTTPMonitor("https://andrewmonks.org", monitor.WithRedirectCheck("https://monks.co/")),
+	"15e8dd93d3": monitor.NewHTTPMonitor("https://lyrics.gy", monitor.WithRedirectCheck("https://monks.co/")),
+	"1701700ff4": monitor.NewHTTPMonitor("https://fuckedcars.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"1e4c151574": monitor.NewHTTPMonitor("https://popefucker.com", monitor.WithRedirectCheck("https://monks.co/")),
 	"230cd6a1c7": monitor.NewHTTPMonitor("https://docrimes.com", monitor.WithRedirectCheck("https://monks.co/")),
 	"2e2a54d014": monitor.NewHTTPMonitor("https://fmail.email", monitor.WithRedirectCheck("https://monks.co/")),
-	"1701700ff4": monitor.NewHTTPMonitor("https://fuckedcars.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"927132497c": monitor.NewHTTPMonitor("https://andrewmonks.net", monitor.WithRedirectCheck("https://monks.co/")),
 	"a24120b740": monitor.NewHTTPMonitor("https://needsyourhelp.org", monitor.WithRedirectCheck("https://monks.co/")),
-	"1e4c151574": monitor.NewHTTPMonitor("https://popefucker.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"cf89105615": monitor.NewHTTPMonitor("https://andrewmonks.com", monitor.WithRedirectCheck("https://monks.co/")),
+	"e2b6c2c6d3": monitor.NewHTTPMonitor("https://amonks.co", monitor.WithRedirectCheck("https://monks.co/")),
 	"e34a530a1c": monitor.NewHTTPMonitor("https://ss.cx", monitor.WithRedirectCheck("https://monks.co/")),
 
 	"2cf481a128": monitor.NewHTTPMonitor("https://monks.co", monitor.WithBodyCheck(
