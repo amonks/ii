@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"strconv"
 	"strings"
+	"time"
 
 	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
@@ -49,6 +50,16 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	})).ServeHTTP(w, req)
 }
 
+type statusListener struct {
+	http.ResponseWriter
+	code int
+}
+
+func (s *statusListener) WriteHeader(code int) {
+	s.code = code
+	s.ResponseWriter.WriteHeader(code)
+}
+
 func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req *http.Request) {
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(req *httputil.ProxyRequest) {
@@ -59,7 +70,14 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 			log.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},
 	}
-	proxy.ServeHTTP(w, req)
+	startAt := time.Now()
+	lis := &statusListener{ResponseWriter: w}
+	proxy.ServeHTTP(lis, req)
+	dur := time.Now().Sub(startAt)
+
+	labels := []string{req.URL.Hostname(), req.URL.Path, fmt.Sprintf("%d", lis.code)}
+	requestDurationsMetric.WithLabelValues(labels...).Observe(float64(dur.Milliseconds()))
+	requestsMetric.WithLabelValues(labels...).Inc()
 }
 
 func parseRoutes(args []string) (map[string]int, error) {

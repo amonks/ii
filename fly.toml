@@ -10,6 +10,10 @@ primary_region = "ord"
   MONKS_ROOT="/app"
   MONKS_DATA="/data"
 
+[metrics]
+  port = 9091
+  path = "/metrics"
+
 [[mounts]]
   source = "data"
   destination = "/data"

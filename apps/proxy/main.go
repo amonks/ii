@@ -12,11 +12,14 @@ import (
 	"time"
 
 	proxyproto "github.com/pires/go-proxyproto"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/middleware"
 	"monks.co/pkg/ports"
+	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
@@ -32,6 +35,23 @@ func main() {
 	}
 }
 
+var (
+	requestsMetric = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "requests",
+		},
+		[]string{"host", "path", "status_code"},
+	)
+	requestDurationsMetric = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name:       "request_durations",
+			MaxAge:     15 * time.Second,
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		},
+		[]string{"host", "path", "status_code"},
+	)
+)
+
 func run() error {
 	flag.Parse()
 
@@ -42,6 +62,9 @@ func run() error {
 
 	var wg sync.WaitGroup
 	ctx, cancel := sigctx.NewWithCancel()
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(requestsMetric, requestDurationsMetric)
 
 	for _, serviceConfig := range config.Services {
 		wg.Add(1)
@@ -71,6 +94,17 @@ func run() error {
 			}
 		}()
 	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+		if err := serve.ListenAndServe(ctx, "0.0.0.0:9091", mux); err != nil {
+			log.Println(err)
+			cancel(err)
+		}
+	}()
 
 	wg.Wait()
 	return nil
@@ -193,7 +227,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	}
 
 	tsSrv := &tsnet.Server{
-		Hostname:  "monks.co-"+os.Getenv("FLY_REGION"),
+		Hostname:  "monks.co-" + os.Getenv("FLY_REGION"),
 		Dir:       s.service.StoragePath,
 		Ephemeral: true,
 		AuthKey:   os.Getenv("TS_AUTHKEY"),
