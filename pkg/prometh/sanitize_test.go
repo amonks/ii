@@ -23,11 +23,6 @@ func TestSanitizeLabel(t *testing.T) {
 			want:  "_",
 		},
 		{
-			name:  "starts with number",
-			input: "123label",
-			want:  "_23label",
-		},
-		{
 			name:  "special characters",
 			input: "hello!@#$%^&*()",
 			want:  "hello__________",

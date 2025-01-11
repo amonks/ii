@@ -80,11 +80,11 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 	dur := time.Now().Sub(startAt)
 
 	labels := prometh.SanitizeLabels(
-		"host_"+req.Host,
-		"app_"+strings.Split(req.URL.Path, "/")[1],
-		"route_"+scw.route,
-		fmt.Sprintf("status_%d", scw.code),
-		"ua_"+req.Header.Get("user-agent"),
+		req.Host,
+		strings.Split(req.URL.Path, "/")[1],
+		scw.route,
+		fmt.Sprintf("%d", scw.code),
+		req.Header.Get("user-agent"),
 	)
 	requestDurationsMetric.WithLabelValues(labels...).Observe(float64(dur.Milliseconds()))
 	requestsMetric.WithLabelValues(labels...).Inc()
