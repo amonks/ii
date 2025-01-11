@@ -12,6 +12,7 @@ require (
 	github.com/caddyserver/certmagic v0.21.5
 	github.com/evanw/esbuild v0.24.2
 	github.com/google/uuid v1.6.0
+	github.com/kevinpollet/nego v0.0.0-20200324111829-b3061ca9dd9d
 	github.com/libdns/route53 v1.5.1
 	github.com/nao1215/imaging v1.0.9
 	github.com/pelletier/go-toml/v2 v2.2.3

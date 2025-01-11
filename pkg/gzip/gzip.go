@@ -19,16 +19,16 @@ var Middleware = middleware.MiddlewareFunc(func(h http.Handler) http.Handler {
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
 		defer gz.Close()
-		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
+		gzw := gzipResponseWriter{w, gz}
 		h.ServeHTTP(gzw, req)
 	})
 })
 
 type gzipResponseWriter struct {
-	io.Writer
 	http.ResponseWriter
+	gzip   io.Writer
 }
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
+	return w.gzip.Write(b)
 }

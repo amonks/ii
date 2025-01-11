@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"monks.co/pkg/env"
-	"monks.co/pkg/gzip"
+	"monks.co/pkg/gzipserver"
 	"monks.co/pkg/prometh"
 )
 
@@ -45,10 +45,8 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	staticFilePath := env.InMonksRoot("static", req.URL.Path)
-	gzip.Middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		http.ServeFile(w, req, staticFilePath)
-	})).ServeHTTP(w, req)
+	srv := gzipserver.FileServer(gzipserver.Dir(env.InMonksRoot("static")))
+	srv.ServeHTTP(w, req)
 }
 
 type StatusCodeWriter struct {
