@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -21,9 +20,9 @@ import (
 	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tls"
 	"monks.co/pkg/traffic"
-	"tailscale.com/tsnet"
 )
 
 var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
@@ -227,12 +226,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 		Handler:     handler,
 	}
 
-	tsSrv := &tsnet.Server{
-		Hostname:  "monks.co-" + os.Getenv("FLY_REGION"),
-		Dir:       s.service.StoragePath,
-		Ephemeral: true,
-		AuthKey:   os.Getenv("TS_AUTHKEY"),
-	}
+	tsSrv := tailnet.Server()
 
 	ln, err := tsSrv.Listen("tcp", ":80")
 	if err != nil {

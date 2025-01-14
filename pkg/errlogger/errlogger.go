@@ -12,6 +12,7 @@ import (
 
 	"monks.co/pkg/meta"
 	"monks.co/pkg/request"
+	"monks.co/pkg/tailnet"
 )
 
 type ErrorReport struct {
@@ -65,6 +66,8 @@ func Report(statusCode int, report string) {
 func sendReport(report *ErrorReport) error {
 	const url = "http://fly.ss.cx/errlog/"
 
+	client := tailnet.Client()
+
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(report); err != nil {
 		return err
@@ -74,7 +77,7 @@ func sendReport(report *ErrorReport) error {
 		return fmt.Errorf("errlog request error: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("errlog network error: %w", err)
 	}

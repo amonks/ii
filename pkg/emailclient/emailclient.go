@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"monks.co/pkg/email"
+	"monks.co/pkg/tailnet"
 )
 
 func EmailMe(message email.Message) error {
@@ -24,7 +25,7 @@ func EmailMe(message email.Message) error {
 
 	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
 
-	hc := http.Client{}
+	hc := tailnet.Client()
 	res, err := hc.Do(req)
 	if err != nil {
 		return err

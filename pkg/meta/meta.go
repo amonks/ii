@@ -15,6 +15,7 @@ var (
 
 func AppName() string     { return appName.get() }
 func MachineName() string { return machineName.get() }
+func IsFly() bool         { return strings.HasPrefix(MachineName(), "fly-") }
 
 func getAppName() string {
 	if path, err := os.Executable(); err != nil {
