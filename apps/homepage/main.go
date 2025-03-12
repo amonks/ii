@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"monks.co/pkg/errlogger"
@@ -11,6 +12,7 @@ import (
 	"monks.co/pkg/letterboxd"
 	"monks.co/pkg/ports"
 	"monks.co/pkg/posts"
+	"monks.co/pkg/rotate"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 )
@@ -31,7 +33,17 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
-	mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /error/{$}", func(w http.ResponseWriter, req *http.Request) {
+		code := 500
+		if qCode := req.URL.Query().Get("code"); qCode != "" {
+			if qCode, err := strconv.ParseInt(qCode, 10, 64); err == nil {
+				code = int(qCode)
+			}
+		}
+		serve.Errorf(w, req, code, "%d, as requested", code)
+		return
+	})
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
 		if err != nil {
 			log.Printf("letterboxd diary error: %s\n", err)
@@ -43,8 +55,9 @@ func run() error {
 			return
 		}
 		h := templ.Handler(Homepage(&PageData{
-			Posts:   posts,
-			Watches: diary,
+			Posts:     posts,
+			Watches:   diary,
+			GoSynonym: goSynonyms.Next(),
 		}))
 		h.ServeHTTP(w, req)
 	})
@@ -68,3 +81,13 @@ func lastFiveWatches() ([]*letterboxd.Watch, error) {
 }
 
 var errUnset = fmt.Errorf("unset")
+
+var goSynonyms = rotate.New[string](
+	"Go",
+	"囲碁",
+	"いご",
+	"바둑",
+	"baduk",
+	"圍棋",
+	"wéiqí",
+)

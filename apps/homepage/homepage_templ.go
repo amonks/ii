@@ -14,8 +14,9 @@ import (
 )
 
 type PageData struct {
-	Watches []*db.Watch
-	Posts   *posts.Posts
+	Watches   []*db.Watch
+	GoSynonym string
+	Posts     *posts.Posts
 }
 
 func Homepage(data *PageData) templ.Component {
@@ -39,192 +40,205 @@ func Homepage(data *PageData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Andrew Monks</title><style>\n\t\t\t/*\n\t\t\t\t visual stuff\n\t\t\t */\n\n\t\t\tbody {\n\t\t\t\tcolor: #1d062d; /* shadow tone sampled from headshot.png, reduced to 10% brightness */\n\t\t\t\tfont-family: Times New Roman, Times, serif;\n\t\t\t}\n\t\t\tabbr {\n\t\t\t\ttext-decoration-line: underline;\n\t\t\t\ttext-decoration-style: dotted;\n\t\t\t}\n\t\t\t.no-underline {\n\t\t\t\ttext-decoration: none;\n\t\t\t}\n\t\t\t.mono {\n\t\t\t\tfont-family: AppleMyungjo, mono\n\t\t\t}\n\t\t\th1 a {\n\t\t\t\tcolor: inherit;\n\t\t\t\ttext-decoration: none;\n\t\t\t}\n\t\t\th3 {\n\t\t\t\tfont-size: inherit;\n\t\t\t\tfont-weight: inherit;\n\t\t\t\tmargin: 0;\n\t\t\t}\n\n\t\t\t/*\n\t\t\t\t grid, spacing\n\t\t\t */\n\t\t\tbody {\n\t\t\t\tmargin: 20px auto 20px;\n\t\t\t\tfont-size: 16px;\n\t\t\t\tline-height: 20px; /* 20px baseline grid */\n\t\t\t\twidth: 720px;\n\t\t\t\tmax-width: 97%;\n\t\t\t}\n\t\t\th1 {\n\t\t\t\tline-height: 26px; /* magic numbers that make the baselines work */\n\t\t\t\tfont-size: 26px; /* magic numbers that make the baselines work */\n\t\t\t\tmargin-bottom: 0px;\n\t\t\t}\n\t\t\tdiv {\n\t\t\t\tmargin-top: 0;\n\t\t\t\tmargin-bottom: 20px; /* 20px baseline grid */\n\t\t\t}\n\n\t\t\t.flex-down {\n\t\t\t\tdisplay: flex;\n\t\t\t\tflex-direction: column;\n\t\t\t\tjustify-content: end;\n\t\t\t}\n\t\t\t.square-block {\n\t\t\t\theight: 120px; /* 20px baseline grid */\n\t\t\t\twidth: 120px;\n\t\t\t}\n\n\t\t\t/*\n\t\t\t\t lists\n\t\t\t*/\n\n\t\t\tul.continuation-list {\n\t\t\t\tlist-style: \"…\" outside;\n\t\t\t}\n\t\t\tul.continuation-list li::marker {\n\t\t\t\tfont-size: 16px;\n\t\t\t}\n\n\t\t\tul.contact-list {\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin: 0;\n\t\t\t}\n\t\t\tul.contact-list > li a {\n\t\t\t\tcolor: inherit;\n\t\t\t\ttext-decoration: none;\n\t\t\t\tcursor: pointer;\n\t\t\t}\n\t\t\tul.contact-list > li {\n\t\t\t\tdisplay: inline;\n\t\t\t}\n\t\t\tul.contact-list > li::after {\n\t\t\t\tcontent: \"\u2003\";\n\t\t\t}\n\t\t\tul.contact-list > li:last-child::after {\n\t\t\t\tcontent: \"\";\n\t\t\t}\n\n\t\t\tol.location-history-list {\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin: 0;\n\t\t\t\tmargin-bottom: 20px;\n\t\t\t}\n\t\t\tol.location-history-list > li {\n\t\t\t\tdisplay: inline;\n\t\t\t}\n\t\t\tol.location-history-list > li::after {\n\t\t\t\tcontent: \"\u2002←\u2002\";\n\t\t\t}\n\t\t\tol.location-history-list > li:last-child::after {\n\t\t\t\tcontent: \"\";\n\t\t\t}\n\n\t\t\tdl.prose-definition-list > dd {\n\t\t\t\tmargin-inline-start: 0;\n\t\t\t}\n\n\t\t\t.columns {\n\t\t\t\tdisplay: grid;\n\t\t\t\tgrid-template-columns: 1fr 3fr;\n\t\t\t\tgrid-template-rows: 1fr;\n\t\t\t\tgap: 20px; /* 20px baseline grid */\n\t\t\t\tmargin-bottom: 20px; /* 20px baseline grid */\n\t\t\t\tmargin-top: 0;\n\t\t\t}\n\t\t\t.columns > *:nth-child(odd)\t/* dl */ {\n\t\t\t\tmin-width: 120px;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ {\n\t\t\t\tmargin-left: 0;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ > * {\n\t\t\t\tmargin-top: 0;\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin-bottom: 20px;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ > *:last-child {\n\t\t\t\tmargin-bottom: 0;\n\t\t\t}\n\t\t</style></head><body class=\"h-card\"><div class=\"columns\"><img class=\"square-block u-photo\" alt=\"beautiful headshot\" src=\"/headshot.jpg\"><section class=\"flex-down\" aria-label=\"Contact information\"><div><h1><a class=\"p-name u-url\" href=\"https://monks.co\">Andrew Monks</a></h1><ul class=\"contact-list\"><li><a class=\"u-email\" href=\"mailto:a@monks.co\">a@monks.co</a></li><li><a class=\"p-tel\" href=\"tel:+19782541779\">+1 978-254-1779</a></li></ul></div></section></div><article aria-label=\"Places I have lived\"><ol class=\"location-history-list\"><li><span class=\"p-adr h-adr\"><span class=\"p-locality\">Chicago</span>, <abbr class=\"p-region no-underline\" title=\"Illinois\">IL</abbr></span></li><li>Asheville, <abbr class=\"no-underline\" title=\"North Carolina\">NC</abbr></li><li>San Francisco, <abbr class=\"no-underline\" title=\"California\">CA</abbr></li><li>Chicago, <abbr class=\"no-underline\" title=\"Illinois\">IL</abbr></li><li>Boston, <abbr class=\"no-underline\" title=\"Massachusetts\">MA</abbr></li></ol></article><article aria-label=\"Work history\" class=\"columns\"><label id=\"currently\">currently,</label><section aria-labelledby=\"currently\"><p>I develop ice cream recipes and noodle on database software. I’m also helping out a bit at <a href=\"https://www.resinrecyclables.com\">Resin Recyclables</a>.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Andrew Monks</title><style>\n\t\t\t/*\n\t\t\t\t visual stuff\n\t\t\t */\n\n\t\t\tbody {\n\t\t\t\tcolor: #1d062d; /* shadow tone sampled from headshot.png, reduced to 10% brightness */\n\t\t\t\tfont-family: Times New Roman, Times, serif;\n\t\t\t}\n\t\t\tabbr {\n\t\t\t\ttext-decoration-line: underline;\n\t\t\t\ttext-decoration-style: dotted;\n\t\t\t}\n\t\t\t.no-underline {\n\t\t\t\ttext-decoration: none;\n\t\t\t}\n\t\t\t.mono {\n\t\t\t\tfont-family: AppleMyungjo, mono\n\t\t\t}\n\t\t\th1 a {\n\t\t\t\tcolor: inherit;\n\t\t\t\ttext-decoration: none;\n\t\t\t}\n\t\t\th3 {\n\t\t\t\tfont-size: inherit;\n\t\t\t\tfont-weight: inherit;\n\t\t\t\tmargin: 0;\n\t\t\t}\n\n\t\t\t/*\n\t\t\t\t grid, spacing\n\t\t\t */\n\t\t\tbody {\n\t\t\t\tmargin: 20px auto 20px;\n\t\t\t\tfont-size: 16px;\n\t\t\t\tline-height: 20px; /* 20px baseline grid */\n\t\t\t\twidth: 720px;\n\t\t\t\tmax-width: 97%;\n\t\t\t}\n\t\t\th1 {\n\t\t\t\tline-height: 26px; /* magic numbers that make the baselines work */\n\t\t\t\tfont-size: 26px; /* magic numbers that make the baselines work */\n\t\t\t\tmargin-bottom: 0px;\n\t\t\t}\n\t\t\tdiv {\n\t\t\t\tmargin-top: 0;\n\t\t\t\tmargin-bottom: 20px; /* 20px baseline grid */\n\t\t\t}\n\n\t\t\t.flex-down {\n\t\t\t\tdisplay: flex;\n\t\t\t\tflex-direction: column;\n\t\t\t\tjustify-content: end;\n\t\t\t}\n\t\t\t.square-block {\n\t\t\t\theight: 120px; /* 20px baseline grid */\n\t\t\t\twidth: 120px;\n\t\t\t}\n\n\t\t\t/*\n\t\t\t\t lists\n\t\t\t*/\n\n\t\t\tul.continuation-list {\n\t\t\t\tlist-style: \"…\" outside;\n\t\t\t}\n\t\t\tul.continuation-list li::marker {\n\t\t\t\tfont-size: 16px;\n\t\t\t}\n\n\t\t\tul.contact-list {\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin: 0;\n\t\t\t}\n\t\t\tul.contact-list > li a {\n\t\t\t\tcolor: inherit;\n\t\t\t\ttext-decoration: none;\n\t\t\t\tcursor: pointer;\n\t\t\t}\n\t\t\tul.contact-list > li {\n\t\t\t\tdisplay: inline;\n\t\t\t}\n\t\t\tul.contact-list > li::after {\n\t\t\t\tcontent: \"\u2003\";\n\t\t\t}\n\t\t\tul.contact-list > li:last-child::after {\n\t\t\t\tcontent: \"\";\n\t\t\t}\n\n\t\t\tol.location-history-list {\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin: 0;\n\t\t\t\tmargin-bottom: 20px;\n\t\t\t}\n\t\t\tol.location-history-list > li {\n\t\t\t\tdisplay: inline;\n\t\t\t}\n\t\t\tol.location-history-list > li::after {\n\t\t\t\tcontent: \"\u2002←\u2002\";\n\t\t\t}\n\t\t\tol.location-history-list > li:last-child::after {\n\t\t\t\tcontent: \"\";\n\t\t\t}\n\n\t\t\tdl.prose-definition-list > dd {\n\t\t\t\tmargin-inline-start: 0;\n\t\t\t}\n\n\t\t\t.columns {\n\t\t\t\tdisplay: grid;\n\t\t\t\tgrid-template-columns: 1fr 3fr;\n\t\t\t\tgrid-template-rows: 1fr;\n\t\t\t\tgap: 20px; /* 20px baseline grid */\n\t\t\t\tmargin-bottom: 20px; /* 20px baseline grid */\n\t\t\t\tmargin-top: 0;\n\t\t\t}\n\t\t\t.columns > *:nth-child(odd)\t/* dl */ {\n\t\t\t\tmin-width: 120px;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ {\n\t\t\t\tmargin-left: 0;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ > * {\n\t\t\t\tmargin-top: 0;\n\t\t\t\tpadding-left: 0;\n\t\t\t\tmargin-bottom: 20px;\n\t\t\t}\n\t\t\t.columns > *:nth-child(even) /* dd */ > *:last-child {\n\t\t\t\tmargin-bottom: 0;\n\t\t\t}\n\t\t</style></head><body class=\"h-card\"><div class=\"columns\"><img class=\"square-block u-photo\" alt=\"beautiful headshot\" src=\"/headshot.jpg\"><section class=\"flex-down\" aria-label=\"Contact information\"><div><h1><a class=\"p-name u-url\" href=\"https://monks.co\">Andrew Monks</a></h1><ul class=\"contact-list\"><li><a class=\"u-email\" href=\"mailto:a@monks.co\">a@monks.co</a></li><li><a class=\"p-tel\" href=\"tel:+19782541779\">+1 978-254-1779</a></li></ul></div></section></div><article aria-label=\"Places I have lived\"><ol class=\"location-history-list\"><li><span class=\"p-adr h-adr\"><span class=\"p-locality\">Chicago</span>, <abbr class=\"p-region no-underline\" title=\"Illinois\">IL</abbr></span></li><li>Asheville, <abbr class=\"no-underline\" title=\"North Carolina\">NC</abbr></li><li>San Francisco, <abbr class=\"no-underline\" title=\"California\">CA</abbr></li><li>Chicago, <abbr class=\"no-underline\" title=\"Illinois\">IL</abbr></li><li>Boston, <abbr class=\"no-underline\" title=\"Massachusetts\">MA</abbr></li></ol></article><article aria-label=\"Work history\" class=\"columns\"><label id=\"currently\">currently,</label><section aria-labelledby=\"currently\"><p>I ride my bicycle, read books, play ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.GoSynonym)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 197, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, ", and try to write database software. I also organize a monthly meetup for computer artists here in Chicago. I occasionally write code with my friends at <a href=\"https://www.resinrecyclables.com\">Resin Recyclables</a>.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.Watches != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<dl class=\"p-note prose-definition-list\"><dt>I watch movies most days. Recently,</dt><dd><a class=\"no-underline\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<dl class=\"p-note prose-definition-list\"><dt>I watch movies most days. Recently,</dt><dd><a class=\"no-underline\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var2 templ.SafeURL = templ.SafeURL(data.Watches[0].LetterboxdURL)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var2)))
+			var templ_7745c5c3_Var3 templ.SafeURL = templ.SafeURL(data.Watches[0].LetterboxdURL)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var3)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><span class=\"mono\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[0].Rating))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 199, Col: 139}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><span class=\"mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[0].MovieTitle)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[0].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 199, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var5 templ.SafeURL = templ.SafeURL(data.Watches[1].LetterboxdURL)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var5)))
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[0].MovieTitle)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 177}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"><span class=\"mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[1].Rating))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 200, Col: 139}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+			var templ_7745c5c3_Var6 templ.SafeURL = templ.SafeURL(data.Watches[1].LetterboxdURL)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var6)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><span class=\"mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[1].MovieTitle)
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[1].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 200, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 templ.SafeURL = templ.SafeURL(data.Watches[2].LetterboxdURL)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var8)))
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[1].MovieTitle)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 177}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><span class=\"mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[2].Rating))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 201, Col: 139}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			var templ_7745c5c3_Var9 templ.SafeURL = templ.SafeURL(data.Watches[2].LetterboxdURL)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var9)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><span class=\"mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[2].MovieTitle)
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[2].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 201, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 templ.SafeURL = templ.SafeURL(data.Watches[3].LetterboxdURL)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var11)))
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[2].MovieTitle)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 177}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"><span class=\"mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</a>,</dd><dd><a class=\"no-underline\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[3].Rating))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 202, Col: 139}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			var templ_7745c5c3_Var12 templ.SafeURL = templ.SafeURL(data.Watches[3].LetterboxdURL)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var12)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><span class=\"mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[3].MovieTitle)
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[3].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 202, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 209, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</a>, and,</dd><dd><a class=\"no-underline\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var14 templ.SafeURL = templ.SafeURL(data.Watches[4].LetterboxdURL)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var14)))
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[3].MovieTitle)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 209, Col: 177}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"><span class=\"mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</a>, and,</dd><dd><a class=\"no-underline\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[4].Rating))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 203, Col: 139}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			var templ_7745c5c3_Var15 templ.SafeURL = templ.SafeURL(data.Watches[4].LetterboxdURL)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var15)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"><span class=\"mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[4].MovieTitle)
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[4].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 203, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 210, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</a>.</dd></dl>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[4].MovieTitle)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 210, Col: 177}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</a>.</dd></dl>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<p>I love exploring. I made a <a href=\"/map\">nice map</a> of places I have opinions about. It doesn't say what the opinions are, so you'll have to make your own. The map scrolls pretty slow; it used to be faster.</p></section><h3 id=\"previously\">previously,</h3><section aria-labelledby=\"previously\"><p>I was a <abbr title=\"zoom attendee\"><span class=\"p-job-title\">staff engineer</span></abbr> at <span class=\"p-org h-card\"><a class=\"o-name u-url\" href=\"https://samsara.com\">Samsara Inc.</a></span>, where I worked on the mobile app platform and the hiring program, and occasionally on mechanisms like <abbr title=\"“System and Organization Controls”\u200a–\u200aI helped accountants understand distributed systems\">SOC2</abbr> and open source license compliance.</p></section><h3 id=\"before-that\">before that, I…</h3><section aria-labelledby=\"before-that\"><ul class=\"continuation-list\"><li>worked on sites and apps for <abbr title=\"eg. Apple, Porsche, Walgreens\">big brands</abbr>,</li><li>performed as a <abbr title=\"“Video Jockey”\u200a–\u200aI made visuals for concerts\">VJ</abbr>,</li><li>made a few <a href=\"https://vimeo.com/140711028/ae31053ae1\">music videos</a>,</li><li>got a degree in studio art,</li><li>operated a local record label,</li><li>published a newsmagazine,</li><li>helped put on <abbr title=\"Jesus Christ Super Star Wars\">a parody opera</abbr>, and,</li><li>street-performed as a balloon twister.</li></ul></section></article></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<p>I just published a <a href=\"/writing/tokyo-2024/\">trip report</a> about two glorious weeks in Tokyo.</p><p>I love exploring. I made a <a href=\"/map\">nice map</a> of places I have opinions about. It doesn't say what the opinions are, so you'll have to make your own. The map scrolls pretty slow; it used to be faster.</p></section><h3 id=\"previously\">previously,</h3><section aria-labelledby=\"previously\"><p>I was a <abbr title=\"zoom attendee\"><span class=\"p-job-title\">staff engineer</span></abbr> at <span class=\"p-org h-card\"><a class=\"o-name u-url\" href=\"https://samsara.com\">Samsara Inc.</a></span>, where I worked on the mobile app platform and the hiring program, and occasionally on mechanisms like <abbr title=\"“System and Organization Controls”\u200a–\u200aI helped accountants understand distributed systems\">SOC2</abbr> and open source license compliance.</p></section><h3 id=\"before-that\">before that, I…</h3><section aria-labelledby=\"before-that\"><ul class=\"continuation-list\"><li>worked on sites and apps for <abbr title=\"eg. Apple, Porsche, Walgreens\">big brands</abbr>,</li><li>performed as a <abbr title=\"“Video Jockey”\u200a–\u200aI made visuals for concerts\">VJ</abbr>,</li><li>made a few <a href=\"https://vimeo.com/140711028/ae31053ae1\">music videos</a>,</li><li>got a degree in studio art,</li><li>operated a local record label,</li><li>published a newsmagazine,</li><li>helped put on <abbr title=\"Jesus Christ Super Star Wars\">a parody opera</abbr>, and,</li><li>street-performed as a balloon twister.</li></ul></section></article></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

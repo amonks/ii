@@ -6,8 +6,9 @@ import (
 )
 
 type PageData struct {
-	Watches []*db.Watch
-	Posts   *posts.Posts
+	Watches   []*db.Watch
+	GoSynonym string
+	Posts     *posts.Posts
 }
 
 templ Homepage(data *PageData) {
@@ -192,7 +193,13 @@ templ Homepage(data *PageData) {
 			<article aria-label="Work history" class="columns">
 				<label id="currently">currently,</label>
 				<section aria-labelledby="currently">
-					<p>I develop ice cream recipes and noodle on database software. I’m also helping out a bit at <a href="https://www.resinrecyclables.com">Resin Recyclables</a>.</p>
+					<p>
+						I ride my bicycle, read books, play { data.GoSynonym }, and try to
+						write database software. I also organize a monthly meetup for
+						computer artists here in Chicago. I occasionally write code with my
+						friends at
+						<a href="https://www.resinrecyclables.com">Resin Recyclables</a>.
+					</p>
 					if data.Watches != nil {
 						<dl class="p-note prose-definition-list">
 							<dt>I watch movies most days. Recently,</dt>
@@ -203,6 +210,10 @@ templ Homepage(data *PageData) {
 							<dd><a class="no-underline" href={ templ.SafeURL(data.Watches[4].LetterboxdURL) }><span class="mono">{ stars(data.Watches[4].Rating) }</span> { data.Watches[4].MovieTitle }</a>.</dd>
 						</dl>
 					}
+					<p>
+						I just published a <a href="/writing/tokyo-2024/">trip report</a>
+						about two glorious weeks in Tokyo.
+					</p>
 					<p>
 						I love exploring. I made a <a href="/map">nice map</a> of places I
 						have opinions about. It doesn't say what the opinions are, so
