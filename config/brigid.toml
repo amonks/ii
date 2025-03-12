@@ -18,7 +18,8 @@ mode = "dev"
     "directory",
     "homepage",
     "dogs",
-    "scrobbles"
+    "scrobbles",
+    "calendar"
   ]
   [service.rewrites]
     "/" = "/homepage/"
