@@ -3,14 +3,15 @@ package tailnet
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"monks.co/pkg/meta"
 	"tailscale.com/tsnet"
 )
 
 var server = &tsnet.Server{
-	Hostname:  "monks.co-" + os.Getenv("FLY_REGION"),
-	Dir:       "/data",
+	Hostname:  "monks.co-" + os.Getenv("FLY_REGION") + "-" + meta.AppName(),
+	Dir:       filepath.Join("/data", meta.AppName()),
 	Ephemeral: true,
 	AuthKey:   os.Getenv("TS_AUTHKEY"),
 }
@@ -27,4 +28,10 @@ func Client() *http.Client {
 		return http.DefaultClient
 	}
 	return server.HTTPClient()
+}
+
+func init() {
+	if meta.IsFly() {
+		server.Start()
+	}
 }

@@ -11,7 +11,9 @@ import (
 func Errorf(w http.ResponseWriter, req *http.Request, statusCode int, msg string, args ...interface{}) {
 	msg = fmt.Sprintf(msg, args...)
 	log.Printf("[%d] %s: %s\n", statusCode, req.URL.Path, msg)
-	errlogger.Report(statusCode, msg)
+	if statusCode >= 500 && statusCode < 600 {
+		errlogger.Report(statusCode, msg)
+	}
 	http.Error(w, http.StatusText(statusCode), statusCode)
 }
 
