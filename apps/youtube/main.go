@@ -32,7 +32,7 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
 		h := templ.Handler(Index(history))
 		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)

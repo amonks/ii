@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"image"
 	"log"
@@ -39,14 +41,14 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
-	// mux.HandleFunc("/{$}", func(w http.ResponseWriter, req *http.Request) {
+	// mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 	// 	h := templ.Handler(templates.Index(posts))
 	// 	h.ServeHTTP(w, req)
 	// })
-	mux.HandleFunc("/{slug}", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /{slug}", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, fmt.Sprintf("/writing/%s/", req.PathValue("slug")), http.StatusMovedPermanently)
 	})
-	mux.HandleFunc("/{slug}/{$}", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /{slug}/{$}", func(w http.ResponseWriter, req *http.Request) {
 		slug := req.PathValue("slug")
 		post := posts.Get(slug)
 		if post == nil {
@@ -58,7 +60,7 @@ func run() error {
 		h.ServeHTTP(w, req)
 	})
 	transcodeLimiter := semaphore.NewWeighted(16)
-	mux.HandleFunc("/{slug}/media/{mediafilename}", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /{slug}/media/{mediafilename}", func(w http.ResponseWriter, req *http.Request) {
 		slug := req.PathValue("slug")
 		post := posts.Get(slug)
 		if post == nil {
@@ -101,8 +103,10 @@ func run() error {
 			return
 		}
 
-		if err := transcodeLimiter.Acquire(req.Context(), 1); err != nil {
+		if err := transcodeLimiter.Acquire(req.Context(), 1); err != nil && !errors.Is(context.Canceled, err) {
 			serve.InternalServerErrorf(w, req, "semaphore error: %w", err)
+			return
+		} else if err != nil {
 			return
 		}
 		defer transcodeLimiter.Release(1)
@@ -121,19 +125,19 @@ func run() error {
 		case ".jpg", ".jpeg":
 			w.Header().Add("Content-Type", "image/jpeg")
 			if err := imaging.Encode(w, resized, imaging.JPEG); err != nil {
-				log.Printf("jpeg encoding error on '%s': %s", mediafilename, err)
+				serve.InternalServerErrorf(w, req, "jpeg encoding error on '%s': %s", mediafilename, err)
 				return
 			}
 
 		case ".png":
 			w.Header().Add("Content-Type", "image/png")
 			if err := imaging.Encode(w, resized, imaging.PNG); err != nil {
-				log.Printf("png encoding error on '%s': %s", mediafilename, err)
+				serve.InternalServerErrorf(w, req, "png encoding error on '%s': %s", mediafilename, err)
 				return
 			}
 
 		default:
-			serve.Errorf(w, req, http.StatusInternalServerError, "unsupported extension on '%s' on post '%s'", mediafilename, slug)
+			serve.InternalServerErrorf(w, req, "unsupported extension on '%s' on post '%s'", mediafilename, slug)
 			return
 		}
 	})

@@ -65,7 +65,7 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
 
 		qOpts := dogs.QueryOptions{}

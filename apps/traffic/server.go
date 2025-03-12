@@ -31,8 +31,8 @@ type Server struct {
 
 func NewServer(m *traffic.Model) *Server {
 	s := &Server{serve.NewMux(), m}
-	s.HandleFunc("/", s.serveTraffic)
-	s.Handle("/index.css", serve.StaticServer("./static/"))
+	s.HandleFunc("GET /{$}", s.serveTraffic)
+	s.Handle("GET /index.css", serve.StaticServer("./static/"))
 	return s
 }
 

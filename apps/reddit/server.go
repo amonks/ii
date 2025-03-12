@@ -16,10 +16,10 @@ type Server struct {
 func newServer(db *model) *Server {
 	s := &Server{serve.NewMux(), db}
 
-	s.Handle("/", s.pageServer())
+	s.Handle("GET /{$}", s.pageServer())
 
 	fs := http.FileServer(http.Dir(archivePath))
-	s.Handle("/media/", http.StripPrefix("/media/", fs))
+	s.Handle("GET /media/", http.StripPrefix("/media/", fs))
 
 	return s
 }

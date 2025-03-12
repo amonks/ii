@@ -36,12 +36,12 @@ type server struct {
 func NewServer(m *model.Model) *server {
 	s := &server{serve.NewMux(), m}
 
-	s.Handle("/index.js", serve.JSServer("./ts/index.ts"))
+	s.Handle("GET /index.js", serve.JSServer("./ts/index.ts"))
 
-	s.Handle("/index.css", serve.StaticServer("./static/"))
-	s.Handle("/dot.png", serve.StaticServer("./static/"))
+	s.Handle("GET /index.css", serve.StaticServer("./static/"))
+	s.Handle("GET /dot.png", serve.StaticServer("./static/"))
 
-	s.HandleFunc("/", s.places)
+	s.HandleFunc("GET /{$}", s.places)
 
 	return s
 }

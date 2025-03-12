@@ -33,12 +33,12 @@ type server struct {
 func NewServer(m *model) (*server) {
 	s := &server{serve.NewMux(), m}
 
-	s.HandleFunc("/", s.ListPeople)
-	s.HandleFunc("/person/", s.ShowPerson)
-	s.HandleFunc("/commands/bump", s.Bump)
-	s.HandleFunc("/commands/ping-person", s.PingPerson)
-	s.HandleFunc("/commands/add-person", s.AddPerson)
-	s.HandleFunc("/commands/update-person", s.UpdatePerson)
+	s.HandleFunc("GET /{$}", s.ListPeople)
+	s.HandleFunc("GET /person/{$}", s.ShowPerson)
+	s.HandleFunc("POST /commands/bump/{$}", s.Bump)
+	s.HandleFunc("POST /commands/ping-person/{$}", s.PingPerson)
+	s.HandleFunc("POST /commands/add-person/{$}", s.AddPerson)
+	s.HandleFunc("POST /commands/update-person/{$}", s.UpdatePerson)
 
 	return s
 }

@@ -22,7 +22,7 @@ func run() error {
 	port := ports.Apps["sms"]
 
 	mux := serve.NewMux()
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	mux.Handle("POST /{$}", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		msg := req.URL.Query().Get("message")
 		if msg == "" {
 			serve.Errorf(w, req, http.StatusBadRequest, "'message' is required")

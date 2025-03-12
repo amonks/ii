@@ -63,7 +63,7 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		scrobbles, err := db.GetScrobbles(1000, 0)
 		if err != nil {
 			serve.InternalServerError(w, req, err)

@@ -22,7 +22,7 @@ func run() error {
 	port := ports.Apps["mailer"]
 
 	mux := serve.NewMux()
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	mux.Handle("POST /{$}", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		req.ParseForm()
 		subject := req.FormValue("subject")
 		if subject == "" {

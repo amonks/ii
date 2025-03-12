@@ -99,7 +99,7 @@ func run() error {
 	go func() {
 		defer wg.Done()
 		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		if err := serve.ListenAndServe(ctx, "0.0.0.0:9091", mux); err != nil {
 			log.Println(err)
 			cancel(err)
