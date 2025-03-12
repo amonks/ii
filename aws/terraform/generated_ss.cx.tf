@@ -34,6 +34,14 @@ resource "aws_route53_record" "w-ss-cx-A" {
   records = ["72.21.17.85"]
 }
 
+resource "aws_route53_record" "thr-ss-cx-A" {
+  zone_id = aws_route53_zone.ss-cx.zone_id
+  name    = "thr.ss.cx."
+  type    = "A"
+  ttl     = "300"
+  records = ["100.93.23.97"]
+}
+
 resource "aws_route53_record" "thor-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "thor.ss.cx."
@@ -71,7 +79,7 @@ resource "aws_route53_record" "fly-ss-cx-A" {
   name    = "fly.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["100.107.86.52"]
+  records = ["100.124.71.5"]
 }
 
 resource "aws_route53_record" "brigid-ss-cx-A" {
