@@ -293,6 +293,51 @@ function createMultiSeriesGraph(title, deviceDataMap) {
     .attr("class", "line")
     .attr("stroke", d => colorScale(d[0]).line)
     .attr("d", d => line(d[1].Data));
+    
+  // Add points at each data point for min, mean, max lines
+  deviceGroups.each(function(d) {
+    const group = d3.select(this);
+    const color = colorScale(d[0]);
+    
+    // Add points for min values
+    group.selectAll(".min-point")
+      .data(d[1].Data)
+      .enter()
+      .append("circle")
+      .attr("class", "min-point")
+      .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+      .attr("cy", d => yScale(d.Min))
+      .attr("r", 2)
+      .attr("fill", color.line)
+      .attr("stroke", "white")
+      .attr("stroke-width", 0.5);
+      
+    // Add points for mean values
+    group.selectAll(".mean-point")
+      .data(d[1].Data)
+      .enter()
+      .append("circle")
+      .attr("class", "mean-point")
+      .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+      .attr("cy", d => yScale(d.Mean))
+      .attr("r", 3)
+      .attr("fill", color.line)
+      .attr("stroke", "white")
+      .attr("stroke-width", 0.5);
+      
+    // Add points for max values
+    group.selectAll(".max-point")
+      .data(d[1].Data)
+      .enter()
+      .append("circle")
+      .attr("class", "max-point")
+      .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+      .attr("cy", d => yScale(d.Max))
+      .attr("r", 2)
+      .attr("fill", color.line)
+      .attr("stroke", "white")
+      .attr("stroke-width", 0.5);
+  });
   
   // Add invisible overlay for tooltip
   svg.append("rect")
@@ -471,6 +516,48 @@ function createSingleSeriesGraph(title, data) {
     .attr("class", "line")
     .attr("stroke", colorPalette[0].line)
     .attr("d", line);
+    
+  // Add points at each data point for min, mean, max
+  const color = colorPalette[0];
+  
+  // Add points for min values
+  svg.selectAll(".min-point")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("class", "min-point")
+    .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+    .attr("cy", d => yScale(d.Min))
+    .attr("r", 2)
+    .attr("fill", color.line)
+    .attr("stroke", "white")
+    .attr("stroke-width", 0.5);
+    
+  // Add points for mean values
+  svg.selectAll(".mean-point")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("class", "mean-point")
+    .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+    .attr("cy", d => yScale(d.Mean))
+    .attr("r", 3)
+    .attr("fill", color.line)
+    .attr("stroke", "white")
+    .attr("stroke-width", 0.5);
+    
+  // Add points for max values
+  svg.selectAll(".max-point")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("class", "max-point")
+    .attr("cx", d => xScale(new Date(d.WindowStartAt)))
+    .attr("cy", d => yScale(d.Max))
+    .attr("r", 2)
+    .attr("fill", color.line)
+    .attr("stroke", "white")
+    .attr("stroke-width", 0.5);
   
   // Add invisible overlay for tooltip
   svg.append("rect")
