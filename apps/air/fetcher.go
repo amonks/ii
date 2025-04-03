@@ -12,8 +12,12 @@ import (
 )
 
 func fetch(db *DB) error {
-	// Get Venta parameters
-	next, err := getDeviceParameters("60:8A:10:B5:58:A0")
+	// Initialize a slice to hold all data points
+	var allDataPoints []DataPoint
+	createdAt := time.Now()
+	
+	// Get Venta parameters (legacy approach)
+	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
 	if err != nil {
 		return err
 	}
@@ -22,7 +26,29 @@ func fetch(db *DB) error {
 	if err != nil {
 		return err
 	}
-	next.ModiCategory = modiCategory
+	ventaParams.ModiCategory = modiCategory
+	
+	// Add Venta data points
+	ventaDevice := "60:8A:10:B5:58:A0"
+	ventaRoom, _ := DeviceToRoom(ventaDevice)
+	
+	// Helper to add a datapoint
+	addDataPoint := func(room, device, parameter string, value float64) {
+		allDataPoints = append(allDataPoints, DataPoint{
+			CreatedAt: createdAt,
+			Room:      room,
+			Device:    device,
+			Parameter: parameter,
+			Value:     value,
+		})
+	}
+	
+	// Add Venta data points
+	addDataPoint(ventaRoom, ventaDevice, "temperature", ventaParams.Temperature)
+	addDataPoint(ventaRoom, ventaDevice, "humidity", ventaParams.Humidity)
+	addDataPoint(ventaRoom, ventaDevice, "dust", float64(ventaParams.Dust))
+	addDataPoint(ventaRoom, ventaDevice, "water_level", float64(ventaParams.WaterLevel))
+	addDataPoint(ventaRoom, ventaDevice, "fan_rpm", float64(ventaParams.FanRPM))
 
 	// Get Aranet parameters
 	aranetDevices, err := getAranetDevices()
@@ -30,12 +56,40 @@ func fetch(db *DB) error {
 		log.Printf("Warning: Failed to fetch Aranet data: %v", err)
 		// Continue even if Aranet fetch fails
 	} else {
-		// Add Aranet data to parameters
-		addAranetDataToParameters(next, aranetDevices)
+		// Add Aranet data points
+		for _, device := range aranetDevices {
+			deviceId := device.Name
+			room, found := DeviceToRoom(deviceId)
+			if !found {
+				log.Printf("Warning: Unknown device %s, skipping", deviceId)
+				continue
+			}
+			
+			if device.TemperatureValid {
+				addDataPoint(room, deviceId, "temperature", device.TemperatureF)
+			}
+			
+			if device.HumidityValid {
+				addDataPoint(room, deviceId, "humidity", float64(device.Humidity))
+			}
+			
+			if device.CO2Valid {
+				addDataPoint(room, deviceId, "co2", float64(device.CO2))
+			}
+			
+			if device.PressureValid {
+				addDataPoint(room, deviceId, "pressure", device.Pressure)
+			}
+			
+			addDataPoint(room, deviceId, "battery", float64(device.Battery))
+			
+			// Also update legacy Parameters struct so we maintain backward compatibility
+			addAranetDataToParameters(ventaParams, aranetDevices)
+		}
 	}
-
-	// Notify if it stopped being full and stayed stably not-full for 2
-	// consecutive checks.
+	
+	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
+	// First use legacy approach for now to maintain backward compatibility
 	last2, err := db.LastN(2)
 	if err != nil {
 		return err
@@ -43,28 +97,41 @@ func fetch(db *DB) error {
 	
 	if len(last2) >= 2 {
 		back1, back2 := last2[0], last2[1]
-		if back2.WaterLevel.IsFull() && !back1.WaterLevel.IsFull() && !next.WaterLevel.IsFull() {
+		if back2.WaterLevel.IsFull() && !back1.WaterLevel.IsFull() && !ventaParams.WaterLevel.IsFull() {
 			if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
 				log.Printf("twilio error: %s", err)
 			}
 		}
 	}
 
-	if err := db.Insert(next); err != nil {
-		return fmt.Errorf("error inserting fetched parameters: %w", err)
+	// Insert all new data points
+	if err := db.InsertDataPoints(allDataPoints); err != nil {
+		return fmt.Errorf("error inserting data points: %w", err)
+	}
+	
+	// Also insert legacy parameters for backward compatibility
+	if err := db.Insert(ventaParams); err != nil {
+		return fmt.Errorf("error inserting legacy parameters: %w", err)
 	}
 
 	// Log data values
-	fmt.Printf("Venta - temp: %f, humid: %f, water: %d\n", next.Temperature, next.Humidity, next.WaterLevel)
+	fmt.Printf("Collected %d data points\n", len(allDataPoints))
 	
-	if next.OfficeAranetValid {
+	// Log Venta values
+	fmt.Printf("Venta - temp: %f, humid: %f, water: %d\n", 
+		ventaParams.Temperature, ventaParams.Humidity, ventaParams.WaterLevel)
+	
+	// Log Aranet values
+	if ventaParams.OfficeAranetValid {
 		fmt.Printf("Office - temp: %f, humid: %d, co2: %d, pressure: %f\n", 
-			next.OfficeTemperature, next.OfficeHumidity, next.OfficeCO2, next.OfficePressure)
+			ventaParams.OfficeTemperature, ventaParams.OfficeHumidity, 
+			ventaParams.OfficeCO2, ventaParams.OfficePressure)
 	}
 	
-	if next.LivingRoomAranetValid {
+	if ventaParams.LivingRoomAranetValid {
 		fmt.Printf("Living Room - temp: %f, humid: %d, co2: %d, pressure: %f\n", 
-			next.LivingRoomTemperature, next.LivingRoomHumidity, next.LivingRoomCO2, next.LivingRoomPressure)
+			ventaParams.LivingRoomTemperature, ventaParams.LivingRoomHumidity, 
+			ventaParams.LivingRoomCO2, ventaParams.LivingRoomPressure)
 	}
 
 	return nil

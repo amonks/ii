@@ -19,7 +19,11 @@ var (
 	tmplSrc string
 )
 
+// Data is the structure passed to the template for rendering
 type Data struct {
+	// For backward compatibility we keep the same structure
+	// but populate it with data from the new model
+	
 	// Venta data
 	Dust        []Aggregate
 	Temperature []Aggregate
@@ -66,77 +70,88 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 
 		var errs error
 		data := &Data{}
-
-		// Fetch Venta data
-		dust, err := db.Aggregate(AggregateIDDust, days)
+		
+		// Using the new data model to fetch aggregates by room/device/parameter
+		
+		// Venta data (living room)
+		ventaDevice := "60:8A:10:B5:58:A0"
+		ventaRoom := "living room"
+		
+		dust, err := db.GetAggregates(ventaRoom, ventaDevice, "dust", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.Dust = dust
 
-		temperature, err := db.Aggregate(AggregateIDTemperature, days)
+		temperature, err := db.GetAggregates(ventaRoom, ventaDevice, "temperature", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.Temperature = temperature
 
-		humidity, err := db.Aggregate(AggregateIDHumidity, days)
+		humidity, err := db.GetAggregates(ventaRoom, ventaDevice, "humidity", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.Humidity = humidity
 
-		waterLevel, err := db.Aggregate(AggregateIDWaterLevel, days)
+		waterLevel, err := db.GetAggregates(ventaRoom, ventaDevice, "water_level", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.WaterLevel = waterLevel
 
-		// Fetch Office Aranet data
-		officeTemp, err := db.Aggregate(AggregateIDOfficeTemperature, days)
+		// Office Aranet data
+		officeDevice := "Aranet4 0AC6E"
+		officeRoom := "office"
+		
+		officeTemp, err := db.GetAggregates(officeRoom, officeDevice, "temperature", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.OfficeTemperature = officeTemp
 
-		officeHumidity, err := db.Aggregate(AggregateIDOfficeHumidity, days)
+		officeHumidity, err := db.GetAggregates(officeRoom, officeDevice, "humidity", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.OfficeHumidity = officeHumidity
 
-		officeCO2, err := db.Aggregate(AggregateIDOfficeCO2, days)
+		officeCO2, err := db.GetAggregates(officeRoom, officeDevice, "co2", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.OfficeCO2 = officeCO2
 
-		officePressure, err := db.Aggregate(AggregateIDOfficePressure, days)
+		officePressure, err := db.GetAggregates(officeRoom, officeDevice, "pressure", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.OfficePressure = officePressure
 
-		// Fetch Living Room Aranet data
-		livingRoomTemp, err := db.Aggregate(AggregateIDLivingRoomTemperature, days)
+		// Living Room Aranet data
+		livingRoomDevice := "Aranet4 069F9"
+		livingRoomRoom := "living room"
+		
+		livingRoomTemp, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "temperature", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.LivingRoomTemperature = livingRoomTemp
 
-		livingRoomHumidity, err := db.Aggregate(AggregateIDLivingRoomHumidity, days)
+		livingRoomHumidity, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "humidity", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.LivingRoomHumidity = livingRoomHumidity
 
-		livingRoomCO2, err := db.Aggregate(AggregateIDLivingRoomCO2, days)
+		livingRoomCO2, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "co2", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		data.LivingRoomCO2 = livingRoomCO2
 
-		livingRoomPressure, err := db.Aggregate(AggregateIDLivingRoomPressure, days)
+		livingRoomPressure, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "pressure", days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}

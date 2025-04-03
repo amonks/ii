@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	mode = flag.String("mode", "fetch", "mode: fetch, serve")
+	mode = flag.String("mode", "fetch", "mode: fetch, serve, migrate")
 )
 
 func main() {
@@ -44,6 +44,12 @@ func run() error {
 	case "aggregates":
 		log.Printf("run aggregates")
 		if err := db.calculateAggregates(); err != nil {
+			errs = errors.Join(errs, err)
+		}
+
+	case "migrate":
+		log.Printf("run data migration from legacy to new schema")
+		if err := db.MigrateData(); err != nil {
 			errs = errors.Join(errs, err)
 		}
 
