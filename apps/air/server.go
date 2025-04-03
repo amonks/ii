@@ -19,28 +19,26 @@ var (
 	tmplSrc string
 )
 
+// DeviceData holds aggregates for a specific device and includes device/room info
+type DeviceData struct {
+	DeviceName string           // Display name for the device
+	RoomName   string           // Display name for the room
+	Data       []WindowAggregate // The actual data points
+}
+
 // Data is the structure passed to the template for rendering
 type Data struct {
-	// For backward compatibility we keep the same structure
-	// but populate it with data from the new model
+	// Data organized by parameter type
+	Temperatures map[string]DeviceData // Key is "room-device"
+	Humidities   map[string]DeviceData
+	CO2s         map[string]DeviceData
+	Pressures    map[string]DeviceData
+	Dust         []WindowAggregate     // Venta only
+	WaterLevel   []WindowAggregate     // Venta only
 	
-	// Venta data
-	Dust        []WindowAggregate
-	Temperature []WindowAggregate
-	Humidity    []WindowAggregate
-	WaterLevel  []WindowAggregate
-	
-	// Office Aranet data
-	OfficeTemperature []WindowAggregate
-	OfficeHumidity    []WindowAggregate
-	OfficeCO2         []WindowAggregate
-	OfficePressure    []WindowAggregate
-	
-	// Living Room Aranet data
-	LivingRoomTemperature []WindowAggregate
-	LivingRoomHumidity    []WindowAggregate
-	LivingRoomCO2         []WindowAggregate
-	LivingRoomPressure    []WindowAggregate
+	// Device mappings - to help with display names
+	DeviceDisplayNames map[string]string // Maps device ID to human readable name
+	RoomDisplayNames   map[string]string // Maps room ID to human readable name
 }
 
 func (d *Data) JSON() (template.JS, error) {
@@ -69,93 +67,91 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 		}
 
 		var errs error
-		data := &Data{}
 		
-		// Using the new data model to fetch aggregates by room/device/parameter
+		// Initialize data structure with maps
+		data := &Data{
+			Temperatures: make(map[string]DeviceData),
+			Humidities:   make(map[string]DeviceData),
+			CO2s:         make(map[string]DeviceData),
+			Pressures:    make(map[string]DeviceData),
+			DeviceDisplayNames: map[string]string{
+				"60:8A:10:B5:58:A0": "Venta Air Purifier",
+				"Aranet4 0AC6E":     "Office Aranet",
+				"Aranet4 069F9":     "Living Room Aranet",
+			},
+			RoomDisplayNames: map[string]string{
+				"living room": "Living Room",
+				"office":      "Office",
+			},
+		}
 		
-		// Venta data (living room)
-		ventaDevice := "60:8A:10:B5:58:A0"
-		ventaRoom := "living room"
+		// Device & room configurations
+		devices := []struct{
+			DeviceId   string
+			Room       string
+			Parameters []string
+		}{
+			// Venta in Living Room
+			{
+				DeviceId:   "60:8A:10:B5:58:A0",
+				Room:       "living room",
+				Parameters: []string{"temperature", "humidity", "dust", "water_level"},
+			},
+			// Aranet in Office
+			{
+				DeviceId:   "Aranet4 0AC6E",
+				Room:       "office",
+				Parameters: []string{"temperature", "humidity", "co2", "pressure"},
+			},
+			// Aranet in Living Room
+			{
+				DeviceId:   "Aranet4 069F9",
+				Room:       "living room",
+				Parameters: []string{"temperature", "humidity", "co2", "pressure"},
+			},
+		}
 		
-		dust, err := db.GetAggregates(ventaRoom, ventaDevice, "dust", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
+		// Fetch data for each device and parameter
+		for _, device := range devices {
+			deviceKey := device.Room + "-" + device.DeviceId
+			
+			for _, param := range device.Parameters {
+				// Get aggregates for this device/parameter
+				aggs, err := db.GetAggregates(device.Room, device.DeviceId, param, days)
+				if err != nil {
+					errs = errors.Join(errs, err)
+					continue
+				}
+				
+				// Skip if no data
+				if len(aggs) == 0 {
+					continue
+				}
+				
+				// Create device data
+				deviceData := DeviceData{
+					DeviceName: data.DeviceDisplayNames[device.DeviceId],
+					RoomName:   data.RoomDisplayNames[device.Room],
+					Data:       aggs,
+				}
+				
+				// Store in the appropriate collection based on parameter
+				switch param {
+				case "temperature":
+					data.Temperatures[deviceKey] = deviceData
+				case "humidity":
+					data.Humidities[deviceKey] = deviceData
+				case "co2":
+					data.CO2s[deviceKey] = deviceData
+				case "pressure":
+					data.Pressures[deviceKey] = deviceData
+				case "dust":
+					data.Dust = aggs
+				case "water_level":
+					data.WaterLevel = aggs
+				}
+			}
 		}
-		data.Dust = dust
-
-		temperature, err := db.GetAggregates(ventaRoom, ventaDevice, "temperature", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.Temperature = temperature
-
-		humidity, err := db.GetAggregates(ventaRoom, ventaDevice, "humidity", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.Humidity = humidity
-
-		waterLevel, err := db.GetAggregates(ventaRoom, ventaDevice, "water_level", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.WaterLevel = waterLevel
-
-		// Office Aranet data
-		officeDevice := "Aranet4 0AC6E"
-		officeRoom := "office"
-		
-		officeTemp, err := db.GetAggregates(officeRoom, officeDevice, "temperature", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.OfficeTemperature = officeTemp
-
-		officeHumidity, err := db.GetAggregates(officeRoom, officeDevice, "humidity", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.OfficeHumidity = officeHumidity
-
-		officeCO2, err := db.GetAggregates(officeRoom, officeDevice, "co2", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.OfficeCO2 = officeCO2
-
-		officePressure, err := db.GetAggregates(officeRoom, officeDevice, "pressure", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.OfficePressure = officePressure
-
-		// Living Room Aranet data
-		livingRoomDevice := "Aranet4 069F9"
-		livingRoomRoom := "living room"
-		
-		livingRoomTemp, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "temperature", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.LivingRoomTemperature = livingRoomTemp
-
-		livingRoomHumidity, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "humidity", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.LivingRoomHumidity = livingRoomHumidity
-
-		livingRoomCO2, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "co2", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.LivingRoomCO2 = livingRoomCO2
-
-		livingRoomPressure, err := db.GetAggregates(livingRoomRoom, livingRoomDevice, "pressure", days)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-		data.LivingRoomPressure = livingRoomPressure
 
 		// Handle errors
 		if errs != nil {

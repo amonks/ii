@@ -2,9 +2,48 @@
 <html>
 <head>
 <title>air</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .graph-container {
+    margin-bottom: 30px;
+  }
+  h1 {
+    margin-top: 30px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+  }
+  canvas {
+    width: 100%;
+    height: 400px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin: 0 15px 5px 0;
+  }
+  .legend-color {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    border-radius: 2px;
+  }
+</style>
 </head>
 
 <body>
+
+<h1>Environmental Monitoring</h1>
 
 <div id="graphs"></div>
 
@@ -15,74 +54,332 @@
 <script>
 {{ .JSON }}
 
-container = document.getElementById("graphs")
-function graph(id, data) {
-  const h1 = document.createElement("h1");
-  h1.innerText = id;
-  container.appendChild(h1);
+const graphColors = [
+  { line: 'rgb(75, 192, 192)', fill: 'rgba(75, 192, 192, 0.2)' },
+  { line: 'rgb(255, 99, 132)', fill: 'rgba(255, 99, 132, 0.2)' },
+  { line: 'rgb(54, 162, 235)', fill: 'rgba(54, 162, 235, 0.2)' },
+  { line: 'rgb(255, 159, 64)', fill: 'rgba(255, 159, 64, 0.2)' },
+  { line: 'rgb(153, 102, 255)', fill: 'rgba(153, 102, 255, 0.2)' }
+];
 
+const container = document.getElementById("graphs");
+
+// Helper to create legend
+function createLegend(deviceDataMap) {
+  const legend = document.createElement("div");
+  legend.className = "legend";
+  
+  let colorIndex = 0;
+  for (const key in deviceDataMap) {
+    const deviceData = deviceDataMap[key];
+    const color = graphColors[colorIndex % graphColors.length];
+    
+    const legendItem = document.createElement("div");
+    legendItem.className = "legend-item";
+    
+    const colorBox = document.createElement("div");
+    colorBox.className = "legend-color";
+    colorBox.style.backgroundColor = color.line;
+    
+    const label = document.createElement("span");
+    label.textContent = `${deviceData.RoomName} (${deviceData.DeviceName})`;
+    
+    legendItem.appendChild(colorBox);
+    legendItem.appendChild(label);
+    legend.appendChild(legendItem);
+    
+    colorIndex++;
+  }
+  
+  return legend;
+}
+
+// Create multi-series graph with min-max bands
+function createMultiSeriesGraph(title, deviceDataMap) {
+  // Create container
+  const graphContainer = document.createElement("div");
+  graphContainer.className = "graph-container";
+  container.appendChild(graphContainer);
+  
+  // Create title
+  const h2 = document.createElement("h2");
+  h2.textContent = title;
+  graphContainer.appendChild(h2);
+  
+  // Create legend
+  const legend = createLegend(deviceDataMap);
+  graphContainer.appendChild(legend);
+  
+  // Create canvas
   const canvas = document.createElement("canvas");
-  canvas.id = id;
-  container.appendChild(canvas);
-
-  new Chart(document.getElementById(id), {
-      type: 'line',
-      data: {
-          datasets: [
-              {
-                  label: "max",
-                  data: data.map(d => ({x: d.WindowStartAt, y: d.Max})),
-                  fill: 2,
-                  below: "rgb(255,0,0)",
-              }, {
-                  label: "mean",
-                  data: data.map(d => ({x: d.WindowStartAt, y: d.Mean})),
-              }, {
-                  label: "min",
-                  data: data.map(d => ({x: d.WindowStartAt, y: d.Min})),
-              }
-          ],
+  canvas.id = title.toLowerCase().replace(/\s+/g, '-');
+  graphContainer.appendChild(canvas);
+  
+  // Prepare datasets
+  const datasets = [];
+  let colorIndex = 0;
+  
+  for (const key in deviceDataMap) {
+    const deviceData = deviceDataMap[key];
+    const color = graphColors[colorIndex % graphColors.length];
+    
+    // Mean line
+    datasets.push({
+      label: `${deviceData.RoomName} ${deviceData.DeviceName} (Mean)`,
+      data: deviceData.Data.map(d => ({ x: d.WindowStartAt, y: d.Mean })),
+      borderColor: color.line,
+      backgroundColor: color.line,
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.1,
+      fill: false
+    });
+    
+    // Min-max band (add before mean so it appears behind the line)
+    datasets.push({
+      label: `${deviceData.RoomName} ${deviceData.DeviceName} (Range)`,
+      data: deviceData.Data.map(d => ({ 
+        x: d.WindowStartAt, 
+        y: d.Min,
+        y1: d.Max 
+      })),
+      backgroundColor: color.fill,
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: true,
+      stepped: false,
+      tension: 0.1
+    });
+    
+    colorIndex++;
+  }
+  
+  // Create chart
+  new Chart(document.getElementById(canvas.id), {
+    type: 'line',
+    data: { datasets },
+    options: {
+      animation: false,
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
       },
-      options: {
-          animation: false,
-          borderWidth: 1,
-          pointRadius: 1,
-          showLine: true,
-          plugins: {
-              legend: false
-          },
-          scales: {
-              x: {
-                  unit: "minute",
-                  type: "time",
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              // If this is a min-max dataset
+              if (context.dataset.data[0].y1 !== undefined) {
+                return [
+                  `Min: ${context.raw.y.toFixed(2)}`,
+                  `Max: ${context.raw.y1.toFixed(2)}`
+                ];
               }
+              return `Mean: ${context.raw.y.toFixed(2)}`;
+            }
           }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'hour',
+            displayFormats: {
+              hour: 'MMM D, HH:mm'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: title
+          }
+        }
+      },
+      parsing: {
+        yAxisKey: 'y',
+      },
+      elements: {
+        line: {
+          tension: 0.1
+        }
       }
+    },
+    plugins: [{
+      beforeDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        
+        // Draw the min-max bands
+        for (let i = 0; i < chart.data.datasets.length; i++) {
+          const dataset = chart.data.datasets[i];
+          
+          // Skip if not a min-max dataset
+          if (!dataset.data[0] || dataset.data[0].y1 === undefined) continue;
+          
+          // Get the dataset index
+          const meta = chart.getDatasetMeta(i);
+          
+          for (let j = 0; j < dataset.data.length - 1; j++) {
+            const current = dataset.data[j];
+            const next = dataset.data[j + 1];
+            
+            // Skip if no data point
+            if (!current || !next) continue;
+            
+            // Calculate pixel positions
+            const xScale = chart.scales.x;
+            const yScale = chart.scales.y;
+            
+            const x1 = xScale.getPixelForValue(current.x);
+            const y1min = yScale.getPixelForValue(current.y);
+            const y1max = yScale.getPixelForValue(current.y1);
+            
+            const x2 = xScale.getPixelForValue(next.x);
+            const y2min = yScale.getPixelForValue(next.y);
+            const y2max = yScale.getPixelForValue(next.y1);
+            
+            // Draw the fill
+            ctx.fillStyle = dataset.backgroundColor;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1min);
+            ctx.lineTo(x2, y2min);
+            ctx.lineTo(x2, y2max);
+            ctx.lineTo(x1, y1max);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+        
+        ctx.restore();
+      }
+    }]
   });
 }
 
-// Venta data
-graph("venta-dust", data.Dust);
-graph("venta-temperature", data.Temperature);
-graph("venta-humidity", data.Humidity);
-graph("venta-waterLevel", data.WaterLevel);
-
-// Office Aranet data
-if (data.OfficeTemperature && data.OfficeTemperature.length > 0) {
-  graph("office-temperature", data.OfficeTemperature);
-  graph("office-humidity", data.OfficeHumidity);
-  graph("office-co2", data.OfficeCO2);
-  graph("office-pressure", data.OfficePressure);
+// Create single-series graphs for Venta-specific metrics
+function createSingleSeriesGraph(title, data) {
+  // Create container
+  const graphContainer = document.createElement("div");
+  graphContainer.className = "graph-container";
+  container.appendChild(graphContainer);
+  
+  // Create title
+  const h2 = document.createElement("h2");
+  h2.textContent = title;
+  graphContainer.appendChild(h2);
+  
+  // Create canvas
+  const canvas = document.createElement("canvas");
+  canvas.id = title.toLowerCase().replace(/\s+/g, '-');
+  graphContainer.appendChild(canvas);
+  
+  new Chart(document.getElementById(canvas.id), {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: "Max",
+          data: data.map(d => ({ x: d.WindowStartAt, y: d.Max })),
+          borderColor: 'rgba(255, 99, 132, 0.8)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: true
+        }, 
+        {
+          label: "Mean",
+          data: data.map(d => ({ x: d.WindowStartAt, y: d.Mean })),
+          borderColor: 'rgb(54, 162, 235)',
+          backgroundColor: 'rgb(54, 162, 235)',
+          borderWidth: 2,
+          pointRadius: 0
+        }, 
+        {
+          label: "Min",
+          data: data.map(d => ({ x: d.WindowStartAt, y: d.Min })),
+          borderColor: 'rgba(75, 192, 192, 0.8)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      animation: false,
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      },
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'hour',
+            displayFormats: {
+              hour: 'MMM D, HH:mm'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: title
+          }
+        }
+      }
+    }
+  });
 }
 
-// Living Room Aranet data
-if (data.LivingRoomTemperature && data.LivingRoomTemperature.length > 0) {
-  graph("livingroom-temperature", data.LivingRoomTemperature);
-  graph("livingroom-humidity", data.LivingRoomHumidity);
-  graph("livingroom-co2", data.LivingRoomCO2);
-  graph("livingroom-pressure", data.LivingRoomPressure);
-}
+// Create all the graphs
+document.addEventListener('DOMContentLoaded', function() {
+  // Temperature Graph (combined)
+  if (Object.keys(data.Temperatures).length > 0) {
+    createMultiSeriesGraph('Temperature', data.Temperatures);
+  }
+  
+  // Humidity Graph (combined)
+  if (Object.keys(data.Humidities).length > 0) {
+    createMultiSeriesGraph('Humidity', data.Humidities);
+  }
+  
+  // CO2 Graph (combined)
+  if (Object.keys(data.CO2s).length > 0) {
+    createMultiSeriesGraph('CO2', data.CO2s);
+  }
+  
+  // Pressure Graph (combined)
+  if (Object.keys(data.Pressures).length > 0) {
+    createMultiSeriesGraph('Pressure', data.Pressures);
+  }
+  
+  // Dust Graph (Venta only)
+  if (data.Dust && data.Dust.length > 0) {
+    createSingleSeriesGraph('Dust', data.Dust);
+  }
+  
+  // Water Level Graph (Venta only)
+  if (data.WaterLevel && data.WaterLevel.length > 0) {
+    createSingleSeriesGraph('Water Level', data.WaterLevel);
+  }
+});
 </script>
 </body>
 </html>
-
