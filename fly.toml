@@ -11,7 +11,7 @@ primary_region = "ord"
   MONKS_DATA="/data"
 
 [metrics]
-  port = 9091
+  port = 9999
   path = "/metrics"
 
 [[mounts]]

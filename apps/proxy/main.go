@@ -100,7 +100,7 @@ func run() error {
 		defer wg.Done()
 		mux := http.NewServeMux()
 		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
-		if err := serve.ListenAndServe(ctx, "0.0.0.0:9091", mux); err != nil {
+		if err := serve.ListenAndServe(ctx, "0.0.0.0:9999", mux); err != nil {
 			log.Println(err)
 			cancel(err)
 		}

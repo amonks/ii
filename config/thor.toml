@@ -20,7 +20,7 @@ mode = "dev"
 [acme]
   storage_path = "cache"
   production = true
-  domains = ["thor.ss.cx"]
+  domains = ["thr.ss.cx"]
 
   [[acme.strategies]]
     strategy = "dns"
