@@ -25,22 +25,22 @@ type Data struct {
 	// but populate it with data from the new model
 	
 	// Venta data
-	Dust        []Aggregate
-	Temperature []Aggregate
-	Humidity    []Aggregate
-	WaterLevel  []Aggregate
+	Dust        []WindowAggregate
+	Temperature []WindowAggregate
+	Humidity    []WindowAggregate
+	WaterLevel  []WindowAggregate
 	
 	// Office Aranet data
-	OfficeTemperature []Aggregate
-	OfficeHumidity    []Aggregate
-	OfficeCO2         []Aggregate
-	OfficePressure    []Aggregate
+	OfficeTemperature []WindowAggregate
+	OfficeHumidity    []WindowAggregate
+	OfficeCO2         []WindowAggregate
+	OfficePressure    []WindowAggregate
 	
 	// Living Room Aranet data
-	LivingRoomTemperature []Aggregate
-	LivingRoomHumidity    []Aggregate
-	LivingRoomCO2         []Aggregate
-	LivingRoomPressure    []Aggregate
+	LivingRoomTemperature []WindowAggregate
+	LivingRoomHumidity    []WindowAggregate
+	LivingRoomCO2         []WindowAggregate
+	LivingRoomPressure    []WindowAggregate
 }
 
 func (d *Data) JSON() (template.JS, error) {

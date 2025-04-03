@@ -19,7 +19,7 @@ func NewDB() (*DB, error) {
 	}
 
 	// Migrate the database to include both legacy and new structures
-	if err := db.AutoMigrate(&Parameters{}, &LegacyAggregate{}, &DataPoint{}, &Aggregate{}); err != nil {
+	if err := db.AutoMigrate(&Parameters{}, &Aggregate{}, &DataPoint{}, &WindowAggregate{}); err != nil {
 		return nil, err
 	}
 
@@ -28,6 +28,17 @@ func NewDB() (*DB, error) {
 
 // MigrateData migrates all data from the legacy schema to the new schema
 func (db *DB) MigrateData() error {
+	// Clean up existing data in new tables to avoid duplication
+	fmt.Println("Cleaning up existing data in new tables...")
+	if err := db.Exec("DELETE FROM data_points").Error; err != nil {
+		return fmt.Errorf("failed to clean data_points table: %w", err)
+	}
+	if err := db.Exec("DELETE FROM window_aggregates").Error; err != nil {
+		// Table might not exist yet, which is fine
+		fmt.Println("Note: window_aggregates table not found or already empty")
+	}
+	fmt.Println("Tables cleaned successfully")
+
 	// Step 1: Migrate from Parameters to DataPoint
 	if err := db.migrateParameters(); err != nil {
 		return fmt.Errorf("failed to migrate parameters: %w", err)
@@ -50,12 +61,12 @@ func (db *DB) migrateParameters() error {
 	}
 
 	fmt.Printf("Migrating %d parameter records...\n", len(parameters))
-	
+
 	for i, param := range parameters {
 		if i%100 == 0 {
 			fmt.Printf("Processed %d/%d parameters\n", i, len(parameters))
 		}
-		
+
 		dataPoints := parametersToDataPoints(&param)
 		for _, dp := range dataPoints {
 			if err := db.Create(&dp).Error; err != nil {
@@ -63,14 +74,14 @@ func (db *DB) migrateParameters() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // parametersToDataPoints converts a single Parameters record to multiple DataPoint records
 func parametersToDataPoints(param *Parameters) []DataPoint {
 	var dataPoints []DataPoint
-	
+
 	// Helper to add a datapoint
 	addDataPoint := func(room, device, parameter string, value float64) {
 		dataPoints = append(dataPoints, DataPoint{
@@ -81,67 +92,67 @@ func parametersToDataPoints(param *Parameters) []DataPoint {
 			Value:     value,
 		})
 	}
-	
+
 	// Venta Air Purifier data
 	ventaDeviceID := "60:8A:10:B5:58:A0"
 	ventaRoom := "living room" // Hardcoded based on our mapping
-	
+
 	addDataPoint(ventaRoom, ventaDeviceID, "temperature", param.Temperature)
 	addDataPoint(ventaRoom, ventaDeviceID, "humidity", param.Humidity)
 	addDataPoint(ventaRoom, ventaDeviceID, "dust", float64(param.Dust))
 	addDataPoint(ventaRoom, ventaDeviceID, "water_level", float64(param.WaterLevel))
 	addDataPoint(ventaRoom, ventaDeviceID, "fan_rpm", float64(param.FanRPM))
-	
+
 	// Office Aranet data (if valid)
 	if param.OfficeAranetValid {
 		officeAranetID := "Aranet4 0AC6E"
 		officeRoom := "office"
-		
+
 		addDataPoint(officeRoom, officeAranetID, "temperature", param.OfficeTemperature)
 		addDataPoint(officeRoom, officeAranetID, "humidity", float64(param.OfficeHumidity))
 		addDataPoint(officeRoom, officeAranetID, "co2", float64(param.OfficeCO2))
 		addDataPoint(officeRoom, officeAranetID, "pressure", param.OfficePressure)
 		addDataPoint(officeRoom, officeAranetID, "battery", float64(param.OfficeBattery))
 	}
-	
+
 	// Living Room Aranet data (if valid)
 	if param.LivingRoomAranetValid {
 		livingRoomAranetID := "Aranet4 069F9"
 		livingRoomRoom := "living room"
-		
+
 		addDataPoint(livingRoomRoom, livingRoomAranetID, "temperature", param.LivingRoomTemperature)
 		addDataPoint(livingRoomRoom, livingRoomAranetID, "humidity", float64(param.LivingRoomHumidity))
 		addDataPoint(livingRoomRoom, livingRoomAranetID, "co2", float64(param.LivingRoomCO2))
 		addDataPoint(livingRoomRoom, livingRoomAranetID, "pressure", param.LivingRoomPressure)
 		addDataPoint(livingRoomRoom, livingRoomAranetID, "battery", float64(param.LivingRoomBattery))
 	}
-	
+
 	return dataPoints
 }
 
 // migrateAggregates converts legacy aggregates to new aggregates
 func (db *DB) migrateAggregates() error {
-	var legacyAggregates []LegacyAggregate
+	var legacyAggregates []Aggregate
 	if err := db.Table("aggregates").Find(&legacyAggregates).Error; err != nil {
 		return fmt.Errorf("error fetching legacy aggregates: %w", err)
 	}
 
 	fmt.Printf("Migrating %d aggregate records...\n", len(legacyAggregates))
-	
+
 	for i, legacyAgg := range legacyAggregates {
 		if i%100 == 0 {
 			fmt.Printf("Processed %d/%d aggregates\n", i, len(legacyAggregates))
 		}
-		
+
 		// Look up the mapping for this aggregate ID
 		mapping, exists := AggregateIDMapping[legacyAgg.Parameter]
 		if !exists {
 			fmt.Printf("Warning: No mapping found for aggregate ID %d\n", legacyAgg.Parameter)
 			continue
 		}
-		
+
 		// Create new aggregate
-		newAgg := Aggregate{
+		newAgg := WindowAggregate{
 			Room:           mapping.Room,
 			Device:         mapping.Device,
 			Parameter:      mapping.Parameter,
@@ -152,24 +163,24 @@ func (db *DB) migrateAggregates() error {
 			Mean:           legacyAgg.Mean,
 			Count:          legacyAgg.Count,
 		}
-		
+
 		if err := db.Create(&newAgg).Error; err != nil {
 			return fmt.Errorf("error creating new aggregate: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
 // GetAggregates retrieves aggregates for a specific room, device, and parameter
-func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]Aggregate, error) {
+func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]WindowAggregate, error) {
 	windowDuration := int64(time.Hour)
 	if days > 30 {
 		windowDuration = int64(24 * time.Hour)
 	}
 	daysQ := fmt.Sprintf("date('now', '-%d day')", days)
-	var points []Aggregate
-	if err := db.Table("aggregates").
+	var points []WindowAggregate
+	if err := db.Table("window_aggregates").
 		Where("window_start_at >= "+daysQ+" AND room = ? AND device = ? AND parameter = ? AND window_duration = ?", room, device, parameter, windowDuration).
 		Find(&points).
 		Error; err != nil {
@@ -179,28 +190,14 @@ func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]Aggre
 }
 
 // Legacy compatibility function - maps old AggregateID to new room/device/parameter structure
-func (db *DB) Aggregate(param AggregateID, days int64) ([]Aggregate, error) {
+func (db *DB) Aggregate(param AggregateID, days int64) ([]WindowAggregate, error) {
 	// Look up the mapping for this parameter
 	mapping, exists := AggregateIDMapping[param]
 	if !exists {
 		return nil, fmt.Errorf("no mapping found for parameter ID %d", param)
 	}
-	
-	return db.GetAggregates(mapping.Room, mapping.Device, mapping.Parameter, days)
-}
 
-// GetLastDatapoints returns the latest n datapoints
-func (db *DB) GetLastDatapoints(n int) ([]DataPoint, error) {
-	var datapoints []DataPoint
-	if err := db.
-		Table("data_points").
-		Order("created_at desc").
-		Limit(n).
-		Find(&datapoints).
-		Error; err != nil {
-		return nil, fmt.Errorf("error getting last datapoints: %w", err)
-	}
-	return datapoints, nil
+	return db.GetAggregates(mapping.Room, mapping.Device, mapping.Parameter, days)
 }
 
 // GetLastDatapointsByParameter returns the latest n datapoints for a specific room, device, and parameter
@@ -218,7 +215,13 @@ func (db *DB) GetLastDatapointsByParameter(room, device, parameter string, n int
 	return datapoints, nil
 }
 
+// IsWaterLevelFull checks if a water level value corresponds to "full"
+func IsWaterLevelFull(value float64) bool {
+	return int(value) == int(WaterLevelFull)
+}
+
 // Legacy compatibility function to support existing code
+// This will be removed after the transition is complete
 func (db *DB) LastN(n int) ([]Parameters, error) {
 	var last []Parameters
 	if err := db.
@@ -237,7 +240,7 @@ func (db *DB) InsertDataPoints(points []DataPoint) error {
 	if len(points) == 0 {
 		return nil
 	}
-	
+
 	// Keep track of all created points, to aggregate them later
 	if err := db.Create(&points).Error; err != nil {
 		return fmt.Errorf("error inserting data points: %w", err)
@@ -248,10 +251,10 @@ func (db *DB) InsertDataPoints(points []DataPoint) error {
 	createdAt := points[0].CreatedAt
 	dayStart := createdAt.Truncate(24 * time.Hour)
 	hourStart := createdAt.Truncate(time.Hour)
-	
+
 	// Group by room/device/parameter for aggregation
 	dataByKey := make(map[string]map[string]map[string][]float64)
-	
+
 	// Organize data for aggregation
 	for _, point := range points {
 		// Initialize nested maps if they don't exist
@@ -264,14 +267,14 @@ func (db *DB) InsertDataPoints(points []DataPoint) error {
 		if _, exists := dataByKey[point.Room][point.Device][point.Parameter]; !exists {
 			dataByKey[point.Room][point.Device][point.Parameter] = []float64{}
 		}
-		
+
 		// Add this value to the appropriate slice
 		dataByKey[point.Room][point.Device][point.Parameter] = append(
-			dataByKey[point.Room][point.Device][point.Parameter], 
+			dataByKey[point.Room][point.Device][point.Parameter],
 			point.Value,
 		)
 	}
-	
+
 	// Update aggregates for each room/device/parameter
 	for room, deviceMap := range dataByKey {
 		for device, paramMap := range deviceMap {
@@ -281,7 +284,7 @@ func (db *DB) InsertDataPoints(points []DataPoint) error {
 					if err := db.updateNewAggregate(room, device, param, time.Hour*24, dayStart, value); err != nil {
 						return fmt.Errorf("error updating daily aggregate for %s/%s/%s: %w", room, device, param, err)
 					}
-					
+
 					// Hourly aggregates
 					if err := db.updateNewAggregate(room, device, param, time.Hour, hourStart, value); err != nil {
 						return fmt.Errorf("error updating hourly aggregate for %s/%s/%s: %w", room, device, param, err)
@@ -294,57 +297,32 @@ func (db *DB) InsertDataPoints(points []DataPoint) error {
 	return nil
 }
 
-// Legacy compatibility function for inserting old Parameters struct
-func (db *DB) Insert(parameters *Parameters) error {
-	if parameters == nil {
-		panic("nil params")
-	}
-	if db == nil {
-		panic("nil db")
-	}
-	
-	// First create the old parameters record for backward compatibility
-	if err := db.Create(parameters).Error; err != nil {
-		return fmt.Errorf("error inserting parameters: %w", err)
-	}
-
-	// Convert to new data points
-	dataPoints := parametersToDataPoints(parameters)
-	
-	// Insert the new data points and calculate aggregates
-	if err := db.InsertDataPoints(dataPoints); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Calculate all aggregates from scratch (re-runs all data points through aggregation)
+// calculateAggregates recalculates all window aggregates from the data points
 func (db *DB) calculateAggregates() error {
 	// Get all data points ordered by time
 	var datapoints []DataPoint
 	if err := db.Table("data_points").Order("created_at asc").Find(&datapoints).Error; err != nil {
 		return fmt.Errorf("error getting all data points: %w", err)
 	}
-	
+
 	fmt.Printf("Calculating aggregates for %d data points\n", len(datapoints))
-	
+
 	// Clear existing aggregates
-	if err := db.Exec("DELETE FROM aggregates").Error; err != nil {
+	if err := db.Exec("DELETE FROM window_aggregates").Error; err != nil {
 		return fmt.Errorf("error clearing aggregates: %w", err)
 	}
-	
+
 	// Process by day to reduce memory usage
 	currentDay := time.Time{}
 	batchPoints := []DataPoint{}
-	
+
 	for i, dp := range datapoints {
 		if i%1000 == 0 {
 			fmt.Printf("Processed %d/%d data points\n", i, len(datapoints))
 		}
-		
+
 		dpDay := dp.CreatedAt.Truncate(24 * time.Hour)
-		
+
 		// If we've moved to a new day, process the batch
 		if !currentDay.IsZero() && !dpDay.Equal(currentDay) {
 			if err := db.InsertDataPoints(batchPoints); err != nil {
@@ -352,18 +330,18 @@ func (db *DB) calculateAggregates() error {
 			}
 			batchPoints = []DataPoint{}
 		}
-		
+
 		currentDay = dpDay
 		batchPoints = append(batchPoints, dp)
 	}
-	
+
 	// Process the final batch
 	if len(batchPoints) > 0 {
 		if err := db.InsertDataPoints(batchPoints); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -373,7 +351,7 @@ func (db *DB) updateNewAggregate(room, device, parameter string, windowDuration 
 	if err != nil {
 		return fmt.Errorf("error getting aggregate: %w", err)
 	}
-	
+
 	if agg.Count == 0 {
 		agg.Min, agg.Max, agg.Mean = value, value, value
 		agg.Count = 1
@@ -398,23 +376,23 @@ func (db *DB) updateNewAggregate(room, device, parameter string, windowDuration 
 }
 
 // getNewAggregate retrieves an aggregate or returns a new one if not found
-func (db *DB) getNewAggregate(room, device, parameter string, windowDuration time.Duration, windowStartAt time.Time) (*Aggregate, error) {
-	var agg Aggregate
-	tx := db.Table("aggregates").
-		Where(&Aggregate{
+func (db *DB) getNewAggregate(room, device, parameter string, windowDuration time.Duration, windowStartAt time.Time) (*WindowAggregate, error) {
+	var agg WindowAggregate
+	tx := db.Table("window_aggregates").
+		Where(&WindowAggregate{
 			Room:           room,
 			Device:         device,
 			Parameter:      parameter,
 			WindowDuration: windowDuration,
 			WindowStartAt:  windowStartAt,
 		}).First(&agg)
-	
+
 	if err := tx.Error; err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("error getting aggregate: %w", err)
 	}
-	
+
 	if err := tx.Error; err != nil {
-		return &Aggregate{
+		return &WindowAggregate{
 			Room:           room,
 			Device:         device,
 			Parameter:      parameter,
@@ -422,12 +400,12 @@ func (db *DB) getNewAggregate(room, device, parameter string, windowDuration tim
 			WindowStartAt:  windowStartAt,
 		}, nil
 	}
-	
+
 	return &agg, nil
 }
 
-// New Aggregate structure that matches the DataPoint structure
-type Aggregate struct {
+// WindowAggregate is the new aggregate structure that matches the DataPoint structure
+type WindowAggregate struct {
 	Room           string        `gorm:"primaryKey"`
 	Device         string        `gorm:"primaryKey"`
 	Parameter      string        `gorm:"primaryKey"`
@@ -440,8 +418,13 @@ type Aggregate struct {
 	Count int64
 }
 
+// TableName overrides the table name used by GORM
+func (WindowAggregate) TableName() string {
+	return "window_aggregates"
+}
+
 // Legacy aggregate structure (kept for migration)
-type LegacyAggregate struct {
+type Aggregate struct {
 	Parameter      AggregateID   `gorm:"primaryKey;column:parameter"`
 	WindowDuration time.Duration `gorm:"primaryKey;column:window_duration"`
 	WindowStartAt  time.Time     `gorm:"primaryKey;column:window_start_at"`
@@ -452,11 +435,6 @@ type LegacyAggregate struct {
 	Count int64
 }
 
-// TableName overrides the table name used by GORM
-func (LegacyAggregate) TableName() string {
-	return "aggregates"
-}
-
 type AggregateID int
 
 const (
@@ -465,13 +443,13 @@ const (
 	AggregateIDHumidity
 	AggregateIDDust
 	AggregateIDWaterLevel
-	
+
 	// New Aranet-specific aggregates
 	AggregateIDOfficeTemperature
 	AggregateIDOfficeHumidity
 	AggregateIDOfficeCO2
 	AggregateIDOfficePressure
-	
+
 	AggregateIDLivingRoomTemperature
 	AggregateIDLivingRoomHumidity
 	AggregateIDLivingRoomCO2
@@ -488,12 +466,12 @@ var AggregateIDMapping = map[AggregateID]struct {
 	AggregateIDHumidity:             {"living room", "60:8A:10:B5:58:A0", "humidity"},
 	AggregateIDDust:                 {"living room", "60:8A:10:B5:58:A0", "dust"},
 	AggregateIDWaterLevel:           {"living room", "60:8A:10:B5:58:A0", "water_level"},
-	
+
 	AggregateIDOfficeTemperature:    {"office", "Aranet4 0AC6E", "temperature"},
 	AggregateIDOfficeHumidity:       {"office", "Aranet4 0AC6E", "humidity"},
 	AggregateIDOfficeCO2:            {"office", "Aranet4 0AC6E", "co2"},
 	AggregateIDOfficePressure:       {"office", "Aranet4 0AC6E", "pressure"},
-	
+
 	AggregateIDLivingRoomTemperature: {"living room", "Aranet4 069F9", "temperature"},
 	AggregateIDLivingRoomHumidity:    {"living room", "Aranet4 069F9", "humidity"},
 	AggregateIDLivingRoomCO2:         {"living room", "Aranet4 069F9", "co2"},

@@ -89,15 +89,25 @@ func fetch(db *DB) error {
 	}
 	
 	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
-	// First use legacy approach for now to maintain backward compatibility
-	last2, err := db.LastN(2)
+	// Use the new data model to check water levels
+	ventaRoom := "living room"
+	ventaDevice := "60:8A:10:B5:58:A0"
+	last2, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
 	if err != nil {
 		return err
 	}
 	
+	// Check current water level value from ventaParams
+	currentWaterLevelFull := ventaParams.WaterLevel.IsFull()
+	
+	// If we have enough history to check
 	if len(last2) >= 2 {
-		back1, back2 := last2[0], last2[1]
-		if back2.WaterLevel.IsFull() && !back1.WaterLevel.IsFull() && !ventaParams.WaterLevel.IsFull() {
+		// We check in reverse because results are ordered by created_at desc
+		back1WaterLevelFull := IsWaterLevelFull(last2[0].Value)
+		back2WaterLevelFull := IsWaterLevelFull(last2[1].Value)
+		
+		// If it was full, then not full, and still not full
+		if back2WaterLevelFull && !back1WaterLevelFull && !currentWaterLevelFull {
 			if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
 				log.Printf("twilio error: %s", err)
 			}
@@ -107,11 +117,6 @@ func fetch(db *DB) error {
 	// Insert all new data points
 	if err := db.InsertDataPoints(allDataPoints); err != nil {
 		return fmt.Errorf("error inserting data points: %w", err)
-	}
-	
-	// Also insert legacy parameters for backward compatibility
-	if err := db.Insert(ventaParams); err != nil {
-		return fmt.Errorf("error inserting legacy parameters: %w", err)
 	}
 
 	// Log data values
