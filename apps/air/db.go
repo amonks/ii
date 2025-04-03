@@ -26,30 +26,17 @@ func NewDB() (*DB, error) {
 	return &DB{db}, nil
 }
 
-// MigrateData migrates all data from the legacy schema to the new schema
+// MigrateData migrates data from the legacy schema to the new schema
 func (db *DB) MigrateData() error {
-	// Clean up existing data in new tables to avoid duplication
-	fmt.Println("Cleaning up existing data in new tables...")
-	if err := db.Exec("DELETE FROM data_points").Error; err != nil {
-		return fmt.Errorf("failed to clean data_points table: %w", err)
-	}
-	if err := db.Exec("DELETE FROM window_aggregates").Error; err != nil {
-		// Table might not exist yet, which is fine
-		fmt.Println("Note: window_aggregates table not found or already empty")
-	}
-	fmt.Println("Tables cleaned successfully")
+	// Skip parameters migration since it's already completed
+	fmt.Println("Skipping Parameters migration - already completed")
 
-	// Step 1: Migrate from Parameters to DataPoint
-	if err := db.migrateParameters(); err != nil {
-		return fmt.Errorf("failed to migrate parameters: %w", err)
-	}
-
-	// Step 2: Migrate from legacy Aggregate to new Aggregate
+	// Just migrate aggregates after filtering out string-based ones
 	if err := db.migrateAggregates(); err != nil {
 		return fmt.Errorf("failed to migrate aggregates: %w", err)
 	}
+	fmt.Println("Aggregates migration completed successfully!")
 
-	fmt.Println("Migration completed successfully!")
 	return nil
 }
 
@@ -132,6 +119,12 @@ func parametersToDataPoints(param *Parameters) []DataPoint {
 
 // migrateAggregates converts legacy aggregates to new aggregates
 func (db *DB) migrateAggregates() error {
+	// First, delete the string-based records which are just a handful
+	fmt.Println("Deleting the string-based aggregate records...")
+	if err := db.Exec("DELETE FROM aggregates WHERE typeof(parameter) = 'text'").Error; err != nil {
+		return fmt.Errorf("error deleting string-based aggregates: %w", err)
+	}
+	
 	var legacyAggregates []Aggregate
 	if err := db.Table("aggregates").Find(&legacyAggregates).Error; err != nil {
 		return fmt.Errorf("error fetching legacy aggregates: %w", err)
