@@ -60,11 +60,11 @@
     fill: #777;
   }
   .area {
-    opacity: 0.3;
+    opacity: 0.2;
   }
   .line {
     fill: none;
-    stroke-width: 2;
+    stroke-width: 2.5;
   }
   .tooltip {
     position: absolute;
@@ -88,6 +88,13 @@
   .tooltip-value {
     margin-top: 2px;
   }
+  .grid line {
+    stroke: #eee;
+    shape-rendering: crispEdges;
+  }
+  .grid path {
+    stroke-width: 0;
+  }
 </style>
 </head>
 
@@ -102,13 +109,11 @@
 <script>
 {{ .JSON }}
 
-// Color palette for different devices
+// Color palette for different devices - adjusted for better contrast
 const colorPalette = [
-  "#4FC3F7", // Light blue
-  "#FF8A65", // Light orange
-  "#81C784", // Light green
-  "#9575CD", // Light purple
-  "#FFD54F"  // Light yellow
+  { line: "#4FC3F7", area: "#E3F2FD" }, // Light blue
+  { line: "#FF8A65", area: "#FFEBEE" }, // Light orange/red
+  { line: "#81C784", area: "#E8F5E9" }  // Light green
 ];
 
 // Utility function to format dates
@@ -128,7 +133,7 @@ function createLegend(deviceDataMap, colorScale) {
     
     const colorBox = document.createElement("div");
     colorBox.className = "legend-color";
-    colorBox.style.backgroundColor = colorScale(key);
+    colorBox.style.backgroundColor = colorScale(key).line;
     
     const label = document.createElement("span");
     label.textContent = `${deviceData.RoomName} (${deviceData.DeviceName})`;
@@ -156,9 +161,10 @@ function createMultiSeriesGraph(title, deviceDataMap) {
   graphContainer.appendChild(h2);
   
   // Set up color scale for devices
-  const colorScale = d3.scaleOrdinal()
-    .domain(Object.keys(deviceDataMap))
-    .range(colorPalette);
+  const colorScale = d => {
+    const index = Object.keys(deviceDataMap).indexOf(d);
+    return colorPalette[index % colorPalette.length];
+  };
   
   // Create legend
   const legend = createLegend(deviceDataMap, colorScale);
@@ -205,6 +211,28 @@ function createMultiSeriesGraph(title, deviceDataMap) {
     ])
     .range([height, 0]);
   
+  // Create grid
+  function makeGridLines(scale, ticks) {
+    return d3.axisBottom(scale)
+      .ticks(ticks)
+      .tickSize(-height)
+      .tickFormat("");
+  }
+  
+  // Add X grid lines
+  svg.append("g")
+    .attr("class", "grid")
+    .attr("transform", `translate(0,${height})`)
+    .call(makeGridLines(xScale, 10));
+  
+  // Add Y grid lines
+  svg.append("g")
+    .attr("class", "grid")
+    .call(d3.axisLeft(yScale)
+      .ticks(5)
+      .tickSize(-width)
+      .tickFormat(""));
+  
   // Create axes
   const xAxis = d3.axisBottom(xScale)
     .ticks(width > 600 ? 10 : 5)
@@ -246,64 +274,76 @@ function createMultiSeriesGraph(title, deviceDataMap) {
     .y(d => yScale(d.Mean))
     .curve(d3.curveMonotoneX);
   
-  // Add bands and lines for each device
-  Object.entries(deviceDataMap).forEach(([key, deviceData]) => {
-    const color = colorScale(key);
-    
-    // Add min-max area (band)
-    svg.append("path")
-      .datum(deviceData.Data)
-      .attr("class", "area")
-      .attr("fill", color)
-      .attr("d", area);
-    
-    // Add mean line
-    svg.append("path")
-      .datum(deviceData.Data)
-      .attr("class", "line")
-      .attr("stroke", color)
-      .attr("d", line);
-    
-    // Add invisible overlay for tooltip for this device
-    svg.append("path")
-      .datum(deviceData.Data)
-      .attr("class", "hover-line")
-      .attr("stroke", "transparent")
-      .attr("stroke-width", 10)
-      .attr("d", line)
-      .on("mouseover", function() {
-        tooltip.transition().duration(200).style("opacity", 0.9);
-      })
-      .on("mouseout", function() {
-        tooltip.transition().duration(500).style("opacity", 0);
-      })
-      .on("mousemove", function(event) {
-        // Find the closest data point based on mouse position
-        const mouseX = d3.pointer(event)[0];
-        const x0 = xScale.invert(mouseX);
-        
-        // Find the closest data point
+  // Create group for each device to control z-index/layering
+  const deviceEntries = Object.entries(deviceDataMap);
+  const deviceGroups = svg.selectAll(".device-group")
+    .data(deviceEntries)
+    .enter()
+    .append("g")
+    .attr("class", "device-group");
+  
+  // Add bands for each device
+  deviceGroups.append("path")
+    .attr("class", "area")
+    .attr("fill", d => colorScale(d[0]).area)
+    .attr("d", d => area(d[1].Data));
+  
+  // Add mean lines on top of all areas
+  deviceGroups.append("path")
+    .attr("class", "line")
+    .attr("stroke", d => colorScale(d[0]).line)
+    .attr("d", d => line(d[1].Data));
+  
+  // Add invisible overlay for tooltip
+  svg.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .on("mouseover", function() {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+    })
+    .on("mouseout", function() {
+      tooltip.transition().duration(500).style("opacity", 0);
+    })
+    .on("mousemove", function(event) {
+      // Find the closest data point based on mouse position
+      const mouseX = d3.pointer(event)[0];
+      const x0 = xScale.invert(mouseX);
+      
+      // Show data for all devices at this time point
+      let tooltipContent = `<div class="tooltip-title">${formatDate(x0)}</div>`;
+      
+      Object.entries(deviceDataMap).forEach(([key, deviceData], i) => {
+        // Find closest data point for this device
         const bisectDate = d3.bisector(d => new Date(d.WindowStartAt)).left;
         const index = bisectDate(deviceData.Data, x0, 1);
-        const d0 = deviceData.Data[index - 1];
-        const d1 = deviceData.Data[index];
         
-        if (!d0 || !d1) return;
-        
-        const d = x0 - new Date(d0.WindowStartAt) > new Date(d1.WindowStartAt) - x0 ? d1 : d0;
-        
-        // Update tooltip content and position
-        tooltip.html(`
-          <div class="tooltip-title">${formatDate(new Date(d.WindowStartAt))}</div>
-          <div class="tooltip-device">${deviceData.RoomName} (${deviceData.DeviceName})</div>
-          <div class="tooltip-value">Min: ${formatValue(d.Min)}</div>
-          <div class="tooltip-value">Mean: ${formatValue(d.Mean)}</div>
-          <div class="tooltip-value">Max: ${formatValue(d.Max)}</div>
-        `)
+        if (index > 0 && index < deviceData.Data.length) {
+          const d0 = deviceData.Data[index - 1];
+          const d1 = deviceData.Data[index];
+          
+          if (!d0 || !d1) return;
+          
+          const d = x0 - new Date(d0.WindowStartAt) > new Date(d1.WindowStartAt) - x0 ? d1 : d0;
+          
+          tooltipContent += `
+            <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 4px;">
+              <div class="tooltip-device" style="color: ${colorScale(key).line}">
+                ${deviceData.RoomName} (${deviceData.DeviceName})
+              </div>
+              <div class="tooltip-value">Min: ${formatValue(d.Min)}</div>
+              <div class="tooltip-value">Mean: ${formatValue(d.Mean)}</div>
+              <div class="tooltip-value">Max: ${formatValue(d.Max)}</div>
+            </div>
+          `;
+        }
+      });
+      
+      tooltip.html(tooltipContent)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 28) + "px");
-      });
-  });
+    });
 }
 
 // Create single series graph for metrics like dust and water level
@@ -355,6 +395,28 @@ function createSingleSeriesGraph(title, data) {
     ])
     .range([height, 0]);
   
+  // Create grid
+  function makeGridLines(scale, ticks) {
+    return d3.axisBottom(scale)
+      .ticks(ticks)
+      .tickSize(-height)
+      .tickFormat("");
+  }
+  
+  // Add X grid lines
+  svg.append("g")
+    .attr("class", "grid")
+    .attr("transform", `translate(0,${height})`)
+    .call(makeGridLines(xScale, 10));
+  
+  // Add Y grid lines
+  svg.append("g")
+    .attr("class", "grid")
+    .call(d3.axisLeft(yScale)
+      .ticks(5)
+      .tickSize(-width)
+      .tickFormat(""));
+  
   // Create axes
   const xAxis = d3.axisBottom(xScale)
     .ticks(width > 600 ? 10 : 5)
@@ -400,14 +462,14 @@ function createSingleSeriesGraph(title, data) {
   svg.append("path")
     .datum(data)
     .attr("class", "area")
-    .attr("fill", "#4FC3F7")
+    .attr("fill", colorPalette[0].area)
     .attr("d", area);
   
   // Add the mean line
   svg.append("path")
     .datum(data)
     .attr("class", "line")
-    .attr("stroke", "#1976D2")
+    .attr("stroke", colorPalette[0].line)
     .attr("d", line);
   
   // Add invisible overlay for tooltip
@@ -430,22 +492,25 @@ function createSingleSeriesGraph(title, data) {
       // Find the closest data point
       const bisectDate = d3.bisector(d => new Date(d.WindowStartAt)).left;
       const index = bisectDate(data, x0, 1);
-      const d0 = data[index - 1];
-      const d1 = data[index];
       
-      if (!d0 || !d1) return;
-      
-      const d = x0 - new Date(d0.WindowStartAt) > new Date(d1.WindowStartAt) - x0 ? d1 : d0;
-      
-      // Update tooltip content and position
-      tooltip.html(`
-        <div class="tooltip-title">${formatDate(new Date(d.WindowStartAt))}</div>
-        <div class="tooltip-value">Min: ${formatValue(d.Min)}</div>
-        <div class="tooltip-value">Mean: ${formatValue(d.Mean)}</div>
-        <div class="tooltip-value">Max: ${formatValue(d.Max)}</div>
-      `)
-      .style("left", (event.pageX + 10) + "px")
-      .style("top", (event.pageY - 28) + "px");
+      if (index > 0 && index < data.length) {
+        const d0 = data[index - 1];
+        const d1 = data[index];
+        
+        if (!d0 || !d1) return;
+        
+        const d = x0 - new Date(d0.WindowStartAt) > new Date(d1.WindowStartAt) - x0 ? d1 : d0;
+        
+        // Update tooltip content and position
+        tooltip.html(`
+          <div class="tooltip-title">${formatDate(new Date(d.WindowStartAt))}</div>
+          <div class="tooltip-value">Min: ${formatValue(d.Min)}</div>
+          <div class="tooltip-value">Mean: ${formatValue(d.Mean)}</div>
+          <div class="tooltip-value">Max: ${formatValue(d.Max)}</div>
+        `)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+      }
     });
 }
 
