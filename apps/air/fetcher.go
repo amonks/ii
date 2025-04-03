@@ -89,10 +89,8 @@ func fetch(db *DB) error {
 	}
 	
 	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
-	// Use the new data model to check water levels
-	ventaRoom := "living room"
-	ventaDevice := "60:8A:10:B5:58:A0"
-	last2, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
+	// Use the new data model to check water levels using the ventaRoom and ventaDevice defined earlier
+	waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
 	if err != nil {
 		return err
 	}
@@ -101,10 +99,10 @@ func fetch(db *DB) error {
 	currentWaterLevelFull := ventaParams.WaterLevel.IsFull()
 	
 	// If we have enough history to check
-	if len(last2) >= 2 {
+	if len(waterLevelPoints) >= 2 {
 		// We check in reverse because results are ordered by created_at desc
-		back1WaterLevelFull := IsWaterLevelFull(last2[0].Value)
-		back2WaterLevelFull := IsWaterLevelFull(last2[1].Value)
+		back1WaterLevelFull := IsWaterLevelFull(waterLevelPoints[0].Value)
+		back2WaterLevelFull := IsWaterLevelFull(waterLevelPoints[1].Value)
 		
 		// If it was full, then not full, and still not full
 		if back2WaterLevelFull && !back1WaterLevelFull && !currentWaterLevelFull {
