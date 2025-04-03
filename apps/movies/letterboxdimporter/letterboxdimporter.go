@@ -23,7 +23,7 @@ func (li *LetterboxdImporter) Run() error {
 	log.Println("letterboxdimporter started")
 	watches, err := letterboxd.FetchDiary()
 	if err != nil {
-		return err
+		return nil
 	}
 	for _, entry := range watches {
 		fmt.Println("adding", entry.MovieTitle)
