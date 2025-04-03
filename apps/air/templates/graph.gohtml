@@ -61,10 +61,27 @@ function graph(id, data) {
   });
 }
 
-graph("dust", data.Dust);
-graph("temperature", data.Temperature);
-graph("humidity", data.Humidity);
-graph("waterLevel", data.WaterLevel);
+// Venta data
+graph("venta-dust", data.Dust);
+graph("venta-temperature", data.Temperature);
+graph("venta-humidity", data.Humidity);
+graph("venta-waterLevel", data.WaterLevel);
+
+// Office Aranet data
+if (data.OfficeTemperature && data.OfficeTemperature.length > 0) {
+  graph("office-temperature", data.OfficeTemperature);
+  graph("office-humidity", data.OfficeHumidity);
+  graph("office-co2", data.OfficeCO2);
+  graph("office-pressure", data.OfficePressure);
+}
+
+// Living Room Aranet data
+if (data.LivingRoomTemperature && data.LivingRoomTemperature.length > 0) {
+  graph("livingroom-temperature", data.LivingRoomTemperature);
+  graph("livingroom-humidity", data.LivingRoomHumidity);
+  graph("livingroom-co2", data.LivingRoomCO2);
+  graph("livingroom-pressure", data.LivingRoomPressure);
+}
 </script>
 </body>
 </html>

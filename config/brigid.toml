@@ -19,7 +19,8 @@ mode = "dev"
     "homepage",
     "dogs",
     "scrobbles",
-    "calendar"
+    "calendar",
+    "aranet"
   ]
   [service.rewrites]
     "/" = "/homepage/"

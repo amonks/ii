@@ -7,6 +7,7 @@ cmd = 'cd aws && fish convert-zones.fish'
 id = 'brigid'
 type = 'long'
 dependencies = [
+  'apps/aranet/dev',
   'apps/calendar/dev',
   'apps/directory/dev',
   'apps/dogs/dev',
@@ -34,6 +35,7 @@ id = 'build'
 type = 'short'
 dependencies = [
   'apps/air/build',
+  'apps/aranet/build',
   'apps/calendar/build',
   'apps/directory/build',
   'apps/dogs/build',

@@ -90,8 +90,35 @@ func (db *DB) Insert(parameters *Parameters) error {
 
 func (db *DB) updateAggregates(parameters *Parameters) error {
 	dayStart := parameters.CreatedAt.Truncate(24 * time.Hour)
+	hourStart := parameters.CreatedAt.Truncate(time.Hour)
+	
+	// Venta air purifier aggregates
+	if err := updateAggregatesForTimeframe(db, dayStart, hourStart, parameters); err != nil {
+		return err
+	}
+	
+	// Aranet Office aggregates (only if valid)
+	if parameters.OfficeAranetValid {
+		if err := updateOfficeAggregates(db, dayStart, hourStart, parameters); err != nil {
+			return err
+		}
+	}
+	
+	// Aranet Living Room aggregates (only if valid)
+	if parameters.LivingRoomAranetValid {
+		if err := updateLivingRoomAggregates(db, dayStart, hourStart, parameters); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// updateAggregatesForTimeframe handles the original Venta aggregates
+func updateAggregatesForTimeframe(db *DB, dayStart, hourStart time.Time, parameters *Parameters) error {
+	// Daily aggregates
 	if err := db.updateAggregate(AggregateIDDust, time.Hour*24, dayStart, float64(parameters.Dust)); err != nil {
-		return fmt.Errorf("error updating daily temp aggregate: %w", err)
+		return fmt.Errorf("error updating daily dust aggregate: %w", err)
 	}
 	if err := db.updateAggregate(AggregateIDTemperature, time.Hour*24, dayStart, parameters.Temperature); err != nil {
 		return fmt.Errorf("error updating daily temp aggregate: %w", err)
@@ -103,9 +130,9 @@ func (db *DB) updateAggregates(parameters *Parameters) error {
 		return fmt.Errorf("error updating daily water level aggregate: %w", err)
 	}
 
-	hourStart := parameters.CreatedAt.Truncate(time.Hour)
+	// Hourly aggregates
 	if err := db.updateAggregate(AggregateIDDust, time.Hour, hourStart, float64(parameters.Dust)); err != nil {
-		return fmt.Errorf("error updating hourly temp aggregate: %w", err)
+		return fmt.Errorf("error updating hourly dust aggregate: %w", err)
 	}
 	if err := db.updateAggregate(AggregateIDTemperature, time.Hour, hourStart, parameters.Temperature); err != nil {
 		return fmt.Errorf("error updating hourly temp aggregate: %w", err)
@@ -116,7 +143,73 @@ func (db *DB) updateAggregates(parameters *Parameters) error {
 	if err := db.updateAggregate(AggregateIDWaterLevel, time.Hour, hourStart, float64(parameters.WaterLevel)); err != nil {
 		return fmt.Errorf("error updating hourly waterLevel aggregate: %w", err)
 	}
+	
+	return nil
+}
 
+// updateOfficeAggregates handles the Office Aranet aggregates
+func updateOfficeAggregates(db *DB, dayStart, hourStart time.Time, parameters *Parameters) error {
+	// Daily aggregates
+	if err := db.updateAggregate(AggregateIDOfficeTemperature, time.Hour*24, dayStart, parameters.OfficeTemperature); err != nil {
+		return fmt.Errorf("error updating daily office temp aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficeHumidity, time.Hour*24, dayStart, float64(parameters.OfficeHumidity)); err != nil {
+		return fmt.Errorf("error updating daily office humidity aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficeCO2, time.Hour*24, dayStart, float64(parameters.OfficeCO2)); err != nil {
+		return fmt.Errorf("error updating daily office co2 aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficePressure, time.Hour*24, dayStart, parameters.OfficePressure); err != nil {
+		return fmt.Errorf("error updating daily office pressure aggregate: %w", err)
+	}
+
+	// Hourly aggregates
+	if err := db.updateAggregate(AggregateIDOfficeTemperature, time.Hour, hourStart, parameters.OfficeTemperature); err != nil {
+		return fmt.Errorf("error updating hourly office temp aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficeHumidity, time.Hour, hourStart, float64(parameters.OfficeHumidity)); err != nil {
+		return fmt.Errorf("error updating hourly office humidity aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficeCO2, time.Hour, hourStart, float64(parameters.OfficeCO2)); err != nil {
+		return fmt.Errorf("error updating hourly office co2 aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDOfficePressure, time.Hour, hourStart, parameters.OfficePressure); err != nil {
+		return fmt.Errorf("error updating hourly office pressure aggregate: %w", err)
+	}
+	
+	return nil
+}
+
+// updateLivingRoomAggregates handles the Living Room Aranet aggregates
+func updateLivingRoomAggregates(db *DB, dayStart, hourStart time.Time, parameters *Parameters) error {
+	// Daily aggregates
+	if err := db.updateAggregate(AggregateIDLivingRoomTemperature, time.Hour*24, dayStart, parameters.LivingRoomTemperature); err != nil {
+		return fmt.Errorf("error updating daily living room temp aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomHumidity, time.Hour*24, dayStart, float64(parameters.LivingRoomHumidity)); err != nil {
+		return fmt.Errorf("error updating daily living room humidity aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomCO2, time.Hour*24, dayStart, float64(parameters.LivingRoomCO2)); err != nil {
+		return fmt.Errorf("error updating daily living room co2 aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomPressure, time.Hour*24, dayStart, parameters.LivingRoomPressure); err != nil {
+		return fmt.Errorf("error updating daily living room pressure aggregate: %w", err)
+	}
+
+	// Hourly aggregates
+	if err := db.updateAggregate(AggregateIDLivingRoomTemperature, time.Hour, hourStart, parameters.LivingRoomTemperature); err != nil {
+		return fmt.Errorf("error updating hourly living room temp aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomHumidity, time.Hour, hourStart, float64(parameters.LivingRoomHumidity)); err != nil {
+		return fmt.Errorf("error updating hourly living room humidity aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomCO2, time.Hour, hourStart, float64(parameters.LivingRoomCO2)); err != nil {
+		return fmt.Errorf("error updating hourly living room co2 aggregate: %w", err)
+	}
+	if err := db.updateAggregate(AggregateIDLivingRoomPressure, time.Hour, hourStart, parameters.LivingRoomPressure); err != nil {
+		return fmt.Errorf("error updating hourly living room pressure aggregate: %w", err)
+	}
+	
 	return nil
 }
 
@@ -177,6 +270,17 @@ const (
 	AggregateIDHumidity
 	AggregateIDDust
 	AggregateIDWaterLevel
+	
+	// New Aranet-specific aggregates
+	AggregateIDOfficeTemperature
+	AggregateIDOfficeHumidity
+	AggregateIDOfficeCO2
+	AggregateIDOfficePressure
+	
+	AggregateIDLivingRoomTemperature
+	AggregateIDLivingRoomHumidity
+	AggregateIDLivingRoomCO2
+	AggregateIDLivingRoomPressure
 )
 
 type Aggregate struct {
@@ -194,6 +298,7 @@ type Parameters struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt time.Time
 
+	// Venta air purifier data
 	ModiCategory string
 
 	DeviceType int
@@ -225,10 +330,28 @@ type Parameters struct {
 	TimerT     int
 
 	FanRPM      int
-	Temperature float64
+	Temperature float64  // Venta temperature
 	Dust        int
 	WaterLevel  WaterLevel
-	Humidity    float64
+	Humidity    float64  // Venta humidity
+
+	// Aranet Office sensor data
+	OfficeTemperature    float64 // Fahrenheit
+	OfficeHumidity       int
+	OfficeCO2            int
+	OfficePressure       float64
+	OfficeBattery        int
+	OfficeVersion        string
+	OfficeAranetValid    bool    // Whether the data is valid
+
+	// Aranet Living Room sensor data
+	LivingRoomTemperature float64 // Fahrenheit
+	LivingRoomHumidity    int
+	LivingRoomCO2         int
+	LivingRoomPressure    float64
+	LivingRoomBattery     int
+	LivingRoomVersion     string
+	LivingRoomAranetValid bool    // Whether the data is valid
 }
 
 type WaterLevel int

@@ -20,10 +20,23 @@ var (
 )
 
 type Data struct {
+	// Venta data
 	Dust        []Aggregate
 	Temperature []Aggregate
 	Humidity    []Aggregate
 	WaterLevel  []Aggregate
+	
+	// Office Aranet data
+	OfficeTemperature []Aggregate
+	OfficeHumidity    []Aggregate
+	OfficeCO2         []Aggregate
+	OfficePressure    []Aggregate
+	
+	// Living Room Aranet data
+	LivingRoomTemperature []Aggregate
+	LivingRoomHumidity    []Aggregate
+	LivingRoomCO2         []Aggregate
+	LivingRoomPressure    []Aggregate
 }
 
 func (d *Data) JSON() (template.JS, error) {
@@ -52,27 +65,84 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 		}
 
 		var errs error
+		data := &Data{}
 
+		// Fetch Venta data
 		dust, err := db.Aggregate(AggregateIDDust, days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+		data.Dust = dust
 
 		temperature, err := db.Aggregate(AggregateIDTemperature, days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+		data.Temperature = temperature
 
 		humidity, err := db.Aggregate(AggregateIDHumidity, days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+		data.Humidity = humidity
 
 		waterLevel, err := db.Aggregate(AggregateIDWaterLevel, days)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+		data.WaterLevel = waterLevel
 
+		// Fetch Office Aranet data
+		officeTemp, err := db.Aggregate(AggregateIDOfficeTemperature, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.OfficeTemperature = officeTemp
+
+		officeHumidity, err := db.Aggregate(AggregateIDOfficeHumidity, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.OfficeHumidity = officeHumidity
+
+		officeCO2, err := db.Aggregate(AggregateIDOfficeCO2, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.OfficeCO2 = officeCO2
+
+		officePressure, err := db.Aggregate(AggregateIDOfficePressure, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.OfficePressure = officePressure
+
+		// Fetch Living Room Aranet data
+		livingRoomTemp, err := db.Aggregate(AggregateIDLivingRoomTemperature, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.LivingRoomTemperature = livingRoomTemp
+
+		livingRoomHumidity, err := db.Aggregate(AggregateIDLivingRoomHumidity, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.LivingRoomHumidity = livingRoomHumidity
+
+		livingRoomCO2, err := db.Aggregate(AggregateIDLivingRoomCO2, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.LivingRoomCO2 = livingRoomCO2
+
+		livingRoomPressure, err := db.Aggregate(AggregateIDLivingRoomPressure, days)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		data.LivingRoomPressure = livingRoomPressure
+
+		// Handle errors
 		if errs != nil {
 			log.Println(errs)
 			w.WriteHeader(500)
@@ -80,12 +150,8 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 			return
 		}
 
-		if err := tmpl.Execute(w, &Data{
-			Dust:        dust,
-			Temperature: temperature,
-			Humidity:    humidity,
-			WaterLevel:  waterLevel,
-		}); err != nil {
+		// Execute template with data
+		if err := tmpl.Execute(w, data); err != nil {
 			log.Println(err)
 		}
 	})
