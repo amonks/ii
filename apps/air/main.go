@@ -47,11 +47,7 @@ func run() error {
 			errs = errors.Join(errs, err)
 		}
 
-	case "migrate":
-		log.Printf("run data migration from legacy to new schema")
-		if err := db.MigrateData(); err != nil {
-			errs = errors.Join(errs, err)
-		}
+	// Migration has been completed, code removed
 
 	case "serve":
 		log.Printf("run serve")

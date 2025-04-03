@@ -16,18 +16,12 @@ func fetch(db *DB) error {
 	var allDataPoints []DataPoint
 	createdAt := time.Now()
 	
-	// Get Venta parameters (legacy approach)
+	// Get Venta parameters (legacy approach for water level checking)
 	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
 	if err != nil {
 		return err
 	}
 
-	modiCategory, err := getModiCategory()
-	if err != nil {
-		return err
-	}
-	ventaParams.ModiCategory = modiCategory
-	
 	// Add Venta data points
 	ventaDevice := "60:8A:10:B5:58:A0"
 	ventaRoom, _ := DeviceToRoom(ventaDevice)
@@ -82,25 +76,22 @@ func fetch(db *DB) error {
 			}
 			
 			addDataPoint(room, deviceId, "battery", float64(device.Battery))
-			
-			// Also update legacy Parameters struct so we maintain backward compatibility
-			addAranetDataToParameters(ventaParams, aranetDevices)
 		}
 	}
 	
 	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
-	// Use the new data model to check water levels using the ventaRoom and ventaDevice defined earlier
 	waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
 	if err != nil {
 		return err
 	}
 	
-	// Check current water level value from ventaParams
-	currentWaterLevelFull := ventaParams.WaterLevel.IsFull()
+	// Calculate current water level value
+	currentWaterLevelValue := float64(ventaParams.WaterLevel)
+	currentWaterLevelFull := IsWaterLevelFull(currentWaterLevelValue)
 	
 	// If we have enough history to check
 	if len(waterLevelPoints) >= 2 {
-		// We check in reverse because results are ordered by created_at desc
+		// Results are ordered by created_at desc
 		back1WaterLevelFull := IsWaterLevelFull(waterLevelPoints[0].Value)
 		back2WaterLevelFull := IsWaterLevelFull(waterLevelPoints[1].Value)
 		
@@ -120,23 +111,6 @@ func fetch(db *DB) error {
 	// Log data values
 	fmt.Printf("Collected %d data points\n", len(allDataPoints))
 	
-	// Log Venta values
-	fmt.Printf("Venta - temp: %f, humid: %f, water: %d\n", 
-		ventaParams.Temperature, ventaParams.Humidity, ventaParams.WaterLevel)
-	
-	// Log Aranet values
-	if ventaParams.OfficeAranetValid {
-		fmt.Printf("Office - temp: %f, humid: %d, co2: %d, pressure: %f\n", 
-			ventaParams.OfficeTemperature, ventaParams.OfficeHumidity, 
-			ventaParams.OfficeCO2, ventaParams.OfficePressure)
-	}
-	
-	if ventaParams.LivingRoomAranetValid {
-		fmt.Printf("Living Room - temp: %f, humid: %d, co2: %d, pressure: %f\n", 
-			ventaParams.LivingRoomTemperature, ventaParams.LivingRoomHumidity, 
-			ventaParams.LivingRoomCO2, ventaParams.LivingRoomPressure)
-	}
-
 	return nil
 }
 
@@ -184,40 +158,6 @@ func getAranetDevices() ([]AranetDevice, error) {
 	}
 
 	return devices, nil
-}
-
-// addAranetDataToParameters adds Aranet data to the parameters struct
-func addAranetDataToParameters(params *Parameters, devices []AranetDevice) {
-	for _, device := range devices {
-		// Determine which location this device is for
-		if isOfficeDevice(device.Name) {
-			params.OfficeAranetValid = device.TemperatureValid && device.HumidityValid
-			params.OfficeTemperature = device.TemperatureF
-			params.OfficeHumidity = device.Humidity
-			params.OfficeCO2 = device.CO2
-			params.OfficePressure = device.Pressure
-			params.OfficeBattery = device.Battery
-			params.OfficeVersion = device.Version
-		} else if isLivingRoomDevice(device.Name) {
-			params.LivingRoomAranetValid = device.TemperatureValid && device.HumidityValid
-			params.LivingRoomTemperature = device.TemperatureF
-			params.LivingRoomHumidity = device.Humidity
-			params.LivingRoomCO2 = device.CO2
-			params.LivingRoomPressure = device.Pressure
-			params.LivingRoomBattery = device.Battery
-			params.LivingRoomVersion = device.Version
-		}
-	}
-}
-
-// isOfficeDevice determines if the device is the office sensor
-func isOfficeDevice(deviceName string) bool {
-	return deviceName == "Aranet4 0AC6E"
-}
-
-// isLivingRoomDevice determines if the device is the living room sensor
-func isLivingRoomDevice(deviceName string) bool {
-	return deviceName == "Aranet4 069F9"
 }
 
 type GetRoomResponse []struct {
@@ -278,55 +218,42 @@ type DeviceParametersResponse struct {
 	} `json:"measure"`
 }
 
-func getDeviceParameters(deviceMAC string) (*Parameters, error) {
+func getDeviceParameters(deviceMAC string) (*VentaParameters, error) {
 	res, err := http.Get("https://venta-app-gateway-prod.azurewebsites.net/1/devices/60:8A:10:B5:58:A0/parameters")
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	bs, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
+	
 	parameters := &DeviceParametersResponse{}
 	if err := json.Unmarshal(bs, parameters); err != nil {
 		return nil, err
 	}
-	return &Parameters{
-		CreatedAt: time.Now(),
-
-		DeviceType: parameters.Header.DeviceType,
-		MacAddress: parameters.Header.MacAdress,
-		Error:      parameters.Header.Error,
-		Hash:       parameters.Header.Hash,
-		DeviceName: parameters.Header.DeviceName,
-
-		SWDisplay: parameters.Info.SWDisplay,
-		SWWifi:    parameters.Info.SWWIFI,
-		UVCOffT:   parameters.Info.UVCOffT,
-
-		RelState0: parameters.Info.RelState[0],
-		RelState1: parameters.Info.RelState[1],
-		RelState2: parameters.Info.RelState[2],
-		RelState3: parameters.Info.RelState[3],
-
-		DiscIonT:   parameters.Info.DiscIonT,
-		ServiceT:   parameters.Info.ServiceT,
-		UVCOnT:     parameters.Info.UVCOnT,
-		SWTouch:    parameters.Info.SWTouch,
-		FilterT:    parameters.Info.FilterT,
-		SWPower:    parameters.Info.SWPower,
-		CleaningT:  parameters.Info.CleaningT,
-		CleanMode:  parameters.Info.CleanMode,
-		CleaningR:  parameters.Info.CleaningR,
-		OperationT: parameters.Info.OperationT,
-		Warnings:   parameters.Info.Warnings,
-		TimerT:     parameters.Info.TimerT,
-
+	
+	// Only extract the fields we actually use
+	return &VentaParameters{
+		CreatedAt:    time.Now(),
 		FanRPM:      parameters.Measure.FanRpm,
 		Temperature: parameters.Measure.Temperature,
 		Dust:        parameters.Measure.Dust,
 		WaterLevel:  WaterLevel(parameters.Measure.WaterLevel),
 		Humidity:    parameters.Measure.Humidity,
 	}, nil
+}
+
+// VentaParameters contains only the essential data from the Venta device
+type VentaParameters struct {
+	CreatedAt time.Time
+
+	// Only keep the fields we actually need
+	FanRPM      int
+	Temperature float64
+	Dust        int
+	WaterLevel  WaterLevel
+	Humidity    float64
 }
