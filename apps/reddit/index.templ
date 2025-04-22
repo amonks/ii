@@ -2,49 +2,214 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"monks.co/pkg/templib"
 )
 
 templ Index(data *PageData) {
-	@templib.Page("Reddit", templib.PageOptions{}) {
-		for _, post := range data.Posts {
-			<div style="width: 100%; max-width: 1000px;">
-				@embed(post)
+	@templib.Page("Reddit Viewer", templib.PageOptions{}) {
+		<div style="width: 100%; max-width: 1000px; margin: 0 auto;">
+			<div style="margin-bottom: 20px;">
+				<h1 style="margin-bottom: 10px;">{ data.Post.Title }</h1>
+				<div style="display: flex; gap: 20px; color: #666; margin-bottom: 15px; flex-wrap: wrap;">
+					<div>
+						<strong>Author:</strong>
+						<a href={ templ.SafeURL(fmt.Sprintf("/reddit/?author=%s", data.Post.Author)) } style="color: inherit;">
+							{ data.Post.Author }
+						</a>
+					</div>
+					<div>
+						<strong>Subreddit:</strong>
+						<a href={ templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", data.Post.Subreddit)) } style="color: inherit;">
+							r/{ data.Post.Subreddit }
+						</a>
+					</div>
+					if data.Post.Created != nil {
+						<div>
+							<strong>Created:</strong> { formatTime(*data.Post.Created) }
+						</div>
+					}
+					if data.Post.Filetype != nil {
+						<div>
+							<strong>Type:</strong>
+							if data.Post.IsGallery {
+								{ fmt.Sprintf("Gallery (%d items)", data.Post.GallerySize) }
+							} else {
+								{ strings.TrimPrefix(*data.Post.Filetype, ".") }
+							}
+						</div>
+					}
+				</div>
+				<div>
+					<a href={ templ.SafeURL(fmt.Sprintf("https://reddit.com%s", data.Post.Permalink)) } target="_blank" rel="noopener">
+						Original Post
+					</a>
+					<span style="margin: 0 10px;">|</span>
+					<a href={ templ.SafeURL(buildListURL(data.Subreddit, data.Author)) }>View List</a>
+					<span style="margin: 0 10px;">|</span>
+					<a href="/reddit/subreddits/">Subreddits</a>
+					<span style="margin: 0 10px;">|</span>
+					<a href="/reddit/authors/">Authors</a>
+				</div>
 			</div>
-		}
-		<a
-			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
-			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Prev)) }
-		>
-			Previous
-		</a>
-		<a
-			style="display: block; border: 1px solid black; margin: 2em; padding: 2em; min-height: 300px;"
-			href={ templ.SafeURL(fmt.Sprintf("?n=%d", data.Next)) }
-		>
-			Next
-		</a>
+
+			if data.Subreddit != "" || data.Author != "" {
+				<div style="margin-bottom: 20px; padding: 10px; background: #f8f8f8; border-radius: 4px;">
+					<h3>Active Filters:</h3>
+					if data.Subreddit != "" {
+						<div style="margin-bottom: 5px;">Subreddit: r/{ data.Subreddit }</div>
+					}
+					if data.Author != "" {
+						<div>Author: { data.Author }</div>
+					}
+				</div>
+			}
+
+			<div style="width: 100%;">
+				@embed(data.Post)
+			</div>
+
+			<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
+				<a
+					id="prev-post-link"
+					style="display: inline-block; padding: 10px 20px; background: #f0f0f0; border-radius: 4px; text-decoration: none;"
+					href={ templ.SafeURL(buildURLWithParams(data.Prev, data.Subreddit, data.Author)) }
+				>
+					← Previous
+				</a>
+
+				<div style="text-align: center; font-size: 14px; color: #666;">
+					Post { fmt.Sprintf("%d", data.Current) } of { fmt.Sprintf("%d", data.TotalPosts) }
+				</div>
+
+				<a
+					id="next-post-link"
+					style="display: inline-block; padding: 10px 20px; background: #f0f0f0; border-radius: 4px; text-decoration: none;"
+					href={ templ.SafeURL(buildURLWithParams(data.Next, data.Subreddit, data.Author)) }
+				>
+					Next →
+				</a>
+			</div>
+
+			<!-- Keyboard navigation script -->
+			<script>
+				document.addEventListener('DOMContentLoaded', function() {
+					// Handle keyboard navigation
+					document.addEventListener('keydown', function(e) {
+						// Left arrow key - Go to previous post
+						if (e.key === 'ArrowLeft') {
+							const prevLink = document.getElementById('prev-post-link');
+							if (prevLink) {
+								window.location.href = prevLink.href;
+							}
+						}
+						// Right arrow key - Go to next post
+						else if (e.key === 'ArrowRight') {
+							const nextLink = document.getElementById('next-post-link');
+							if (nextLink) {
+								window.location.href = nextLink.href;
+							}
+						}
+					});
+				});
+			</script>
+		</div>
 	}
+}
+
+// buildURLWithParams creates a URL with the necessary filter parameters
+func buildURLWithParams(n int, subreddit, author string) string {
+	url := fmt.Sprintf("/reddit/post/%d/", n)
+	params := []string{}
+	if subreddit != "" {
+		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
+	}
+	if author != "" {
+		params = append(params, fmt.Sprintf("author=%s", author))
+	}
+
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+	return url
+}
+
+// buildListURL creates a URL for the list page with filter parameters
+func buildListURL(subreddit, author string) string {
+	url := "/reddit/"
+
+	params := []string{}
+	if subreddit != "" {
+		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
+	}
+	if author != "" {
+		params = append(params, fmt.Sprintf("author=%s", author))
+	}
+
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	return url
 }
 
 templ embed(p *Post) {
 	if p.Filetype == nil {
-		<div>no</div>
+		<div>No media available</div>
+	} else if p.IsGallery {
+		@galleryEmbed(p)
 	} else {
 		switch *p.Filetype {
 			case ".gif":
-				<img style="width: 100%;" src={ p.Src() }/>
+				<img style="width: 100%; max-height: 80vh; object-fit: contain;" src={ p.Src() }/>
 			case ".jpg":
-				<img style="width: 100%;" src={ p.Src() }/>
+				<img style="width: 100%; max-height: 80vh; object-fit: contain;" src={ p.Src() }/>
 			case ".png":
-				<img style="width: 100%;" src={ p.Src() }/>
+				<img style="width: 100%; max-height: 80vh; object-fit: contain;" src={ p.Src() }/>
 			case ".mp4":
-				<video style="width: 100%;" controls autoplay loop preload="auto">
+				<video style="width: 100%; max-height: 80vh;" controls autoplay loop preload="auto">
 					<source src={ p.Src() }/>
 				</video>
 			default:
-				<div>unexpected filetype { *p.Filetype }</div>
+				<div>Unexpected filetype: { *p.Filetype }</div>
 		}
 	}
+}
+
+templ galleryEmbed(p *Post) {
+	<div style="width: 100%;">
+		<!-- Gallery header -->
+		<div style="margin-bottom: 20px; padding: 10px; background: #f8f8f8; border-radius: 4px;">
+			<h3 style="margin: 0;">Gallery</h3>
+			<div style="color: #666;">{ fmt.Sprintf("%d items", p.GallerySize) }</div>
+		</div>
+
+		<!-- Gallery items container - all items visible -->
+		<div id="gallery-container" style="width: 100%;">
+			for i := 1; i <= p.GallerySize; i++ {
+				<div class="gallery-item" style="margin-bottom: 30px; width: 100%;">
+					<div style="margin-bottom: 5px; color: #666; font-size: 14px;">
+						{ fmt.Sprintf("Item %d of %d", i, p.GallerySize) }
+					</div>
+					<!-- Determine content type based on file extension -->
+					if strings.HasSuffix(p.GallerySrc(i), ".mp4") {
+						<video style="width: 100%; max-height: 80vh;" controls autoplay loop preload="auto">
+							<source src={ p.GallerySrc(i) }/>
+						</video>
+					} else {
+						<img style="width: 100%; max-height: 80vh; object-fit: contain;" src={ p.GallerySrc(i) }/>
+					}
+					if i < p.GallerySize {
+						<hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;"/>
+					}
+				</div>
+			}
+		</div>
+	</div>
+}
+
+func formatTime(t time.Time) string {
+	return t.Format("Jan 2, 2006")
 }

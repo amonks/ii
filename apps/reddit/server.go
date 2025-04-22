@@ -16,7 +16,11 @@ type Server struct {
 func newServer(db *model) *Server {
 	s := &Server{serve.NewMux(), db}
 
-	s.Handle("GET /{$}", s.pageServer())
+	// New routes
+	s.Handle("GET /{$}", s.listServer())                  // List page is now the home page
+	s.Handle("GET /post/{n}/{$}", s.postServer())         // Individual post page with trailing slash
+	s.Handle("GET /subreddits/{$}", s.subredditsServer()) // Subreddits page
+	s.Handle("GET /authors/{$}", s.authorsServer())       // Authors page
 
 	fs := http.FileServer(http.Dir(archivePath))
 	s.Handle("GET /media/", http.StripPrefix("/media/", fs))
@@ -25,30 +29,139 @@ func newServer(db *model) *Server {
 }
 
 type PageData struct {
-	Posts []*Post
-	Next  int
-	Prev  int
+	Post       *Post
+	Next       int
+	Prev       int
+	Subreddit  string
+	Author     string
+	Current    int  // Current position in the posts list
+	TotalPosts int  // Total number of posts
 }
 
-func (s *Server) pageServer() http.Handler {
-	const postsPerPage = 2
+type ListData struct {
+	Posts     []*Post
+	Subreddit string
+	Author    string
+}
+
+func (s *Server) postServer() http.Handler {
+	const postsPerPage = 1
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		n := req.URL.Query().Get("n")
+		// Get post number from path parameter
+		n := req.PathValue("n")
 		if n == "" {
 			n = "1"
 		}
+		
+		// Get filter parameters
+		subreddit := req.URL.Query().Get("subreddit")
+		author := req.URL.Query().Get("author")
+		
+		// Get total count of posts for wrap-around navigation
+		totalCount, err := s.db.getPostCount(subreddit, author)
+		if err != nil {
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
+		}
+		
+		if totalCount == 0 {
+			serve.Error(w, req, http.StatusNotFound, nil)
+			return
+		}
+		
 		offset, err := strconv.ParseInt(n, 10, 64)
 		if err != nil {
 			serve.Error(w, req, http.StatusBadRequest, err)
+			return
 		}
-		posts, err := s.db.getPosts(postsPerPage, int(offset))
+		
+		// Implement wrap-around for offset
+		// First ensure offset is positive (may be negative if user tried to go back from 1)
+		for offset <= 0 {
+			offset += totalCount
+		}
+		
+		// Then take modulo to ensure it's within bounds (1 to totalCount)
+		offset = ((offset - 1) % totalCount) + 1
+		
+		posts, err := s.db.getPosts(postsPerPage, int(offset), subreddit, author)
 		if err != nil {
-			panic(err)
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
 		}
+
+		if len(posts) == 0 {
+			serve.Error(w, req, http.StatusNotFound, nil)
+			return
+		}
+		
+		// Calculate next and previous with wrap-around
+		next := (offset % totalCount) + 1
+		prev := offset - 1
+		if prev == 0 {
+			prev = totalCount
+		}
+
+		// Add the current position and total count to the page data
 		h := templ.Handler(Index(&PageData{
-			Posts: posts,
-			Next:  int(offset) + postsPerPage,
-			Prev:  int(offset) - postsPerPage,
+			Post:       posts[0],
+			Next:       int(next),
+			Prev:       int(prev),
+			Subreddit:  subreddit,
+			Author:     author,
+			Current:    int(offset),
+			TotalPosts: int(totalCount),
+		}))
+		h.ServeHTTP(w, req)
+	})
+}
+
+func (s *Server) listServer() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Get filter parameters
+		subreddit := req.URL.Query().Get("subreddit")
+		author := req.URL.Query().Get("author")
+		
+		posts, err := s.db.getPostsByCreated(subreddit, author)
+		if err != nil {
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
+		}
+
+		h := templ.Handler(List(&ListData{
+			Posts:     posts,
+			Subreddit: subreddit,
+			Author:    author,
+		}))
+		h.ServeHTTP(w, req)
+	})
+}
+
+func (s *Server) subredditsServer() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		subreddits, err := s.db.getSubredditCounts()
+		if err != nil {
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
+		}
+
+		h := templ.Handler(Subreddits(&SubredditsData{
+			Subreddits: subreddits,
+		}))
+		h.ServeHTTP(w, req)
+	})
+}
+
+func (s *Server) authorsServer() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		authors, err := s.db.getAuthorCounts()
+		if err != nil {
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
+		}
+
+		h := templ.Handler(Authors(&AuthorsData{
+			Authors: authors,
 		}))
 		h.ServeHTTP(w, req)
 	})
