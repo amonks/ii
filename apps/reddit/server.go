@@ -52,38 +52,38 @@ func (s *Server) postServer() http.Handler {
 		if n == "" {
 			n = "1"
 		}
-		
+
 		// Get filter parameters
 		subreddit := req.URL.Query().Get("subreddit")
 		author := req.URL.Query().Get("author")
-		
+
 		// Get total count of posts for wrap-around navigation
 		totalCount, err := s.db.getPostCount(subreddit, author)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
 			return
 		}
-		
+
 		if totalCount == 0 {
 			serve.Error(w, req, http.StatusNotFound, nil)
 			return
 		}
-		
+
 		offset, err := strconv.ParseInt(n, 10, 64)
 		if err != nil {
 			serve.Error(w, req, http.StatusBadRequest, err)
 			return
 		}
-		
+
 		// Implement wrap-around for offset
 		// First ensure offset is positive (may be negative if user tried to go back from 1)
 		for offset <= 0 {
 			offset += totalCount
 		}
-		
+
 		// Then take modulo to ensure it's within bounds (1 to totalCount)
 		offset = ((offset - 1) % totalCount) + 1
-		
+
 		posts, err := s.db.getPosts(postsPerPage, int(offset), subreddit, author)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
@@ -94,7 +94,7 @@ func (s *Server) postServer() http.Handler {
 			serve.Error(w, req, http.StatusNotFound, nil)
 			return
 		}
-		
+
 		// Calculate next and previous with wrap-around
 		next := (offset % totalCount) + 1
 		prev := offset - 1
@@ -103,7 +103,7 @@ func (s *Server) postServer() http.Handler {
 		}
 
 		// Add the current position and total count to the page data
-		h := templ.Handler(Index(&PageData{
+		h := templ.Handler(PostPage(&PageData{
 			Post:       posts[0],
 			Next:       int(next),
 			Prev:       int(prev),
@@ -121,7 +121,7 @@ func (s *Server) listServer() http.Handler {
 		// Get filter parameters
 		subreddit := req.URL.Query().Get("subreddit")
 		author := req.URL.Query().Get("author")
-		
+
 		posts, err := s.db.getPostsByCreated(subreddit, author)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)

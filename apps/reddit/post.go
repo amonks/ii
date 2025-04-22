@@ -52,7 +52,7 @@ func (p *Post) GallerySrc(index int) string {
 	// For galleries, construct the path with the item index
 	basePath := strings.TrimSuffix(*p.Archivepath, "-1"+*p.Filetype)
 	itemPath := fmt.Sprintf("%s-%d%s", basePath, index, *p.Filetype)
-	return strings.Replace(itemPath, archivePath, "media/", 1)
+	return strings.Replace(itemPath, archivePath, "/reddit/media/", 1)
 }
 
 // SetCreatedFromJSON extracts and sets the created time from the Reddit JSON
