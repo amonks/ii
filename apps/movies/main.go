@@ -20,6 +20,9 @@ import (
 	"monks.co/apps/movies/moviemetadatafetcher"
 	"monks.co/apps/movies/posterfetcher"
 	"monks.co/apps/movies/ratingfetcher"
+	"monks.co/apps/movies/tvcopier"
+	"monks.co/apps/movies/tvimporter"
+	"monks.co/apps/movies/tvmetadatafetcher"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/loggingwaitgroup"
 	"monks.co/pkg/tmdb"
@@ -144,6 +147,31 @@ func run() error {
 			}
 		}
 	}()
+	
+	// Launch tvimporter, rerunning every minute.
+	ti := tvimporter.New(tmdb, db)
+	wg.Add("tvimporter")
+	go func() {
+		defer wg.Done("tvimporter")
+		for {
+			if err := ti.Run(ctx); err != nil {
+				cancel(fmt.Errorf("tvimporter error: %w", err))
+				return
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(1 * time.Minute):
+			}
+		}
+	}()
+	
+	// Add TV copier and metadata fetcher
+	tc := tvcopier.New(db)
+	tmf := tvmetadatafetcher.New(tmdb, db)
+	runAfterImport("tvcopier", tc.Run)
+	runAfterImport("tvmetadatafetcher", tmf.Run)
 
 	// Handle signals. If we get one, kill the program.
 	wg.Add("signalhandler")

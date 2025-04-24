@@ -16,6 +16,9 @@ import (
 var (
 	//go:embed schema.sql
 	schema string
+	
+	//go:embed schema_tv.sql
+	tvSchema string
 )
 
 var ErrCollision = fmt.Errorf("collision")
@@ -130,7 +133,11 @@ func (db *DB) Start() error {
 	db.DB = gormdb
 
 	if err := gormdb.Exec(schema).Error; err != nil {
-		return fmt.Errorf("error migrating: %w", err)
+		return fmt.Errorf("error migrating movie schema: %w", err)
+	}
+	
+	if err := gormdb.Exec(tvSchema).Error; err != nil {
+		return fmt.Errorf("error migrating TV schema: %w", err)
 	}
 
 	if err := db.PopulateMovieWatches(); err != nil {
