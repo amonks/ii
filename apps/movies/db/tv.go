@@ -78,9 +78,21 @@ type TVShowTitle struct {
 	Name  string  // references tv_shows.name
 }
 
+// TVSearchResult represents a TV show search result from TMDB
+type TVSearchResult struct {
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	FirstAirDate string `json:"first_air_date"`
+}
+
 func (s *TVShow) BuildLibraryPath() string {
-	// Return the folder path for the TV show
-	return fmt.Sprintf("%s", s.Name)
+	// Return the folder path for the TV show with release year
+	year := ""
+	if s.FirstAirDate != "" && len(s.FirstAirDate) >= 4 {
+		year = s.FirstAirDate[:4]
+		return fmt.Sprintf("%s (%s)", s.Name, year)
+	}
+	return s.Name
 }
 
 func (s *TVSeason) BuildLibraryPath(showPath string) string {
@@ -154,6 +166,9 @@ func (db *DB) CreateTVSeason(showID int64, s *tmdb.Season) (*TVSeason, error) {
 	if err := db.Table("tv_seasons").Create(&season).Error; err != nil {
 		return nil, err
 	}
+
+	// Notify subscribers about the new TV season
+	db.notifyTV(&season)
 
 	return &season, nil
 }
@@ -253,6 +268,11 @@ func (db *DB) AllTVShows() ([]*TVShow, error) {
 	return shows, nil
 }
 
+// GetTVShows is an alias for AllTVShows, used by stubquerygenerator
+func (db *DB) GetTVShows() ([]*TVShow, error) {
+	return db.AllTVShows()
+}
+
 // AddTVShowPoster adds a poster path to a TV show
 func (db *DB) AddTVShowPoster(show *TVShow, posterPath string) error {
 	if err := db.Table("tv_shows").Where("id = ?", show.ID).
@@ -279,6 +299,20 @@ func (db *DB) SetTVEpisodeCopied(episode *TVEpisode) error {
 		return err
 	}
 	return nil
+}
+
+// TVShowExistsFromPath checks if a TV show exists in the database with the given import path
+func (db *DB) TVShowExistsFromPath(importedFromPath string) (bool, error) {
+	var episode TVEpisode
+	if err := db.Table("tv_episodes").
+		Where("imported_from_path = ?", importedFromPath).
+		First(&episode).
+		Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // FindTVShowByName finds a TV show by name using FTS
@@ -318,4 +352,37 @@ func (db *DB) GetTVEpisodeIDToCopy() (int64, int, int, error) {
 		return 0, 0, 0, err
 	}
 	return episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber, nil
+}
+
+// GetTVShowSeasons gets all seasons for a TV show
+func (db *DB) GetTVShowSeasons(showID int64) ([]*TVSeason, error) {
+	var seasons []*TVSeason
+	if err := db.Table("tv_seasons").
+		Where("show_id = ?", showID).
+		Find(&seasons).Error; err != nil {
+		return nil, err
+	}
+	return seasons, nil
+}
+
+// GetTVSeasonEpisodes gets all episodes for a TV season
+func (db *DB) GetTVSeasonEpisodes(showID int64, seasonNumber int) ([]*TVEpisode, error) {
+	var episodes []*TVEpisode
+	if err := db.Table("tv_episodes").
+		Where("show_id = ? AND season_number = ?", showID, seasonNumber).
+		Find(&episodes).Error; err != nil {
+		return nil, err
+	}
+	return episodes, nil
+}
+
+// UpdateTVEpisodePath updates the path for an existing episode
+func (db *DB) UpdateTVEpisodePath(episode *TVEpisode, newPath string) error {
+	return db.Table("tv_episodes").
+		Where("show_id = ? AND season_number = ? AND episode_number = ?", 
+			episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
+		Updates(map[string]interface{}{
+			"imported_from_path": newPath,
+			"is_copied": false,
+		}).Error
 }

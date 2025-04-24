@@ -9,7 +9,10 @@ import (
 
 templ Stubs(stubs []*db.Stub) {
 	for i, stub := range stubs {
-		@Stub(fmt.Sprintf("%d", i), stub)
+		// Show stubs that need operator action or have search results or failed searches
+		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "" || len(stub.Results) > 0) {
+			@Stub(fmt.Sprintf("%d", i), stub)
+		}
 	}
 	<script>
 		(function() {
@@ -29,7 +32,7 @@ templ Stubs(stubs []*db.Stub) {
 					params.append("year", year);
 					params.append("path", path);
 					console.log("search", {query, year, path});
-					await fetch(`search?`+params.toString(), {method: "POST"});
+					await fetch(`/movies/search/?`+params.toString(), {method: "POST"});
 					location.reload();
 				});
 
@@ -45,7 +48,7 @@ templ Stubs(stubs []*db.Stub) {
 						params.append("id", id);
 						params.append("path", path);
 						console.log("identify", {path, id});
-						await fetch(`identify?`+params.toString(), { method: "POST" });
+						await fetch(`/movies/identify/?`+params.toString(), { method: "POST" });
 						location.reload();
 					})
 				}
@@ -55,7 +58,7 @@ templ Stubs(stubs []*db.Stub) {
 					const params = new URLSearchParams();
 					params.append("path", path);
 					console.log("ignore", {path});
-					await fetch(`ignore?`+params.toString(), { method: "POST" });
+					await fetch(`/movies/ignore/?`+params.toString(), { method: "POST" });
 					location.reload();
 				})
 			}

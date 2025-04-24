@@ -21,6 +21,7 @@ type TVShow struct {
 	Genres        []Genre     `json:"genres"`
 	EpisodeRunTime []int64    `json:"episode_run_time"`
 	Languages     []Language  `json:"spoken_languages"`
+	PosterPath    string      `json:"poster_path"`
 	TMDBJSON      string      `json:"tmdb_json"`
 }
 

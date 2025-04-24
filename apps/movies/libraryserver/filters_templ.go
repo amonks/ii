@@ -149,7 +149,7 @@ func Filters(data *MoviesPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<script>\n\t\t(function() {\n\t\t\t{\n\t\t\t\tconst genreInputs = document.querySelectorAll('input[name=\"genres[]\"]');\n\t\t\t\tfor (const el of genreInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ genres\", el.value);\n\t\t\t\t\t\tif (!el.checked) {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.delete(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.append(\"genres\", el.value);\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<script>\n\t\t(function() {\n\t\t\t{\n\t\t\t\tconst genreInputs = document.querySelectorAll('input[name=\"genres[]\"]');\n\t\t\t\tfor (const el of genreInputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconsole.log(\"Δ genres\", el.value);\n\t\t\t\t\t\tif (!el.checked) {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.delete(\"genres\", el.value);\n\t\t\t\t\t\t\tif (!url.pathname.endsWith('/')) url.pathname += '/';\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\t\turl.searchParams.append(\"genres\", el.value);\n\t\t\t\t\t\t\tif (!url.pathname.endsWith('/')) url.pathname += '/';\n\t\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t};\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -214,7 +214,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 94, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 96, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -227,7 +227,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 97, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -240,7 +240,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 97, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -253,7 +253,7 @@ func TextInput(id, title, value string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 95, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 97, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -288,7 +288,7 @@ func TextInputScript() templ.Component {
 			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script>\n\t\t{\n\t\t\tconst textInputs = document.querySelectorAll('.text-input input');\n\t\t\tfor (const textInput of textInputs) {\n\t\t\t\tconst id = textInput.id;\n\t\t\t\tconsole.log(`text-input ${id}`);\n\t\t\t\ttextInput.addEventListener(\"blur\", ev => {\n\t\t\t\t\tconst value = textInput.value;\n\t\t\t\t\tconsole.log(\"Δ text-input ${id} → ${value}\");\n\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t});\n\t\t\t}\n\t\t};\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script>\n\t\t{\n\t\t\tconst textInputs = document.querySelectorAll('.text-input input');\n\t\t\tfor (const textInput of textInputs) {\n\t\t\t\tconst id = textInput.id;\n\t\t\t\tconsole.log(`text-input ${id}`);\n\t\t\t\ttextInput.addEventListener(\"blur\", ev => {\n\t\t\t\t\tconst value = textInput.value;\n\t\t\t\t\tconsole.log(\"Δ text-input ${id} → ${value}\");\n\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\tif (!url.pathname.endsWith('/')) url.pathname += '/';\n\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t});\n\t\t\t}\n\t\t};\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -329,7 +329,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 124, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 127, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -342,7 +342,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 125, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 128, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -360,7 +360,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 130, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 133, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 131, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 134, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -396,7 +396,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(id + "-" + option.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 138, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 141, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -409,7 +409,7 @@ func RadioSet(id, title, selected string, options []RadioOption) templ.Component
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(option.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 139, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/filters.templ`, Line: 142, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -449,7 +449,7 @@ func RadioSetScript() templ.Component {
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<script>\n\t\t{\n\t\t\tconst radioSets = document.querySelectorAll(\".radio-set\");\n\t\t\tfor (const set of radioSets) {\n\t\t\t\tconst id = set.id;\n\t\t\t\tconsole.log(`radio-set: ${id}`);\n\t\t\t\tconst inputs = document.querySelectorAll(`#${id} input`);\n\t\t\t\tfor (const el of inputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconst value = el.id.replace(id + \"-\", \"\");\n\t\t\t\t\t\tconsole.log(`∆ ${id} → ${value}`);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t})\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<script>\n\t\t{\n\t\t\tconst radioSets = document.querySelectorAll(\".radio-set\");\n\t\t\tfor (const set of radioSets) {\n\t\t\t\tconst id = set.id;\n\t\t\t\tconsole.log(`radio-set: ${id}`);\n\t\t\t\tconst inputs = document.querySelectorAll(`#${id} input`);\n\t\t\t\tfor (const el of inputs) {\n\t\t\t\t\tel.addEventListener(\"click\", ev => {\n\t\t\t\t\t\tconst value = el.id.replace(id + \"-\", \"\");\n\t\t\t\t\t\tconsole.log(`∆ ${id} → ${value}`);\n\t\t\t\t\t\tconst url = new URL(document.location);\n\t\t\t\t\t\turl.searchParams.set(id, value);\n\t\t\t\t\t\tif (!url.pathname.endsWith('/')) url.pathname += '/';\n\t\t\t\t\t\twindow.location = url.toString();\n\t\t\t\t\t})\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

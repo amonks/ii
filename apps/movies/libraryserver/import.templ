@@ -2,28 +2,279 @@ package libraryserver
 
 import (
 	"fmt"
-
 	"monks.co/apps/movies/db"
+	"path/filepath"
+	"strings"
 )
 
 type ImportPageData struct {
 	MetacriticValidations []*db.Movie
 	Stubs                 []*db.Stub
+
+	// TV-specific tabs
+	ActiveTab string     // "movies" or "tv"
+	TVStubs   []*db.Stub // TV show stubs
+}
+
+// Helper function to count movie stubs that need attention
+func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
+	count := 0
+	for _, stub := range stubs {
+		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "") {
+			count++
+		}
+	}
+	return count
+}
+
+// Helper function to count TV stubs that need attention
+func countTVStubsNeedingAttention(stubs []*db.Stub) int {
+	count := 0
+	for _, stub := range stubs {
+		// Only count stubs that actually need manual attention
+		if stub.Type == db.MediaTypeTV && stub.SearchStatus == "needs_manual" {
+			count++
+		}
+	}
+	return count
 }
 
 templ Import(data *ImportPageData) {
-	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations)+len(data.Stubs))) {
-		if len(data.MetacriticValidations) > 0 {
-			<details open>
-				<summary>{ fmt.Sprintf("%d movies in the metacritic validation queue", len(data.MetacriticValidations)) }</summary>
-				@MetacriticValidations(data.MetacriticValidations)
-			</details>
-		}
-		if len(data.Stubs) > 0 {
-			<details open>
-				<summary>{ fmt.Sprintf("%d movies in the import queue", len(data.Stubs)) }</summary>
-				@Stubs(data.Stubs)
-			</details>
-		}
+	// Calculate total tasks needing attention: movie stubs + TV stubs + metacritic validations
+	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + countMovieStubsNeedingAttention(data.Stubs) + countTVStubsNeedingAttention(data.TVStubs))) {
+		<div class="tabs">
+			<div class="tab-nav">
+				<a href="/movies/import/?tab=movies" class={ "tab-link", templ.KV("active", data.ActiveTab == "movies" || data.ActiveTab == "") }>
+					Movies ({ fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs)) })
+				</a>
+				<a href="/movies/import/?tab=tv" class={ "tab-link", templ.KV("active", data.ActiveTab == "tv") }>
+					TV Shows ({ fmt.Sprintf("%d need attention", countTVStubsNeedingAttention(data.TVStubs)) })
+				</a>
+			</div>
+			<div class="tab-content">
+				if data.ActiveTab == "tv" {
+					<h2>TV Show Import</h2>
+					@TVShowStubs(data.TVStubs)
+				} else {
+					if len(data.MetacriticValidations) > 0 {
+						<details open>
+							<summary>{ fmt.Sprintf("%d movies in the metacritic validation queue", len(data.MetacriticValidations)) }</summary>
+							@MetacriticValidations(data.MetacriticValidations)
+						</details>
+					}
+					// Count stubs needing attention
+					<details open>
+						<summary>{ fmt.Sprintf("%d movies need your attention", countMovieStubsNeedingAttention(data.Stubs)) }</summary>
+						@Stubs(data.Stubs)
+					</details>
+				}
+			</div>
+		</div>
+		<style>
+			.tabs {
+				margin-top: 20px;
+			}
+			.tab-nav {
+				display: flex;
+				border-bottom: 1px solid #ddd;
+				margin-bottom: 20px;
+			}
+			.tab-link {
+				padding: 10px 20px;
+				text-decoration: none;
+				color: #333;
+				border-bottom: 3px solid transparent;
+			}
+			.tab-link.active {
+				border-bottom: 3px solid #0066cc;
+				font-weight: bold;
+			}
+			.tab-content {
+				padding: 20px 0;
+			}
+		</style>
 	}
+}
+
+templ TVShowStubs(stubs []*db.Stub) {
+	<div class="tv-stubs">
+		if countTVStubsNeedingAttention(stubs) == 0 {
+			<p>No TV shows need your attention right now.</p>
+		} else {
+			<p>{ fmt.Sprintf("%d TV shows need your attention.", countTVStubsNeedingAttention(stubs)) }</p>
+		}
+		for _, stub := range stubs {
+			// Only show TV stubs that need operator action (needs_manual)
+			if stub.Type == db.MediaTypeTV && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "complete") {
+				<div class="show-stub">
+					<h3>{ getShowNameFromPath(stub.ImportedFromPath) }</h3>
+					<p>{ fmt.Sprintf("%d episodes found", len(stub.EpisodeFiles)) }</p>
+					if stub.SeasonNumber > 0 {
+						<p>Detected Season: <strong>{ fmt.Sprintf("%d", stub.SeasonNumber) }</strong></p>
+					}
+					<form method="POST" action="/movies/tv/search/">
+						<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
+						<div class="form-group">
+							<label for="query">Search for TV Show</label>
+							<input type="text" name="query" id="query" value={ stub.Query }/>
+						</div>
+						<div class="form-group">
+							<label for="year">Year</label>
+							<input type="text" name="year" id="year" value={ stub.Year }/>
+						</div>
+						<button type="submit">Search</button>
+					</form>
+					if len(stub.TVResults) > 0 {
+						<div class="search-results">
+							<h4>Search Results</h4>
+							<div class="search-results-container">
+								for _, result := range stub.TVResults {
+									<div class="search-result">
+										<div class="result-details">
+											<h5>{ result.Name }</h5>
+											if result.FirstAirDate != "" {
+												<p>First Aired: { result.FirstAirDate }</p>
+											}
+										</div>
+										<form method="POST" action="/movies/tv/identify/">
+											<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
+											<input type="hidden" name="id" value={ fmt.Sprintf("%d", result.ID) }/>
+											// Add season number input
+											<div class="form-group">
+												<label for="season_number">Season Number</label>
+												<input
+													type="number"
+													name="season_number"
+													id="season_number"
+													value={ fmt.Sprintf("%d", stub.SeasonNumber) }
+													min="1"
+												/>
+											</div>
+											<button type="submit">Identify This Show</button>
+										</form>
+									</div>
+								}
+							</div>
+						</div>
+					}
+					if len(stub.EpisodeFiles) > 0 {
+						<div class="episode-list">
+							<details>
+								<summary>Show { fmt.Sprintf("%d", len(stub.EpisodeFiles)) } Episodes</summary>
+								<ul class="episode-files">
+									for _, episode := range stub.EpisodeFiles {
+										<li>{ getRelativeEpisodePath(episode) }</li>
+									}
+								</ul>
+							</details>
+						</div>
+					}
+					<form method="POST" action="/movies/tv/ignore-show/">
+						<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
+						<button type="submit" class="ignore-button">Ignore Show</button>
+					</form>
+				</div>
+			}
+		}
+		<style>
+			.tv-stubs {
+				margin-top: 20px;
+			}
+			.show-stub {
+				margin-bottom: 30px;
+				padding: 20px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				background-color: #f9f9f9;
+			}
+			.form-group {
+				margin-bottom: 15px;
+			}
+			.form-group label {
+				display: block;
+				margin-bottom: 5px;
+			}
+			.form-group input {
+				width: 100%;
+				padding: 8px;
+				box-sizing: border-box;
+			}
+			.search-results {
+				margin-top: 20px;
+			}
+			.search-results-container {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+				gap: 15px;
+			}
+			.search-result {
+				border: 1px solid #eee;
+				border-radius: 4px;
+				padding: 15px;
+				background-color: white;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+			.result-details {
+				margin-bottom: 15px;
+			}
+			.result-details h5 {
+				margin: 0 0 10px 0;
+			}
+			.result-details p {
+				margin: 0;
+				color: #666;
+			}
+			button {
+				padding: 8px 15px;
+				margin-bottom: 8px;
+				background-color: #0066cc;
+				color: white;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				width: 100%;
+			}
+			button:hover {
+				background-color: #0055aa;
+			}
+			.ignore-button {
+				background-color: #999;
+				margin-top: 15px;
+			}
+			.ignore-button:hover {
+				background-color: #777;
+			}
+			.episode-list {
+				margin: 15px 0;
+			}
+			.episode-files {
+				max-height: 200px;
+				overflow-y: auto;
+				border: 1px solid #eee;
+				padding: 10px;
+				border-radius: 4px;
+				background-color: white;
+			}
+			.episode-files li {
+				margin-bottom: 5px;
+				font-size: 14px;
+				color: #444;
+			}
+		</style>
+	</div>
+}
+
+// Helper functions for display
+func getShowNameFromPath(path string) string {
+	// Clean up the path to make it more readable
+	name := filepath.Base(path)
+	name = strings.ReplaceAll(name, ".", " ")
+	return name
+}
+
+func getRelativeEpisodePath(path string) string {
+	// Return just the filename for display
+	return filepath.Base(path)
 }

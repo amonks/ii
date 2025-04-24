@@ -273,6 +273,11 @@ func (db *DB) AllMovies() ([]*Movie, error) {
 	return movies, nil
 }
 
+// GetMovies is an alias for AllMovies, used by stubquerygenerator
+func (db *DB) GetMovies() ([]*Movie, error) {
+	return db.AllMovies()
+}
+
 func (m *Movie) HasPoster() bool {
 	return m.PosterPath != ""
 }

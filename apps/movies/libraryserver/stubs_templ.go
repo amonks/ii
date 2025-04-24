@@ -37,12 +37,18 @@ func Stubs(stubs []*db.Stub) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		for i, stub := range stubs {
-			templ_7745c5c3_Err = Stub(fmt.Sprintf("%d", i), stub).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "" || len(stub.Results) > 0) {
+				templ_7745c5c3_Err = Stub(fmt.Sprintf("%d", i), stub).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t(function() {\n\t\t\tconst stubs = document.querySelectorAll(\".stub\");\n\t\t\tfor (const stub of stubs) {\n\t\t\t\tconst path = stub.querySelector(\".stub--path\").innerText;\n\t\t\t\tif (!path) throw Error(\"no path\");\n\t\t\t\tconsole.log(path);\n\n\t\t\t\tconst searchButton = stub.querySelector(\".stub--searchbutton\");\n\t\t\t\tsearchButton.addEventListener(\"click\", async () => {\n\t\t\t\t\tconst query = stub.querySelector(\".stub--query\").value;\n\t\t\t\t\tconst year = stub.querySelector(\".stub--year\").value;\n\t\t\t\t\tif (!query) throw Error(\"no query\");\n\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\tparams.append(\"query\", query);\n\t\t\t\t\tparams.append(\"year\", year);\n\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\tconsole.log(\"search\", {query, year, path});\n\t\t\t\t\tawait fetch(`search?`+params.toString(), {method: \"POST\"});\n\t\t\t\t\tlocation.reload();\n\t\t\t\t});\n\n\t\t\t\tconst results = stub.querySelectorAll(\".stub--result\");\n\t\t\t\tfor (const result of results) {\n\t\t\t\t\tconst button = result.querySelector(\".stub--result--choose\");\n\t\t\t\t\tif (!result.attributes[\"data-id\"]) {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tconst id = result.attributes[\"data-id\"].value;\n\t\t\t\t\tbutton.addEventListener(\"click\", async (ev) => {\n\t\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\t\tparams.append(\"id\", id);\n\t\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\t\tconsole.log(\"identify\", {path, id});\n\t\t\t\t\t\tawait fetch(`identify?`+params.toString(), { method: \"POST\" });\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t})\n\t\t\t\t}\n\n\t\t\t\tconst ignoreButton = stub.querySelector(\".stub--ignore\")\n\t\t\t\tignoreButton.addEventListener(\"click\", async (ev) => {\n\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\tconsole.log(\"ignore\", {path});\n\t\t\t\t\tawait fetch(`ignore?`+params.toString(), { method: \"POST\" });\n\t\t\t\t\tlocation.reload();\n\t\t\t\t})\n\t\t\t}\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script>\n\t\t(function() {\n\t\t\tconst stubs = document.querySelectorAll(\".stub\");\n\t\t\tfor (const stub of stubs) {\n\t\t\t\tconst path = stub.querySelector(\".stub--path\").innerText;\n\t\t\t\tif (!path) throw Error(\"no path\");\n\t\t\t\tconsole.log(path);\n\n\t\t\t\tconst searchButton = stub.querySelector(\".stub--searchbutton\");\n\t\t\t\tsearchButton.addEventListener(\"click\", async () => {\n\t\t\t\t\tconst query = stub.querySelector(\".stub--query\").value;\n\t\t\t\t\tconst year = stub.querySelector(\".stub--year\").value;\n\t\t\t\t\tif (!query) throw Error(\"no query\");\n\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\tparams.append(\"query\", query);\n\t\t\t\t\tparams.append(\"year\", year);\n\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\tconsole.log(\"search\", {query, year, path});\n\t\t\t\t\tawait fetch(`/movies/search/?`+params.toString(), {method: \"POST\"});\n\t\t\t\t\tlocation.reload();\n\t\t\t\t});\n\n\t\t\t\tconst results = stub.querySelectorAll(\".stub--result\");\n\t\t\t\tfor (const result of results) {\n\t\t\t\t\tconst button = result.querySelector(\".stub--result--choose\");\n\t\t\t\t\tif (!result.attributes[\"data-id\"]) {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tconst id = result.attributes[\"data-id\"].value;\n\t\t\t\t\tbutton.addEventListener(\"click\", async (ev) => {\n\t\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\t\tparams.append(\"id\", id);\n\t\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\t\tconsole.log(\"identify\", {path, id});\n\t\t\t\t\t\tawait fetch(`/movies/identify/?`+params.toString(), { method: \"POST\" });\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t})\n\t\t\t\t}\n\n\t\t\t\tconst ignoreButton = stub.querySelector(\".stub--ignore\")\n\t\t\t\tignoreButton.addEventListener(\"click\", async (ev) => {\n\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\tparams.append(\"path\", path);\n\t\t\t\t\tconsole.log(\"ignore\", {path});\n\t\t\t\t\tawait fetch(`/movies/ignore/?`+params.toString(), { method: \"POST\" });\n\t\t\t\t\tlocation.reload();\n\t\t\t\t})\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -116,7 +122,7 @@ func Stub(id string, stub *db.Stub) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -135,7 +141,7 @@ func Stub(id string, stub *db.Stub) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -158,7 +164,7 @@ func Stub(id string, stub *db.Stub) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -185,25 +191,25 @@ func Stub(id string, stub *db.Stub) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " <ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " <ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, result := range stub.Results {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<li class=\"stub--result\" data-id=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<li class=\"stub--result\" data-id=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", result.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 102, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 105, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><button class=\"stub--result--choose\">choose</button> <a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"><button class=\"stub--result--choose\">choose</button> <a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -212,38 +218,38 @@ func Stub(id string, stub *db.Stub) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(result.ReleaseDate)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 105, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 108, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, ": ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ": ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(result.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 105, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/stubs.templ`, Line: 108, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</a></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</a></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

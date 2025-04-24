@@ -20,10 +20,12 @@ import (
 	"monks.co/apps/movies/moviemetadatafetcher"
 	"monks.co/apps/movies/posterfetcher"
 	"monks.co/apps/movies/ratingfetcher"
+	"monks.co/apps/movies/stubquerygenerator"
 	"monks.co/apps/movies/tvcopier"
 	"monks.co/apps/movies/tvimporter"
 	"monks.co/apps/movies/tvmetadatafetcher"
 	"monks.co/pkg/errlogger"
+	"monks.co/pkg/llm"
 	"monks.co/pkg/loggingwaitgroup"
 	"monks.co/pkg/tmdb"
 )
@@ -83,6 +85,28 @@ func run() error {
 			}
 		}()
 	}
+	
+	runAfterTVImport := func(name string, run func(ctx context.Context) error) {
+		wg.Add(name)
+		go func() {
+			defer wg.Done(name)
+		run:
+			if err := run(ctx); err != nil {
+				err := fmt.Errorf("%s error: %w", name, err)
+				cancel(err)
+				return
+			}
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-db.SubscribeTV():
+					goto run
+				}
+			}
+		}()
+	}
 
 	// For each post-import task, launch it, then wait. If the context is
 	// canceled, exit. If movieimporter updates, rerun it, waiting again
@@ -105,9 +129,11 @@ func run() error {
 	wg.Add("libraryserver")
 	go func() {
 		defer wg.Done("libraryserver")
-		if err := ls.Run(ctx); err != nil {
+		err := ls.Run(ctx)
+		if err != nil {
 			cancel(fmt.Errorf("libraryserver error: %w", err))
-			return
+		} else {
+			cancel(fmt.Errorf("libraryserver stopped"))
 		}
 	}()
 
@@ -170,8 +196,18 @@ func run() error {
 	// Add TV copier and metadata fetcher
 	tc := tvcopier.New(db)
 	tmf := tvmetadatafetcher.New(tmdb, db)
-	runAfterImport("tvcopier", tc.Run)
-	runAfterImport("tvmetadatafetcher", tmf.Run)
+	runAfterTVImport("tvcopier", tc.Run)
+	runAfterTVImport("tvmetadatafetcher", tmf.Run)
+	
+	// Initialize the LLM client
+	llmClient := llm.New("4o-mini")
+	
+	// Add stub query generator for movies
+	sqg := stubquerygenerator.New(llmClient, tmdb, db)
+	runAfterImport("stubquerygenerator_movies", sqg.RunMovies)
+	
+	// Add stub query generator for TV shows
+	runAfterTVImport("stubquerygenerator_tv", sqg.RunTV)
 
 	// Handle signals. If we get one, kill the program.
 	wg.Add("signalhandler")

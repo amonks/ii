@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,15 @@ var (
 	
 	//go:embed schema_tv.sql
 	tvSchema string
+	
+	//go:embed migrate_tv.sql
+	migrateTVSchema string
+	
+	//go:embed migrate_episode_files.sql
+	migrateEpisodeFilesSchema string
+	
+	//go:embed migrate_season_status.sql
+	migrateSeasonStatusSchema string
 )
 
 var ErrCollision = fmt.Errorf("collision")
@@ -30,6 +40,7 @@ type DB struct {
 
 	mutex         sync.Mutex
 	subscriptions []chan *Movie
+	tvSubscriptions []chan *TVSeason
 
 	parent *DB
 }
@@ -69,6 +80,19 @@ func (db *DB) Subscribe() chan *Movie {
 	return c
 }
 
+func (db *DB) SubscribeTV() chan *TVSeason {
+	if db.parent != nil {
+		return db.parent.SubscribeTV()
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	c := make(chan *TVSeason)
+	db.tvSubscriptions = append(db.tvSubscriptions, c)
+	return c
+}
+
 func (db *DB) notify(m *Movie) {
 	if db.parent != nil {
 		db.parent.notify(m)
@@ -86,6 +110,23 @@ func (db *DB) notify(m *Movie) {
 	db.subscriptions = nil
 }
 
+func (db *DB) notifyTV(s *TVSeason) {
+	if db.parent != nil {
+		db.parent.notifyTV(s)
+		return
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	for _, c := range db.tvSubscriptions {
+		c <- s
+		close(c)
+	}
+
+	db.tvSubscriptions = nil
+}
+
 func (db *DB) close() {
 	if db.parent != nil {
 		panic("close called on tx")
@@ -95,6 +136,10 @@ func (db *DB) close() {
 	defer db.mutex.Unlock()
 
 	for _, c := range db.subscriptions {
+		close(c)
+	}
+	
+	for _, c := range db.tvSubscriptions {
 		close(c)
 	}
 }
@@ -138,6 +183,30 @@ func (db *DB) Start() error {
 	
 	if err := gormdb.Exec(tvSchema).Error; err != nil {
 		return fmt.Errorf("error migrating TV schema: %w", err)
+	}
+	
+	// Run TV migration scripts (safe to run multiple times)
+	if err := gormdb.Exec(migrateTVSchema).Error; err != nil {
+		// Ignore duplicate column errors - this is expected if the column already exists
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return fmt.Errorf("error running TV migration: %w", err)
+		}
+	}
+	
+	// Run episode_files migration script (safe to run multiple times)
+	if err := gormdb.Exec(migrateEpisodeFilesSchema).Error; err != nil {
+		// Ignore duplicate column errors - this is expected if the column already exists
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return fmt.Errorf("error running episode_files migration: %w", err)
+		}
+	}
+	
+	// Run season_status migration script (safe to run multiple times)
+	if err := gormdb.Exec(migrateSeasonStatusSchema).Error; err != nil {
+		// Ignore duplicate column errors - this is expected if the column already exists
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return fmt.Errorf("error running season_status migration: %w", err)
+		}
 	}
 
 	if err := db.PopulateMovieWatches(); err != nil {

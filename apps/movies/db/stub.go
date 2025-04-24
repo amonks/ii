@@ -13,6 +13,10 @@ type Stub struct {
 	Year             string
 	Query            string
 	Results          []tmdb.SearchResult `gorm:"serializer:json"`
+	TVResults        []TVSearchResult    `gorm:"serializer:json"`
+	EpisodeFiles     []string            `gorm:"serializer:json"` // For TV shows, store the list of episode files
+	SeasonNumber     int                 // For TV shows, store the identified season number
+	SearchStatus     string              // Track search status: "pending", "searching", "needs_manual", "complete"
 }
 
 type Result struct {
@@ -72,4 +76,13 @@ func (d *DB) StubExistsFromPath(mediaType MediaType, importedFromPath string) (b
 		return false, err
 	}
 	return stub.ImportedFromPath != "", nil
+}
+
+// CountStubsByType counts the number of stubs of a specific media type
+func (d *DB) CountStubsByType(mediaType MediaType) (int, error) {
+	var count int64
+	if err := d.Table("stubs").Where("type = ?", mediaType).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

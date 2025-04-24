@@ -3,7 +3,6 @@ package tvcopier
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,17 +10,26 @@ import (
 
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
+	"monks.co/pkg/filesystem"
 )
 
 type TVCopier struct {
 	mu sync.Mutex
 	db *db.DB
+	fs filesystem.FS
 }
 
 func New(db *db.DB) *TVCopier {
 	return &TVCopier{
 		db: db,
+		fs: filesystem.NewOSFileSystem(),
 	}
+}
+
+// WithFS allows injecting a custom filesystem for testing
+func (app *TVCopier) WithFS(fs filesystem.FS) *TVCopier {
+	app.fs = fs
+	return app
 }
 
 func (app *TVCopier) Run(ctx context.Context) error {
@@ -82,7 +90,10 @@ func (app *TVCopier) Run(ctx context.Context) error {
 
 		// Now copy the episode file
 		log.Println("Copying TV episode...")
-		srcPath := filepath.Join(config.TVImportDir, episode.ImportedFromPath)
+		srcPath := episode.ImportedFromPath
+		if srcPath != "" && !filepath.IsAbs(srcPath) {
+			srcPath = filepath.Join(config.TVImportDir, srcPath)
+		}
 		destPath := filepath.Join(config.TVLibraryDir, episode.LibraryPath)
 
 		if err := app.copyFile(ctx, srcPath, destPath); err != nil {
@@ -99,7 +110,7 @@ func (app *TVCopier) Run(ctx context.Context) error {
 }
 
 func (app *TVCopier) copyFile(ctx context.Context, src, dest string) error {
-	srcStat, err := os.Stat(src)
+	srcStat, err := app.fs.Stat(src)
 	if err != nil {
 		return fmt.Errorf("copy: error reading source file '%s': %w", src, err)
 	}
@@ -107,41 +118,37 @@ func (app *TVCopier) copyFile(ctx context.Context, src, dest string) error {
 		return fmt.Errorf("cannot copy irregular file '%s'", src)
 	}
 
-	srcF, err := os.Open(src)
+	srcF, err := app.fs.Open(src)
 	if err != nil {
 		return fmt.Errorf("error opening file '%s': %w", src, err)
 	}
 	defer srcF.Close()
 
 	destDir := filepath.Dir(dest)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := app.fs.MkdirAll(destDir, 0755); err != nil {
 		return fmt.Errorf("error creating destination directory '%s': %w", destDir, err)
 	}
 
-	destF, err := os.Create(dest)
+	destF, err := app.fs.Create(dest)
 	if err != nil {
 		return fmt.Errorf("error creating file '%s': %w", dest, err)
 	}
 	defer destF.Close()
 
-	// Use a buffer for efficient copying
-	buf := make([]byte, 1024*1024) // 1MB buffer
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			nr, err := srcF.Read(buf)
-			if err != nil && err != io.EOF {
-				return fmt.Errorf("error reading from source file: %w", err)
-			}
-			if nr == 0 {
-				return nil // Done copying
-			}
+	// Copy the file with context awareness
+	done := make(chan error, 1)
+	go func() {
+		_, err := app.fs.Copy(srcF, destF)
+		done <- err
+	}()
 
-			if _, err := destF.Write(buf[:nr]); err != nil {
-				return fmt.Errorf("error writing to destination file: %w", err)
-			}
+	select {
+	case err := <-done:
+		if err != nil {
+			return fmt.Errorf("error copying file: %w", err)
 		}
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }

@@ -47,15 +47,28 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	defer log.Println("libraryserver done")
 
 	mux := serve.NewMux()
-	mux.HandleFunc("GET /", app.serveIndex)
-	mux.HandleFunc("GET /import", app.serveImport)
-	mux.HandleFunc("GET /poster", app.servePoster)
-	mux.HandleFunc("POST /play", app.servePlayButton)
-	mux.HandleFunc("POST /enqueue", app.serveEnqueueButton)
-	mux.HandleFunc("POST /search", app.serveSearch)
-	mux.HandleFunc("POST /identify", app.serveIdentify)
-	mux.HandleFunc("POST /ignore", app.serveIgnore)
-	mux.HandleFunc("POST /validate-metacritic", app.serveValidateMetacritic)
+	// Movie routes
+	mux.HandleFunc("GET /{$}", app.serveIndex)
+	mux.HandleFunc("GET /import/{$}", app.serveImport)
+	mux.HandleFunc("GET /poster/{$}", app.servePoster)
+	mux.HandleFunc("POST /play/{$}", app.servePlayButton)
+	mux.HandleFunc("POST /enqueue/{$}", app.serveEnqueueButton)
+	mux.HandleFunc("POST /search/{$}", app.serveSearch)
+	mux.HandleFunc("POST /identify/{$}", app.serveIdentify)
+	mux.HandleFunc("POST /ignore/{$}", app.serveIgnore)
+	mux.HandleFunc("POST /validate-metacritic/{$}", app.serveValidateMetacritic)
+
+	// TV show routes
+	mux.HandleFunc("GET /tv/{$}", app.serveTVIndex)
+	mux.HandleFunc("GET /tv/show/{$}", app.serveTVShow)
+	mux.HandleFunc("GET /tv/season/{$}", app.serveTVSeason)
+	mux.HandleFunc("GET /tv/poster/{$}", app.serveTVPoster)
+	mux.HandleFunc("GET /tv/season/poster/{$}", app.serveTVSeasonPoster)
+	mux.HandleFunc("POST /tv/play/{$}", app.serveTVPlayButton)
+	mux.HandleFunc("POST /tv/search/{$}", app.serveTVSearch)
+	mux.HandleFunc("POST /tv/identify/{$}", app.serveTVIdentify)
+	mux.HandleFunc("POST /tv/identify-all/{$}", app.serveTVIdentifyAll)
+	mux.HandleFunc("POST /tv/ignore-show/{$}", app.serveTVIgnoreShow)
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
@@ -321,6 +334,14 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 
 	var data ImportPageData
 
+	// Get tab from query parameter
+	tab := req.URL.Query().Get("tab")
+	if tab != "movies" && tab != "tv" {
+		tab = "movies" // Default to movies tab
+	}
+	data.ActiveTab = tab
+
+	// Get validation tasks
 	if metacriticValidations, err := app.db.PendingMetacriticValidations(); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -328,17 +349,37 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 		data.MetacriticValidations = metacriticValidations
 	}
 
+	// Get stubs
 	if stubs, err := app.db.AllStubs(); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
 	} else {
-		data.Stubs = stubs
+		// For TV tab, get TV stubs
+		if tab == "tv" {
+			var tvStubs []*db.Stub
+			for _, stub := range stubs {
+				if stub.Type == db.MediaTypeTV {
+					tvStubs = append(tvStubs, stub)
+				}
+			}
+			data.TVStubs = tvStubs
+		} else {
+			// For the movies tab, filter out TV stubs
+			var movieStubs []*db.Stub
+			for _, stub := range stubs {
+				if stub.Type == db.MediaTypeMovie {
+					movieStubs = append(movieStubs, stub)
+				}
+			}
+			data.Stubs = movieStubs
+		}
 	}
 
 	if err := Import(&data).Render(req.Context(), w); err != nil {
 		log.Println(err)
 	}
 }
+
 
 func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) {
 	idStr := req.URL.Query().Get("id")

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `stubs` (
 	`year` text,
 	`query` text,
 	`results` text,
+	`tv_results` text,
 	`type` integer,
 	PRIMARY KEY (`imported_from_path`)
 );
