@@ -49,7 +49,7 @@ func PostPage(data *PageData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"width: 100%; max-width: 1000px; margin: 0 auto;\"><div style=\"margin-bottom: 20px;\"><h1 style=\"margin-bottom: 10px;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"width: 100%; max-width: 1000px; margin: 0 auto; padding-bottom: 100px;\"><div style=\"margin-bottom: 20px;\"><h1 style=\"margin-bottom: 10px;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
