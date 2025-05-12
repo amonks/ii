@@ -49,6 +49,9 @@ func fetch(db *DB) error {
 	if err != nil {
 		log.Printf("Warning: Failed to fetch Aranet data: %v", err)
 		// Continue even if Aranet fetch fails
+	} else if aranetDevices == nil {
+		// No new data (304 Not Modified or duplicate timestamp)
+		log.Printf("No new Aranet data to process")
 	} else {
 		// Add Aranet data points
 		for _, device := range aranetDevices {
@@ -58,23 +61,23 @@ func fetch(db *DB) error {
 				log.Printf("Warning: Unknown device %s, skipping", deviceId)
 				continue
 			}
-			
+
 			if device.TemperatureValid {
 				addDataPoint(room, deviceId, "temperature", device.TemperatureF)
 			}
-			
+
 			if device.HumidityValid {
 				addDataPoint(room, deviceId, "humidity", float64(device.Humidity))
 			}
-			
+
 			if device.CO2Valid {
 				addDataPoint(room, deviceId, "co2", float64(device.CO2))
 			}
-			
+
 			if device.PressureValid {
 				addDataPoint(room, deviceId, "pressure", device.Pressure)
 			}
-			
+
 			addDataPoint(room, deviceId, "battery", float64(device.Battery))
 		}
 	}
@@ -135,16 +138,59 @@ type AranetDevice struct {
 	Ago             int     `json:"ago"`
 }
 
+// AranetResponse represents the new response format from the Aranet service
+type AranetResponse struct {
+	Timestamp time.Time       `json:"timestamp"`
+	Devices   []AranetDevice  `json:"devices"`
+}
+
+// Store the last timestamp we received from the Aranet service
+var lastAranetTimestamp time.Time
+
 // getAranetDevices fetches data from the Aranet API endpoint
 func getAranetDevices() ([]AranetDevice, error) {
-	res, err := http.Get("https://brigid.ss.cx/aranet/")
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	req, err := http.NewRequest("GET", "https://brigid.ss.cx/aranet/", nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Send If-Modified-Since header if we have a previous timestamp
+	if !lastAranetTimestamp.IsZero() {
+		req.Header.Set("If-Modified-Since", lastAranetTimestamp.Format(http.TimeFormat))
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching Aranet data: %w", err)
 	}
 	defer res.Body.Close()
 
+	// Check if the response is 304 Not Modified
+	if res.StatusCode == http.StatusNotModified {
+		log.Printf("Aranet data not modified since last fetch")
+		return nil, nil
+	}
+
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Aranet API returned non-OK status: %d", res.StatusCode)
+	}
+
+	// Parse the Last-Modified header
+	lastModified := res.Header.Get("Last-Modified")
+	if lastModified != "" {
+		modTime, err := time.Parse(http.TimeFormat, lastModified)
+		if err == nil {
+			// Check if this is a duplicate timestamp
+			if !lastAranetTimestamp.IsZero() && modTime.Equal(lastAranetTimestamp) {
+				log.Printf("Skipping duplicate Aranet data with timestamp: %v", modTime)
+				return nil, nil
+			}
+			lastAranetTimestamp = modTime
+		}
 	}
 
 	bs, err := io.ReadAll(res.Body)
@@ -152,12 +198,21 @@ func getAranetDevices() ([]AranetDevice, error) {
 		return nil, fmt.Errorf("error reading Aranet response: %w", err)
 	}
 
-	var devices []AranetDevice
-	if err := json.Unmarshal(bs, &devices); err != nil {
+	var response AranetResponse
+	if err := json.Unmarshal(bs, &response); err != nil {
+		// Try parsing the old format as a fallback
+		var devices []AranetDevice
+		if err2 := json.Unmarshal(bs, &devices); err2 == nil {
+			log.Printf("Warning: Aranet service returned old format without timestamp")
+			return devices, nil
+		}
 		return nil, fmt.Errorf("error parsing Aranet JSON: %w", err)
 	}
 
-	return devices, nil
+	// Update lastAranetTimestamp with the timestamp from the response
+	lastAranetTimestamp = response.Timestamp
+
+	return response.Devices, nil
 }
 
 type GetRoomResponse []struct {

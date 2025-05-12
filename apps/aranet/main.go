@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 
@@ -26,33 +28,104 @@ var (
 	deviceCount = 2
 )
 
+// DeviceData holds the latest device readings and their timestamp
+type DeviceData struct {
+	Devices   []*aranet4.Device
+	Timestamp time.Time
+	Error     error
+	mu        sync.RWMutex
+}
+
+// Update atomically updates the device data
+func (d *DeviceData) Update(devices []*aranet4.Device, err error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.Devices = devices
+	d.Timestamp = time.Now()
+	d.Error = err
+}
+
+// Get atomically retrieves the device data
+func (d *DeviceData) Get() ([]*aranet4.Device, time.Time, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	return d.Devices, d.Timestamp, d.Error
+}
+
 func run() error {
 	port := ports.Apps["aranet"]
 
+	// Create a shared data structure for the latest readings
+	deviceData := &DeviceData{}
+
+	// Start the Bluetooth scanning goroutine
+	ctx := sigctx.New()
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+
+		// Run the first scan immediately
+		scanForDevices(deviceData)
+
+		for {
+			select {
+			case <-ticker.C:
+				scanForDevices(deviceData)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, req *http.Request) {
-		devices, err := aranet4.GetDevices(deviceCount)
+		devices, timestamp, err := deviceData.Get()
+
 		if err != nil {
 			serve.InternalServerError(w, req, err)
 			return
 		}
 
-		// Print to console for logging
-		for _, dev := range devices {
-			fmt.Println(dev)
-			fmt.Println()
+		if devices == nil {
+			serve.InternalServerError(w, req, fmt.Errorf("no data available yet"))
+			return
 		}
-		
-		// Return JSON response
+
+		// Set Last-Modified header for caching/change detection
+		w.Header().Set("Last-Modified", timestamp.Format(http.TimeFormat))
 		w.Header().Set("Content-Type", "application/json")
-		serve.JSON(w, req, devices)
+
+		// Create response with timestamp and devices
+		response := map[string]interface{}{
+			"timestamp": timestamp,
+			"devices":   devices,
+		}
+
+		serve.JSON(w, req, response)
 	})
 
-	ctx := sigctx.New()
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// scanForDevices performs a Bluetooth scan and updates the shared device data
+func scanForDevices(deviceData *DeviceData) {
+	devices, err := aranet4.GetDevices(deviceCount)
+	if err != nil {
+		fmt.Printf("Error scanning for devices: %v\n", err)
+		deviceData.Update(nil, err)
+		return
+	}
+
+	// Print to console for logging
+	for _, dev := range devices {
+		fmt.Println(dev)
+		fmt.Println()
+	}
+
+	deviceData.Update(devices, nil)
 }
