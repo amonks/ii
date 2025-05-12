@@ -12,12 +12,17 @@ import (
 )
 
 func fetch(db *DB) error {
+	startTime := time.Now()
+	log.Printf("Fetch: starting data collection")
+
 	// Initialize a slice to hold all data points
 	var allDataPoints []DataPoint
 	createdAt := time.Now()
-	
+
 	// Get Venta parameters (legacy approach for water level checking)
+	ventaStart := time.Now()
 	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
+	log.Printf("Fetch: Venta data fetch took %v", time.Since(ventaStart))
 	if err != nil {
 		return err
 	}
@@ -45,7 +50,9 @@ func fetch(db *DB) error {
 	addDataPoint(ventaRoom, ventaDevice, "fan_rpm", float64(ventaParams.FanRPM))
 
 	// Get Aranet parameters
+	aranetStart := time.Now()
 	aranetDevices, err := getAranetDevices()
+	log.Printf("Fetch: Aranet data fetch took %v", time.Since(aranetStart))
 	if err != nil {
 		log.Printf("Warning: Failed to fetch Aranet data: %v", err)
 		// Continue even if Aranet fetch fails
@@ -83,7 +90,9 @@ func fetch(db *DB) error {
 	}
 	
 	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
+	dbStart := time.Now()
 	waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
+	log.Printf("Fetch: DB query for water level points took %v", time.Since(dbStart))
 	if err != nil {
 		return err
 	}
@@ -107,13 +116,15 @@ func fetch(db *DB) error {
 	}
 
 	// Insert all new data points
+	dbInsertStart := time.Now()
 	if err := db.InsertDataPoints(allDataPoints); err != nil {
 		return fmt.Errorf("error inserting data points: %w", err)
 	}
+	log.Printf("Fetch: DB insert of %d data points took %v", len(allDataPoints), time.Since(dbInsertStart))
 
-	// Log data values
-	fmt.Printf("Collected %d data points\n", len(allDataPoints))
-	
+	// Log total execution time
+	log.Printf("Fetch: completed in %v with %d data points collected", time.Since(startTime), len(allDataPoints))
+
 	return nil
 }
 
@@ -149,6 +160,9 @@ var lastAranetTimestamp time.Time
 
 // getAranetDevices fetches data from the Aranet API endpoint
 func getAranetDevices() ([]AranetDevice, error) {
+	log.Printf("getAranetDevices: starting fetch")
+	httpStart := time.Now()
+	
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -168,6 +182,7 @@ func getAranetDevices() ([]AranetDevice, error) {
 		return nil, fmt.Errorf("error fetching Aranet data: %w", err)
 	}
 	defer res.Body.Close()
+	log.Printf("getAranetDevices: HTTP request took %v", time.Since(httpStart))
 
 	// Check if the response is 304 Not Modified
 	if res.StatusCode == http.StatusNotModified {
@@ -193,11 +208,14 @@ func getAranetDevices() ([]AranetDevice, error) {
 		}
 	}
 
+	readStart := time.Now()
 	bs, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading Aranet response: %w", err)
 	}
+	log.Printf("getAranetDevices: reading response body took %v", time.Since(readStart))
 
+	jsonStart := time.Now()
 	var response AranetResponse
 	if err := json.Unmarshal(bs, &response); err != nil {
 		// Try parsing the old format as a fallback
@@ -208,6 +226,7 @@ func getAranetDevices() ([]AranetDevice, error) {
 		}
 		return nil, fmt.Errorf("error parsing Aranet JSON: %w", err)
 	}
+	log.Printf("getAranetDevices: JSON unmarshaling took %v with %d devices found", time.Since(jsonStart), len(response.Devices))
 
 	// Update lastAranetTimestamp with the timestamp from the response
 	lastAranetTimestamp = response.Timestamp
@@ -274,22 +293,29 @@ type DeviceParametersResponse struct {
 }
 
 func getDeviceParameters(deviceMAC string) (*VentaParameters, error) {
+	log.Printf("getDeviceParameters: fetching for device %s", deviceMAC)
+	httpStart := time.Now()
 	res, err := http.Get("https://venta-app-gateway-prod.azurewebsites.net/1/devices/60:8A:10:B5:58:A0/parameters")
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
+	log.Printf("getDeviceParameters: HTTP request took %v", time.Since(httpStart))
 
+	readStart := time.Now()
 	bs, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	
+	log.Printf("getDeviceParameters: reading response body took %v", time.Since(readStart))
+
+	jsonStart := time.Now()
 	parameters := &DeviceParametersResponse{}
 	if err := json.Unmarshal(bs, parameters); err != nil {
 		return nil, err
 	}
-	
+	log.Printf("getDeviceParameters: JSON unmarshaling took %v", time.Since(jsonStart))
+
 	// Only extract the fields we actually use
 	return &VentaParameters{
 		CreatedAt:    time.Now(),

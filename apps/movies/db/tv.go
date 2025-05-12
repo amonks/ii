@@ -315,6 +315,20 @@ func (db *DB) TVShowExistsFromPath(importedFromPath string) (bool, error) {
 	return true, nil
 }
 
+// TVShowExistsByPathPrefix checks if any TV episodes exist with paths starting with the given prefix
+func (db *DB) TVShowExistsByPathPrefix(pathPrefix string) (bool, error) {
+	var episode TVEpisode
+	if err := db.Table("tv_episodes").
+		Where("imported_from_path LIKE ?", pathPrefix+"%").
+		First(&episode).
+		Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // FindTVShowByName finds a TV show by name using FTS
 func (db *DB) FindTVShowByName(name string) (*TVShow, error) {
 	sanitized := nonAlpha.ReplaceAllString(name, " ")

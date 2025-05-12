@@ -20,7 +20,7 @@ type ImportPageData struct {
 func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
 	count := 0
 	for _, stub := range stubs {
-		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "") {
+		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "" || len(stub.Results) > 0) {
 			count++
 		}
 	}
@@ -31,8 +31,8 @@ func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
 func countTVStubsNeedingAttention(stubs []*db.Stub) int {
 	count := 0
 	for _, stub := range stubs {
-		// Only count stubs that actually need manual attention
-		if stub.Type == db.MediaTypeTV && stub.SearchStatus == "needs_manual" {
+		// Count stubs that need manual attention or are complete (matches what's displayed)
+		if stub.Type == db.MediaTypeTV && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "complete") {
 			count++
 		}
 	}
@@ -45,7 +45,7 @@ templ Import(data *ImportPageData) {
 		<div class="tabs">
 			<div class="tab-nav">
 				<a href="/movies/import/?tab=movies" class={ "tab-link", templ.KV("active", data.ActiveTab == "movies" || data.ActiveTab == "") }>
-					Movies ({ fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs)) })
+					Movies ({ fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs) + len(data.MetacriticValidations)) })
 				</a>
 				<a href="/movies/import/?tab=tv" class={ "tab-link", templ.KV("active", data.ActiveTab == "tv") }>
 					TV Shows ({ fmt.Sprintf("%d need attention", countTVStubsNeedingAttention(data.TVStubs)) })

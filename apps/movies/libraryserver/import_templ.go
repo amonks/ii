@@ -28,7 +28,7 @@ type ImportPageData struct {
 func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
 	count := 0
 	for _, stub := range stubs {
-		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "") {
+		if stub.Type == db.MediaTypeMovie && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "" || len(stub.Results) > 0) {
 			count++
 		}
 	}
@@ -39,8 +39,8 @@ func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
 func countTVStubsNeedingAttention(stubs []*db.Stub) int {
 	count := 0
 	for _, stub := range stubs {
-		// Only count stubs that actually need manual attention
-		if stub.Type == db.MediaTypeTV && stub.SearchStatus == "needs_manual" {
+		// Count stubs that need manual attention or are complete (matches what's displayed)
+		if stub.Type == db.MediaTypeTV && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "complete") {
 			count++
 		}
 	}
@@ -107,9 +107,9 @@ func Import(data *ImportPageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs)))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs)+len(data.MetacriticValidations)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/import.templ`, Line: 48, Col: 92}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/import.templ`, Line: 48, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {

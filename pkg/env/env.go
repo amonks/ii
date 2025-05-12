@@ -6,11 +6,19 @@ import (
 )
 
 func InMonksRoot(path ...string) string {
-	parts := append([]string{os.Getenv("MONKS_ROOT")}, path...)
+	root := os.Getenv("MONKS_ROOT")
+	if root == "" {
+		panic("MONKS_ROOT environment variable is not set")
+	}
+	parts := append([]string{root}, path...)
 	return filepath.Join(parts...)
 }
 
 func InMonksData(path ...string) string {
-	parts := append([]string{os.Getenv("MONKS_DATA")}, path...)
+	data := os.Getenv("MONKS_DATA")
+	if data == "" {
+		panic("MONKS_DATA environment variable is not set")
+	}
+	parts := append([]string{data}, path...)
 	return filepath.Join(parts...)
 }

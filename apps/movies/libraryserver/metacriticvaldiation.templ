@@ -45,7 +45,7 @@ templ MetacriticValidation(id string, movie *db.Movie) {
 				@templib.ButtonPrimary(&templib.ButtonOptions{
 					Class:  "mc--submit",
 					Label:  "Submit",
-					HxPost: "validate-metacritic",
+					HxPost: "/movies/validate-metacritic/",
 				})
 			}
 		}
