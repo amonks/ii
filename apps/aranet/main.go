@@ -114,8 +114,28 @@ func run() error {
 
 // scanForDevices performs a Bluetooth scan and updates the shared device data
 func scanForDevices(deviceData *DeviceData) {
-	devices, err := aranet4.GetDevices(deviceCount)
+	// Use a 30-second timeout for device scanning
+	scanTimeout := 30 * time.Second
+	devices, err := aranet4.GetDevices(deviceCount, scanTimeout)
+
 	if err != nil {
+		// Even if we got an error, we might have found some devices
+		if devices != nil && len(devices) > 0 {
+			fmt.Printf("Warning: partial scan results (%d/%d devices): %v\n",
+				len(devices), deviceCount, err)
+
+			// Continue with the partial results
+			for _, dev := range devices {
+				fmt.Println(dev)
+				fmt.Println()
+			}
+
+			// Update with partial results but no error
+			deviceData.Update(devices, nil)
+			return
+		}
+
+		// No devices found at all
 		fmt.Printf("Error scanning for devices: %v\n", err)
 		deviceData.Update(nil, err)
 		return

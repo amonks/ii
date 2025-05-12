@@ -7,29 +7,54 @@ import (
 	"log"
 	"math"
 	"strings"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 )
 
 var adapter = bluetooth.DefaultAdapter
 
-func GetDevices(count int) ([]*Device, error) {
+func GetDevices(count int, timeout time.Duration) ([]*Device, error) {
 	adapter.Enable()
 	results := map[string]bluetooth.ScanResult{}
+	scanComplete := make(chan struct{})
+	scanError := make(chan error, 1)
 
-	if err := adapter.Scan(func(adapter *bluetooth.Adapter, result bluetooth.ScanResult) {
-		if strings.HasPrefix(result.LocalName(), "Aranet4") {
-			prevCount := len(results)
-			results[result.Address.String()] = result
-			if len(results) > prevCount {
-				log.Printf("found device: %s %s", result.LocalName(), result.Address.String())
+	// Set up the scan with a timeout
+	go func() {
+		err := adapter.Scan(func(adapter *bluetooth.Adapter, result bluetooth.ScanResult) {
+			if strings.HasPrefix(result.LocalName(), "Aranet4") {
+				prevCount := len(results)
+				results[result.Address.String()] = result
+				if len(results) > prevCount {
+					log.Printf("found device: %s %s", result.LocalName(), result.Address.String())
+				}
+				if len(results) >= count {
+					adapter.StopScan()
+					close(scanComplete)
+				}
 			}
-			if len(results) >= count {
-				adapter.StopScan()
-			}
+		})
+		if err != nil {
+			scanError <- err
 		}
-	}); err != nil {
+	}()
+
+	// Wait for either the scan to complete, an error, or a timeout
+	select {
+	case <-scanComplete:
+		// Scan completed by finding all requested devices
+	case err := <-scanError:
 		return nil, err
+	case <-time.After(timeout):
+		// Timeout reached, stop the scan
+		adapter.StopScan()
+		log.Printf("Scan timeout reached after %v. Found %d/%d devices", timeout, len(results), count)
+	}
+
+	// No devices found at all
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no Aranet4 devices found within timeout (%v)", timeout)
 	}
 
 	var devices []*Device
@@ -41,7 +66,8 @@ func GetDevices(count int) ([]*Device, error) {
 			}
 		}
 		if bs == nil {
-			return nil, fmt.Errorf("no aranet data")
+			log.Printf("warning: device %s has no Aranet data", result.Address.String())
+			continue
 		}
 		log.Printf("%d bytes", len(bs))
 		rawData := readRawData(bs)
@@ -51,6 +77,11 @@ func GetDevices(count int) ([]*Device, error) {
 			continue
 		}
 		devices = append(devices, device)
+	}
+
+	// If we didn't find any valid devices with data, return an error
+	if len(devices) == 0 {
+		return nil, fmt.Errorf("no valid Aranet4 devices found within timeout (%v)", timeout)
 	}
 
 	return devices, nil
