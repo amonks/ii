@@ -189,7 +189,7 @@ templ TVShowDetails(data *TVShowData) {
 						</div>
 						<div class="md:w-3/4">
 							<h2 class="text-xl font-semibold text-gray-900">{ data.Show.Name }</h2>
-							
+
 							<div class="mt-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
 								if data.Show.FirstAirDate != "" {
 									<div class="col-span-1">
@@ -197,21 +197,21 @@ templ TVShowDetails(data *TVShowData) {
 										<dd class="mt-1 text-sm text-gray-900">{ data.Show.FirstAirDate }</dd>
 									</div>
 								}
-								
+
 								if data.Show.LastAirDate != "" {
 									<div class="col-span-1">
 										<dt class="text-sm font-medium text-gray-500">Last Aired</dt>
 										<dd class="mt-1 text-sm text-gray-900">{ data.Show.LastAirDate }</dd>
 									</div>
 								}
-								
+
 								if data.Show.Status != "" {
 									<div class="col-span-1">
 										<dt class="text-sm font-medium text-gray-500">Status</dt>
 										<dd class="mt-1 text-sm text-gray-900">{ data.Show.Status }</dd>
 									</div>
 								}
-								
+
 								if len(data.Show.Genres) > 0 {
 									<div class="sm:col-span-2">
 										<dt class="text-sm font-medium text-gray-500">Genres</dt>
@@ -226,7 +226,7 @@ templ TVShowDetails(data *TVShowData) {
 										</dd>
 									</div>
 								}
-								
+
 								if len(data.Show.Languages) > 0 {
 									<div class="sm:col-span-2">
 										<dt class="text-sm font-medium text-gray-500">Languages</dt>
@@ -234,7 +234,7 @@ templ TVShowDetails(data *TVShowData) {
 									</div>
 								}
 							</div>
-							
+
 							if data.Show.Overview != "" {
 								<div class="mt-4">
 									<dt class="text-sm font-medium text-gray-500">Overview</dt>
@@ -345,13 +345,13 @@ templ TVSeasonDetails(data *TVSeasonData) {
 						</div>
 						<div class="md:w-4/5">
 							<h2 class="text-xl font-semibold text-gray-900">{ seasonDisplayName(data.Season) }</h2>
-							
+
 							<div class="mt-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
 								<div class="col-span-1">
 									<dt class="text-sm font-medium text-gray-500">Episodes</dt>
 									<dd class="mt-1 text-sm text-gray-900">{ fmt.Sprintf("%d", data.Season.EpisodeCount) }</dd>
 								</div>
-								
+
 								if data.Season.AirDate != "" {
 									<div class="col-span-1">
 										<dt class="text-sm font-medium text-gray-500">Air Date</dt>
@@ -359,7 +359,7 @@ templ TVSeasonDetails(data *TVSeasonData) {
 									</div>
 								}
 							</div>
-							
+
 							if data.Season.Overview != "" {
 								<div class="mt-4">
 									<dt class="text-sm font-medium text-gray-500">Overview</dt>

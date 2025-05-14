@@ -283,7 +283,7 @@ func (m *Movie) HasPoster() bool {
 }
 
 func (m *Movie) PosterURL() string {
-	return fmt.Sprintf("poster?id=%d", m.ID)
+	return fmt.Sprintf("poster/?id=%d", m.ID)
 }
 
 func (db *DB) GetMovie(id int64) (*Movie, error) {
