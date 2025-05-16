@@ -26,31 +26,6 @@ func NewDB() (*DB, error) {
 	return &DB{db}, nil
 }
 
-// Room-to-devices mapping
-var RoomDevices = map[string][]string{
-	"living room": {"Aranet4 069F9", "60:8A:10:B5:58:A0"}, // Aranet and Venta
-	"office":      {"Aranet4 0AC6E"},                      // Aranet
-	"kitchen":     {"Aranet4 09678"},                      // Aranet
-}
-
-// Map of valid device parameters by type
-var DeviceParameters = map[string][]string{
-	"Venta":   {"temperature", "humidity", "dust", "water_level", "fan_rpm"},
-	"Aranet4": {"temperature", "humidity", "co2", "pressure", "battery"},
-}
-
-// DeviceToRoom returns the room for a given device
-func DeviceToRoom(device string) (string, bool) {
-	for room, devices := range RoomDevices {
-		for _, d := range devices {
-			if d == device {
-				return room, true
-			}
-		}
-	}
-	return "", false
-}
-
 // DataPoint represents a single measurement from a sensor
 type DataPoint struct {
 	ID        uint `gorm:"primarykey"`
@@ -296,4 +271,3 @@ func (db *DB) getAggregate(room, device, parameter string, windowDuration time.D
 
 	return &agg, nil
 }
-

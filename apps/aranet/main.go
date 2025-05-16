@@ -25,7 +25,8 @@ func main() {
 
 var (
 	adapter     = bluetooth.DefaultAdapter
-	deviceCount = 3
+	deviceCount = 4
+	scanTimeout = time.Minute
 )
 
 // DeviceData holds the latest device readings and their timestamp
@@ -114,8 +115,6 @@ func run() error {
 
 // scanForDevices performs a Bluetooth scan and updates the shared device data
 func scanForDevices(deviceData *DeviceData) {
-	// Use a 30-second timeout for device scanning
-	scanTimeout := 30 * time.Second
 	devices, err := aranet4.GetDevices(deviceCount, scanTimeout)
 
 	if err != nil {

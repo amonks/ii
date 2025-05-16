@@ -21,8 +21,8 @@ var (
 
 // DeviceData holds aggregates for a specific device and includes device/room info
 type DeviceData struct {
-	DeviceName string           // Display name for the device
-	RoomName   string           // Display name for the room
+	DeviceName string            // Display name for the device
+	RoomName   string            // Display name for the room
 	Data       []WindowAggregate // The actual data points
 }
 
@@ -33,9 +33,9 @@ type Data struct {
 	Humidities   map[string]DeviceData
 	CO2s         map[string]DeviceData
 	Pressures    map[string]DeviceData
-	Dust         []WindowAggregate     // Venta only
-	WaterLevel   []WindowAggregate     // Venta only
-	
+	Dust         []WindowAggregate // Venta only
+	WaterLevel   []WindowAggregate // Venta only
+
 	// Device mappings - to help with display names
 	DeviceDisplayNames map[string]string // Maps device ID to human readable name
 	RoomDisplayNames   map[string]string // Maps room ID to human readable name
@@ -67,54 +67,41 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 		}
 
 		var errs error
-		
+
 		// Initialize data structure with maps
 		data := &Data{
-			Temperatures: make(map[string]DeviceData),
-			Humidities:   make(map[string]DeviceData),
-			CO2s:         make(map[string]DeviceData),
-			Pressures:    make(map[string]DeviceData),
-			DeviceDisplayNames: map[string]string{
-				"60:8A:10:B5:58:A0": "Venta Air Purifier",
-				"Aranet4 0AC6E":     "Office Aranet",
-				"Aranet4 069F9":     "Living Room Aranet",
-			},
-			RoomDisplayNames: map[string]string{
-				"living room": "Living Room",
-				"office":      "Office",
-			},
+			Temperatures:       make(map[string]DeviceData),
+			Humidities:         make(map[string]DeviceData),
+			CO2s:               make(map[string]DeviceData),
+			Pressures:          make(map[string]DeviceData),
+			DeviceDisplayNames: GetDeviceDisplayNames(),
+			RoomDisplayNames:   GetRoomDisplayNames(),
 		}
-		
-		// Device & room configurations
-		devices := []struct{
+
+		// Use the devices configuration from devices.go
+		var deviceConfigs []struct {
 			DeviceId   string
 			Room       string
 			Parameters []string
-		}{
-			// Venta in Living Room
-			{
-				DeviceId:   "60:8A:10:B5:58:A0",
-				Room:       "living room",
-				Parameters: []string{"temperature", "humidity", "dust", "water_level"},
-			},
-			// Aranet in Office
-			{
-				DeviceId:   "Aranet4 0AC6E",
-				Room:       "office",
-				Parameters: []string{"temperature", "humidity", "co2", "pressure"},
-			},
-			// Aranet in Living Room
-			{
-				DeviceId:   "Aranet4 069F9",
-				Room:       "living room",
-				Parameters: []string{"temperature", "humidity", "co2", "pressure"},
-			},
 		}
-		
+
+		// Convert our centralized device configuration
+		for _, device := range Devices {
+			deviceConfigs = append(deviceConfigs, struct {
+				DeviceId   string
+				Room       string
+				Parameters []string
+			}{
+				DeviceId:   device.ID,
+				Room:       string(device.RoomID),
+				Parameters: device.GetParameters(),
+			})
+		}
+
 		// Fetch data for each device and parameter
-		for _, device := range devices {
+		for _, device := range deviceConfigs {
 			deviceKey := device.Room + "-" + device.DeviceId
-			
+
 			for _, param := range device.Parameters {
 				// Get aggregates for this device/parameter
 				aggs, err := db.GetAggregates(device.Room, device.DeviceId, param, days)
@@ -122,19 +109,19 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 					errs = errors.Join(errs, err)
 					continue
 				}
-				
+
 				// Skip if no data
 				if len(aggs) == 0 {
 					continue
 				}
-				
+
 				// Create device data
 				deviceData := DeviceData{
 					DeviceName: data.DeviceDisplayNames[device.DeviceId],
 					RoomName:   data.RoomDisplayNames[device.Room],
 					Data:       aggs,
 				}
-				
+
 				// Store in the appropriate collection based on parameter
 				switch param {
 				case "temperature":
@@ -173,3 +160,4 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 
 	return nil
 }
+
