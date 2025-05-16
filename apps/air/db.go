@@ -30,6 +30,7 @@ func NewDB() (*DB, error) {
 var RoomDevices = map[string][]string{
 	"living room": {"Aranet4 069F9", "60:8A:10:B5:58:A0"}, // Aranet and Venta
 	"office":      {"Aranet4 0AC6E"},                      // Aranet
+	"kitchen":     {"Aranet4 09678"},                      // Aranet
 }
 
 // Map of valid device parameters by type
@@ -52,13 +53,13 @@ func DeviceToRoom(device string) (string, bool) {
 
 // DataPoint represents a single measurement from a sensor
 type DataPoint struct {
-	ID        uint      `gorm:"primarykey"`
+	ID        uint `gorm:"primarykey"`
 	CreatedAt time.Time
 
-	Room       string  // e.g., "living room", "office"
-	Device     string  // e.g., "aranet4 069F9", "venta air purifier"
-	Parameter  string  // e.g., "temperature", "humidity", "co2", "water_level", "fan_rpm", "battery"
-	Value      float64 // all values stored as float64 for consistency
+	Room      string  // e.g., "living room", "office"
+	Device    string  // e.g., "aranet4 069F9", "venta air purifier"
+	Parameter string  // e.g., "temperature", "humidity", "co2", "water_level", "fan_rpm", "battery"
+	Value     float64 // all values stored as float64 for consistency
 }
 
 // WindowAggregate is the structure for aggregated data points
@@ -295,3 +296,4 @@ func (db *DB) getAggregate(room, device, parameter string, windowDuration time.D
 
 	return &agg, nil
 }
+

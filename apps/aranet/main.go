@@ -25,7 +25,7 @@ func main() {
 
 var (
 	adapter     = bluetooth.DefaultAdapter
-	deviceCount = 2
+	deviceCount = 3
 )
 
 // DeviceData holds the latest device readings and their timestamp
