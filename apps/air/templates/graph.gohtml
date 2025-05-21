@@ -109,11 +109,16 @@
 <script>
 {{ .JSON }}
 
-// Color palette for different devices - adjusted for better visibility
+// Color palette for different devices - expanded to support more data lines
 const colorPalette = [
   { line: "#2196F3", area: "#BBDEFB" }, // Blue
   { line: "#FF5722", area: "#FFCCBC" }, // Orange/red
-  { line: "#4CAF50", area: "#C8E6C9" }  // Green
+  { line: "#4CAF50", area: "#C8E6C9" }, // Green
+  { line: "#9C27B0", area: "#E1BEE7" }, // Purple
+  { line: "#FF9800", area: "#FFE0B2" }, // Orange
+  { line: "#795548", area: "#D7CCC8" }, // Brown
+  { line: "#607D8B", area: "#CFD8DC" }, // Blue Grey
+  { line: "#E91E63", area: "#F8BBD0" }  // Pink
 ];
 
 // Utility function to format dates
