@@ -38,7 +38,7 @@ func run() error {
 	case "fetch":
 		log.Printf("run fetch")
 		if err := fetch(db); err != nil {
-			errs = errors.Join(errs, err)
+			errs = errors.Join(errs, fmt.Errorf("fetch error: %w", err))
 		}
 
 	case "aggregates":

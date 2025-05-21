@@ -89,7 +89,7 @@ func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]Windo
 }
 
 // GetLastDatapointsByParameter returns the latest n datapoints for a specific room, device, and parameter
-func (db *DB) GetLastDatapointsByParameter(room, device, parameter string, n int) ([]DataPoint, error) {
+func (db *DB) GetLastDatapointsByParameter(room RoomID, device, parameter string, n int) ([]DataPoint, error) {
 	var datapoints []DataPoint
 	if err := db.
 		Table("data_points").

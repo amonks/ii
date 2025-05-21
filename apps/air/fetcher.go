@@ -19,35 +19,36 @@ func fetch(db *DB) error {
 	var allDataPoints []DataPoint
 	createdAt := time.Now()
 
-	// Get Venta parameters (legacy approach for water level checking)
-	ventaStart := time.Now()
-	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
-	log.Printf("Fetch: Venta data fetch took %v", time.Since(ventaStart))
-	if err != nil {
-		return err
-	}
-
-	// Add Venta data points
-	ventaDevice := "60:8A:10:B5:58:A0"
-	ventaRoom, _ := DeviceToRoom(ventaDevice)
-	
 	// Helper to add a datapoint
-	addDataPoint := func(room, device, parameter string, value float64) {
+	addDataPoint := func(room RoomID, device, parameter string, value float64) {
 		allDataPoints = append(allDataPoints, DataPoint{
 			CreatedAt: createdAt,
-			Room:      room,
+			Room:      string(room),
 			Device:    device,
 			Parameter: parameter,
 			Value:     value,
 		})
 	}
-	
-	// Add Venta data points
-	addDataPoint(ventaRoom, ventaDevice, "temperature", ventaParams.Temperature)
-	addDataPoint(ventaRoom, ventaDevice, "humidity", ventaParams.Humidity)
-	addDataPoint(ventaRoom, ventaDevice, "dust", float64(ventaParams.Dust))
-	addDataPoint(ventaRoom, ventaDevice, "water_level", float64(ventaParams.WaterLevel))
-	addDataPoint(ventaRoom, ventaDevice, "fan_rpm", float64(ventaParams.FanRPM))
+
+	// Get Venta parameters (legacy approach for water level checking)
+	ventaStart := time.Now()
+	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
+	log.Printf("Fetch: Venta data fetch took %v", time.Since(ventaStart))
+	if err != nil {
+		log.Printf("Warning: Failed to fetch Venta data: %v", err)
+		// Continue even if Venta fetch fails
+	} else {
+		// Add Venta data points
+		ventaDevice := "60:8A:10:B5:58:A0"
+		ventaRoom, _ := DeviceToRoom(ventaDevice)
+
+		// Add Venta data points
+		addDataPoint(ventaRoom, ventaDevice, "temperature", ventaParams.Temperature)
+		addDataPoint(ventaRoom, ventaDevice, "humidity", ventaParams.Humidity)
+		addDataPoint(ventaRoom, ventaDevice, "dust", float64(ventaParams.Dust))
+		addDataPoint(ventaRoom, ventaDevice, "water_level", float64(ventaParams.WaterLevel))
+		addDataPoint(ventaRoom, ventaDevice, "fan_rpm", float64(ventaParams.FanRPM))
+	}
 
 	// Get Aranet parameters
 	aranetStart := time.Now()
@@ -88,29 +89,35 @@ func fetch(db *DB) error {
 			addDataPoint(room, deviceId, "battery", float64(device.Battery))
 		}
 	}
-	
+
 	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
-	dbStart := time.Now()
-	waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
-	log.Printf("Fetch: DB query for water level points took %v", time.Since(dbStart))
-	if err != nil {
-		return err
-	}
-	
-	// Calculate current water level value
-	currentWaterLevelValue := float64(ventaParams.WaterLevel)
-	currentWaterLevelFull := IsWaterLevelFull(currentWaterLevelValue)
-	
-	// If we have enough history to check
-	if len(waterLevelPoints) >= 2 {
-		// Results are ordered by created_at desc
-		back1WaterLevelFull := IsWaterLevelFull(waterLevelPoints[0].Value)
-		back2WaterLevelFull := IsWaterLevelFull(waterLevelPoints[1].Value)
+	// Only check water level notifications if we successfully fetched Venta data
+	if ventaParams != nil {
+		ventaDevice := "60:8A:10:B5:58:A0"
+		ventaRoom, _ := DeviceToRoom(ventaDevice)
 		
-		// If it was full, then not full, and still not full
-		if back2WaterLevelFull && !back1WaterLevelFull && !currentWaterLevelFull {
-			if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
-				log.Printf("twilio error: %s", err)
+		dbStart := time.Now()
+		waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
+		log.Printf("Fetch: DB query for water level points took %v", time.Since(dbStart))
+		if err != nil {
+			log.Printf("Warning: Failed to query water level history: %v", err)
+		} else {
+			// Calculate current water level value
+			currentWaterLevelValue := float64(ventaParams.WaterLevel)
+			currentWaterLevelFull := IsWaterLevelFull(currentWaterLevelValue)
+
+			// If we have enough history to check
+			if len(waterLevelPoints) >= 2 {
+				// Results are ordered by created_at desc
+				back1WaterLevelFull := IsWaterLevelFull(waterLevelPoints[0].Value)
+				back2WaterLevelFull := IsWaterLevelFull(waterLevelPoints[1].Value)
+
+				// If it was full, then not full, and still not full
+				if back2WaterLevelFull && !back1WaterLevelFull && !currentWaterLevelFull {
+					if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
+						log.Printf("twilio error: %s", err)
+					}
+				}
 			}
 		}
 	}
@@ -130,29 +137,29 @@ func fetch(db *DB) error {
 
 // AranetDevice represents the data from an Aranet device
 type AranetDevice struct {
-	Name            string  `json:"name"`
-	Address         string  `json:"address"`
-	Version         string  `json:"version"`
-	Flags           int     `json:"flags"`
-	CO2Valid        bool    `json:"co2_valid"`
-	CO2             int     `json:"co2"`
-	TemperatureValid bool   `json:"temperature_valid"`
-	TemperatureC    float64 `json:"temperature_c"`
-	TemperatureF    float64 `json:"temperature_f"`
-	HumidityValid   bool    `json:"humidity_valid"`
-	Humidity        int     `json:"humidity"`
-	PressureValid   bool    `json:"pressure_valid"`
-	Pressure        float64 `json:"pressure"`
-	Battery         int     `json:"battery"`
-	Status          int     `json:"status"`
-	Interval        int     `json:"interval"`
-	Ago             int     `json:"ago"`
+	Name             string  `json:"name"`
+	Address          string  `json:"address"`
+	Version          string  `json:"version"`
+	Flags            int     `json:"flags"`
+	CO2Valid         bool    `json:"co2_valid"`
+	CO2              int     `json:"co2"`
+	TemperatureValid bool    `json:"temperature_valid"`
+	TemperatureC     float64 `json:"temperature_c"`
+	TemperatureF     float64 `json:"temperature_f"`
+	HumidityValid    bool    `json:"humidity_valid"`
+	Humidity         int     `json:"humidity"`
+	PressureValid    bool    `json:"pressure_valid"`
+	Pressure         float64 `json:"pressure"`
+	Battery          int     `json:"battery"`
+	Status           int     `json:"status"`
+	Interval         int     `json:"interval"`
+	Ago              int     `json:"ago"`
 }
 
 // AranetResponse represents the new response format from the Aranet service
 type AranetResponse struct {
-	Timestamp time.Time       `json:"timestamp"`
-	Devices   []AranetDevice  `json:"devices"`
+	Timestamp time.Time      `json:"timestamp"`
+	Devices   []AranetDevice `json:"devices"`
 }
 
 // Store the last timestamp we received from the Aranet service
@@ -162,7 +169,7 @@ var lastAranetTimestamp time.Time
 func getAranetDevices() ([]AranetDevice, error) {
 	log.Printf("getAranetDevices: starting fetch")
 	httpStart := time.Now()
-	
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -297,7 +304,7 @@ func getDeviceParameters(deviceMAC string) (*VentaParameters, error) {
 	httpStart := time.Now()
 	res, err := http.Get("https://venta-app-gateway-prod.azurewebsites.net/1/devices/60:8A:10:B5:58:A0/parameters")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("venta api error: %w", err)
 	}
 	defer res.Body.Close()
 	log.Printf("getDeviceParameters: HTTP request took %v", time.Since(httpStart))
@@ -305,20 +312,20 @@ func getDeviceParameters(deviceMAC string) (*VentaParameters, error) {
 	readStart := time.Now()
 	bs, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading venta response: %w", err)
 	}
 	log.Printf("getDeviceParameters: reading response body took %v", time.Since(readStart))
 
 	jsonStart := time.Now()
 	parameters := &DeviceParametersResponse{}
 	if err := json.Unmarshal(bs, parameters); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshaling venta response: %w\n%s", err, string(bs))
 	}
 	log.Printf("getDeviceParameters: JSON unmarshaling took %v", time.Since(jsonStart))
 
 	// Only extract the fields we actually use
 	return &VentaParameters{
-		CreatedAt:    time.Now(),
+		CreatedAt:   time.Now(),
 		FanRPM:      parameters.Measure.FanRpm,
 		Temperature: parameters.Measure.Temperature,
 		Dust:        parameters.Measure.Dust,
