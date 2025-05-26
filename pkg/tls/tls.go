@@ -64,7 +64,7 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 					DNSProvider: &route53.Provider{
 						Region: "us-east-1",
 					},
-					Resolvers:   []string{"8.8.8.8"},
+					Resolvers: []string{"8.8.8.8"},
 				},
 			}
 

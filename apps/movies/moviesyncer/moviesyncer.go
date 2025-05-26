@@ -17,8 +17,8 @@ type MovieSyncer struct {
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieSyncer {
 	return &MovieSyncer{
-		tmdb:   tmdb,
-		db:     db,
+		tmdb: tmdb,
+		db:   db,
 	}
 }
 

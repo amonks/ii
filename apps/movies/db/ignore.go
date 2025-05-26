@@ -28,3 +28,18 @@ func (db *DB) IgnorePath(mediaType MediaType, path string) error {
 	}
 	return nil
 }
+
+func (db *DB) AllIgnores() ([]*Ignore, error) {
+	var ignores []*Ignore
+	if err := db.Find(&ignores).Error; err != nil {
+		return nil, err
+	}
+	return ignores, nil
+}
+
+func (db *DB) DeleteIgnore(path string, mediaType MediaType) error {
+	if err := db.Where(&Ignore{ImportedFromPath: path, Type: mediaType}).Delete(&Ignore{}).Error; err != nil {
+		return err
+	}
+	return nil
+}

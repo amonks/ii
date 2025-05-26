@@ -17,16 +17,16 @@ import (
 var (
 	//go:embed schema.sql
 	schema string
-	
+
 	//go:embed schema_tv.sql
 	tvSchema string
-	
+
 	//go:embed migrate_tv.sql
 	migrateTVSchema string
-	
+
 	//go:embed migrate_episode_files.sql
 	migrateEpisodeFilesSchema string
-	
+
 	//go:embed migrate_season_status.sql
 	migrateSeasonStatusSchema string
 )
@@ -38,8 +38,8 @@ type DB struct {
 
 	path string
 
-	mutex         sync.Mutex
-	subscriptions []chan *Movie
+	mutex           sync.Mutex
+	subscriptions   []chan *Movie
 	tvSubscriptions []chan *TVSeason
 
 	parent *DB
@@ -138,7 +138,7 @@ func (db *DB) close() {
 	for _, c := range db.subscriptions {
 		close(c)
 	}
-	
+
 	for _, c := range db.tvSubscriptions {
 		close(c)
 	}
@@ -180,11 +180,11 @@ func (db *DB) Start() error {
 	if err := gormdb.Exec(schema).Error; err != nil {
 		return fmt.Errorf("error migrating movie schema: %w", err)
 	}
-	
+
 	if err := gormdb.Exec(tvSchema).Error; err != nil {
 		return fmt.Errorf("error migrating TV schema: %w", err)
 	}
-	
+
 	// Run TV migration scripts (safe to run multiple times)
 	if err := gormdb.Exec(migrateTVSchema).Error; err != nil {
 		// Ignore duplicate column errors - this is expected if the column already exists
@@ -192,7 +192,7 @@ func (db *DB) Start() error {
 			return fmt.Errorf("error running TV migration: %w", err)
 		}
 	}
-	
+
 	// Run episode_files migration script (safe to run multiple times)
 	if err := gormdb.Exec(migrateEpisodeFilesSchema).Error; err != nil {
 		// Ignore duplicate column errors - this is expected if the column already exists
@@ -200,7 +200,7 @@ func (db *DB) Start() error {
 			return fmt.Errorf("error running episode_files migration: %w", err)
 		}
 	}
-	
+
 	// Run season_status migration script (safe to run multiple times)
 	if err := gormdb.Exec(migrateSeasonStatusSchema).Error; err != nil {
 		// Ignore duplicate column errors - this is expected if the column already exists

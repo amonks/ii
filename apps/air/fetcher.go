@@ -95,7 +95,7 @@ func fetch(db *DB) error {
 	if ventaParams != nil {
 		ventaDevice := "60:8A:10:B5:58:A0"
 		ventaRoom, _ := DeviceToRoom(ventaDevice)
-		
+
 		dbStart := time.Now()
 		waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
 		log.Printf("Fetch: DB query for water level points took %v", time.Since(dbStart))

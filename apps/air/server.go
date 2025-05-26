@@ -160,4 +160,3 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 
 	return nil
 }
-

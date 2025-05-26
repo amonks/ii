@@ -34,11 +34,11 @@ func (m *MockLLM) GenerateTVQuery(filepath string) (string, int, int, error) {
 
 // MockDB is a mock implementation of the database
 type MockDB struct {
-	stubs    []*db.Stub
-	saved    []*db.Stub
-	deleted  []*db.Stub
-	movies   []*db.Movie
-	tvShows  []*db.TVShow
+	stubs   []*db.Stub
+	saved   []*db.Stub
+	deleted []*db.Stub
+	movies  []*db.Movie
+	tvShows []*db.TVShow
 }
 
 func (m *MockDB) AllStubs() ([]*db.Stub, error) {
@@ -129,9 +129,9 @@ func TestStubQueryGeneratorRun(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name             string
-		stubs            []*db.Stub
-		expectedPaths    []string  // Paths we expect to be processed
+		name              string
+		stubs             []*db.Stub
+		expectedPaths     []string // Paths we expect to be processed
 		checkSeasonNumber bool     // Whether to check for season number (for TV stubs)
 	}{
 		{
@@ -152,7 +152,7 @@ func TestStubQueryGeneratorRun(t *testing.T) {
 					Type:             db.MediaTypeTV,
 				},
 			},
-			expectedPaths:    []string{"/path/to/tvshow"},
+			expectedPaths:     []string{"/path/to/tvshow"},
 			checkSeasonNumber: true,
 		},
 		{
@@ -167,7 +167,7 @@ func TestStubQueryGeneratorRun(t *testing.T) {
 					Type:             db.MediaTypeTV,
 				},
 			},
-			expectedPaths:    []string{"/path/to/movie1.mkv", "/path/to/tvshow"},
+			expectedPaths:     []string{"/path/to/movie1.mkv", "/path/to/tvshow"},
 			checkSeasonNumber: true,
 		},
 	}
@@ -195,14 +195,14 @@ func TestStubQueryGeneratorRun(t *testing.T) {
 			for _, stub := range mockDB.saved {
 				processedPaths[stub.ImportedFromPath] = true
 			}
-			
+
 			// Check that expected paths were processed
 			for _, path := range tc.expectedPaths {
 				if !processedPaths[path] {
 					t.Errorf("Expected path %s to be processed, but it wasn't", path)
 				}
 			}
-			
+
 			// Check for TV season number if needed
 			if tc.checkSeasonNumber {
 				foundSeasonNumber := false
@@ -212,7 +212,7 @@ func TestStubQueryGeneratorRun(t *testing.T) {
 						break
 					}
 				}
-				
+
 				if !foundSeasonNumber {
 					t.Errorf("Expected at least one TV stub to have season number %d", mockLLM.tvSeasonNumber)
 				}

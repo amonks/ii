@@ -52,7 +52,7 @@ type stats struct {
 	bytesProcessed atomic.Int64
 	filesSkipped   atomic.Int64
 	errors         atomic.Int64
-	start         time.Time
+	start          time.Time
 }
 
 func (s *stats) print() {
@@ -249,5 +249,3 @@ func compressOneFile(src, dst string, newCompressor func(io.Writer) io.WriteClos
 	}
 	return nil
 }
-
-

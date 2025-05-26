@@ -40,4 +40,3 @@ func (date Date) MarshalJSON() ([]byte, error) {
 func (date *Date) UnmarshalJSON(b []byte) error {
 	return (*time.Time)(date).UnmarshalJSON(b)
 }
-

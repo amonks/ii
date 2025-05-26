@@ -108,4 +108,3 @@ func run() error {
 
 //go:embed index.html
 var content embed.FS
-

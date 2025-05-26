@@ -948,4 +948,3 @@ func (ra *RedditArchiver) Run() error {
 
 	return nil
 }
-

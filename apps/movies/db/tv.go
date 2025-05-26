@@ -12,70 +12,70 @@ import (
 
 // TVShow represents a TV show in the database
 type TVShow struct {
-	ID            int64     `gorm:"primaryKey"`
-	Name          string
-	OriginalName  string
-	Overview      string
-	Status        string
-	FirstAirDate  string
-	LastAirDate   string
-	Genres        []string  `gorm:"serializer:json"`
-	Languages     []string  `gorm:"serializer:json"`
-	
-	LibraryPath   string
-	ImportedAt    string
-	
-	TMDBJSON         string `gorm:"column:tmdb_json"`
-	PosterPath       string
-	TMDBCreditsJSON  string `gorm:"column:tmdb_credits_json"`
-	
+	ID           int64 `gorm:"primaryKey"`
+	Name         string
+	OriginalName string
+	Overview     string
+	Status       string
+	FirstAirDate string
+	LastAirDate  string
+	Genres       []string `gorm:"serializer:json"`
+	Languages    []string `gorm:"serializer:json"`
+
+	LibraryPath string
+	ImportedAt  string
+
+	TMDBJSON        string `gorm:"column:tmdb_json"`
+	PosterPath      string
+	TMDBCreditsJSON string `gorm:"column:tmdb_credits_json"`
+
 	// Not persisted
 	Seasons []TVSeason `gorm:"-:all"`
 }
 
 // TVSeason represents a season of a TV show in the database
 type TVSeason struct {
-	ID            int64    `gorm:"-:all"`
-	ShowID        int64    `gorm:"primaryKey;column:show_id"`
-	SeasonNumber  int      `gorm:"primaryKey"`
-	Name          string
-	Overview      string
-	EpisodeCount  int
-	AirDate       string
-	PosterPath    string
-	ImportedAt    string
-	TMDBJSON      string   `gorm:"column:tmdb_json"`
-	LibraryPath   string
-	
+	ID           int64 `gorm:"-:all"`
+	ShowID       int64 `gorm:"primaryKey;column:show_id"`
+	SeasonNumber int   `gorm:"primaryKey"`
+	Name         string
+	Overview     string
+	EpisodeCount int
+	AirDate      string
+	PosterPath   string
+	ImportedAt   string
+	TMDBJSON     string `gorm:"column:tmdb_json"`
+	LibraryPath  string
+
 	// Not persisted
 	Episodes []TVEpisode `gorm:"-:all"`
 }
 
 // TVEpisode represents a TV episode in the database
 type TVEpisode struct {
-	ID               int64   `gorm:"-:all"`
-	ShowID           int64   `gorm:"primaryKey;column:show_id"`
-	SeasonNumber     int     `gorm:"primaryKey"`
-	EpisodeNumber    int     `gorm:"primaryKey"`
-	Name             string
-	Overview         string
-	Runtime          int64
-	AirDate          string
-	StillPath        string
-	
+	ID            int64 `gorm:"-:all"`
+	ShowID        int64 `gorm:"primaryKey;column:show_id"`
+	SeasonNumber  int   `gorm:"primaryKey"`
+	EpisodeNumber int   `gorm:"primaryKey"`
+	Name          string
+	Overview      string
+	Runtime       int64
+	AirDate       string
+	StillPath     string
+
 	Extension        string
 	ImportedFromPath string
 	LibraryPath      string
 	IsCopied         bool
 	ImportedAt       string
-	
-	TMDBJSON         string  `gorm:"column:tmdb_json"`
+
+	TMDBJSON string `gorm:"column:tmdb_json"`
 }
 
 // TVShowTitle is for the FTS table
 type TVShowTitle struct {
-	ID    int64   // references tv_shows.id
-	Name  string  // references tv_shows.name
+	ID   int64  // references tv_shows.id
+	Name string // references tv_shows.name
 }
 
 // TVSearchResult represents a TV show search result from TMDB
@@ -102,7 +102,7 @@ func (s *TVSeason) BuildLibraryPath(showPath string) string {
 
 func (e *TVEpisode) BuildLibraryPath(seasonPath string) string {
 	// Return the file path for the episode within the season directory
-	return filepath.Join(seasonPath, fmt.Sprintf("S%02dE%02d - %s%s", 
+	return filepath.Join(seasonPath, fmt.Sprintf("S%02dE%02d - %s%s",
 		e.SeasonNumber, e.EpisodeNumber, e.Name, e.Extension))
 }
 
@@ -154,13 +154,13 @@ func (db *DB) CreateTVSeason(showID int64, s *tmdb.Season) (*TVSeason, error) {
 		AirDate:      s.AirDate,
 		ImportedAt:   time.Now().Format(time.DateTime),
 	}
-	
+
 	// Get show path for constructing the season path
 	var show TVShow
 	if err := db.Table("tv_shows").Where("id = ?", showID).First(&show).Error; err != nil {
 		return nil, err
 	}
-	
+
 	season.LibraryPath = season.BuildLibraryPath(show.LibraryPath)
 
 	if err := db.Table("tv_seasons").Create(&season).Error; err != nil {
@@ -176,26 +176,26 @@ func (db *DB) CreateTVSeason(showID int64, s *tmdb.Season) (*TVSeason, error) {
 // CreateTVEpisode adds a new episode to the database
 func (db *DB) CreateTVEpisode(showID int64, e *tmdb.Episode, importedFromPath string) (*TVEpisode, error) {
 	episode := TVEpisode{
-		ID:              e.ID,
-		ShowID:          showID,
-		SeasonNumber:    e.SeasonNumber,
-		EpisodeNumber:   e.EpisodeNumber,
-		Name:            e.Name,
-		Overview:        e.Overview,
-		Runtime:         e.Runtime,
-		AirDate:         e.AirDate,
-		StillPath:       e.StillPath,
-		Extension:       filepath.Ext(importedFromPath),
+		ID:               e.ID,
+		ShowID:           showID,
+		SeasonNumber:     e.SeasonNumber,
+		EpisodeNumber:    e.EpisodeNumber,
+		Name:             e.Name,
+		Overview:         e.Overview,
+		Runtime:          e.Runtime,
+		AirDate:          e.AirDate,
+		StillPath:        e.StillPath,
+		Extension:        filepath.Ext(importedFromPath),
 		ImportedFromPath: importedFromPath,
-		ImportedAt:      time.Now().Format(time.DateTime),
+		ImportedAt:       time.Now().Format(time.DateTime),
 	}
-	
+
 	// Get season path for constructing the episode path
 	var season TVSeason
 	if err := db.Table("tv_seasons").Where("show_id = ? AND season_number = ?", showID, e.SeasonNumber).First(&season).Error; err != nil {
 		return nil, err
 	}
-	
+
 	episode.LibraryPath = episode.BuildLibraryPath(season.LibraryPath)
 
 	if err := db.Table("tv_episodes").Create(&episode).Error; err != nil {
@@ -211,14 +211,14 @@ func (db *DB) GetTVShow(id int64) (*TVShow, error) {
 	if err := db.Table("tv_shows").Where("id = ?", id).First(&show).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// Load seasons
 	var seasons []TVSeason
 	if err := db.Table("tv_seasons").Where("show_id = ?", id).Find(&seasons).Error; err != nil {
 		return nil, err
 	}
 	show.Seasons = seasons
-	
+
 	return &show, nil
 }
 
@@ -228,21 +228,21 @@ func (db *DB) GetTVSeason(showID int64, seasonNumber int) (*TVSeason, error) {
 	if err := db.Table("tv_seasons").Where("show_id = ? AND season_number = ?", showID, seasonNumber).First(&season).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// Load episodes
 	var episodes []TVEpisode
 	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ?", showID, seasonNumber).Find(&episodes).Error; err != nil {
 		return nil, err
 	}
 	season.Episodes = episodes
-	
+
 	return &season, nil
 }
 
 // GetTVEpisode retrieves an episode by show ID, season number, and episode number
 func (db *DB) GetTVEpisode(showID int64, seasonNumber, episodeNumber int) (*TVEpisode, error) {
 	var episode TVEpisode
-	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ? AND episode_number = ?", 
+	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ? AND episode_number = ?",
 		showID, seasonNumber, episodeNumber).First(&episode).Error; err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (db *DB) AllTVShows() ([]*TVShow, error) {
 	if err := db.Table("tv_shows").Find(&shows).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// Load seasons for each show
 	for _, show := range shows {
 		var seasons []TVSeason
@@ -264,7 +264,7 @@ func (db *DB) AllTVShows() ([]*TVShow, error) {
 		}
 		show.Seasons = seasons
 	}
-	
+
 	return shows, nil
 }
 
@@ -282,18 +282,9 @@ func (db *DB) AddTVShowPoster(show *TVShow, posterPath string) error {
 	return nil
 }
 
-// AddTVSeasonPoster adds a poster path to a TV season
-func (db *DB) AddTVSeasonPoster(showID int64, seasonNumber int, posterPath string) error {
-	if err := db.Table("tv_seasons").Where("show_id = ? AND season_number = ?", showID, seasonNumber).
-		Updates(map[string]interface{}{"poster_path": posterPath}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 // SetTVEpisodeCopied marks an episode as copied to the library
 func (db *DB) SetTVEpisodeCopied(episode *TVEpisode) error {
-	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ? AND episode_number = ?", 
+	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ? AND episode_number = ?",
 		episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
 		Updates(map[string]interface{}{"is_copied": true}).Error; err != nil {
 		return err
@@ -393,10 +384,10 @@ func (db *DB) GetTVSeasonEpisodes(showID int64, seasonNumber int) ([]*TVEpisode,
 // UpdateTVEpisodePath updates the path for an existing episode
 func (db *DB) UpdateTVEpisodePath(episode *TVEpisode, newPath string) error {
 	return db.Table("tv_episodes").
-		Where("show_id = ? AND season_number = ? AND episode_number = ?", 
+		Where("show_id = ? AND season_number = ? AND episode_number = ?",
 			episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
 		Updates(map[string]interface{}{
 			"imported_from_path": newPath,
-			"is_copied": false,
+			"is_copied":          false,
 		}).Error
 }

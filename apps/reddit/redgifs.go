@@ -63,7 +63,7 @@ func extractRedGifsID(url string) (string, error) {
 	if len(matches) > 1 {
 		return matches[1], nil
 	}
-	
+
 	// For format 4: https://i.redgifs.com/i/palejaggednutcracker.jpg
 	re2 := regexp.MustCompile(`i\.redgifs\.com/i/([a-zA-Z0-9]+)\.`)
 	matches = re2.FindStringSubmatch(url)
@@ -186,9 +186,9 @@ func (r *RedGifsClient) fetchGifInfo(id string) (string, error) {
 	var gifResp struct {
 		Gif struct {
 			URLs struct {
-				HD      string `json:"hd"`
-				SD      string `json:"sd"`
-				Poster  string `json:"poster"`
+				HD        string `json:"hd"`
+				SD        string `json:"sd"`
+				Poster    string `json:"poster"`
 				Thumbnail string `json:"thumbnail"`
 			} `json:"urls"`
 			Type int `json:"type"`

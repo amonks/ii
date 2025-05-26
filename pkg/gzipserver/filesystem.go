@@ -67,5 +67,3 @@ func (f *fsAdapter) Exists(name string) bool {
 func (f *fsAdapter) Open(name string) (http.File, error) {
 	return http.FS(f.fs).Open(strings.TrimPrefix(name, "/"))
 }
-
-

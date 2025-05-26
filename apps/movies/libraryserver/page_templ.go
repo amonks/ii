@@ -42,14 +42,14 @@ func Page(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.8\" integrity=\"sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr\" crossorigin=\"anonymous\"></script></head><body><div class=\"bg-slate-100\"><div><main class=\"py-4\"><h1 class=\"px-6 sm:px-8 text-4xl mb-6 pb-2 sm:pt-6 font-bold border-b-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.8\" integrity=\"sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr\" crossorigin=\"anonymous\"></script></head><body><div class=\"bg-slate-100 min-h-screen\"><nav class=\"bg-white shadow-sm border-b\"><div class=\"px-6 sm:px-8\"><div class=\"flex justify-between items-center h-16\"><div class=\"flex items-center space-x-8\"><h1 class=\"text-xl font-semibold text-gray-900\">Movies</h1><div class=\"flex space-x-4\"><a href=\"/movies/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Library</a> <a href=\"/movies/tv/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">TV Shows</a> <a href=\"/movies/import/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Import</a> <a href=\"/movies/ignores/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Ignores</a></div></div></div></div></nav><div><main class=\"py-4\"><h1 class=\"px-6 sm:px-8 text-4xl mb-6 pb-2 sm:pt-6 font-bold border-b-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 18, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 33, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {

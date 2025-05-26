@@ -42,9 +42,9 @@ var (
 )
 
 type TVImporter struct {
-	tmdb      *tmdb.Client
-	db        *db.DB
-	fs        filesystem.FS
+	tmdb *tmdb.Client
+	db   *db.DB
+	fs   filesystem.FS
 	// Map of directories to episode information
 	seasonMap map[string]map[string]EpisodeInfo // dir -> filename -> episode info
 }
@@ -382,8 +382,8 @@ func detectEpisodeNumbersFromFiles(filenames []string) map[string]int {
 		for _, num := range allNumbers {
 			// Skip common video-related numbers that aren't episode numbers
 			if num == 1080 || num == 720 || num == 480 || num == 360 || num == 2160 ||
-			   num == 264 || num == 265 ||
-			   (num >= 1950 && num <= 2030) { // Years
+				num == 264 || num == 265 ||
+				(num >= 1950 && num <= 2030) { // Years
 				continue
 			}
 			numbers = append(numbers, num)
@@ -619,8 +619,8 @@ func guessEpisodeFromNumbers(filename string, seasonNum int) (int, int, error) {
 	for _, num := range numbers {
 		// Skip numbers that are likely to be years, resolutions, codecs, etc.
 		if num == 1080 || num == 720 || num == 480 || num == 360 || num == 2160 ||
-		   num == 264 || num == 265 || num == 10 || // H.264, H.265, 10-bit
-		   (num >= 1950 && num <= 2030) { // Years
+			num == 264 || num == 265 || num == 10 || // H.264, H.265, 10-bit
+			(num >= 1950 && num <= 2030) { // Years
 			continue
 		}
 
@@ -631,7 +631,7 @@ func guessEpisodeFromNumbers(filename string, seasonNum int) (int, int, error) {
 
 			// If it seems valid, use this
 			if detectedEpisode > 0 && detectedEpisode <= 99 &&
-			   detectedSeason > 0 && detectedSeason <= 30 {
+				detectedSeason > 0 && detectedSeason <= 30 {
 				return detectedSeason, detectedEpisode, nil
 			}
 		}

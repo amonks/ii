@@ -184,4 +184,3 @@ func readOrientation(r io.Reader) int {
 	}
 	return 0 // Missing orientation tag.
 }
-

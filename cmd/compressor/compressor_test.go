@@ -128,5 +128,3 @@ func TestWalk(t *testing.T) {
 		t.Errorf("expected context cancellation error, got %v", err)
 	}
 }
-
-

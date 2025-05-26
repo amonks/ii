@@ -34,8 +34,8 @@ type PageData struct {
 	Prev       int
 	Subreddit  string
 	Author     string
-	Current    int  // Current position in the posts list
-	TotalPosts int  // Total number of posts
+	Current    int // Current position in the posts list
+	TotalPosts int // Total number of posts
 }
 
 type ListData struct {

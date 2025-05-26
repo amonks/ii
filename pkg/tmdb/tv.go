@@ -10,49 +10,49 @@ import (
 
 // TVShow represents a TV series from TMDb
 type TVShow struct {
-	ID            int64       `json:"id"`
-	Name          string      `json:"name"`
-	OriginalName  string      `json:"original_name"`
-	FirstAirDate  string      `json:"first_air_date"`
-	LastAirDate   string      `json:"last_air_date"`
-	Overview      string      `json:"overview"`
-	Status        string      `json:"status"`
-	Seasons       []Season    `json:"seasons"`
-	Genres        []Genre     `json:"genres"`
+	ID             int64      `json:"id"`
+	Name           string     `json:"name"`
+	OriginalName   string     `json:"original_name"`
+	FirstAirDate   string     `json:"first_air_date"`
+	LastAirDate    string     `json:"last_air_date"`
+	Overview       string     `json:"overview"`
+	Status         string     `json:"status"`
+	Seasons        []Season   `json:"seasons"`
+	Genres         []Genre    `json:"genres"`
 	EpisodeRunTime []int64    `json:"episode_run_time"`
-	Languages     []Language  `json:"spoken_languages"`
-	PosterPath    string      `json:"poster_path"`
-	TMDBJSON      string      `json:"tmdb_json"`
+	Languages      []Language `json:"spoken_languages"`
+	PosterPath     string     `json:"poster_path"`
+	TMDBJSON       string     `json:"tmdb_json"`
 }
 
 // Season represents a TV season from TMDb
 type Season struct {
-	ID            int64       `json:"id"`
-	Name          string      `json:"name"`
-	SeasonNumber  int         `json:"season_number"`
-	EpisodeCount  int         `json:"episode_count"`
-	AirDate       string      `json:"air_date"`
-	Overview      string      `json:"overview"`
-	PosterPath    string      `json:"poster_path"` 
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	SeasonNumber int    `json:"season_number"`
+	EpisodeCount int    `json:"episode_count"`
+	AirDate      string `json:"air_date"`
+	Overview     string `json:"overview"`
+	PosterPath   string `json:"poster_path"`
 }
 
 // Episode represents a TV episode from TMDb
 type Episode struct {
-	ID            int64       `json:"id"`
-	Name          string      `json:"name"`
-	EpisodeNumber int         `json:"episode_number"`
-	SeasonNumber  int         `json:"season_number"`
-	AirDate       string      `json:"air_date"`
-	Overview      string      `json:"overview"`
-	StillPath     string      `json:"still_path"`
-	Runtime       int64       `json:"runtime"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	EpisodeNumber int    `json:"episode_number"`
+	SeasonNumber  int    `json:"season_number"`
+	AirDate       string `json:"air_date"`
+	Overview      string `json:"overview"`
+	StillPath     string `json:"still_path"`
+	Runtime       int64  `json:"runtime"`
 }
 
 // TVSearchResult for TV show search results
 type TVSearchResult struct {
-	ID            int64       `json:"id"`
-	Name          string      `json:"name"`
-	FirstAirDate  string      `json:"first_air_date"`
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	FirstAirDate string `json:"first_air_date"`
 }
 
 // SearchTV searches for TV shows by name
@@ -133,7 +133,7 @@ func (c *Client) GetTV(id int64) (*TVShow, error) {
 
 // GetSeason fetches details for a specific season of a TV show
 func (c *Client) GetSeason(tvID int64, seasonNumber int) (*Season, []Episode, error) {
-	req, err := http.NewRequest(http.MethodGet, 
+	req, err := http.NewRequest(http.MethodGet,
 		fmt.Sprintf(`https://api.themoviedb.org/3/tv/%d/season/%d`, tvID, seasonNumber), nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("building tmdb season request: %w", err)
@@ -158,11 +158,11 @@ func (c *Client) GetSeason(tvID int64, seasonNumber int) (*Season, []Episode, er
 	}
 
 	var response struct {
-		ID           int64    `json:"id"`
-		Name         string   `json:"name"`
-		SeasonNumber int      `json:"season_number"`
-		AirDate      string   `json:"air_date"`
-		Overview     string   `json:"overview"`
+		ID           int64     `json:"id"`
+		Name         string    `json:"name"`
+		SeasonNumber int       `json:"season_number"`
+		AirDate      string    `json:"air_date"`
+		Overview     string    `json:"overview"`
 		Episodes     []Episode `json:"episodes"`
 	}
 
@@ -184,8 +184,8 @@ func (c *Client) GetSeason(tvID int64, seasonNumber int) (*Season, []Episode, er
 
 // GetEpisode fetches details for a specific episode of a TV show
 func (c *Client) GetEpisode(tvID int64, seasonNumber, episodeNumber int) (*Episode, error) {
-	req, err := http.NewRequest(http.MethodGet, 
-		fmt.Sprintf(`https://api.themoviedb.org/3/tv/%d/season/%d/episode/%d`, 
+	req, err := http.NewRequest(http.MethodGet,
+		fmt.Sprintf(`https://api.themoviedb.org/3/tv/%d/season/%d/episode/%d`,
 			tvID, seasonNumber, episodeNumber), nil)
 	if err != nil {
 		return nil, fmt.Errorf("building tmdb episode request: %w", err)

@@ -50,6 +50,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	// Movie routes
 	mux.HandleFunc("GET /{$}", app.serveIndex)
 	mux.HandleFunc("GET /import/{$}", app.serveImport)
+	mux.HandleFunc("GET /ignores/{$}", app.serveIgnores)
 	mux.HandleFunc("GET /poster/{$}", app.servePoster)
 	mux.HandleFunc("POST /play/{$}", app.servePlayButton)
 	mux.HandleFunc("POST /enqueue/{$}", app.serveEnqueueButton)
@@ -57,6 +58,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("POST /identify/{$}", app.serveIdentify)
 	mux.HandleFunc("POST /ignore/{$}", app.serveIgnore)
 	mux.HandleFunc("POST /validate-metacritic/{$}", app.serveValidateMetacritic)
+	mux.HandleFunc("POST /delete-ignore/{$}", app.serveDeleteIgnore)
 
 	// TV show routes
 	mux.HandleFunc("GET /tv/{$}", app.serveTVIndex)
@@ -380,7 +382,6 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 	}
 }
 
-
 func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) {
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
@@ -436,7 +437,7 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 		return
 	}
 	for _, cmd := range []*exec.Cmd{
-		exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thor.ss.cx/data/tank/movies/%s'", movie.LibraryPath)),
+		exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thr.ss.cx/data/tank/movies/%s'", movie.LibraryPath)),
 		exec.Command("ssh", "lugh", `osascript -e 'tell application "VLC" to activate' -e 'tell application "System Events" to keystroke "f" using {command down, control down}'`),
 	} {
 		cmd := cmd
@@ -590,6 +591,101 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 	}
 
 	app.serveImport(w, req)
+}
+
+func (app *LibraryServer) serveIgnores(w http.ResponseWriter, req *http.Request) {
+	log.Println("serveIgnores")
+
+	var data IgnoresPageData
+
+	// Get search query
+	query := req.URL.Query().Get("search")
+	data.Query = query
+
+	// Get media type filter
+	mediaTypeFilter := req.URL.Query().Get("type")
+	data.MediaTypeFilter = mediaTypeFilter
+
+	// Get all ignores from database
+	allIgnores, err := app.db.AllIgnores()
+	if err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	// Filter ignores based on search and type
+	for _, ignore := range allIgnores {
+		// Apply media type filter
+		if mediaTypeFilter != "" && mediaTypeFilter != "all" {
+			if (mediaTypeFilter == "tv" && ignore.Type != db.MediaTypeTV) ||
+				(mediaTypeFilter == "movies" && ignore.Type != db.MediaTypeMovie) {
+				continue
+			}
+		}
+
+		// Apply search filter
+		if query != "" {
+			if !strings.Contains(strings.ToLower(ignore.ImportedFromPath), strings.ToLower(query)) {
+				continue
+			}
+		}
+
+		data.Ignores = append(data.Ignores, ignore)
+	}
+
+	if err := Ignores(&data).Render(req.Context(), w); err != nil {
+		log.Println(err)
+	}
+}
+
+func (app *LibraryServer) serveDeleteIgnore(w http.ResponseWriter, req *http.Request) {
+	log.Println("serveDeleteIgnore")
+
+	if req.Method != "POST" {
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+		return
+	}
+
+	req.ParseForm()
+
+	path := req.FormValue("path")
+	mediaTypeStr := req.FormValue("type")
+
+	if path == "" {
+		serve.Errorf(w, req, http.StatusBadRequest, "no path given")
+		return
+	}
+
+	if mediaTypeStr == "" {
+		serve.Errorf(w, req, http.StatusBadRequest, "no media type given")
+		return
+	}
+
+	var mediaType db.MediaType
+	switch mediaTypeStr {
+	case "1":
+		mediaType = db.MediaTypeTV
+	case "2":
+		mediaType = db.MediaTypeMovie
+	default:
+		serve.Errorf(w, req, http.StatusBadRequest, "invalid media type: %s", mediaTypeStr)
+		return
+	}
+
+	if err := app.db.DeleteIgnore(path, mediaType); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	log.Printf("Deleted ignore for path: %s (type: %s)", path, mediaTypeStr)
+
+	// Redirect back to ignores page with same filters
+	redirectURL := "/movies/ignores/"
+	if query := req.URL.Query(); len(query) > 0 {
+		redirectURL += "?" + query.Encode()
+	}
+
+	http.Redirect(w, req, redirectURL, http.StatusSeeOther)
 }
 
 func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *http.Request) {

@@ -49,19 +49,6 @@ func main() {
 
 		// Process each season
 		for _, season := range show.Seasons {
-			// Check season poster
-			if season.PosterPath != "" {
-				if _, err := os.Stat(season.PosterPath); os.IsNotExist(err) {
-					log.Printf("Missing poster for season %d of %s", season.SeasonNumber, show.Name)
-					// Reset poster path in database to trigger re-download
-					if err := moviesDB.AddTVSeasonPoster(show.ID, season.SeasonNumber, ""); err != nil {
-						log.Printf("Error resetting poster path for season %d of %s: %v", season.SeasonNumber, show.Name, err)
-					} else {
-						postersFixed++
-					}
-				}
-			}
-
 			// Get episodes for this season
 			episodes, err := moviesDB.GetTVSeasonEpisodes(show.ID, season.SeasonNumber)
 			if err != nil {
@@ -74,12 +61,12 @@ func main() {
 				if episode.IsCopied {
 					destPath := filepath.Join(config.TVLibraryDir, episode.LibraryPath)
 					if _, err := os.Stat(destPath); os.IsNotExist(err) {
-						log.Printf("Missing episode file: S%02dE%02d - %s of %s", 
+						log.Printf("Missing episode file: S%02dE%02d - %s of %s",
 							episode.SeasonNumber, episode.EpisodeNumber, episode.Name, show.Name)
-						
+
 						// Reset copied status in database to trigger re-copy
 						if err := resetEpisodeCopiedStatus(moviesDB, episode); err != nil {
-							log.Printf("Error resetting copied status for episode S%02dE%02d of %s: %v", 
+							log.Printf("Error resetting copied status for episode S%02dE%02d of %s: %v",
 								episode.SeasonNumber, episode.EpisodeNumber, show.Name, err)
 						} else {
 							episodesFixed++
@@ -98,16 +85,16 @@ func resetEpisodeCopiedStatus(db *db.DB, episode *db.TVEpisode) error {
 	// Create a new episode with the same data but IsCopied set to false
 	updatedEpisode := *episode
 	updatedEpisode.IsCopied = false
-	
+
 	// Update the episode in the database
 	err := db.Table("tv_episodes").
-		Where("show_id = ? AND season_number = ? AND episode_number = ?", 
+		Where("show_id = ? AND season_number = ? AND episode_number = ?",
 			episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
 		Updates(map[string]interface{}{"is_copied": false}).Error
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to update episode: %w", err)
 	}
-	
+
 	return nil
 }

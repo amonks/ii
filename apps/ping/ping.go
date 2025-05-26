@@ -30,7 +30,7 @@ type server struct {
 	model *model
 }
 
-func NewServer(m *model) (*server) {
+func NewServer(m *model) *server {
 	s := &server{serve.NewMux(), m}
 
 	s.HandleFunc("GET /{$}", s.ListPeople)

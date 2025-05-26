@@ -32,7 +32,7 @@ func run() error {
 	if len(os.Args) > 1 && os.Args[1] == "update" {
 		return runUpdate()
 	}
-	
+
 	// Default behavior - serve the web interface
 	return runServer()
 }
@@ -78,20 +78,20 @@ func runUpdate() error {
 
 	archiver := NewRedditArchiver(db, clientID, secret, archivePath, username)
 	err = archiver.Run()
-	
+
 	// Handle token-related errors
 	if err != nil {
-		if strings.Contains(err.Error(), "token file does not exist") || 
-		   strings.Contains(err.Error(), "refresh token is missing") {
+		if strings.Contains(err.Error(), "token file does not exist") ||
+			strings.Contains(err.Error(), "refresh token is missing") {
 			// Token is missing, guide the user through authentication
 			authHelper := archiver.GetAuthHelper()
 			authHelper.PrintAuthHelp()
-			
+
 			// Read the code from stdin
 			var code string
 			fmt.Print("> ")
 			fmt.Scanln(&code)
-			
+
 			// Clean up the code (remove any URL parts if the user pasted the whole URL)
 			code = strings.TrimSpace(code)
 			if strings.Contains(code, "code=") {
@@ -103,25 +103,25 @@ func runUpdate() error {
 					}
 				}
 			}
-			
+
 			fmt.Println("Using authorization code:", code)
-			
+
 			// Exchange the code for tokens
 			if err := archiver.ExchangeCode(code); err != nil {
 				return fmt.Errorf("failed to exchange authorization code: %w", err)
 			}
-			
+
 			fmt.Println("\nAuthentication successful!")
 			fmt.Println("Running archive update...")
-			
+
 			// Try again with the new tokens
 			if err := archiver.Run(); err != nil {
 				return fmt.Errorf("archive update failed after authentication: %w", err)
 			}
-			
+
 			return nil
 		}
-		
+
 		// Other types of errors
 		return fmt.Errorf("archive update failed: %w", err)
 	}

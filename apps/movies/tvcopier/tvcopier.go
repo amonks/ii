@@ -103,8 +103,8 @@ func (app *TVCopier) Run(ctx context.Context) error {
 		if err := app.db.SetTVEpisodeCopied(episode); err != nil {
 			return err
 		}
-		log.Printf("Imported '%s S%02dE%02d - %s' from '%s' to '%s'", 
-			show.Name, episode.SeasonNumber, episode.EpisodeNumber, episode.Name, 
+		log.Printf("Imported '%s S%02dE%02d - %s' from '%s' to '%s'",
+			show.Name, episode.SeasonNumber, episode.EpisodeNumber, episode.Name,
 			episode.ImportedFromPath, episode.LibraryPath)
 	}
 }

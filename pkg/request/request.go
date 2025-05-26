@@ -20,4 +20,3 @@ func Error(resp *http.Response) error {
 	}
 	return nil
 }
-

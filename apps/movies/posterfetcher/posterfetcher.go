@@ -23,8 +23,8 @@ type PosterFetcher struct {
 
 func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {
 	return &PosterFetcher{
-		tmdb:   tmdb,
-		db:     db,
+		tmdb: tmdb,
+		db:   db,
 	}
 }
 

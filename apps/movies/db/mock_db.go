@@ -7,16 +7,16 @@ import (
 
 // MockDB implements a simple in-memory database for testing
 type MockDB struct {
-	stubs       map[string]*Stub
-	ignores     map[string]MediaType
-	movies      map[int64]*Movie
-	tvShows     map[int64]*TVShow
-	tvSeasons   map[string]*TVSeason // key: "showID_seasonNumber"
-	tvEpisodes  map[string]*TVEpisode // key: "showID_seasonNumber_episodeNumber"
-	
+	stubs      map[string]*Stub
+	ignores    map[string]MediaType
+	movies     map[int64]*Movie
+	tvShows    map[int64]*TVShow
+	tvSeasons  map[string]*TVSeason  // key: "showID_seasonNumber"
+	tvEpisodes map[string]*TVEpisode // key: "showID_seasonNumber_episodeNumber"
+
 	createdStubs []string
 	mu           sync.Mutex
-	
+
 	// Embed the real DB to satisfy the interface
 	*DB
 }
@@ -33,12 +33,12 @@ func NewMockDB() *MockDB {
 		tvEpisodes:   make(map[string]*TVEpisode),
 		createdStubs: make([]string, 0),
 	}
-	
+
 	// Create a minimal real DB to satisfy the interface
 	mockDB.DB = &DB{
 		path: ":memory:", // For SQLite, in-memory database
 	}
-	
+
 	return mockDB
 }
 
@@ -58,7 +58,7 @@ func (db *MockDB) StubWasCreated(path string) bool {
 func (db *MockDB) GetStub(importedFromPath string) (*Stub, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	stub, ok := db.stubs[importedFromPath]
 	if !ok {
 		return nil, fmt.Errorf("stub not found")
@@ -70,7 +70,7 @@ func (db *MockDB) GetStub(importedFromPath string) (*Stub, error) {
 func (db *MockDB) AllStubs() ([]*Stub, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	stubs := make([]*Stub, 0, len(db.stubs))
 	for _, stub := range db.stubs {
 		stubs = append(stubs, stub)
@@ -82,7 +82,7 @@ func (db *MockDB) AllStubs() ([]*Stub, error) {
 func (db *MockDB) SaveStub(stub *Stub) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	db.stubs[stub.ImportedFromPath] = stub
 	return nil
 }
@@ -91,7 +91,7 @@ func (db *MockDB) SaveStub(stub *Stub) error {
 func (db *MockDB) DeleteStub(stub *Stub) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	delete(db.stubs, stub.ImportedFromPath)
 	return nil
 }
@@ -102,7 +102,7 @@ func (db *MockDB) DeleteStub(stub *Stub) error {
 func (db *MockDB) IgnorePath(mediaType MediaType, path string) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	db.ignores[path] = mediaType
 	return nil
 }
@@ -113,7 +113,7 @@ func (db *MockDB) IgnorePath(mediaType MediaType, path string) error {
 func (db *MockDB) CreateMovie(movie *Movie) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	db.movies[movie.ID] = movie
 	return nil
 }
@@ -122,7 +122,7 @@ func (db *MockDB) CreateMovie(movie *Movie) error {
 func (db *MockDB) GetMovie(id int64) (*Movie, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	movie, ok := db.movies[id]
 	if !ok {
 		return nil, fmt.Errorf("movie not found")
@@ -134,7 +134,7 @@ func (db *MockDB) GetMovie(id int64) (*Movie, error) {
 func (db *MockDB) MovieExistsFromPath(path string) (bool, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	for _, movie := range db.movies {
 		if movie.ImportedFromPath == path {
 			return true, nil
@@ -149,7 +149,7 @@ func (db *MockDB) MovieExistsFromPath(path string) (bool, error) {
 func (db *MockDB) CreateTVEpisode(episode *TVEpisode) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	key := fmt.Sprintf("%d_%d_%d", episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber)
 	db.tvEpisodes[key] = episode
 	return nil
@@ -159,7 +159,7 @@ func (db *MockDB) CreateTVEpisode(episode *TVEpisode) error {
 func (db *MockDB) TVEpisodeExistsFromPath(path string) (bool, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	for _, episode := range db.tvEpisodes {
 		if episode.ImportedFromPath == path {
 			return true, nil
@@ -174,7 +174,7 @@ func (db *MockDB) TVEpisodeExistsFromPath(path string) (bool, error) {
 func (db *MockDB) PathIsIgnored(mediaType MediaType, path string) (bool, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	ignoreType, ok := db.ignores[path]
 	if !ok {
 		return false, nil
@@ -186,7 +186,7 @@ func (db *MockDB) PathIsIgnored(mediaType MediaType, path string) (bool, error) 
 func (db *MockDB) StubExistsFromPath(mediaType MediaType, path string) (bool, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	stub, ok := db.stubs[path]
 	if !ok {
 		return false, nil
@@ -198,7 +198,7 @@ func (db *MockDB) StubExistsFromPath(mediaType MediaType, path string) (bool, er
 func (db *MockDB) CreateStub(mediaType MediaType, path string) (*Stub, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	stub := &Stub{
 		ImportedFromPath: path,
 		Type:             mediaType,

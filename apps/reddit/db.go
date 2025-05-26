@@ -20,7 +20,7 @@ func (m *model) getPosts(limit, offset int, subreddit, author string) ([]*Post, 
 	posts := []*Post{}
 	query := m.DB.Table("posts").
 		Where("status = ? AND created IS NOT NULL", "archived")
-	
+
 	// Apply filters if provided
 	if subreddit != "" {
 		query = query.Where("subreddit = ?", subreddit)
@@ -28,7 +28,7 @@ func (m *model) getPosts(limit, offset int, subreddit, author string) ([]*Post, 
 	if author != "" {
 		query = query.Where("author = ?", author)
 	}
-	
+
 	if err := query.
 		Order("created DESC").
 		Offset(offset - 1). // Convert from 1-based to 0-based
@@ -44,7 +44,7 @@ func (m *model) getPostsByCreated(subreddit, author string) ([]*Post, error) {
 	posts := []*Post{}
 	query := m.DB.Table("posts").
 		Where("status = ? AND created IS NOT NULL", "archived")
-	
+
 	// Apply filters if provided
 	if subreddit != "" {
 		query = query.Where("subreddit = ?", subreddit)
@@ -52,7 +52,7 @@ func (m *model) getPostsByCreated(subreddit, author string) ([]*Post, error) {
 	if author != "" {
 		query = query.Where("author = ?", author)
 	}
-	
+
 	if err := query.
 		Order("created DESC").
 		Find(&posts).
@@ -67,7 +67,7 @@ func (m *model) getPostCount(subreddit, author string) (int64, error) {
 	var count int64
 	query := m.DB.Table("posts").
 		Where("status = ? AND created IS NOT NULL", "archived")
-	
+
 	// Apply filters if provided
 	if subreddit != "" {
 		query = query.Where("subreddit = ?", subreddit)
@@ -75,7 +75,7 @@ func (m *model) getPostCount(subreddit, author string) (int64, error) {
 	if author != "" {
 		query = query.Where("author = ?", author)
 	}
-	
+
 	if err := query.Count(&count).Error; err != nil {
 		return 0, err
 	}
@@ -98,13 +98,13 @@ func (m *model) getSubredditCounts() ([]SubredditCount, error) {
 		GROUP BY subreddit 
 		ORDER BY count DESC
 	`
-	
+
 	rows, err := m.DB.Raw(query).Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	for rows.Next() {
 		var sc SubredditCount
 		if err := rows.Scan(&sc.Subreddit, &sc.Count); err != nil {
@@ -112,7 +112,7 @@ func (m *model) getSubredditCounts() ([]SubredditCount, error) {
 		}
 		results = append(results, sc)
 	}
-	
+
 	return results, nil
 }
 
@@ -132,13 +132,13 @@ func (m *model) getAuthorCounts() ([]AuthorCount, error) {
 		GROUP BY author 
 		ORDER BY count DESC
 	`
-	
+
 	rows, err := m.DB.Raw(query).Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	for rows.Next() {
 		var ac AuthorCount
 		if err := rows.Scan(&ac.Author, &ac.Count); err != nil {
@@ -146,6 +146,6 @@ func (m *model) getAuthorCounts() ([]AuthorCount, error) {
 		}
 		results = append(results, ac)
 	}
-	
+
 	return results, nil
 }

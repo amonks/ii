@@ -15,7 +15,7 @@ const (
 	// A URL that Reddit will redirect to after authorization
 	// This should match what's registered in the Reddit app settings
 	redirectURI = "https://thor.ss.cx/reddit/"
-	
+
 	// File to save tokens to
 	defaultTokenFile = "/data/tank/mirror/reddit/.tokens.json"
 )
@@ -69,7 +69,7 @@ func (a *AuthHelper) ExchangeCode(code string) (*TokenResponse, error) {
 	data.Set("redirect_uri", redirectURI)
 
 	// Create request
-	req, err := http.NewRequest("POST", "https://www.reddit.com/api/v1/access_token", 
+	req, err := http.NewRequest("POST", "https://www.reddit.com/api/v1/access_token",
 		strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (a *AuthHelper) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	data.Set("refresh_token", refreshToken)
 
 	// Create request
-	req, err := http.NewRequest("POST", "https://www.reddit.com/api/v1/access_token", 
+	req, err := http.NewRequest("POST", "https://www.reddit.com/api/v1/access_token",
 		strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err

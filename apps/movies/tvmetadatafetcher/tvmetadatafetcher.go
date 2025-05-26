@@ -52,20 +52,6 @@ func (app *TVMetadataFetcher) Run(ctx context.Context) error {
 			}
 		}
 
-		// For each season, fetch metadata
-		for _, season := range show.Seasons {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-
-			// Fetch season poster if needed
-			if season.PosterPath == "" {
-				log.Printf("Fetching poster for season %d of %s", season.SeasonNumber, show.Name)
-				if err := app.fetchSeasonPoster(show.ID, season.SeasonNumber); err != nil {
-					log.Printf("Error fetching poster for season %d of %s: %v", season.SeasonNumber, show.Name, err)
-				}
-			}
-		}
 	}
 
 	return nil
@@ -90,31 +76,6 @@ func (app *TVMetadataFetcher) fetchShowPoster(show *db.TVShow) error {
 		// Update database with poster path
 		if err := app.db.AddTVShowPoster(show, posterPath); err != nil {
 			return fmt.Errorf("error updating TV show poster path: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (app *TVMetadataFetcher) fetchSeasonPoster(showID int64, seasonNumber int) error {
-	// Get season details
-	season, _, err := app.tmdb.GetSeason(showID, seasonNumber)
-	if err != nil {
-		return fmt.Errorf("error fetching season details: %w", err)
-	}
-
-	if season.PosterPath != "" {
-		posterURL := fmt.Sprintf("https://image.tmdb.org/t/p/original%s", season.PosterPath)
-		posterPath := filepath.Join("/data/tank/tv", "posters", fmt.Sprintf("season_%d_%d.jpg", showID, seasonNumber))
-
-		// Download poster
-		if err := downloadImage(posterURL, posterPath); err != nil {
-			return fmt.Errorf("error downloading season poster: %w", err)
-		}
-
-		// Update database with poster path
-		if err := app.db.AddTVSeasonPoster(showID, seasonNumber, posterPath); err != nil {
-			return fmt.Errorf("error updating season poster path: %w", err)
 		}
 	}
 

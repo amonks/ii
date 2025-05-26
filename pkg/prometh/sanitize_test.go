@@ -58,5 +58,3 @@ func TestSanitizeLabel(t *testing.T) {
 		})
 	}
 }
-
-

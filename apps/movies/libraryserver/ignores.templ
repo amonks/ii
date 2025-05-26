@@ -1,0 +1,100 @@
+package libraryserver
+
+import (
+	"monks.co/apps/movies/db"
+	"strconv"
+)
+
+type IgnoresPageData struct {
+	Ignores         []*db.Ignore
+	Query           string
+	MediaTypeFilter string
+}
+
+templ Ignores(data *IgnoresPageData) {
+	@Page("Ignores") {
+		<div class="px-6 sm:px-8">
+			<!-- Search and filter form -->
+			<form method="get" class="mb-6">
+				<div class="flex flex-wrap gap-4 items-end">
+					<div class="flex-1 min-w-64">
+						<label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search:</label>
+						<input type="text" name="search" id="search" class="w-full px-3 py-2 border border-gray-300 rounded-md" value={ data.Query } placeholder="Search paths..."/>
+					</div>
+					<div class="w-48">
+						<label for="type" class="block text-sm font-medium text-gray-700 mb-1">Media Type:</label>
+						<select name="type" id="type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+							<option value="" if data.MediaTypeFilter == "" {
+								selected
+							}>All</option>
+							<option value="tv" if data.MediaTypeFilter == "tv" {
+								selected
+							}>TV Shows</option>
+							<option value="movies" if data.MediaTypeFilter == "movies" {
+								selected
+							}>Movies</option>
+						</select>
+					</div>
+					<div class="flex gap-2">
+						<button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Filter</button>
+						<a href="/movies/ignores/" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Clear</a>
+					</div>
+				</div>
+			</form>
+			
+			<!-- Results -->
+			<div>
+				if len(data.Ignores) == 0 {
+					<div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+						No ignored paths found
+						if data.Query != "" || data.MediaTypeFilter != "" {
+							 matching your filters
+						}
+						.
+					</div>
+				} else {
+					<p class="text-gray-600 mb-4">Found { strconv.Itoa(len(data.Ignores)) } ignored paths</p>
+					
+					<div class="overflow-x-auto">
+						<table class="min-w-full bg-white border border-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-200">
+								for _, ignore := range data.Ignores {
+									<tr class="hover:bg-gray-50">
+										<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{ ignore.ImportedFromPath }</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+												if ignore.Type == db.MediaTypeTV {
+													<span class="bg-purple-100 text-purple-800">TV Show</span>
+												} else if ignore.Type == db.MediaTypeMovie {
+													<span class="bg-green-100 text-green-800">Movie</span>
+												} else {
+													<span class="bg-gray-100 text-gray-800">Unknown</span>
+												}
+											</span>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm">
+											<form method="post" action="/movies/delete-ignore/" class="inline" onsubmit="return confirm('Are you sure you want to remove this ignore? This will allow the item to be processed again.');">
+												<input type="hidden" name="path" value={ ignore.ImportedFromPath }/>
+												<input type="hidden" name="type" value={ strconv.Itoa(int(ignore.Type)) }/>
+												<button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+													Remove Ignore
+												</button>
+											</form>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}

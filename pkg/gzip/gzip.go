@@ -26,7 +26,7 @@ var Middleware = middleware.MiddlewareFunc(func(h http.Handler) http.Handler {
 
 type gzipResponseWriter struct {
 	http.ResponseWriter
-	gzip   io.Writer
+	gzip io.Writer
 }
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {

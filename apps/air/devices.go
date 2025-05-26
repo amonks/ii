@@ -168,4 +168,3 @@ func GetRoomDisplayNames() map[string]string {
 	}
 	return result
 }
-

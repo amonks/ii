@@ -54,13 +54,13 @@ func JSON(w http.ResponseWriter, req *http.Request, data interface{}) {
 	if w.Header().Get("Content-Type") == "" {
 		w.Header().Set("Content-Type", "application/json")
 	}
-	
+
 	// Write the HTTP status code
 	w.WriteHeader(http.StatusOK)
-	
+
 	// Create an encoder that writes to the response writer
 	enc := json.NewEncoder(w)
-	
+
 	// Encode the data directly to the ResponseWriter
 	if err := enc.Encode(data); err != nil {
 		// Log encode errors, but can't really respond with an error at this point

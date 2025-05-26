@@ -85,7 +85,7 @@ func run() error {
 			}
 		}()
 	}
-	
+
 	runAfterTVImport := func(name string, run func(ctx context.Context) error) {
 		wg.Add(name)
 		go func() {
@@ -173,7 +173,7 @@ func run() error {
 			}
 		}
 	}()
-	
+
 	// Launch tvimporter, rerunning every minute.
 	ti := tvimporter.New(tmdb, db)
 	wg.Add("tvimporter")
@@ -192,20 +192,20 @@ func run() error {
 			}
 		}
 	}()
-	
+
 	// Add TV copier and metadata fetcher
 	tc := tvcopier.New(db)
 	tmf := tvmetadatafetcher.New(tmdb, db)
 	runAfterTVImport("tvcopier", tc.Run)
 	runAfterTVImport("tvmetadatafetcher", tmf.Run)
-	
+
 	// Initialize the LLM client
 	llmClient := llm.New("4o-mini")
-	
+
 	// Add stub query generator for movies
 	sqg := stubquerygenerator.New(llmClient, tmdb, db)
 	runAfterImport("stubquerygenerator_movies", sqg.RunMovies)
-	
+
 	// Add stub query generator for TV shows
 	runAfterTVImport("stubquerygenerator_tv", sqg.RunTV)
 

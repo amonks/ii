@@ -82,4 +82,3 @@ func (db *DB) LastN(n int, where ErrorReport) ([]ErrorReport, error) {
 	}
 	return reports, nil
 }
-

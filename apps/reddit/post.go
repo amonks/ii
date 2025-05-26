@@ -21,15 +21,15 @@ type Post struct {
 	Filetype    *string
 	Archivepath *string
 	Created     *time.Time
-	IsGallery   bool           // Indicates if this post is a gallery
-	GallerySize int            // Number of items in the gallery
+	IsGallery   bool // Indicates if this post is a gallery
+	GallerySize int  // Number of items in the gallery
 }
 
 // Status constants
 const (
-	StatusNew        = "new"        // Post fetched but media not processed yet
-	StatusArchived   = "archived"   // Media successfully downloaded
-	StatusDeleted    = "deleted"    // Media not available (404, etc.)
+	StatusNew         = "new"         // Post fetched but media not processed yet
+	StatusArchived    = "archived"    // Media successfully downloaded
+	StatusDeleted     = "deleted"     // Media not available (404, etc.)
 	StatusUnsupported = "unsupported" // Media format not supported
 )
 

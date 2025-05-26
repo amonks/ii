@@ -252,17 +252,8 @@ templ TVShowDetails(data *TVShowData) {
 					<div class="space-y-6">
 						for _, season := range data.Seasons {
 							<div class="bg-white shadow overflow-hidden sm:rounded-lg">
-								<div class="px-4 py-4 sm:px-6 flex flex-col sm:flex-row">
-									<div class="sm:w-1/6 mb-4 sm:mb-0 sm:mr-4">
-										if season.PosterPath != "" {
-											<img src={ fmt.Sprintf("/movies/tv/season/poster/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber) } class="w-full rounded" alt={ fmt.Sprintf("Season %d", season.SeasonNumber) }/>
-										} else {
-											<div class="w-full h-32 bg-gray-200 flex items-center justify-center rounded">
-												<span class="text-gray-500">No Poster</span>
-											</div>
-										}
-									</div>
-									<div class="sm:w-5/6">
+								<div class="px-4 py-4 sm:px-6">
+									<div>
 										<h4 class="text-md font-semibold text-gray-900">
 											<a href={ templ.SafeURL(fmt.Sprintf("/movies/tv/season/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber)) } class="text-blue-600 hover:text-blue-800">
 												if season.Name != "" {
@@ -333,17 +324,8 @@ templ TVSeasonDetails(data *TVSeasonData) {
 
 			<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
 				<div class="px-4 py-5 sm:px-6">
-					<div class="flex flex-col md:flex-row">
-						<div class="md:w-1/5 mb-6 md:mb-0 md:mr-6">
-							if data.Season.PosterPath != "" {
-								<img src={ fmt.Sprintf("/movies/tv/season/poster/?show_id=%d&season=%d", data.Show.ID, data.Season.SeasonNumber) } class="w-full rounded-lg shadow-md" alt={ seasonDisplayName(data.Season) }/>
-							} else {
-								<div class="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg">
-									<span class="text-gray-500">No Poster</span>
-								</div>
-							}
-						</div>
-						<div class="md:w-4/5">
+					<div>
+						<div>
 							<h2 class="text-xl font-semibold text-gray-900">{ seasonDisplayName(data.Season) }</h2>
 
 							<div class="mt-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">

@@ -8,13 +8,13 @@ import (
 // MockTMDB is a mock TMDB client for testing
 type MockTMDB struct {
 	// Pre-defined responses
-	Movies      map[int64]*Movie
-	TVShows     map[int64]*TVShow
-	Seasons     map[string]*Season      // key: "showID_seasonNumber"
-	Episodes    map[string]*Episode     // key: "showID_seasonNumber_episodeNumber"
-	SearchResults map[string][]SearchResult // key: "query_year"
+	Movies          map[int64]*Movie
+	TVShows         map[int64]*TVShow
+	Seasons         map[string]*Season          // key: "showID_seasonNumber"
+	Episodes        map[string]*Episode         // key: "showID_seasonNumber_episodeNumber"
+	SearchResults   map[string][]SearchResult   // key: "query_year"
 	TVSearchResults map[string][]TVSearchResult // key: "query_year"
-	
+
 	// Embed the real client to satisfy the interface
 	// This allows the mock to be used wherever a Client is expected
 	*Client
@@ -27,7 +27,7 @@ func NewMockTMDB() *MockTMDB {
 		apiKey:    "mock-api-key",
 		readToken: "mock-read-token",
 	}
-	
+
 	return &MockTMDB{
 		Movies:          make(map[int64]*Movie),
 		TVShows:         make(map[int64]*TVShow),
@@ -120,7 +120,7 @@ func (m *MockTMDB) GetSeason(showID int64, seasonNumber int) (*Season, []Episode
 	if !ok {
 		return nil, nil, fmt.Errorf("season not found")
 	}
-	
+
 	// Find all episodes for this season
 	var episodes []Episode
 	for epKey, episode := range m.Episodes {
@@ -128,7 +128,7 @@ func (m *MockTMDB) GetSeason(showID int64, seasonNumber int) (*Season, []Episode
 			episodes = append(episodes, *episode)
 		}
 	}
-	
+
 	return season, episodes, nil
 }
 

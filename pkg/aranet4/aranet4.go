@@ -111,14 +111,14 @@ func readRawData(bs []byte) *Data {
 func convertToDevice(data *Data, addr, name string) (*Device, error) {
 	// Create new device with eagerly interpreted values
 	device := &Device{
-		Address:   addr,
-		Name:      name,
-		Flags:     data.flags,
-		Version:   data.version,
-		Battery:   data.battery,
-		Status:    data.status,
-		Interval:  data.interval,
-		Ago:       data.ago,
+		Address:  addr,
+		Name:     name,
+		Flags:    data.flags,
+		Version:  data.version,
+		Battery:  data.battery,
+		Status:   data.status,
+		Interval: data.interval,
+		Ago:      data.ago,
 	}
 
 	// Parse CO2
@@ -133,7 +133,7 @@ func convertToDevice(data *Data, addr, name string) (*Device, error) {
 	if err == nil {
 		// Round to 1 decimal place to avoid floating point precision issues
 		device.TemperatureC = math.Round(tempC*10) / 10
-		device.TemperatureF = math.Round((tempC*(float64(9)/float64(5)) + float64(32))*10) / 10
+		device.TemperatureF = math.Round((tempC*(float64(9)/float64(5))+float64(32))*10) / 10
 		device.TemperatureValid = true
 	}
 
@@ -174,24 +174,24 @@ type Data struct {
 
 // Device contains the interpreted data from an Aranet4 device
 type Device struct {
-	Name     string  `json:"name"`
-	Address  string  `json:"address"`
-	Version  Version `json:"version"`
-	Flags    byte    `json:"flags"`
-	
-	CO2Valid       bool `json:"co2_valid"`
-	CO2            int  `json:"co2,omitempty"`
-	
+	Name    string  `json:"name"`
+	Address string  `json:"address"`
+	Version Version `json:"version"`
+	Flags   byte    `json:"flags"`
+
+	CO2Valid bool `json:"co2_valid"`
+	CO2      int  `json:"co2,omitempty"`
+
 	TemperatureValid bool    `json:"temperature_valid"`
 	TemperatureC     float64 `json:"temperature_c,omitempty"`
 	TemperatureF     float64 `json:"temperature_f,omitempty"`
-	
+
 	HumidityValid bool `json:"humidity_valid"`
 	Humidity      int  `json:"humidity,omitempty"`
-	
+
 	PressureValid bool    `json:"pressure_valid"`
 	Pressure      float64 `json:"pressure,omitempty"`
-	
+
 	Battery  uint8  `json:"battery"`
 	Status   uint8  `json:"status"`
 	Interval uint16 `json:"interval"`

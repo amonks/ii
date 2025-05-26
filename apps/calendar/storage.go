@@ -50,7 +50,6 @@ func (s *Storage) Save() error {
 	data, err := json.Marshal(s.data)
 	s.RUnlock()
 
-
 	if err != nil {
 		return err
 	}

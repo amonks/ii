@@ -8,44 +8,44 @@ import (
 
 func TestFileServer(t *testing.T) {
 	tests := []struct {
-		name            string
+		name           string
 		path           string
 		acceptEncoding string
 		wantStatus     int
 		wantEncoding   string
 	}{
 		{
-			name:        "normal file",
-			path:        "/test.txt",
+			name:       "normal file",
+			path:       "/test.txt",
 			wantStatus: http.StatusOK,
 		},
 		{
-			name:            "gzipped file with accept",
+			name:           "gzipped file with accept",
 			path:           "/test.txt",
 			acceptEncoding: "gzip",
 			wantStatus:     http.StatusOK,
 			wantEncoding:   "gzip",
 		},
 		{
-			name:            "brotli file with accept",
+			name:           "brotli file with accept",
 			path:           "/test.txt",
 			acceptEncoding: "br",
 			wantStatus:     http.StatusOK,
 			wantEncoding:   "br",
 		},
 		{
-			name:        "missing file",
-			path:        "/notfound.txt",
+			name:       "missing file",
+			path:       "/notfound.txt",
 			wantStatus: http.StatusNotFound,
 		},
 		{
-			name:        "directory redirect",
-			path:        "/dir",
+			name:       "directory redirect",
+			path:       "/dir",
 			wantStatus: http.StatusMovedPermanently,
 		},
 		{
-			name:        "directory index",
-			path:        "/dir/",
+			name:       "directory index",
+			path:       "/dir/",
 			wantStatus: http.StatusOK,
 		},
 	}
@@ -78,4 +78,3 @@ func TestFileServer(t *testing.T) {
 		})
 	}
 }
-
