@@ -154,9 +154,10 @@ func (s *diaryRow) Review() (string, error) {
 }
 
 func (s *diaryRow) LetterboxdURL() (string, error) {
-	href, got := s.Find("td.td-film-details > h3 > a").Attr("href")
+	href, got := s.Find("td.td-film-details h2 > a").Attr("href")
 	if !got {
-		return "", fmt.Errorf("could not find letterboxd url")
+		html, _ := s.Html()
+		return "", fmt.Errorf("could not find letterboxd url in:\n%s", html)
 	}
 	return "https://letterboxd.com" + href, nil
 }
@@ -179,7 +180,7 @@ func (s *diaryRow) IsRewatch() bool {
 }
 
 func (s *diaryRow) MovieTitle() string {
-	return s.Find("td.td-film-details > h3").Text()
+	return s.Find("td.td-film-details h2").Text()
 }
 
 func (s *diaryRow) MovieReleaseYear() (int, error) {
@@ -192,9 +193,10 @@ func (s *diaryRow) MovieReleaseYear() (int, error) {
 }
 
 func (s *diaryRow) MovieLetterboxdURL() (string, error) {
-	href, got := s.Find("td.td-film-details > h3 > a").Attr("href")
+	href, got := s.Find("td.td-film-details h2 > a").Attr("href")
 	if !got {
-		return "", fmt.Errorf("could not find letterboxd url")
+		html, _ := s.Html()
+		return "", fmt.Errorf("could not find movie letterboxd url in:\n%s", html)
 	}
 	return "https://letterboxd.com" + strings.TrimPrefix(href, fmt.Sprintf("/%s", s.username)), nil
 }
