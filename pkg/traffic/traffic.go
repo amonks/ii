@@ -79,7 +79,20 @@ func Open() (*Model, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Model{db}, nil
+	m := &Model{db}
+	if err := m.migrate(); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (m *Model) migrate() error {
+	sql := `
+		CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at DESC);
+		CREATE INDEX IF NOT EXISTS idx_requests_created_at_remote_addr ON requests(created_at, remote_addr);
+		CREATE INDEX IF NOT EXISTS idx_requests_created_at_host_path ON requests(created_at, host, path);
+	`
+	return m.Exec(sql).Error
 }
 
 func New(host string) (*TrafficLogger, error) {
