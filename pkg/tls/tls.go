@@ -76,9 +76,10 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 			acmeIssuerConfig.DNS01Solver = &certmagic.DNS01Solver{
 				DNSManager: certmagic.DNSManager{
 					DNSProvider: &route53.Provider{
-						Region: "us-east-1",
+						Region:             "us-east-1",
+						WaitForPropagation: true,
 					},
-					Resolvers: []string{"8.8.8.8"},
+					PropagationTimeout: -1,
 				},
 			}
 
