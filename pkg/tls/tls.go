@@ -11,6 +11,7 @@ import (
 )
 
 type ACME struct {
+	OnDemand    bool    `toml:"on_demand"`
 	StoragePath *string `toml:"storage_path"`
 	Strategies  []ACMEStrategy
 	Domains     []string
@@ -44,6 +45,19 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 		}
 	}
 	config = certmagic.New(cache, baseConfig)
+
+	if acmeConfig.OnDemand {
+		config.OnDemand = &certmagic.OnDemandConfig{
+			DecisionFunc: func(ctx context.Context, name string) error {
+				for _, domain := range acmeConfig.Domains {
+					if strings.HasSuffix(name, domain) {
+						return nil
+					}
+				}
+				return fmt.Errorf("unknown domain %s", name)
+			},
+		}
+	}
 
 	ca := certmagic.LetsEncryptStagingCA
 	if acmeConfig.Production {
