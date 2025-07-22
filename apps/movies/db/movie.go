@@ -228,10 +228,29 @@ func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 }
 
 func (d *DB) DeleteMovie(movie *Movie) error {
-	if err := d.Delete(movie).Error; err != nil {
-		return err
-	}
-	return nil
+	return d.Transaction(func(tx *DB) error {
+		// Delete from movie_titles (FTS4 virtual table)
+		if err := tx.Table("movie_titles").Where("id = ?", movie.ID).Delete(&MovieTitle{}).Error; err != nil {
+			return fmt.Errorf("failed to delete from movie_titles: %w", err)
+		}
+		
+		// Delete from movie_watches (join table)
+		if err := tx.Table("movie_watches").Where("id = ?", movie.ID).Delete(&MovieWatch{}).Error; err != nil {
+			return fmt.Errorf("failed to delete from movie_watches: %w", err)
+		}
+		
+		// Delete from queued_movies if present
+		if err := tx.Table("queued_movies").Where("id = ?", movie.ID).Delete(&struct{ ID int64 }{}).Error; err != nil {
+			return fmt.Errorf("failed to delete from queued_movies: %w", err)
+		}
+		
+		// Delete the movie itself
+		if err := tx.Delete(movie).Error; err != nil {
+			return fmt.Errorf("failed to delete movie: %w", err)
+		}
+		
+		return nil
+	})
 }
 
 func (d *DB) MovieExistsFromPath(importedFromPath string) (bool, error) {
