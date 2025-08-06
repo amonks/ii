@@ -7,6 +7,7 @@
 package letterboxd
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -46,52 +47,49 @@ func fetchDiary() ([]*Watch, error) {
 	fmt.Println("fetch ", url)
 	doc, err := fetch(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch diary page: %w", err)
 	}
 
 	var diary []*Watch
-	var findErr error
-	if doc.Find("tr.diary-entry-row").Each(func(_ int, result *goquery.Selection) {
+	var parseErrors []error
+	doc.Find("tr.diary-entry-row").Each(func(i int, result *goquery.Selection) {
 		fmt.Println("handle diary entry")
-		if findErr != nil {
-			return
-		}
 
 		row := &diaryRow{result, username}
 
 		date, err := row.Date()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to parse date: %w", i, err))
 			return
 		}
 
 		review, err := row.Review()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to fetch review: %w", i, err))
 			return
 		}
 
 		movieReleaseYear, err := row.MovieReleaseYear()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to parse movie release year: %w", i, err))
 			return
 		}
 
 		rating, err := row.Rating()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to parse rating: %w", i, err))
 			return
 		}
 
 		letterboxdURL, err := row.LetterboxdURL()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to get letterboxd URL: %w", i, err))
 			return
 		}
 
 		movieLetterboxdURL, err := row.MovieLetterboxdURL()
 		if err != nil {
-			findErr = err
+			parseErrors = append(parseErrors, fmt.Errorf("entry %d: failed to get movie letterboxd URL: %w", i, err))
 			return
 		}
 
@@ -107,8 +105,10 @@ func fetchDiary() ([]*Watch, error) {
 			MovieReleaseYear:   movieReleaseYear,
 			MovieLetterboxdURL: movieLetterboxdURL,
 		})
-	}); findErr != nil {
-		return nil, findErr
+	})
+
+	if len(parseErrors) > 0 {
+		return diary, errors.Join(parseErrors...)
 	}
 	return diary, nil
 }
@@ -121,7 +121,7 @@ type diaryRow struct {
 func (s *diaryRow) Date() (time.Time, error) {
 	dateStr := strings.TrimSuffix(
 		strings.TrimPrefix(
-			s.Find("td.td-day.diary-day > a").AttrOr("href", ""),
+			s.Find("td.col-daydate.diary-day > a").AttrOr("href", ""),
 			fmt.Sprintf("/%s/films/diary/for/", s.username),
 		),
 		"/",
@@ -139,7 +139,7 @@ func (s *diaryRow) Date() (time.Time, error) {
 }
 
 func (s *diaryRow) Review() (string, error) {
-	path, found := s.Find("td.td-review > a").Attr("href")
+	path, found := s.Find("td.col-review a").Attr("href")
 	if !found {
 		return "", nil
 	}
@@ -147,14 +147,14 @@ func (s *diaryRow) Review() (string, error) {
 	url := "https://letterboxd.com" + path
 	doc, err := fetch(url)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to fetch review from %s: %w", url, err)
 	}
 
 	return doc.Find("div.review.body-text").Text(), nil
 }
 
 func (s *diaryRow) LetterboxdURL() (string, error) {
-	href, got := s.Find("td.td-film-details h2 > a").Attr("href")
+	href, got := s.Find("td.col-production a").Attr("href")
 	if !got {
 		html, _ := s.Html()
 		return "", fmt.Errorf("could not find letterboxd url in:\n%s", html)
@@ -163,37 +163,37 @@ func (s *diaryRow) LetterboxdURL() (string, error) {
 }
 
 func (s *diaryRow) Rating() (int, error) {
-	str := s.Find("td.td-rating > .editable-rating > input").AttrOr("value", "0")
+	str := s.Find("td.col-rating .editable-rating > input").AttrOr("value", "0")
 	rating, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to parse rating '%s': %w", str, err)
 	}
 	return int(rating), nil
 }
 
 func (s *diaryRow) IsLiked() bool {
-	return s.Find("td.td-like > span.icon-liked").Length() > 0
+	return s.Find("td.col-like > span.icon-liked").Length() > 0
 }
 
 func (s *diaryRow) IsRewatch() bool {
-	return s.Find("td.td-rewatch.icon-status-off").Length() == 0
+	return s.Find("td.col-rewatch.icon-status-off").Length() == 0
 }
 
 func (s *diaryRow) MovieTitle() string {
-	return s.Find("td.td-film-details h2").Text()
+	return s.Find("td.col-production h2").Text()
 }
 
 func (s *diaryRow) MovieReleaseYear() (int, error) {
-	str := s.Find("td.td-released").Text()
+	str := s.Find("td.col-releaseyear").Text()
 	year, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to parse movie release year '%s': %w", str, err)
 	}
 	return int(year), nil
 }
 
 func (s *diaryRow) MovieLetterboxdURL() (string, error) {
-	href, got := s.Find("td.td-film-details h2 > a").Attr("href")
+	href, got := s.Find("td.col-production a").Attr("href")
 	if !got {
 		html, _ := s.Html()
 		return "", fmt.Errorf("could not find movie letterboxd url in:\n%s", html)
@@ -204,12 +204,12 @@ func (s *diaryRow) MovieLetterboxdURL() (string, error) {
 func fetch(url string) (*goquery.Document, error) {
 	reader, err := aschrome.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get page content from %s: %w", url, err)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse HTML document from %s: %w", url, err)
 	}
 
 	return doc, nil
