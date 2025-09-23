@@ -53,7 +53,7 @@ func Homepage(data *PageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, ", and try to write database software. I also organize a monthly meetup for computer artists here in Chicago. I occasionally write code with my friends at <a href=\"https://www.resinrecyclables.com\">Resin Recyclables</a>.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, ", and try to write database software. I sometimes make <a href=\"https://x.monks.co/mountains-2.m4v\">video art</a>.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -74,7 +74,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[0].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 204, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -87,7 +87,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[0].MovieTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 204, Col: 177}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[1].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 205, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[1].MovieTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 205, Col: 177}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[2].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -157,7 +157,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[2].MovieTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 206, Col: 177}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[3].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 209, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -192,7 +192,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[3].MovieTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 209, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 207, Col: 177}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -214,7 +214,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(stars(data.Watches[4].Rating))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 210, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -227,7 +227,7 @@ func Homepage(data *PageData) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Watches[4].MovieTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 210, Col: 177}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/homepage/homepage.templ`, Line: 208, Col: 177}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -238,7 +238,7 @@ func Homepage(data *PageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<p>I just published a <a href=\"/writing/tokyo-2024/\">trip report</a> about two glorious weeks in Tokyo.</p><p>I love exploring. I made a <a href=\"/map\">nice map</a> of places I have opinions about. It doesn't say what the opinions are, so you'll have to make your own. The map scrolls pretty slow; it used to be faster.</p></section><h3 id=\"previously\">previously,</h3><section aria-labelledby=\"previously\"><p>I was a <abbr title=\"zoom attendee\"><span class=\"p-job-title\">staff engineer</span></abbr> at <span class=\"p-org h-card\"><a class=\"o-name u-url\" href=\"https://samsara.com\">Samsara Inc.</a></span>, where I worked on the mobile app platform and the hiring program, and occasionally on mechanisms like <abbr title=\"“System and Organization Controls”\u200a–\u200aI helped accountants understand distributed systems\">SOC2</abbr> and open source license compliance.</p></section><h3 id=\"before-that\">before that, I…</h3><section aria-labelledby=\"before-that\"><ul class=\"continuation-list\"><li>worked on sites and apps for <abbr title=\"eg. Apple, Porsche, Walgreens\">big brands</abbr>,</li><li>performed as a <abbr title=\"“Video Jockey”\u200a–\u200aI made visuals for concerts\">VJ</abbr>,</li><li>made a few <a href=\"https://vimeo.com/140711028/ae31053ae1\">music videos</a>,</li><li>got a degree in studio art,</li><li>operated a local record label,</li><li>published a newsmagazine,</li><li>helped put on <abbr title=\"Jesus Christ Super Star Wars\">a parody opera</abbr>, and,</li><li>street-performed as a balloon twister.</li></ul></section></article></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<p>I love exploring. I made a <a href=\"/map\">nice map</a> of places I have opinions about. It doesn't say what the opinions are, so you'll have to make your own. The map scrolls pretty slow; it used to be faster.</p></section><h3 id=\"previously\">previously,</h3><section aria-labelledby=\"previously\"><p>I was a <abbr title=\"zoom attendee\"><span class=\"p-job-title\">staff engineer</span></abbr> at <span class=\"p-org h-card\"><a class=\"o-name u-url\" href=\"https://samsara.com\">Samsara Inc.</a></span>, where I worked on the mobile app platform and the hiring program, and occasionally on mechanisms like <abbr title=\"“System and Organization Controls”\u200a–\u200aI helped accountants understand distributed systems\">SOC2</abbr> and open source license compliance.</p></section><h3 id=\"before-that\">before that, I…</h3><section aria-labelledby=\"before-that\"><ul class=\"continuation-list\"><li>worked on sites and apps for <abbr title=\"eg. Apple, Porsche, Walgreens\">big brands</abbr>,</li><li>performed as a <abbr title=\"“Video Jockey”\u200a–\u200aI made visuals for concerts\">VJ</abbr>,</li><li>made a few <a href=\"https://vimeo.com/140711028/ae31053ae1\">music videos</a>,</li><li>got a degree in studio art,</li><li>operated a local record label,</li><li>published a newsmagazine,</li><li>helped put on <abbr title=\"Jesus Christ Super Star Wars\">a parody opera</abbr>, and,</li><li>street-performed as a balloon twister.</li></ul></section></article></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
