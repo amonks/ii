@@ -31,14 +31,6 @@ var (
 
 	// Format: [OZC]The Big O E14 'Roger the Wanderer'.mkv
 	plainEpisodePattern = regexp.MustCompile(`(?i)E(\d+)\s*['"\[]`)
-
-	// Format: Batman (1966) - S1E28 The Pharaohs In A Rut.avi
-	// No zero padding in season number
-	simpleEpisodePattern = regexp.MustCompile(`(?i)S(\d+)E(\d+)`)
-
-	// Format: Survivor S20E01 Slay Everyone, Trust No One
-	// Spaces instead of dots or dashes
-	spaceEpisodePattern = regexp.MustCompile(`(?i)S(\d+)\s*E(\d+)`)
 )
 
 type TVImporter struct {

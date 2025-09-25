@@ -10,7 +10,8 @@ import (
 func GetRequester(r *http.Request) (bool, string) {
 	addr := r.RemoteAddr
 
-	who, err := tailscale.WhoIs(r.Context(), addr)
+	lc := new(tailscale.LocalClient)
+	who, err := lc.WhoIs(r.Context(), addr)
 	if err != nil {
 		return false, ""
 	}

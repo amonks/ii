@@ -104,7 +104,7 @@ func (s *server) AddPerson(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	http.Redirect(w, req, "/ping", 302)
+	http.Redirect(w, req, "/ping", http.StatusFound)
 }
 
 func (s *server) UpdatePerson(w http.ResponseWriter, req *http.Request) {
@@ -121,7 +121,7 @@ func (s *server) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), 302)
+	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), http.StatusFound)
 }
 
 func (s *server) Bump(w http.ResponseWriter, req *http.Request) {
@@ -130,7 +130,7 @@ func (s *server) Bump(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/ping", 302)
+	http.Redirect(w, req, "/ping", http.StatusFound)
 }
 
 func (s *server) PingPerson(w http.ResponseWriter, req *http.Request) {
@@ -160,5 +160,5 @@ func (s *server) PingPerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, fmt.Sprintf("/ping/person/?slug=%s", slug), 302)
+	http.Redirect(w, req, fmt.Sprintf("/ping/person/?slug=%s", slug), http.StatusFound)
 }

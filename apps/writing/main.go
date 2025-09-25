@@ -103,7 +103,7 @@ func run() error {
 			return
 		}
 
-		if err := transcodeLimiter.Acquire(req.Context(), 1); err != nil && !errors.Is(context.Canceled, err) {
+		if err := transcodeLimiter.Acquire(req.Context(), 1); err != nil && !errors.Is(err, context.Canceled) {
 			serve.InternalServerErrorf(w, req, "semaphore error: %w", err)
 			return
 		} else if err != nil {

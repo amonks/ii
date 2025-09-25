@@ -75,12 +75,12 @@ func (s *server) handlePost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/golink", 302)
+	http.Redirect(w, req, "/golink", http.StatusFound)
 }
 
 func (s *server) handleDelete(w http.ResponseWriter, req *http.Request) {
 	log.Printf("path: del")
-	key := strings.Trim(req.URL.Path, "/golink/")
+	key := strings.TrimPrefix(req.URL.Path, "/golink/")
 
 	if err := s.model.Delete(key); err != nil {
 		serve.InternalServerError(w, req, err)
@@ -108,5 +108,5 @@ func (s *server) handleGet(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, url, 301)
+	http.Redirect(w, req, url, http.StatusMovedPermanently)
 }

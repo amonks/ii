@@ -132,11 +132,3 @@ func (m *model) getPersonPings(slug string) ([]Ping, error) {
 	}
 	return pings, nil
 }
-
-func formatTimeMs(at int64) string {
-	formatted := "never"
-	if at > 0 {
-		formatted = time.UnixMilli(at).Format("2006-01-02")
-	}
-	return formatted
-}

@@ -14,7 +14,7 @@ func (redirects RedirectorMiddleware) ModifyHandler(h http.Handler) http.Handler
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		for host, target := range redirects {
 			if req.Host == host || req.Host == "www."+host {
-				http.Redirect(w, req, target, 301)
+				http.Redirect(w, req, target, http.StatusMovedPermanently)
 				return
 			}
 		}

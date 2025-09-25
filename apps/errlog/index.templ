@@ -67,7 +67,7 @@ templ index(reports []model.ErrorReport, where model.ErrorReport) {
 								-
 							}
 						</td>
-						<td><code>{ fmt.Sprintf("%s", report.Report.HappenedAt.Truncate(time.Millisecond)) }</code></td>
+						<td><code>{ report.Report.HappenedAt.Truncate(time.Millisecond).String() }</code></td>
 						<td>{ report.Report.Report }</td>
 					</tr>
 				}

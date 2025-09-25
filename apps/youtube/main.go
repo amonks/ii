@@ -36,7 +36,6 @@ func run() error {
 		h := templ.Handler(Index(history))
 		w.Header().Set("Content-type", "charset=utf-8")
 		h.ServeHTTP(w, req)
-		return
 	})
 
 	ctx := sigctx.New()

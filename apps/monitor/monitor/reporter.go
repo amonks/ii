@@ -39,6 +39,6 @@ func (rep Reporter) Report() error {
 			log.Printf("%s", err)
 		}
 	}
-	log.Printf("report complete in %s", time.Now().Sub(start).Truncate(time.Millisecond))
+	log.Printf("report complete in %s", time.Since(start).Truncate(time.Millisecond))
 	return nil
 }

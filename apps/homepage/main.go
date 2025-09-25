@@ -41,7 +41,6 @@ func run() error {
 			}
 		}
 		serve.Errorf(w, req, code, "%d, as requested", code)
-		return
 	})
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
@@ -71,18 +70,7 @@ func run() error {
 	return nil
 }
 
-func lastFiveWatches() ([]*letterboxd.Watch, error) {
-	var watches []*letterboxd.Watch
-	watches, err := letterboxd.FetchDiary()
-	if err != nil {
-		return nil, fmt.Errorf("error fetching last 5 watches: %w", err)
-	}
-	return watches, nil
-}
-
-var errUnset = fmt.Errorf("unset")
-
-var goSynonyms = rotate.New[string](
+var goSynonyms = rotate.New(
 	"Go",
 	"囲碁",
 	"いご",

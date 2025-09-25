@@ -19,11 +19,11 @@ func main() {
 
 	if err := run(); err != nil {
 		errlogger.ReportPanic(err)
-		fmt.Fprintf(os.Stderr, "failed after %s\n", time.Now().Sub(startAt))
+		fmt.Fprintf(os.Stderr, "failed after %s\n", time.Since(startAt))
 		panic(err)
 	}
 
-	fmt.Fprintf(os.Stderr, "succeeded after %s\n", time.Now().Sub(startAt))
+	fmt.Fprintf(os.Stderr, "succeeded after %s\n", time.Since(startAt))
 }
 
 func run() error {

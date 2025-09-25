@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // RoomID represents a unique identifier for a room
@@ -52,6 +54,8 @@ type Device struct {
 	RoomID RoomID     // References Room.ID
 }
 
+var titlecase = cases.Title(language.English)
+
 // GetRoom returns the Room for this device
 func (d Device) GetRoom() Room {
 	for _, room := range Rooms {
@@ -60,7 +64,7 @@ func (d Device) GetRoom() Room {
 		}
 	}
 	// This should never happen with properly configured devices
-	return Room{ID: d.RoomID, DisplayName: strings.Title(string(d.RoomID))}
+	return Room{ID: d.RoomID, DisplayName: titlecase.String(string(d.RoomID))}
 }
 
 // GetParameters returns the parameters for this device based on its type

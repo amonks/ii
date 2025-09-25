@@ -120,16 +120,6 @@ func (f *fileHandler) findBestFile(w http.ResponseWriter, r *http.Request, fpath
 	return f.openAndStat(fpath)
 }
 
-// tryFile attempts to open and stat a file, closing it and returning only the FileInfo if successful
-func (f *fileHandler) tryFile(name string) (os.FileInfo, error) {
-	file, info, err := f.openAndStat(name)
-	if err != nil {
-		return nil, err
-	}
-	file.Close()
-	return info, nil
-}
-
 func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upath := r.URL.Path
 	if !strings.HasPrefix(upath, "/") {

@@ -140,6 +140,9 @@ func Load(ctx context.Context) (*Posts, error) {
 		}
 
 		post, err := ReadPost(date, slug, bs)
+		if err != nil {
+			return nil, fmt.Errorf("reading post '%s': %w", mdpath, err)
+		}
 		post.Media = media
 		posts.List = append(posts.List, post)
 		posts.bySlug[post.Slug] = post

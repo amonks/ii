@@ -86,6 +86,21 @@ watch = ['apps/proxy/**', 'apps/proxy/*']
 cmd = './bin/proxy -machine=fly'
 
 [[task]]
+id = 'go-test'
+type = 'short'
+cmd = 'go test ./...'
+
+[[task]]
+id = 'govulncheck'
+type = 'short'
+cmd = 'go tool govulncheck ./...'
+
+[[task]]
+id = 'staticcheck'
+type = 'short'
+cmd = 'go tool staticcheck ./...'
+
+[[task]]
 id = 'taskmaker'
 type = 'short'
 cmd = 'go run ./cmd/taskmaker'
@@ -124,6 +139,15 @@ dependencies = [
   'aws-convert-zones'
 ]
 cmd = 'source aws/.envrc && cd aws/terraform && terraform plan'
+
+[[task]]
+id = 'test'
+type = 'short'
+dependencies = [
+  'staticcheck',
+  'govulncheck',
+  'go-test'
+]
 
 [[task]]
 id = 'thor'

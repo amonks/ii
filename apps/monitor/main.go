@@ -52,7 +52,7 @@ func run() error {
 
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
-		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", 301)
+		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", http.StatusMovedPermanently)
 	})
 
 	ctx, cancel := sigctx.NewWithCancel()

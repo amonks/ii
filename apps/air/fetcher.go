@@ -198,6 +198,7 @@ func getAranetDevices() ([]AranetDevice, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
+		//lint:ignore ST1005 proper noun
 		return nil, fmt.Errorf("Aranet API returned non-OK status: %d", res.StatusCode)
 	}
 
@@ -245,23 +246,6 @@ type GetRoomResponse []struct {
 	ModiCategory struct {
 		Name string `json:"name"`
 	} `json:"modi_category"`
-}
-
-func getModiCategory() (string, error) {
-	res, err := http.Get("https://venta-app-gateway-prod.azurewebsites.net/1/rooms?owner_id=5ad200d8-9b4f-45e9-ab69-3df9f7c75efb")
-	if err != nil {
-		return "", err
-	}
-
-	bs, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-	room := GetRoomResponse{}
-	if err := json.Unmarshal(bs, &room); err != nil {
-		return "", err
-	}
-	return room[0].ModiCategory.Name, nil
 }
 
 type DeviceParametersResponse struct {

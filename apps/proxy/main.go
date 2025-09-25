@@ -135,7 +135,7 @@ func (s *Service) listenAndServeRedirects(ctx context.Context) error {
 		u := req.URL
 		u.Host = net.JoinHostPort(req.Host, "443")
 		u.Scheme = "https"
-		http.Redirect(w, req, u.String(), 301)
+		http.Redirect(w, req, u.String(), http.StatusMovedPermanently)
 	})
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,

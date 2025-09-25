@@ -1,6 +1,7 @@
 package loggingwaitgroup
 
 import (
+	"fmt"
 	"log"
 	"sync"
 )
@@ -13,15 +14,22 @@ type WaitGroup struct {
 }
 
 func (wg *WaitGroup) Add(name string) {
-	if shouldLog {
-		log.Println("add", name)
-	}
+	wg.println("add", name)
 	wg.WaitGroup.Add(1)
 }
 
 func (wg *WaitGroup) Done(name string) {
-	if shouldLog {
-		log.Println("done", name)
-	}
+	wg.println("done", name)
 	wg.WaitGroup.Done()
+}
+
+func (wg *WaitGroup) println(vs ...any) {
+	if !shouldLog {
+		return
+	}
+
+	if wg.name != "" {
+		vs = append([]any{fmt.Sprintf("[%s]", wg.name)}, vs...)
+	}
+	log.Println(vs...)
 }

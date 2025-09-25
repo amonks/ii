@@ -35,7 +35,7 @@ func TestSanitizeLabel(t *testing.T) {
 		{
 			name:  "unicode characters",
 			input: "métric_名前",
-			want:  "m_tric____",
+			want:  "m_tric___",
 		},
 		{
 			name:  "single underscore",

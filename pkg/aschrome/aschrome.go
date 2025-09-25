@@ -45,6 +45,9 @@ func Get(url string) (io.Reader, error) {
 	switch resp.Header.Get("Content-Encoding") {
 	case "gzip":
 		reader, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		defer reader.(io.ReadCloser).Close()
 	case "br":
 		reader = brotli.NewReader(resp.Body)

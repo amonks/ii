@@ -451,7 +451,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 
 		if show == nil {
 			// Create the show
-			show, err = tx.CreateTVShow(tvShow)
+			_, err = tx.CreateTVShow(tvShow)
 			if err != nil {
 				return fmt.Errorf("error creating TV show: %w", err)
 			}
@@ -488,7 +488,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				}
 
 				// Create the season
-				season, err = tx.CreateTVSeason(tvShow.ID, seasonData)
+				_, err = tx.CreateTVSeason(tvShow.ID, seasonData)
 				if err != nil {
 					log.Printf("Warning: Error creating season S%02d: %v", seasonNumber, err)
 					continue
@@ -512,7 +512,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 
 				// Create the full path by directly using the episodePath which retains original case
 				fullPath := filepath.Join(config.TVImportDir, episodePath)
-				episode, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
+				_, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
 				if err != nil {
 					log.Printf("Warning: Error creating episode S%02dE%02d: %v", seasonNumber, episodeNum, err)
 					continue

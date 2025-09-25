@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"tinygo.org/x/bluetooth"
-
 	"monks.co/pkg/aranet4"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
@@ -24,7 +22,6 @@ func main() {
 }
 
 var (
-	adapter     = bluetooth.DefaultAdapter
 	deviceCount = 4
 	scanTimeout = time.Minute
 )
@@ -119,7 +116,7 @@ func scanForDevices(deviceData *DeviceData) {
 
 	if err != nil {
 		// Even if we got an error, we might have found some devices
-		if devices != nil && len(devices) > 0 {
+		if len(devices) > 0 {
 			fmt.Printf("Warning: partial scan results (%d/%d devices): %v\n",
 				len(devices), deviceCount, err)
 

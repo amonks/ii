@@ -44,7 +44,6 @@ func (li *LetterboxdImporter) Run() error {
 		} else {
 			log.Printf("could not find movie '%s' for queue removal", entry.MovieTitle)
 		}
-		return nil
 	}
 	log.Println("letterboxdimporter done")
 	return nil

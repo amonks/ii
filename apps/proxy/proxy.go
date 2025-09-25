@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"strconv"
 	"strings"
 	"time"
 
@@ -37,7 +36,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		//
 		// TODO: I'm getting redirect loops from this sometimes.
 		if req.URL.Path == "/"+firstSegment {
-			http.Redirect(w, req, req.URL.String()+"/", 301)
+			http.Redirect(w, req, req.URL.String()+"/", http.StatusMovedPermanently)
 			return
 		}
 
@@ -75,7 +74,7 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 	startAt := time.Now()
 	scw := &StatusCodeWriter{ResponseWriter: w}
 	proxy.ServeHTTP(scw, req)
-	dur := time.Now().Sub(startAt)
+	dur := time.Since(startAt)
 
 	labels := prometh.SanitizeLabels(
 		req.Host,
@@ -86,21 +85,4 @@ func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req
 	)
 	requestDurationsMetric.WithLabelValues(labels...).Observe(float64(dur.Milliseconds()))
 	requestsMetric.WithLabelValues(labels...).Inc()
-}
-
-func parseRoutes(args []string) (map[string]int, error) {
-	routes := make(map[string]int, len(args))
-	for _, p := range args {
-		parts := strings.Split(p, ":")
-		if port, err := strconv.ParseInt(parts[1], 10, 64); err != nil {
-			return nil, err
-		} else {
-			prefix := parts[0]
-			if !strings.HasPrefix(prefix, "/") {
-				prefix = "/" + prefix
-			}
-			routes[prefix] = int(port)
-		}
-	}
-	return routes, nil
 }

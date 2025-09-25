@@ -45,4 +45,24 @@ var baseTasks = []*task{
 		Cmd:          "source aws/.envrc && cd aws/terraform && terraform fmt",
 		Dependencies: []string{"aws-convert-zones"},
 	},
+	{
+		Id:           "test",
+		Type:         "short",
+		Dependencies: []string{"staticcheck", "go-test"},
+	},
+	{
+		Id:   "staticcheck",
+		Type: "short",
+		Cmd:  "go tool staticcheck ./...",
+	},
+	{
+		Id:   "govulncheck",
+		Type: "short",
+		Cmd:  "go tool govulncheck ./...",
+	},
+	{
+		Id:   "go-test",
+		Type: "short",
+		Cmd:  "go test ./...",
+	},
 }

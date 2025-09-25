@@ -73,22 +73,6 @@ func (pi paginationInfo) page() int64 {
 	}
 }
 
-func (pi paginationInfo) perPage() int64 {
-	if parsed, err := strconv.ParseInt(pi.PerPage, 10, 64); err != nil {
-		panic(err)
-	} else {
-		return parsed
-	}
-}
-
-func (pi paginationInfo) total() int64 {
-	if parsed, err := strconv.ParseInt(pi.Total, 10, 64); err != nil {
-		panic(err)
-	} else {
-		return parsed
-	}
-}
-
 type scrobblesResponse struct {
 	RecentTracks struct {
 		Track []Scrobble     `json:"track"`
