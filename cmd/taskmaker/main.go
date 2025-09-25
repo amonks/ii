@@ -6,6 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"bytes"
+
+	"github.com/amonks/run/pkg/run"
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
@@ -13,95 +16,159 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
+	if err := start(); err != nil {
 		errlogger.ReportPanic(err)
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	machines, err := config.ListMachines()
+func start() error {
+	var tasks []*task
+
+	// add base tasks
+	tasks = append(tasks, baseTasks...)
+
+	// build app task sets for each machine
+	appTasks, err := buildAppTasks()
 	if err != nil {
 		return err
+	}
+	tasks = append(tasks, appTasks...)
+
+	// find generate task
+	var generate *task
+	for _, task := range tasks {
+		if task.Id == "generate" {
+			generate = task
+			break
+		}
+	}
+
+	// add discovered dependencies (from apps) to top-level generate task
+	generators, err := findGenerateTaskIDs(tasks)
+	if err != nil {
+		return fmt.Errorf("finding generator tasks: %w", err)
+	}
+	generate.Dependencies = append(generate.Dependencies, generators...)
+
+	if err := writeTasks("tasks.toml", tasks); err != nil {
+		return fmt.Errorf("writing finished tasks.toml: %w", err)
+	}
+
+	return nil
+}
+
+func buildAppTasks() ([]*task, error) {
+	machineConfigs, err := getMachineConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	// add build tasks
+	buildDependencies := []string{"apps/proxy/build"}
+	for name := range ports.Apps {
+		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
+	}
+	sort.Strings(buildDependencies)
+
+	tasks := []*task{{
+		Id:           "build",
+		Type:         "short",
+		Dependencies: buildDependencies,
+	}}
+
+	// add run tasks
+	for machineName, machine := range machineConfigs {
+		proxyRunID := "proxy-"+machineName
+		proxyRun := &task{
+			Id:   proxyRunID,
+			Type: "long",
+			Cmd:  fmt.Sprintf("./bin/proxy -machine=%s", machineName),
+		}
+
+		machineStart := &task{
+			Id:           machineName,
+			Dependencies: []string{proxyRunID},
+			Type:         "long",
+		}
+
+		switch machine.Mode {
+		case "dev":
+			proxyRun.Dependencies = []string{"apps/proxy/build"}
+		case "prod":
+		default:
+			return nil, fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
+		}
+
+		for _, app := range machine.Apps() {
+			switch machine.Mode {
+			case "dev":
+				machineStart.Dependencies = append(machineStart.Dependencies,
+					"apps/"+app+"/dev")
+			case "prod":
+				machineStart.Dependencies = append(machineStart.Dependencies,
+					"apps/"+app+"/start")
+			default:
+				return nil, fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
+			}
+		}
+
+		sort.Strings(machineStart.Dependencies)
+
+		tasks = append(tasks, machineStart)
+		tasks = append(tasks, proxyRun)
+	}
+
+	return tasks, nil
+}
+
+func getMachineConfigs() (map[string]*config.Config, error) {
+	machines, err := config.ListMachines()
+	if err != nil {
+		return nil, fmt.Errorf("listing machines: %w", err)
 	}
 
 	machineConfigs := make(map[string]*config.Config, len(machines))
 	for _, machine := range machines {
 		config, err := config.Load(machine)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("loading config for '%s': %w", machine, err)
 		}
 		machineConfigs[machine] = config
 	}
 
-	var tasks []*task
+	return machineConfigs, nil
+}
 
-	// add base tasks
-	tasks = append(tasks, baseTasks...)
-
-	// add build tasks
-	var buildDependencies []string
-	buildDependencies = append(buildDependencies,
-		"apps/proxy/build",
-		"templ",
-	)
-	for name := range ports.Apps {
-		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
-	}
-	sort.Strings(buildDependencies)
-	tasks = append(tasks, &task{
-		Id:           "build",
-		Type:         "short",
-		Dependencies: buildDependencies,
-	})
-
-	// add run tasks
-	for machineName, machine := range machineConfigs {
-		group := []string{
-			machineName + "-proxy",
-		}
-		if machine.Mode == "dev" {
-			group = append(group, "templ")
-		}
-
-		proxyCmd := []string{
-			"./bin/proxy",
-			"-machine=" + machineName,
-		}
-		if machine.Mode == "dev" {
-			proxyCmd[0] = "go run ./apps/proxy"
-		}
-
-		for _, app := range machine.Apps() {
-			switch machine.Mode {
-			case "dev":
-				group = append(group, "apps/"+app+"/dev")
-			case "prod":
-				group = append(group, "apps/"+app+"/start")
-			default:
-				return fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
-			}
-		}
-		sort.Strings(group)
-		tasks = append(tasks, &task{
-			Id:           machineName,
-			Dependencies: group,
-			Type:         "long",
-		})
-		tasks = append(tasks, &task{
-			Id:    machineName + "-proxy",
-			Type:  "long",
-			Watch: []string{"apps/proxy/**", "apps/proxy/*"},
-			Cmd:   strings.Join(proxyCmd, " "),
-		})
-	}
-
+// Find the "generate" tasks from the apps. A generate task is here defined as
+// the dependency of an app's build task.
+func findGenerateTaskIDs(tasks []*task) ([]string, error) {
+	// We want to discover the subtasks from apps. We'll do that by writing
+	// the taskfile and asking Run to load it.
 	if err := writeTasks("tasks.toml", tasks); err != nil {
-		return err
+		return nil, err
+	}
+	loaded, err := run.Load(".")
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	var ids []string
+	for _, taskID := range loaded.IDs() {
+		if !strings.HasPrefix(taskID, "apps/") {
+			continue
+		}
+		if !strings.HasSuffix(taskID, "/build") {
+			continue
+		}
+
+		for _, dep := range loaded.Get(taskID).Metadata().Dependencies {
+			ids = append(ids, dep)
+		}
+	}
+
+	return ids, nil
 }
 
 func writeTasks(filename string, tasks []*task) error {
@@ -109,16 +176,17 @@ func writeTasks(filename string, tasks []*task) error {
 		return tasks[a].Id < tasks[b].Id
 	})
 
-	toml, err := toml.Marshal(struct {
+	var buf bytes.Buffer
+	enc := toml.NewEncoder(&buf)
+	enc.SetIndentTables(true)
+
+	if err := enc.Encode(struct {
 		Task []*task `toml:"task"`
-	}{
-		Task: tasks,
-	})
-	if err != nil {
-		return err
+	}{Task: tasks}); err != nil {
+		return fmt.Errorf("marshalling taskflie: %w", err)
 	}
 
-	bs := append([]byte("# Code generated by taskmaker - DO NOT EDIT.\n\n"), toml...)
+	bs := append([]byte("# Code generated by taskmaker - DO NOT EDIT.\n\n"), buf.Bytes()...)
 
 	if err := os.WriteFile(filename, bs, 0644); err != nil {
 		return err

@@ -1,13 +1,8 @@
 [[task]]
   id = "dev"
   type = "long"
-  watch = ["**/*", "*"]
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
-
-[[task]]
-  id = "build"
-  type = "short"
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ../../bin/ ."
+  dependencies = ["build"]
+  cmd = "../../bin/reddit"
 
 [[task]]
   id = "start"
@@ -17,5 +12,12 @@
 [[task]]
   id = "update"
   type = "short"
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run . update"
+  cmd = "run build && ../../bin/reddit update"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
+  cmd = "go build -o ../../bin/ ."
 

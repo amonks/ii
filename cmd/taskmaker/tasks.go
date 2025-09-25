@@ -6,44 +6,34 @@ var baseTasks = []*task{
 		Type: "short",
 		Cmd:  "go run ./cmd/taskmaker",
 	},
+	// Run only checks subdirectories for taskfiles if they are
+	// referenced, and then sees all (including unreferenced) tasks
+	// in those taskflies.
+	{
+		Id:           "terraform-apply",
+		Type:         "short",
+		Dependencies: []string{"aws/apply"},
+	},
 	{
 		Id:   "deploy",
 		Type: "short",
 		Cmd:  "go run ./cmd/deploy",
 	},
 	{
+		Id:           "generate",
+		Type:         "short",
+		Dependencies: []string{"templ", "compress-statics"},
+	},
+	{
 		Id:    "templ",
 		Type:  "short",
-		Cmd:   "go run github.com/a-h/templ/cmd/templ generate",
-		Watch: []string{"**/*.templ"},
+		Cmd:   "go tool templ generate -path=./pkg",
+		Watch: []string{"pkg/**/*.templ"},
 	},
 	{
-		Id:   "aws-convert-zones",
+		Id:   "compress-statics",
 		Type: "short",
-		Cmd:  "cd aws && fish convert-zones.fish",
-	},
-	{
-		Id:   "terraform-init",
-		Type: "short",
-		Cmd:  "source aws/.envrc && cd aws/terraform && terraform init",
-	},
-	{
-		Id:           "terraform-plan",
-		Type:         "short",
-		Cmd:          "source aws/.envrc && cd aws/terraform && terraform plan",
-		Dependencies: []string{"aws-convert-zones"},
-	},
-	{
-		Id:           "terraform-apply",
-		Type:         "short",
-		Cmd:          "source aws/.envrc && cd aws/terraform && yes yes | terraform apply",
-		Dependencies: []string{"aws-convert-zones"},
-	},
-	{
-		Id:           "terraform-fmt",
-		Type:         "short",
-		Cmd:          "source aws/.envrc && cd aws/terraform && terraform fmt",
-		Dependencies: []string{"aws-convert-zones"},
+		Cmd:  "go run ./cmd/compressor -dir=static -workers=8 -force -v",
 	},
 	{
 		Id:           "test",

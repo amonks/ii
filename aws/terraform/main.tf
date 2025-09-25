@@ -30,7 +30,7 @@ terraform {
 }
 
 variable "GANDI_PERSONAL_ACCESS_TOKEN" {
-  type = "string"
+  type        = string
   description = "gandi personal access token"
 }
 

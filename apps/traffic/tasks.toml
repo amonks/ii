@@ -1,37 +1,35 @@
 [[task]]
   id = "dev"
   type = "long"
-  watch = [
-    "**/*.go", "*.go",
-    "**/*.gohtml", "*.gohtml",
-  ]
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
-  dependencies = ["build-css"]
-
-[[task]]
-  id = "build"
-  type = "short"
-  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/traffic"
-  dependencies = ["build-css"]
+  dependencies = ["build"]
+  cmd = "../../bin/traffic"
 
 [[task]]
   id = "start"
   type = "long"
-  cmd = "$MONKS_ROOT/bin/traffic"
+  cmd = "../../bin/traffic"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  dependencies = ["build-css"]
+  env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
+  cmd = "go build -o ../../bin/ ."
 
 [[task]]
   id = "build-css"
   type = "short"
-  dependencies = ["install-css"]
   watch = [
     "css/*.css",
     "templates/*.gohtml"
   ]
+  dependencies = ["install-css"]
   cmd = """
-    cd css
-    npx tailwindcss \
-      -i ./index.css \
-      -o ../static/index.css
+    cd css && \
+      npx tailwindcss \
+        -i ./index.css \
+        -o ../static/index.css
   """
 
 [[task]]

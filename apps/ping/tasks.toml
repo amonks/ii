@@ -1,16 +1,18 @@
 [[task]]
   id = "dev"
   type = "long"
-  watch = ["**/*", "*"]
-  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 SQLITE_ENABLE_LOCKING_STYLE=1 go run ./apps/ping"
-
-[[task]]
-  id = "build"
-  type = "short"
-  cmd = "cd $MONKS_ROOT && SQLITE_ENABLE_LOCKING_STYLE=1 SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ./bin/ ./apps/ping"
+  dependencies = ["build"]
+  cmd = "../../bin/ping"
 
 [[task]]
   id = "start"
   type = "long"
-  cmd = "cd $MONKS_ROOT && ./bin/ping"
+  cmd = "../../bin/ping"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
+  cmd = "go build -o ../../bin/ ."
 

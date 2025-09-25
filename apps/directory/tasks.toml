@@ -1,23 +1,25 @@
 [[task]]
-  id = "templ"
-  type = "short"
-  cmd = "go run github.com/a-h/templ/cmd/templ generate"
-  watch = ["*.templ"]
-
-[[task]]
   id = "dev"
   type = "long"
-  watch = ["**/*", "*"]
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go run ."
-
-[[task]]
-  id = "build"
-  type = "short"
-  cmd = "SQLITE_ENABLE_LOCKING_STYLE=1 go build -o ../../bin/ ."
-  dependencies = ["templ"]
+  dependencies = ["build"]
+  cmd = "../../bin/directory"
 
 [[task]]
   id = "start"
   type = "long"
   cmd = "../../bin/directory"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  dependencies = ["templ"]
+  env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
+  cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "templ"
+  type = "short"
+  watch = ["*.templ", "**/*.templ"]
+  cmd = "go tool templ generate"
 
