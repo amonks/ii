@@ -6,6 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"monks.co/credentials"
 )
 
 type Message struct {
@@ -25,7 +27,7 @@ func EmailMe(message Message) error {
 func SendEmail(from string, message Message) error {
 	return smtp.SendMail(
 		"email-smtp.us-east-1.amazonaws.com:25",
-		&loginAuth{os.Getenv("SMTP_USERNAME"), os.Getenv("SMTP_PASSWORD")},
+		&loginAuth{credentials.SMTPUsername, credentials.SMTPPassword},
 		extractAddress(from),
 		[]string{extractAddress(message.To)},
 		[]byte(strings.Join([]string{

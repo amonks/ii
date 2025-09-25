@@ -29,8 +29,13 @@ terraform {
   }
 }
 
+variable "GANDI_PERSONAL_ACCESS_TOKEN" {
+  type = "string"
+  description = "gandi personal access token"
+}
+
 provider "gandi" {
-  personal_access_token = "6383dc14d928bac69851e85e90f27ac7cff34090"
+  personal_access_token = var.GANDI_PERSONAL_ACCESS_TOKEN
 }
 
 output "monks-go_iam_user_access_key_id" {

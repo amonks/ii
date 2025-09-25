@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"monks.co/credentials"
 	"monks.co/pkg/meta"
 	"tailscale.com/tsnet"
 )
@@ -13,7 +14,7 @@ var server = &tsnet.Server{
 	Hostname:  "monks.co-" + os.Getenv("FLY_REGION") + "-" + meta.AppName(),
 	Dir:       filepath.Join("/data", meta.AppName()),
 	Ephemeral: true,
-	AuthKey:   os.Getenv("TS_AUTHKEY"),
+	AuthKey:   credentials.TailscaleAuthKey,
 }
 
 func Server() *tsnet.Server {
