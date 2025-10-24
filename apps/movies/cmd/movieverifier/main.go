@@ -26,6 +26,7 @@ type VerificationReport struct {
 	DestinationMissing     int
 	SourceMissing          int
 	SizeMismatches         int
+	PathMismatches         int
 	Verified               int
 	Errors                 int
 	Results                []VerificationResult
@@ -77,6 +78,8 @@ func main() {
 			report.SourceMissing++
 		case "marked_as_not_copied_size_mismatch", "would_mark_as_not_copied_size_mismatch":
 			report.SizeMismatches++
+		case "fixed_path_mismatch", "would_fix_path_mismatch":
+			report.PathMismatches++
 		case "verified":
 			report.Verified++
 		case "error":
@@ -104,6 +107,41 @@ func verifyMovie(database *db.DB, movie *db.Movie, dryRun bool) VerificationResu
 
 	sourcePath := filepath.Join(config.MovieImportDir, movie.ImportedFromPath)
 	destPath := filepath.Join(config.MovieLibraryDir, movie.LibraryPath)
+
+	// Check if the library path matches what we would generate now
+	expectedLibraryPath := movie.BuildLibraryPath()
+	if movie.LibraryPath != expectedLibraryPath {
+		// Path doesn't match - need to fix it
+		if dryRun {
+			result.Action = "would_fix_path_mismatch"
+		} else {
+			result.Action = "fixed_path_mismatch"
+
+			// Delete the old destination file if it exists
+			if _, err := os.Stat(destPath); err == nil {
+				if err := os.Remove(destPath); err != nil {
+					result.Error = fmt.Errorf("failed to delete old destination file: %w", err)
+					result.Action = "error"
+					return result
+				}
+			}
+
+			// Update the library path in the database
+			if err := database.UpdateMovieLibraryPath(movie, expectedLibraryPath); err != nil {
+				result.Error = fmt.Errorf("failed to update library path: %w", err)
+				result.Action = "error"
+				return result
+			}
+
+			// Mark as not copied so it will be re-copied with the correct path
+			if err := setMovieIsNotCopied(database, movie); err != nil {
+				result.Error = fmt.Errorf("failed to mark movie as not copied: %w", err)
+				result.Action = "error"
+				return result
+			}
+		}
+		return result
+	}
 
 	// Check if destination file exists
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
@@ -233,10 +271,12 @@ func printReport(report VerificationReport, dryRun bool) {
 		fmt.Printf("Destination missing (would mark as not copied): %d\n", report.DestinationMissing)
 		fmt.Printf("Source missing (logged only): %d\n", report.SourceMissing)
 		fmt.Printf("Size mismatches (would fix): %d\n", report.SizeMismatches)
+		fmt.Printf("Path mismatches (would fix): %d\n", report.PathMismatches)
 	} else {
 		fmt.Printf("Destination missing (marked as not copied): %d\n", report.DestinationMissing)
 		fmt.Printf("Source missing (logged only): %d\n", report.SourceMissing)
 		fmt.Printf("Size mismatches (fixed): %d\n", report.SizeMismatches)
+		fmt.Printf("Path mismatches (fixed): %d\n", report.PathMismatches)
 	}
 	
 	fmt.Printf("Errors: %d\n", report.Errors)
@@ -282,6 +322,22 @@ func printReport(report VerificationReport, dryRun bool) {
 		for _, result := range report.Results {
 			if result.Action == "marked_as_not_copied_size_mismatch" || result.Action == "would_mark_as_not_copied_size_mismatch" {
 				fmt.Printf("- %s (will be re-copied)\n", result.Movie.Title)
+			}
+		}
+	}
+
+	if report.PathMismatches > 0 {
+		if dryRun {
+			fmt.Println("\nMOVIES WITH PATH MISMATCHES (would fix):")
+		} else {
+			fmt.Println("\nMOVIES WITH PATH MISMATCHES (fixed):")
+		}
+		for _, result := range report.Results {
+			if result.Action == "fixed_path_mismatch" || result.Action == "would_fix_path_mismatch" {
+				expectedPath := result.Movie.BuildLibraryPath()
+				fmt.Printf("- %s\n", result.Movie.Title)
+				fmt.Printf("  Old: %s\n", result.Movie.LibraryPath)
+				fmt.Printf("  New: %s\n", expectedPath)
 			}
 		}
 	}

@@ -101,7 +101,7 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 	return &movie, nil
 }
 
-var illegalCharForFilename = regexp.MustCompile(`\/`)
+var illegalCharForFilename = regexp.MustCompile(`[^a-zA-Z0-9\.\- ]+`)
 
 func (m *Movie) BuildLibraryPath() string {
 	releaseYear := "9999"
@@ -223,6 +223,18 @@ func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 		Where("id = ?", movie.ID).
 		Updates(map[string]interface{}{
 			"imported_from_path": path,
+		}).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DB) UpdateMovieLibraryPath(movie *Movie, libraryPath string) error {
+	if err := d.Model(&Movie{}).
+		Where("id = ?", movie.ID).
+		Updates(map[string]interface{}{
+			"library_path": libraryPath,
 		}).
 		Error; err != nil {
 		return err
