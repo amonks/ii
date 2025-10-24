@@ -12,6 +12,7 @@ import (
 
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
+	"monks.co/apps/movies/filenames"
 	"monks.co/pkg/filesystem"
 	"monks.co/pkg/tmdb"
 )
@@ -31,6 +32,14 @@ var (
 
 	// Format: [OZC]The Big O E14 'Roger the Wanderer'.mkv
 	plainEpisodePattern = regexp.MustCompile(`(?i)E(\d+)\s*['"\[]`)
+
+	// Format: Batman (1966) - S1E28 The Pharaohs In A Rut.avi
+	// No zero padding in season number
+	simpleEpisodePattern = regexp.MustCompile(`(?i)S(\d+)E(\d+)`)
+
+	// Format: Survivor S20E01 Slay Everyone, Trust No One
+	// Spaces instead of dots or dashes
+	spaceEpisodePattern = regexp.MustCompile(`(?i)S(\d+)\s*E(\d+)`)
 )
 
 type TVImporter struct {
@@ -302,27 +311,7 @@ func (app *TVImporter) processSeasonDirectories(filesByDir map[string][]string) 
 }
 
 func (app *TVImporter) isEpisodeFile(filename string) bool {
-	// Check file extension
-	ext := strings.ToLower(filepath.Ext(filename))
-	if ext != ".mkv" && ext != ".mp4" && ext != ".avi" && ext != ".m4v" {
-		return false
-	}
-
-	// First check for explicit episode patterns in filename
-	// Note: we're using case-insensitive regex patterns ((?i) prefix), so we don't need to lowercase the filename
-	if episodePattern.MatchString(filename) ||
-		seasonEpPattern.MatchString(filename) ||
-		dotSeasonEpPattern.MatchString(filename) ||
-		dashEpisodePattern.MatchString(filename) ||
-		dotEpisodePattern.MatchString(filename) ||
-		plainEpisodePattern.MatchString(filename) {
-		return true
-	}
-
-	// If we didn't match a specific pattern, check if the filename contains any numbers
-	// This is more permissive than the strict patterns, but helps catch more valid episodes
-	numbers := parseNumericSequence(filename)
-	return len(numbers) > 0
+	return filenames.IsEpisodeFile(filename)
 }
 
 // parseNumericSequence extracts all numeric sequences from a filename
@@ -531,37 +520,37 @@ func parseEpisodeInfoWithPatterns(filename string) (int, int, error) {
 	seasonNum := detectSeasonFromPath(dirPath)
 
 	// Try the traditional regex patterns first
-	if match := episodePattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.EpisodePattern.FindStringSubmatch(filename); match != nil {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
 	}
 
-	if match := seasonEpPattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.SeasonEpPattern.FindStringSubmatch(filename); match != nil {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
 	}
 
-	if match := dotSeasonEpPattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.DotSeasonEpPattern.FindStringSubmatch(filename); match != nil {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
 	}
 
-	if match := dashEpisodePattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.DashEpisodePattern.FindStringSubmatch(filename); match != nil {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
 	}
 
-	if match := dotEpisodePattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.DotEpisodePattern.FindStringSubmatch(filename); match != nil {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
 	}
 
-	if match := plainEpisodePattern.FindStringSubmatch(filename); match != nil {
+	if match := filenames.PlainEpisodePattern.FindStringSubmatch(filename); match != nil {
 		episode, _ := strconv.Atoi(match[1])
 		return seasonNum, episode, nil
 	}
@@ -650,24 +639,7 @@ func guessEpisodeFromNumbers(filename string, seasonNum int) (int, int, error) {
 
 // detectSeasonFromPath extracts the season number from a directory path
 func detectSeasonFromPath(dirPath string) int {
-	parts := strings.Split(dirPath, string(filepath.Separator))
-
-	// Default to season 1 if we can't find a season number
-	seasonNum := 1
-
-	for _, part := range parts {
-		if seasonMatch := seasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
-			if s, err := strconv.Atoi(seasonMatch[1]); err == nil && s > 0 {
-				return s
-			}
-		} else if s2Match := regexp.MustCompile(`(?i)S(\d+)`).FindStringSubmatch(part); s2Match != nil {
-			if s, err := strconv.Atoi(s2Match[1]); err == nil && s > 0 {
-				return s
-			}
-		}
-	}
-
-	return seasonNum
+	return filenames.DetectSeasonFromPath(dirPath)
 }
 
 // episodeFilesEqual compares two slices of episode files to determine if they contain the same elements

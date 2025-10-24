@@ -6,22 +6,14 @@ import (
 	"net/http"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
+	"monks.co/apps/movies/filenames"
 	"monks.co/pkg/serve"
-)
-
-// These patterns are copied from tvimporter package to keep consistent behavior
-var (
-	episodePattern      = regexp.MustCompile(`(?i)S(\d+)E(\d+)`)
-	seasonEpPattern     = regexp.MustCompile(`(?i)Season\s*(\d+).*?Episode\s*(\d+)`)
-	dotSeasonEpPattern  = regexp.MustCompile(`(\d+)x(\d+)`)
-	seasonFolderPattern = regexp.MustCompile(`(?i)Season\s*(\d+)`)
 )
 
 // serveTVIndex handles the /tv route to show the TV shows library
@@ -602,107 +594,5 @@ func (app *LibraryServer) serveTVIgnoreShow(w http.ResponseWriter, req *http.Req
 
 // Helper function to extract season and episode numbers from a file path
 func extractSeasonEpisodeFromPath(path string) (int, int, error) {
-	// Try to use the same function from tvimporter package (via a helper)
-	season, episode, err := parseEpisodeInfoFromPath(path)
-	if err == nil {
-		return season, episode, nil
-	}
-
-	// If that fails, try our fallback approaches
-
-	// Extract the filename from the path
-	dir, filename := filepath.Split(path)
-
-	// Try all known episode patterns
-	if match := episodePattern.FindStringSubmatch(filename); match != nil {
-		season, _ := strconv.Atoi(match[1])
-		episode, _ := strconv.Atoi(match[2])
-		return season, episode, nil
-	}
-
-	if match := seasonEpPattern.FindStringSubmatch(filename); match != nil {
-		season, _ := strconv.Atoi(match[1])
-		episode, _ := strconv.Atoi(match[2])
-		return season, episode, nil
-	}
-
-	if match := dotSeasonEpPattern.FindStringSubmatch(filename); match != nil {
-		season, _ := strconv.Atoi(match[1])
-		episode, _ := strconv.Atoi(match[2])
-		return season, episode, nil
-	}
-
-	// Also check for season directories in the path
-	parts := strings.Split(path, "/")
-	var seasonNum int
-
-	for _, part := range parts {
-		// Look for "Season X" directory pattern
-		if seasonMatch := seasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
-			seasonNum, _ = strconv.Atoi(seasonMatch[1])
-
-			// Look for just a number as the episode
-			re := regexp.MustCompile(`(\d+)`)
-			if match := re.FindStringSubmatch(filename); match != nil {
-				episodeNum, _ := strconv.Atoi(match[1])
-				return seasonNum, episodeNum, nil
-			}
-		}
-	}
-
-	// Last resort: Check if the directory name is in season format and filename has numbers
-	dirParts := strings.Split(dir, "/")
-	for _, part := range dirParts {
-		if seasonMatch := seasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
-			seasonNum, _ := strconv.Atoi(seasonMatch[1])
-
-			// Try to find episode number in filename
-			episodeMatch := regexp.MustCompile(`(\d+)`).FindStringSubmatch(filename)
-			if episodeMatch != nil {
-				episodeNum, _ := strconv.Atoi(episodeMatch[1])
-				return seasonNum, episodeNum, nil
-			}
-		}
-	}
-
-	// If all else fails, assume season 1 if we can at least find an episode number
-	episodeMatch := regexp.MustCompile(`(\d+)`).FindStringSubmatch(filename)
-	if episodeMatch != nil {
-		episodeNum, _ := strconv.Atoi(episodeMatch[1])
-		return 1, episodeNum, nil
-	}
-
-	return 0, 0, fmt.Errorf("could not extract season and episode from path: %s", path)
-}
-
-// Helper function that mimics ParseEpisodeInfo from tvimporter
-func parseEpisodeInfoFromPath(path string) (int, int, error) {
-	filename := filepath.Base(path)
-
-	// Try various patterns to extract season and episode numbers
-	if match := episodePattern.FindStringSubmatch(filename); match != nil {
-		seasonNum := match[1]
-		episodeNum := match[2]
-		season, _ := strconv.Atoi(seasonNum)
-		episode, _ := strconv.Atoi(episodeNum)
-		return season, episode, nil
-	}
-
-	if match := seasonEpPattern.FindStringSubmatch(filename); match != nil {
-		seasonNum := match[1]
-		episodeNum := match[2]
-		season, _ := strconv.Atoi(seasonNum)
-		episode, _ := strconv.Atoi(episodeNum)
-		return season, episode, nil
-	}
-
-	if match := dotSeasonEpPattern.FindStringSubmatch(filename); match != nil {
-		seasonNum := match[1]
-		episodeNum := match[2]
-		season, _ := strconv.Atoi(seasonNum)
-		episode, _ := strconv.Atoi(episodeNum)
-		return season, episode, nil
-	}
-
-	return 0, 0, fmt.Errorf("could not parse season and episode from path: %s", path)
+	return filenames.ParseSeasonEpisode(path)
 }
