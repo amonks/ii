@@ -13,11 +13,17 @@ templ List(data *ListData) {
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 				<h1>Reddit Archive</h1>
 				<div style="display: flex; gap: 10px;">
-					if data.Subreddit != "" || data.Author != "" {
+					if data.Subreddit != "" || data.Author != "" || data.Starred != "" {
 						<a href="/reddit/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 							Clear Filters
 						</a>
 					}
+					<a href={ templ.SafeURL(addStarredFilterURL("true", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+						⭐ Starred
+					</a>
+					<a href={ templ.SafeURL(addStarredFilterURL("false", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+						Not Starred
+					</a>
 					<a href="/reddit/subreddits/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Subreddits
 					</a>
@@ -27,27 +33,44 @@ templ List(data *ListData) {
 				</div>
 			</div>
 
-			if data.Subreddit != "" || data.Author != "" {
+			if data.Subreddit != "" || data.Author != "" || data.Starred != "" {
 				<div style="margin-bottom: 20px; padding: 10px; background: #f8f8f8; border-radius: 4px;">
 					<h3>Active Filters:</h3>
 					if data.Subreddit != "" {
 						<div style="margin-bottom: 5px; display: flex; align-items: center;">
 							<span style="margin-right: 10px;">Subreddit: r/{ data.Subreddit }</span>
-							<a href={ templ.SafeURL(removeFilterURL("subreddit", data.Subreddit, data.Author)) } style="text-decoration: none; color: #666; font-weight: bold; font-size: 16px; display: inline-block; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; background-color: #ebebeb;">×</a>
+							<a href={ templ.SafeURL(removeFilterURL("subreddit", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; color: #666; font-weight: bold; font-size: 16px; display: inline-block; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; background-color: #ebebeb;">×</a>
 						</div>
 					}
 					if data.Author != "" {
-						<div style="display: flex; align-items: center;">
+						<div style="margin-bottom: 5px; display: flex; align-items: center;">
 							<span style="margin-right: 10px;">Author: { data.Author }</span>
-							<a href={ templ.SafeURL(removeFilterURL("author", data.Subreddit, data.Author)) } style="text-decoration: none; color: #666; font-weight: bold; font-size: 16px; display: inline-block; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; background-color: #ebebeb;">×</a>
+							<a href={ templ.SafeURL(removeFilterURL("author", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; color: #666; font-weight: bold; font-size: 16px; display: inline-block; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; background-color: #ebebeb;">×</a>
+						</div>
+					}
+					if data.Starred != "" {
+						<div style="display: flex; align-items: center;">
+							<span style="margin-right: 10px;">
+								if data.Starred == "true" {
+									⭐ Starred Posts
+								} else {
+									Not Starred
+								}
+							</span>
+							<a href={ templ.SafeURL(removeFilterURL("starred", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; color: #666; font-weight: bold; font-size: 16px; display: inline-block; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; background-color: #ebebeb;">×</a>
 						</div>
 					}
 				</div>
 			}
 
+			<div style="margin-bottom: 10px; color: #666; font-size: 14px;">
+				{ fmt.Sprintf("%d posts", len(data.Posts)) }
+			</div>
+
 			<table style="width: 100%; border-collapse: collapse;">
 				<thead>
 					<tr style="border-bottom: 2px solid #ddd; text-align: left;">
+						<th style="padding: 10px;">Star</th>
 						<th style="padding: 10px;">Title</th>
 						<th style="padding: 10px;">Subreddit</th>
 						<th style="padding: 10px;">Author</th>
@@ -58,8 +81,17 @@ templ List(data *ListData) {
 					for i, post := range data.Posts {
 						<tr>
 							<td style="padding: 10px;">
+								<button { templ.Attributes{"onclick": fmt.Sprintf("toggleStar('%s')", post.Name)}... } style="border: none; background: none; cursor: pointer; font-size: 18px;">
+									if post.IsStarred {
+										⭐
+									} else {
+										☆
+									}
+								</button>
+							</td>
+							<td style="padding: 10px;">
 								<a
-									href={ templ.SafeURL(buildPostURL(i+1, data.Subreddit, data.Author)) }
+									href={ templ.SafeURL(buildPostURL(i+1, data.Subreddit, data.Author, data.Starred)) }
 									style="text-decoration: none; color: #0366d6;"
 								>
 									{ post.Title }
@@ -90,16 +122,27 @@ templ List(data *ListData) {
 					}
 					if len(data.Posts) == 0 {
 						<tr>
-							<td colspan="4" style="padding: 20px; text-align: center;">No posts found</td>
+							<td colspan="5" style="padding: 20px; text-align: center;">No posts found</td>
 						</tr>
 					}
 				</tbody>
 			</table>
 		</div>
+		<script>
+			function toggleStar(postName) {
+				fetch('/reddit/star/' + postName + '/', {
+					method: 'POST'
+				}).then(response => {
+					if (response.ok) {
+						location.reload();
+					}
+				});
+			}
+		</script>
 	}
 }
 
-func buildPostURL(n int, subreddit, author string) string {
+func buildPostURL(n int, subreddit, author, starred string) string {
 	base := fmt.Sprintf("/reddit/post/%d/", n)  // Added trailing slash
 	params := []string{}
 	if subreddit != "" {
@@ -107,6 +150,9 @@ func buildPostURL(n int, subreddit, author string) string {
 	}
 	if author != "" {
 		params = append(params, fmt.Sprintf("author=%s", author))
+	}
+	if starred != "" {
+		params = append(params, fmt.Sprintf("starred=%s", starred))
 	}
 
 	if len(params) > 0 {
@@ -123,7 +169,7 @@ func trStyle(i int) string {
 }
 
 // removeFilterURL creates a URL that removes a specific filter while keeping other filters
-func removeFilterURL(filterToRemove, subreddit, author string) string {
+func removeFilterURL(filterToRemove, subreddit, author, starred string) string {
 	url := "/reddit/"
 	params := []string{}
 
@@ -133,6 +179,9 @@ func removeFilterURL(filterToRemove, subreddit, author string) string {
 	}
 	if filterToRemove != "author" && author != "" {
 		params = append(params, fmt.Sprintf("author=%s", author))
+	}
+	if filterToRemove != "starred" && starred != "" {
+		params = append(params, fmt.Sprintf("starred=%s", starred))
 	}
 
 	if len(params) > 0 {
@@ -168,3 +217,47 @@ func addFilterURL(filterType, filterValue, currentSubreddit, currentAuthor strin
 
 	return url
 }
+
+// addStarredFilterURL creates a URL that adds or replaces the starred filter
+func addStarredFilterURL(starredValue, currentSubreddit, currentAuthor, currentStarred string) string {
+	url := "/reddit/"
+	params := []string{}
+
+	// Keep existing filters
+	if currentSubreddit != "" {
+		params = append(params, fmt.Sprintf("subreddit=%s", currentSubreddit))
+	}
+	if currentAuthor != "" {
+		params = append(params, fmt.Sprintf("author=%s", currentAuthor))
+	}
+	
+	// Add starred filter (or toggle it off if same value)
+	if currentStarred != starredValue {
+		params = append(params, fmt.Sprintf("starred=%s", starredValue))
+	}
+
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	return url
+}
+
+// starredButtonStyle returns the CSS style for starred filter buttons
+func starredButtonStyle(buttonValue, currentStarred string) string {
+	baseStyle := "text-decoration: none; padding: 8px 16px; border-radius: 4px;"
+	if currentStarred == buttonValue {
+		return baseStyle + " background: #0366d6; color: white;"
+	}
+	return baseStyle + " background: #f0f0f0; color: black;"
+}
+
+// starButtonStyle returns the CSS style for individual star buttons
+func starButtonStyle(isStarred bool) string {
+	baseStyle := "border: none; background: none; cursor: pointer; font-size: 18px; padding: 5px;"
+	if isStarred {
+		return baseStyle + " color: #ffd700;"
+	}
+	return baseStyle + " color: #ccc;"
+}
+

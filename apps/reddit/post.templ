@@ -10,9 +10,54 @@ import (
 
 templ PostPage(data *PageData) {
 	@templib.Page("Reddit Viewer", templib.PageOptions{}) {
-		<div style="width: 100%; max-width: 1000px; margin: 0 auto; padding-bottom: 100px;">
+		<!-- Boss mode overlay -->
+		<div id="boss-mode-overlay" style="
+			opacity: 0;
+			visibility: hidden;
+			width: 100%;
+			height: 100vh;
+			background-color: black;
+			position: fixed;
+			top: 0;
+			left: 0;
+			z-index: 10000;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-family: Arial, sans-serif;
+			transition: opacity 0.3s ease;
+		">
+			<button id="boss-mode-exit" style="
+				padding: 15px 30px;
+				font-size: 1.1em;
+				background-color: #007bff;
+				color: white;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;
+				transition: background-color 0.3s;
+			" onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'">
+				Show Content
+			</button>
+		</div>
+
+		<div id="main-content" style="width: 100%; max-width: 1000px; margin: 0 auto; padding-bottom: 100px;">
 			<div style="margin-bottom: 20px;">
-				<h1 style="margin-bottom: 10px;">{ data.Post.Title }</h1>
+				<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+					<h1 style="margin: 0;">{ data.Post.Title }</h1>
+					<div style="display: flex; align-items: center;">
+						<button onclick="showBossMode()" style="border: none; background: none; cursor: pointer; font-size: 24px; padding: 8px; margin-right: 5px;">
+							👁️
+						</button>
+						<button { templ.Attributes{"onclick": fmt.Sprintf("toggleStar('%s')", data.Post.Name)}... } style="border: none; background: none; cursor: pointer; font-size: 24px; padding: 8px;">
+							if data.Post.IsStarred {
+								⭐
+							} else {
+								☆
+							}
+						</button>
+					</div>
+				</div>
 				<div style="display: flex; gap: 20px; color: #666; margin-bottom: 15px; flex-wrap: wrap;">
 					<div>
 						<strong>Author:</strong>
@@ -75,7 +120,7 @@ templ PostPage(data *PageData) {
 				<a
 					id="prev-post-link"
 					style="display: inline-block; padding: 10px 20px; background: #f0f0f0; border-radius: 4px; text-decoration: none;"
-					href={ templ.SafeURL(buildURLWithParams(data.Prev, data.Subreddit, data.Author)) }
+					href={ templ.SafeURL(buildURLWithParams(data.Prev, data.Subreddit, data.Author, data.Starred)) }
 				>
 					← Previous
 				</a>
@@ -87,7 +132,7 @@ templ PostPage(data *PageData) {
 				<a
 					id="next-post-link"
 					style="display: inline-block; padding: 10px 20px; background: #f0f0f0; border-radius: 4px; text-decoration: none;"
-					href={ templ.SafeURL(buildURLWithParams(data.Next, data.Subreddit, data.Author)) }
+					href={ templ.SafeURL(buildURLWithParams(data.Next, data.Subreddit, data.Author, data.Starred)) }
 				>
 					Next →
 				</a>
@@ -96,6 +141,63 @@ templ PostPage(data *PageData) {
 			<!-- Keyboard navigation script -->
 			<script>
 				document.addEventListener('DOMContentLoaded', function() {
+					let inactivityTimer;
+					const INACTIVITY_DELAY = 2 * 60 * 1000; // 2 minutes
+					const bossOverlay = document.getElementById('boss-mode-overlay');
+					const exitButton = document.getElementById('boss-mode-exit');
+
+					function showBossMode() {
+						document.getElementById('main-content').style.opacity = '0';
+						bossOverlay.style.opacity = '1';
+						bossOverlay.style.visibility = 'visible';
+						localStorage.setItem('bossMode', 'active');
+					}
+
+					// Make showBossMode globally available
+					window.showBossMode = showBossMode;
+
+					function hideBossMode() {
+						document.getElementById('main-content').style.opacity = '1';
+						bossOverlay.style.opacity = '0';
+						bossOverlay.style.visibility = 'hidden';
+						localStorage.setItem('bossMode', 'inactive');
+						resetInactivityTimer();
+					}
+
+					function resetInactivityTimer() {
+						clearTimeout(inactivityTimer);
+						const currentState = localStorage.getItem('bossMode');
+						if (currentState !== 'active') {
+							inactivityTimer = setTimeout(showBossMode, INACTIVITY_DELAY);
+						}
+					}
+
+					// Initialize boss mode state from localStorage
+					function initializeBossMode() {
+						const savedState = localStorage.getItem('bossMode');
+						if (savedState === 'inactive') {
+							// Only show content if user previously exited boss mode
+							resetInactivityTimer();
+						} else {
+							// Default to boss mode active for fresh sessions
+							document.getElementById('main-content').style.opacity = '0';
+							bossOverlay.style.opacity = '1';
+							bossOverlay.style.visibility = 'visible';
+							localStorage.setItem('bossMode', 'active');
+						}
+					}
+
+					// Only reset timer on actual user interaction, not just mouse movement
+					document.addEventListener('click', resetInactivityTimer);
+					document.addEventListener('keydown', resetInactivityTimer);
+					document.addEventListener('scroll', resetInactivityTimer);
+
+					// Boss mode exit button
+					exitButton.addEventListener('click', hideBossMode);
+
+					// Initialize boss mode state
+					initializeBossMode();
+
 					// Handle keyboard navigation
 					document.addEventListener('keydown', function(e) {
 						// Left arrow key - Go to previous post
@@ -116,11 +218,22 @@ templ PostPage(data *PageData) {
 				});
 			</script>
 		</div>
+		<script>
+			function toggleStar(postName) {
+				fetch('/reddit/star/' + postName + '/', {
+					method: 'POST'
+				}).then(response => {
+					if (response.ok) {
+						location.reload();
+					}
+				});
+			}
+		</script>
 	}
 }
 
 // buildURLWithParams creates a URL with the necessary filter parameters
-func buildURLWithParams(n int, subreddit, author string) string {
+func buildURLWithParams(n int, subreddit, author, starred string) string {
 	url := fmt.Sprintf("/reddit/post/%d/", n)
 	params := []string{}
 	if subreddit != "" {
@@ -128,6 +241,9 @@ func buildURLWithParams(n int, subreddit, author string) string {
 	}
 	if author != "" {
 		params = append(params, fmt.Sprintf("author=%s", author))
+	}
+	if starred != "" {
+		params = append(params, fmt.Sprintf("starred=%s", starred))
 	}
 
 	if len(params) > 0 {
@@ -213,3 +329,5 @@ templ galleryEmbed(p *Post) {
 func formatTime(t time.Time) string {
 	return t.Format("Jan 2, 2006")
 }
+
+

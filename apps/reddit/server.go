@@ -21,6 +21,7 @@ func newServer(db *model) *Server {
 	s.Handle("GET /post/{n}/{$}", s.postServer())         // Individual post page with trailing slash
 	s.Handle("GET /subreddits/{$}", s.subredditsServer()) // Subreddits page
 	s.Handle("GET /authors/{$}", s.authorsServer())       // Authors page
+	s.Handle("POST /star/{name}/{$}", s.starHandler())    // Star toggle endpoint
 
 	fs := http.FileServer(http.Dir(archivePath))
 	s.Handle("GET /media/", http.StripPrefix("/media/", fs))
@@ -34,6 +35,7 @@ type PageData struct {
 	Prev       int
 	Subreddit  string
 	Author     string
+	Starred    string // Starred filter parameter
 	Current    int // Current position in the posts list
 	TotalPosts int // Total number of posts
 }
@@ -42,6 +44,7 @@ type ListData struct {
 	Posts     []*Post
 	Subreddit string
 	Author    string
+	Starred   string
 }
 
 func (s *Server) postServer() http.Handler {
@@ -56,9 +59,17 @@ func (s *Server) postServer() http.Handler {
 		// Get filter parameters
 		subreddit := req.URL.Query().Get("subreddit")
 		author := req.URL.Query().Get("author")
+		starredParam := req.URL.Query().Get("starred")
+		
+		var starred *bool
+		if starredParam == "true" {
+			starred = &[]bool{true}[0]
+		} else if starredParam == "false" {
+			starred = &[]bool{false}[0]
+		}
 
 		// Get total count of posts for wrap-around navigation
-		totalCount, err := s.db.getPostCount(subreddit, author)
+		totalCount, err := s.db.getPostCount(subreddit, author, starred)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
 			return
@@ -84,7 +95,7 @@ func (s *Server) postServer() http.Handler {
 		// Then take modulo to ensure it's within bounds (1 to totalCount)
 		offset = ((offset - 1) % totalCount) + 1
 
-		posts, err := s.db.getPosts(postsPerPage, int(offset), subreddit, author)
+		posts, err := s.db.getPosts(postsPerPage, int(offset), subreddit, author, starred)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
 			return
@@ -109,6 +120,7 @@ func (s *Server) postServer() http.Handler {
 			Prev:       int(prev),
 			Subreddit:  subreddit,
 			Author:     author,
+			Starred:    starredParam,
 			Current:    int(offset),
 			TotalPosts: int(totalCount),
 		}))
@@ -121,8 +133,16 @@ func (s *Server) listServer() http.Handler {
 		// Get filter parameters
 		subreddit := req.URL.Query().Get("subreddit")
 		author := req.URL.Query().Get("author")
+		starredParam := req.URL.Query().Get("starred")
+		
+		var starred *bool
+		if starredParam == "true" {
+			starred = &[]bool{true}[0]
+		} else if starredParam == "false" {
+			starred = &[]bool{false}[0]
+		}
 
-		posts, err := s.db.getPostsByCreated(subreddit, author)
+		posts, err := s.db.getPosts(1000, 1, subreddit, author, starred)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
 			return
@@ -132,6 +152,7 @@ func (s *Server) listServer() http.Handler {
 			Posts:     posts,
 			Subreddit: subreddit,
 			Author:    author,
+			Starred:   starredParam,
 		}))
 		h.ServeHTTP(w, req)
 	})
@@ -164,5 +185,22 @@ func (s *Server) authorsServer() http.Handler {
 			Authors: authors,
 		}))
 		h.ServeHTTP(w, req)
+	})
+}
+
+func (s *Server) starHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		name := req.PathValue("name")
+		if name == "" {
+			serve.Error(w, req, http.StatusBadRequest, nil)
+			return
+		}
+
+		if err := s.db.toggleStarredStatus(name); err != nil {
+			serve.Error(w, req, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	})
 }

@@ -23,6 +23,7 @@ type Post struct {
 	Created     *time.Time
 	IsGallery   bool // Indicates if this post is a gallery
 	GallerySize int  // Number of items in the gallery
+	IsStarred   bool // Indicates if this post is starred
 }
 
 // Status constants

@@ -104,7 +104,10 @@ func (db *DB) CreateMovie(m *tmdb.Movie, importedFromPath string) (*Movie, error
 var illegalCharForFilename = regexp.MustCompile(`\/`)
 
 func (m *Movie) BuildLibraryPath() string {
-	releaseYear := m.ReleaseDate[0:4]
+	releaseYear := "9999"
+	if len(m.ReleaseDate) >= 4 {
+		releaseYear = m.ReleaseDate[0:4]
+	}
 	filename := fmt.Sprintf("%s-%s%s", releaseYear, m.Title, m.Extension)
 	filename = illegalCharForFilename.ReplaceAllString(filename, "-")
 	return filename

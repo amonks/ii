@@ -18,6 +18,13 @@
   id = "build"
   type = "short"
   watch = ["**/*.go", "*.go"]
+  dependencies = ["templ"]
   env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
   cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "templ"
+  type = "short"
+  watch = ["*.templ", "**/*.templ"]
+  cmd = "go tool templ generate"
 

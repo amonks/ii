@@ -1,8 +1,12 @@
 package main
 
 import (
+	emb "embed"
 	"monks.co/pkg/database"
 )
+
+//go:embed migrations/*.sql
+var migrationsFS emb.FS
 
 type model struct {
 	*database.DB
@@ -13,10 +17,21 @@ func NewModel() (*model, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Load migrations from embedded filesystem
+	migrations, err := database.LoadMigrationsFromFS(migrationsFS, "migrations")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Migrate(migrations); err != nil {
+		return nil, err
+	}
+
 	return &model{db}, nil
 }
 
-func (m *model) getPosts(limit, offset int, subreddit, author string) ([]*Post, error) {
+func (m *model) getPosts(limit, offset int, subreddit, author string, starred *bool) ([]*Post, error) {
 	posts := []*Post{}
 	query := m.DB.Table("posts").
 		Where("status = ? AND created IS NOT NULL", "archived")
@@ -27,6 +42,9 @@ func (m *model) getPosts(limit, offset int, subreddit, author string) ([]*Post, 
 	}
 	if author != "" {
 		query = query.Where("author = ?", author)
+	}
+	if starred != nil {
+		query = query.Where("is_starred = ?", *starred)
 	}
 
 	if err := query.
@@ -63,7 +81,7 @@ func (m *model) getPostsByCreated(subreddit, author string) ([]*Post, error) {
 }
 
 // getPostCount returns the total number of posts matching the given filters
-func (m *model) getPostCount(subreddit, author string) (int64, error) {
+func (m *model) getPostCount(subreddit, author string, starred *bool) (int64, error) {
 	var count int64
 	query := m.DB.Table("posts").
 		Where("status = ? AND created IS NOT NULL", "archived")
@@ -74,6 +92,9 @@ func (m *model) getPostCount(subreddit, author string) (int64, error) {
 	}
 	if author != "" {
 		query = query.Where("author = ?", author)
+	}
+	if starred != nil {
+		query = query.Where("is_starred = ?", *starred)
 	}
 
 	if err := query.Count(&count).Error; err != nil {
@@ -92,10 +113,10 @@ type SubredditCount struct {
 func (m *model) getSubredditCounts() ([]SubredditCount, error) {
 	var results []SubredditCount
 	query := `
-		SELECT subreddit, COUNT(*) as count 
-		FROM posts 
+		SELECT subreddit, COUNT(*) as count
+		FROM posts
 		WHERE status = 'archived' AND created IS NOT NULL
-		GROUP BY subreddit 
+		GROUP BY subreddit
 		ORDER BY count DESC
 	`
 
@@ -126,10 +147,10 @@ type AuthorCount struct {
 func (m *model) getAuthorCounts() ([]AuthorCount, error) {
 	var results []AuthorCount
 	query := `
-		SELECT author, COUNT(*) as count 
-		FROM posts 
+		SELECT author, COUNT(*) as count
+		FROM posts
 		WHERE status = 'archived' AND created IS NOT NULL
-		GROUP BY author 
+		GROUP BY author
 		ORDER BY count DESC
 	`
 
@@ -148,4 +169,9 @@ func (m *model) getAuthorCounts() ([]AuthorCount, error) {
 	}
 
 	return results, nil
+}
+
+// toggleStarredStatus toggles the starred status of a post
+func (m *model) toggleStarredStatus(postName string) error {
+	return m.DB.Exec("UPDATE posts SET is_starred = NOT is_starred WHERE name = ?", postName).Error
 }
