@@ -4,11 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
 	"monks.co/pkg/tmdb"
 )
+
+var illegalCharForTVFilename = regexp.MustCompile(`[^a-zA-Z0-9\.\- ]+`)
 
 // TVShow represents a TV show in the database
 type TVShow struct {
@@ -87,12 +90,13 @@ type TVSearchResult struct {
 
 func (s *TVShow) BuildLibraryPath() string {
 	// Return the folder path for the TV show with release year
+	name := illegalCharForTVFilename.ReplaceAllString(s.Name, "-")
 	year := ""
 	if s.FirstAirDate != "" && len(s.FirstAirDate) >= 4 {
 		year = s.FirstAirDate[:4]
-		return fmt.Sprintf("%s (%s)", s.Name, year)
+		return fmt.Sprintf("%s (%s)", name, year)
 	}
-	return s.Name
+	return name
 }
 
 func (s *TVSeason) BuildLibraryPath(showPath string) string {
@@ -102,8 +106,10 @@ func (s *TVSeason) BuildLibraryPath(showPath string) string {
 
 func (e *TVEpisode) BuildLibraryPath(seasonPath string) string {
 	// Return the file path for the episode within the season directory
+	// Sanitize the episode name to remove illegal filesystem characters
+	episodeName := illegalCharForTVFilename.ReplaceAllString(e.Name, "-")
 	return filepath.Join(seasonPath, fmt.Sprintf("S%02dE%02d - %s%s",
-		e.SeasonNumber, e.EpisodeNumber, e.Name, e.Extension))
+		e.SeasonNumber, e.EpisodeNumber, episodeName, e.Extension))
 }
 
 // CreateTVShow adds a new TV show to the database
