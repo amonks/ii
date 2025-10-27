@@ -88,8 +88,6 @@ type DBClient interface {
 	DeleteStub(stub *db.Stub) error
 	GetTVShow(id int64) (*db.TVShow, error)
 	GetMovie(id int64) (*db.Movie, error)
-	GetTVShows() ([]*db.TVShow, error)
-	GetMovies() ([]*db.Movie, error)
 	IgnorePath(mediaType db.MediaType, path string) error
 }
 
@@ -396,12 +394,6 @@ func (app *StubQueryGenerator) RunMovies(ctx context.Context) error {
 	log.Println("stubquerygenerator (movies) started")
 	defer log.Println("stubquerygenerator (movies) done")
 
-	// First, clean up any stubs that have already been imported
-	if err := app.CleanupAlreadyImportedStubs(ctx); err != nil {
-		log.Printf("Warning: Error cleaning up already imported stubs: %v", err)
-		// Continue with processing even if cleanup fails
-	}
-
 	stubs, err := app.db.AllStubs()
 	if err != nil {
 		return err
@@ -426,12 +418,6 @@ func (app *StubQueryGenerator) RunTV(ctx context.Context) error {
 	log.Println("stubquerygenerator (TV) started")
 	defer log.Println("stubquerygenerator (TV) done")
 
-	// First, clean up any stubs that have already been imported
-	if err := app.CleanupAlreadyImportedStubs(ctx); err != nil {
-		log.Printf("Warning: Error cleaning up already imported stubs: %v", err)
-		// Continue with processing even if cleanup fails
-	}
-
 	stubs, err := app.db.AllStubs()
 	if err != nil {
 		return err
@@ -451,94 +437,10 @@ func (app *StubQueryGenerator) RunTV(ctx context.Context) error {
 	return nil
 }
 
-// CleanupAlreadyImportedStubs removes stubs that have already been imported into the library
-func (app *StubQueryGenerator) CleanupAlreadyImportedStubs(ctx context.Context) error {
-	log.Println("Cleaning up already imported stubs...")
-
-	// Get all stubs
-	stubs, err := app.db.AllStubs()
-	if err != nil {
-		return fmt.Errorf("error getting stubs for cleanup: %w", err)
-	}
-
-	// Get all movies and TV shows for lookup
-	movies, err := app.db.GetMovies()
-	if err != nil {
-		return fmt.Errorf("error getting movies for stub cleanup: %w", err)
-	}
-
-	tvShows, err := app.db.GetTVShows()
-	if err != nil {
-		return fmt.Errorf("error getting TV shows for stub cleanup: %w", err)
-	}
-
-	// Create lookup maps
-	movieIDs := make(map[int64]bool)
-	for _, movie := range movies {
-		movieIDs[movie.ID] = true
-	}
-
-	tvShowIDs := make(map[int64]bool)
-	for _, show := range tvShows {
-		tvShowIDs[show.ID] = true
-	}
-
-	// Track stubs to delete
-	var stubsDeleted int
-
-	// Check each stub
-	for _, stub := range stubs {
-		if stub.Type == db.MediaTypeMovie && len(stub.Results) > 0 {
-			// Check if any result ID matches an imported movie
-			for _, result := range stub.Results {
-				if movieIDs[result.ID] {
-					log.Printf("Deleting movie stub %s (TMDB ID %d) as it's already imported", stub.ImportedFromPath, result.ID)
-					if err := app.db.DeleteStub(stub); err != nil {
-						log.Printf("Error deleting stub %s: %v", stub.ImportedFromPath, err)
-					} else {
-						// Add to ignore list to prevent re-creation
-						if err := app.db.IgnorePath(stub.Type, stub.ImportedFromPath); err != nil {
-							log.Printf("Warning: Could not add %s to ignore list: %v", stub.ImportedFromPath, err)
-						}
-						stubsDeleted++
-					}
-					break
-				}
-			}
-		} else if stub.Type == db.MediaTypeTV && len(stub.TVResults) > 0 {
-			// Check if any result ID matches an imported TV show
-			for _, result := range stub.TVResults {
-				if tvShowIDs[result.ID] {
-					log.Printf("Deleting TV show stub %s (TMDB ID %d) as it's already imported", stub.ImportedFromPath, result.ID)
-					if err := app.db.DeleteStub(stub); err != nil {
-						log.Printf("Error deleting stub %s: %v", stub.ImportedFromPath, err)
-					} else {
-						// Add to ignore list to prevent re-creation
-						if err := app.db.IgnorePath(stub.Type, stub.ImportedFromPath); err != nil {
-							log.Printf("Warning: Could not add %s to ignore list: %v", stub.ImportedFromPath, err)
-						}
-						stubsDeleted++
-					}
-					break
-				}
-			}
-		}
-	}
-
-	log.Printf("Stub cleanup complete. Deleted %d already imported stubs.", stubsDeleted)
-	return nil
-}
-
 // Run processes all stubs without search queries (both movies and TV)
 func (app *StubQueryGenerator) Run(ctx context.Context) error {
 	log.Println("stubquerygenerator (all) started")
 	defer log.Println("stubquerygenerator (all) done")
-
-	// First, clean up any stubs that have already been imported
-	if err := app.CleanupAlreadyImportedStubs(ctx); err != nil {
-		log.Printf("Warning: Error cleaning up already imported stubs: %v", err)
-		// Continue with processing even if cleanup fails
-	}
 
 	stubs, err := app.db.AllStubs()
 	if err != nil {
