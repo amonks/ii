@@ -449,12 +449,17 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 			}
 		}
 
+		// Track successfully processed episodes and episodes that failed parsing
+		processedCount := 0
+		var unprocessedFiles []string
+
 		// Process all episode files in the stub, but only for the specified season
 		for _, episodePath := range stub.EpisodeFiles {
 			// Extract the season and episode numbers from the file path
 			fileSeasonNum, episodeNum, err := extractSeasonEpisodeFromPath(episodePath)
 			if err != nil {
 				log.Printf("Warning: Couldn't extract season/episode from %s: %v", episodePath, err)
+				unprocessedFiles = append(unprocessedFiles, episodePath)
 				continue
 			}
 
@@ -462,6 +467,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 			if fileSeasonNum != seasonNumber {
 				log.Printf("Skipping episode from different season: S%02d vs. selected S%02d - %s",
 					fileSeasonNum, seasonNumber, episodePath)
+				unprocessedFiles = append(unprocessedFiles, episodePath)
 				continue
 			}
 
@@ -499,6 +505,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				episodeData, err := app.tmdb.GetEpisode(tvShow.ID, seasonNumber, episodeNum)
 				if err != nil {
 					log.Printf("Warning: Error getting episode data for S%02dE%02d: %v", seasonNumber, episodeNum, err)
+					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
 
@@ -507,6 +514,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				_, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
 				if err != nil {
 					log.Printf("Warning: Error creating episode S%02dE%02d: %v", seasonNumber, episodeNum, err)
+					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
 			} else {
@@ -515,17 +523,36 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				fullPath := filepath.Join(config.TVImportDir, episodePath)
 				if err := tx.UpdateTVEpisodePath(episode, fullPath); err != nil {
 					log.Printf("Warning: Error updating episode path for S%02dE%02d: %v", seasonNumber, episodeNum, err)
+					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
 			}
+
+			// Successfully processed this episode
+			processedCount++
 		}
 
-		// Delete the stub
-		if err := tx.DeleteStub(stub); err != nil {
-			return fmt.Errorf("error deleting stub: %w", err)
+		// If we successfully processed at least one episode, handle the stub
+		if processedCount > 0 {
+			if len(unprocessedFiles) > 0 {
+				// Update the stub to only contain unprocessed files
+				stub.EpisodeFiles = unprocessedFiles
+				if err := tx.SaveStub(stub); err != nil {
+					log.Printf("Warning: Error updating stub with unprocessed files: %v", err)
+				} else {
+					log.Printf("Updated stub to retain %d unprocessed files for manual review", len(unprocessedFiles))
+				}
+			} else {
+				// All files processed successfully, delete the stub
+				if err := tx.DeleteStub(stub); err != nil {
+					return fmt.Errorf("error deleting stub: %w", err)
+				}
+			}
+			log.Printf("Successfully processed TV show: %s with %d/%d episodes", tvShow.Name, processedCount, len(stub.EpisodeFiles))
+		} else {
+			log.Printf("No episodes were successfully processed for TV show: %s", tvShow.Name)
+			return fmt.Errorf("no episodes could be processed - stub retained for manual review")
 		}
-
-		log.Printf("Successfully processed TV show: %s with %d episodes", tvShow.Name, len(stub.EpisodeFiles))
 
 		return nil
 	}); err != nil {
