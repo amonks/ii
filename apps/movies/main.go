@@ -108,6 +108,50 @@ func run() error {
 		}()
 	}
 
+	runAfterMovieStubCreation := func(name string, run func(ctx context.Context) error) {
+		wg.Add(name)
+		go func() {
+			defer wg.Done(name)
+		run:
+			if err := run(ctx); err != nil {
+				err := fmt.Errorf("%s error: %w", name, err)
+				cancel(err)
+				return
+			}
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-db.SubscribeMovieStub():
+					goto run
+				}
+			}
+		}()
+	}
+
+	runAfterTVStubCreation := func(name string, run func(ctx context.Context) error) {
+		wg.Add(name)
+		go func() {
+			defer wg.Done(name)
+		run:
+			if err := run(ctx); err != nil {
+				err := fmt.Errorf("%s error: %w", name, err)
+				cancel(err)
+				return
+			}
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-db.SubscribeTVStub():
+					goto run
+				}
+			}
+		}()
+	}
+
 	// For each post-import task, launch it, then wait. If the context is
 	// canceled, exit. If movieimporter updates, rerun it, waiting again
 	// when it exits.
@@ -204,10 +248,10 @@ func run() error {
 
 	// Add stub query generator for movies
 	sqg := stubquerygenerator.New(llmClient, tmdb, db)
-	runAfterImport("stubquerygenerator_movies", sqg.RunMovies)
+	runAfterMovieStubCreation("stubquerygenerator_movies", sqg.RunMovies)
 
 	// Add stub query generator for TV shows
-	runAfterTVImport("stubquerygenerator_tv", sqg.RunTV)
+	runAfterTVStubCreation("stubquerygenerator_tv", sqg.RunTV)
 
 	// Handle signals. If we get one, kill the program.
 	wg.Add("signalhandler")

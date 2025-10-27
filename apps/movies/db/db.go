@@ -38,9 +38,11 @@ type DB struct {
 
 	path string
 
-	mutex           sync.Mutex
-	subscriptions   []chan *Movie
-	tvSubscriptions []chan *TVSeason
+	mutex               sync.Mutex
+	subscriptions       []chan *Movie
+	tvSubscriptions     []chan *TVSeason
+	movieStubSubscriptions []chan *Stub
+	tvStubSubscriptions    []chan *Stub
 
 	parent *DB
 }
@@ -93,6 +95,32 @@ func (db *DB) SubscribeTV() chan *TVSeason {
 	return c
 }
 
+func (db *DB) SubscribeMovieStub() chan *Stub {
+	if db.parent != nil {
+		return db.parent.SubscribeMovieStub()
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	c := make(chan *Stub)
+	db.movieStubSubscriptions = append(db.movieStubSubscriptions, c)
+	return c
+}
+
+func (db *DB) SubscribeTVStub() chan *Stub {
+	if db.parent != nil {
+		return db.parent.SubscribeTVStub()
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	c := make(chan *Stub)
+	db.tvStubSubscriptions = append(db.tvStubSubscriptions, c)
+	return c
+}
+
 func (db *DB) notify(m *Movie) {
 	if db.parent != nil {
 		db.parent.notify(m)
@@ -125,6 +153,23 @@ func (db *DB) notifyTV(s *TVSeason) {
 	}
 
 	db.tvSubscriptions = nil
+}
+
+func (db *DB) close() {
+	if db.parent != nil {
+		panic("close called on tx")
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	for _, c := range db.subscriptions {
+		close(c)
+	}
+
+	for _, c := range db.tvSubscriptions {
+		close(c)
+	}
 }
 
 func New(path string) *DB {

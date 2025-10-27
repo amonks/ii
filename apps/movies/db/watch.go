@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -88,7 +89,7 @@ func (db *DB) PopulateMovieWatches() error {
 		return fmt.Errorf("err finding watch: %w", err)
 	}
 	for _, watch := range watches {
-		if movie, err := db.FindMovieByTitle(watch.MovieTitle); err != nil {
+		if movie, err := db.FindMovieByTitle(watch.MovieTitle); err != nil && !strings.Contains(err.Error(), "record not found") {
 			return fmt.Errorf("err finding movie: %w", err)
 		} else if movie != nil {
 			if err := db.Clauses(clause.OnConflict{DoNothing: true}).

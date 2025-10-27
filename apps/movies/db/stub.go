@@ -49,6 +49,14 @@ func (d *DB) CreateStub(mediaType MediaType, importedFromPath string) (*Stub, er
 	if err := d.Create(stub).Error; err != nil {
 		return nil, err
 	}
+
+	// Notify subscribers based on media type
+	if mediaType == MediaTypeMovie {
+		d.notifyMovieStub(stub)
+	} else if mediaType == MediaTypeTV {
+		d.notifyTVStub(stub)
+	}
+
 	return stub, nil
 }
 
