@@ -24,3 +24,6 @@ _atproto 300 IN TXT "did=did:plc:yfekcz5g5oabfem5icfcjj3d"
 
 ;; old sites
 processing 300 IN CNAME amonks.github.io.
+
+;; gods teeth
+teeth 300 IN CNAME 0m80plo.gods-teeth-2025.fly.dev.

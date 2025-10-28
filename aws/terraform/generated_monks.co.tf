@@ -26,6 +26,14 @@ resource "aws_route53_record" "updates-monks-co-CNAME" {
   records = ["murmuring-bedbug-xc9fvm5sklejkr3tlrhfat80.herokudns.com."]
 }
 
+resource "aws_route53_record" "teeth-monks-co-CNAME" {
+  zone_id = aws_route53_zone.monks-co.zone_id
+  name    = "teeth.monks.co."
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["0m80plo.gods-teeth-2025.fly.dev."]
+}
+
 resource "aws_route53_record" "processing-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "processing.monks.co."
