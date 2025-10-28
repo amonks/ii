@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{.Title}} - Delta Green Notes</title>
+    <title>{{.Title}} - God's Teeth Notes</title>
     <style>
       @font-face {
         font-family: "Triplicate";
@@ -210,6 +210,12 @@
         color: #000;
         font-style: italic;
       }
+      div.break {
+        height: 0.75em;
+      }
+      .content p {
+        margin: 0;
+      }
       /* Task list styling */
       .task-list-item {
         list-style: none;
@@ -291,11 +297,11 @@
   <body>
     <div class="nav">
       <div class="breadcrumb">
-        <a href="/">📁 notes</a>
+        <a href="/">notes</a>
         {{if not .IsIndex}}
         <script>
           // Split path and inject separators
-          (function() {
+          (function () {
             const path = "{{.Path}}";
             const parts = path.split("/");
             const breadcrumb = document.currentScript.parentElement;
@@ -329,8 +335,7 @@
     </div>
     {{if .IsIndex}}
     <h1>God's Teeth Campaign Notes</h1>
-    {{.TreeHTML}}
-    {{else}}
+    {{.TreeHTML}} {{else}}
     <div class="content">{{.Content}}</div>
     {{end}}
 
@@ -344,7 +349,7 @@
         // Get all result elements
         function getResults() {
           return Array.from(
-            searchDropdown.querySelectorAll(".search-result:not(.search-meta)")
+            searchDropdown.querySelectorAll(".search-result:not(.search-meta)"),
           );
         }
 
@@ -505,7 +510,8 @@
                 const after = text.substring(index + textToFind.length);
 
                 const fragment = document.createDocumentFragment();
-                if (before) fragment.appendChild(document.createTextNode(before));
+                if (before)
+                  fragment.appendChild(document.createTextNode(before));
 
                 const mark = document.createElement("mark");
                 mark.className = "search-highlight";
@@ -524,7 +530,11 @@
 
                 return mark;
               }
-            } else if (node.nodeType === Node.ELEMENT_NODE && node.nodeName !== "SCRIPT" && node.nodeName !== "STYLE") {
+            } else if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              node.nodeName !== "SCRIPT" &&
+              node.nodeName !== "STYLE"
+            ) {
               Array.from(node.childNodes).forEach(highlightInNode);
             }
           }

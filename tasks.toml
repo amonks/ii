@@ -2,5 +2,5 @@
   id = "dev"
   type = "long"
   cmd = "go run ."
-  watch = ["main.go", "notes/**/*.md", "*.html"]
+  watch = ["*.go", "notes/**/*.md", "*.html"]
 

@@ -356,6 +356,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	contentStr := buf.String()
 
+	// Replace <br> tags with custom div
+	contentStr = strings.ReplaceAll(contentStr, "<br />", "<div class=\"break\"></div>")
+	contentStr = strings.ReplaceAll(contentStr, "<br>", "<div class=\"break\"></div>")
+
 	data := PageData{
 		Title:   strings.TrimSuffix(filepath.Base(path), ".md"),
 		Path:    path,

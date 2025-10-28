@@ -1,6 +1,7 @@
 # KALAMATIANO (Yelena Kalamatiano)
 
 ## Basic Info
+
 - Adult at CORNUCOPIA HOUSE
 - Body found at fire scene in 2001
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
@@ -15,10 +16,12 @@
 ### Session 1-2
 
 As old woman in COTTAGE:
+
 > YELENA: "I am sorry, I didn't expect company; please come in"
 > YELENA: "I was just about to make tea, can I have some"
 
 [AGENTS trying to grab guns, can't back out the door]
+
 > AGENTS: "what the hell? I can't move normal"
 > YELENA: "it's probably just the cold, please come in"
 
@@ -28,29 +31,35 @@ As old woman in COTTAGE:
 > YELENA: "where'd you see that?"
 
 [AGENTS can't remember]
+
 > YELENA: "please, sit down and have some tea"
 
 [SEAMUS tries to knock over candle, rolls con, falls to knees and starts vomiting]
+
 > YELENA: "tea is great for an upset stomach"
 > LOTTIE: "why is this candle making me feel so yucky"
 
 [LOTTIE gets in old woman's face]
+
 > LOTTIE: "what's going on here who are you"
-> YELENA: "I am yolanda"
+> YELENA: "I am yelena"
 
 As LADYSLUG (after spell broken):
 [Zombie-walking towards SEAMUS, reaches to grab him, succeeds]
+
 > LADYSLUG: "have some tea darling"
 
 ## Events and Notes
 
 ### 2001 - At CORNUCOPIA HOUSE
+
 - One of the adults at CORNUCOPIA HOUSE
 - Lives in the COTTAGE
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
 - This suggests she had mind control over HOUGHTON
 
 ### Initial Appearance (Illusory Form in COTTAGE)
+
 - Living in fairy-tale COTTAGE with front porch and armchair
 - Smoke coming out of chimney
 - Knitting needles and half-finished blue scarf on rocking chair
@@ -68,6 +77,7 @@ As LADYSLUG (after spell broken):
 ### Powers and Abilities
 
 #### Mind Control
+
 - AGENTS find their guns are back in their holsters
 - Cannot grab guns
 - Cannot back out the door
@@ -78,12 +88,14 @@ As LADYSLUG (after spell broken):
 - AGENTS can't remember seeing the dead girl in the bag or the mattresses
 
 #### The Black Candle
+
 - Candle on the table makes people feel sick when they look at it
 - Has a black flame
 - SEAMUS tries to knock it over, rolls con, falls to his knees and starts vomiting
 - When SEAMUS successfully knocks over candle table and candle goes out, the spell lifts
 
 ### True Form Revealed (LADYSLUG)
+
 - All the crosses on the walls are upside-down
 - Filth shit and vomit covers every surface
 - Furniture is fucked
@@ -96,6 +108,7 @@ As LADYSLUG (after spell broken):
 - ERASTUS fails san for 4, SEAMUS and LOTTIE pass for 1
 
 ### Combat and Death
+
 - ERASTUS fails to shoot
 - LOTTIE fails to shoot
 - SEAMUS hits for 4, yellowish-white ooze comes out
@@ -125,6 +138,7 @@ As LADYSLUG (after spell broken):
 - Body found at fire scene
 
 ### News Coverage
+
 - News article: 4 adult bodies found at fire scene, plus one child body
 - Bodies: KALAMATIANO (Yelena Kalamatiano), APPOLONOV (Sabina Appolonov), ARSENI (Alexi Arseni), INNOKENTY (Ryan Innokenty)
 - Ties to Brighton Beach crime (per news article)
@@ -133,15 +147,17 @@ As LADYSLUG (after spell broken):
 - News article: it was russian gangs what did the fire and the shootin there
 
 ### 2016 Discovery
+
 - The 11 mummies are found under where the COTTAGE used to be
 - Preserved and dessicated, but not toilet-papered
 - No decomp whatsoever
 - Unnatural
 
 ## Notes
+
 - Russian name, ties to Brighton Beach crime
 - Unnatural entity with mind control and illusion powers
 - May have been the primary threat at CORNUCOPIA HOUSE
 - Her death may be why the site became less dangerous (though still cursed)
 - The mummies under her cottage suggest she was involved in the child murders going back to the early 60s
-- When asked her name, she says "I am yolanda" - possibly a false name, or the name got misheard by AGENTS
+- When asked her name, she says "I am yelena" - possibly a false name, or the name got misheard by AGENTS

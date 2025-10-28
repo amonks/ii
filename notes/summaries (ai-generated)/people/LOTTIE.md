@@ -1,6 +1,7 @@
 # LOTTIE (Charlotte Watkins)
 
 ## Basic Info
+
 - DEA agent
 - Hobbyist graverobber
 - Mother of DANTE
@@ -8,6 +9,7 @@
 - High criminology skill (can steal cars)
 
 ## Equipment
+
 - SLUG SHOTGUN (acquired at ROSARYVILLE ANNUAL GUN SHOW)
 - Pink BURNT HELLO KITTY FOLDER (contained disturbing polaroids)
 - NORMAL MANILLA FOLDER (with dossiers and tax forms)
@@ -18,28 +20,34 @@
 ### Session 1-2
 
 At the briefing:
+
 > LOTTIE: [comes in] "not actually a teacher"
 
 To EDDIE on phone:
+
 > LOTTIE: [calls up husband EDDIE, who is expecting her home to make dinner for DANTE and "some broad." She will not be home.]
 
 At CORNUCOPIA HOUSE:
+
 > LOTTIE: "there's some nasty shit in the fridge!"
 
 At the COTTAGE:
+
 > AGENTS: "what the hell? I can't move normal"
 > YELENA: "it's probably just the cold, please come in"
 
 > LOTTIE: "why is this candle making me feel so yucky"
 
 > LOTTIE: [gets in the old woman's face] "what's going on here who are you"
-> YELENA: "I am yolanda"
+> YELENA: "I am yelena"
 
 After burning the COTTAGE:
+
 > LOTTIE: "ok i'm gonna be straight with you: before we met at the holiday inn, I met with this agent clove from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
 > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"
 
 At home with EDDIE:
+
 > EDDIE: "why are you home so early? were you seein some other kind of fella?"
 > LOTTIE: "work stuff"
 > EDDIE: "makes no sense"
@@ -60,18 +68,21 @@ At home with EDDIE:
 ### Session 3
 
 At ZION arrival:
+
 > SEAMUS: "VELASQUEZ, what have you got here?"
 > VELASQUEZ: "suit up: hazmat"
 > LOTTIE: "why is all this necesasry?"
 > VELASQUEZ: "you'll see. we don't want to contaminate the crime scene. Also there's a biological perspective. Lotta question marks"
 
 [LOTTIE offers flask]
+
 > VELASQUEZ: [sips irish coffee] "that's pretty good; wink"
 
 > VELASQUEZ: "Loose end: an auto theft"
 > LOTTIE: "must have been kids I guess!"
 
 To GRACE:
+
 > LOTTIE: "what's the protocol for making sure no investigators leave the site with these materials?"
 > GRACE: "I'm just a professor... are you saying there's something you want me to be doing?"
 > LOTTIE: "I'd love if we started bag-checking your students before they leave the site"
@@ -86,6 +97,7 @@ To GRACE:
 ### Session 4
 
 With VELASQUEZ:
+
 > LOTTIE: [holds out flask] "want a sip?"
 > VELASQUEZ: "more of an afternoon gal"
 > LOTTIE: "you were so nice yesterday what happened? you don't drink in the morning anymore?"
@@ -97,6 +109,7 @@ With VELASQUEZ:
 > LOTTIE: "I've said too much already. anyway let's look at the video"
 
 After viewing footage:
+
 > LOTTIE: "was any evidence recovered from this apartment?"
 > VELASQUEZ: "not yet"
 
@@ -105,17 +118,21 @@ After viewing footage:
 > LOTTIE: "we want a look at everything you collect"
 
 To COSTA about OWEN:
+
 > COSTA: "you need some help?"
 > LOTTIE: "yes. this guy's a flight risk. You need to get a copy of any outgoing communications he makes. Lock him up in county."
 
 To KIM SUNG HOO:
+
 > LOTTIE: "why don't you tell us everything you told the police please?"
 
 To WARDEN:
+
 > LOTTIE: "anything different on the 17th and 18th?"
 > WARDEN: "two fellas enjoying each-others company in the showers, which, by the way, we don't stand for."
 
 To FINCH:
+
 > LOTTIE: "when they're out in the yard doing exercise, have they mentioned anything about wildlife? critters?"
 > FINCH: "are you patronizing me ma'am?"
 
@@ -123,12 +140,14 @@ To FINCH:
 > FINCH: "no"
 
 At HOUGHTON's apartment:
+
 > LOTTIE: "any karens in the building who might have been up in HOUGHTON's business?"
 > CINDY: "nope; people don't live here for long normally."
 
 ## Events and Notes
 
 ### 2001 - The Briefing
+
 - Comes into the seminar carrying:
   - Pink BURNT HELLO KITTY FOLDER (see below)
   - NORMAL MANILLA FOLDER (has dossiers, tax forms for FAMILIES WITHOUT FRONTIERS nonprofit)
@@ -145,12 +164,14 @@ At HOUGHTON's apartment:
   - Bad things are happening to children at the place
 
 ### The BURNT HELLO KITTY FOLDER
+
 - LOTTIE shows the BURNT HELLO KITTY FOLDER
 - Upon looking in the folder, ERASTUS loses 1 san and has intrusive fantasy visions about violent means of killing the people who made the folder
 - Content is POLAROIDS (not shown to players, only characters know)
 - Effect: "must commit fully to THE plan at any cost"
 
 ### 2001 - The Operation
+
 - During operation:
   - Hit by FURRY THING (squirrel) that falls on her head, bites her finger; rubbing alcohol
   - Looks into the BIG GREY SACK, sees CORPSE OF YOUNG GIRL
@@ -164,6 +185,7 @@ At HOUGHTON's apartment:
   - Crits the LADYSLUG with shotgun for 11; gets her in the face
 
 ### Phone Call with CLOVE
+
 - After burning the COTTAGE, calls the beeper number to agent CLOVE
 - CLOVE says:
   > "don't tell the program.
@@ -173,6 +195,7 @@ At HOUGHTON's apartment:
   > you know what you have to do"
 
 ### Aftermath - Return Home
+
 - EDDIE accuses her:
   > "why are you home so early? were you seein some other kind of fella?"
   > "makes no sense"
@@ -185,14 +208,17 @@ At HOUGHTON's apartment:
   > "carmella is the mother of our grandchild, you can't just move her to a new state"
 
 ### 2004
+
 - At grocery store a few years later, follows a blood trail into the back room where there's a dying bat on top of an item
 - The item is a short story, very short book, titled SREDNI BASHTAR by SAKI
 
 ### 2005-2016
+
 - Stays buddies with SEAMUS
 - Read into program, occasionally do small jobs, nothing insane
 
 ### 2016 - WORKING GROUP MASTICATE
+
 - Called back into service by PIZZA for the ZION investigation
 - Part of WORKING GROUP: MASTICATE
 - Makes irish coffee that VELASQUEZ sips and approves of
