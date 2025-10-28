@@ -142,6 +142,7 @@ func renderTree(node *TreeNode, prefix string, isLast bool) string {
 
 func main() {
 	http.HandleFunc("/fonts/", serveFonts)
+	http.HandleFunc("/search", handleSearch)
 	http.HandleFunc("/", handleRequest)
 
 	port := os.Getenv("PORT")
@@ -176,6 +177,83 @@ func serveFonts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(content)
+}
+
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		w.Write([]byte(""))
+		return
+	}
+
+	var results strings.Builder
+	searchLower := strings.ToLower(query)
+	matchCount := 0
+	maxResults := 50 // Limit results for performance
+
+	// Walk through all markdown files
+	err := fs.WalkDir(markdownFiles, "notes", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Stop if we've hit the limit
+		if matchCount >= maxResults {
+			return nil
+		}
+
+		// Only process markdown files
+		if !d.IsDir() && strings.HasSuffix(path, ".md") {
+			cleanPath := strings.TrimPrefix(path, "notes/")
+
+			// Skip character sheets
+			if strings.HasPrefix(cleanPath, "character_sheets/") {
+				return nil
+			}
+
+			// Read file content
+			content, err := markdownFiles.ReadFile(path)
+			if err != nil {
+				return nil // Skip files we can't read
+			}
+
+			// Search line by line
+			lines := strings.Split(string(content), "\n")
+			for i, line := range lines {
+				if matchCount >= maxResults {
+					break
+				}
+				if strings.Contains(strings.ToLower(line), searchLower) {
+					matchCount++
+					lineNum := i + 1
+					// Escape HTML in the line
+					escapedLine := template.HTMLEscapeString(line)
+					// Build fzf-style result - pass the matched line text as query param
+					results.WriteString(fmt.Sprintf(
+						"<div class=\"search-result\"><a href=\"/%s?highlight=%s\">%s:%d</a>: %s</div>\n",
+						cleanPath, template.URLQueryEscaper(strings.TrimSpace(line)), cleanPath, lineNum, escapedLine,
+					))
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Error searching files", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if matchCount == 0 {
+		w.Write([]byte("<div class=\"search-result\">No results found</div>"))
+	} else {
+		if matchCount >= maxResults {
+			results.WriteString(fmt.Sprintf("<div class=\"search-result search-meta\">Showing first %d results...</div>\n", maxResults))
+		}
+		w.Write([]byte(results.String()))
+	}
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {

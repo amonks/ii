@@ -110,9 +110,14 @@
         background: #f9f8f5;
       }
       .nav {
+        position: sticky;
+        top: 0;
+        background: #faf9f6;
+        z-index: 100;
         margin-bottom: 30px;
         padding-bottom: 10px;
         border-bottom: 2px solid #ccc;
+        padding-top: 10px;
       }
       .file-list {
         list-style: none;
@@ -139,6 +144,13 @@
       }
       .content {
         line-height: 1.7;
+      }
+      /* Highlight matched text */
+      mark.search-highlight {
+        background: #fffacd;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-weight: bold;
       }
       .file-path {
         font-family: "Triplicate", "Courier New", monospace;
@@ -183,17 +195,298 @@
       .task-list-item input[type="checkbox"] {
         margin-right: 0.5em;
       }
+      .search-container {
+        position: relative;
+        margin-top: 10px;
+      }
+      .search-container input[type="text"] {
+        width: 100%;
+        font-family: "Triplicate", "Courier New", monospace;
+        font-size: 1em;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+        box-sizing: border-box;
+      }
+      .search-container input[type="text"]:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      }
+      .search-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 500px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: none;
+        z-index: 1000;
+        margin-top: -1px;
+      }
+      .search-dropdown.visible {
+        display: block;
+      }
+      .search-result {
+        padding: 8px 12px;
+        border-bottom: 1px solid #eee;
+        font-family: "Triplicate", "Courier New", monospace;
+        line-height: 1.5;
+        font-size: 0.9em;
+      }
+      .search-result:last-child {
+        border-bottom: none;
+      }
+      .search-result:hover,
+      .search-result.selected {
+        background: #f5f4f0;
+      }
+      .search-result.selected {
+        border-left: 3px solid #0066cc;
+      }
+      .search-result a {
+        color: #0066cc;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .search-result a:hover {
+        text-decoration: underline;
+      }
+      .search-result.search-meta {
+        color: #666;
+        font-style: italic;
+        background: #f9f8f5;
+      }
     </style>
   </head>
   <body>
     <div class="nav">
       <a href="/">📁 All Files</a>
+      <div class="search-container">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="🔍 Search..."
+          autocomplete="off"
+        />
+        <div id="search-dropdown" class="search-dropdown"></div>
+      </div>
     </div>
     {{if .IsIndex}}
     <h1>Delta Green Campaign Notes</h1>
-    {{.TreeHTML}} {{else}}
+    {{.TreeHTML}}
+    {{else}}
     <div class="file-path">📄 {{.Path}}</div>
     <div class="content">{{.Content}}</div>
     {{end}}
+
+    <script>
+      (function () {
+        const searchInput = document.getElementById("search-input");
+        const searchDropdown = document.getElementById("search-dropdown");
+        let debounceTimer;
+        let selectedIndex = -1;
+
+        // Get all result elements
+        function getResults() {
+          return Array.from(
+            searchDropdown.querySelectorAll(".search-result:not(.search-meta)")
+          );
+        }
+
+        // Update selected result styling
+        function updateSelection() {
+          const results = getResults();
+          results.forEach((result, index) => {
+            if (index === selectedIndex) {
+              result.classList.add("selected");
+              result.scrollIntoView({ block: "nearest" });
+            } else {
+              result.classList.remove("selected");
+            }
+          });
+        }
+
+        // Navigate to selected result
+        function navigateToSelected() {
+          const results = getResults();
+          if (selectedIndex >= 0 && selectedIndex < results.length) {
+            const link = results[selectedIndex].querySelector("a");
+            if (link) {
+              window.location.href = link.href;
+            }
+          }
+        }
+
+        // Debounced search function
+        function performSearch(query) {
+          if (!query.trim()) {
+            searchDropdown.classList.remove("visible");
+            searchDropdown.innerHTML = "";
+            selectedIndex = -1;
+            return;
+          }
+
+          fetch("/search?q=" + encodeURIComponent(query))
+            .then((response) => response.text())
+            .then((html) => {
+              searchDropdown.innerHTML = html;
+              searchDropdown.classList.add("visible");
+              selectedIndex = -1;
+            })
+            .catch((error) => {
+              console.error("Search error:", error);
+              searchDropdown.innerHTML =
+                '<div class="search-result">Error performing search</div>';
+              searchDropdown.classList.add("visible");
+              selectedIndex = -1;
+            });
+        }
+
+        // Listen to input events
+        searchInput.addEventListener("input", function (e) {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(function () {
+            performSearch(e.target.value);
+          }, 300); // 300ms debounce
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+          if (!e.target.closest(".search-container")) {
+            searchDropdown.classList.remove("visible");
+            selectedIndex = -1;
+          }
+        });
+
+        // Show dropdown again when focusing on input with existing query
+        searchInput.addEventListener("focus", function (e) {
+          if (e.target.value.trim() && searchDropdown.innerHTML) {
+            searchDropdown.classList.add("visible");
+          }
+        });
+
+        // Handle keyboard navigation in search input
+        searchInput.addEventListener("keydown", function (e) {
+          const results = getResults();
+
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (results.length > 0) {
+              selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+              updateSelection();
+            }
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (results.length > 0) {
+              selectedIndex = Math.max(selectedIndex - 1, -1);
+              updateSelection();
+            }
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            navigateToSelected();
+          } else if (e.key === "Escape") {
+            searchDropdown.classList.remove("visible");
+            searchInput.blur();
+            selectedIndex = -1;
+          }
+        });
+
+        // Global keyboard shortcuts
+        document.addEventListener("keydown", function (e) {
+          // Ctrl-L or / to focus search
+          if (
+            (e.ctrlKey && e.key === "l") ||
+            (e.key === "/" && !isTypingInInput(e.target))
+          ) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+        });
+
+        // Helper to check if user is typing in an input
+        function isTypingInInput(element) {
+          return (
+            element.tagName === "INPUT" ||
+            element.tagName === "TEXTAREA" ||
+            element.isContentEditable
+          );
+        }
+
+        // Highlight matched text from query parameter
+        function highlightSearchMatch() {
+          const params = new URLSearchParams(window.location.search);
+          const highlightText = params.get("highlight");
+
+          if (!highlightText) {
+            return;
+          }
+
+          const content = document.querySelector(".content");
+          if (!content) {
+            return;
+          }
+
+          // Find and highlight the text
+          const textToFind = highlightText.trim();
+          if (!textToFind) {
+            return;
+          }
+
+          // Walk through text nodes and highlight matches
+          function highlightInNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              const text = node.textContent;
+              const lowerText = text.toLowerCase();
+              const lowerSearch = textToFind.toLowerCase();
+              const index = lowerText.indexOf(lowerSearch);
+
+              if (index !== -1) {
+                const before = text.substring(0, index);
+                const match = text.substring(index, index + textToFind.length);
+                const after = text.substring(index + textToFind.length);
+
+                const fragment = document.createDocumentFragment();
+                if (before) fragment.appendChild(document.createTextNode(before));
+
+                const mark = document.createElement("mark");
+                mark.className = "search-highlight";
+                mark.textContent = match;
+                fragment.appendChild(mark);
+
+                if (after) fragment.appendChild(document.createTextNode(after));
+
+                node.parentNode.replaceChild(fragment, node);
+
+                // Scroll to first match
+                if (!window.hasScrolledToMatch) {
+                  mark.scrollIntoView({ behavior: "smooth", block: "center" });
+                  window.hasScrolledToMatch = true;
+                }
+
+                return mark;
+              }
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.nodeName !== "SCRIPT" && node.nodeName !== "STYLE") {
+              Array.from(node.childNodes).forEach(highlightInNode);
+            }
+          }
+
+          window.hasScrolledToMatch = false;
+          highlightInNode(content);
+        }
+
+        // Run on page load
+        if (document.querySelector(".content")) {
+          highlightSearchMatch();
+        }
+      })();
+    </script>
   </body>
 </html>
