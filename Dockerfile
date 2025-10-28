@@ -4,11 +4,13 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /app
 
 # Copy go mod files
-COPY go.mod ./
+COPY go.mod ./go.mod
+COPY go.sum ./go.sum
 RUN go mod download
 
 # Copy source files, notes, and fonts for embedding
-COPY main.go ./
+COPY main.go ./main.go
+COPY template.html ./template.html
 COPY notes ./notes
 COPY fonts ./fonts
 
