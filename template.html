@@ -152,12 +152,25 @@
         border-radius: 2px;
         font-weight: bold;
       }
-      .file-path {
+      .breadcrumb {
         font-family: "Triplicate", "Courier New", monospace;
-        font-size: 0.85em;
-        color: #666;
-        margin-bottom: 1.5em;
-        display: block;
+        font-size: 0.95em;
+        margin-bottom: 10px;
+      }
+      .breadcrumb a {
+        color: #0066cc;
+        text-decoration: none;
+      }
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+      .breadcrumb .separator {
+        margin: 0 8px;
+        color: #999;
+      }
+      .breadcrumb .current {
+        color: #333;
+        font-weight: bold;
       }
       ul,
       ol {
@@ -267,7 +280,33 @@
   </head>
   <body>
     <div class="nav">
-      <a href="/">📁 All Files</a>
+      <div class="breadcrumb">
+        <a href="/">📁 notes</a>
+        {{if not .IsIndex}}
+        <script>
+          // Split path and inject separators
+          (function() {
+            const path = "{{.Path}}";
+            const parts = path.split("/");
+            const breadcrumb = document.currentScript.parentElement;
+
+            parts.forEach((part, index) => {
+              const sep = document.createElement("span");
+              sep.className = "separator";
+              sep.textContent = "/";
+              breadcrumb.appendChild(sep);
+
+              const span = document.createElement("span");
+              if (index === parts.length - 1) {
+                span.className = "current";
+              }
+              span.textContent = part;
+              breadcrumb.appendChild(span);
+            });
+          })();
+        </script>
+        {{end}}
+      </div>
       <div class="search-container">
         <input
           type="text"
@@ -279,10 +318,9 @@
       </div>
     </div>
     {{if .IsIndex}}
-    <h1>Delta Green Campaign Notes</h1>
+    <h1>God's Teeth Campaign Notes</h1>
     {{.TreeHTML}}
     {{else}}
-    <div class="file-path">📄 {{.Path}}</div>
     <div class="content">{{.Content}}</div>
     {{end}}
 
