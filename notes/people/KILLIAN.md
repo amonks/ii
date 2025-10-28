@@ -1,0 +1,42 @@
+# KILLIAN (Crystal Killian)
+
+## Basic Info
+- Florida shut-in
+- Elderly resident
+- Lived in Meyers Point trailer park
+- Found dead on August 15, 2016
+
+## Dialog
+
+No direct dialog recorded.
+
+## Events and Notes
+
+### August 2016
+- GLENDA (elderly resident of Meyers Pt. trailer park) repeatedly calls sheriff between 8th-15th Aug to report stolen cats
+- Monday 15 Aug: ECKSTEIN dispatched to drive through Meyers Pt
+- ECKSTEIN notices graffiti, kicked-in door
+- Finds decaying body of KILLIAN
+- ECKSTEIN calls it in
+
+### Evidence Found
+- EMT finds bloody piece of paper with three names on it:
+  - Charlotte Watkins
+  - Seamus McGillicutty
+  - Erastus Boudreau
+- Plus the address of CORNUCOPIA HOUSE (now a jail)
+
+### Investigation
+- Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about CORNUCOPIA HOUSE
+- Mentions agents' names
+- Questions are in pursuit of homicide
+- This trips DG voice recognition thing
+- Flags the finding as high-priority
+- MIAMI FBI (program) meets with ECKSTEIN offering services
+- Really the point is to question ECKSTEIN about program operatives
+- MIAMI FBI discovers that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)
+
+### Significance
+- Death triggers the investigation that leads back to ZION
+- The bloody piece of paper connects the 2001 operation to the 2016 events
+- Her murder appears to be the start of a chain of events targeting people connected to CORNUCOPIA HOUSE
