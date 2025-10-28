@@ -1,7 +1,5 @@
 # THREES
 
-A recurring theme involving the number three as a ritual or symbolic pattern used by the mysterious cult. This manifests in attacks, stigmata, symbolic carvings, and the structure of cult activities.
-
 ## Three Animal Attacks (2001)
 
 Three separate animal attacks on the three agents before the 2001 operation at CORNUCOPIA HOUSE.

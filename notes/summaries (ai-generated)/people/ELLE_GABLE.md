@@ -58,9 +58,5 @@ No direct dialog recorded.
 - Identified through National Child Identification Database
 - Connected to King Torino Children's Refuge in Charlotte, NC
 
-### Connection to CORNUCOPIA HOUSE
-- Age 4 in 2001 when the operation occurred
-- Possibly one of the children at CORNUCOPIA HOUSE
-- If so, witnessed the events there
-- May have learned something from the place that drove her to this
-- This would align with CLOVE's statement: "what the children learned here cannot spread into the world"
+## Notes
+- Age 4 in 2001 when the CORNUCOPIA HOUSE operation occurred

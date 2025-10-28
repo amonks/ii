@@ -35,8 +35,3 @@ No direct dialog recorded.
 - MIAMI FBI (program) meets with ECKSTEIN offering services
 - Really the point is to question ECKSTEIN about program operatives
 - MIAMI FBI discovers that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)
-
-### Significance
-- Death triggers the investigation that leads back to ZION
-- The bloody piece of paper connects the 2001 operation to the 2016 events
-- Her murder appears to be the start of a chain of events targeting people connected to CORNUCOPIA HOUSE

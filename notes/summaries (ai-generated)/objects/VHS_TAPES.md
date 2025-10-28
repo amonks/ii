@@ -32,16 +32,3 @@ From Session 1-2 (after the operation):
 >   > you will never hear from me again.
 >   > what the children learned here cannot spread into the world.
 >   > you know what you have to do"
-
-## Commercial Operation
-
-The VHS TAPES were part of a child abuse material distribution ring:
-- Tapes labeled "ready" were prepared for distribution
-- Tapes labeled "blank" were for new recordings
-- The ledger contained post office boxes, quantities, dollar amounts, and names
-- Professional video recording equipment (JVC-JXC7 multicolor processing unit)
-- This connects to the tax forms for CORNUCOPIA HOUSE found in LOTTIE's briefing materials
-
-## Connection to POLAROIDS
-
-The VHS TAPES likely documented the same abuse shown in the POLAROIDS that LOTTIE brought to the briefing, suggesting both physical photographs and video recordings were being produced and distributed.

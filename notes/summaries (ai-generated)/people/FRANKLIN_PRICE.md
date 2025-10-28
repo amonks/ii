@@ -18,8 +18,3 @@ No direct dialog recorded.
 
 ## Notes
 - HOUGHTON used FRANKLIN PRICE as support for her claims of seeing nothing wrong at CORNUCOPIA HOUSE
-- If FRANKLIN PRICE also saw nothing, this could mean:
-  - The mind control/influence at CORNUCOPIA HOUSE affected him too
-  - He was complicit
-  - He genuinely didn't see anything (inspections before the worst abuse?)
-- Part of the cover-up or whitewashing of CORNUCOPIA HOUSE conditions

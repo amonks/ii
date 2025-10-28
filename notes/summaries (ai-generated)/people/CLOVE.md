@@ -34,10 +34,3 @@ On the phone after burning the COTTAGE:
 - LOTTIE shares with SEAMUS and ERASTUS:
   > "ok i'm gonna be straight with you: before we met at the holiday inn, I met with this agent clove from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
   > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"
-
-### Analysis
-- The operation was presented to LOTTIE as being about saving children from abuse
-- After the unnatural threat is eliminated, CLOVE orders the children killed
-- LOTTIE refuses this order
-- CLOVE says "you will never hear from me again"
-- This appears to have been a test of LOTTIE, or possibly CLOVE has been compromised

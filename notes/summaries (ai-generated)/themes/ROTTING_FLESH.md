@@ -1,7 +1,5 @@
 # ROTTING FLESH
 
-A recurring sensory phenomenon associated with the cult's influence. The smell of rotting meat/flesh appears in connection with YELENA, SEAMUS's resurrection, the 2004 deliveries, and HOUGHTON's apartment.
-
 ## The COTTAGE Encounter with YELENA (2001)
 
 ### Initial Contact

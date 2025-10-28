@@ -24,8 +24,3 @@ No direct dialog recorded.
 - The cellular structure of the substance doesn't resemble normal chemistry
 - No positive identification yet
 - The substance reaches out towards human flesh like a ferrofluid
-
-## Notes
-- Specialized in biology/cellular analysis
-- Working on the most unusual evidence
-- Part of the Harvard team that understands the program deals with unusual occurrences

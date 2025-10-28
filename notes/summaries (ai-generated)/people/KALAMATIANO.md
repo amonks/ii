@@ -155,9 +155,4 @@ As LADYSLUG (after spell broken):
 
 ## Notes
 
-- Russian name, ties to Brighton Beach crime
-- Unnatural entity with mind control and illusion powers
-- May have been the primary threat at CORNUCOPIA HOUSE
-- Her death may be why the site became less dangerous (though still cursed)
-- The mummies under her cottage suggest she was involved in the child murders going back to the early 60s
-- When asked her name, she says "I am yelena" - possibly a false name, or the name got misheard by AGENTS
+- Russian name, ties to Brighton Beach crime (per news article)

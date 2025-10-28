@@ -44,18 +44,3 @@ From Session 4:
 > - further testing:
 >   - high stress, def taking high doses of mental health medication.
 >   - nothing's weird about the blood, so it's ok to allow the cops to analyze these weapons.
-
-## Use in the Murder
-
-The weapons were used for:
-1. **Teeth removal** - Pliers and mattock used to remove all of HOUGHTON's teeth over 30 minutes
-2. **Jaw breaking** - Mattock used to break jaw to access molars, jaw severed with mattock
-3. **Stigmata** - Two screwdrivers driven through hands, one chisel driven above left collarbone (THREES pattern)
-4. **Crucifixion** - HOUGHTON nailed to the warehouse door
-
-## Significance
-
-- The opportunistic nature of the theft suggests the KILLERS were improvising or had flexible plans
-- The ritualistic use (three puncture wounds) indicates cult knowledge/training
-- VELASQUEZ's question about what they would have done without the tools suggests the murder was premeditated but the tools were targets of opportunity
-- All three KILLERS' fingerprints on the weapons confirms joint participation

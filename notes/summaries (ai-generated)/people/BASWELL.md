@@ -20,10 +20,3 @@ No direct dialog recorded.
 ### News Coverage
 - News article mentions detective BASWELL
 - Investigation concluded it was Russian gangs that did the fire and the shooting
-
-## Notes
-- Either incompetent or possibly covering up
-- His "gang" explanation is considered inadequate by VELASQUEZ
-- The official story became "russian gangs what did the fire and the shootin there"
-- May have been pressured to close the case quickly
-- May not have investigated thoroughly

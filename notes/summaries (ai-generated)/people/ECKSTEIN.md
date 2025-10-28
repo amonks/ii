@@ -24,7 +24,7 @@ No direct dialog recorded.
   - Erastus Boudreau
 - Plus address of CORNUCOPIA HOUSE (now a jail)
 
-### Suspicious Investigation
+### Investigation
 - Wednesday 17 Aug: Calls Maryland PD
 - Asks about CORNUCOPIA HOUSE
 - Mentions agents' names
@@ -37,11 +37,3 @@ No direct dialog recorded.
 - Offering services
 - Really the point is to question ECKSTEIN about program operatives
 - MIAMI FBI discovers that ECKSTEIN has already closed down the investigation as natural causes
-- This is suspicious - why close a murder investigation as natural causes?
-
-## Analysis
-- Either incompetent or possibly compromised
-- Closed what appears to be a murder as natural causes
-- This closure is noted as suspicious by program operatives
-- May have been trying to cover something up
-- Or may have been influenced to close the case quickly

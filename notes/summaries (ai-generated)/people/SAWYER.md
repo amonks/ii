@@ -23,7 +23,5 @@ No direct dialog recorded.
 - Finds the body at 7pm (HOUGHTON died at 3am the same day)
 
 ### Aftermath
-- Discovery triggers massive investigation
 - Friday 19 Aug: Search and rescue dogs descend
 - Forensic science, state troopers arrive
-- Investigation rapidly escalates to involve multiple agencies and eventually federal intervention

@@ -25,7 +25,4 @@ No direct dialog recorded.
 - News article: it was russian gangs what did the fire and the shootin there
 
 ## Notes
-- Likely one of the adults killed by the team during the 2001 operation
-- Russian name, ties to Brighton Beach crime
-- May have been complicit in the abuse and unnatural activities at CORNUCOPIA HOUSE
-- Possibly BEARD MAN or BLONDE MAN from the operation
+- Russian name, ties to Brighton Beach crime (per news article)

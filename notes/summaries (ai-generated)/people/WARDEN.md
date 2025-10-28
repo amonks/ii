@@ -34,17 +34,11 @@ Meeting the WARDEN:
 - Has worked there since the prison opened in 2008
 - Strongly opposed to closing the prison
 - Calls prisoners "freaks"
-- Reports constant unusual behavior (but seems to mean normal prison violence)
+- Reports constant unusual behavior
 - Reports a murder this year (man killed another with sharpened toothbrush)
 - Reports prisoners getting sick all the time
 - Medical staff onsite
 - Nothing particularly unusual on August 17-18
 - Reports "two fellas enjoying each-others company in the showers" which she doesn't stand for
 - Refers to FINCH as "dumb bitch psychologist"
-
-### Characterization
-- Conservative, punitive attitude toward prisoners
-- Disparages mental health professionals
-- Invites AGENTS to son's little league game (trying to ingratiate herself with federal agents)
-- Not a useful source of information about unusual occurrences
-- Either unobservant or deliberately unhelpful
+- Invites AGENTS to son's little league game

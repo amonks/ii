@@ -1,7 +1,5 @@
 # ANIMALS
 
-A recurring theme involving animals as agents of the mysterious cult, particularly in the form of three attacks before the 2001 operation, and various animal-related phenomena throughout the investigation.
-
 ## Three Animal Attacks (2001)
 
 ### RACCOON Bites ERASTUS

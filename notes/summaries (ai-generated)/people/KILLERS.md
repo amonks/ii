@@ -81,7 +81,5 @@ From Session 3:
 
 ## Connection to CORNUCOPIA HOUSE
 
-- Age 20 in 2016 = age ~4-5 in 2001, matching timeline of children at CORNUCOPIA HOUSE
-- ELLE GABLE confirmed to be 4 years old in 2001
-- The ritualistic nature of the murder (three wounds, teeth removal) mirrors cult practices
-- They found HOUGHTON, the former DHS inspector who failed to save them
+- Age 20 in 2016 = age ~4-5 in 2001
+- ELLE GABLE was 4 years old in 2001

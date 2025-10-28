@@ -25,8 +25,5 @@ No direct dialog recorded.
 - News article: it was russian gangs what did the fire and the shootin there
 
 ## Notes
-- Likely one of the adults killed by the team during the 2001 operation
 - Has a Russian first name (Innokenty) but Western last name pattern
-- Ties to Brighton Beach crime
-- May have been complicit in the abuse and unnatural activities at CORNUCOPIA HOUSE
-- Possibly BEARD MAN or BLONDE MAN from the operation
+- Ties to Brighton Beach crime (per news article)
