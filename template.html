@@ -467,13 +467,16 @@
             return;
           }
 
+          // URLSearchParams.get() doesn't decode + to spaces, so we need to do it manually
+          const decodedHighlight = highlightText.replace(/\+/g, " ");
+
           const content = document.querySelector(".content");
           if (!content) {
             return;
           }
 
           // Find and highlight the text
-          const textToFind = highlightText.trim();
+          const textToFind = decodedHighlight.trim();
           if (!textToFind) {
             return;
           }
