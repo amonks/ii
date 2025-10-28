@@ -375,27 +375,29 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// If root, show index
 	if path == "" {
-		files, err := fs.Glob(markdownFiles, "notes/**/*.md")
+		var cleanFiles []string
+
+		// Walk the entire notes directory
+		err := fs.WalkDir(markdownFiles, "notes", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// Only process markdown files
+			if !d.IsDir() && strings.HasSuffix(path, ".md") {
+				cleanPath := strings.TrimPrefix(path, "notes/")
+				// Skip character sheets
+				if !strings.HasPrefix(cleanPath, "character_sheets/") {
+					cleanFiles = append(cleanFiles, cleanPath)
+				}
+			}
+
+			return nil
+		})
+
 		if err != nil {
 			http.Error(w, "Error reading files", http.StatusInternalServerError)
 			return
-		}
-
-		// Also get root level markdown files
-		rootFiles, err := fs.Glob(markdownFiles, "notes/*.md")
-		if err == nil {
-			files = append(files, rootFiles...)
-		}
-
-		// Clean up paths for display and filter out character sheets
-		var cleanFiles []string
-		for _, f := range files {
-			cleanPath := strings.TrimPrefix(f, "notes/")
-			// Skip character sheets
-			if strings.HasPrefix(cleanPath, "character_sheets/") {
-				continue
-			}
-			cleanFiles = append(cleanFiles, cleanPath)
 		}
 
 		sort.Strings(cleanFiles)
