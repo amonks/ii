@@ -30,10 +30,8 @@ D.O.B.: June 1, 1929 (71 years old)
 ## MOTIVATIONS
 
 - Remain in good health to spend time on my boat; maybe retire soon
-- Gain more approval from strangers than Prasad does (eg by publishing Singular
-  and Inpsired research)
-- Build a better relationship with Lucy and her wife Yolanda (NOTE: I am the
-  problem here)
+- Gain more approval from strangers than Prasad does (eg by publishing Singular and Inpsired research)
+- Build a better relationship with Lucy and her wife Yolanda (NOTE: I am the problem here)
 
 ## GEAR
 

@@ -29,7 +29,7 @@ PERSONAL BRIEFING: the other agents are a liability; their loyalty to the
 program is not assured. Any signs to be reported to handler.
 
 HEALTH: 12 / 12
-STRESS: 6 (min 2) / 20
+STRESS: 7 (min 2) / 20
 
 WOUNDS: 0 / 3
 
