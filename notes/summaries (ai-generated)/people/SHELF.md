@@ -3,7 +3,7 @@
 ## Basic Info
 
 - Program operative
-- Backup for WORKING GROUP MASTICATE
+- Backup for working group masticate
 - Works with PIZZA
 
 ## Dialog

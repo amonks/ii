@@ -1,6 +1,6 @@
 # SREDNI BASHTAR
 
-A short story by SAKI (pseudonym of Hector Hugh Monroe), published 1911. Mysteriously delivered to all three agents on the same day in 2004 via animals, three years after the CORNUCOPIA HOUSE operation.
+a short story by Saki (pseudonym of Hector Hugh Monroe), published 1911. Mysteriously delivered to all three agents on the same day in 2004 via animals, three years after the Cornucopia house operation.
 
 ## The Deliveries (2004)
 

@@ -1,6 +1,6 @@
 # KILLERS
 
-The three young perpetrators who murdered HOUGHTON in 2016. They are approximately 20 years old and appear to be former children from CORNUCOPIA HOUSE, likely seeking revenge.
+The three young perpetrators who murdered HOUGHTON in 2016. They are approximately 20 years old and appear to be former children from Cornucopia house, likely seeking revenge.
 
 ## The Three Perpetrators (THREES)
 
@@ -30,7 +30,7 @@ From Session 4:
 > - She'd been housed in a children' home.
 > - She was 8 when the print was taken in 2005.
 >   - 4 when the shit went down in 2001.
-> - We aren't sure if she stayed at CORNUCOPIA HOUSE.
+> - We aren't sure if she stayed at Cornucopia house.
 
 Additional identification from Session 3:
 
@@ -79,7 +79,7 @@ From Session 3:
 > This is where the MD state troopers found her hangin.
 > Two screwdrivers and one chisel. (THREES)
 
-## Connection to CORNUCOPIA HOUSE
+## Connection to Cornucopia house
 
 - Age 20 in 2016 = age ~4-5 in 2001
 - ELLE GABLE was 4 years old in 2001

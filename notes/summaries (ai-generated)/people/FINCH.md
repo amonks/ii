@@ -1,7 +1,7 @@
 # FINCH (Kate Finch)
 
 ## Basic Info
-- Psychologist at MD CORRECTION 3
+- Psychologist at MD Correction 3
 - The person prisoners would talk to if they saw something
 - Referred to as "dumb bitch psychologist" by the WARDEN
 
@@ -31,13 +31,13 @@ Interview with FINCH:
 
 ## Events and Notes
 
-### At MD CORRECTION 3
+### At MD Correction 3
 - The person prisoners would report unusual things to
 - Visibly deflates at the mention of the WARDEN
 - Reports nothing unusual on Wednesday or Thursday before the incident
 - Just the usual number of releases recently
 - No ex-law-enforcement prisoners that she's aware of
-- Takes the AGENTS' card
+- Takes the agents' card
 - Becomes defensive when asked about wildlife/animals
 - After clarification about disease vectors, says nothing lately
 - No bites recently

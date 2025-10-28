@@ -3,7 +3,7 @@
 ## Basic Info
 
 - Program operative
-- Part of WORKING GROUP MASTICATE
+- Part of working group masticate
 - Works under CDC cover
 - Handles forensic and medical evidence analysis
 
@@ -88,7 +88,7 @@ At HOUGHTON's apartment:
 > MO: "Active investigation, ma'am. We have nothing to share at this time."
 > TOOMEY: "I heard there were toxic materials. can you shed light on that?"
 > MO: "We're CDC. There's always a disease concern."
-> ALL: "no comment at this time."
+> all: "no comment at this time."
 
 At the apartment:
 
@@ -106,9 +106,9 @@ With neighbor CINDY:
 
 ## Events and Notes
 
-### 2016 - WORKING GROUP MASTICATE
+### 2016 - working group masticate
 
-- Part of WORKING GROUP: MASTICATE investigating ZION prison incident
+- Part of working group: masticate investigating ZION prison incident
 - Handles forensic analysis and evidence collection
 - Tests weapons for blood and bloodborne pathogens:
   - MO checks the weapons for blood, it's all human blood, it's all from the victim. microscopes it. nothing unusual. Jars some for later.

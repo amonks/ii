@@ -32,7 +32,7 @@ The OWEN incident:
 ## Events and Notes
 
 ### At ZION Investigation
-- Walks up to AGENTS and GRACE
+- Walks up to agents and GRACE
 - Knows about the "pudding" (black substance) even though GRACE has been keeping people away
 - GRACE is not sure why COSTA knows about it
 - LOTTIE makes eye contact with VELASQUEZ, who rolls her eyes (not a COSTA fan)

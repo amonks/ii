@@ -89,17 +89,17 @@ Evidence transport:
 ### 2001 Investigation
 - Was a rookie on the 2001 investigation with BASWELL
 - BASWELL said it was a gang thing (which VELASQUEZ finds laughable now)
-- Investigated the CORNUCOPIA HOUSE fire
+- Investigated the Cornucopia house fire
 
 ### 2016 Investigation
-- Approaches AGENTS when they arrive at ZION
+- Approaches agents when they arrive at ZION
 - Provides irish coffee setup for LOTTIE
 - Makes eye contact with LOTTIE and rolls her eyes at COSTA (not a COSTA fan)
 - Shows 48 hours of security footage from HOUGHTON's apartment
-- A guy brings the trashbag with cat vomit in an evidence bag at her direction
+- a guy brings the trashbag with cat vomit in an evidence bag at her direction
 - Gets fingerprint matches from weapons - identifies ELLE GABLE
 - Wants to get to the bottom of this (per GRACE)
-- Calls AGENTS about the OWEN incident
+- Calls agents about the OWEN incident
 - Continues to work the case actively
 
 ## Background

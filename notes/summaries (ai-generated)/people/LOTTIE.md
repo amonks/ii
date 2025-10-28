@@ -10,10 +10,10 @@
 
 ## Equipment
 
-- SLUG SHOTGUN (acquired at ROSARYVILLE ANNUAL GUN SHOW)
-- Pink BURNT HELLO KITTY FOLDER (contained disturbing polaroids)
-- NORMAL MANILLA FOLDER (with dossiers and tax forms)
-- Collected VHS TAPES (labeled "ready") and SMALL BLACK BOOK from SHED
+- slug shotgun (acquired at Rosaryville Annual Gun Show)
+- Pink burnt Hello Kitty folder (contained disturbing polaroids)
+- normal manila folder (with dossiers and tax forms)
+- Collected VHS TAPES (labeled "ready") and small black book from shed
 
 ## Dialog
 
@@ -27,13 +27,13 @@ To EDDIE on phone:
 
 > LOTTIE: [calls up husband EDDIE, who is expecting her home to make dinner for DANTE and "some broad." She will not be home.]
 
-At CORNUCOPIA HOUSE:
+At Cornucopia house:
 
 > LOTTIE: "there's some nasty shit in the fridge!"
 
-At the COTTAGE:
+At the cottage:
 
-> AGENTS: "what the hell? I can't move normal"
+> agents: "what the hell? I can't move normal"
 > YELENA: "it's probably just the cold, please come in"
 
 > LOTTIE: "why is this candle making me feel so yucky"
@@ -41,7 +41,7 @@ At the COTTAGE:
 > LOTTIE: [gets in the old woman's face] "what's going on here who are you"
 > YELENA: "I am yelena"
 
-After burning the COTTAGE:
+After burning the cottage:
 
 > LOTTIE: "ok i'm gonna be straight with you: before we met at the holiday inn, I met with this agent clove from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
 > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"
@@ -149,10 +149,10 @@ At HOUGHTON's apartment:
 ### 2001 - The Briefing
 
 - Comes into the seminar carrying:
-  - Pink BURNT HELLO KITTY FOLDER (see below)
-  - NORMAL MANILLA FOLDER (has dossiers, tax forms for FAMILIES WITHOUT FRONTIERS nonprofit)
+  - Pink burnt Hello Kitty folder (see below)
+  - normal manila folder (has dossiers, tax forms for Families Without Frontiers nonprofit)
 - Tells the plan:
-  - CORNUCOPIA HOUSE is on a farm near ZION MD
+  - Cornucopia house is on a farm near ZION MD
   - Facility for foster children, about a dozen children
   - Need guns, masks, vehicles
   - Will kill every adult in the building
@@ -163,30 +163,30 @@ At HOUGHTON's apartment:
   - NOC -- leave no trace; no cover from govt if things go sour
   - Bad things are happening to children at the place
 
-### The BURNT HELLO KITTY FOLDER
+### The burnt Hello Kitty folder
 
-- LOTTIE shows the BURNT HELLO KITTY FOLDER
+- LOTTIE shows the burnt Hello Kitty folder
 - Upon looking in the folder, ERASTUS loses 1 san and has intrusive fantasy visions about violent means of killing the people who made the folder
 - Content is POLAROIDS (not shown to players, only characters know)
-- Effect: "must commit fully to THE plan at any cost"
+- Effect: "must commit fully to the plan at any cost"
 
 ### 2001 - The Operation
 
 - During operation:
-  - Hit by FURRY THING (squirrel) that falls on her head, bites her finger; rubbing alcohol
-  - Looks into the BIG GREY SACK, sees CORPSE OF YOUNG GIRL
+  - Hit by furry thing (squirrel) that falls on her head, bites her finger; rubbing alcohol
+  - Looks into the big grey sack, sees corpse of young girl
   - Critfails san check for 5, projects onto bond EDDIE for 2, so only 3 san loss (mental break averted)
-  - Point-blank shoots BEARD MAN in the head, exploding it; fails san
-  - Takes VHS TAPES labeled "ready" and the SMALL BLACK BOOK from SHED
-  - Shoots the WOMAN in the kitchen
+  - Point-blank shoots beard man in the head, exploding it; fails san
+  - Takes VHS TAPES labeled "ready" and the small black book from shed
+  - Shoots the woman in the kitchen
   - Rifles through BEDROOM drawers full of drugs
-  - Attacks YELENA/LADYSLUG in COTTAGE, passes strength check, smells rotten meat, does 1 damage
+  - Attacks KALAMATIANO/LADYSLUG in cottage, passes strength check, smells rotten meat, does 1 damage
   - Shoots the LADYSLUG for 7, hits SEAMUS instead
   - Crits the LADYSLUG with shotgun for 11; gets her in the face
 
 ### Phone Call with CLOVE
 
-- After burning the COTTAGE, calls the beeper number to agent CLOVE
+- After burning the cottage, calls the beeper number to agent CLOVE
 - CLOVE says:
   > "don't tell the program.
   > make sure all the evidence and recordings are destroyed.
@@ -210,15 +210,15 @@ At HOUGHTON's apartment:
 ### 2004
 
 - At grocery store a few years later, follows a blood trail into the back room where there's a dying bat on top of an item
-- The item is a short story, very short book, titled SREDNI BASHTAR by SAKI
+- The item is a short story, very short book, titled SREDNI_BASHTAR by Saki
 
 ### 2005-2016
 
 - Stays buddies with SEAMUS
 - Read into program, occasionally do small jobs, nothing insane
 
-### 2016 - WORKING GROUP MASTICATE
+### 2016 - working group masticate
 
 - Called back into service by PIZZA for the ZION investigation
-- Part of WORKING GROUP: MASTICATE
+- Part of working group: masticate
 - Makes irish coffee that VELASQUEZ sips and approves of

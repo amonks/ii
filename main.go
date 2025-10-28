@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"embed"
+	"flag"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -40,6 +41,9 @@ type PageData struct {
 
 // tagMap maps ALLCAPS tags to their summary file paths
 var tagMap map[string]string
+
+// tagPattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN EXPRESS"
+var tagPattern = regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:\s+[A-Z][A-Z_0-9]*)*)\b`)
 
 func init() {
 	tagMap = buildTagMap()
@@ -89,10 +93,6 @@ func buildTagMap() map[string]string {
 // linkTags converts ALLCAPS tags to HTML links in the rendered HTML
 // It only processes text outside of HTML tags to avoid breaking existing HTML
 func linkTags(html string) string {
-	// Split HTML into parts: inside tags (<...>) and outside tags (text)
-	// We'll only process the text parts
-	// Pattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN EXPRESS"
-	tagPattern := regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:\s+[A-Z][A-Z_0-9]*)*)\b`)
 	htmlTagPattern := regexp.MustCompile(`<[^>]+>`)
 
 	// Find all HTML tags and their positions
@@ -243,7 +243,95 @@ func renderTree(node *TreeNode, prefix string, isLast bool) string {
 	return result.String()
 }
 
+// Common acronyms and abbreviations that should not be considered tags
+var commonAcronyms = map[string]bool{
+	"MD": true, "DHS": true, "FBI": true, "DEA": true, "CDC": true,
+	"VHS": true, "VCR": true, "USB": true, "JVC": true, "CCTV": true,
+	"PTSD": true, "NOC": true, "BRT": true, "EMT": true, "PD": true,
+	"NC": true, "MA": true, "US": true, "TV": true, "ID": true,
+	"DG": true, "BO": true, "JR": true, "KEN": true,
+}
+
+// findNonTagCaps scans summary files and reports capitalized strings that aren't tags
+func findNonTagCaps() {
+	fmt.Println("Scanning for non-tag capitalized strings...")
+	fmt.Println()
+
+	// Track occurrences of each non-tag caps word
+	occurrences := make(map[string]int)
+
+	// Walk through summary files
+	err := fs.WalkDir(markdownFiles, "notes/summaries (ai-generated)", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Only process markdown files
+		if !d.IsDir() && strings.HasSuffix(path, ".md") {
+			content, err := markdownFiles.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+
+			// Find all ALLCAPS words
+			matches := tagPattern.FindAllStringSubmatch(string(content), -1)
+			for _, match := range matches {
+				if len(match) < 2 {
+					continue
+				}
+				capsString := match[1] // Extract from capture group
+
+				// Skip if it's a valid tag
+				if _, isTag := tagMap[capsString]; isTag {
+					continue
+				}
+				// Skip if it's a valid tag with underscores
+				spaceVersion := strings.ReplaceAll(capsString, "_", " ")
+				if _, isTag := tagMap[spaceVersion]; isTag {
+					continue
+				}
+				// Skip if it's a common acronym
+				if commonAcronyms[capsString] {
+					continue
+				}
+
+				occurrences[capsString]++
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Sort by word
+	var words []string
+	for word := range occurrences {
+		words = append(words, word)
+	}
+	sort.Strings(words)
+
+	// Print results
+	for _, word := range words {
+		fmt.Printf("%s (%d occurrences)\n", word, occurrences[word])
+	}
+
+	if len(words) == 0 {
+		fmt.Println("No non-tag capitalized strings found!")
+	}
+}
+
 func main() {
+	checkTags := flag.Bool("check-tags", false, "Check for capitalized strings that aren't tags")
+	flag.Parse()
+
+	if *checkTags {
+		findNonTagCaps()
+		return
+	}
+
 	http.HandleFunc("/fonts/", serveFonts)
 	http.HandleFunc("/search", handleSearch)
 	http.HandleFunc("/", handleRequest)
@@ -331,10 +419,10 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 					lineNum := i + 1
 					// Escape HTML in the line
 					escapedLine := template.HTMLEscapeString(line)
-					// Build fzf-style result - pass the matched line text as query param
+					// Build fzf-style result - pass the search query and line number
 					results.WriteString(fmt.Sprintf(
-						"<div class=\"search-result\"><a href=\"/%s?highlight=%s\">%s:%d</a>: %s</div>\n",
-						cleanPath, template.URLQueryEscaper(strings.TrimSpace(line)), cleanPath, lineNum, escapedLine,
+						"<div class=\"search-result\"><a href=\"/%s?highlight=%s&line=%d\">%s:%d</a>: %s</div>\n",
+						cleanPath, template.URLQueryEscaper(query), lineNum, cleanPath, lineNum, escapedLine,
 					))
 				}
 			}

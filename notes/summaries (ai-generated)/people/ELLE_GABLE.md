@@ -4,7 +4,7 @@
 - Woman involved in murder of HOUGHTON
 - ~20 years old in 2016
 - Would have been 8 years old in 2005
-- Would have been 4 years old in 2001 (possibly at CORNUCOPIA HOUSE)
+- Would have been 4 years old in 2001 (possibly at Cornucopia house)
 - Short black hair
 - Lip ring
 - Rotten crooked teeth
@@ -24,7 +24,7 @@ No direct dialog recorded.
 - Print taken in 2005 in Charlotte, NC when she was 8
 - Brought by the King Torino Children's Refuge
 - Had been housed in a children's home
-- Uncertain if she stayed at CORNUCOPIA HOUSE, but timing suggests possible
+- Uncertain if she stayed at Cornucopia house, but timing suggests possible
 
 ### Murder of HOUGHTON - August 17-18, 2016
 
@@ -59,4 +59,4 @@ No direct dialog recorded.
 - Connected to King Torino Children's Refuge in Charlotte, NC
 
 ## Notes
-- Age 4 in 2001 when the CORNUCOPIA HOUSE operation occurred
+- Age 4 in 2001 when the Cornucopia house operation occurred

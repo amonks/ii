@@ -1,7 +1,7 @@
-# WAREHOUSE (at MD CORRECTION 3)
+# WAREHOUSE (at MD Correction 3)
 
 ## Basic Info
-- Storage building at MD CORRECTION 3 (formerly CORNUCOPIA HOUSE)
+- Storage building at MD Correction 3 (formerly Cornucopia house)
 - White garage-style door
 - Site of HOUGHTON's murder in 2016
 
@@ -22,7 +22,7 @@
 - Like 30 folks here all together, investigating
 - Big FBI table with touch plasma screen
 - Lots of crime scene photos
-- FBI agents hanging around (very deferential to WORKING GROUP MASTICATE)
+- FBI agents hanging around (very deferential to working group masticate)
 
 ### Evidence Found
 - Four garbage bags containing viscous black fluid
@@ -38,7 +38,7 @@
 - Hard to keep investigators away
 - Could autopsy these
 - No decomp whatsoever - unnatural
-- Found under where the COTTAGE used to be
+- Found under where the cottage used to be
 
 ## Events
 
@@ -48,11 +48,11 @@
 - Camera is motion activated; 1fps, greyscale, low res, grainy, bad angle
 - Garage door in corner
 - Scene lit by security light plus two car headlights
-- Three perps (MAN 1, MAN 2, WOMAN/ELLE GABLE) torture and kill HOUGHTON
+- Three perps (KILLERS - woman is ELLE GABLE) torture and kill HOUGHTON
 - 30 minute process of removing teeth
 - Breaking jaw to access molars
 - Driving screwdrivers into hands and above collarbone
-- WOMAN returns later to smile at camera and present 2 human teeth
+- ELLE GABLE returns later to smile at camera and present 2 human teeth
 
 #### Discovery
 - Thursday 18 Aug: MD st trooper SAWYER arrives and finds the body

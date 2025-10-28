@@ -2,60 +2,60 @@
 
 ## Three Animal Attacks (2001)
 
-### RACCOON Bites ERASTUS
+### raccoon Bites ERASTUS
 
 From Session 1-2:
 
-> we head out from the HOLIDAY INN EXPRESS and approach the TRUCK belonging to ERASTUS (78 chevy).
-> There's a RACCOON in the passenger seat, which bites the hand of ERASTUS, who neosporins that shit.
+> we head out from the HOLIDAY INN EXPRESS and approach the truck belonging to ERASTUS (78 chevy).
+> There's a raccoon in the passenger seat, which bites the hand of ERASTUS, who neosporins that shit.
 
-### BIG CROW Pecks SEAMUS
+### big crow Pecks SEAMUS
 
 From Session 1-2:
 
 > we enter ZION MD (bumfuck town; not a lot goin on)
-> the plan: ERASTUS drops SEAMUS and LOTTIE off by some driveway to steal a minivan; intent is that they then come to meet ERASTUS at the walmart where he will have parked (leaving the TRUCK of ERASTUS next to where we steal a car seems unwise)
-> they see a BIG CROW, which is unusual at this hour
-> scared by the BIG CROW, the walk up the block to find a DIFFERENT MINIVAN
-> no longer in sight of the BIG CROW, they steal that DIFFERENT MINIVAN
-> BIG CROW comes down and flaps in their face!! pecks SEAMUS, draws blood
+> the plan: ERASTUS drops SEAMUS and LOTTIE off by some driveway to steal a minivan; intent is that they then come to meet ERASTUS at the walmart where he will have parked (leaving the truck of ERASTUS next to where we steal a car seems unwise)
+> they see a big crow, which is unusual at this hour
+> scared by the big crow, the walk up the block to find a different minivan
+> no longer in sight of the big crow, they steal that different minivan
+> big crow comes down and flaps in their face!! pecks SEAMUS, draws blood
 > car starts just as the crow peck happens
 
-### FURRY THING (Squirrel) Bites LOTTIE
+### furry thing (Squirrel) Bites LOTTIE
 
 From Session 1-2:
 
 > we park on country road 224 and plod through the woods towards the house
 > we carry all our shit, we're loaded up heavy
-> FURRY THING falls on the head of LOTTIE; is a squirrel, bites her finger; rubbing alcohol
+> furry thing falls on the head of LOTTIE; is a squirrel, bites her finger; rubbing alcohol
 
-### Connection to BIG SPOOKY TREE
-
-From Session 1-2:
-
-> BIG SPOOKY TREE has a carving of a creepy symbol with three figures, each figure has a deeper cut: one on the hand, one on the head, one on wherever SEAMUS got bit by the crow; these drawings correspond to us and the deep cuts correspond to our animal bites
-
-## Animals at CORNUCOPIA HOUSE
-
-### FERRET and Animal Abuse
+### Connection to big spooky tree
 
 From Session 1-2:
 
-> screen door on HOUSE opens up, BLONDE MAN comes out dragging a child by the hair to the BARN.
+> big spooky tree has a carving of a creepy symbol with three figures, each figure has a deeper cut: one on the hand, one on the head, one on wherever SEAMUS got bit by the crow; these drawings correspond to us and the deep cuts correspond to our animal bites
+
+## Animals at Cornucopia house
+
+### ferret and Animal Abuse
+
+From Session 1-2:
+
+> screen door on house opens up, blonde man comes out dragging a child by the hair to the barn.
 > knocks the child to the ground.
-> runs into the BARN and comes out with a caged FERRET.
-> sprays a can at the FERRET, FERRET goes crazy.
+> runs into the barn and comes out with a caged ferret.
+> sprays a can at the ferret, ferret goes crazy.
 
-> we observe that the can (previously sprayed on the FERRET) is roach killer.
+> we observe that the can (previously sprayed on the ferret) is roach killer.
 
-> the child took the FERRET out of the cage and is tending to it.
+> the child took the ferret out of the cage and is tending to it.
 
-### The BARN Full of Animals
+### The barn Full of Animals
 
 From Session 1-2:
 
-> ERASTUS peeks in BARN with flashlight:
-> - BARN: used to be a dairy barn, now it's a scary barn.
+> ERASTUS peeks in barn with flashlight:
+> - barn: used to be a dairy barn, now it's a scary barn.
 >   full of shelves holding a bizarre collection of pets; mammals, reptiles, birds.
 >   animals are in bad condition; some are dead; cages look unpleasant.
 >   cages are stacked such that waste rains down onto lower-stacked animals.
@@ -67,7 +67,7 @@ From Session 1-2:
 
 From Session 1-2 (Kitchen):
 
-> WOMAN sitting in a filty kitchen, legs up on the counter, small bunny-ear tv with vcr playing what appears to be olympic figure skating at full volume; that's the source of the applause.
+> woman sitting in a filty kitchen, legs up on the counter, small bunny-ear tv with vcr playing what appears to be olympic figure skating at full volume; that's the source of the applause.
 
 > grainy figure skating footage; no obvious reason to be watching figure skating (it's not the olympics rn or anything)
 
@@ -95,7 +95,7 @@ From Session 3:
 >   - SEAMUS: waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
 > in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by SAKI, pseudonym of Hector Hugh Monroe, published 1911
 
-## CAT at HOUGHTON's Apartment (2016)
+## cat at HOUGHTON's Apartment (2016)
 
 From Session 4:
 

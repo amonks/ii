@@ -18,5 +18,5 @@ No direct dialog recorded.
 ## Significance
 - Her reports of stolen cats led to the discovery of KILLIAN's body
 - The discovery of KILLIAN's body led to the paper with the three agents' names
-- This triggered the entire investigation that led back to CORNUCOPIA HOUSE and the discovery of 56 bodies
+- This triggered the entire investigation that led back to Cornucopia house and the discovery of 56 bodies
 - Stolen cats may be connected to unnatural elements (pattern of animal involvement throughout the case)

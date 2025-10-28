@@ -2,9 +2,9 @@
 
 ## Basic Info
 - Social worker
-- Former inspector of CORNUCOPIA HOUSE
+- Former inspector of Cornucopia house
 - Was DHS case manager in 2001
-- Let go after occurrences at CORNUCOPIA HOUSE
+- Let go after occurrences at Cornucopia house
 - Age 40 at time of death (2016)
 - Lived at apartment #12121, STRAWBERRY MILLS apt complex in WHITEHALL maryland
 
@@ -16,7 +16,7 @@ No direct dialog recorded.
 
 ### 2001
 - Was DHS case manager
-- Inspected CORNUCOPIA HOUSE
+- Inspected Cornucopia house
 - Let go after occurrences there
 - Email chains from 2001 with DHS on her computer, where she repeats over and over that she never saw anything, and that FRANKLIN PRICE (prev inspector) hadn't seen anything either
 - Desperate correspondence; she's suspended and then fired
@@ -31,7 +31,7 @@ No direct dialog recorded.
 - Litterbox has poop, but nothing fresh
 - Cat food around
 - Laptop computer on the counter, logged in, no password
-- A bunch of diaries, all from 2000 and 2001
+- a bunch of diaries, all from 2000 and 2001
 - On the verge of being evicted
 - For the past decade supported herself via entry-level jobs
 - Hasn't been a social worker since 2001
@@ -53,7 +53,7 @@ No direct dialog recorded.
 ### Murder - August 17-18, 2016
 
 #### Abduction (Security Footage)
-- 12:09AM 8/18: 3 figures come up the stairs (MAN 1, MAN 2, WOMAN - later identified as ELLE GABLE)
+- 12:09AM 8/18: 3 figures come up the stairs (KILLERS - woman later identified as ELLE GABLE)
 - Two men walk up one staircase, woman walks up the other
 - Two men stand adjacent to the doorway while woman faces it
 - They don't knock
@@ -72,24 +72,24 @@ No direct dialog recorded.
 - Camera is motion activated; 1fps, greyscale, low res, grainy, bad angle
 - Garage door is in the corner
 - Scene is lit by security light plus two car headlights, car offscreen
-- MAN 1 drags victim into frame
-- WOMAN enters, kneels on victim's legs; victim is wearing pajamas and no shoes
-- MAN 2 holds down other side of victim
-- 30 minute fast-fwd of WOMAN removing individual teeth from victim using pliers and matic
+- One of the KILLERS drags victim into frame
+- ELLE GABLE enters, kneels on victim's legs; victim is wearing pajamas and no shoes
+- Another of the KILLERS holds down other side of victim
+- 30 minute fast-fwd of ELLE GABLE removing individual teeth from victim using pliers and matic
 - Victim goes limp 20m in
 - They break victim's jaw to access molars
 - Teeth are gathered and pocketed
 - Victim regains consciousness, vomits blood; jaw hanging loose
-- MAN 1 and MAN 2 hold victim as WOMAN drives screws into hands and right above left collarbone
+- Two of the KILLERS hold victim as ELLE GABLE drives screws into hands and right above left collarbone
 - Victim goes completely limp
 - 3 perps leave the scene
-- Later: WOMAN is looking directly at camera, smiling, lip ring, rotten crooked teeth, covered in sores, sunken eyes
+- Later: ELLE GABLE is looking directly at camera, smiling, lip ring, rotten crooked teeth, covered in sores, sunken eyes
 - PUMA shoe logo on left side of neck
 - Raises hand right in front of camera, presenting 2 human teeth to camera
 - Later: State Trooper SAWYER arrives and finds the body
 
 #### Discovery
-- Thursday 18 Aug: MD st trooper SAWYER drives to MD CORRECTION 3 (formerly CORNUCOPIA HOUSE)
+- Thursday 18 Aug: MD st trooper SAWYER drives to MD Correction 3 (formerly Cornucopia house)
 - Finds HOUGHTON dead and mutilated
 - Calls for backup
 - Sees dog digging up human skull, requests k9 unit

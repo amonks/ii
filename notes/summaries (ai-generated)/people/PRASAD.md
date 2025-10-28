@@ -12,7 +12,7 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### 2001
-- After the CORNUCOPIA HOUSE operation, ERASTUS goes to work
+- After the Cornucopia house operation, ERASTUS goes to work
 - Gets bit snippy with PRASAD
 - PRASAD grew up in Germany and has a German accent
 - This interaction shows ERASTUS is stressed/changed after the operation

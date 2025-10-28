@@ -1,37 +1,37 @@
-# CORNUCOPIA HOUSE
+# Cornucopia house
 
 ## Basic Info
 - Location: Farm near ZION MD
-- Originally: Foster children facility operated by FAMILIES WITHOUT FRONTIERS nonprofit
-- Current (2016): MD CORRECTION 3 (prison)
+- Originally: Foster children facility operated by Families Without Frontiers nonprofit
+- Current (2016): MD Correction 3 (prison)
 - About a dozen children in 2001
-- Four buildings on the property: SHED, BARN, HOUSE, COTTAGE
+- Four buildings on the property: shed, barn, house, cottage
 
 ## History
 
 ### 2001 - As Foster Home
 - Facility for foster children
-- Operated by FAMILIES WITHOUT FRONTIERS nonprofit
+- Operated by Families Without Frontiers nonprofit
 - About a dozen children
 - Staff included: KALAMATIANO (Yelena Kalamatiano), APPOLONOV (Sabina Appolonov), ARSENI (Alexi Arseni), INNOKENTY (Ryan Innokenty)
 - Social worker HOUGHTON (Kerry Houghton) was DHS case manager
 - Inspector FRANKLIN PRICE also inspected the facility
 - Bad things were happening to children
 - Evidence of abuse
-- Disturbing polaroids in BURNT HELLO KITTY FOLDER
+- Disturbing polaroids in burnt Hello Kitty folder
 - Connection to Brighton Beach crime
 
 ### The Operation - February 3, 2001
 - LOTTIE, SEAMUS, and ERASTUS infiltrate at night
-- Four buildings on site: SHED, BARN, HOUSE, COTTAGE
-- Adults killed: BEARD MAN, BLONDE MAN, WOMAN (in kitchen), KALAMATIANO/YELENA (LADYSLUG in COTTAGE)
+- Four buildings on site: shed, barn, house, cottage
+- Adults killed: beard man, blonde man, woman (in kitchen), KALAMATIANO (LADYSLUG in cottage)
 - Children rescued (about 11-12 children)
 - Evidence includes:
-  - VHS recording equipment and tapes in SHED
-  - SMALL BLACK BOOK with ledger of post office boxes, quantities, dollar amounts, names
-  - Cages full of mistreated animals in BARN
-  - Disturbing contents in HOUSE (drugs, porn, abuse materials)
-  - Unnatural entity (YELENA KALAMATIANO/LADYSLUG) in COTTAGE
+  - VHS recording equipment and tapes in shed
+  - small black book with ledger of post office boxes, quantities, dollar amounts, names
+  - Cages full of mistreated animals in barn
+  - Disturbing contents in house (drugs, porn, abuse materials)
+  - Unnatural entity (KALAMATIANO/LADYSLUG) in cottage
 - Fire destroys much of the facility
 - Children freed and later picked up (not killed despite CLOVE's orders)
 
@@ -56,7 +56,7 @@
 - Lot purchased by state in 2008
 - Prison constructed
 
-### 2010-2016 - As MD CORRECTION 3
+### 2010-2016 - As MD Correction 3
 - Prison opened in 2010
 - 800 inmates currently
 - Ranges from minimal to maximal security
@@ -80,16 +80,16 @@
 
 ## The Four Buildings (2001)
 
-### THE CLEARING
+### the CLEARING
 - Contains the four buildings
-- SHED (dark)
-- BARN (dark)
-- HOUSE (lights on)
-- COTTAGE (lights on)
+- shed (dark)
+- barn (dark)
+- house (lights on)
+- cottage (lights on)
 
-### SHED
+### shed
 - Dark initially
-- BEARD MAN enters, light comes on
+- beard man enters, light comes on
 - Contains:
   - VHS TAPES labeled either "blank" or "ready"
   - VCR
@@ -97,11 +97,11 @@
   - Video recording equipment
   - Shelves
   - JVC-JXC7 multicolor processing unit
-  - SMALL BLACK BOOK (ledger) in front of TV
-- LOTTIE takes "ready" VHS TAPES and SMALL BLACK BOOK
+  - small black book (ledger) in front of TV
+- LOTTIE takes "ready" VHS TAPES and small black book
 - Burned by SEAMUS during escape
 
-### BARN
+### barn
 - Dark initially
 - Used to be a dairy barn
 - Now a scary barn
@@ -111,10 +111,10 @@
 - Cages stacked such that waste rains down onto lower-stacked animals
 - Each cage has a paper tag
 - 17 animals total, one for each kid
-- BLONDE MAN drags child here and sprays roach killer on caged FERRET
+- blonde man drags child here and sprays roach killer on caged ferret
 - Children freed and gather here with their animals after adults are killed
 
-### HOUSE
+### house
 - Lights on
 - Big house windows all boarded shut
 - Porch windows all blackout curtained
@@ -129,12 +129,12 @@
 - Flickering light
 - Flies everywhere
 - Maggots
-- WOMAN, very pale, thin blonde hair, watching television
+- woman, very pale, thin blonde hair, watching television
 - Grainy figure skating footage at full volume
 - No obvious reason to be watching figure skating
 - 6 dirty mattresses with sleeping(-ish, maybe) children
 - Child pulls shotgun from kitchen counter
-- Fridge contains: cold cuts, eggs, DELI CONTAINERS FULL OF PURPLE LIQUID WITH SOMETHING FLOATING INSIDE
+- Fridge contains: cold cuts, eggs, deli containers full of purple liquid with something floating inside
 
 #### FAMILY ROOM
 - Single beatup armchair
@@ -164,18 +164,18 @@
 #### Two Dormitory Rooms
 - Each has 8 bunkbeds (16 bunks each)
 - One room: pink sheets, very dusty, nobody's been here for years
-- Other room: blue sheets, posters of HULK HOGAN, BO JACKSON, KEN GRIFFEY JR
+- Other room: blue sheets, posters of Hulk Hogan, Bo Jackson, Ken Griffey Jr
 - One poster peeling off wall, revealing discoloration
 - Behind poster: crayon drawing exactly matching SEAMUS's birthmark (dancing boy shape)
 
-### COTTAGE
+### cottage
 - Front porch with armchair
 - Smoke coming out of chimney
 - Looks like a fairy-tale cottage, very nice
 - Knitting needles and half-finished blue scarf on rocking chair
 - Blue and pink
 - Windows are frosted
-- Contains KALAMATIANO/YELENA in LADYSLUG form (see person file)
+- Contains KALAMATIANO in LADYSLUG form (see person file)
 
 **Initial appearance (illusory):**
 - Furniture warm and inviting, immaculately tended-to
@@ -193,7 +193,7 @@
 - Freezing cold
 - No fire
 - Smell of rotting meat
-- YELENA revealed as LADYSLUG
+- KALAMATIANO revealed as LADYSLUG
 
 **Destruction:**
 - Dowsed with gasoline by SEAMUS
@@ -201,15 +201,15 @@
 - Burns with LADYSLUG inside
 
 ### 2016 Discovery
-- The 11 mummies are found under where the COTTAGE used to be
+- The 11 mummies are found under where the cottage used to be
 - Preserved and dessicated, but not toilet-papered
 - No decomp whatsoever
 - Unnatural
 
 ## Other Features
 
-### BIG SPOOKY TREE
-- On the way to COTTAGE
+### big spooky tree
+- On the way to cottage
 - Carving of creepy symbol with three figures
 - Each figure has a deeper cut:
   - One on the hand
@@ -219,7 +219,7 @@
 - LOTTIE sniffs it, smells like tree
 
 ### Three Cars in Driveway
-- Disabled by team before entering HOUSE
+- Disabled by team before entering house
 
 ## Current Status (2016)
 - Prison housing 800 inmates

@@ -79,7 +79,7 @@ The OWEN incident:
 - Having trouble getting a positive id
 
 ### The Mummies
-- Under where the COTTAGE used to be
+- Under where the cottage used to be
 - No decomp whatsoever
 - Never seen anything like it
 - Unnatural

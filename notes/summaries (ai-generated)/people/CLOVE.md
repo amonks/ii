@@ -9,7 +9,7 @@
 
 ### Session 1-2
 
-On the phone after burning the COTTAGE:
+On the phone after burning the cottage:
 > [LOTTIE calls the beeper number to agent CLOVE]
 > CLOVE: "don't tell the program.
 > make sure all the evidence and recordings are destroyed.
@@ -21,8 +21,8 @@ On the phone after burning the COTTAGE:
 
 ### 2001 - The Operation
 - LOTTIE met with CLOVE before meeting SEAMUS and ERASTUS at the HOLIDAY INN
-- CLOVE organized the CORNUCOPIA HOUSE operation
-- After the COTTAGE burns and LADYSLUG is killed, LOTTIE calls the beeper number
+- CLOVE organized the Cornucopia house operation
+- After the cottage burns and LADYSLUG is killed, LOTTIE calls the beeper number
 - CLOVE tells LOTTIE to:
   - Not tell the program
   - Make sure all evidence and recordings are destroyed

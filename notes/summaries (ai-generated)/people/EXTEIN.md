@@ -13,8 +13,8 @@ No direct dialog recorded.
 ### KILLIAN Murder Investigation
 - Deputy in Florida who is involved in the KILLIAN (Crystal Killian) murder case
 - KILLIAN was a Florida shut-in who was murdered 7 days before the 2016 briefing
-- EMT found bloody piece of paper with three names on it: Charlotte Watkins, Seamus McGillicutty, Erastus Boudreau, plus the address of CORNUCOPIA HOUSE (now a jail)
-- This discovery triggered the investigation that brought AGENTS back to ZION
+- EMT found bloody piece of paper with three names on it: Charlotte Watkins, Seamus McGillicutty, Erastus Boudreau, plus the address of Cornucopia house (now a jail)
+- This discovery triggered the investigation that brought agents back to ZION
 
 ## Notes
 - Only mentioned briefly in briefing context

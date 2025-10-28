@@ -2,10 +2,10 @@
 
 ## Basic Info
 
-- Adult at CORNUCOPIA HOUSE
+- Adult at Cornucopia house
 - Body found at fire scene in 2001
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
-- Inhabitant of the COTTAGE at CORNUCOPIA HOUSE
+- Inhabitant of the cottage at Cornucopia house
 - Initial appearance: old woman wearing a shawl
 - True form: grey mass of flesh covered in abscesses, lolling tongue, swollen-shut eyes, tumorous udders dripping white slime
 - No legs, "big stinky milky slug" (LADYSLUG)
@@ -15,22 +15,22 @@
 
 ### Session 1-2
 
-As old woman in COTTAGE:
+As old woman in cottage:
 
 > YELENA: "I am sorry, I didn't expect company; please come in"
 > YELENA: "I was just about to make tea, can I have some"
 
-[AGENTS trying to grab guns, can't back out the door]
+[agents trying to grab guns, can't back out the door]
 
-> AGENTS: "what the hell? I can't move normal"
+> agents: "what the hell? I can't move normal"
 > YELENA: "it's probably just the cold, please come in"
 
-[AGENTS keep standing there, then take a step into the room]
+[agents keep standing there, then take a step into the room]
 
-> AGENTS: "We just saw a bunch of kids living in weird mattresses! a dead girl in a bag!"
+> agents: "We just saw a bunch of kids living in weird mattresses! a dead girl in a bag!"
 > YELENA: "where'd you see that?"
 
-[AGENTS can't remember]
+[agents can't remember]
 
 > YELENA: "please, sit down and have some tea"
 
@@ -51,19 +51,19 @@ As LADYSLUG (after spell broken):
 
 ## Events and Notes
 
-### 2001 - At CORNUCOPIA HOUSE
+### 2001 - At Cornucopia house
 
-- One of the adults at CORNUCOPIA HOUSE
-- Lives in the COTTAGE
+- One of the adults at Cornucopia house
+- Lives in the cottage
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
 - This suggests she had mind control over HOUGHTON
 
-### Initial Appearance (Illusory Form in COTTAGE)
+### Initial Appearance (Illusory Form in cottage)
 
-- Living in fairy-tale COTTAGE with front porch and armchair
+- Living in fairy-tale cottage with front porch and armchair
 - Smoke coming out of chimney
 - Knitting needles and half-finished blue scarf on rocking chair
-- COTTAGE is blue and pink; windows are frosted
+- cottage is blue and pink; windows are frosted
 - Furniture is warm and inviting, immaculately tended-to
 - Cozy rug, hardwood floors
 - Kettle on stove
@@ -71,21 +71,21 @@ As LADYSLUG (after spell broken):
 - Russian crosses and icons on the walls
 - Old woman on the couch wears a shawl
 - Table in front of her has a lit candle (black flame)
-- Kettle sounds as AGENTS walk in
+- Kettle sounds as agents walk in
 - Woman is just standing up as if to get it
 
 ### Powers and Abilities
 
 #### Mind Control
 
-- AGENTS find their guns are back in their holsters
+- agents find their guns are back in their holsters
 - Cannot grab guns
 - Cannot back out the door
 - Keep standing there involuntarily
 - Take steps into room involuntarily
 - Cannot move hands to doorknobs
-- YELENA closes front door; keeps speaking, and AGENTS can't act
-- AGENTS can't remember seeing the dead girl in the bag or the mattresses
+- KALAMATIANO closes front door; keeps speaking, and agents can't act
+- agents can't remember seeing the dead girl in the bag or the mattresses
 
 #### The Black Candle
 
@@ -128,7 +128,7 @@ As LADYSLUG (after spell broken):
 - ERASTUS shoots for 6, walks onto the porch
 - LOTTIE crits the lady with shotgun for 11; gets her in the face, she stops chanting and locks eyes directly on LOTTIE
 - SEAMUS dowses house with gasoline
-- LADYSLUG follows AGENTS out the door; squishes through it like an octopus, stinks like rotting meat
+- LADYSLUG follows agents out the door; squishes through it like an octopus, stinks like rotting meat
 - Shoots her big black tongue out of her mouth at LOTTIE in a real frog move
 - LOTTIE dodges, tongue splats on the ground with an incredibly loud thwack like a moose hitting a car
 - ERASTUS lights a zippo and tosses it in the house
@@ -148,7 +148,7 @@ As LADYSLUG (after spell broken):
 
 ### 2016 Discovery
 
-- The 11 mummies are found under where the COTTAGE used to be
+- The 11 mummies are found under where the cottage used to be
 - Preserved and dessicated, but not toilet-papered
 - No decomp whatsoever
 - Unnatural

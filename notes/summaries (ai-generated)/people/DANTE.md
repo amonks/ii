@@ -13,7 +13,7 @@ No direct dialog recorded.
 
 ### 2001
 - EDDIE is expecting LOTTIE home to make dinner for DANTE and "some broad" (presumably CARMELLA)
-- LOTTIE does not come home as expected due to CORNUCOPIA HOUSE operation
+- LOTTIE does not come home as expected due to Cornucopia house operation
 - DANTE used to steal cars (mentioned by LOTTIE when discussing stealing a car for the operation)
 - Has a child with CARMELLA (LOTTIE and EDDIE's grandchild)
 

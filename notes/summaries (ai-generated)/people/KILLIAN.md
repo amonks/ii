@@ -24,14 +24,14 @@ No direct dialog recorded.
   - Charlotte Watkins
   - Seamus McGillicutty
   - Erastus Boudreau
-- Plus the address of CORNUCOPIA HOUSE (now a jail)
+- Plus the address of Cornucopia house (now a jail)
 
 ### Investigation
-- Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about CORNUCOPIA HOUSE
+- Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about Cornucopia house
 - Mentions agents' names
 - Questions are in pursuit of homicide
 - This trips DG voice recognition thing
 - Flags the finding as high-priority
-- MIAMI FBI (program) meets with ECKSTEIN offering services
+- Miami FBI (program) meets with ECKSTEIN offering services
 - Really the point is to question ECKSTEIN about program operatives
-- MIAMI FBI discovers that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)
+- Miami FBI discovers that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)

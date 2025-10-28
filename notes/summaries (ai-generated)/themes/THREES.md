@@ -2,23 +2,23 @@
 
 ## Three Animal Attacks (2001)
 
-Three separate animal attacks on the three agents before the 2001 operation at CORNUCOPIA HOUSE.
+Three separate animal attacks on the three agents before the 2001 operation at Cornucopia house.
 
-### Attack 1: RACCOON Bites ERASTUS
-
-From Session 1-2:
-
-> we head out from the HOLIDAY INN EXPRESS and approach the TRUCK belonging to ERASTUS (78 chevy).
-> There's a RACCOON in the passenger seat, which bites the hand of ERASTUS, who neosporins that shit.
-
-### Attack 2: BIG CROW Pecks SEAMUS
+### Attack 1: raccoon Bites ERASTUS
 
 From Session 1-2:
 
-> they see a BIG CROW, which is unusual at this hour
-> scared by the BIG CROW, the walk up the block to find a DIFFERENT MINIVAN
-> no longer in sight of the BIG CROW, they steal that DIFFERENT MINIVAN
-> BIG CROW comes down and flaps in their face!! pecks SEAMUS, draws blood
+> we head out from the HOLIDAY INN EXPRESS and approach the truck belonging to ERASTUS (78 chevy).
+> There's a raccoon in the passenger seat, which bites the hand of ERASTUS, who neosporins that shit.
+
+### Attack 2: big crow Pecks SEAMUS
+
+From Session 1-2:
+
+> they see a big crow, which is unusual at this hour
+> scared by the big crow, the walk up the block to find a different minivan
+> no longer in sight of the big crow, they steal that different minivan
+> big crow comes down and flaps in their face!! pecks SEAMUS, draws blood
 
 ### Attack 3: Squirrel Bites LOTTIE
 
@@ -26,16 +26,16 @@ From Session 1-2:
 
 > we park on country road 224 and plod through the woods towards the house
 > we carry all our shit, we're loaded up heavy
-> FURRY THING falls on the head of LOTTIE; is a squirrel, bites her finger; rubbing alcohol
+> furry thing falls on the head of LOTTIE; is a squirrel, bites her finger; rubbing alcohol
 
-## Three Figures on BIG SPOOKY TREE
+## Three Figures on big spooky tree
 
 The three attacks correspond to a ritual carving.
 
 From Session 1-2:
 
-> on the way, there's a BIG SPOOKY TREE, not that SPOOKY tho
-> BIG SPOOKY TREE has a carving of a creepy symbol with three figures, each figure has a deeper cut: one on the hand, one on the head, one on wherever SEAMUS got bit by the crow; these drawings correspond to us and the deep cuts correspond to our animal bites
+> on the way, there's a big spooky tree, not that SPOOKY tho
+> big spooky tree has a carving of a creepy symbol with three figures, each figure has a deeper cut: one on the hand, one on the head, one on wherever SEAMUS got bit by the crow; these drawings correspond to us and the deep cuts correspond to our animal bites
 
 ## Three Stigmata Wounds (2016)
 
@@ -102,10 +102,10 @@ From Session 3:
 
 ## Summary
 
-- RACCOON bit ERASTUS on the hand, BIG CROW pecked SEAMUS drawing blood, squirrel bit LOTTIE on the finger before the 2001 operation
-- BIG SPOOKY TREE had a carving with three figures, each with a deeper cut matching the location of each agent's animal bite
+- raccoon bit ERASTUS on the hand, big crow pecked SEAMUS drawing blood, squirrel bit LOTTIE on the finger before the 2001 operation
+- big spooky tree had a carving with three figures, each with a deeper cut matching the location of each agent's animal bite
 - HOUGHTON was nailed to the WAREHOUSE door with three puncture wounds: two in the hands and one in the collarbone
-- Three perpetrators (MAN 1, WOMAN, MAN 2) murdered HOUGHTON in 2016
+- Three perpetrators (KILLERS) murdered HOUGHTON in 2016
 - All three agents received SREDNI BASHTAR delivered by animals on the same day in 2004
-- Three cars were parked in the driveway at CORNUCOPIA HOUSE in 2001
+- Three cars were parked in the driveway at Cornucopia house in 2001
 - KILLIAN was found murdered with a bloody piece of paper containing the three agents' names

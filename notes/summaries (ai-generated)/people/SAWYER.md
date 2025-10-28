@@ -2,7 +2,7 @@
 
 ## Basic Info
 - Maryland State Trooper
-- Discovered HOUGHTON's body at MD CORRECTION 3
+- Discovered HOUGHTON's body at MD Correction 3
 
 ## Dialog
 
@@ -11,7 +11,7 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### Discovery of HOUGHTON - Thursday August 18, 2016
-- Drives to MD CORRECTION 3 (formerly CORNUCOPIA HOUSE)
+- Drives to MD Correction 3 (formerly Cornucopia house)
 - Finds HOUGHTON dead and mutilated at WAREHOUSE
 - Body nailed to door with screwdrivers (stigmata-style)
 - Calls for backup

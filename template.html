@@ -155,11 +155,12 @@
         line-height: 1.7;
       }
       /* Highlight matched text */
-      mark.search-highlight {
+      .search-highlight {
         background: #fffacd;
-        padding: 2px 4px;
+        padding: 4px 8px;
         border-radius: 2px;
-        font-weight: bold;
+        border-left: 3px solid #f0e68c;
+        margin: 2px 0;
       }
       .breadcrumb {
         font-family: "Triplicate", "Courier New", monospace;
@@ -507,6 +508,8 @@
           }
 
           // Walk through text nodes and highlight matches
+          let matchCount = 0;
+          let firstMatch = null;
           function highlightInNode(node) {
             if (node.nodeType === Node.TEXT_NODE) {
               const text = node.textContent;
@@ -515,30 +518,44 @@
               const index = lowerText.indexOf(lowerSearch);
 
               if (index !== -1) {
-                const before = text.substring(0, index);
-                const match = text.substring(index, index + textToFind.length);
-                const after = text.substring(index + textToFind.length);
+                matchCount++;
 
-                const fragment = document.createDocumentFragment();
-                if (before)
-                  fragment.appendChild(document.createTextNode(before));
-
-                const mark = document.createElement("mark");
-                mark.className = "search-highlight";
-                mark.textContent = match;
-                fragment.appendChild(mark);
-
-                if (after) fragment.appendChild(document.createTextNode(after));
-
-                node.parentNode.replaceChild(fragment, node);
-
-                // Scroll to first match
-                if (!window.hasScrolledToMatch) {
-                  mark.scrollIntoView({ behavior: "smooth", block: "center" });
-                  window.hasScrolledToMatch = true;
+                // Find the block-level parent to highlight the whole line
+                let blockParent = node.parentNode;
+                while (blockParent && blockParent !== content) {
+                  const tag = blockParent.tagName;
+                  if (tag === 'P' || tag === 'LI' || tag === 'BLOCKQUOTE' ||
+                      tag === 'H1' || tag === 'H2' || tag === 'H3' ||
+                      tag === 'H4' || tag === 'H5' || tag === 'H6' ||
+                      tag === 'TD' || tag === 'TH') {
+                    break;
+                  }
+                  blockParent = blockParent.parentNode;
                 }
 
-                return mark;
+                // Store first match for scrolling later (skip tag links)
+                if (!firstMatch) {
+                  // Check if this match is inside a tag-link
+                  let parent = node.parentNode;
+                  let isInTagLink = false;
+                  while (parent && parent !== content) {
+                    if (parent.tagName === 'A' && parent.className === 'tag-link') {
+                      isInTagLink = true;
+                      break;
+                    }
+                    parent = parent.parentNode;
+                  }
+
+                  if (!isInTagLink && blockParent && blockParent !== content) {
+                    firstMatch = blockParent;
+                    blockParent.classList.add('search-highlight');
+                  }
+                } else if (blockParent && blockParent !== content) {
+                  // Highlight additional matches
+                  blockParent.classList.add('search-highlight');
+                }
+
+                return node;
               }
             } else if (
               node.nodeType === Node.ELEMENT_NODE &&
@@ -549,8 +566,12 @@
             }
           }
 
-          window.hasScrolledToMatch = false;
           highlightInNode(content);
+
+          // Scroll to first match after all highlighting is complete
+          if (firstMatch) {
+            firstMatch.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
         }
 
         // Run on page load

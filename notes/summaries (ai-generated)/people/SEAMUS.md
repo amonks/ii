@@ -8,7 +8,7 @@
 - Father of GRENADINE
 
 ## Equipment
-- MEDIUM PISTOL (acquired at ROSARYVILLE ANNUAL GUN SHOW)
+- medium pistol (acquired at Rosaryville Annual Gun Show)
 
 ## Dialog
 
@@ -65,15 +65,15 @@ To PIZZA:
 
 ### 2001 - The Operation
 - Attended domestic abuse and response professional development seminar 2b at HOLIDAY INN EXPRESS Sikesville
-- Recruited by LOTTIE for the CORNUCOPIA HOUSE operation
+- Recruited by LOTTIE for the Cornucopia house operation
 - During the operation:
-  - Pecked by BIG CROW while stealing car, drew blood
-  - Cut throat of BLONDE guy during the fight
+  - Pecked by big crow while stealing car, drew blood
+  - Cut throat of blonde guy during the fight
   - Shot by LOTTIE for 7 damage during fight with LADYSLUG
   - Broke away from LADYSLUG, tumbled onto the ground, blood sprays everywhere
   - Got pus from LADYSLUG into his mouth: "it's better than anything he's ever tasted"
-  - Dowsed COTTAGE with gasoline
-  - Burns tape SHED
+  - Dowsed cottage with gasoline
+  - Burns tape shed
 
 ### The Death and Resurrection
 - In the car, ERASTUS tries to treat the gun wound on SEAMUS, crit fails, SEAMUS bleeds out
@@ -95,17 +95,17 @@ To PIZZA:
 - Returns home to GWEN in Quincy MA
 
 ### The Birthmark
-- At the HOUSE, SEAMUS recognizes a crayon drawing which is exactly the shape of a birthmark on his leg, in the specific shape of a dancing boy
+- At the house, SEAMUS recognizes a crayon drawing which is exactly the shape of a birthmark on his leg, in the specific shape of a dancing boy
 - Passed san roll when seeing this
 
 ### 2004
 - Waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-- The item is a short story, very short book, titled SREDNI BASHTAR by SAKI
+- The item is a short story, very short book, titled SREDNI_BASHTAR by Saki
 
 ### 2005-2016
 - Stays buddies with LOTTIE
 - Read into program, occasionally do small jobs, nothing insane
 
-### 2016 - WORKING GROUP MASTICATE
+### 2016 - working group masticate
 - Called back into service by PIZZA for the ZION investigation
-- Part of WORKING GROUP: MASTICATE
+- Part of working group: masticate

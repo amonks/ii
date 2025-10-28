@@ -6,7 +6,7 @@
 - Real serious
 - Rumpled suit
 - Water bottle has coffee in it
-- Commands WORKING GROUP MASTICATE
+- Commands working group masticate
 
 ## Dialog
 
@@ -22,7 +22,7 @@ At the WeWork briefing:
 > PIZZA: "why the fuck are your names on this? your lives are fragile right now"
 > SEAMUS and LOTTIE: [claim they've never been to ZION]
 
-> PIZZA: "You are now under my direct command. The three of you are now WORKING GROUP: MASTICATE. Your mission is to have the following priorities: [see priorities below]"
+> PIZZA: "You are now under my direct command. The three of you are now working group: masticate. Your mission is to have the following priorities: [see priorities below]"
 > PIZZA: "fyi: somebody's head is gonna roll for this. The FBI investigated this and didn't find 56 dead kids? if you fuck this up, you will never see the person that kills you. That's what we're working with here."
 > PIZZA: "this is my number one priority. call me any time. the resources of the program are behind this"
 > PIZZA: "we have a team of harvard specialists onsite, who understand that the program sometimes deals with unusual occurances. they are to be trusted to an extent. they are stalling for time. get down there."
@@ -44,14 +44,14 @@ On phone with SEAMUS:
 
 ## Events and Notes
 
-### 2016 - Forming WORKING GROUP MASTICATE
-- Meets AGENTS at a WeWork
+### 2016 - Forming working group masticate
+- Meets agents at a WeWork
 - Beer tap doesn't work; Fridges are empty
 - Comes up the elevator
 - Says not a word initially
 - Sits at the far end of the table
 - Turns tv onto morning news showing "Breaking: 56 Bodies Found At Sight Of Maryland Youth Home"
-- Forms WORKING GROUP: MASTICATE with priorities:
+- Forms working group: masticate with priorities:
   1. keep your names out of all news and reports, now that they are associated with the program
   2. figure out what the program and yourselves have to do with the 56 dead kids
   3. ~~find out what happened there in a fire in February 2001~~

@@ -1,6 +1,6 @@
 # ROTTING FLESH
 
-## The COTTAGE Encounter with YELENA (2001)
+## The cottage Encounter with KALAMATIANO (2001)
 
 ### Initial Contact
 

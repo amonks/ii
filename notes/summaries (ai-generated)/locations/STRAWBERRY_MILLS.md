@@ -31,7 +31,7 @@
 ### August 17-18, 2016 - Abduction of HOUGHTON
 
 #### Security Footage (12:09AM 8/18)
-- 3 figures come up the stairs (MAN 1, MAN 2, WOMAN/ELLE GABLE)
+- 3 figures come up the stairs (KILLERS - woman is ELLE GABLE)
 - Two men walk up one staircase, woman walks up the other
 - Two men stand adjacent to doorway while woman faces it
 - They don't knock
@@ -42,20 +42,20 @@
 - Appears very surprised to see the woman
 - Two men begin striking HOUGHTON on head with fists
 - Drag HOUGHTON down stairs
-- WOMAN walks into apartment, remains for 6 seconds, leaves with keychain
+- ELLE GABLE walks into apartment, remains for 6 seconds, leaves with keychain
 - Perps leave door open; cat walks out
-- MEN waiting next to 1997 Corolla
-- WOMAN opens trunk with HOUGHTON's keychain
-- MEN load HOUGHTON into trunk
+- Two of the KILLERS waiting next to 1997 Corolla
+- ELLE GABLE opens trunk with HOUGHTON's keychain
+- Two of the KILLERS load HOUGHTON into trunk
 - 12:13AM: All drive off
 
 ### 2016 Investigation
-- AGENTS visit after discovering footage
+- agents visit after discovering footage
 - TOOMEY (Olivia Toomey, BMore Sun) approaches car asking questions
-- AGENTS enter apartment
+- agents enter apartment
 - Evidence collected:
   - Laptop with email chains from 2001
-  - Diaries with compulsive writing about CORNUCOPIA HOUSE
+  - Diaries with compulsive writing about Cornucopia house
   - Trashbag with cat vomit (weird smell, like rotting meat, makes people feel hungry)
   - Medications for PTSD, Schizoaffective disorder, Bipolar
 - Neighbor CINDY interviewed

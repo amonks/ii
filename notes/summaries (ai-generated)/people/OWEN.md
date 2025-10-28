@@ -31,13 +31,13 @@ The OWEN Incident:
 ## Events and Notes
 
 ### The OWEN Incident
-- VELASQUEZ calls AGENTS about "goings on around the hazmat tent"
+- VELASQUEZ calls agents about "goings on around the hazmat tent"
 - VELASQUEZ reports: "we implemented the search you recommended, and caught this individual with contraband materials exiting the crime scene"
 - OWEN protests that it was going to be a cover-up
-- Points out that AGENTS are taking everything offsite
+- Points out that agents are taking everything offsite
 - Claims he's not an idiot and took the sample properly (with sample vial)
 - Officers take OWEN away
-- AGENTS recover the sample from OWEN
+- agents recover the sample from OWEN
 - Threatens that his contact in the press will hear about this
 
 ### Aftermath

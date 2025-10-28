@@ -1,7 +1,7 @@
 # KIM Seon-hu
 
 ## Basic Info
-- Maintenance worker at MD CORRECTION 3
+- Maintenance worker at MD Correction 3
 - Tools were stolen and used in HOUGHTON murder
 - Has rock-solid alibi
 

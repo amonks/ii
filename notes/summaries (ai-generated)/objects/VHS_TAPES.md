@@ -1,22 +1,22 @@
 # VHS TAPES
 
-Video recordings of child abuse found in the shed at CORNUCOPIA HOUSE. The tapes were labeled "blank" or "ready" and were part of a commercial distribution operation tracked in a ledger.
+Video recordings of child abuse found in the shed at Cornucopia house. The tapes were labeled "blank" or "ready" and were part of a commercial distribution operation tracked in a ledger.
 
 ## The Shed
 
 From Session 1-2:
 
-> - we check SHED:
->   - SHED: VHS TAPES, vcr, small tv, video recording equipment, shelves.
+> - we check shed:
+>   - shed: VHS TAPES, vcr, small tv, video recording equipment, shelves.
 >     jvc-jxc7 multicolor processing unit.
->     VHS TAPES are labeled either "blank" or "ready"; in front of the tv is a SMALL BLACK BOOK
+>     VHS TAPES are labeled either "blank" or "ready"; in front of the tv is a small black book
 
 ## The Ledger
 
 From Session 1-2:
 
-> - LOTTIE looks inside the SMALL BLACK BOOK, list of post-office boxes, quantities, dollar amounts, names; some kind of ledger
-> - LOTTIE takes some "ready" VHS TAPES and the SMALL BLACK BOOK and sticks em in her bag
+> - LOTTIE looks inside the small black book, list of post-office boxes, quantities, dollar amounts, names; some kind of ledger
+> - LOTTIE takes some "ready" VHS TAPES and the small black book and sticks em in her bag
 
 ## Destruction
 

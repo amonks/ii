@@ -1,7 +1,7 @@
 # WARDEN (Constance Horan)
 
 ## Basic Info
-- Warden of MD CORRECTION 3 (formerly CORNUCOPIA HOUSE)
+- Warden of MD Correction 3 (formerly Cornucopia house)
 - Has worked there since 2008, since it opened
 - Has a son who plays little league
 - Conservative political views
@@ -30,7 +30,7 @@ Meeting the WARDEN:
 
 ## Events and Notes
 
-### At MD CORRECTION 3
+### At MD Correction 3
 - Has worked there since the prison opened in 2008
 - Strongly opposed to closing the prison
 - Calls prisoners "freaks"
@@ -41,4 +41,4 @@ Meeting the WARDEN:
 - Nothing particularly unusual on August 17-18
 - Reports "two fellas enjoying each-others company in the showers" which she doesn't stand for
 - Refers to FINCH as "dumb bitch psychologist"
-- Invites AGENTS to son's little league game
+- Invites agents to son's little league game
