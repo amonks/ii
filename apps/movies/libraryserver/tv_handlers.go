@@ -463,12 +463,22 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				continue
 			}
 
-			// Only process files that match the identified season number
+			// Handle season number mismatch with fallback for single-season series
 			if fileSeasonNum != seasonNumber {
-				log.Printf("Skipping episode from different season: S%02d vs. selected S%02d - %s",
-					fileSeasonNum, seasonNumber, episodePath)
-				unprocessedFiles = append(unprocessedFiles, episodePath)
-				continue
+				// For single-season series (season 1), fall back to assuming S01
+				// when the detected season seems unreasonable (> 9) or doesn't match.
+				// This handles cases where numbers in the path (like resolution "1008x720")
+				// are misinterpreted as season numbers.
+				if seasonNumber == 1 && fileSeasonNum > 9 {
+					log.Printf("Detected unlikely season S%02d for S01 series, assuming S01E%02d - %s",
+						fileSeasonNum, episodeNum, episodePath)
+					fileSeasonNum = 1
+				} else {
+					log.Printf("Skipping episode from different season: S%02d vs. selected S%02d - %s",
+						fileSeasonNum, seasonNumber, episodePath)
+					unprocessedFiles = append(unprocessedFiles, episodePath)
+					continue
+				}
 			}
 
 			// Check if the season already exists

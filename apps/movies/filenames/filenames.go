@@ -17,7 +17,8 @@ var (
 	SeasonEpPattern = regexp.MustCompile(`(?i)Season\s*(\d+).*?Episode\s*(\d+)`)
 
 	// Format: 1x02
-	DotSeasonEpPattern = regexp.MustCompile(`(\d+)x(\d+)`)
+	// Use word boundaries and limit season/episode to reasonable ranges to avoid matching resolutions like 1008x720
+	DotSeasonEpPattern = regexp.MustCompile(`\b(\d{1,2})x(\d{1,3})\b`)
 
 	// Format: Season 1 (for directories)
 	SeasonFolderPattern = regexp.MustCompile(`(?i)Season\s*(\d+)`)
@@ -34,6 +35,11 @@ var (
 	// Format: [OZC]The Big O E14 'Roger the Wanderer'.mkv
 	// Matches E followed by digits, with a word boundary to avoid matching within words
 	PlainEpisodePattern = regexp.MustCompile(`(?i)\bE(\d+)\b`)
+
+	// Format: Show_Name_01_Title.mkv or Show - 01 [tags].mkv
+	// Matches underscore/dash followed by exactly 2 digits followed by delimiter (space, underscore, dash, dot, open paren/bracket)
+	// This catches simple episode numbering like "_01_" or "- 05 " or "-07."
+	SimpleEpisodePattern = regexp.MustCompile(`[_-]\s*(\d{2})\s*[_\-\.\(\[\s]`)
 
 	// Format: 520.mkv or just 520 (bare 3-digit: first digit is season, last two are episode)
 	ThreeDigitPattern = regexp.MustCompile(`^(\d)(\d{2})(?:\.[a-z0-9]+)?$`)
@@ -76,6 +82,15 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 		return season, episode, nil
 	}
 
+	// Try simple two-digit episode pattern (e.g., "_01_" or "-05-")
+	// Check this before falling back to directory-based detection
+	if match := SimpleEpisodePattern.FindStringSubmatch(filename); match != nil {
+		episode, _ := strconv.Atoi(match[1])
+		// Use season from directory path
+		seasonNum := DetectSeasonFromPath(filepath.Dir(path))
+		return seasonNum, episode, nil
+	}
+
 	// Try bare three-digit format (e.g., "520.mkv" or "520")
 	// This is less specific, so check it after the delimited patterns
 	if match := ThreeDigitPattern.FindStringSubmatch(filename); match != nil {
@@ -115,6 +130,33 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 				return seasonNum, episode, nil
 			}
 
+			// Check for 3-digit episode codes where first digit matches season
+			// e.g., "601 - Title.mkv" in "S06" directory -> S06E01
+			// Look for 3 digits at start or after delimiter
+			threeDigitMatch := regexp.MustCompile(`^(\d)(\d{2})\b`).FindStringSubmatch(filename)
+			if threeDigitMatch != nil {
+				detectedSeason, _ := strconv.Atoi(threeDigitMatch[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(threeDigitMatch[2])
+					return seasonNum, episode, nil
+				}
+			}
+
+			if match := DashEpisodePattern.FindStringSubmatch(filename); match != nil {
+				detectedSeason, _ := strconv.Atoi(match[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(match[2])
+					return seasonNum, episode, nil
+				}
+			}
+			if match := DotEpisodePattern.FindStringSubmatch(filename); match != nil {
+				detectedSeason, _ := strconv.Atoi(match[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(match[2])
+					return seasonNum, episode, nil
+				}
+			}
+
 			// Look for just a number as the episode
 			re := regexp.MustCompile(`(\d+)`)
 			if match := re.FindStringSubmatch(filename); match != nil {
@@ -138,6 +180,32 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 			}
 		} else if sMatch := SPattern.FindStringSubmatch(part); sMatch != nil {
 			seasonNum, _ := strconv.Atoi(sMatch[1])
+
+			// Check for 3-digit episode codes where first digit matches season
+			// e.g., "601 - Title.mkv" in "S06" directory -> S06E01
+			threeDigitMatch := regexp.MustCompile(`^(\d)(\d{2})\b`).FindStringSubmatch(filename)
+			if threeDigitMatch != nil {
+				detectedSeason, _ := strconv.Atoi(threeDigitMatch[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(threeDigitMatch[2])
+					return seasonNum, episode, nil
+				}
+			}
+
+			if match := DashEpisodePattern.FindStringSubmatch(filename); match != nil {
+				detectedSeason, _ := strconv.Atoi(match[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(match[2])
+					return seasonNum, episode, nil
+				}
+			}
+			if match := DotEpisodePattern.FindStringSubmatch(filename); match != nil {
+				detectedSeason, _ := strconv.Atoi(match[1])
+				if detectedSeason == seasonNum {
+					episode, _ := strconv.Atoi(match[2])
+					return seasonNum, episode, nil
+				}
+			}
 
 			// Try to find episode number in filename
 			episodeMatch := regexp.MustCompile(`(\d+)`).FindStringSubmatch(filename)
@@ -186,7 +254,8 @@ func IsEpisodeFile(filename string) bool {
 		DotSeasonEpPattern.MatchString(filename) ||
 		DashEpisodePattern.MatchString(filename) ||
 		DotEpisodePattern.MatchString(filename) ||
-		PlainEpisodePattern.MatchString(filename) {
+		PlainEpisodePattern.MatchString(filename) ||
+		SimpleEpisodePattern.MatchString(filename) {
 		return true
 	}
 

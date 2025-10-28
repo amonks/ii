@@ -61,6 +61,41 @@ func TestParseSeasonEpisode(t *testing.T) {
 			expectedEpisode: 5,
 			shouldError:     false,
 		},
+		{
+			name:            "Coalgirls format with resolution in path - should extract E01 not be confused by 1008",
+			path:            "[Coalgirls]_Serial_Experiments_Lain_(1008x720_Blu-Ray_FLAC)/[Coalgirls]_Serial_Experiments_Lain_01_(1008x720_Blu-Ray_FLAC)_[F0EF8AF8].mkv",
+			expectedSeason:  1,
+			expectedEpisode: 1,
+			shouldError:     false,
+		},
+		{
+			name:            "Lunar format with space-dash-space separator",
+			path:            "Bartender/[Lunar] Bartender - 01 [x264][1280x720].mkv",
+			expectedSeason:  1,
+			expectedEpisode: 1,
+			shouldError:     false,
+		},
+		{
+			name:            "Lunar format with two-digit episode",
+			path:            "Bartender/[Lunar] Bartender - 07 [x264][1280x720].mkv",
+			expectedSeason:  1,
+			expectedEpisode: 7,
+			shouldError:     false,
+		},
+		{
+			name:            "King of the Hill format - 3 digits starting with season number",
+			path:            "King of the Hill S06/601 - Bobby Goes Nuts.mkv",
+			expectedSeason:  6,
+			expectedEpisode: 1,
+			shouldError:     false,
+		},
+		{
+			name:            "King of the Hill format - episode 20",
+			path:            "King of the Hill S06/620 - Dang Ol' Love.mkv",
+			expectedSeason:  6,
+			expectedEpisode: 20,
+			shouldError:     false,
+		},
 	}
 
 	for _, tt := range tests {
