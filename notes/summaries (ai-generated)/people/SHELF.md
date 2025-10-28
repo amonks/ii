@@ -21,7 +21,7 @@ Evidence transport:
 > MO: "CDC."
 > SHELF: "if you need any further access to this stuff, please call CDC."
 
-To KIM SUNG HOO:
+To KIM Seon-hu:
 
 > KIM: "I already answered all the questions"
 > SHELF: "yes, that's alright, you aren't under suspicion. If you uncover anything else, please make sure I'm your first call."
@@ -62,7 +62,7 @@ OWEN incident:
 > COSTA: "yeah, if you help me out I'll help you out. I'll even rough him up a bit"
 > SHELF: "that certainly wouldn't be necessary" [winks, indicating that it would, in fact, be preferred]
 
-To KIM SUNG HOO:
+To KIM Seon-hu:
 
 > LOTTIE: "why don't you tell us everything you told the police please?"
 > KIM: "I lost my tools. I'm on the tape."

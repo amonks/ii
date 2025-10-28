@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -35,6 +36,108 @@ type PageData struct {
 	IsIndex  bool
 	Files    []string
 	TreeHTML template.HTML
+}
+
+// tagMap maps ALLCAPS tags to their summary file paths
+var tagMap map[string]string
+
+func init() {
+	tagMap = buildTagMap()
+}
+
+// buildTagMap scans all summary files and creates a map from tag names to file paths
+func buildTagMap() map[string]string {
+	tags := make(map[string]string)
+
+	// Walk through summaries directory
+	err := fs.WalkDir(markdownFiles, "notes/summaries (ai-generated)", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Only process markdown files
+		if !d.IsDir() && strings.HasSuffix(path, ".md") {
+			// Get the tag name from the filename (without .md extension)
+			filename := d.Name()
+			tagName := strings.TrimSuffix(filename, ".md")
+
+			// Store the path relative to notes/ directory
+			relativePath := strings.TrimPrefix(path, "notes/")
+
+			// Store with underscore version (as it appears in filename)
+			tags[tagName] = relativePath
+
+			// Also store with space version (as it appears in text)
+			// e.g., "HOLIDAY_INN_EXPRESS" -> also store as "HOLIDAY INN EXPRESS"
+			tagWithSpaces := strings.ReplaceAll(tagName, "_", " ")
+			if tagWithSpaces != tagName {
+				tags[tagWithSpaces] = relativePath
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("Error building tag map: %v", err)
+	}
+
+	log.Printf("Built tag map with %d tags", len(tags))
+	return tags
+}
+
+// linkTags converts ALLCAPS tags to HTML links in the rendered HTML
+// It only processes text outside of HTML tags to avoid breaking existing HTML
+func linkTags(html string) string {
+	// Split HTML into parts: inside tags (<...>) and outside tags (text)
+	// We'll only process the text parts
+	// Pattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN EXPRESS"
+	tagPattern := regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:\s+[A-Z][A-Z_0-9]*)*)\b`)
+	htmlTagPattern := regexp.MustCompile(`<[^>]+>`)
+
+	// Find all HTML tags and their positions
+	tagMatches := htmlTagPattern.FindAllStringIndex(html, -1)
+
+	if len(tagMatches) == 0 {
+		// No HTML tags, process entire string
+		return tagPattern.ReplaceAllStringFunc(html, replaceTag)
+	}
+
+	// Build result by processing text between HTML tags
+	var result strings.Builder
+	lastEnd := 0
+
+	for _, match := range tagMatches {
+		start, end := match[0], match[1]
+
+		// Process text before this HTML tag
+		if start > lastEnd {
+			textPart := html[lastEnd:start]
+			processedText := tagPattern.ReplaceAllStringFunc(textPart, replaceTag)
+			result.WriteString(processedText)
+		}
+
+		// Write the HTML tag unchanged
+		result.WriteString(html[start:end])
+		lastEnd = end
+	}
+
+	// Process remaining text after last HTML tag
+	if lastEnd < len(html) {
+		textPart := html[lastEnd:]
+		processedText := tagPattern.ReplaceAllStringFunc(textPart, replaceTag)
+		result.WriteString(processedText)
+	}
+
+	return result.String()
+}
+
+// replaceTag is a helper function that replaces a tag with a link if it exists in tagMap
+func replaceTag(match string) string {
+	if path, exists := tagMap[match]; exists {
+		return fmt.Sprintf(`<a href="/%s" class="tag-link">%s</a>`, path, match)
+	}
+	return match
 }
 
 type TreeNode struct {
@@ -359,6 +462,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Replace <br> tags with custom div
 	contentStr = strings.ReplaceAll(contentStr, "<br />", "<div class=\"break\"></div>")
 	contentStr = strings.ReplaceAll(contentStr, "<br>", "<div class=\"break\"></div>")
+
+	// Link ALLCAPS tags to their summary files
+	contentStr = linkTags(contentStr)
 
 	data := PageData{
 		Title:   strings.TrimSuffix(filepath.Base(path), ".md"),

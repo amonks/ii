@@ -65,6 +65,15 @@
         text-decoration: underline;
         color: #0052a3;
       }
+      a.tag-link {
+        color: #006600;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      a.tag-link:hover {
+        text-decoration: underline;
+        color: #004400;
+      }
       pre {
         background: #f5f4f0;
         border: 1px solid #ddd;
@@ -453,9 +462,10 @@
 
         // Global keyboard shortcuts
         document.addEventListener("keydown", function (e) {
-          // Ctrl-L or / to focus search
+          // Ctrl-L, Ctrl-K or / to focus search
           if (
             (e.ctrlKey && e.key === "l") ||
+            (e.ctrlKey && e.key === "k") ||
             (e.key === "/" && !isTypingInInput(e.target))
           ) {
             e.preventDefault();

@@ -63,7 +63,7 @@
 - WARDEN Constance Horan since 2008
 - Psychologist Kate FINCH on staff
 - Medical staff onsite
-- Maintenance by KIM SUNG HOO
+- Maintenance by KIM Seon-hu
 
 ### August 2016 - Bodies Discovered
 - Thursday 18 Aug: MD st trooper SAWYER finds HOUGHTON dead and mutilated at WAREHOUSE

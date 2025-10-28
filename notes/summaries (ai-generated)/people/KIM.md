@@ -1,4 +1,4 @@
-# KIM SUNG HOO
+# KIM Seon-hu
 
 ## Basic Info
 - Maintenance worker at MD CORRECTION 3
@@ -23,7 +23,7 @@ Interview:
 ### Tool Theft
 - Uses a tool bucket for maintenance work
 - Bucket contained screwdrivers and other tools
-- All tools had "KIM SUN HOO" and a phone number written on handles in permanent marker
+- All tools had "KIM Seon-hu" and a phone number written on handles in permanent marker
 - Tool bucket went missing the day before HOUGHTON's murder
 - CCTV footage shows bucket fell out of the back of his truck after he unloaded some bedframes
 - Perps on footage grabbing the tools right before killing HOUGHTON

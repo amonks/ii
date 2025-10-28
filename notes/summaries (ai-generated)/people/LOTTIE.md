@@ -122,7 +122,7 @@ To COSTA about OWEN:
 > COSTA: "you need some help?"
 > LOTTIE: "yes. this guy's a flight risk. You need to get a copy of any outgoing communications he makes. Lock him up in county."
 
-To KIM SUNG HOO:
+To KIM Seon-hu:
 
 > LOTTIE: "why don't you tell us everything you told the police please?"
 

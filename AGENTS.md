@@ -1,0 +1,13 @@
+- `notes/sessions/*.md` are the source files
+- we generate `notes/summaries (ai-generated)/**/*.md` from them
+- I wrote the session notes, and they are the source of truth. If I ask you to "read the notes" or similar, I mean the session notes, I don't mean the summaries.
+- you must never edit the content of session notes, but you may edit their formatting if I ask.
+- for searchability, we have a system where recurring characters, locations, themes, objects, etc get ALLCAPS TAGS.
+- we must always refer to them by that tag.
+- if you see a reference to a tagged object _without_ the tag (eg: not all caps, misspelled) that's a bug and you may fix it.
+- if you see a tag without a corresponding tag file, that's a bug but you must ask me how to fix it: either we will remove the tag (eg lowercasing the name) or we will give it a file
+- each tag must correspond to a file in `notes/summaries (ai-generated)/**/*.md`, which centralizes everything we know about the tagged object
+- always run `tree ./notes` before doing anything else so that you know what the tags are
+- summary files should ALWAYS quote directly from session notes as much as possible, including surrounding context
+- summary files should never conatin analysis, just quotes and facts
+- before writing or editing a summary file, read several other summary files in each category to get the idea
