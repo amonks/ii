@@ -387,10 +387,14 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			files = append(files, rootFiles...)
 		}
 
-		// Clean up paths for display
+		// Clean up paths for display and filter out character sheets
 		var cleanFiles []string
 		for _, f := range files {
 			cleanPath := strings.TrimPrefix(f, "notes/")
+			// Skip character sheets
+			if strings.HasPrefix(cleanPath, "character_sheets/") {
+				continue
+			}
 			cleanFiles = append(cleanFiles, cleanPath)
 		}
 
@@ -416,6 +420,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Serve markdown file
 	if !strings.HasSuffix(path, ".md") {
 		path += ".md"
+	}
+
+	// Block access to character sheets
+	if strings.HasPrefix(path, "character_sheets/") {
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
 	}
 
 	// Add notes/ prefix for embed.FS
