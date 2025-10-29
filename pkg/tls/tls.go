@@ -77,7 +77,7 @@ func NewTLSConfig(ctx context.Context, acmeConfig ACME) (*tls.Config, func(), er
 				DNSManager: certmagic.DNSManager{
 					DNSProvider: &route53.Provider{
 						Region:             "us-east-1",
-						WaitForPropagation: true,
+						WaitForRoute53Sync: true,
 					},
 					PropagationTimeout: -1,
 				},

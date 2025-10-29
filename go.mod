@@ -240,7 +240,7 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gvisor.dev/gvisor v0.0.0-20251028033038-d93c5f5ac2ad // indirect
+	gvisor.dev/gvisor v0.0.0-20250205023644-9414b50a5633 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
