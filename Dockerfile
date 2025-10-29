@@ -17,6 +17,7 @@ FROM golang:alpine AS gobuild
   COPY aws/tasks.toml aws/tasks.toml
 
   COPY tasks.toml tasks.toml
+  RUN run apps/air/build
   RUN run build
 
 FROM alpine
