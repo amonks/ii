@@ -3,7 +3,6 @@ package email
 import (
 	"errors"
 	"net/smtp"
-	"os"
 	"regexp"
 	"strings"
 
