@@ -2,6 +2,5 @@ cache
 .git
 .envrc
 bin
-aws
 node_modules
 
