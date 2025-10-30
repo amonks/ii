@@ -9,11 +9,14 @@ import (
 	"math/rand"
 	"net/http"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"gorm.io/gorm"
+	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/ports"
@@ -22,8 +25,9 @@ import (
 )
 
 type LibraryServer struct {
-	tmdb *tmdb.Client
-	db   *db.DB
+	tmdb  *tmdb.Client
+	db    *db.DB
+	mutex sync.Mutex
 }
 
 type Genre struct {
@@ -69,6 +73,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("POST /tv/identify/{$}", app.serveTVIdentify)
 	mux.HandleFunc("POST /tv/identify-all/{$}", app.serveTVIdentifyAll)
 	mux.HandleFunc("POST /tv/ignore-show/{$}", app.serveTVIgnoreShow)
+	mux.HandleFunc("POST /tv/ignore-episodes/{$}", app.serveTVIgnoreEpisodes)
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
@@ -354,15 +359,56 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 		serve.InternalServerError(w, req, err)
 		return
 	} else {
-		// For TV tab, get TV stubs
+		// For TV tab, get TV stubs and check if they're adding to existing shows
 		if tab == "tv" {
-			var tvStubs []*db.Stub
+			var tvStubsInfo []*TVStubInfo
 			for _, stub := range stubs {
 				if stub.Type == db.MediaTypeTV {
-					tvStubs = append(tvStubs, stub)
+					info := &TVStubInfo{
+						Stub: stub,
+					}
+
+					// Check if this stub is adding episodes to an already-imported show
+					showPrefix := filepath.Join(config.TVImportDir, stub.ImportedFromPath)
+					log.Printf("DEBUG: Checking if show exists with prefix: %s", showPrefix)
+					if exists, err := app.db.TVShowExistsByPathPrefix(showPrefix); err != nil {
+						log.Printf("Warning: Error checking if TV show exists: %v", err)
+					} else if exists {
+						log.Printf("DEBUG: Show exists! Setting IsAddingToExisting = true for: %s", stub.ImportedFromPath)
+						info.IsAddingToExisting = true
+
+						// Get the existing show by querying for ANY episode from this show directory
+						// Use the directory prefix, not a specific file (since the stub's files are NEW and not yet in DB)
+						log.Printf("DEBUG: Looking up show by directory prefix: %s", showPrefix)
+						if show, err := app.getTVShowByEpisodePath(showPrefix); err != nil {
+							log.Printf("Warning: Error getting TV show: %v", err)
+						} else if show != nil {
+							log.Printf("DEBUG: Found existing show: %s (ID: %d)", show.Name, show.ID)
+							info.ExistingShow = show
+
+							// Get existing episodes for this show and season
+							if stub.SeasonNumber > 0 {
+								if episodes, err := app.db.GetTVSeasonEpisodes(show.ID, stub.SeasonNumber); err != nil {
+									log.Printf("Warning: Error getting existing episodes: %v", err)
+								} else {
+									info.ExistingEpisodes = episodes
+								}
+							}
+
+							// The new episodes are just the stub's episode files
+							info.NewEpisodes = stub.EpisodeFiles
+							log.Printf("DEBUG: Set ExistingShow, %d existing episodes, %d new episodes", len(info.ExistingEpisodes), len(info.NewEpisodes))
+						} else {
+							log.Printf("DEBUG: getTVShowByEpisodePath returned nil show")
+						}
+					} else {
+						log.Printf("DEBUG: Show does NOT exist with prefix: %s", showPrefix)
+					}
+
+					tvStubsInfo = append(tvStubsInfo, info)
 				}
 			}
-			data.TVStubs = tvStubs
+			data.TVStubsInfo = tvStubsInfo
 		} else {
 			// For the movies tab, filter out TV stubs
 			var movieStubs []*db.Stub
@@ -742,4 +788,28 @@ func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *ht
 	}
 
 	app.serveImport(w, req)
+}
+
+// getTVShowByEpisodePath queries the database to find a TV show that has an episode
+// with a path matching or starting with the given path
+func (app *LibraryServer) getTVShowByEpisodePath(episodePath string) (*db.TVShow, error) {
+	// Query for an episode with this imported_from_path prefix
+	var episode db.TVEpisode
+	query := episodePath + "%"
+	log.Printf("DEBUG: getTVShowByEpisodePath query: WHERE imported_from_path LIKE %s", query)
+	err := app.db.Table("tv_episodes").
+		Where("imported_from_path LIKE ?", query).
+		First(&episode).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Printf("DEBUG: No episode found with path prefix: %s", episodePath)
+		return nil, nil
+	} else if err != nil {
+		log.Printf("DEBUG: Error querying episode: %v", err)
+		return nil, err
+	}
+
+	log.Printf("DEBUG: Found episode S%02dE%02d for show ID %d", episode.SeasonNumber, episode.EpisodeNumber, episode.ShowID)
+	// Get the TV show for this episode
+	return app.db.GetTVShow(episode.ShowID)
 }

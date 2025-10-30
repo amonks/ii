@@ -184,9 +184,10 @@ func (c *Client) GetSeason(tvID int64, seasonNumber int) (*Season, []Episode, er
 
 // GetEpisode fetches details for a specific episode of a TV show
 func (c *Client) GetEpisode(tvID int64, seasonNumber, episodeNumber int) (*Episode, error) {
-	req, err := http.NewRequest(http.MethodGet,
-		fmt.Sprintf(`https://api.themoviedb.org/3/tv/%d/season/%d/episode/%d`,
-			tvID, seasonNumber, episodeNumber), nil)
+	url := fmt.Sprintf(`https://api.themoviedb.org/3/tv/%d/season/%d/episode/%d`,
+		tvID, seasonNumber, episodeNumber)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("building tmdb episode request: %w", err)
 	}
@@ -197,11 +198,12 @@ func (c *Client) GetEpisode(tvID int64, seasonNumber, episodeNumber int) (*Episo
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making tmdb episode request: %w", err)
+		return nil, fmt.Errorf("error making tmdb episode request to %s: %w", url, err)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error code from tmdb episode request: %d", res.StatusCode)
+		return nil, fmt.Errorf("error code %d from tmdb episode request: GET %s (tvID=%d, S%02dE%02d)",
+			res.StatusCode, url, tvID, seasonNumber, episodeNumber)
 	}
 
 	body, err := io.ReadAll(res.Body)

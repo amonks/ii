@@ -443,7 +443,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 
 		if show == nil {
 			// Create the show
-			_, err = tx.CreateTVShow(tvShow)
+			show, err = tx.CreateTVShow(tvShow)
 			if err != nil {
 				return fmt.Errorf("error creating TV show: %w", err)
 			}
@@ -496,7 +496,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				}
 
 				// Create the season
-				_, err = tx.CreateTVSeason(tvShow.ID, seasonData)
+				season, err = tx.CreateTVSeason(tvShow.ID, seasonData)
 				if err != nil {
 					log.Printf("Warning: Error creating season S%02d: %v", seasonNumber, err)
 					continue
@@ -514,14 +514,15 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				// Get the episode details from TMDB
 				episodeData, err := app.tmdb.GetEpisode(tvShow.ID, seasonNumber, episodeNum)
 				if err != nil {
-					log.Printf("Warning: Error getting episode data for S%02dE%02d: %v", seasonNumber, episodeNum, err)
+					log.Printf("Warning: Error getting episode data for '%s' S%02dE%02d (file: %s): %v",
+						tvShow.Name, seasonNumber, episodeNum, episodePath, err)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
 
 				// Create the full path by directly using the episodePath which retains original case
 				fullPath := filepath.Join(config.TVImportDir, episodePath)
-				_, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
+				episode, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
 				if err != nil {
 					log.Printf("Warning: Error creating episode S%02dE%02d: %v", seasonNumber, episodeNum, err)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
@@ -624,6 +625,57 @@ func (app *LibraryServer) serveTVIgnoreShow(w http.ResponseWriter, req *http.Req
 	}
 
 	log.Printf("Successfully ignored TV show: %s", path)
+
+	// Redirect to TV tab
+	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+}
+
+// serveTVIgnoreEpisodes ignores specific episodes from a TV show stub
+func (app *LibraryServer) serveTVIgnoreEpisodes(w http.ResponseWriter, req *http.Request) {
+	log.Println("serveTVIgnoreEpisodes")
+
+	if req.Method != "POST" {
+		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+		return
+	}
+
+	req.ParseForm()
+
+	// Get stub path
+	path := req.FormValue("path")
+	if path == "" {
+		serve.Errorf(w, req, http.StatusBadRequest, "no path given")
+		return
+	}
+
+	// Get the stub
+	stub, err := app.db.GetStub(path)
+	if err != nil {
+		serve.Errorf(w, req, http.StatusNotFound, "no such stub: %s", err)
+		return
+	}
+
+	if err := app.db.Transaction(func(tx *db.DB) error {
+		// Ignore all episode files in the stub
+		for _, episodeFile := range stub.EpisodeFiles {
+			if err := tx.IgnoreEpisode(episodeFile); err != nil {
+				log.Printf("Warning: Error ignoring episode '%s': %v", episodeFile, err)
+				// Continue with other episodes even if one fails
+			}
+		}
+
+		// Delete the stub since all its episodes are now ignored
+		if err := tx.DeleteStub(stub); err != nil {
+			return fmt.Errorf("error deleting stub for '%s': %w", stub.ImportedFromPath, err)
+		}
+
+		return nil
+	}); err != nil {
+		serve.InternalServerError(w, req, err)
+		return
+	}
+
+	log.Printf("Successfully ignored %d episodes from stub: %s", len(stub.EpisodeFiles), path)
 
 	// Redirect to TV tab
 	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)

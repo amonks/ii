@@ -12,8 +12,18 @@ type ImportPageData struct {
 	Stubs                 []*db.Stub
 
 	// TV-specific tabs
-	ActiveTab string     // "movies" or "tv"
-	TVStubs   []*db.Stub // TV show stubs
+	ActiveTab   string           // "movies" or "tv"
+	TVStubs     []*db.Stub       // TV show stubs
+	TVStubsInfo []*TVStubInfo    // Additional info for TV stubs
+}
+
+// TVStubInfo contains additional context about a TV stub
+type TVStubInfo struct {
+	Stub               *db.Stub
+	IsAddingToExisting bool           // True if this stub is adding episodes to an already-imported show
+	ExistingShow       *db.TVShow     // The existing show (if applicable)
+	ExistingEpisodes   []*db.TVEpisode // List of episodes already imported for this show
+	NewEpisodes        []string       // List of new episode files being added (from stub.EpisodeFiles)
 }
 
 // Helper function to count movie stubs that need attention
@@ -28,9 +38,10 @@ func countMovieStubsNeedingAttention(stubs []*db.Stub) int {
 }
 
 // Helper function to count TV stubs that need attention
-func countTVStubsNeedingAttention(stubs []*db.Stub) int {
+func countTVStubsNeedingAttention(stubsInfo []*TVStubInfo) int {
 	count := 0
-	for _, stub := range stubs {
+	for _, info := range stubsInfo {
+		stub := info.Stub
 		// Count stubs that need manual attention or are complete (matches what's displayed)
 		if stub.Type == db.MediaTypeTV && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "complete") {
 			count++
@@ -41,20 +52,20 @@ func countTVStubsNeedingAttention(stubs []*db.Stub) int {
 
 templ Import(data *ImportPageData) {
 	// Calculate total tasks needing attention: movie stubs + TV stubs + metacritic validations
-	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + countMovieStubsNeedingAttention(data.Stubs) + countTVStubsNeedingAttention(data.TVStubs))) {
+	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + countMovieStubsNeedingAttention(data.Stubs) + countTVStubsNeedingAttention(data.TVStubsInfo))) {
 		<div class="tabs">
 			<div class="tab-nav">
 				<a href="/movies/import/?tab=movies" class={ "tab-link", templ.KV("active", data.ActiveTab == "movies" || data.ActiveTab == "") }>
 					Movies ({ fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs) + len(data.MetacriticValidations)) })
 				</a>
 				<a href="/movies/import/?tab=tv" class={ "tab-link", templ.KV("active", data.ActiveTab == "tv") }>
-					TV Shows ({ fmt.Sprintf("%d need attention", countTVStubsNeedingAttention(data.TVStubs)) })
+					TV Shows ({ fmt.Sprintf("%d need attention", countTVStubsNeedingAttention(data.TVStubsInfo)) })
 				</a>
 			</div>
 			<div class="tab-content">
 				if data.ActiveTab == "tv" {
 					<h2>TV Show Import</h2>
-					@TVShowStubs(data.TVStubs)
+					@TVShowStubs(data.TVStubsInfo)
 				} else {
 					if len(data.MetacriticValidations) > 0 {
 						<details open>
@@ -96,83 +107,161 @@ templ Import(data *ImportPageData) {
 	}
 }
 
-templ TVShowStubs(stubs []*db.Stub) {
+templ TVShowStubs(stubsInfo []*TVStubInfo) {
 	<div class="tv-stubs">
-		if countTVStubsNeedingAttention(stubs) == 0 {
+		if countTVStubsNeedingAttention(stubsInfo) == 0 {
 			<p>No TV shows need your attention right now.</p>
 		} else {
-			<p>{ fmt.Sprintf("%d TV shows need your attention.", countTVStubsNeedingAttention(stubs)) }</p>
+			<p>{ fmt.Sprintf("%d TV shows need your attention.", countTVStubsNeedingAttention(stubsInfo)) }</p>
 		}
-		for _, stub := range stubs {
+		for _, info := range stubsInfo {
 			// Only show TV stubs that need operator action (needs_manual)
-			if stub.Type == db.MediaTypeTV && (stub.SearchStatus == "needs_manual" || stub.SearchStatus == "complete") {
+			if info.Stub.Type == db.MediaTypeTV && (info.Stub.SearchStatus == "needs_manual" || info.Stub.SearchStatus == "complete") {
 				<div class="show-stub">
-					<h3>{ getShowNameFromPath(stub.ImportedFromPath) }</h3>
-					<p>{ fmt.Sprintf("%d episodes found", len(stub.EpisodeFiles)) }</p>
-					if stub.SeasonNumber > 0 {
-						<p>Detected Season: <strong>{ fmt.Sprintf("%d", stub.SeasonNumber) }</strong></p>
-					}
-					<form method="POST" action="/movies/tv/search/">
-						<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
-						<div class="form-group">
-							<label for="query">Search for TV Show</label>
-							<input type="text" name="query" id="query" value={ stub.Query }/>
-						</div>
-						<div class="form-group">
-							<label for="year">Year</label>
-							<input type="text" name="year" id="year" value={ stub.Year }/>
-						</div>
-						<button type="submit">Search</button>
-					</form>
-					if len(stub.TVResults) > 0 {
-						<div class="search-results">
-							<h4>Search Results</h4>
-							<div class="search-results-container">
-								for _, result := range stub.TVResults {
-									<div class="search-result">
-										<div class="result-details">
-											<h5>{ result.Name }</h5>
-											if result.FirstAirDate != "" {
-												<p>First Aired: { result.FirstAirDate }</p>
+					<h3>{ getShowNameFromPath(info.Stub.ImportedFromPath) }</h3>
+					if info.IsAddingToExisting && info.ExistingShow != nil {
+						<p class="adding-episodes-notice">
+							<strong>Adding episodes to existing show:</strong> { info.ExistingShow.Name }
+						</p>
+						<p>{ fmt.Sprintf("%d new episodes found, %d episodes already imported", len(info.NewEpisodes), len(info.ExistingEpisodes)) }</p>
+						if info.Stub.SeasonNumber > 0 {
+							<p>Detected Season: <strong>{ fmt.Sprintf("%d", info.Stub.SeasonNumber) }</strong></p>
+						}
+						// Show existing and new episodes side by side
+						<div class="episode-comparison">
+							<div class="episode-column">
+								<h4>Already Imported ({ fmt.Sprintf("%d", len(info.ExistingEpisodes)) })</h4>
+								<div class="episode-list-box">
+									if len(info.ExistingEpisodes) > 0 {
+										<ul class="episode-files">
+											for _, episode := range info.ExistingEpisodes {
+												<li class="existing-episode">
+													S{ fmt.Sprintf("%02d", episode.SeasonNumber) }E{ fmt.Sprintf("%02d", episode.EpisodeNumber) } - { episode.ImportedFromPath }
+												</li>
 											}
-										</div>
-										<form method="POST" action="/movies/tv/identify/">
-											<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
-											<input type="hidden" name="id" value={ fmt.Sprintf("%d", result.ID) }/>
-											// Add season number input
-											<div class="form-group">
-												<label for="season_number">Season Number</label>
-												<input
-													type="number"
-													name="season_number"
-													id="season_number"
-													value={ fmt.Sprintf("%d", stub.SeasonNumber) }
-													min="1"
-												/>
-											</div>
-											<button type="submit">Identify This Show</button>
-										</form>
-									</div>
-								}
+										</ul>
+									} else {
+										<p class="no-episodes">No episodes yet</p>
+									}
+								</div>
+							</div>
+							<div class="episode-column">
+								<h4>New Episodes ({ fmt.Sprintf("%d", len(info.NewEpisodes)) })</h4>
+								<div class="episode-list-box">
+									if len(info.NewEpisodes) > 0 {
+										<ul class="episode-files">
+											for _, episode := range info.NewEpisodes {
+												<li class="new-episode">{ getRelativeEpisodePath(episode) }</li>
+											}
+										</ul>
+									} else {
+										<p class="no-episodes">None found</p>
+									}
+								</div>
 							</div>
 						</div>
+						// Show the existing show as the only "search result" with pre-filled identify form
+						<div class="search-results">
+							<h4>Existing Show (Auto-detected)</h4>
+							<div class="search-results-container">
+								<div class="search-result existing-show-result">
+									<div class="result-details">
+										<h5>{ info.ExistingShow.Name }</h5>
+										if info.ExistingShow.FirstAirDate != "" {
+											<p>First Aired: { info.ExistingShow.FirstAirDate }</p>
+										}
+									</div>
+									<form method="POST" action="/movies/tv/identify/">
+										<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
+										<input type="hidden" name="id" value={ fmt.Sprintf("%d", info.ExistingShow.ID) }/>
+										<div class="form-group">
+											<label for="season_number">Season Number</label>
+											<input
+												type="number"
+												name="season_number"
+												id="season_number"
+												value={ fmt.Sprintf("%d", info.Stub.SeasonNumber) }
+												min="1"
+											/>
+										</div>
+										<button type="submit">Add These Episodes</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					} else {
+						<p>{ fmt.Sprintf("%d episodes found", len(info.Stub.EpisodeFiles)) }</p>
+						if info.Stub.SeasonNumber > 0 {
+							<p>Detected Season: <strong>{ fmt.Sprintf("%d", info.Stub.SeasonNumber) }</strong></p>
+						}
+						<form method="POST" action="/movies/tv/search/">
+							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
+							<div class="form-group">
+								<label for="query">Search for TV Show</label>
+								<input type="text" name="query" id="query" value={ info.Stub.Query }/>
+							</div>
+							<div class="form-group">
+								<label for="year">Year</label>
+								<input type="text" name="year" id="year" value={ info.Stub.Year }/>
+							</div>
+							<button type="submit">Search</button>
+						</form>
+						if len(info.Stub.TVResults) > 0 {
+							<div class="search-results">
+								<h4>Search Results</h4>
+								<div class="search-results-container">
+									for _, result := range info.Stub.TVResults {
+										<div class="search-result">
+											<div class="result-details">
+												<h5>{ result.Name }</h5>
+												if result.FirstAirDate != "" {
+													<p>First Aired: { result.FirstAirDate }</p>
+												}
+											</div>
+											<form method="POST" action="/movies/tv/identify/">
+												<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
+												<input type="hidden" name="id" value={ fmt.Sprintf("%d", result.ID) }/>
+												// Add season number input
+												<div class="form-group">
+													<label for="season_number">Season Number</label>
+													<input
+														type="number"
+														name="season_number"
+														id="season_number"
+														value={ fmt.Sprintf("%d", info.Stub.SeasonNumber) }
+														min="1"
+													/>
+												</div>
+												<button type="submit">Identify This Show</button>
+											</form>
+										</div>
+									}
+								</div>
+							</div>
+						}
 					}
-					if len(stub.EpisodeFiles) > 0 {
+					if len(info.Stub.EpisodeFiles) > 0 {
 						<div class="episode-list">
 							<details>
-								<summary>Show { fmt.Sprintf("%d", len(stub.EpisodeFiles)) } Episodes</summary>
+								<summary>Show { fmt.Sprintf("%d", len(info.Stub.EpisodeFiles)) } Episodes</summary>
 								<ul class="episode-files">
-									for _, episode := range stub.EpisodeFiles {
+									for _, episode := range info.Stub.EpisodeFiles {
 										<li>{ getRelativeEpisodePath(episode) }</li>
 									}
 								</ul>
 							</details>
 						</div>
 					}
-					<form method="POST" action="/movies/tv/ignore-show/">
-						<input type="hidden" name="path" value={ stub.ImportedFromPath }/>
-						<button type="submit" class="ignore-button">Ignore Show</button>
-					</form>
+					<div class="ignore-buttons">
+						<form method="POST" action="/movies/tv/ignore-show/">
+							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
+							<button type="submit" class="ignore-button">Ignore Show</button>
+						</form>
+						<form method="POST" action="/movies/tv/ignore-episodes/">
+							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
+							<button type="submit" class="ignore-button ignore-episodes-button">Ignore These Episodes</button>
+						</form>
+					</div>
 				</div>
 			}
 		}
@@ -186,6 +275,62 @@ templ TVShowStubs(stubs []*db.Stub) {
 				border: 1px solid #ddd;
 				border-radius: 4px;
 				background-color: #f9f9f9;
+			}
+			.adding-episodes-notice {
+				padding: 10px;
+				background-color: #e8f4f8;
+				border-left: 4px solid #0066cc;
+				border-radius: 4px;
+				margin-bottom: 15px;
+			}
+			.adding-episodes-notice strong {
+				color: #0066cc;
+			}
+			.episode-comparison {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 20px;
+				margin: 20px 0;
+			}
+			.episode-column {
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				padding: 15px;
+				background-color: white;
+			}
+			.episode-column h4 {
+				margin: 0 0 10px 0;
+				font-size: 16px;
+			}
+			.episode-list-box {
+				max-height: 300px;
+				overflow-y: auto;
+			}
+			.episode-list-box .episode-files {
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+			.episode-list-box .episode-files li {
+				padding: 8px;
+				margin-bottom: 4px;
+				border-radius: 3px;
+				font-size: 14px;
+			}
+			.existing-episode {
+				background-color: #f0f0f0;
+				color: #666;
+			}
+			.new-episode {
+				background-color: #e8f4f8;
+				color: #0066cc;
+				font-weight: 500;
+			}
+			.no-episodes {
+				color: #999;
+				font-style: italic;
+				text-align: center;
+				padding: 20px;
 			}
 			.form-group {
 				margin-bottom: 15px;
@@ -216,6 +361,10 @@ templ TVShowStubs(stubs []*db.Stub) {
 				flex-direction: column;
 				justify-content: space-between;
 			}
+			.existing-show-result {
+				border: 2px solid #0066cc;
+				background-color: #f0f8ff;
+			}
 			.result-details {
 				margin-bottom: 15px;
 			}
@@ -239,12 +388,26 @@ templ TVShowStubs(stubs []*db.Stub) {
 			button:hover {
 				background-color: #0055aa;
 			}
+			.ignore-buttons {
+				display: flex;
+				gap: 10px;
+				margin-top: 15px;
+			}
+			.ignore-buttons form {
+				flex: 1;
+			}
 			.ignore-button {
 				background-color: #999;
-				margin-top: 15px;
+				margin-bottom: 0;
 			}
 			.ignore-button:hover {
 				background-color: #777;
+			}
+			.ignore-episodes-button {
+				background-color: #cc6600;
+			}
+			.ignore-episodes-button:hover {
+				background-color: #aa5500;
 			}
 			.episode-list {
 				margin: 15px 0;
@@ -275,6 +438,6 @@ func getShowNameFromPath(path string) string {
 }
 
 func getRelativeEpisodePath(path string) string {
-	// Return just the filename for display
-	return filepath.Base(path)
+	// Return the full path for display to provide context (e.g., show "Extras" folder)
+	return path
 }

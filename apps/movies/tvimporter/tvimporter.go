@@ -17,31 +17,6 @@ import (
 	"monks.co/pkg/tmdb"
 )
 
-var (
-	// Common TV show episode patterns
-	episodePattern      = regexp.MustCompile(`(?i)S(\d+)E(\d+)`)
-	seasonEpPattern     = regexp.MustCompile(`(?i)Season\s*(\d+).*?Episode\s*(\d+)`)
-	dotSeasonEpPattern  = regexp.MustCompile(`(\d+)x(\d+)`)
-	seasonFolderPattern = regexp.MustCompile(`(?i)Season\s*(\d+)`)
-
-	// Format: The Eric Andre Show - 101 - George Clooney.mkv
-	dashEpisodePattern = regexp.MustCompile(`(?i).*?[- ]\s*(\d)(\d{2})\s*[- ]`)
-
-	// Format: the.good.wife.509.hdtv-lol.mp4
-	dotEpisodePattern = regexp.MustCompile(`(?i).*?\.(\d)(\d{2})\.`)
-
-	// Format: [OZC]The Big O E14 'Roger the Wanderer'.mkv
-	plainEpisodePattern = regexp.MustCompile(`(?i)E(\d+)\s*['"\[]`)
-
-	// Format: Batman (1966) - S1E28 The Pharaohs In A Rut.avi
-	// No zero padding in season number
-	simpleEpisodePattern = regexp.MustCompile(`(?i)S(\d+)E(\d+)`)
-
-	// Format: Survivor S20E01 Slay Everyone, Trust No One
-	// Spaces instead of dots or dashes
-	spaceEpisodePattern = regexp.MustCompile(`(?i)S(\d+)\s*E(\d+)`)
-)
-
 type TVImporter struct {
 	tmdb *tmdb.Client
 	db   *db.DB
@@ -154,10 +129,11 @@ func (app *TVImporter) processShowDirectory(ctx context.Context, showDir, showRe
 	// Check if any episode files have already been imported
 	// Instead of exact path matching, we'll check by folder prefix
 	showPrefix := filepath.Join(config.TVImportDir, showRelPath)
+	showAlreadyImported := false
 	if exists, err := app.db.TVShowExistsByPathPrefix(showPrefix); err != nil {
 		log.Printf("Warning: Error checking if TV show exists with prefix '%s': %v", showPrefix, err)
 	} else if exists {
-		return nil
+		showAlreadyImported = true
 	}
 
 	// Check if a stub already exists for this show directory
@@ -180,6 +156,48 @@ func (app *TVImporter) processShowDirectory(ctx context.Context, showDir, showRe
 		log.Printf("Skipping directory with no valid episodes: %s", showRelPath)
 		return nil
 	}
+
+	// Filter out ignored episodes and episodes that already exist in the database
+	var newEpisodeFiles []string
+	for _, episodeFile := range episodeFiles {
+		// Check if this episode is ignored
+		ignored, err := app.db.EpisodeIsIgnored(episodeFile)
+		if err != nil {
+			log.Printf("Warning: Error checking if episode is ignored '%s': %v", episodeFile, err)
+			continue
+		}
+		if ignored {
+			// Skip this ignored episode
+			continue
+		}
+
+		// If the show has already been imported, check if the episode exists in the database
+		if showAlreadyImported {
+			fullPath := filepath.Join(config.TVImportDir, episodeFile)
+			exists, err := app.db.TVEpisodeExistsFromPath(fullPath)
+			if err != nil {
+				log.Printf("Warning: Error checking if episode exists '%s': %v", fullPath, err)
+				continue
+			}
+			if exists {
+				// Episode already imported, skip it
+				continue
+			}
+		}
+
+		// This is a new, non-ignored episode
+		newEpisodeFiles = append(newEpisodeFiles, episodeFile)
+	}
+
+	// If there are no new episodes (all ignored or already imported), we're done
+	if len(newEpisodeFiles) == 0 {
+		return nil
+	}
+
+	if showAlreadyImported {
+		log.Printf("Found %d new episodes for already-imported show: %s", len(newEpisodeFiles), showRelPath)
+	}
+	episodeFiles = newEpisodeFiles
 
 	if stubExists {
 		// Only update if episode list has changed

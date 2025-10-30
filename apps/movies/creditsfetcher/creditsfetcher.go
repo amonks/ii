@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/tmdb"
 )
 
 type CreditsFetcher struct {
-	tmdb *tmdb.Client
-	db   *db.DB
+	tmdb  *tmdb.Client
+	db    *db.DB
+	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *CreditsFetcher {

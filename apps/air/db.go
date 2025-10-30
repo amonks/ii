@@ -15,7 +15,7 @@ type DB struct {
 func NewDB() (*DB, error) {
 	db, err := database.Open("/data/tank/venta/venta.db")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opening /data/tank/venta/venta.db: %w", err)
 	}
 
 	// Only migrate the current structures - no more legacy tables

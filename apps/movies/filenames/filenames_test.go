@@ -96,6 +96,48 @@ func TestParseSeasonEpisode(t *testing.T) {
 			expectedEpisode: 20,
 			shouldError:     false,
 		},
+		{
+			name:            "Baccano format with Ep. and space",
+			path:		 "Baccano! 01-16 DVDRip (Dual Audio)/Baccano! Ep. 15.mkv",
+			expectedSeason:  1,
+			expectedEpisode: 15,
+			shouldError:     false,
+		},
+		{
+			name:            "Episode with period format",
+			path:            "Show/Episode. 05.mkv",
+			expectedSeason:  1,
+			expectedEpisode: 5,
+			shouldError:     false,
+		},
+		{
+			name:            "Ep with space format",
+			path:            "Show/Ep 12.mkv",
+			expectedSeason:  1,
+			expectedEpisode: 12,
+			shouldError:     false,
+		},
+		{
+			name:            "Mad Men 4-digit format should not match DotEpisodePattern",
+			path:            "Mad.Men.S4.HDTV.Xvid-Mixed/mad.men.0402.hdtv.xvid-notv.avi",
+			expectedSeason:  4,
+			expectedEpisode: 2,
+			shouldError:     false,
+		},
+		{
+			name:            "Tenspeed 3-digit format with title after digits",
+			path:            "Tenspeed and Brown Shoe/112 Untitled.avi",
+			expectedSeason:  1,
+			expectedEpisode: 12,
+			shouldError:     false,
+		},
+		{
+			name:            "The Night Of - should not match 720p as episode",
+			path:            "The.Night.Of.S01.720p.HDTV.x264-BTN/The.Night.Of.Part.2.720p.HDTV.x264-BATV.mkv",
+			expectedSeason:  1,
+			expectedEpisode: 2,
+			shouldError:     false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -160,6 +202,75 @@ func TestPlainEpisodePattern(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			matches := PlainEpisodePattern.FindStringSubmatch(tt.input)
+
+			if tt.expected {
+				if matches == nil {
+					t.Errorf("Expected pattern to match but it didn't")
+					return
+				}
+				if len(matches) < 2 {
+					t.Errorf("Expected capture group but got none")
+					return
+				}
+				if matches[1] != tt.episode {
+					t.Errorf("Expected episode %s but got %s", tt.episode, matches[1])
+				}
+			} else {
+				if matches != nil {
+					t.Errorf("Expected pattern not to match but it did: %v", matches)
+				}
+			}
+		})
+	}
+}
+
+func TestEpDotPattern(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+		episode  string
+	}{
+		{
+			name:     "Baccano format with Ep. and space",
+			input:    "Baccano! Ep. 14.mkv",
+			expected: true,
+			episode:  "14",
+		},
+		{
+			name:     "Episode. with space",
+			input:    "Show Episode. 05.mkv",
+			expected: true,
+			episode:  "05",
+		},
+		{
+			name:     "Ep with just space",
+			input:    "Show Ep 12.mkv",
+			expected: true,
+			episode:  "12",
+		},
+		{
+			name:     "Ep with multiple periods",
+			input:    "Show Ep.. 03.mkv",
+			expected: true,
+			episode:  "03",
+		},
+		{
+			name:     "Episode followed by no space or period - should not match",
+			input:    "Episode12.mkv",
+			expected: false,
+		},
+		{
+			name:     "Case insensitive - lowercase ep.",
+			input:    "Show ep. 7.mkv",
+			expected: true,
+			episode:  "7",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			matches := EpDotPattern.FindStringSubmatch(tt.input)
 
 			if tt.expected {
 				if matches == nil {

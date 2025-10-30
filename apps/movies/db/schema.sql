@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS movies (
 );
 CREATE TABLE IF NOT EXISTS ignores (
 	path text unique,
-	`type` integer
+	`type` integer,
+	`ignore_type` integer default 1
 );
 CREATE TABLE IF NOT EXISTS `stubs` (
 	`imported_from_path` text,

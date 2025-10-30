@@ -29,6 +29,9 @@ var (
 
 	//go:embed migrate_season_status.sql
 	migrateSeasonStatusSchema string
+
+	//go:embed migrate_ignore_type.sql
+	migrateIgnoreTypeSchema string
 )
 
 var ErrCollision = fmt.Errorf("collision")
@@ -155,6 +158,40 @@ func (db *DB) notifyTV(s *TVSeason) {
 	db.tvSubscriptions = nil
 }
 
+func (db *DB) notifyMovieStub(s *Stub) {
+	if db.parent != nil {
+		db.parent.notifyMovieStub(s)
+		return
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	for _, c := range db.movieStubSubscriptions {
+		c <- s
+		close(c)
+	}
+
+	db.movieStubSubscriptions = nil
+}
+
+func (db *DB) notifyTVStub(s *Stub) {
+	if db.parent != nil {
+		db.parent.notifyTVStub(s)
+		return
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	for _, c := range db.tvStubSubscriptions {
+		c <- s
+		close(c)
+	}
+
+	db.tvStubSubscriptions = nil
+}
+
 func (db *DB) close() {
 	if db.parent != nil {
 		panic("close called on tx")
@@ -168,6 +205,14 @@ func (db *DB) close() {
 	}
 
 	for _, c := range db.tvSubscriptions {
+		close(c)
+	}
+
+	for _, c := range db.movieStubSubscriptions {
+		close(c)
+	}
+
+	for _, c := range db.tvStubSubscriptions {
 		close(c)
 	}
 }
@@ -234,6 +279,14 @@ func (db *DB) Start() error {
 		// Ignore duplicate column errors - this is expected if the column already exists
 		if !strings.Contains(err.Error(), "duplicate column name") {
 			return fmt.Errorf("error running season_status migration: %w", err)
+		}
+	}
+
+	// Run ignore_type migration script (safe to run multiple times)
+	if err := gormdb.Exec(migrateIgnoreTypeSchema).Error; err != nil {
+		// Ignore duplicate column errors - this is expected if the column already exists
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return fmt.Errorf("error running ignore_type migration: %w", err)
 		}
 	}
 

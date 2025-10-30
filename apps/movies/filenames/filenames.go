@@ -30,19 +30,30 @@ var (
 	DashEpisodePattern = regexp.MustCompile(`(?i).*?[- ]\s*(\d)(\d{2})\s*[- ]`)
 
 	// Format: the.good.wife.509.hdtv-lol.mp4
-	DotEpisodePattern = regexp.MustCompile(`(?i).*?\.(\d)(\d{2})\.`)
+	// Match exactly 3 digits between dots (not 2, not 4+)
+	// Avoid matching resolutions like 720p, 1080p by excluding 'p' and 'i' as the following character
+	DotEpisodePattern = regexp.MustCompile(`(?i).*?\.(\d)(\d{2})(?:[^\dpi]|$)`)
+
+	// Format: mad.men.0402.hdtv.avi (4 digits: 2 for season, 2 for episode)
+	// Match exactly 4 digits between dots representing SSEE format
+	FourDigitPattern = regexp.MustCompile(`(?i).*?\.(\d{2})(\d{2})\.`)
 
 	// Format: [OZC]The Big O E14 'Roger the Wanderer'.mkv
 	// Matches E followed by digits, with a word boundary to avoid matching within words
 	PlainEpisodePattern = regexp.MustCompile(`(?i)\bE(\d+)\b`)
+
+	// Format: Baccano! Ep. 14.mkv
+	// Matches "Ep." or "Episode" followed by optional space/period and digits
+	EpDotPattern = regexp.MustCompile(`(?i)\bEp(?:isode)?[.\s]+(\d+)\b`)
 
 	// Format: Show_Name_01_Title.mkv or Show - 01 [tags].mkv
 	// Matches underscore/dash followed by exactly 2 digits followed by delimiter (space, underscore, dash, dot, open paren/bracket)
 	// This catches simple episode numbering like "_01_" or "- 05 " or "-07."
 	SimpleEpisodePattern = regexp.MustCompile(`[_-]\s*(\d{2})\s*[_\-\.\(\[\s]`)
 
-	// Format: 520.mkv or just 520 (bare 3-digit: first digit is season, last two are episode)
-	ThreeDigitPattern = regexp.MustCompile(`^(\d)(\d{2})(?:\.[a-z0-9]+)?$`)
+	// Format: 520.mkv, 520, or "112 Untitled.avi" (bare 3-digit: first digit is season, last two are episode)
+	// Match 3 digits at start followed by space, dot, or end of string
+	ThreeDigitPattern = regexp.MustCompile(`^(\d)(\d{2})(?:\s|\.|\b)`)
 )
 
 // ParseSeasonEpisode extracts season and episode numbers from a file path or filename
@@ -68,6 +79,21 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 		season, _ := strconv.Atoi(match[1])
 		episode, _ := strconv.Atoi(match[2])
 		return season, episode, nil
+	}
+
+	// Try 4-digit SSEE format (e.g., "mad.men.0402.hdtv.avi" -> S04E02)
+	if match := FourDigitPattern.FindStringSubmatch(filename); match != nil {
+		season, _ := strconv.Atoi(match[1])
+		episode, _ := strconv.Atoi(match[2])
+		return season, episode, nil
+	}
+
+	// Try "Ep. N" pattern (e.g., "Baccano! Ep. 14.mkv")
+	if match := EpDotPattern.FindStringSubmatch(filename); match != nil {
+		episode, _ := strconv.Atoi(match[1])
+		// Use season from directory path, default to 1
+		seasonNum := DetectSeasonFromPath(filepath.Dir(path))
+		return seasonNum, episode, nil
 	}
 
 	if match := DashEpisodePattern.FindStringSubmatch(filename); match != nil {
@@ -252,6 +278,8 @@ func IsEpisodeFile(filename string) bool {
 	if EpisodePattern.MatchString(filename) ||
 		SeasonEpPattern.MatchString(filename) ||
 		DotSeasonEpPattern.MatchString(filename) ||
+		FourDigitPattern.MatchString(filename) ||
+		EpDotPattern.MatchString(filename) ||
 		DashEpisodePattern.MatchString(filename) ||
 		DotEpisodePattern.MatchString(filename) ||
 		PlainEpisodePattern.MatchString(filename) ||

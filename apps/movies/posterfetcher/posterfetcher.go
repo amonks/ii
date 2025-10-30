@@ -9,14 +9,16 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sync"
 
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/tmdb"
 )
 
 type PosterFetcher struct {
-	tmdb *tmdb.Client
-	db   *db.DB
+	tmdb  *tmdb.Client
+	db    *db.DB
+	mutex sync.Mutex
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {

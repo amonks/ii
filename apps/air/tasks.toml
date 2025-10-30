@@ -1,7 +1,7 @@
 [[task]]
   id = "dev"
   type = "long"
-  dependenices = ["build"]
+  dependencies = ["build"]
   cmd = "../../bin/air -mode=serve"
 
 [[task]]
