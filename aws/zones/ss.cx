@@ -8,6 +8,9 @@ www 300 IN AAAA 2a09:8280:1::f:478
 w 300 IN A 72.21.17.85
 wifi 300 IN A 104.168.77.185
 
+;; junk
+local-brigid 300 IN A 192.168.1.40
+
 ;; tailnet
 brigid 300 IN A 100.85.200.70
 *.brigid 300 IN A 100.85.200.70

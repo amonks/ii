@@ -22,7 +22,7 @@ func main() {
 }
 
 var (
-	deviceCount = 4
+	deviceCount = 5
 	scanTimeout = time.Minute
 )
 
