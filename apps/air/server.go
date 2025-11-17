@@ -34,8 +34,6 @@ type Data struct {
 	Humidities   map[string]DeviceData
 	CO2s         map[string]DeviceData
 	Pressures    map[string]DeviceData
-	Dust         []WindowAggregate // Venta only
-	WaterLevel   []WindowAggregate // Venta only
 
 	// Device mappings - to help with display names
 	DeviceDisplayNames map[string]string // Maps device ID to human readable name
@@ -133,10 +131,6 @@ func serveAir(ctx context.Context, db *DB) error {
 					data.CO2s[deviceKey] = deviceData
 				case "pressure":
 					data.Pressures[deviceKey] = deviceData
-				case "dust":
-					data.Dust = aggs
-				case "water_level":
-					data.WaterLevel = aggs
 				}
 			}
 		}

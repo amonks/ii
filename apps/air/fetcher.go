@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"monks.co/pkg/twilio"
 )
 
 func fetch(db *DB) error {
@@ -30,33 +28,12 @@ func fetch(db *DB) error {
 		})
 	}
 
-	// Get Venta parameters (legacy approach for water level checking)
-	ventaStart := time.Now()
-	ventaParams, err := getDeviceParameters("60:8A:10:B5:58:A0")
-	log.Printf("Fetch: Venta data fetch took %v", time.Since(ventaStart))
-	if err != nil {
-		log.Printf("Warning: Failed to fetch Venta data: %v", err)
-		// Continue even if Venta fetch fails
-	} else {
-		// Add Venta data points
-		ventaDevice := "60:8A:10:B5:58:A0"
-		ventaRoom, _ := DeviceToRoom(ventaDevice)
-
-		// Add Venta data points
-		addDataPoint(ventaRoom, ventaDevice, "temperature", ventaParams.Temperature)
-		addDataPoint(ventaRoom, ventaDevice, "humidity", ventaParams.Humidity)
-		addDataPoint(ventaRoom, ventaDevice, "dust", float64(ventaParams.Dust))
-		addDataPoint(ventaRoom, ventaDevice, "water_level", float64(ventaParams.WaterLevel))
-		addDataPoint(ventaRoom, ventaDevice, "fan_rpm", float64(ventaParams.FanRPM))
-	}
-
 	// Get Aranet parameters
 	aranetStart := time.Now()
 	aranetDevices, err := getAranetDevices()
 	log.Printf("Fetch: Aranet data fetch took %v", time.Since(aranetStart))
 	if err != nil {
-		log.Printf("Warning: Failed to fetch Aranet data: %v", err)
-		// Continue even if Aranet fetch fails
+		return fmt.Errorf("failed to fetch Aranet data: %w", err)
 	} else if aranetDevices == nil {
 		// No new data (304 Not Modified or duplicate timestamp)
 		log.Printf("No new Aranet data to process")
@@ -87,38 +64,6 @@ func fetch(db *DB) error {
 			}
 
 			addDataPoint(room, deviceId, "battery", float64(device.Battery))
-		}
-	}
-
-	// Notify if Venta water level stopped being full and stayed stably not-full for 2 consecutive checks
-	// Only check water level notifications if we successfully fetched Venta data
-	if ventaParams != nil {
-		ventaDevice := "60:8A:10:B5:58:A0"
-		ventaRoom, _ := DeviceToRoom(ventaDevice)
-
-		dbStart := time.Now()
-		waterLevelPoints, err := db.GetLastDatapointsByParameter(ventaRoom, ventaDevice, "water_level", 2)
-		log.Printf("Fetch: DB query for water level points took %v", time.Since(dbStart))
-		if err != nil {
-			log.Printf("Warning: Failed to query water level history: %v", err)
-		} else {
-			// Calculate current water level value
-			currentWaterLevelValue := float64(ventaParams.WaterLevel)
-			currentWaterLevelFull := IsWaterLevelFull(currentWaterLevelValue)
-
-			// If we have enough history to check
-			if len(waterLevelPoints) >= 2 {
-				// Results are ordered by created_at desc
-				back1WaterLevelFull := IsWaterLevelFull(waterLevelPoints[0].Value)
-				back2WaterLevelFull := IsWaterLevelFull(waterLevelPoints[1].Value)
-
-				// If it was full, then not full, and still not full
-				if back2WaterLevelFull && !back1WaterLevelFull && !currentWaterLevelFull {
-					if err := twilio.SMSMe("alert: low water in air purifier"); err != nil {
-						log.Printf("twilio error: %s", err)
-					}
-				}
-			}
 		}
 	}
 
@@ -240,92 +185,4 @@ func getAranetDevices() ([]AranetDevice, error) {
 	lastAranetTimestamp = response.Timestamp
 
 	return response.Devices, nil
-}
-
-type GetRoomResponse []struct {
-	ModiCategory struct {
-		Name string `json:"name"`
-	} `json:"modi_category"`
-}
-
-type DeviceParametersResponse struct {
-	Header struct {
-		DeviceType int
-		MacAdress  string
-		Error      int
-		Hash       string
-		DeviceName string
-	} `json:"header"`
-	Info struct {
-		SWDisplay  string
-		SWWIFI     string
-		UVCOffT    int
-		RelState   []bool
-		DiscIonT   int
-		ServiceT   int
-		UVCOnT     int
-		SWTouch    string
-		FilterT    int
-		SWPower    string
-		CleaningT  int
-		CleanMode  bool
-		CleaningR  int
-		OperationT int
-		Warnings   int
-		TimerT     int
-	} `json:"info"`
-	Measure struct {
-		FanRpm      int
-		Temperature float64
-		Dust        int
-		WaterLevel  int
-		Humidity    float64
-	} `json:"measure"`
-}
-
-func getDeviceParameters(deviceMAC string) (*VentaParameters, error) {
-	log.Printf("getDeviceParameters: fetching for device %s", deviceMAC)
-	httpStart := time.Now()
-	res, err := http.Get("https://venta-app-gateway-prod.azurewebsites.net/1/devices/60:8A:10:B5:58:A0/parameters")
-	if err != nil {
-		return nil, fmt.Errorf("venta api error: %w", err)
-	}
-	defer res.Body.Close()
-	log.Printf("getDeviceParameters: HTTP request took %v", time.Since(httpStart))
-
-	readStart := time.Now()
-	bs, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("reading venta response: %w", err)
-	}
-	log.Printf("getDeviceParameters: reading response body took %v", time.Since(readStart))
-
-	jsonStart := time.Now()
-	parameters := &DeviceParametersResponse{}
-	if err := json.Unmarshal(bs, parameters); err != nil {
-		return nil, fmt.Errorf("unmarshaling venta response: %w\n%s", err, string(bs))
-	}
-	log.Printf("getDeviceParameters: JSON unmarshaling took %v", time.Since(jsonStart))
-
-	// Only extract the fields we actually use
-	return &VentaParameters{
-		CreatedAt:   time.Now(),
-		FanRPM:      parameters.Measure.FanRpm,
-		Temperature: parameters.Measure.Temperature,
-		Dust:        parameters.Measure.Dust,
-		WaterLevel:  WaterLevel(parameters.Measure.WaterLevel),
-		Humidity:    parameters.Measure.Humidity,
-	}, nil
-}
-
-// VentaParameters contains only the essential data from the Venta device
-type VentaParameters struct {
-	CreatedAt time.Time
-
-	// Only keep the fields we actually need
-	FanRPM      int
-	Temperature float64
-	Dust        int
-	WaterLevel  WaterLevel
-	Humidity    float64
 }

@@ -56,21 +56,6 @@ func (WindowAggregate) TableName() string {
 	return "window_aggregates"
 }
 
-// WaterLevel constants for water level status
-type WaterLevel int
-
-const (
-	WaterLevelError WaterLevel = 0
-	WaterLevelFull  WaterLevel = 3
-	WaterLevelLow   WaterLevel = 1
-	WaterLevelEmpty WaterLevel = 2
-)
-
-// IsWaterLevelFull checks if a water level value corresponds to "full"
-func IsWaterLevelFull(value float64) bool {
-	return int(value) == int(WaterLevelFull)
-}
-
 // GetAggregates retrieves aggregates for a specific room, device, and parameter
 func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]WindowAggregate, error) {
 	windowDuration := int64(time.Hour)
@@ -86,21 +71,6 @@ func (db *DB) GetAggregates(room, device, parameter string, days int64) ([]Windo
 		return nil, err
 	}
 	return points, nil
-}
-
-// GetLastDatapointsByParameter returns the latest n datapoints for a specific room, device, and parameter
-func (db *DB) GetLastDatapointsByParameter(room RoomID, device, parameter string, n int) ([]DataPoint, error) {
-	var datapoints []DataPoint
-	if err := db.
-		Table("data_points").
-		Where("room = ? AND device = ? AND parameter = ?", room, device, parameter).
-		Order("created_at desc").
-		Limit(n).
-		Find(&datapoints).
-		Error; err != nil {
-		return nil, fmt.Errorf("error getting last datapoints by parameter: %w", err)
-	}
-	return datapoints, nil
 }
 
 // InsertDataPoints inserts multiple data points from various devices

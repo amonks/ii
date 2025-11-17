@@ -15,18 +15,23 @@ var Devices = []Device{
 		Type:   DeviceTypeAranet,
 		RoomID: RoomOffice,
 	},
-
-	// ?
 	{
-		ID:     "Aranet4 069F9",
+		ID:     "Aranet4 0A384",
 		Type:   DeviceTypeAranet,
-		RoomID: RoomLivingRoom,
+		RoomID: RoomBanjo,
 	},
 	{
 		ID:     "Aranet4 09678",
 		Type:   DeviceTypeAranet,
-		RoomID: RoomKitchen,
+		RoomID: RoomFridge,
 	},
+	{
+		ID:     "Aranet4 069F9",
+		Type:   DeviceTypeAranet,
+		RoomID: RoomTV,
+	},
+
+	// ?
 	{
 		ID:     "Aranet4 0A007",
 		Type:   DeviceTypeAranet,
@@ -40,10 +45,11 @@ type RoomID string
 
 // Defined room constants
 const (
-	RoomLivingRoom RoomID = "living room"
-	RoomOffice     RoomID = "office"
-	RoomKitchen    RoomID = "kitchen"
-	RoomBedroom    RoomID = "bedroom"
+	RoomTV      RoomID = "tv"
+	RoomOffice  RoomID = "office"
+	RoomBanjo   RoomID = "banjo"
+	RoomFridge  RoomID = "fridge"
+	RoomBedroom RoomID = "bedroom"
 )
 
 // Room represents a physical location with monitoring devices
@@ -54,30 +60,29 @@ type Room struct {
 
 // All monitored rooms
 var Rooms = []Room{
-	{ID: RoomLivingRoom, DisplayName: "Living Room"},
+	{ID: RoomTV, DisplayName: "TV"},
 	{ID: RoomOffice, DisplayName: "Office"},
-	{ID: RoomKitchen, DisplayName: "Kitchen"},
+	{ID: RoomBanjo, DisplayName: "Banjo"},
+	{ID: RoomFridge, DisplayName: "Fridge"},
 	{ID: RoomBedroom, DisplayName: "Bedroom"},
 }
 
-// DeviceType represents the type of device (Aranet4, Venta, etc.)
+// DeviceType represents the type of device
 type DeviceType string
 
 const (
 	DeviceTypeAranet DeviceType = "Aranet4"
-	DeviceTypeVenta  DeviceType = "Venta"
 )
 
 // ParametersByType defines all parameters that each device type can monitor
 var ParametersByType = map[DeviceType][]string{
-	DeviceTypeVenta:  {"temperature", "humidity", "dust", "water_level", "fan_rpm"},
 	DeviceTypeAranet: {"temperature", "humidity", "co2", "pressure", "battery"},
 }
 
 // Device represents a single monitoring device
 type Device struct {
-	ID     string     // Unique identifier for the device (could be a MAC address or serial number)
-	Type   DeviceType // Type of device (Aranet4, Venta, etc.)
+	ID     string     // Unique identifier for the device
+	Type   DeviceType // Type of device
 	RoomID RoomID     // References Room.ID
 }
 
@@ -105,8 +110,6 @@ func (d Device) GetDisplayName() string {
 	switch d.Type {
 	case DeviceTypeAranet:
 		return fmt.Sprintf("%s Aranet", room.DisplayName)
-	case DeviceTypeVenta:
-		return "Venta Air Purifier"
 	default:
 		return fmt.Sprintf("%s %s", room.DisplayName, d.Type)
 	}
