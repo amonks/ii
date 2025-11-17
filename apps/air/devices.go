@@ -7,6 +7,33 @@ import (
 	"golang.org/x/text/language"
 )
 
+// All configured devices
+var Devices = []Device{
+	// good
+	{
+		ID:     "Aranet4 0AC6E",
+		Type:   DeviceTypeAranet,
+		RoomID: RoomOffice,
+	},
+
+	// ?
+	{
+		ID:     "Aranet4 069F9",
+		Type:   DeviceTypeAranet,
+		RoomID: RoomLivingRoom,
+	},
+	{
+		ID:     "Aranet4 09678",
+		Type:   DeviceTypeAranet,
+		RoomID: RoomKitchen,
+	},
+	{
+		ID:     "Aranet4 0A007",
+		Type:   DeviceTypeAranet,
+		RoomID: RoomBedroom,
+	},
+}
+
 // RoomID represents a unique identifier for a room
 // These values are used directly in the database, so they must match the existing data
 type RoomID string
@@ -83,35 +110,6 @@ func (d Device) GetDisplayName() string {
 	default:
 		return fmt.Sprintf("%s %s", room.DisplayName, d.Type)
 	}
-}
-
-// All configured devices
-var Devices = []Device{
-	{
-		ID:     "Aranet4 069F9",
-		Type:   DeviceTypeAranet,
-		RoomID: RoomLivingRoom,
-	},
-	{
-		ID:     "Aranet4 0AC6E",
-		Type:   DeviceTypeAranet,
-		RoomID: RoomOffice,
-	},
-	{
-		ID:     "Aranet4 09678",
-		Type:   DeviceTypeAranet,
-		RoomID: RoomKitchen,
-	},
-	{
-		ID:     "Aranet4 0A007",
-		Type:   DeviceTypeAranet,
-		RoomID: RoomBedroom,
-	},
-	{
-		ID:     "60:8A:10:B5:58:A0",
-		Type:   DeviceTypeVenta,
-		RoomID: RoomLivingRoom,
-	},
 }
 
 // GetDevicesByRoom returns all devices in a specific room
