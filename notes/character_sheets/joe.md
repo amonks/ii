@@ -17,8 +17,8 @@ INTELLECT: 40
 COMBAT: 39 + 10 = 49
 
 SANITY: 18
-FEAR: 22 + 20 = 42
-BODY: 22 + 10 = 32
+FEAR: 42 = 22 + 20
+BODY: 32 = 22 + 10
 
 WEAPON:
 medium pistol; 1d10 close range; 6 rounds of shooting
@@ -29,7 +29,7 @@ PERSONAL BRIEFING: the other agents are a liability; their loyalty to the
 program is not assured. Any signs to be reported to handler.
 
 HEALTH: 12 / 12
-STRESS: 6 (min 2) / 20
+STRESS: 9 (min 2) / 20
 
 WOUNDS: 0 / 3
 
