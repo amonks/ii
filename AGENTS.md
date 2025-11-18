@@ -12,6 +12,10 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 2. **TAG AUDIT** We perform a tag audit, identifying the new themes, characters, objects, and locations that correspond to existing tags, plus any references to things that ought to be new tags
 3. **SUMMARIZATION** We update the summary files: location files log everything that happened at a location, person files list all their dialog and all dialog about them, etc.
 4. **COMPREHENSIVE CHECK** We read through the _other_ session files to see if they reference anything that we've reified into a tag, and update accordingly.
+5. **TAG VERIFICATION** When the previous steps are done for a session, add it to `./imported-sessions` and run `go test`. The test suite enforces:
+   - every ALLCAPS string in summaries and imported sessions resolves to a tag or approved acronym
+   - no tag name exists in more than one category folder
+   - every tag that appears in a tagfile also appears somewhere in the session notes
 
 ## CLEANUP process
 
@@ -50,9 +54,35 @@ I take raw notes during a session. I'm typing while talking, jotting things down
   - make sure the tag appears appropriately in the session file
   - make sure that excerpt of the session file appears in the tag file
 
+## TAG VERIFICATION process
+
+- `./imported-sessions` lists every session file that has fully completed steps 1-4.
+- After adding a session to that list, run `go test ./...` (or `go test ./... -run TestTagCoverage` if you only want the tag check) to ensure:
+  - all ALLCAPS strings in summaries and the imported sessions resolve to real tags or approved acronyms
+  - every tag file only lives in a single summaries category
+  - every summary tag actually appears somewhere in the source session notes
+- Remove a session from `./imported-sessions` if further edits invalidate its import so it is not tested prematurely.
+
 # GLOBAL INVARIANTS
 
 - every character and location MUST ALWAYS be referred to by their tag. The tag doesn't need to appear on every line, but should always be present.
-- each tag MUST have a corresponding tag file.
+- each tag MUST have a corresponding tag file, and that tag name must also appear in the session notes.
 - summary files should ALWAYS quote directly from session notes as much as possible, including surrounding context
 - summary files should never conatin analysis, just quotes and facts directly from the session files
+
+# TAG POLICY
+
+Tagging correctly is something of an art.
+
+Sometimes the appropriate tag name won't reasonably appear in the prose, so we can add it in parentheses somewhere, eg,
+
+- three puncture wounds (THREES)
+- a german shepherd appears (ANIMALS)
+- A piece of paper on the counter says "Charlotte Watkins" (LOTTIE) in black ink.
+
+There are a lot of locations and they can be hard to keep track of -- location tagnames should include city and/or state (as relevant), eg `DENNY'S ZION MD` (punctuation breaks tags, so use spaces to keep multi-word names together).
+
+The correct resolution might be different for different locations -- eg MIAMI might be a good tag, and so might STATE RECORDS FACILITY ZION MD.
+
+- BEDROOM is not a good tag because it is too vague -- which bedroom? in what building?
+- BEDROOM CORNUCOPIA HOUSE COTTAGE is not a good tag because it is too specific -- CORNUCOPIA HOUSE is fine

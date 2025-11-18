@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"embed"
-	"flag"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -22,14 +21,6 @@ import (
 )
 
 func main() {
-	checkTags := flag.Bool("check-tags", false, "Check for capitalized strings that aren't tags")
-	flag.Parse()
-
-	if *checkTags {
-		findNonTagCaps()
-		return
-	}
-
 	http.HandleFunc("/fonts/", serveFonts)
 	http.HandleFunc("/search", handleSearch)
 	http.HandleFunc("/", handleRequest)
@@ -67,7 +58,8 @@ type PageData struct {
 var tagMap map[string]string
 
 // tagPattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN EXPRESS"
-var tagPattern = regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:\s+[A-Z][A-Z_0-9]*)*)\b`)
+// Multi-word tags must be separated by spaces (not newline) so headings don't merge.
+var tagPattern = regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:[ \t]+[A-Z][A-Z_0-9]*)*)\b`)
 
 func init() {
 	tagMap = buildTagMap()
@@ -92,15 +84,13 @@ func buildTagMap() map[string]string {
 			// Store the path relative to notes/ directory
 			relativePath := strings.TrimPrefix(path, "notes/")
 
-			// Store with underscore version (as it appears in filename)
-			tags[tagName] = relativePath
-
-			// Also store with space version (as it appears in text)
-			// e.g., "HOLIDAY_INN_EXPRESS" -> also store as "HOLIDAY INN EXPRESS"
-			tagWithSpaces := strings.ReplaceAll(tagName, "_", " ")
-			if tagWithSpaces != tagName {
-				tags[tagWithSpaces] = relativePath
+			// Tags must be referenced with spaces even though filenames use
+			// underscores, so normalize once here.
+			canonical := canonicalTagName(tagName)
+			if canonical == "" {
+				return nil
 			}
+			tags[canonical] = relativePath
 		}
 
 		return nil
@@ -158,8 +148,12 @@ func linkTags(html string) string {
 
 // replaceTag is a helper function that replaces a tag with a link if it exists in tagMap
 func replaceTag(match string) string {
-	if path, exists := tagMap[match]; exists {
-		return fmt.Sprintf(`<a href="/%s" class="tag-link">%s</a>`, path, match)
+	core, suffix := normalizeTokenParts(match)
+	if core == "" {
+		return match
+	}
+	if path, exists := tagMap[core]; exists {
+		return fmt.Sprintf(`<a href="/%s" class="tag-link">%s</a>%s`, path, core, suffix)
 	}
 	return match
 }
@@ -265,86 +259,6 @@ func renderTree(node *TreeNode, prefix string, isLast bool) string {
 	}
 
 	return result.String()
-}
-
-// Common acronyms and abbreviations that should not be considered tags
-var commonAcronyms = map[string]bool{
-	"MD": true, "DHS": true, "FBI": true, "DEA": true, "CDC": true,
-	"VHS": true, "VCR": true, "USB": true, "JVC": true, "CCTV": true,
-	"PTSD": true, "NOC": true, "BRT": true, "EMT": true, "PD": true,
-	"NC": true, "MA": true, "US": true, "TV": true, "ID": true,
-	"DG": true, "BO": true, "JR": true, "KEN": true,
-}
-
-// findNonTagCaps scans summary files and reports capitalized strings that aren't tags
-func findNonTagCaps() {
-	fmt.Println("Scanning for non-tag capitalized strings...")
-	fmt.Println()
-
-	// Track occurrences of each non-tag caps word
-	occurrences := make(map[string]int)
-
-	// Walk through summary files
-	err := fs.WalkDir(markdownFiles, "notes/summaries (ai-generated)", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Only process markdown files
-		if !d.IsDir() && strings.HasSuffix(path, ".md") {
-			content, err := markdownFiles.ReadFile(path)
-			if err != nil {
-				return nil
-			}
-
-			// Find all ALLCAPS words
-			matches := tagPattern.FindAllStringSubmatch(string(content), -1)
-			for _, match := range matches {
-				if len(match) < 2 {
-					continue
-				}
-				capsString := match[1] // Extract from capture group
-
-				// Skip if it's a valid tag
-				if _, isTag := tagMap[capsString]; isTag {
-					continue
-				}
-				// Skip if it's a valid tag with underscores
-				spaceVersion := strings.ReplaceAll(capsString, "_", " ")
-				if _, isTag := tagMap[spaceVersion]; isTag {
-					continue
-				}
-				// Skip if it's a common acronym
-				if commonAcronyms[capsString] {
-					continue
-				}
-
-				occurrences[capsString]++
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Sort by word
-	var words []string
-	for word := range occurrences {
-		words = append(words, word)
-	}
-	sort.Strings(words)
-
-	// Print results
-	for _, word := range words {
-		fmt.Printf("%s (%d occurrences)\n", word, occurrences[word])
-	}
-
-	if len(words) == 0 {
-		fmt.Println("No non-tag capitalized strings found!")
-	}
 }
 
 func serveFonts(w http.ResponseWriter, r *http.Request) {
