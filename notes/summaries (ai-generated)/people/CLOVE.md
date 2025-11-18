@@ -1,4 +1,4 @@
-# CLOVE (Agent Clove)
+# Agent CLOVE
 
 ## Basic Info
 - Delta Green agent
@@ -21,8 +21,8 @@ On the phone after burning the cottage:
 
 ### 2001 - The Operation
 - LOTTIE met with CLOVE before meeting SEAMUS and ERASTUS at the HOLIDAY INN
-- CLOVE organized the Cornucopia house operation
-- After the cottage burns and LADYSLUG is killed, LOTTIE calls the beeper number
+- CLOVE organized the CORNUCOPIA HOUSE operation
+- After the cottage burns and YELENA is killed, LOTTIE calls the beeper number
 - CLOVE tells LOTTIE to:
   - Not tell the program
   - Make sure all evidence and recordings are destroyed
@@ -32,5 +32,5 @@ On the phone after burning the cottage:
 
 ### LOTTIE's Reaction
 - LOTTIE shares with SEAMUS and ERASTUS:
-  > "ok i'm gonna be straight with you: before we met at the holiday inn, I met with this agent clove from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
+  > "ok i'm gonna be straight with you: before we met at the HOLIDAY INN, I met with this agent CLOVE from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
   > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"

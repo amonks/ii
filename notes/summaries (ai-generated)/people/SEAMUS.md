@@ -1,4 +1,4 @@
-# SEAMUS (Seamus McGillicutty)
+# SEAMUS (SEAMUS McGillicutty)
 
 ## Basic Info
 - Physician
@@ -64,14 +64,14 @@ To PIZZA:
 ## Events and Notes
 
 ### 2001 - The Operation
-- Attended domestic abuse and response professional development seminar 2b at HOLIDAY INN EXPRESS Sikesville
-- Recruited by LOTTIE for the Cornucopia house operation
+- Attended domestic abuse and response professional development seminar 2b at HOLIDAY INN Sikesville
+- Recruited by LOTTIE for the CORNUCOPIA HOUSE operation
 - During the operation:
   - Pecked by big crow while stealing car, drew blood
   - Cut throat of blonde guy during the fight
-  - Shot by LOTTIE for 7 damage during fight with LADYSLUG
-  - Broke away from LADYSLUG, tumbled onto the ground, blood sprays everywhere
-  - Got pus from LADYSLUG into his mouth: "it's better than anything he's ever tasted"
+  - Shot by LOTTIE for 7 damage during fight with YELENA
+  - Broke away from YELENA, tumbled onto the ground, blood sprays everywhere
+  - Got pus from YELENA into his mouth: "it's better than anything he's ever tasted"
   - Dowsed cottage with gasoline
   - Burns tape shed
 
@@ -100,12 +100,12 @@ To PIZZA:
 
 ### 2004
 - Waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-- The item is a short story, very short book, titled SREDNI_BASHTAR by Saki
+- The item is a short story, very short book, titled SREDNI BASHTAR by Saki
 
 ### 2005-2016
 - Stays buddies with LOTTIE
 - Read into program, occasionally do small jobs, nothing insane
 
 ### 2016 - working group masticate
-- Called back into service by PIZZA for the ZION investigation
+- Called back into service by PIZZA for the ZION MD investigation
 - Part of working group: masticate

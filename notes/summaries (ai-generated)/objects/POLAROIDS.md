@@ -1,6 +1,6 @@
 # POLAROIDS
 
-Photographs of child abuse found in the burnt Hello Kitty folder that LOTTIE brought to the briefing. The contents motivated the agents to fully commit to the massacre at Cornucopia house.
+Photographs of child abuse found in the burnt Hello Kitty folder that LOTTIE brought to the briefing. The contents motivated the agents to fully commit to the massacre at CORNUCOPIA HOUSE.
 
 ## The Burnt Hello Kitty Folder
 
@@ -12,7 +12,7 @@ From Session 1-2:
 >       - see below
 >     - normal manila folder
 >       - has our dossiers
->       - has the tax forms for a nonprofit called Families Without Frontiers, which operates out of Cornucopia house
+>       - has the tax forms for a nonprofit called Families Without Frontiers, which operates out of CORNUCOPIA HOUSE
 
 ## The Contents
 

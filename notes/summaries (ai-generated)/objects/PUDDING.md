@@ -36,4 +36,4 @@ From Session 4:
 > - 12:12AM: HOUGHTON opens the door carrying black trashbag.
 > - Trashbag appears not to be super full.
 > - HOUGHTON wearing pajamas, no shoes.
-> - The trashbag does not resemble the ones full of pudding.
+> - The trashbag does not resemble the ones full of PUDDING.

@@ -28,7 +28,7 @@ Interview:
 - CCTV footage shows bucket fell out of the back of his truck after he unloaded some bedframes
 - Perps on footage grabbing the tools right before killing HOUGHTON
 
-### The Murder Weapons
+### The Murder WEAPONS
 - Three tools used in murder: two screwdrivers and one chisel
 - All had KIM's name and phone number on them
 - Used to crucify HOUGHTON (stigmata-style)

@@ -1,4 +1,4 @@
-# KILLIAN (Crystal Killian)
+# Crystal KILLIAN
 
 ## Basic Info
 - Florida shut-in
@@ -22,12 +22,12 @@ No direct dialog recorded.
 ### Evidence Found
 - EMT finds bloody piece of paper with three names on it:
   - Charlotte Watkins
-  - Seamus McGillicutty
-  - Erastus Boudreau
-- Plus the address of Cornucopia house (now a jail)
+  - SEAMUS McGillicutty
+  - ERASTUS Boudreau
+- Plus the address of CORNUCOPIA HOUSE (now a jail)
 
 ### Investigation
-- Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about Cornucopia house
+- Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about CORNUCOPIA HOUSE
 - Mentions agents' names
 - Questions are in pursuit of homicide
 - This trips DG voice recognition thing

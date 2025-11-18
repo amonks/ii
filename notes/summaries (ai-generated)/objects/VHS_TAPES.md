@@ -1,6 +1,6 @@
 # VHS TAPES
 
-Video recordings of child abuse found in the shed at Cornucopia house. The tapes were labeled "blank" or "ready" and were part of a commercial distribution operation tracked in a ledger.
+Video recordings of child abuse found in the shed at CORNUCOPIA HOUSE. The tapes were labeled "blank" or "ready" and were part of a commercial distribution operation tracked in a ledger.
 
 ## The Shed
 
@@ -26,7 +26,7 @@ From Session 1-2:
 
 From Session 1-2 (after the operation):
 
-> - LOTTIE calls the beeper number to agent clove
+> - LOTTIE calls the beeper number to agent CLOVE
 >   > "don't tell the program.
 >   > make sure all the evidence and recordings are destroyed.
 >   > you will never hear from me again.

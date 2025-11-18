@@ -1,4 +1,4 @@
-NAME: Erastus Boudreau
+NAME: ERASTUS Boudreau
 PORTRAYED BY: Harve Presnell
 PROFESSION: Cardiologist
 EMPLOYER: University of Maryland Medical Center
@@ -64,7 +64,7 @@ D.O.B.: June 1, 1929 (71 years old)
 - 10 [= 10] HUMINT
 - ?? [= ??] Law
 - 80 [> 00] Medicine
-- 30 [= 30] Melee Weapons
+- 30 [= 30] Melee weapons
 - 30 [> 10] Navigate
 - 10 [= 10] Occult
 - 40 [> 20] Persuade

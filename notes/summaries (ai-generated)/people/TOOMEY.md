@@ -1,8 +1,8 @@
-# TOOMEY (Olivia Toomey)
+# Olivia TOOMEY
 
 ## Basic Info
 - Reporter for Baltimore Sun (BMore Sun)
-- Covering the ZION mass grave story
+- Covering the ZION MD mass grave story
 
 ## Dialog
 
@@ -16,7 +16,7 @@ At STRAWBERRY MILLS:
 > MO: "We're CDC. There's always a disease concern."
 > all: "no comment at this time."
 
-At ZION:
+At ZION MD:
 > agents: [step out of car]
 > TOOMEY: "say stuff"
 > agents: [close car window]
@@ -25,7 +25,7 @@ At ZION:
 
 ### 2016 Investigation
 - Covering the story for Baltimore Sun
-- Approaches agents at both ZION and STRAWBERRY MILLS
+- Approaches agents at both ZION MD and STRAWBERRY MILLS
 - Persistent in trying to get information
 - Asks about toxic materials
 - Gets "no comment" from agents

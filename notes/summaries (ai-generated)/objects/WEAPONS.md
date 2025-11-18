@@ -24,7 +24,7 @@ From Session 3 (autopsy findings):
 
 From Session 4:
 
-> we notice that the weapons all have the name "KIM Seon-hu" and a phone number on the handles written in permanent marker. KIM Seon-hu does maintenance at the prison and has a rock-solid alibi. He's on CCTV at the prison doing maintenance work. In interview with staties, he says that the tool bucket he uses had gone missing the day before the murder. Police reviewed CCTV footage and saw that the bucket fell out of the back of a truck after KIM unloaded some bedframes. perps on footage grabbing the tools right before killing.
+> we notice that the WEAPONS all have the name "KIM Seon-hu" and a phone number on the handles written in permanent marker. KIM Seon-hu does maintenance at the prison and has a rock-solid alibi. He's on CCTV at the prison doing maintenance work. In interview with staties, he says that the tool bucket he uses had gone missing the day before the murder. Police reviewed CCTV footage and saw that the bucket fell out of the back of a truck after KIM unloaded some bedframes. perps on footage grabbing the tools right before killing.
 
 From Session 4:
 
@@ -40,7 +40,7 @@ From Session 4:
 
 From Session 4:
 
-> - MO checks the weapons for blood, it's all human blood, it's all from the victim. microscopes it. nothing unusual. Jars some for later.
+> - MO checks the WEAPONS for blood, it's all human blood, it's all from the victim. microscopes it. nothing unusual. Jars some for later.
 > - further testing:
 >   - high stress, def taking high doses of mental health medication.
->   - nothing's weird about the blood, so it's ok to allow the cops to analyze these weapons.
+>   - nothing's weird about the blood, so it's ok to allow the cops to analyze these WEAPONS.

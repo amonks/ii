@@ -1,4 +1,4 @@
-# FINCH (Kate Finch)
+# Kate FINCH
 
 ## Basic Info
 - Psychologist at MD Correction 3
@@ -11,8 +11,8 @@
 
 Interview with FINCH:
 > FINCH: "great to meet you"
-> SHELF: "We thought you might have a more useful perspective than the warden about this."
-> [FINCH visibly deflates at the mention of the warden]
+> SHELF: "We thought you might have a more useful perspective than the WARDEN about this."
+> [FINCH visibly deflates at the mention of the WARDEN]
 > SHELF: "anything unusual wednesday or thursday before the thing?"
 > FINCH: "nothing unusual"
 > MO: "anyone released recently?"

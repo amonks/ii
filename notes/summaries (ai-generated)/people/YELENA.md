@@ -1,14 +1,14 @@
-# KALAMATIANO (Yelena Kalamatiano)
+# YELENA Kalamatiano
 
 ## Basic Info
 
-- Adult at Cornucopia house
+- Adult at CORNUCOPIA HOUSE
 - Body found at fire scene in 2001
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
-- Inhabitant of the cottage at Cornucopia house
+- Inhabitant of the cottage at CORNUCOPIA HOUSE
 - Initial appearance: old woman wearing a shawl
 - True form: grey mass of flesh covered in abscesses, lolling tongue, swollen-shut eyes, tumorous udders dripping white slime
-- No legs, "big stinky milky slug" (LADYSLUG)
+- No legs, "big stinky milky slug" (YELENA)
 - Jabba the hut-like appearance
 
 ## Dialog
@@ -42,18 +42,18 @@ As old woman in cottage:
 [LOTTIE gets in old woman's face]
 
 > LOTTIE: "what's going on here who are you"
-> YELENA: "I am yelena"
+> YELENA: "I am YELENA"
 
-As LADYSLUG (after spell broken):
+As YELENA (after spell broken):
 [Zombie-walking towards SEAMUS, reaches to grab him, succeeds]
 
-> LADYSLUG: "have some tea darling"
+> YELENA: "have some tea darling"
 
 ## Events and Notes
 
-### 2001 - At Cornucopia house
+### 2001 - At CORNUCOPIA HOUSE
 
-- One of the adults at Cornucopia house
+- One of the adults at CORNUCOPIA HOUSE
 - Lives in the cottage
 - Described as "a great caretaker" in HOUGHTON's compulsive diary entries
 - This suggests she had mind control over HOUGHTON
@@ -84,7 +84,7 @@ As LADYSLUG (after spell broken):
 - Keep standing there involuntarily
 - Take steps into room involuntarily
 - Cannot move hands to doorknobs
-- KALAMATIANO closes front door; keeps speaking, and agents can't act
+- YELENA closes front door; keeps speaking, and agents can't act
 - agents can't remember seeing the dead girl in the bag or the mattresses
 
 #### The Black Candle
@@ -94,7 +94,7 @@ As LADYSLUG (after spell broken):
 - SEAMUS tries to knock it over, rolls con, falls to his knees and starts vomiting
 - When SEAMUS successfully knocks over candle table and candle goes out, the spell lifts
 
-### True Form Revealed (LADYSLUG)
+### True Form Revealed (YELENA)
 
 - All the crosses on the walls are upside-down
 - Filth shit and vomit covers every surface
@@ -128,19 +128,19 @@ As LADYSLUG (after spell broken):
 - ERASTUS shoots for 6, walks onto the porch
 - LOTTIE crits the lady with shotgun for 11; gets her in the face, she stops chanting and locks eyes directly on LOTTIE
 - SEAMUS dowses house with gasoline
-- LADYSLUG follows agents out the door; squishes through it like an octopus, stinks like rotting meat
+- YELENA follows agents out the door; squishes through it like an octopus, stinks like rotting meat
 - Shoots her big black tongue out of her mouth at LOTTIE in a real frog move
 - LOTTIE dodges, tongue splats on the ground with an incredibly loud thwack like a moose hitting a car
 - ERASTUS lights a zippo and tosses it in the house
-- The LADYSLUG and house go up in flames
-- LADYSLUG doesn't like this at all
+- The YELENA and house go up in flames
+- YELENA doesn't like this at all
 - Burns crispy
 - Body found at fire scene
 
 ### News Coverage
 
 - News article: 4 adult bodies found at fire scene, plus one child body
-- Bodies: KALAMATIANO (Yelena Kalamatiano), APPOLONOV (Sabina Appolonov), ARSENI (Alexi Arseni), INNOKENTY (Ryan Innokenty)
+- Bodies: YELENA Kalamatiano, Sabina APPOLONOV, Alexi ARSENI, Ryan INNOKENTY
 - Ties to Brighton Beach crime (per news article)
 - News article: drugs found at burnt child home, also signs of abuse, also the child was def murdered
 - Detective BASWELL involved
@@ -148,7 +148,7 @@ As LADYSLUG (after spell broken):
 
 ### 2016 Discovery
 
-- The 11 mummies are found under where the cottage used to be
+- The 11 MUMMIES are found under where the cottage used to be
 - Preserved and dessicated, but not toilet-papered
 - No decomp whatsoever
 - Unnatural

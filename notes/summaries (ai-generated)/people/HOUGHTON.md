@@ -1,10 +1,10 @@
-# HOUGHTON (Kerry Houghton)
+# Kerry HOUGHTON
 
 ## Basic Info
 - Social worker
-- Former inspector of Cornucopia house
+- Former inspector of CORNUCOPIA HOUSE
 - Was DHS case manager in 2001
-- Let go after occurrences at Cornucopia house
+- Let go after occurrences at CORNUCOPIA HOUSE
 - Age 40 at time of death (2016)
 - Lived at apartment #12121, STRAWBERRY MILLS apt complex in WHITEHALL maryland
 
@@ -16,13 +16,13 @@ No direct dialog recorded.
 
 ### 2001
 - Was DHS case manager
-- Inspected Cornucopia house
+- Inspected CORNUCOPIA HOUSE
 - Let go after occurrences there
 - Email chains from 2001 with DHS on her computer, where she repeats over and over that she never saw anything, and that FRANKLIN PRICE (prev inspector) hadn't seen anything either
 - Desperate correspondence; she's suspended and then fired
 
 ### Living Situation
-- Lived at STRAWBERRY MILLS apt complex in WHITEHALL maryland (1hr from ZION)
+- Lived at STRAWBERRY MILLS apt complex in WHITEHALL maryland (1hr from ZION MD)
 - Apartment is a hoarder nightmare
 - Glass cupboard full of precious moments dolls
 - Pet cleaner and paper towels on the floor
@@ -42,7 +42,7 @@ No direct dialog recorded.
 
 ### Diaries
 - Initial pages begin with her DHS work
-- At some point, pages start filling with the same sentence over and over again, which is the same glowing paragraph-long review of cornucopia house: "the conditions at cornucopia house is above the standard. YELENA is a great caretaker. etc"
+- At some point, pages start filling with the same sentence over and over again, which is the same glowing paragraph-long review of CORNUCOPIA HOUSE: "the conditions at CORNUCOPIA HOUSE is above the standard. YELENA is a great caretaker. etc"
 
 ### Mental Health
 - Meds in cabinet for: PTSD, Schizoaffective disorder, Bipolar, whole battery of stuff
@@ -62,10 +62,10 @@ No direct dialog recorded.
 - Appears very surprised to see the woman there
 - Two men begin striking HOUGHTON on the head with their fists
 - Drag HOUGHTON down the stairs
-- WOMAN walks into apartment, remains for 6 seconds, leaves with keychain
+- ELLE GABLE walks into the apartment, remains for 6 seconds, leaves with HOUGHTON's keychain
 - Perps leave door open; cat walks out
-- MEN waiting next to 1997 corolla, WOMAN opens trunk with HOUGHTON's keychain
-- MEN load HOUGHTON into trunk
+- The men waiting next to the 1997 Corolla hand HOUGHTON to ELLE GABLE, who opens the trunk with HOUGHTON's keychain
+- The men load HOUGHTON into the trunk
 - 12:13AM: All drive off
 
 #### Murder (Security Footage at WAREHOUSE)
@@ -84,12 +84,12 @@ No direct dialog recorded.
 - Victim goes completely limp
 - 3 perps leave the scene
 - Later: ELLE GABLE is looking directly at camera, smiling, lip ring, rotten crooked teeth, covered in sores, sunken eyes
-- PUMA shoe logo on left side of neck
+- Puma shoe logo on left side of neck
 - Raises hand right in front of camera, presenting 2 human teeth to camera
 - Later: State Trooper SAWYER arrives and finds the body
 
 #### Discovery
-- Thursday 18 Aug: MD st trooper SAWYER drives to MD Correction 3 (formerly Cornucopia house)
+- Thursday 18 Aug: MD st trooper SAWYER drives to MD Correction 3 (formerly CORNUCOPIA HOUSE)
 - Finds HOUGHTON dead and mutilated
 - Calls for backup
 - Sees dog digging up human skull, requests k9 unit
@@ -112,6 +112,6 @@ No direct dialog recorded.
 
 ### Evidence Handling
 - Body taken offsite by program truck to CDC
-- Weapons (screwdrivers and chisel) checked by SHELF/MO
+- WEAPONS (screwdrivers and chisel) checked by SHELF/MO
 - Blood all human, all from victim
 - High stress evident, definitely taking high doses of mental health medication

@@ -16,11 +16,11 @@ At the WeWork briefing:
 [PIZZA unmutes tv showing "Breaking: 56 Bodies Found At Sight Of Maryland Youth Home"]
 
 > PIZZA: "So, can anyone tell me why we're here?"
-> PIZZA: "7 days ago some florida shutin gets murdered; emt finds bloody piece of paper with three names on it: Charlotte Watkins, Seamus McGillicutty, Erastus Boudreau, plus the addr of Cornucopia House, now a jail"
+> PIZZA: "7 days ago some florida shutin gets murdered; emt finds bloody piece of paper with three names on it: Charlotte Watkins, SEAMUS McGillicutty, ERASTUS Boudreau, plus the addr of CORNUCOPIA HOUSE, now a jail"
 > PIZZA: "3 days ago a MD st trooper goes to the jail and finds a woman nailed to the door of a storage garage, nailed up with screwdrivers, stigmata'd up in there."
 > PIZZA: "2 days ago: our names flagged as coming up in this investigation"
 > PIZZA: "why the fuck are your names on this? your lives are fragile right now"
-> SEAMUS and LOTTIE: [claim they've never been to ZION]
+> SEAMUS and LOTTIE: [claim they've never been to ZION MD]
 
 > PIZZA: "You are now under my direct command. The three of you are now working group: masticate. Your mission is to have the following priorities: [see priorities below]"
 > PIZZA: "fyi: somebody's head is gonna roll for this. The FBI investigated this and didn't find 56 dead kids? if you fuck this up, you will never see the person that kills you. That's what we're working with here."
@@ -28,7 +28,7 @@ At the WeWork briefing:
 > PIZZA: "we have a team of harvard specialists onsite, who understand that the program sometimes deals with unusual occurances. they are to be trusted to an extent. they are stalling for time. get down there."
 > PIZZA: "you'll be entering the crime scene as an FBI task force; complete access; credentials to do anything we need. anything is permissible if it protects the program"
 > PIZZA: "I expect a report at least once a day. If it gets kinetic, Joe here's got your back."
-> PIZZA: "One last call: are you sure you've never been to ZION?"
+> PIZZA: "One last call: are you sure you've never been to ZION MD?"
 
 [LOTTIE and SEAMUS admit they were there in 2001]
 

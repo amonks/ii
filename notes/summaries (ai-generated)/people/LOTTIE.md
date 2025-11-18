@@ -11,7 +11,7 @@
 ## Equipment
 
 - slug shotgun (acquired at Rosaryville Annual Gun Show)
-- Pink burnt Hello Kitty folder (contained disturbing polaroids)
+- Pink burnt Hello Kitty folder (contained disturbing POLAROIDS)
 - normal manila folder (with dossiers and tax forms)
 - Collected VHS TAPES (labeled "ready") and small black book from shed
 
@@ -27,7 +27,7 @@ To EDDIE on phone:
 
 > LOTTIE: [calls up husband EDDIE, who is expecting her home to make dinner for DANTE and "some broad." She will not be home.]
 
-At Cornucopia house:
+At CORNUCOPIA HOUSE:
 
 > LOTTIE: "there's some nasty shit in the fridge!"
 
@@ -39,11 +39,11 @@ At the cottage:
 > LOTTIE: "why is this candle making me feel so yucky"
 
 > LOTTIE: [gets in the old woman's face] "what's going on here who are you"
-> YELENA: "I am yelena"
+> YELENA: "I am YELENA"
 
 After burning the cottage:
 
-> LOTTIE: "ok i'm gonna be straight with you: before we met at the holiday inn, I met with this agent clove from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
+> LOTTIE: "ok i'm gonna be straight with you: before we met at the HOLIDAY INN, I met with this agent CLOVE from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
 > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"
 
 At home with EDDIE:
@@ -58,16 +58,16 @@ At home with EDDIE:
 > LOTTIE: "I have a difficult job"
 > EDDIE: "how am I supposed to trust you anymore"
 > LOTTIE: "I guess you fuckin can't"
-> EDDIE: "that's it; I am bringing dante and moving in with my family in new jersey"
+> EDDIE: "that's it; I am bringing DANTE and moving in with my family in new jersey"
 > LOTTIE: "what about our grandchild"
 > EDDIE: "I will move em all"
-> LOTTIE: "carmella is the mother of our grandchild, you can't just move her to a new state"
+> LOTTIE: "CARMELLA is the mother of our grandchild, you can't just move her to a new state"
 > EDDIE: "I am going to bed"
 > [door slam]
 
 ### Session 3
 
-At ZION arrival:
+At ZION MD arrival:
 
 > SEAMUS: "VELASQUEZ, what have you got here?"
 > VELASQUEZ: "suit up: hazmat"
@@ -88,7 +88,7 @@ To GRACE:
 > LOTTIE: "I'd love if we started bag-checking your students before they leave the site"
 > GRACE: "we're happy to follow any protocol, but also we're professionals and know that leaving with evidence would be illegal"
 > LOTTIE: "yeah we're gonna do searches"
-> STUDENTS: "what the hell!?"
+> Students: "what the hell!?"
 > LOTTIE: "this seems like a really tight ship actually, excited to take this off your hands at noon"
 
 > LOTTIE: "by the way, who's been giving you the most trouble?"
@@ -152,7 +152,7 @@ At HOUGHTON's apartment:
   - Pink burnt Hello Kitty folder (see below)
   - normal manila folder (has dossiers, tax forms for Families Without Frontiers nonprofit)
 - Tells the plan:
-  - Cornucopia house is on a farm near ZION MD
+  - CORNUCOPIA HOUSE is on a farm near ZION MD
   - Facility for foster children, about a dozen children
   - Need guns, masks, vehicles
   - Will kill every adult in the building
@@ -179,10 +179,10 @@ At HOUGHTON's apartment:
   - Point-blank shoots beard man in the head, exploding it; fails san
   - Takes VHS TAPES labeled "ready" and the small black book from shed
   - Shoots the woman in the kitchen
-  - Rifles through BEDROOM drawers full of drugs
-  - Attacks KALAMATIANO/LADYSLUG in cottage, passes strength check, smells rotten meat, does 1 damage
-  - Shoots the LADYSLUG for 7, hits SEAMUS instead
-  - Crits the LADYSLUG with shotgun for 11; gets her in the face
+  - Rifles through bedroom drawers full of drugs
+  - Attacks YELENA/YELENA in cottage, passes strength check, smells rotten meat, does 1 damage
+  - Shoots the YELENA for 7, hits SEAMUS instead
+  - Crits the YELENA with shotgun for 11; gets her in the face
 
 ### Phone Call with CLOVE
 
@@ -202,15 +202,15 @@ At HOUGHTON's apartment:
   > "Is that egg mcmuffin on your breath? did another man buy that for you?"
   > "is this cuz I can't keep it up? is this cuz I am impotent? you're out getting mcmuffins?"
   > "how am I supposed to trust you anymore"
-  > "that's it; I am bringing dante and moving in with my family in new jersey"
+  > "that's it; I am bringing DANTE and moving in with my family in new jersey"
   > "what about our grandchild"
   > "I will move em all"
-  > "carmella is the mother of our grandchild, you can't just move her to a new state"
+  > "CARMELLA is the mother of our grandchild, you can't just move her to a new state"
 
 ### 2004
 
 - At grocery store a few years later, follows a blood trail into the back room where there's a dying bat on top of an item
-- The item is a short story, very short book, titled SREDNI_BASHTAR by Saki
+- The item is a short story, very short book, titled SREDNI BASHTAR by Saki
 
 ### 2005-2016
 
@@ -219,6 +219,6 @@ At HOUGHTON's apartment:
 
 ### 2016 - working group masticate
 
-- Called back into service by PIZZA for the ZION investigation
+- Called back into service by PIZZA for the ZION MD investigation
 - Part of working group: masticate
 - Makes irish coffee that VELASQUEZ sips and approves of

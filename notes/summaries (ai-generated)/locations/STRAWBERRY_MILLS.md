@@ -2,8 +2,8 @@
 
 ## Basic Info
 - Apartment complex in WHITEHALL, Maryland
-- 1 hour from ZION
-- U-shaped building surrounding a parking lot
+- 1 hour from ZION MD
+- u-shaped building surrounding a parking lot
 - 2 stories, motel style
 - Each apartment has an exterior door
 - Not a nice building; sketchy; very low-income energy
@@ -11,7 +11,7 @@
 ## Residents
 
 ### Apartment #12121
-- HOUGHTON (Kerry Houghton) lived here
+- Kerry HOUGHTON lived here
 - Hoarder nightmare
 - Glass cupboard full of precious moments dolls
 - Pet cleaner and paper towels on floor
@@ -55,7 +55,7 @@
 - agents enter apartment
 - Evidence collected:
   - Laptop with email chains from 2001
-  - Diaries with compulsive writing about Cornucopia house
+  - Diaries with compulsive writing about CORNUCOPIA HOUSE
   - Trashbag with cat vomit (weird smell, like rotting meat, makes people feel hungry)
   - Medications for PTSD, Schizoaffective disorder, Bipolar
 - Neighbor CINDY interviewed

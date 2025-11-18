@@ -1,4 +1,4 @@
-# ECKSTEIN (Kasey Eckstein)
+# Kasey ECKSTEIN
 
 ## Basic Info
 - Deputy dispatched to Meyers Point trailer park
@@ -20,13 +20,13 @@ No direct dialog recorded.
 ### The Evidence
 - EMT finds bloody piece of paper with three names:
   - Charlotte Watkins
-  - Seamus McGillicutty
-  - Erastus Boudreau
-- Plus address of Cornucopia house (now a jail)
+  - SEAMUS McGillicutty
+  - ERASTUS Boudreau
+- Plus address of CORNUCOPIA HOUSE (now a jail)
 
 ### Investigation
 - Wednesday 17 Aug: Calls Maryland PD
-- Asks about Cornucopia house
+- Asks about CORNUCOPIA HOUSE
 - Mentions agents' names
 - Questions in pursuit of homicide
 - This trips DG voice recognition system

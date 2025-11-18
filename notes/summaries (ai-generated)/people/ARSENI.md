@@ -1,7 +1,7 @@
-# ARSENI (Alexi Arseni)
+# Alexi ARSENI
 
 ## Basic Info
-- Adult at Cornucopia house
+- Adult at CORNUCOPIA HOUSE
 - Body found at fire scene in 2001
 
 ## Dialog
@@ -11,7 +11,7 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### 2001
-- One of the adults at Cornucopia house
+- One of the adults at CORNUCOPIA HOUSE
 - Body found at fire scene
 - News article: 4 adult bodies found at fire scene, plus one child body
 - Ties to Brighton Beach crime (per news article)

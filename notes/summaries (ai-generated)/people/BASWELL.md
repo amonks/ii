@@ -1,8 +1,8 @@
-# BASWELL (Keith Baswell)
+# Keith BASWELL
 
 ## Basic Info
 - Detective
-- Investigated the 2001 Cornucopia house fire
+- Investigated the 2001 CORNUCOPIA HOUSE fire
 - VELASQUEZ was his rookie partner
 
 ## Dialog

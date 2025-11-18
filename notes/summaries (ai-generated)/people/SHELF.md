@@ -1,4 +1,4 @@
-# SHELF (Joe Shelf)
+# Joe SHELF
 
 ## Basic Info
 
@@ -10,9 +10,9 @@
 
 ### Session 3
 
-At ZION:
+At ZION MD:
 
-> SHELF: "Velasquez! how are ya. Can you introduce us to each investigation leader onsite, cross-department, so we can check in with what they've found so far?"
+> SHELF: "VELASQUEZ! how are ya. Can you introduce us to each investigation leader onsite, cross-department, so we can check in with what they've found so far?"
 > VELASQUEZ: "we've been holding off, as per instructions, so nothing really yet. I do still have that footage from HOUGHTON's apartment"
 
 Evidence transport:
@@ -41,8 +41,8 @@ To WARDEN:
 To FINCH:
 
 > FINCH: "great to meet you"
-> SHELF: "We thought you might have a more useful perspective than the warden about this."
-> [FINCH visibly deflates at the mention of the warden]
+> SHELF: "We thought you might have a more useful perspective than the WARDEN about this."
+> [FINCH visibly deflates at the mention of the WARDEN]
 > SHELF: "anything unusual wednesday or thursday before the thing?"
 > FINCH: "nothing unusual"
 
@@ -56,7 +56,7 @@ OWEN incident:
 > VELASQUEZ: [calls] "we've got some goings on around the hazmat tent. could you attend?"
 > SHELF: "BRT"
 
-> SHELF: "dr grace? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
+> SHELF: "dr GRACE? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
 > GRACE: "yes I do."
 
 > COSTA: "yeah, if you help me out I'll help you out. I'll even rough him up a bit"

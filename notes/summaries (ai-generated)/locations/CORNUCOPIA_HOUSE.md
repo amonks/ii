@@ -1,6 +1,7 @@
-# Cornucopia house
+# CORNUCOPIA HOUSE
 
 ## Basic Info
+
 - Location: Farm near ZION MD
 - Originally: Foster children facility operated by Families Without Frontiers nonprofit
 - Current (2016): MD Correction 3 (prison)
@@ -10,53 +11,60 @@
 ## History
 
 ### 2001 - As Foster Home
+
 - Facility for foster children
 - Operated by Families Without Frontiers nonprofit
 - About a dozen children
-- Staff included: KALAMATIANO (Yelena Kalamatiano), APPOLONOV (Sabina Appolonov), ARSENI (Alexi Arseni), INNOKENTY (Ryan Innokenty)
-- Social worker HOUGHTON (Kerry Houghton) was DHS case manager
+- Staff included: YELENA Kalamatiano, Sabina APPOLONOV, Alexi ARSENI, Ryan INNOKENTY
+- Social worker Kerry HOUGHTON was DHS case manager
 - Inspector FRANKLIN PRICE also inspected the facility
 - Bad things were happening to children
 - Evidence of abuse
-- Disturbing polaroids in burnt Hello Kitty folder
+- Disturbing POLAROIDS in burnt Hello Kitty folder
 - Connection to Brighton Beach crime
 
 ### The Operation - February 3, 2001
+
 - LOTTIE, SEAMUS, and ERASTUS infiltrate at night
 - Four buildings on site: shed, barn, house, cottage
-- Adults killed: beard man, blonde man, woman (in kitchen), KALAMATIANO (LADYSLUG in cottage)
+- Adults killed: beard man, blonde man, woman (in kitchen), YELENA (YELENA in cottage)
 - Children rescued (about 11-12 children)
 - Evidence includes:
   - VHS recording equipment and tapes in shed
   - small black book with ledger of post office boxes, quantities, dollar amounts, names
   - Cages full of mistreated animals in barn
   - Disturbing contents in house (drugs, porn, abuse materials)
-  - Unnatural entity (KALAMATIANO/LADYSLUG) in cottage
+  - Unnatural entity (YELENA/YELENA) in cottage
 - Fire destroys much of the facility
 - Children freed and later picked up (not killed despite CLOVE's orders)
 
 ### Bodies Found
-- 4 adult bodies: KALAMATIANO, APPOLONOV, ARSENI, INNOKENTY
+
+- 4 adult bodies: YELENA, APPOLONOV, ARSENI, INNOKENTY
 - Plus one child body
 - News article: drugs found at burnt child home, signs of abuse, child was murdered
 - Ties to Brighton Beach crime reported
 
 ### Investigation Cover-Up
+
 - Detective BASWELL concludes it was Russian gangs
 - HOUGHTON suspended and then fired from DHS
 - Auto theft noted as loose end
 - Case closed quickly
 
 ### 2001-2008
+
 - Property abandoned after fire
 - Bodies of children buried on property (56 total found in 2016)
 - Bodies date back to early 60s
 
 ### 2008-2010
+
 - Lot purchased by state in 2008
 - Prison constructed
 
 ### 2010-2016 - As MD Correction 3
+
 - Prison opened in 2010
 - 800 inmates currently
 - Ranges from minimal to maximal security
@@ -66,6 +74,7 @@
 - Maintenance by KIM Seon-hu
 
 ### August 2016 - Bodies Discovered
+
 - Thursday 18 Aug: MD st trooper SAWYER finds HOUGHTON dead and mutilated at WAREHOUSE
 - Dog digging up human skull
 - Search and rescue dogs descend
@@ -80,7 +89,8 @@
 
 ## The Four Buildings (2001)
 
-### the CLEARING
+### The clearing
+
 - Contains the four buildings
 - shed (dark)
 - barn (dark)
@@ -88,6 +98,7 @@
 - cottage (lights on)
 
 ### shed
+
 - Dark initially
 - beard man enters, light comes on
 - Contains:
@@ -96,12 +107,13 @@
   - Small TV
   - Video recording equipment
   - Shelves
-  - JVC-JXC7 multicolor processing unit
+  - JVC-Jxc7 multicolor processing unit
   - small black book (ledger) in front of TV
 - LOTTIE takes "ready" VHS TAPES and small black book
 - Burned by SEAMUS during escape
 
 ### barn
+
 - Dark initially
 - Used to be a dairy barn
 - Now a scary barn
@@ -115,6 +127,7 @@
 - Children freed and gather here with their animals after adults are killed
 
 ### house
+
 - Lights on
 - Big house windows all boarded shut
 - Porch windows all blackout curtained
@@ -123,6 +136,7 @@
 - Continued applause sounds from TV
 
 #### Kitchen
+
 - Disgusting
 - Rotten smell
 - Yellow lino floor
@@ -136,13 +150,15 @@
 - Child pulls shotgun from kitchen counter
 - Fridge contains: cold cuts, eggs, deli containers full of purple liquid with something floating inside
 
-#### FAMILY ROOM
+#### Family room
+
 - Single beatup armchair
 - Wood panel walls
 - 10 mattresses
 - TV (off, but turns on by itself - "when animals attack" show)
 
-#### BEDROOM
+#### Bedroom
+
 - Sheetless stained mattress
 - Rusted metal bedframe
 - Tape recorder on tripod
@@ -153,15 +169,18 @@
 - Needles on the floor
 - Drawers full of drugs
 
-#### BATHROOM
+#### Bathroom
+
 - Spotless (in stark contrast to rest of house)
 
-#### BIG HALLWAY
+#### Big hallway
+
 - Newer part of house
 - Very dark, kind of musty
 - Door boarded shut at end
 
 #### Two Dormitory Rooms
+
 - Each has 8 bunkbeds (16 bunks each)
 - One room: pink sheets, very dusty, nobody's been here for years
 - Other room: blue sheets, posters of Hulk Hogan, Bo Jackson, Ken Griffey Jr
@@ -169,15 +188,17 @@
 - Behind poster: crayon drawing exactly matching SEAMUS's birthmark (dancing boy shape)
 
 ### cottage
+
 - Front porch with armchair
 - Smoke coming out of chimney
 - Looks like a fairy-tale cottage, very nice
 - Knitting needles and half-finished blue scarf on rocking chair
 - Blue and pink
 - Windows are frosted
-- Contains KALAMATIANO in LADYSLUG form (see person file)
+- Contains YELENA in YELENA form (see person file)
 
 **Initial appearance (illusory):**
+
 - Furniture warm and inviting, immaculately tended-to
 - Cozy rug, hardwood floors
 - Kettle on stove
@@ -187,21 +208,24 @@
 - Table with lit candle (black flame)
 
 **True appearance (after candle extinguished):**
+
 - All crosses upside-down
 - Filth shit and vomit covers every surface
 - Furniture is fucked
 - Freezing cold
 - No fire
 - Smell of rotting meat
-- KALAMATIANO revealed as LADYSLUG
+- YELENA revealed as YELENA
 
 **Destruction:**
+
 - Dowsed with gasoline by SEAMUS
 - Lit on fire by ERASTUS
-- Burns with LADYSLUG inside
+- Burns with YELENA inside
 
 ### 2016 Discovery
-- The 11 mummies are found under where the cottage used to be
+
+- The 11 MUMMIES are found under where the cottage used to be
 - Preserved and dessicated, but not toilet-papered
 - No decomp whatsoever
 - Unnatural
@@ -209,6 +233,7 @@
 ## Other Features
 
 ### big spooky tree
+
 - On the way to cottage
 - Carving of creepy symbol with three figures
 - Each figure has a deeper cut:
@@ -219,9 +244,11 @@
 - LOTTIE sniffs it, smells like tree
 
 ### Three Cars in Driveway
+
 - Disabled by team before entering house
 
 ## Current Status (2016)
+
 - Prison housing 800 inmates
 - Not evacuated during investigation
 - Excavation mostly outside fenced grounds

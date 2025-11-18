@@ -11,10 +11,10 @@
 
 ### Session 4
 
-At ZION with GRACE:
+At ZION MD with GRACE:
 
 > SHELF: "in that case, you'll be delighted to hear that the CDC is taking everything of interest off site"
-> MO: "standard cdc protocol. We know you're studying to be like us, but leave this one to the pros."
+> MO: "standard CDC protocol. We know you're studying to be like us, but leave this one to the pros."
 > MO: "anyway monique, have you seen anything interesting today?"
 > GRACE: "nope, been busy just playing defense"
 
@@ -34,12 +34,12 @@ Securing evidence:
 > SEAMUS: "that's all. hope ur having a good day. I'm very sorry"
 > MO: safe-ejects the USB drive and puts it in his pocket.
 > MO, to VELASQUEZ: we'd like to speak to the WARDEN
-> VELASQUEZ: sure. by the way, can we run those prints from the weapons?
+> VELASQUEZ: sure. by the way, can we run those prints from the WEAPONS?
 > MO: I'd like to get a quick look at that first. CDC reasons.
 > VELASQUEZ: uhhhhh? you want to look at the fingerprints? like, the images of them?
 > MO: no, i mean send us the files and also hand us the screwdrivers. I want to test the screwdrivers' blood for bloodborne pathogens.
 > VELASQUEZ: that seems normal, yes.
-> MO: takes the weapons to the onsite lab to make sure they won't turn up anyhting unnatural when the police inspect them.
+> MO: takes the WEAPONS to the onsite lab to make sure they won't turn up anyhting unnatural when the police inspect them.
 
 With WARDEN:
 
@@ -108,10 +108,10 @@ With neighbor CINDY:
 
 ### 2016 - working group masticate
 
-- Part of working group: masticate investigating ZION prison incident
+- Part of working group: masticate investigating ZION MD prison incident
 - Handles forensic analysis and evidence collection
-- Tests weapons for blood and bloodborne pathogens:
-  - MO checks the weapons for blood, it's all human blood, it's all from the victim. microscopes it. nothing unusual. Jars some for later.
-  - further testing: high stress, def taking high doses of mental health medication. nothing's weird about the blood, so it's ok to allow the cops to analyze these weapons.
+- Tests WEAPONS for blood and bloodborne pathogens:
+  - MO checks the WEAPONS for blood, it's all human blood, it's all from the victim. microscopes it. nothing unusual. Jars some for later.
+  - further testing: high stress, def taking high doses of mental health medication. nothing's weird about the blood, so it's ok to allow the cops to analyze these WEAPONS.
 - Jars cat vomit sample from HOUGHTON's apartment
 - Attempts to attract cat at HOUGHTON's apartment using kibble

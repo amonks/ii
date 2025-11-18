@@ -1,7 +1,7 @@
 # WAREHOUSE (at MD Correction 3)
 
 ## Basic Info
-- Storage building at MD Correction 3 (formerly Cornucopia house)
+- Storage building at MD Correction 3 (formerly CORNUCOPIA HOUSE)
 - White garage-style door
 - Site of HOUGHTON's murder in 2016
 
@@ -32,8 +32,8 @@
 - These bags were clustered together
 - Victims disposed of quickly, often in garbage bag or burlap sack
 
-### 11 Mummies
-- 11 cots with child mummies
+### 11 MUMMIES
+- 11 cots with child MUMMIES
 - Preserved and dessicated, but not toilet-papered
 - Hard to keep investigators away
 - Could autopsy these
@@ -58,5 +58,5 @@
 - Thursday 18 Aug: MD st trooper SAWYER arrives and finds the body
 - Calls for backup
 - Sees dog digging up human skull
-- Requests K9 unit
+- Requests a police dog unit
 - Investigation rapidly escalates

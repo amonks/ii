@@ -57,7 +57,7 @@ type PageData struct {
 // tagMap maps ALLCAPS tags to their summary file paths
 var tagMap map[string]string
 
-// tagPattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN EXPRESS"
+// tagPattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN"
 // Multi-word tags must be separated by spaces (not newline) so headings don't merge.
 var tagPattern = regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:[ \t]+[A-Z][A-Z_0-9]*)*)\b`)
 

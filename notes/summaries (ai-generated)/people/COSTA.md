@@ -1,4 +1,4 @@
-# COSTA (Michael Costa)
+# Michael COSTA
 
 ## Basic Info
 - Blonde guy with mustache
@@ -12,7 +12,7 @@
 
 ### Session 3
 
-At ZION:
+At ZION MD:
 > COSTA: [walks up] "you would not believe the day I am havin! Cecil county PD here. Criminal innvestigation division liason. We're up to our elbows in mysteries here"
 > [LOTTIE makes eye-contact with VELASQUEZ, who rolls her eyes]
 > COSTA: "have you guys seen the puddin' yet? cuz it's really freaking me out!"
@@ -31,9 +31,9 @@ The OWEN incident:
 
 ## Events and Notes
 
-### At ZION Investigation
+### At ZION MD Investigation
 - Walks up to agents and GRACE
-- Knows about the "pudding" (black substance) even though GRACE has been keeping people away
+- Knows about the "PUDDING" (black substance) even though GRACE has been keeping people away
 - GRACE is not sure why COSTA knows about it
 - LOTTIE makes eye contact with VELASQUEZ, who rolls her eyes (not a COSTA fan)
 

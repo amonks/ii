@@ -1,10 +1,10 @@
-# GRACE (Dr. Monique Grace)
+# GRACE (Dr. Monique GRACE)
 
 ## Basic Info
 - From Harvard
 - Wire-rim glasses lady
 - Specialist who understands that the program sometimes deals with unusual occurrences
-- Has been stalling for time at ZION
+- Has been stalling for time at ZION MD
 
 ## Dialog
 
@@ -12,9 +12,9 @@
 
 At the airlock:
 > GRACE: "I really cannot stress enough how happy I am to see you. It's been difficult to prevent people from taking a look. Lots of specialists coming in on the, ahem, esoteric situation."
-> GRACE: "mostly bones so far, starting early 60s; we also have these specimens: 11 cots with child mummies. preserved and dessicated, but not toilet-papered. It's been hard to keep the investigators away."
+> GRACE: "mostly bones so far, starting early 60s; we also have these specimens: 11 cots with child MUMMIES. preserved and dessicated, but not toilet-papered. It's been hard to keep the investigators away."
 > [VELASQUEZ looks confused]
-> GRACE: "Velasquez, don't you have somehting you shuold be doing somewhere else?"
+> GRACE: "VELASQUEZ, don't you have somehting you shuold be doing somewhere else?"
 > VELASQUEZ: "nope, happy to be here"
 
 About the black substance:
@@ -22,8 +22,8 @@ About the black substance:
 > [GRACE shows four garbage bags]
 > GRACE: "my colleague CAMPBELL (Tim Campbell) has been looking at this stuff, he's a biologist, the cellular structure... doesn't resemble chemistry. we're having trouble getting a positive id on this."
 
-About the mummies:
-> GRACE: "these mummies here -- no decomp whatsoever? never seen anything like it. Unnatural."
+About the MUMMIES:
+> GRACE: "these MUMMIES here -- no decomp whatsoever? never seen anything like it. Unnatural."
 
 Debriefing:
 > LOTTIE: "by the way, who's been giving you the most trouble?"
@@ -35,7 +35,7 @@ Next morning:
 > [GRACE looks very tired]
 > [Reports that a lot of forensic specialists are trying to get at the specimens]
 > MO: "in that case, you'll be delighted to hear that the CDC is taking everything of interest off site"
-> MO: "standard cdc protocol. We know you're studying to be like us, but leave this one to the pros."
+> MO: "standard CDC protocol. We know you're studying to be like us, but leave this one to the pros."
 > MO: "anyway monique, have you seen anything interesting today?"
 > GRACE: "nope, been busy just playing defense"
 
@@ -45,27 +45,27 @@ Bag checking protocol:
 > LOTTIE: "I'd love if we started bag-checking your students before they leave the site"
 > GRACE: "we're happy to follow any protocol, but also we're professionals and know that leaving with evidence would be illegal"
 > LOTTIE: "yeah we're gonna do searches"
-> STUDENTS: "what the hell!?"
+> Students: "what the hell!?"
 > LOTTIE: "this seems like a really tight ship actually, excited to take this off your hands at noon"
 
 The OWEN incident:
-> SHELF: "dr grace? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
+> SHELF: "dr GRACE? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
 > GRACE: "yes I do."
 
 ## Events and Notes
 
-### At ZION Investigation
+### At ZION MD Investigation
 - Part of Harvard specialists team onsite
 - Understands that the program sometimes deals with unusual occurrences
 - Trusted to an extent by the program
 - Has been difficult to prevent people from taking a look at evidence
-- Has been keeping people away from the mummies and black substance
+- Has been keeping people away from the MUMMIES and black substance
 
 ### Findings Presented
 - Mostly bones so far, starting early 60s
-- 11 cots with child mummies - preserved and dessicated, but not toilet-papered
+- 11 cots with child MUMMIES - preserved and dessicated, but not toilet-papered
 - Hard to keep investigators away
-- Could autopsy the mummies
+- Could autopsy the MUMMIES
 - Might want to bring them offsite
 
 ### The Black Substance
@@ -73,12 +73,12 @@ The OWEN incident:
 - Victims were disposed of pretty quickly, often in garbage bag or burlap sack
 - These garbage bags contain a strange phenomenon: the substance "reaches out" towards human flesh like a ferrofluid
 - These bags were clustered together
-- Colleague CAMPBELL (Tim Campbell) has been looking at it
+- Colleague Tim CAMPBELL has been looking at it
 - He's a biologist
 - The cellular structure "doesn't resemble chemistry"
 - Having trouble getting a positive id
 
-### The Mummies
+### The MUMMIES
 - Under where the cottage used to be
 - No decomp whatsoever
 - Never seen anything like it

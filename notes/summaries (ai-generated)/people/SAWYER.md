@@ -1,4 +1,4 @@
-# SAWYER (Vivian Sawyer)
+# Vivian SAWYER
 
 ## Basic Info
 - Maryland State Trooper
@@ -11,12 +11,12 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### Discovery of HOUGHTON - Thursday August 18, 2016
-- Drives to MD Correction 3 (formerly Cornucopia house)
+- Drives to MD Correction 3 (formerly CORNUCOPIA HOUSE)
 - Finds HOUGHTON dead and mutilated at WAREHOUSE
 - Body nailed to door with screwdrivers (stigmata-style)
 - Calls for backup
 - Sees dog digging up human skull
-- Requests K9 unit
+- Requests a police dog unit
 
 ### Security Footage
 - Appears in security footage arriving at WAREHOUSE

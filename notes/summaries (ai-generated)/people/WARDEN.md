@@ -1,7 +1,7 @@
 # WARDEN (Constance Horan)
 
 ## Basic Info
-- Warden of MD Correction 3 (formerly Cornucopia house)
+- WARDEN of MD Correction 3 (formerly CORNUCOPIA HOUSE)
 - Has worked there since 2008, since it opened
 - Has a son who plays little league
 - Conservative political views

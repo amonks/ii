@@ -1,7 +1,7 @@
 # OWEN
 
 ## Basic Info
-- Part of investigation team at ZION
+- Part of investigation team at ZION MD
 - Likely a student or junior researcher with the Harvard team
 - Has a contact in the press
 - Attempted to steal evidence
@@ -16,7 +16,7 @@ The OWEN Incident:
 > [we arrive]
 > VELASQUEZ: "we implemented the search you recommended, and caught this individual with contraband materials exiting the crime scene"
 > OWEN: "It was gonna be a cover up! you're gonna take everything offsite!"
-> SHELF: "dr grace? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
+> SHELF: "dr GRACE? sorry about this. We'll need to deal with OWEN with the full extent of the law. You'll understand."
 > GRACE: "yes I do."
 > SEAMUS: "how did you take the sample? did you touch any of the goo?"
 > OWEN: "I'm not a fuckin idiot. I took it with a sample and put it in the sample vial."

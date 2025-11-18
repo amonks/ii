@@ -1,8 +1,8 @@
-# CAMPBELL (Tim Campbell)
+# Tim CAMPBELL
 
 ## Basic Info
 - Biologist
-- Part of Harvard team at ZION
+- Part of Harvard team at ZION MD
 - Colleague of Dr. GRACE
 - Studying the black substance
 
@@ -12,7 +12,7 @@ No direct dialog recorded.
 
 ## Events and Notes
 
-### At ZION Investigation
+### At ZION MD Investigation
 - Part of Harvard specialists team onsite
 - Has been looking at the black substance (viscous black fluid in garbage bags)
 - The cellular structure "doesn't resemble chemistry"

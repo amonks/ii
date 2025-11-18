@@ -6,7 +6,7 @@
 
 From Session 1-2:
 
-> we head out from the HOLIDAY INN EXPRESS and approach the truck belonging to ERASTUS (78 chevy).
+> we head out from the HOLIDAY INN and approach the truck belonging to ERASTUS (78 chevy).
 > There's a raccoon in the passenger seat, which bites the hand of ERASTUS, who neosporins that shit.
 
 ### big crow Pecks SEAMUS
@@ -35,7 +35,7 @@ From Session 1-2:
 
 > big spooky tree has a carving of a creepy symbol with three figures, each figure has a deeper cut: one on the hand, one on the head, one on wherever SEAMUS got bit by the crow; these drawings correspond to us and the deep cuts correspond to our animal bites
 
-## Animals at Cornucopia house
+## Animals at CORNUCOPIA HOUSE
 
 ### ferret and Animal Abuse
 
@@ -93,7 +93,7 @@ From Session 3:
 >   - LOTTIE: at grocery store a few years later, follows a blood trail into th eback room where there's a dying bat on top of an item
 >   - ERASTUS: driving truck home in the dark, then hits a deer; cops find an item on the car
 >   - SEAMUS: waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-> in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by SAKI, pseudonym of Hector Hugh Monroe, published 1911
+> in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
 
 ## cat at HOUGHTON's Apartment (2016)
 

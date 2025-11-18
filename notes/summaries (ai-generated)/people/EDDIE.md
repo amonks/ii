@@ -21,10 +21,10 @@ When LOTTIE returns home:
 > LOTTIE: "I have a difficult job"
 > EDDIE: "how am I supposed to trust you anymore"
 > LOTTIE: "I guess you fuckin can't"
-> EDDIE: "that's it; I am bringing dante and moving in with my family in new jersey"
+> EDDIE: "that's it; I am bringing DANTE and moving in with my family in new jersey"
 > LOTTIE: "what about our grandchild"
 > EDDIE: "I will move em all"
-> LOTTIE: "carmella is the mother of our grandchild, you can't just move her to a new state"
+> LOTTIE: "CARMELLA is the mother of our grandchild, you can't just move her to a new state"
 > EDDIE: "I am going to bed"
 > [door slam]
 

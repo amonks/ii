@@ -1,4 +1,4 @@
-# VELASQUEZ (Det. Sgt. Velasquez)
+# VELASQUEZ (Det. Sgt. VELASQUEZ)
 
 ## Basic Info
 - Maryland State Police Detective Sergeant
@@ -13,7 +13,7 @@
 
 ### Session 3
 
-At ZION arrival:
+At ZION MD arrival:
 > SEAMUS: "VELASQUEZ, what have you got here?"
 > VELASQUEZ: "suit up: hazmat"
 > LOTTIE: "why is all this necesasry?"
@@ -31,12 +31,12 @@ At ZION arrival:
 > VELASQUEZ: "tree roots in the forest have slowed down the investigation; graves are closely packed; we're gonna be diggin for months."
 
 At the airlock:
-> GRACE: "Velasquez, don't you have somehting you shuold be doing somewhere else?"
+> GRACE: "VELASQUEZ, don't you have somehting you shuold be doing somewhere else?"
 > VELASQUEZ: "nope, happy to be here"
 
 ### Session 4
 
-> SHELF: "Velasquez! how are ya. Can you introduce us to each investigation leader onsite, cross-department, so we can check in with what they've found so far?"
+> SHELF: "VELASQUEZ! how are ya. Can you introduce us to each investigation leader onsite, cross-department, so we can check in with what they've found so far?"
 > VELASQUEZ: "we've been holding off, as per instructions, so nothing really yet. I do still have that footage from HOUGHTON's apartment"
 > LOTTIE: [holds out flask] "want a sip?"
 > VELASQUEZ: "more of an afternoon gal"
@@ -62,8 +62,8 @@ After viewing footage:
 > VELASQUEZ: "sure"
 > LOTTIE: "we want a look at everything you collect"
 
-About the weapons:
-> VELASQUEZ: "can we run those prints from the weapons?"
+About the WEAPONS:
+> VELASQUEZ: "can we run those prints from the WEAPONS?"
 > MO: "I'd like to get a quick look at that first. CDC reasons."
 > VELASQUEZ: "uhhhhh? you want to look at the fingerprints? like, the images of them?"
 > MO: "no, i mean send us the files and also hand us the screwdrivers. I want to test the screwdrivers' blood for bloodborne pathogens."
@@ -89,15 +89,15 @@ Evidence transport:
 ### 2001 Investigation
 - Was a rookie on the 2001 investigation with BASWELL
 - BASWELL said it was a gang thing (which VELASQUEZ finds laughable now)
-- Investigated the Cornucopia house fire
+- Investigated the CORNUCOPIA HOUSE fire
 
 ### 2016 Investigation
-- Approaches agents when they arrive at ZION
+- Approaches agents when they arrive at ZION MD
 - Provides irish coffee setup for LOTTIE
 - Makes eye contact with LOTTIE and rolls her eyes at COSTA (not a COSTA fan)
 - Shows 48 hours of security footage from HOUGHTON's apartment
 - a guy brings the trashbag with cat vomit in an evidence bag at her direction
-- Gets fingerprint matches from weapons - identifies ELLE GABLE
+- Gets fingerprint matches from WEAPONS - identifies ELLE GABLE
 - Wants to get to the bottom of this (per GRACE)
 - Calls agents about the OWEN incident
 - Continues to work the case actively

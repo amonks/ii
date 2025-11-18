@@ -2,7 +2,7 @@
 
 ## Basic Info
 - Location in Maryland
-- 1 hour from ZION
+- 1 hour from ZION MD
 - Site of STRAWBERRY MILLS apartment complex
 
 ## Locations
