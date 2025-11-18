@@ -21,6 +21,30 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
+func main() {
+	checkTags := flag.Bool("check-tags", false, "Check for capitalized strings that aren't tags")
+	flag.Parse()
+
+	if *checkTags {
+		findNonTagCaps()
+		return
+	}
+
+	http.HandleFunc("/fonts/", serveFonts)
+	http.HandleFunc("/search", handleSearch)
+	http.HandleFunc("/", handleRequest)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server starting on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
 //go:embed notes
 var markdownFiles embed.FS
 
@@ -320,30 +344,6 @@ func findNonTagCaps() {
 
 	if len(words) == 0 {
 		fmt.Println("No non-tag capitalized strings found!")
-	}
-}
-
-func main() {
-	checkTags := flag.Bool("check-tags", false, "Check for capitalized strings that aren't tags")
-	flag.Parse()
-
-	if *checkTags {
-		findNonTagCaps()
-		return
-	}
-
-	http.HandleFunc("/fonts/", serveFonts)
-	http.HandleFunc("/search", handleSearch)
-	http.HandleFunc("/", handleRequest)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Server starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
 	}
 }
 
