@@ -21,6 +21,12 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 - read some existing session files to get a feel for the formatting conventions
 - update the new session file, breaking it into sections and generally bringing it in line with the expected formatting
+- when transcribing dialogue, prefer blockquotes with speaker tags so the raw quotes can be copied directly into tag files, e.g.
+
+> LOTTIE: "We're on the record now, so keep it professional."
+> SEAMUS: "Copy that. Where do we start?"
+> LOTTIE: "Now I'm saying something."
+
 - IMPORTANT: YOU MUST NOT CHANGE ANY PROSE IN THE SESSION FILE. YOU MAY ONLY INSERT FORMATTING CHARACTERS. SUBSTITUING ANY WORD IS AN IMMEDIATE FAILURE. The limited exceptions:
   - correcting spelling is ok
   - inserting headers is ok (this counts as formatting)
