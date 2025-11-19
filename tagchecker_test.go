@@ -27,7 +27,7 @@ func TestTagCoverage(t *testing.T) {
 	tagMap := buildTagMap()
 	allowed := loadAllowedAllCaps(t)
 
-	summaryRoot := "notes/summaries (ai-generated)"
+	summaryRoot := path.Join(notesRoot, summaryPhysicalDir)
 	t.Run("summaries", func(t *testing.T) {
 		issues := collectDirIssues(t, summaryRoot, tagMap, summaryRoot+"/", allowed)
 		if len(issues) > 0 {
@@ -109,7 +109,7 @@ func TestTagsNotLowercase(t *testing.T) {
 	allowed := loadAllowedAllCaps(t)
 	combinedIssues := make(map[string][]lowercaseMatch)
 
-	summaryRoot := "notes/summaries (ai-generated)"
+	summaryRoot := path.Join(notesRoot, summaryPhysicalDir)
 	t.Run("summaries", func(t *testing.T) {
 		issues := collectLowercaseIssuesInDir(t, summaryRoot, summaryRoot+"/", tagMap, allowed)
 		if len(issues) > 0 {
@@ -455,7 +455,7 @@ func loadAllowedAllCaps(t *testing.T) map[string]struct{} {
 func summaryTagsByCategory(t *testing.T) map[string][]string {
 	t.Helper()
 
-	root := "notes/summaries (ai-generated)"
+	root := path.Join(notesRoot, summaryPhysicalDir)
 	top, err := fs.ReadDir(markdownFiles, root)
 	if err != nil {
 		t.Fatalf("read %s: %v", root, err)

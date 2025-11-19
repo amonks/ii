@@ -57,6 +57,35 @@ type PageData struct {
 // tagMap maps ALLCAPS tags to their summary file paths
 var tagMap map[string]string
 
+const (
+	notesRoot          = "notes"
+	notesPrefix        = notesRoot + "/"
+	summaryPhysicalDir = "tagfiles"
+	summaryDisplayDir  = "summaries (ai-generated)"
+)
+
+// convert to user-facing path names so URLs show the historical directory name
+func toPublicNotesPath(rel string) string {
+	if rel == summaryPhysicalDir {
+		return summaryDisplayDir
+	}
+	if strings.HasPrefix(rel, summaryPhysicalDir+"/") {
+		return summaryDisplayDir + rel[len(summaryPhysicalDir):]
+	}
+	return rel
+}
+
+// convert user-facing paths back to the real filesystem locations
+func toPhysicalNotesPath(rel string) string {
+	if rel == summaryDisplayDir {
+		return summaryPhysicalDir
+	}
+	if strings.HasPrefix(rel, summaryDisplayDir+"/") {
+		return summaryPhysicalDir + rel[len(summaryDisplayDir):]
+	}
+	return rel
+}
+
 // tagPattern matches ALLCAPS words, including multi-word tags like "HOLIDAY INN"
 // Multi-word tags must be separated by spaces (not newline) so headings don't merge.
 var tagPattern = regexp.MustCompile(`\b([A-Z][A-Z_0-9]*(?:[ \t]+[A-Z][A-Z_0-9]*)*)\b`)
@@ -69,8 +98,9 @@ func init() {
 func buildTagMap() map[string]string {
 	tags := make(map[string]string)
 
-	// Walk through summaries directory
-	err := fs.WalkDir(markdownFiles, "notes/summaries (ai-generated)", func(path string, d fs.DirEntry, err error) error {
+	// Walk through summaries directory (physical location)
+	summaryRoot := filepath.Join(notesRoot, summaryPhysicalDir)
+	err := fs.WalkDir(markdownFiles, summaryRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -81,8 +111,8 @@ func buildTagMap() map[string]string {
 			filename := d.Name()
 			tagName := strings.TrimSuffix(filename, ".md")
 
-			// Store the path relative to notes/ directory
-			relativePath := strings.TrimPrefix(path, "notes/")
+			// Store the path relative to notes/ directory and convert to public display name
+			relativePath := toPublicNotesPath(strings.TrimPrefix(path, notesPrefix))
 
 			// Tags must be referenced with spaces even though filenames use
 			// underscores, so normalize once here.
@@ -297,7 +327,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	maxResults := 50 // Limit results for performance
 
 	// Walk through all markdown files
-	err := fs.WalkDir(markdownFiles, "notes", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(markdownFiles, notesRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -309,12 +339,14 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 
 		// Only process markdown files
 		if !d.IsDir() && strings.HasSuffix(path, ".md") {
-			cleanPath := strings.TrimPrefix(path, "notes/")
+			relative := strings.TrimPrefix(path, notesPrefix)
 
 			// Skip character sheets
-			if strings.HasPrefix(cleanPath, "character_sheets/") {
+			if strings.HasPrefix(relative, "character_sheets/") {
 				return nil
 			}
+
+			publicPath := toPublicNotesPath(relative)
 
 			// Read file content
 			content, err := markdownFiles.ReadFile(path)
@@ -336,7 +368,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 					// Build fzf-style result - pass the search query and line number
 					results.WriteString(fmt.Sprintf(
 						"<div class=\"search-result\"><a href=\"/%s?highlight=%s&line=%d\">%s:%d</a>: %s</div>\n",
-						cleanPath, template.URLQueryEscaper(query), lineNum, cleanPath, lineNum, escapedLine,
+						publicPath, template.URLQueryEscaper(query), lineNum, publicPath, lineNum, escapedLine,
 					))
 				}
 			}
@@ -376,18 +408,19 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		var cleanFiles []string
 
 		// Walk the entire notes directory
-		err := fs.WalkDir(markdownFiles, "notes", func(path string, d fs.DirEntry, err error) error {
+		err := fs.WalkDir(markdownFiles, notesRoot, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
 			// Only process markdown files
 			if !d.IsDir() && strings.HasSuffix(path, ".md") {
-				cleanPath := strings.TrimPrefix(path, "notes/")
+				relative := strings.TrimPrefix(path, notesPrefix)
 				// Skip character sheets
-				if !strings.HasPrefix(cleanPath, "character_sheets/") {
-					cleanFiles = append(cleanFiles, cleanPath)
+				if strings.HasPrefix(relative, "character_sheets/") {
+					return nil
 				}
+				cleanFiles = append(cleanFiles, toPublicNotesPath(relative))
 			}
 
 			return nil
@@ -428,8 +461,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add notes/ prefix for embed.FS
-	fullPath := "notes/" + path
+	// Convert public URL paths into their real filesystem equivalents
+	physicalPath := toPhysicalNotesPath(path)
+	fullPath := filepath.Join(notesRoot, physicalPath)
 
 	content, err := markdownFiles.ReadFile(fullPath)
 	if err != nil {
@@ -468,9 +502,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Link ALLCAPS tags to their summary files
 	contentStr = linkTags(contentStr)
 
+	publicPath := toPublicNotesPath(physicalPath)
+
 	data := PageData{
-		Title:   strings.TrimSuffix(filepath.Base(path), ".md"),
-		Path:    path,
+		Title:   strings.TrimSuffix(filepath.Base(publicPath), ".md"),
+		Path:    publicPath,
 		Content: template.HTML(contentStr),
 		IsIndex: false,
 	}
