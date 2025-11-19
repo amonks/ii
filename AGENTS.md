@@ -21,9 +21,10 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 - read some existing session files to get a feel for the formatting conventions
 - update the new session file, breaking it into sections and generally bringing it in line with the expected formatting
-- when transcribing dialogue, prefer blockquotes with speaker tags so the raw quotes can be copied directly into tag files, e.g.
+- when transcribing dialogue, use blockquotes with speaker tags, and italicize non-dialog prose. For example,
 
 > LOTTIE: "We're on the record now, so keep it professional."
+> _LOTTIE clears her throat_
 > SEAMUS: "Copy that. Where do we start?"
 > LOTTIE: "Now I'm saying something."
 
@@ -75,15 +76,13 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 # TAG POLICY
 
-Tagging correctly is something of an art.
+Tagging is usually straightforward: CAPITALIZE every character and location, plus every theme and object that we have an existing tag for. Usuaully we can fit tags smoothly into the prose, but sometimes we need to tack them onto the end of a line in parentheses. A tag only needs to appear once per line. Sometimes, the original session file will mention a character without including their tag, so we need to add it. Here are some example lines with tags in them:
 
-Sometimes the appropriate tag name won't reasonably appear in the prose, so we can add it in parentheses somewhere, eg,
-
+- We meet LOTTIE Watkins. Lottie is in her mid 60s.
+- He was sent to CORNUCOPIA HOUSE for care, where he met ELLE GABLE.
 - three puncture wounds (THREES)
 - a german shepherd appears (ANIMALS)
 - A piece of paper on the counter says "Charlotte Watkins" (LOTTIE) in black ink.
-
-There are a lot of locations and they can be hard to keep track of -- location tagnames should include city and/or state (as relevant), eg `DENNY'S ZION MD` (punctuation breaks tags, so use spaces to keep multi-word names together).
 
 The correct resolution might be different for different locations -- eg MIAMI might be a good tag, and so might STATE RECORDS FACILITY ZION MD.
 
