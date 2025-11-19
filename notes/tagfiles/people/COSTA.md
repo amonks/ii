@@ -50,7 +50,14 @@ The OWEN incident:
 - LOTTIE is suspicious of him (tells VELASQUEZ she's suspicious of "that guy with the gross mustache")
 
 ### Session 5 Phone Call
-> - LOTTIE's barbara phone rings, it's COSTA
+> - LOTTIE's Barbara cover phone rings, it's COSTA
 > - COSTA: "hey barb! you haven't been around the site today. doing some investigation?"
 > - LOTTIE: "yeah"
 > - COSTA: "I found something you might be interested in. When can you talk one on one, Barb, or should I say, Charlotte? maybe tomorrow? breakfast. Denny's. 8am."
+
+### Session 6 – DENNYS Ultimatum
+> COSTA arrives in disguise, demands to be called "Nightlord," and immediately threatens to expose LOTTIE's identity: "You sent that boy to the prison! ... dammit, I know you don't want me telling everyone you're Charlotte Watkins."
+
+> He lays out his deal: "I want you to make me sherrif. Also, kill my wife." He names SARAH COSTA and her boyfriend PABLO RUIZ, insists they be killed within 48 hours, and orders LOTTIE to frame PABLO RUIZ, saying the player is at the CHESAPEAKE BAYSOX STADIUM.
+
+> LOTTIE attempts to stall with flirtation and shared breakfast orders, but COSTA reiterates, "I'm threatening you. You're gonna kill my wife," and calls her "deertick" before storming out—only to be abducted by SHELF and SEAMUS in the parking lot moments later.

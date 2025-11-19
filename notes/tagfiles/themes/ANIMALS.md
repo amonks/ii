@@ -117,3 +117,10 @@ From Session 4:
 > [...]
 > a guy brings us a the trashbag in an evidence bag; MO jars it up. the vomit does have a weird smell, kind of like rotting meat, and makes us feel hungry.
 
+## Session 6 – Sparrow Delivery
+
+> While debriefing VELASQUEZ at the HOLIDAY INN, "two birds smack into the hotel room window and die, little sparrows." SEAMUS autopsies them and discovers numbered keys labeled for the STATE ARCHIVE hidden inside each carcass; the birds smell like ROTTING FLESH.
+
+## Session 6 – Crow at SAMUEL BALL's Window
+
+> During the GARRETT COUNTY PRISON interview, BECKY MARSHALL recalls that "I'd walk into his room and there'd be this crow on his windowsill. He'd just be staring at it... Must have been 10 times I saw that bird," highlighting SAMUEL BALL's connection to corvid messengers.

@@ -71,3 +71,7 @@ From Session 4:
 > diaries: initial pages begin with her DHS work. at some point, the pages start filling with the same sentence over and over again, which is the same glowing paragraph-long review of CORNUCOPIA HOUSE: "the conditions at CORNUCOPIA HOUSE is above the standard. YELENA is a great caretaker. etc"
 > ed note: her place is nasty enough that it's weird she was concerned with taking out some cat puke
 > smells like ROTTING FLESH in the spot on the floor where the cat puked
+
+## Session 6 – Sparrow Keys
+
+> When two sparrows slam into the HOLIDAY INN window during the VELASQUEZ debrief, SEAMUS notes "the birds smell like ROTTING FLESH" as he retrieves STATE ARCHIVE keys from their bodies, linking the odor to another courier event.

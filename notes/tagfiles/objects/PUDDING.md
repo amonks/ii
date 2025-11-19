@@ -37,3 +37,6 @@ From Session 4:
 > - Trashbag appears not to be super full.
 > - HOUGHTON wearing pajamas, no shoes.
 > - The trashbag does not resemble the ones full of PUDDING.
+
+## Session 6 – Laboratory Tests
+> During the midnight black-site session we experiment with the PUDDING: "stuff that eats dead stuff loves the PUDDING, thrives," and the ooze continues to creep toward exposed flesh. Dipping one of the MUMMIES produces no reaction, but placing an earthworm into the substance causes it to sprout tumors and die almost immediately.

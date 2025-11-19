@@ -1,5 +1,6 @@
 # ALLCAPS tokens that should not generate tags
 A
+B
 CCTV
 DG
 EMT
@@ -18,6 +19,7 @@ US
 VCR
 VHS
 BRT
+SUV
 
 # LOWERCASE tokens that are allowed to shadow tags
 animals

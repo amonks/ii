@@ -7,6 +7,7 @@
 - Mother of DANTE
 - Married to EDDIE (husband having marital issues)
 - High criminology skill (can steal cars)
+- Uses cover identity "Barbara" (with dedicated phone) when needed for ops
 
 ## Equipment
 
@@ -253,7 +254,7 @@ At HOUGHTON's apartment:
 > - LOTTIE gets to door first, rings doorbell a lot of times, no answer
 > - LOTTIE opens door, being careful to wipe handle
 > - SHELF: "LOTTIE you might not want to look in here"
-> - LOTTIE's barbara phone rings, it's COSTA
+> - LOTTIE's Barbara cover phone rings, it's COSTA
 > - COSTA: "hey barb! you haven't been around the site today. doing some investigation?"
 > - LOTTIE: "yeah"
 > - COSTA: "I found something you might be interested in. When can you talk one on one, Barb, or should I say, Charlotte? maybe tomorrow? breakfast. Denny's. 8am."

@@ -14,8 +14,8 @@
 - Mon 22 Aug:
   - md st pol forensic consultant arrives with equipment truck, joins county forensics, ground-penetrating radar finds many bodies, calls in all personel, briefs the governor
   - md governor is HOGAN (Larry Hogan, r)
-  - MIAMI FBI meets with ECKSTEIN offering services, really the point is to question ECKSTEIN about program operatives
-  - MIAMI FBI (program) discovers that ECKSTEIN has already closed down the investigation as natural causes, which is suss
+  - FBI (program) representatives from MIAMI meet with ECKSTEIN offering services, really the point is to question ECKSTEIN about program operatives
+  - The MIAMI contingent of the FBI discovers that ECKSTEIN has already closed down the investigation as natural causes, which is suss
   - governor asks FBI for help, swifit response
 - Tuesday 23 Aug
   - program realizes that maryland site is now mass grave on international news, scrambles to contain

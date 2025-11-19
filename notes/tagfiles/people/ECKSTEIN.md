@@ -33,7 +33,7 @@ No direct dialog recorded.
 - Flags the finding as high-priority
 
 ### FBI Contact
-- Monday 22 Aug: Miami FBI (program) meets with ECKSTEIN
+- Monday 22 Aug: FBI (program) agents from MIAMI meet with ECKSTEIN
 - Offering services
 - Really the point is to question ECKSTEIN about program operatives
-- Miami FBI discovers that ECKSTEIN has already closed down the investigation as natural causes
+- The FBI team from MIAMI discovers that ECKSTEIN has already closed down the investigation as natural causes

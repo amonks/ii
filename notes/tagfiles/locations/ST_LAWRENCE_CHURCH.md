@@ -7,3 +7,6 @@
 >   - an airplane depicted over a large cross, the large cross is overlaid on a haphazard grid; cross is red-cross-type, not christian
 >   - a dog in a circle (LOTTIE frowns at this)
 >   - a child's stick figure drawing of a smiling family (two kids mom and dad) and the mother's head is a black hole
+
+## Session 6 – SAMUEL BALL's Return
+> BECKY MARSHALL tracks SAMUEL BALL to ST LAWRENCE CHURCH in MIAMI ("some shelter" as she remembers it) and finds him among a silent group of teens who only smile. SAMUEL BALL recognizes her, smiles for the first time, and stabs her eight times with an icepick before fleeing, reinforcing the church's role as a hub for CORNUCOPIA HOUSE survivors.

@@ -34,3 +34,9 @@ From Session 3:
   - the corpse of HOUGHTON
   - the video
   - the MUMMIES
+
+## Session 6 – Black Site Observations
+
+> At the midnight black-site review we confirm the MUMMIES' tissues remain inexplicably sterile: "no microbiological cultures can be found among the cells, no bacteria, no mold, no cells at all." Even organisms that feed on necrotic tissue die on contact, worms and vermin refuse to touch them, and the preserved organs still sit inside the desiccated bodies.
+
+> All of the MUMMIES are white children bearing deep glial scarring severe enough to disrupt autonomic processes—"they died because something made them forget how to live."

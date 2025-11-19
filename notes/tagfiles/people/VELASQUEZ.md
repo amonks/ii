@@ -84,6 +84,13 @@ Evidence transport:
 > VELASQUEZ: "where's this stuff headed?"
 > MO: "CDC."
 
+### Session 6 – Escalating Pressure
+> VELASQUEZ calls SEAMUS during the DENNYS grab, furious about being "left in the dark," running down Russian cult rumors, OWEN's missed phone calls, and parents plus reporters asking about the PUDDING. She threatens to head to county jail herself if the team stonewalls her again.
+
+> Later at the HOLIDAY INN she presses for transparency, citing missing YELENA financial records, ritual WEAPONS, and synchronized attackers just as two sparrows slam into the window and drop labeled STATE ARCHIVE keys.
+
+> Near midnight she rings again: "we got a situation: a quadruple homicide at the scene. it's the perp's adoptive family. Get this: he was at CORNUCOPIA HOUSE!" She predicts she'll be tied up with the murders while wondering if every perp comes from CORNUCOPIA HOUSE.
+
 ## Events and Notes
 
 ### 2001 Investigation

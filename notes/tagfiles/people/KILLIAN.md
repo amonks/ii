@@ -32,6 +32,6 @@ No direct dialog recorded.
 - Questions are in pursuit of homicide
 - This trips DG voice recognition thing
 - Flags the finding as high-priority
-- Miami FBI (program) meets with ECKSTEIN offering services
+- FBI (program) personnel from MIAMI meet with ECKSTEIN offering services
 - Really the point is to question ECKSTEIN about program operatives
-- Miami FBI discovers that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)
+- The FBI delegates from MIAMI discover that ECKSTEIN has already closed down the investigation as natural causes (which is suspicious)
