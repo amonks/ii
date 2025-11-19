@@ -74,3 +74,38 @@ To KIM Seon-hu:
 
 > SHELF: "have inspectors been to the apartment at all?"
 > VELASQUEZ: "yeah we went there, but didn't search thoroughly; got the camera footage; collected the trashbag which was full of cat vomit and paper towels."
+
+### Session 5 - CHARLOTTES REST VETERANS HOME
+> - SHELF rushes door 121, tries to break it down
+> - SHELF shoots to incapacitate; gets her in the leg
+> - SHELF shoots the poodle
+> - SHELF restrains ELLE GABLE
+> - SHELF shoots the German shepherd to kill; it goes down
+> - SHELF: "our mission isn't to study the supernatural it's to destroy it"
+> - SHELF finds a bloody pamphlet in ELLE GABLE's pocket, advert for ST LAWRENCE CHURCH homeless shelter in florida, DOODLES on reverse, multiple instances each of,
+>   - outline of black head containing red brain
+>   - crescent moon over horizon with stars, dead tree silhouetted in foreground against the moon (every instance of this doodle (DOODLES) has the stars in the same pattern)
+>   - an airplane depicted over a large cross, the large cross is overlaid on a haphazard grid; cross is red-cross-type, not christian
+>   - a dog in a circle (LOTTIE frowns at this)
+>   - a child's stick figure drawing of a smiling family (two kids mom and dad) and the mother's head is a black hole
+> - SHELF wraps ELLE GABLE in a shower curtain
+> - SHELF wipes door handle for prints; LOTTIE does the same with the front desk computer
+> - SHELF kills FRANKLIN PRICE with pillow move
+
+### Session 5 - JUG BAY WETLANDS SANCTUARY
+> - SHELF drives to the swamp (JUG BAY WETLANDS SANCTUARY); off-road a bit to get out of earshot
+> - SHELF does some hitting, it doesn't work, "idk, try good cop"
+> - SHELF: "I tried my tools on her (gestures at guns), you've tried your brain stuff. what's left?"
+> - SHELF: "SEAMUS, do you have the means to do a rudimentary autopsy here?"
+
+### Session 5 - CUNNINGHAM FARM
+> - SHELF notes that if ELLE GABLE took a car to the vet's home, it's in the parking lot and the police will find it
+> - SHELF: "LOTTIE you might not want to look in here"
+> - SHELF: texts PIZZA with updates; pizza confirms that ELLE GABLE's corpse is secure, it is.
+> - SHELF: "who was that?"
+> - SHELF: "wasn't that your cover phone?"
+> - SHELF: "I don't like that"
+
+### Session 5 - Cover Story
+> we decide: our cover up methodology is gonna be to make it look like these three kids got fucked up by something that happened at the home (bad but not supernatural) and got murderous. we leave this scene for cops to find.
+> SHELF texts PIZZA to get in sync about our intended cover story

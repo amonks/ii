@@ -22,7 +22,7 @@ No direct dialog recorded.
 ### Childhood
 - Brought to National Child Identification Database as a child
 - Print taken in 2005 in Charlotte, NC when she was 8
-- Brought by the King Torino Children's Refuge
+- Brought by the King Torino Children's Refuge (KING TORINO CHILDRENS REFUGE)
 - Had been housed in a children's home
 - Uncertain if she stayed at CORNUCOPIA HOUSE, but timing suggests possible
 
@@ -56,7 +56,30 @@ No direct dialog recorded.
 - Fingerprints from all three perpetrators found on WEAPONS
 - Only ELLE GABLE's prints hit in database
 - Identified through National Child Identification Database
-- Connected to King Torino Children's Refuge in Charlotte, NC
+- Connected to KING TORINO CHILDRENS REFUGE in Charlotte, NC
 
+### Attack on CHARLOTTES REST VETERANS HOME (Session 5)
+> - paramedics arrive, rush through door, run down hall, throatless man (now throated) behind desk looking nursey
+> - right behind paramedics, ELLE GABLE arrives, hides in broom closet during paramedic scuffle
+> - paramedics leave down the hallway
+> - ELLE GABLE jumps out of the closet, and opens the door to three dogs: a German shepherd, a giant schnauzer, and a standard poodle; the poodle rips the nurse's throat out
+> - ELLE GABLE enters room 121 with the dogs; we see ourselves immediately enter
+> - ELLE GABLE with a huge bone knife
+> - ELLE GABLE lets out baboon shriek and falls to the ground;
+> - ELLE GABLE resists arrest, SHELF knocks her out
+
+### Capture and Execution (Session 5)
+> - SHELF wraps ELLE GABLE in a shower curtain
+> - SEAMUS shoves sock in ELLE GABLE's mouth
+> - we toss her in the suv
+> - we sit ELLE GABLE on the ground and remove the sock
+> - she screeches like a babboon, tries to bite us, we aren't getting anywhere
+> - SHELF does some hitting, it doesn't work, \"idk, try good cop\"
+> - MO holds ELLE GABLE down and pours liquor down her throat
+> - MO wafts ROTTING FLESH smells under ELLE GABLE's nose
+> - LOTTIE reaches into the rabbit vag and finds something small and hard, pulls it out, it's a human molar
+> - ELLE GABLE starts laughing
+> - LOTTIE holds the molar out to ELLE GABLE, who does not react
+> - MO: "good journey" and covers ELLE GABLE's eyes and slits her throat
 ## Notes
 - Age 4 in 2001 when the CORNUCOPIA HOUSE operation occurred

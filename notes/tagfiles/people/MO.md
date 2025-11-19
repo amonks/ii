@@ -115,3 +115,26 @@ With neighbor CINDY:
   - further testing: high stress, def taking high doses of mental health medication. nothing's weird about the blood, so it's ok to allow the cops to analyze these WEAPONS.
 - Jars cat vomit sample from HOUGHTON's apartment
 - Attempts to attract cat at HOUGHTON's apartment using kibble
+
+### Session 5 - CHARLOTTES REST VETERANS HOME
+> MO opens the little door thing and sees a man on the ground with his throat torn out; looks like a dog did it. screen with security feeds.
+> MO flags down the parametics outside, they're like "what are you talking about", but come out and see the dead guy
+> MO jumps on FRANKLIN PRICE to protect him with his body
+> MO jumps off of FRANKLIN PRICE with knife to attack schnauzer, misses
+> MO turns to FRANKLIN PRICE, who is mumbling about smelling cookies, he smells like ROTTING FLESH
+> MO takes a sample of poodle blood, adds to inventory
+> MO does first aid on ELLE GABLE, tourniquets wound
+> MO does first aid on SEAMUS
+
+### Session 5 - JUG BAY WETLANDS SANCTUARY
+> - SHELF drives to the swamp (JUG BAY WETLANDS SANCTUARY); off-road a bit to get out of earshot
+> - MO holds ELLE GABLE down and pours liquor down her throat
+> - MO wafts ROTTING FLESH smells under ELLE GABLE's nose
+> - MO and SEAMUS go around the tree while LOTTIE stays with ELLE GABLE
+> - MO collects some leg blood
+> - MO: "good journey" and covers ELLE GABLE's eyes and slits her throat
+> - autopsy result: drug addict's body; no gleal scarring (which would indicate dementia), no teeth in uterus, 20$ in pockets, nothing else
+
+### Session 5 - CUNNINGHAM FARM
+> - MO checks mailbox; full of mail; bills etc, going back two weeks
+> - MO checks bodies medically

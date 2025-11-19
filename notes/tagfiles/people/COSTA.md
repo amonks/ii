@@ -48,3 +48,9 @@ The OWEN incident:
 - Per GRACE: "COSTA is a useful idiot, wants his ass covered"
 - Per VELASQUEZ: "he's a buffoon"
 - LOTTIE is suspicious of him (tells VELASQUEZ she's suspicious of "that guy with the gross mustache")
+
+### Session 5 Phone Call
+> - LOTTIE's barbara phone rings, it's COSTA
+> - COSTA: "hey barb! you haven't been around the site today. doing some investigation?"
+> - LOTTIE: "yeah"
+> - COSTA: "I found something you might be interested in. When can you talk one on one, Barb, or should I say, Charlotte? maybe tomorrow? breakfast. Denny's. 8am."

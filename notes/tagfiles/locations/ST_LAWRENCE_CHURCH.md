@@ -1,0 +1,9 @@
+# ST LAWRENCE CHURCH
+
+## Pamphlet Reference (Session 5)
+> - SHELF finds a bloody pamphlet in ELLE GABLE's pocket, advert for ST LAWRENCE CHURCH homeless shelter in florida, DOODLES on reverse, multiple instances each of,
+>   - outline of black head containing red brain
+>   - crescent moon over horizon with stars, dead tree silhouetted in foreground against the moon (every instance of this doodle (DOODLES) has the stars in the same pattern)
+>   - an airplane depicted over a large cross, the large cross is overlaid on a haphazard grid; cross is red-cross-type, not christian
+>   - a dog in a circle (LOTTIE frowns at this)
+>   - a child's stick figure drawing of a smiling family (two kids mom and dad) and the mother's head is a black hole

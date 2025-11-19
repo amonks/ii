@@ -58,7 +58,7 @@ From Session 3:
 
 From Session 3:
 
-> TATTOOED KILLER and SCARRED KILLER hold the victim as ELLE GABLE drives screws into hands and right above left collarbone.
+> THOMAS PEREZ CUNNINGHAM and SCARRED KILLER hold the victim as ELLE GABLE drives screws into hands and right above left collarbone.
 > victim goes completely limp.
 
 ## Three Perps (2016)
@@ -69,7 +69,7 @@ From Session 3:
 
 > three perps depicted:
 > - Cast:
->   - TATTOOED KILLER: rail-thin white man with tattoo on inner-right forearm of open-fanged mouth filled with black.
+>   - THOMAS PEREZ CUNNINGHAM: rail-thin white man with tattoo on inner-right forearm of open-fanged mouth filled with black.
 >   - ELLE GABLE: short black hair; her mouth has a lipring; ragged clothes, rainboots, army jacket
 >   - SCARRED KILLER: not so white, not so thin, deep scar on left hand that looks fresh
 

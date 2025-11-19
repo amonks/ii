@@ -8,7 +8,7 @@ From Session 3 security footage:
 
 > three perps depicted:
 > - Cast:
->   - TATTOOED KILLER: rail-thin white man with tattoo on inner-right forearm of open-fanged mouth filled with black.
+>   - THOMAS PEREZ CUNNINGHAM: rail-thin white man with tattoo on inner-right forearm of open-fanged mouth filled with black.
 >   - ELLE GABLE: short black hair; her mouth has a lipring; ragged clothes, rainboots, army jacket
 >   - SCARRED KILLER: not so white, not so thin, deep scar on left hand that looks fresh
 
@@ -17,6 +17,14 @@ From Session 4 apartment footage:
 > 12:09AM 8/18, early morning: 3 figures come up the stairs, matching the perps from the other video. All are ~20yo. (THREES)
 > two men walk up one staircase, woman walks up the other.
 
+## Identification Leads (Session 5)
+
+> we wake up to facial recognition results from PIZZA, re the KILLERS:
+>
+> - one is a broward county man, no name, we have a picture of him; charged as john doe (SCARRED KILLER); the white guy; rough age 20ish, arrests all this year in Ft Lauderdale
+> - ELLE GABLE also shows up in miami on aug 16 2016 buying a greyhound ticket, which was to baltimore, arrived 4hr before the abduction
+> - q: who else was on that bus?
+> - third face has appeared in the facebook group Md homeschoolers, where a woman named SUSAN CUNNINGHAM posted footage of the young man (he'd be 17 now, but in some of the videos he was as young as 13) who is one of her three adopted children; in the videos they're praying and doing wholesome stuff, she calls him THOMAS PEREZ CUNNINGHAM or Tommy; the CUNNINGHAM FARM is in wico-mico county md; 2hr drive from zion; THOMAS PEREZ CUNNINGHAM is the youngest of 3
 ## The Woman: ELLE GABLE
 
 From Session 4:
@@ -26,7 +34,7 @@ From Session 4:
 > The prints hit because she had been brought to an event for the National Child Identification Database as a child.
 >
 > - This was in Charlotte, NC.
-> - Brought by the King Torino Children's Refuge.
+> - Brought by the King Torino Children's Refuge (KING TORINO CHILDRENS REFUGE).
 > - She'd been housed in a children' home.
 > - She was 8 when the print was taken in 2005.
 >   - 4 when the shit went down in 2001.
@@ -62,7 +70,7 @@ From Session 3:
 >   They break victim's jaw to access molars.
 >   Teeth are gathered and pocketed
 > - victim regains consciousness, vomits blood; jaw hanging loose
-> - TATTOOED KILLER and SCARRED KILLER hold the victim as ELLE GABLE drives screws into the hands and right above the left collarbone.
+> - THOMAS PEREZ CUNNINGHAM and SCARRED KILLER hold the victim as ELLE GABLE drives screws into the hands and right above the left collarbone.
 >   victim goes completely limp.
 >   3 perps leave the scene.
 

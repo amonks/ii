@@ -63,3 +63,17 @@ On phone with SEAMUS:
 - Expects daily reports
 - Has Joe SHELF as backup if things get kinetic
 - Receives encrypted files from the investigation
+
+### Session 5 Requests
+> we request that PIZZA run down the leads:
+>
+> - who else was found alive at CORNUCOPIA HOUSE
+> - how can we contact FRANKLIN PRICE
+>
+> he replies that he can't unseal child records, but that they're at the STATE ARCHIVE in annapolis; he could also get us a warrant but it'll take 2 weeks (unnaceptable)
+>
+> re FRANKLIN PRICE: he's been receiving benefits since 1998 owing to a lack of psychological competence; now 58yo in CHARLOTTES REST VETERANS HOME, just south of d.c.
+>
+> - SHELF: texts PIZZA with updates; pizza confirms that ELLE GABLE's corpse is secure, it is.
+>
+> SHELF texts PIZZA to get in sync about our intended cover story

@@ -109,3 +109,27 @@ To PIZZA:
 ### 2016 - working group masticate
 - Called back into service by PIZZA for the ZION MD investigation
 - Part of working group: masticate
+
+### Session 5 - CHARLOTTES REST VETERANS HOME
+> - SEAMUS and LOTTIE are nauseated by ROTTING FLESH hunger-making smell; MO and SHELF are not
+> - SEAMUS shots at schnauzer, misses
+> - schnauzer attacks SEAMUS, severely biting his arm
+> - SEAMUS shoots at the schnauzer, misses
+> - MO jumps off of FRANKLIN PRICE with knife to attack schnauzer, misses
+> - the German shepherd attacks the schnauzer; these dogs are fighting now
+> - SEAMUS: "Franklin, do you know why this woman was after you?"
+> - FRANKLIN PRICE: "she was one of the QUIET CHILDREN"
+> - SEAMUS: "have you seen any other QUIET CHILDREN?"
+> - FRANKLIN PRICE: "it smells like cookies"
+> - SEAMUS: "who are they? what are the QUIET CHILDREN?"
+> - SEAMUS shoves sock in ELLE GABLE's mouth
+
+### Session 5 - JUG BAY WETLANDS SANCTUARY
+> - MO and SEAMUS go around the tree while LOTTIE stays with ELLE GABLE
+> - SHELF: "SEAMUS, do you have the means to do a rudimentary autopsy here?"
+> - MO and SEAMUS: "yes"
+
+### Session 5 - CUNNINGHAM FARM
+> - in the car on the way to CUNNINGHAM FARM
+> - SEAMUS speculates that THOMAS PEREZ CUNNINGHAM might be dead; maybe corresponds with the black-hole-faced mom doodle (DOODLES)
+> - SEAMUS does a lap around the house

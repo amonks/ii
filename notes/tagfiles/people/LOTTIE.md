@@ -222,3 +222,44 @@ At HOUGHTON's apartment:
 - Called back into service by PIZZA for the ZION MD investigation
 - Part of working group: masticate
 - Makes irish coffee that VELASQUEZ sips and approves of
+
+### Session 5 - CHARLOTTES REST VETERANS HOME
+> - LOTTIE loots corpse for keys
+> - LOTTIE follows with stolen key card, opens door
+> - LOTTIE tries a dog command; the german shepherd sees the command, looks at LOTTIE, understands and cooperates in a supernatural way, not like other dogs.
+> - SHELF shoots the poodle
+> - LOTTIE communicates to the German shepherd: "get that schnauzer off of SEAMUS"
+> - LOTTIE: "what the fuck he was listening to me"
+> - single tear runs down LOTTIE's cheek
+> - SHELF finds a bloody pamphlet in ELLE GABLE's pocket, advert for ST LAWRENCE CHURCH homeless shelter in florida, DOODLES on reverse, multiple instances each of,
+>   - outline of black head containing red brain
+>   - crescent moon over horizon with stars, dead tree silhouetted in foreground against the moon (every instance of this doodle (DOODLES) has the stars in the same pattern)
+>   - an airplane depicted over a large cross, the large cross is overlaid on a haphazard grid; cross is red-cross-type, not christian
+>   - a dog in a circle (LOTTIE frowns at this)
+>   - a child's stick figure drawing of a smiling family (two kids mom and dad) and the mother's head is a black hole
+> - LOTTIE runs to front desk and takes security footage hard drive and FRANKLIN PRICE's file
+
+### Session 5 - JUG BAY WETLANDS SANCTUARY
+> - we sit ELLE GABLE on the ground and remove the sock
+> - she screeches like a babboon, tries to bite us, we aren't getting anywhere
+> - LOTTIE reaches into the rabbit vag and finds something small and hard, pulls it out, it's a human molar
+> - ELLE GABLE starts laughing
+> - LOTTIE holds the molar out to ELLE GABLE, who does not react
+> - LOTTIE says nothing
+
+### Session 5 - Aftermath and CUNNINGHAM FARM
+> we go to walmart and get new clothes, wipes, whatever, as needed, to get rid of blood/mud
+> LOTTIE is very drunk
+> - LOTTIE gets to door first, rings doorbell a lot of times, no answer
+> - LOTTIE opens door, being careful to wipe handle
+> - SHELF: "LOTTIE you might not want to look in here"
+> - LOTTIE's barbara phone rings, it's COSTA
+> - COSTA: "hey barb! you haven't been around the site today. doing some investigation?"
+> - LOTTIE: "yeah"
+> - COSTA: "I found something you might be interested in. When can you talk one on one, Barb, or should I say, Charlotte? maybe tomorrow? breakfast. Denny's. 8am."
+> - LOTTIE does not report about the call to us
+> - SHELF: "who was that?"
+> - LOTTIE: "my dog handler peanut"
+> - SHELF: "wasn't that your cover phone?"
+> - LOTTIE: "yes, I gave him the number"
+> - SHELF: "I don't like that"
