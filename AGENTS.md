@@ -1,8 +1,8 @@
 These are notes for a table-top roleplaying campaign, with a cross-referencing system to make them easy to browse.
 
-- `notes/sessions/*.md` are the source files, and we create `notes/summaries (ai-generated)/**/*.md` from them. We call the former "session files" or "session notes", and the latter "tag files" or "tag files".
-- I wrote the session notes, and they are the source of truth.
-- for searchability, we have a system where characters, locations, themes, objects, etc get ALLCAPS TAGS. TAGS can only contain capital letters and spaces. Each appearance of a tag is automatically hyperlinked to the corresponding tagfile.
+`notes/sessions/*.md` are the source files, and we create `notes/tagfiles/**/*.md` based on their content. We call the former "session files" or "session notes", and the latter "tag files" or "tag files".
+
+We generate a website from these files. The website uses a tag system for automatically creating cross-links between files. when a CAPITALIZED STRING appears in the notes, it links to the page `notes/tagfiles/$THEME/CAPITALIZED_STRING.md`. The tagfiles are essentially an index into the session files: they contain the blurb from each session that mentions the tag. It's important that we include the TAG every time a tag concept comes up in the session logs: we want very rich tagging and crosslinking.
 
 # Import procedure
 
@@ -11,7 +11,7 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 1. **CLEANUP** We clean up the session notes, adding formatting without changing the text
 2. **TAG AUDIT** We perform a tag audit, identifying the new themes, characters, objects, and locations that correspond to existing tags, plus any references to things that ought to be new tags
 3. **SUMMARIZATION** We update the tag files: location files log everything that happened at a location, person files list all their dialogue and all dialogue about them, etc.
-4. **COMPREHENSIVE CHECK** We read through the _other_ session files to see if they reference anything that we've reified into a tag, and update accordingly.
+4. **CROSS-REFERENCE CHECK** We read through the _other_ session files to see if they reference anything that we've reified into a tag, and update accordingly.
 5. **TAG VERIFICATION** When the previous steps are done for a session, add it to `./imported-sessions` and run `go test`. The test suite enforces:
    - every ALLCAPS string in tagfiles and imported sessions resolves to a tag or approved acronym
    - no tag name exists in more than one category folder
@@ -38,7 +38,7 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 - run `tree ./notes` to find the existing tags
 - read the new session notes and make a mental list of the characters, locations, themes, and objects referenced. This includes,
-  - anything that maatches an existing tag file
+  - everything that matches an existing tag file, including when the tag is not mentioned by name -- eg if there is a bird, that matches the ANIMALS tag
   - new things that should have tag files -- err on the side of tagging every character and location, we never know what might turn out to be important. I will sometimes ALLCAPS things when I'm writing the session notes, but that's meaningless; that's just to catch my eye during the session. A chararcter or location should always be a tag, even if it isn't ALLCAPS in the raw session file.
   - objects and themes are tougher: introducing a tag for every random object would be absurd. Use your judgement to propose a list of objects and themes we might want to add tags for
 - modify the session file to use tags consistently
@@ -89,3 +89,7 @@ The correct resolution might be different for different locations -- eg MIAMI mi
 
 - BEDROOM is not a good tag because it is too vague -- which bedroom? in what building?
 - BEDROOM CORNUCOPIA HOUSE COTTAGE is not a good tag because it is too specific -- CORNUCOPIA HOUSE is fine
+
+# BEFORE DOING ANYTHING ELSE
+
+IMPORTANT: use your shell tool to read several session files and tagfiles so that you understand the conventions
