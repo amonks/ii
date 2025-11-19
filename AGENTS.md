@@ -1,6 +1,6 @@
 These are notes for a table-top roleplaying campaign, with a cross-referencing system to make them easy to browse.
 
-- `notes/sessions/*.md` are the source files, and we create `notes/summaries (ai-generated)/**/*.md` from them. We call the former "session files" or "session notes", and the latter "tag files" or "summary files".
+- `notes/sessions/*.md` are the source files, and we create `notes/summaries (ai-generated)/**/*.md` from them. We call the former "session files" or "session notes", and the latter "tag files" or "tag files".
 - I wrote the session notes, and they are the source of truth.
 - for searchability, we have a system where characters, locations, themes, objects, etc get ALLCAPS TAGS
 
@@ -10,10 +10,10 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 1. **CLEANUP** We clean up the session notes, adding formatting without changing the text
 2. **TAG AUDIT** We perform a tag audit, identifying the new themes, characters, objects, and locations that correspond to existing tags, plus any references to things that ought to be new tags
-3. **SUMMARIZATION** We update the summary files: location files log everything that happened at a location, person files list all their dialog and all dialog about them, etc.
+3. **SUMMARIZATION** We update the tag files: location files log everything that happened at a location, person files list all their dialogue and all dialogue about them, etc.
 4. **COMPREHENSIVE CHECK** We read through the _other_ session files to see if they reference anything that we've reified into a tag, and update accordingly.
 5. **TAG VERIFICATION** When the previous steps are done for a session, add it to `./imported-sessions` and run `go test`. The test suite enforces:
-   - every ALLCAPS string in summaries and imported sessions resolves to a tag or approved acronym
+   - every ALLCAPS string in tagfiles and imported sessions resolves to a tag or approved acronym
    - no tag name exists in more than one category folder
    - every tag that appears in a tagfile also appears somewhere in the session notes
 
@@ -48,10 +48,9 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 - "summarization" is a misnomer: we're really just extracting excerpts
 - tag files should never contain analysis, just quotes and facts
-- read a handful of each type of summary file to get a feel for the formatting and content conventions
-- a tag file should contain surrounding context from the session notes that relate to the tagged object
-  - the whole stanza -- in a three-way conversation, we would include all three characters dialog in all three of their tag files
-- for each tag that comes up in the session file, add the appropriate content to that tag's summary file
+- read a handful of each type of tag file to get a feel for the formatting and content conventions
+- for each tag that comes up in the session file, add the appropriate content to that tag's tag file
+- when copying content to a tag file, always include surrounding context; it is often appropriate to include the whole scene/vignette/section where the tag comes up. For example, dialogue extracts should include the whole conversation, even when parts of that conversation don't relate to the tag.
 
 ## COMPREHENSIVE CHECK process
 
@@ -62,19 +61,17 @@ I take raw notes during a session. I'm typing while talking, jotting things down
 
 ## TAG VERIFICATION process
 
-- `./imported-sessions` lists every session file that has fully completed steps 1-4.
-- After adding a session to that list, run `go test ./...` (or `go test ./... -run TestTagCoverage` if you only want the tag check) to ensure:
-  - all ALLCAPS strings in summaries and the imported sessions resolve to real tags or approved acronyms
-  - every tag file only lives in a single summaries category
-  - every summary tag actually appears somewhere in the source session notes
-- Remove a session from `./imported-sessions` if further edits invalidate its import so it is not tested prematurely.
+- Add the session to `./imported-sessions` and run `go test` to ensure:
+  - all ALLCAPS strings in tagfiles and the imported sessions resolve to real tags (or ignored acronyms)
+  - every tag file only lives in a single tag category
+  - every tag in a tagfile actually appears somewhere in the source session notes
 
 # GLOBAL INVARIANTS
 
 - every character and location MUST ALWAYS be referred to by their tag. The tag doesn't need to appear on every line, but should always be present.
 - each tag MUST have a corresponding tag file, and that tag name must also appear in the session notes.
-- summary files should ALWAYS quote directly from session notes as much as possible, including surrounding context
-- summary files should never conatin analysis, just quotes and facts directly from the session files
+- tag files should ALWAYS quote directly from session notes as much as possible, including surrounding context
+- tag files should never conatin analysis, just quotes and facts directly from the session files
 
 # TAG POLICY
 
