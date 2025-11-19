@@ -8,13 +8,16 @@ COPY go.mod ./go.mod
 COPY go.sum ./go.sum
 RUN go mod download
 
-# Copy source files, notes, and fonts for embedding
-COPY main.go ./main.go
-COPY template.html ./template.html
-COPY notes ./notes
+# Do an initial no-notes build to warm up the cache
 COPY fonts ./fonts
+COPY template.html ./template.html
+COPY *.go ./
+COPY ./notes/crime-timeline.md ./notes/crime-timeline.md
+RUN go build -o server .
 
-RUN go build -o server main.go
+# Copy notes and rebuild
+COPY notes ./notes
+RUN go build -o server .
 
 
 # Run stage
