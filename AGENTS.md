@@ -2,7 +2,7 @@ These are notes for a table-top roleplaying campaign, with a cross-referencing s
 
 - `notes/sessions/*.md` are the source files, and we create `notes/summaries (ai-generated)/**/*.md` from them. We call the former "session files" or "session notes", and the latter "tag files" or "tag files".
 - I wrote the session notes, and they are the source of truth.
-- for searchability, we have a system where characters, locations, themes, objects, etc get ALLCAPS TAGS
+- for searchability, we have a system where characters, locations, themes, objects, etc get ALLCAPS TAGS. TAGS can only contain capital letters and spaces. Each appearance of a tag is automatically hyperlinked to the corresponding tagfile.
 
 # Import procedure
 
