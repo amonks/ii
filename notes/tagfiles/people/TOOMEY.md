@@ -21,6 +21,21 @@ At ZION MD:
 > TOOMEY: "say stuff"
 > agents: [close car window]
 
+### Session 7 – Press Conference Prep
+> TOOMEY: Perfect, I've been meaning to get ahold of you. Do you mind if I record this?
+> 
+> TOOMEY: yes of course. By the way, _is_ that true that the government was trying to cover this up?
+> 
+> TOOMEY: anyway, I'm more concerned about the violence issue. OWEN said the FBI wanted to rough him up?
+> 
+> TOOMEY: You're on a task force together. That's an affiliation, wouldn't you agree?
+> 
+> TOOMEY: Is the bureau gonna plead not guilty then?
+> 
+> TOOMEY: What about the investigation 15 years ago. Was that still Brighton Beach Gangs?
+> 
+> TOOMEY: I think we're gonna move on.
+
 ## Events and Notes
 
 ### 2016 Investigation

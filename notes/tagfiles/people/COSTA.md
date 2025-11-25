@@ -61,3 +61,14 @@ The OWEN incident:
 > He lays out his deal: "I want you to make me sherrif. Also, kill my wife." He names SARAH COSTA and her boyfriend PABLO RUIZ, insists they be killed within 48 hours, and orders LOTTIE to frame PABLO RUIZ, saying the player is at the CHESAPEAKE BAYSOX STADIUM.
 
 > LOTTIE attempts to stall with flirtation and shared breakfast orders, but COSTA reiterates, "I'm threatening you. You're gonna kill my wife," and calls her "deertick" before storming out—only to be abducted by SHELF and SEAMUS in the parking lot moments later.
+
+### Session 7 – Press Conference and Execution
+> COSTA is standing with a bunch of county police goons. SHELF glares at him. He looks nervous.
+> 
+> COSTA: You're not gonna pin me on this! Pin this on me! I was at the DENNYS!
+> 
+> PIZZA pulls out his service pistol and shoots COSTA in the head.
+
+## Session 7 Outcome
+- COSTA attends OWEN's press event flanked by county officers, still trying to steer the case away from himself.
+- During the GH FALLON FEDERAL BUILDING debrief, he lashes out at the agents, prompting PIZZA to execute him on the spot and order the team to dispose of the body.

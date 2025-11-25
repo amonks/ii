@@ -40,3 +40,6 @@ From Session 4:
 
 ## Session 6 – Laboratory Tests
 > During the midnight black-site session we experiment with the PUDDING: "stuff that eats dead stuff loves the PUDDING, thrives," and the ooze continues to creep toward exposed flesh. Dipping one of the MUMMIES produces no reaction, but placing an earthworm into the substance causes it to sprout tumors and die almost immediately.
+
+## Session 7 – CDC Cover Story
+> MO: Anyway, with this goo, we've been calling it PUDDING. CDC checked it out. It's just roofing tar.

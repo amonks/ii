@@ -103,6 +103,48 @@ Evidence transport:
 
 > Near midnight she rings again: "we got a situation: a quadruple homicide at the scene. it's the perp's adoptive family. Get this: he was at CORNUCOPIA HOUSE!" She predicts she'll be tied up with the murders while wondering if every perp comes from CORNUCOPIA HOUSE.
 
+### Session 7 – Cover Stories and Courtship
+
+> VELASQUEZ: "Oh, joe!"
+
+> _V_: Hey there barb! Good to hear your voice! (VELASQUEZ)
+> 
+> _V_: Turns out the murder weapon was an icepick on all 4 of these victims! Anyway: I was thinking the brass might think our new relationship is inappropriate, so we should keep this under wraps for now. I'll need to talk to HR. (VELASQUEZ)
+> 
+> _V_: I agree, keeping it secret is sexy. But eventually, you know, I don't like going behind the organization's back like this. And besides, I don't think it's gonna be a problem; you're federal, I'm state. (VELASQUEZ)
+> 
+> _V_: FRANKLIN PRICE? I heard he died recently! Of natural causes! Very unusual circumstances! This ties everything together! (VELASQUEZ)
+> 
+> _V_: yes that's what it looks like (VELASQUEZ)
+
+### Session 7 – Red Lobster Date
+
+> _V_: Barb, it's good to see you. You can call me Ali. (VELASQUEZ)
+> 
+> _V_: I'm lactose intolerant. (VELASQUEZ)
+> 
+> _V_: Tell me more about you! About your family! Are you from the area? Where are you from? (VELASQUEZ)
+> 
+> _V_: What's your son's name? (VELASQUEZ)
+> 
+> _V_: Anyway, BASWELL was such a mentor to me. You remind me a lot of BASWELL. Because of your sense of justice. With your dogs. He wanted to find out who had done crimes. (VELASQUEZ)
+> 
+> _V_: He was like a father to me, I cherish his memory. With his case opening back up, I just wanna do justice to his memory. (VELASQUEZ)
+
+### Session 7 – Read-In
+
+> PIZZA pulls out his service pistol and shoots COSTA in the head.
+> 
+> VELASQUEZ: "What?!"
+> 
+> PIZZA: Two ways out of this VELASQUEZ. You can go like that moron, or you can learn the truth.
+> 
+> VELASQUEZ: ...ok...
+> 
+> We read VELASQUEZ into the program.
+> 
+> VELASQUEZ: ...yeah, I guess. Barb, you've been dealing with this for a while?
+
 ## Events and Notes
 
 ### 2001 Investigation

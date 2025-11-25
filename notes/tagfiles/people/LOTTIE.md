@@ -145,6 +145,34 @@ At HOUGHTON's apartment:
 > LOTTIE: "any karens in the building who might have been up in HOUGHTON's business?"
 > CINDY: "nope; people don't live here for long normally."
 
+### Session 7 – Cover Stories and Date Night
+> VELASQUEZ: Red Lobster tonight? See you later _blush_
+> 
+> LOTTIE: "Yeah..."
+> 
+> LOTTIE: It's a very exciting morning!
+> 
+> _L_: Yeah that's a thought for later. Anyway, I wanted to say thank you so much for those leads with the Russians. We looked into it more and we think it's a very Russian problem. We were going through HOUGHTON's papers and we found a link to the Russians. It looks solid. Quid pro quo. FRANKLIN PRICE too. (LOTTIE)
+> 
+> LOTTIE: Anyway I'll see you at Red Lobster tonight bye.
+
+### Session 7 – Family Fight
+> LOTTIE: I took... a nap? I thought she was playing ticktocks on her phone?
+> 
+> LOTTIE: She's basically an adult!
+> 
+> LOTTIE: She's 15, she doesn't need a babysitter
+> 
+> LOTTIE: Close enough! happy quinceañera!
+> 
+> LOTTIE: What?
+> 
+> LOTTIE: I don't talk to DANTE!
+> 
+> LOTTIE: I didn't know he was in Arizona!
+> 
+> LOTTIE: I want this to be over. Closes _CARM_ out the door.
+
 ## Events and Notes
 
 ### 2001 - The Briefing

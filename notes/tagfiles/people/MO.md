@@ -104,6 +104,17 @@ With neighbor CINDY:
 > MO: "did you ever see a cat?" (ANIMALS)
 > CINDY: "no"
 
+### Session 7 – Press Conference Prep
+> MO: This is agent Lester Foote. Heard about the press conference.
+> 
+> MO: No problem at all. We heard about this press conference. You gonna be in attendance? We've been looking into some stuff and we wanted to make a statement on behalf of law enforcement here. Sorry I wasn't more forthcoming earlier. Anyway, you're aware of the PUDDING he was concerned about?
+> 
+> MO: Anyway, with this goo, we've been calling it PUDDING. CDC checked it out. It's just roofing tar.
+> 
+> MO: We're not affiliated with COSTA at all.
+> 
+> MO: um, er, (freezes up)
+
 ## Events and Notes
 
 ### 2016 - working group masticate

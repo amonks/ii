@@ -77,3 +77,21 @@ On phone with SEAMUS:
 > - SHELF: texts PIZZA with updates; pizza confirms that ELLE GABLE's corpse is secure, it is.
 >
 > SHELF texts PIZZA to get in sync about our intended cover story
+
+### Session 7 – Final Orders
+> PIZZA calls SHELF with a briefing:
+> PIZZA: "we're not getting any results on APBs and bolos on the perps. We've gotta have your operation wrapped up in Maryland by end of day. You, staties, county, all debrief tonight 9pm in the basement of the GH FALLON FEDERAL BUILDING, Baltimore.
+> PIZZA: "Remember, your objective is not to solve the case, it's to give the media something to chow down on that doesn't trace back to the program.
+> PIZZA: "Also, noon, press conference with OWEN and a reporter TOOMEY"
+>
+> PIZZA: Come in. Thank you for joining us, COSTA, VELASQUEZ. Agents. Let's have the special agents in charge here present the findings so far.
+>
+> PIZZA pulls out his service pistol and shoots COSTA in the head.
+>
+> PIZZA: Two ways out of this VELASQUEZ. You can go like that moron, or you can learn the truth.
+>
+> PIZZA: Read her in. Deal with this dead moron. I can work with this. Great work here. Next stop: Florida. Take a week, rest up, make your excuses. See you then. (holsters and leaves).
+
+### Session 7 Mandate
+- Orders the team to finalize a mundane cover story, attend a 9pm GH FALLON FEDERAL BUILDING debrief in Baltimore, and face down the press conference.
+- Executes COSTA during the basement meeting, forces VELASQUEZ to choose between death and initiation, then sends the agents on a week of downtime before redeploying them to Florida.

@@ -28,6 +28,15 @@ The OWEN Incident:
 > COSTA: "yeah, if you help me out I'll help you out. I'll even rough him up a bit"
 > SHELF: "that certainly wouldn't be necessary" [winks, indicating that it would, in fact, be preferred]
 
+### Session 7 – Press Conference
+> ### Press Conference
+> 
+> OWEN: Hello. I'm OWEN Becker. I'm a victim of police brutality. Like many people, I've suffered at the abusive hands of law enforcement. Look at my bruises and scars. (he has bruises and scars). This was perpetrated on my by the county police, because I was seeking to bring truth to an investigation that the whole country was watching. I was targeted by county police at the behest of the FBI, because I was trying to bring the light of truth to the cabal of pedophiles that run this country. They want me to be silent, but I will continue to shine the flashlight of honesty into the dark well of untruth. I'll be bringing my case against the Federal Government and the County Police.
+> 
+> OWEN: Yeah, I found a substance. I was just in jail.
+> 
+> OWEN: The substance reached out towards human flesh like it had a mind of its own.
+
 ## Events and Notes
 
 ### The OWEN Incident

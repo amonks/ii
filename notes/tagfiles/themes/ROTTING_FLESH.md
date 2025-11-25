@@ -75,3 +75,7 @@ From Session 4:
 ## Session 6 – Sparrow Keys
 
 > When two sparrows slam into the HOLIDAY INN window during the VELASQUEZ debrief, SEAMUS notes "the birds smell like ROTTING FLESH" as he retrieves STATE ARCHIVE keys from their bodies, linking the odor to another courier event.
+
+## Session 7 – Basement Debrief
+
+> SHELF smells rotting meat after COSTA's execution in the GH FALLON FEDERAL BUILDING basement, moments before he pushes VELASQUEZ to accept the supernatural truth.

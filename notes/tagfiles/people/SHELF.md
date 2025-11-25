@@ -109,3 +109,18 @@ To KIM Seon-hu:
 ### Session 5 - Cover Story
 > we decide: our cover up methodology is gonna be to make it look like these three kids got fucked up by something that happened at the home (bad but not supernatural) and got murderous. we leave this scene for cops to find.
 > SHELF texts PIZZA to get in sync about our intended cover story
+
+### Session 7 – Final Push
+> SHELF knocks on each HOLIDAY INN room door with a coffee, "Downstairs in 5"
+> 
+> SHELF: "Ok team, two missions for the day. We've gotta close this one down by 9pm. A mundane explanation for OWEN's press conference would be good. A mundane explanation for the recent
+> 
+> SHELF: (grabs the phone)
+> 
+> SHELF: Foote's indisposed. Yes: he's on the task force. Our statement is: what he did was reprehensible. Acted alone.
+> 
+> SHELF: Sounds like a lawyer question. Anything else I can help you with?
+> 
+> SHELF glares at him. He looks nervous.
+> 
+> SHELF: I was gonna show you some proof, but maybe you believe me now?

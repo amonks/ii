@@ -124,3 +124,7 @@ From Session 4:
 ## Session 6 – Crow at SAMUEL BALL's Window
 
 > During the GARRETT COUNTY PRISON interview, BECKY MARSHALL recalls that "I'd walk into his room and there'd be this crow on his windowsill. He'd just be staring at it... Must have been 10 times I saw that bird," highlighting SAMUEL BALL's connection to corvid messengers.
+
+## Session 7 – Rat in the Federal Basement
+
+> A rat (ANIMALS) bites SHELF in the ankle.

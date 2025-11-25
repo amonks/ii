@@ -4,6 +4,7 @@ B
 CCTV
 DG
 EMT
+HR
 ID
 I
 JVC
@@ -20,6 +21,7 @@ VCR
 VHS
 BRT
 SUV
+MKULTRA
 
 # LOWERCASE tokens that are allowed to shadow tags
 animals

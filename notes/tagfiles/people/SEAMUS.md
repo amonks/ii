@@ -7,7 +7,7 @@
 - From Quincy, MA
 - Married to GWEN (Gwen McGillicuddy, nee o'Shaughnessey)
 - Father of GRENADINE
-- Under cover as SAMUEL O'SHAUGHNESSEY
+- Under cover as Samuel _O_'Shaughnessey
 
 ## Equipment
 
@@ -70,6 +70,18 @@ To PIZZA:
 
 > PIZZA: "so you're saying the children saw your face?"
 > SEAMUS: "no, we had masks"
+
+### Session 7 – Checking on DIRK MASTERSON
+> SEAMUS: You're in Hawaii?
+> 
+> SEAMUS: That didn't work out?
+> 
+> SEAMUS: What's the date?
+> 
+> SEAMUS: Oh, fuck, _DIRK_, I'm so sorry! (DIRK MASTERSON)
+> 
+> SEAMUS: One question: can I come to the Quinceañera?
+
 
 ## Events and Notes
 
