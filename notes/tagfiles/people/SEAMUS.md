@@ -5,9 +5,9 @@
 - Physician
 - Korean War veteran
 - From Quincy, MA
-- Married to GWEN (Gwen McGillicuddy, nee o'Shaughnessey)
+- Married to GWEN (Gwen McGillicuddy, nee O'Shaughnessy)
 - Father of GRENADINE
-- Under cover as Samuel _O_'Shaughnessey
+- Under cover as Samuel O'Shaughnessy
 
 ## Equipment
 
@@ -78,7 +78,7 @@ To PIZZA:
 > 
 > SEAMUS: What's the date?
 > 
-> SEAMUS: Oh, fuck, _DIRK_, I'm so sorry! (DIRK MASTERSON)
+> SEAMUS: Oh, fuck, DIRK MASTERSON, I'm so sorry! (DIRK MASTERSON)
 > 
 > SEAMUS: One question: can I come to the Quinceañera?
 

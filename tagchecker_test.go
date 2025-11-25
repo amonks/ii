@@ -22,6 +22,7 @@ type lowercaseMatch struct {
 }
 
 var lowercaseRegexCache sync.Map
+var italicCapsPattern = regexp.MustCompile(`_([A-Z][A-Z_0-9]*(?:[ \t]+[A-Z][A-Z_0-9]*)*)_`)
 
 func TestTagCoverage(t *testing.T) {
 	tagMap := buildTagMap()
@@ -200,8 +201,9 @@ func collectFileIssues(t *testing.T, filePath string, tagMap map[string]string, 
 		t.Fatalf("read %s: %v", filePath, err)
 	}
 
+	normalized := normalizeAllCapsContent(content)
 	results := make(map[string]int)
-	matches := tagPattern.FindAllString(string(content), -1)
+	matches := tagPattern.FindAllString(string(normalized), -1)
 	for _, raw := range matches {
 		token := normalizeToken(raw)
 		if token == "" {
@@ -502,7 +504,8 @@ func collectSessionTags(t *testing.T) map[string]struct{} {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
 
-		matches := tagPattern.FindAllString(string(content), -1)
+		normalized := normalizeAllCapsContent(content)
+		matches := tagPattern.FindAllString(string(normalized), -1)
 		for _, raw := range matches {
 			token := normalizeToken(raw)
 			if token == "" {
@@ -518,4 +521,8 @@ func collectSessionTags(t *testing.T) map[string]struct{} {
 	}
 
 	return tags
+}
+
+func normalizeAllCapsContent(content []byte) []byte {
+	return italicCapsPattern.ReplaceAll(content, []byte("$1"))
 }

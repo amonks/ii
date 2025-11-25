@@ -1,4 +1,4 @@
-# GWEN (Gwen McGillicuddy, nee o'Shaughnessey)
+# GWEN (Gwen McGillicuddy, nee O'Shaughnessy)
 
 ## Basic Info
 - Wife of SEAMUS
