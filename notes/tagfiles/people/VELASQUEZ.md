@@ -1,6 +1,7 @@
 # VELASQUEZ (Det. Sgt. VELASQUEZ)
 
 ## Basic Info
+
 - Maryland State Police Detective Sergeant
 - Latina woman in her late 30s
 - Very tall
@@ -14,12 +15,14 @@
 ### Session 3
 
 At ZION MD arrival:
+
 > SEAMUS: "VELASQUEZ, what have you got here?"
 > VELASQUEZ: "suit up: hazmat"
 > LOTTIE: "why is all this necesasry?"
 > VELASQUEZ: "you'll see. we don't want to contaminate the crime scene. Also there's a biological perspective. Lotta question marks"
 
 [LOTTIE offers flask]
+
 > VELASQUEZ: [sips irish coffee] "that's pretty good; wink"
 
 > VELASQUEZ: "56 remains so far, more on the way. bones are tough to date, but these things go back to the early 60s here. All children so far"
@@ -31,6 +34,7 @@ At ZION MD arrival:
 > VELASQUEZ: "tree roots in the forest have slowed down the investigation; graves are closely packed; we're gonna be diggin for months."
 
 At the airlock:
+
 > GRACE: "VELASQUEZ, don't you have somehting you shuold be doing somewhere else?"
 > VELASQUEZ: "nope, happy to be here"
 
@@ -49,11 +53,13 @@ At the airlock:
 > LOTTIE: "I've said too much already. anyway let's look at the video"
 
 Reviewing footage:
+
 > VELASQUEZ: "I've got 48 hours of footage here"
 > SHELF: "have you seen it?"
 > VELASQUEZ: "no time yet"
 
 After viewing footage:
+
 > LOTTIE: "was any evidence recovered from this apartment?"
 > VELASQUEZ: "not yet"
 > SHELF: "have inspectors been to the apartment at all?"
@@ -63,6 +69,7 @@ After viewing footage:
 > LOTTIE: "we want a look at everything you collect"
 
 About the WEAPONS:
+
 > VELASQUEZ: "can we run those prints from the WEAPONS?"
 > MO: "I'd like to get a quick look at that first. CDC reasons."
 > VELASQUEZ: "uhhhhh? you want to look at the fingerprints? like, the images of them?"
@@ -70,21 +77,26 @@ About the WEAPONS:
 > VELASQUEZ: "that seems normal, yes."
 
 [After testing]
+
 > VELASQUEZ: "what would they have done if the tools weren't there?"
 
 Fingerprint results:
+
 > VELASQUEZ: "by the way, we got hits on the weapon fingerprints!"
 
 The OWEN incident:
+
 > VELASQUEZ: [calls] "we've got some goings on around the hazmat tent. could you attend?"
 > SHELF: "BRT"
 > VELASQUEZ: "we implemented the search you recommended, and caught this individual with contraband materials exiting the crime scene"
 
 Evidence transport:
+
 > VELASQUEZ: "where's this stuff headed?"
 > MO: "CDC."
 
 ### Session 6 – Escalating Pressure
+
 > VELASQUEZ calls SEAMUS during the DENNYS grab, furious about being "left in the dark," running down Russian cult rumors, OWEN's missed phone calls, and parents plus reporters asking about the PUDDING. She threatens to head to county jail herself if the team stonewalls her again.
 
 > Later at the HOLIDAY INN she presses for transparency, citing missing YELENA financial records, ritual WEAPONS, and synchronized attackers just as two sparrows slam into the window and drop labeled STATE ARCHIVE keys.
@@ -94,11 +106,13 @@ Evidence transport:
 ## Events and Notes
 
 ### 2001 Investigation
+
 - Was a rookie on the 2001 investigation with BASWELL
 - BASWELL said it was a gang thing (which VELASQUEZ finds laughable now)
 - Investigated the CORNUCOPIA HOUSE fire
 
 ### 2016 Investigation
+
 - Approaches agents when they arrive at ZION MD
 - Provides irish coffee setup for LOTTIE
 - Makes eye contact with LOTTIE and rolls her eyes at COSTA (not a COSTA fan)
@@ -110,4 +124,5 @@ Evidence transport:
 - Continues to work the case actively
 
 ## Background
+
 - Per PIZZA: was involved in 2001; no further intel; nothing unusual

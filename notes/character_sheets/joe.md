@@ -29,14 +29,14 @@ PERSONAL BRIEFING: the other agents are a liability; their loyalty to the
 program is not assured. Any signs to be reported to handler.
 
 HEALTH: 12 / 12
-STRESS: 9 (min 2) / 20
+STRESS: 3 (min 2) / 20
 
 WOUNDS: 0 / 3
 
 BONDS:
 
 - 14: Dottie Shelf, his mother
-- 18: Solomon Boone, his on-again-off-again boyfriend
+- 16: Solomon Boone, his on-again-off-again not-boyfriend; did Navy together
 
 SKILLS
 trained (+10) / expert (+15) / master (+20)
