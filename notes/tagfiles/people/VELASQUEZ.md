@@ -145,6 +145,13 @@ Evidence transport:
 > 
 > VELASQUEZ: ...yeah, I guess. Barb, you've been dealing with this for a while?
 
+### Session 8 – Florida Stress
+
+> After LOTTIE is licked by the LICKITUNG outside the university library, VELASQUEZ asks "what was that?" and presses her girlfriend about the promise to cut back on drinking.
+>
+> - Reminds LOTTIE, "I know we weren't gonna talk about this at work," and worries she's already falling off the wagon on day one of the Florida op.
+- Gets dragged to JO MAMAS SWAMP SHACK where she fumes as LOTTIE flirts with biker boys for intel.
+
 ## Events and Notes
 
 ### 2001 Investigation

@@ -36,7 +36,7 @@
   - Disturbing contents in house (drugs, porn, abuse materials)
   - Unnatural entity (YELENA/YELENA) in cottage
 - Fire destroys much of the facility
-- Children freed and later picked up (not killed despite CLOVE's orders)
+- Children freed and later picked up (not killed despite KILLIAN's "Clove" orders)
 
 ### Bodies Found
 

@@ -26,7 +26,7 @@ From Session 1-2:
 
 From Session 1-2 (after the operation):
 
-> - LOTTIE calls the beeper number to agent CLOVE
+- LOTTIE calls the beeper number to agent KILLIAN ("Clove")
 >   > "don't tell the program.
 >   > make sure all the evidence and recordings are destroyed.
 >   > you will never hear from me again.

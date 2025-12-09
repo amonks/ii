@@ -13,3 +13,7 @@
 
 > - SEAMUS speculates that THOMAS PEREZ CUNNINGHAM might be dead; maybe corresponds with the black-hole-faced mom doodle (DOODLES)
 > - Tommy's room (THOMAS PEREZ CUNNINGHAM): weirdly not decorated; spartan; notebook full of DOODLES -- the same drawings, not just similar content
+
+## Session 8 – KILLIAN's Trailer
+
+> When the agents revisit Crystal KILLIAN's singlewide at MEYERS POINT TRAILER PARK, they spot the black-head-with-red-brain DOODLES motif painted over her doorframe, matching the earlier pamphlet art.

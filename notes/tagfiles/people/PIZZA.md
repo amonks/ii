@@ -95,3 +95,8 @@ On phone with SEAMUS:
 ### Session 7 Mandate
 - Orders the team to finalize a mundane cover story, attend a 9pm GH FALLON FEDERAL BUILDING debrief in Baltimore, and face down the press conference.
 - Executes COSTA during the basement meeting, forces VELASQUEZ to choose between death and initiation, then sends the agents on a week of downtime before redeploying them to Florida.
+
+### Session 8 – Florida Deployment
+- Calls SEAMUS at the airport to reiterate that the ECKSTEIN situation must stay contained.
+- Flags SKOPTSI research and inquiries into C CELL as indicators that ECKSTEIN's online sleuthing is getting too close to Program history.
+- Tells the agents about the buried barrel containing an m249, cocaine, and a sawed-off shotgun near ECKSTEIN's parents' house in case they need leverage or extra firepower.

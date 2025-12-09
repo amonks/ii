@@ -2,7 +2,7 @@
 
 ## Basic Info
 
-- Deputy dispatched to Meyers Point trailer park
+- Deputy dispatched to MEYERS POINT TRAILER PARK
 - Discovered KILLIAN's body
 - Closed investigation as natural causes (suspicious)
 
@@ -14,7 +14,7 @@ No direct dialog recorded.
 
 ### Discovery of KILLIAN - Monday August 15, 2016
 
-- Dispatched to drive through Meyers Point in response to GLENDA's calls about stolen cats
+- Dispatched to drive through MEYERS POINT TRAILER PARK in response to GLENDA's calls about stolen cats
 - Notices graffiti, kicked-in door
 - Finds decaying body of KILLIAN
 - Calls it in
@@ -42,3 +42,7 @@ No direct dialog recorded.
 - Offering services
 - Really the point is to question ECKSTEIN about program operatives
 - The FBI team from MIAMI discovers that ECKSTEIN has already closed down the investigation as natural causes
+
+### Session 8 – Containment Order
+- PIZZA orders the team to keep the "ECKSTEIN thing" contained because Casey's online searches now include SKOPTSI lore and references to C CELL.
+- Reveals that the Program planted a barrel with an m249, cocaine, and a sawed-off shotgun in ECKSTEIN's parents' backyard so the agents can seize or stage evidence as needed.

@@ -44,7 +44,7 @@ At the cottage:
 
 After burning the cottage:
 
-> LOTTIE: "ok i'm gonna be straight with you: before we met at the HOLIDAY INN, I met with this agent CLOVE from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
+> LOTTIE: "ok i'm gonna be straight with you: before we met at the HOLIDAY INN, I met with this agent KILLIAN — codename 'Clove' — from a program called Delta Green that I am involved with, and I just gave her a ring, and she just told me to kill all those fucking kids.
 > I think she's fucking cuckoo bananas, I don't trust here, this was supposed to be a test for you guys"
 
 At home with EDDIE:
@@ -213,10 +213,10 @@ At HOUGHTON's apartment:
   - Shoots the YELENA for 7, hits SEAMUS instead
   - Crits the YELENA with shotgun for 11; gets her in the face
 
-### Phone Call with CLOVE
+### Phone Call with KILLIAN ("Clove")
 
-- After burning the cottage, calls the beeper number to agent CLOVE
-- CLOVE says:
+- After burning the cottage, calls the beeper number to agent KILLIAN
+- KILLIAN says:
   > "don't tell the program.
   > make sure all the evidence and recordings are destroyed.
   > you will never hear from me again.

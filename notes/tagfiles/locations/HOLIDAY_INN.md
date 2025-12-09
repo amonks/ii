@@ -31,6 +31,6 @@ General references to the HOLIDAY INN brand when characters shorthand the HOLIDA
 - ERASTUS drives LOTTIE back to the HOLIDAY INN to get her car; stops for an egg mcmuffin on the way
 
 ### Dialogue Excerpts
-> LOTTIE met with CLOVE before meeting SEAMUS and ERASTUS at the HOLIDAY INN.
+> LOTTIE met with KILLIAN (codename "Clove") before meeting SEAMUS and ERASTUS at the HOLIDAY INN.
 
 > ERASTUS drives LOTTIE back to the HOLIDAY INN to get her car; stops for an egg mcmuffin on the way.

@@ -79,3 +79,7 @@ From Session 4:
 ## Session 7 – Basement Debrief
 
 > SHELF smells rotting meat after COSTA's execution in the GH FALLON FEDERAL BUILDING basement, moments before he pushes VELASQUEZ to accept the supernatural truth.
+
+## Session 8 – LICKITUNG
+
+> Outside FLORIDA SOUTHWESTERN STATE UNIVERSITY, the LICKITUNG freezes the team inside their SUV, licks LOTTIE's face with a giant red tongue, and leaves her drenched in the overpowering ROTTING FLESH stench.
