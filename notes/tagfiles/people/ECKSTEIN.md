@@ -1,6 +1,7 @@
-# Kasey ECKSTEIN
+# Casey ECKSTEIN
 
 ## Basic Info
+
 - Deputy dispatched to Meyers Point trailer park
 - Discovered KILLIAN's body
 - Closed investigation as natural causes (suspicious)
@@ -12,12 +13,14 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### Discovery of KILLIAN - Monday August 15, 2016
+
 - Dispatched to drive through Meyers Point in response to GLENDA's calls about stolen cats
 - Notices graffiti, kicked-in door
 - Finds decaying body of KILLIAN
 - Calls it in
 
 ### The Evidence
+
 - EMT finds bloody piece of paper with three names:
   - Charlotte Watkins
   - SEAMUS McGillicutty
@@ -25,6 +28,7 @@ No direct dialog recorded.
 - Plus address of CORNUCOPIA HOUSE (now a jail)
 
 ### Investigation
+
 - Wednesday 17 Aug: Calls Maryland PD
 - Asks about CORNUCOPIA HOUSE
 - Mentions agents' names
@@ -33,6 +37,7 @@ No direct dialog recorded.
 - Flags the finding as high-priority
 
 ### FBI Contact
+
 - Monday 22 Aug: FBI (program) agents from MIAMI meet with ECKSTEIN
 - Offering services
 - Really the point is to question ECKSTEIN about program operatives

@@ -1,9 +1,12 @@
 # Crystal KILLIAN
 
 ## Basic Info
+
 - Florida shut-in
 - Elderly resident
 - Lived in Meyers Point trailer park
+- library assistant at florida southwestern state university
+- born 1982
 - Found dead on August 15, 2016
 
 ## Dialog
@@ -13,6 +16,7 @@ No direct dialog recorded.
 ## Events and Notes
 
 ### August 2016
+
 - GLENDA (elderly resident of Meyers Pt. trailer park) repeatedly calls sheriff between 8th-15th Aug to report stolen cats
 - Monday 15 Aug: ECKSTEIN dispatched to drive through Meyers Pt
 - ECKSTEIN notices graffiti, kicked-in door
@@ -20,6 +24,7 @@ No direct dialog recorded.
 - ECKSTEIN calls it in
 
 ### Evidence Found
+
 - EMT finds bloody piece of paper with three names on it:
   - Charlotte Watkins
   - SEAMUS McGillicutty
@@ -27,6 +32,7 @@ No direct dialog recorded.
 - Plus the address of CORNUCOPIA HOUSE (now a jail)
 
 ### Investigation
+
 - Wed 17 Aug: ECKSTEIN calls Maryland PD, asks about CORNUCOPIA HOUSE
 - Mentions agents' names
 - Questions are in pursuit of homicide

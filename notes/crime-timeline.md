@@ -3,7 +3,7 @@
 - 8th - 15th aug 2016
   - GLENDA (Glenda c.), elderly resident of meyers pt. trailer park repeatedly calls sherrif to report stolen cats
 - Mon 15 Aug:
-  - ECKSTEIN (Kasey Eckstein) dispatched to drive through meyers pt, notices graffiti, kicked-in door, finds decaying body of KILLIAN (Crystal KILLIAN), calls it in
+  - ECKSTEIN (Casey Eckstein) dispatched to drive through meyers pt, notices graffiti, kicked-in door, finds decaying body of KILLIAN (Crystal KILLIAN), calls it in
 - Wed 17 Aug:
   - ECKSTEIN calls maryland PD, asks about CORNUCOPIA HOUSE, mentions agents' names, qs are in pursuit of homicide
   - this trips DG voice recognition thing, flags the finding as high-priority

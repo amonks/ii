@@ -1,6 +1,7 @@
 # DOODLES
 
 ## Pamphlet Art (Session 5)
+
 > - SHELF finds a bloody pamphlet in ELLE GABLE's pocket, advert for ST LAWRENCE CHURCH homeless shelter in florida, DOODLES on reverse, multiple instances each of,
 >   - outline of black head containing red brain
 >   - crescent moon over horizon with stars, dead tree silhouetted in foreground against the moon (every instance of this doodle (DOODLES) has the stars in the same pattern)
@@ -9,5 +10,6 @@
 >   - a child's stick figure drawing of a smiling family (two kids mom and dad) and the mother's head is a black hole
 
 ## CUNNINGHAM FARM (Session 5)
+
 > - SEAMUS speculates that THOMAS PEREZ CUNNINGHAM might be dead; maybe corresponds with the black-hole-faced mom doodle (DOODLES)
 > - Tommy's room (THOMAS PEREZ CUNNINGHAM): weirdly not decorated; spartan; notebook full of DOODLES -- the same drawings, not just similar content
