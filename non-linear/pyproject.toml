@@ -1,0 +1,19 @@
+[project]
+name = "creamery"
+version = "0.1.0"
+description = "Industrial ice cream formulation solver built with CasADi/IPOPT"
+authors = [{name = "Generated"}]
+requires-python = ">=3.11"
+dependencies = [
+    "casadi>=3.6.5",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pytest>=8.3",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+dev-dependencies = []
