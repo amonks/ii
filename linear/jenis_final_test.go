@@ -19,6 +19,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 		Protein:     6,
 		TotalCarbs:  28,
 		Sugars:      23,
+		AddedSugars: 16,
 	}
 
 	target := label.ToTarget()

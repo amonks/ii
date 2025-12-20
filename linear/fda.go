@@ -81,7 +81,8 @@ type NutritionLabel struct {
 	TotalFat    float64 // grams
 	Protein     float64 // grams
 	TotalCarbs  float64 // grams
-	Sugars      float64 // grams
+	Sugars      float64 // grams (total sugars: lactose + intrinsic + added)
+	AddedSugars float64 // grams of added sugars (0 if not declared or none)
 }
 
 // ToTarget converts FDA label values to a target Composition with
@@ -92,7 +93,12 @@ func (l NutritionLabel) ToTarget() Composition {
 	// Convert gram intervals to fraction intervals
 	fatGrams := FatInterval(l.TotalFat)
 	proteinGrams := ProteinInterval(l.Protein)
+	carbGrams := CarbInterval(l.TotalCarbs)
 	sugarGrams := SugarInterval(l.Sugars)
+	addedSugarGrams := sugarGrams
+	if l.AddedSugars > 0 {
+		addedSugarGrams = SugarInterval(l.AddedSugars)
+	}
 
 	// Fat fraction
 	fatFrac := Interval{
@@ -111,10 +117,28 @@ func (l NutritionLabel) ToTarget() Composition {
 		Hi: math.Min(1, (proteinGrams.Hi/0.34)/serving),
 	}
 
+	// Cap MSNF by available carbs once added sugars are accounted for.
+	// Lactose (from MSNF) + fiber/starch must fit in (carbs - added sugar).
+	if l.TotalCarbs > 0 {
+		// Use the most permissive gap between total carbs and added sugars (hi - lo)
+		// so rounding uncertainty doesn't make the cap too aggressive.
+		maxLactoseGrams := math.Max(0, carbGrams.Hi-addedSugarGrams.Lo)
+		if maxLactoseGrams > 0 && serving > 0 {
+			maxMSNFByCarbs := math.Min(1, (maxLactoseGrams/serving)/LactoseFractionOfMSNF)
+			if maxMSNFByCarbs < msnfFrac.Hi {
+				if maxMSNFByCarbs < msnfFrac.Lo {
+					msnfFrac.Hi = msnfFrac.Lo
+				} else {
+					msnfFrac.Hi = maxMSNFByCarbs
+				}
+			}
+		}
+	}
+
 	// Sugar fraction
 	sugarFrac := Interval{
-		Lo: math.Max(0, sugarGrams.Lo/serving),
-		Hi: math.Min(1, sugarGrams.Hi/serving),
+		Lo: math.Max(0, addedSugarGrams.Lo/serving),
+		Hi: math.Min(1, addedSugarGrams.Hi/serving),
 	}
 
 	// Other: hard to estimate from label, use wide range

@@ -27,6 +27,7 @@ func TestFullWorkflow(t *testing.T) {
 		Protein:     6,
 		TotalCarbs:  28,
 		Sugars:      23,
+		AddedSugars: 16,
 	}
 
 	fmt.Println("Jeni's Sweet Cream label:")
@@ -43,6 +44,50 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Printf("  MSNF:  %s\n", target.MSNF)
 	fmt.Printf("  Sugar: %s\n", target.Sugar)
 	fmt.Printf("  Water: %s (derived)\n", target.Water())
+
+	fmt.Println()
+	fmt.Println("### Interpreting the ingredient list")
+	fmt.Println("Using the label's ingredient order to constrain possible formulations:")
+
+	labelIngredients := []linear.Ingredient{
+		linear.WholeMilk,
+		linear.HeavyCream,
+		linear.Sugar,
+		linear.NonfatMilkVariable, // let the solver decide the concentration
+		linear.TapiocaSyrup,
+	}
+
+	labelProblem := linear.NewProblem(labelIngredients, target)
+	labelProblem.OrderConstraints = true
+
+	labelSolver, err := linear.NewSolver(labelProblem)
+	if err != nil {
+		t.Fatalf("label solver creation failed: %v", err)
+	}
+
+	labelSamples, err := labelSolver.Sample(50, true, nil)
+	if err != nil {
+		t.Fatalf("label sampling failed: %v", err)
+	}
+	if len(labelSamples) == 0 {
+		fmt.Println("  No formulation satisfies both the label macros and ingredient order.")
+	} else {
+		fmt.Println("  Candidate formulations:")
+		limit := min(2, len(labelSamples))
+		for i := 0; i < limit; i++ {
+			s := labelSamples[i]
+			fmt.Printf("    Option %d:\n", i+1)
+			for _, name := range labelProblem.IngredientNames() {
+				if w := s.Weights[name]; w > 0.005 {
+					fmt.Printf("      %-18s %5.1f%%\n", name+":", w*100)
+				}
+			}
+			if impliedMSNF, ok := s.ImpliedMSNF(labelIngredients, target, "Nonfat Milk"); ok {
+				desc := linear.DescribeNonfatMilk(impliedMSNF)
+				fmt.Printf("      └─ Nonfat milk form: %s\n", desc)
+			}
+		}
+	}
 
 	// =========================================================================
 	// WORKFLOW 2: Create a recipe with known ingredients
@@ -69,13 +114,13 @@ func TestFullWorkflow(t *testing.T) {
 	}
 
 	mySucrose := linear.Ingredient{
-		Name: "Sucrose",
+		Name:      "Sucrose",
 		Comp:      linear.PointComposition(0, 0, 1.0, 0), // 100% sugar
 		Sweetener: linear.Sucrose,                        // POD=100, PAC=100
 	}
 
 	myDextrose := linear.Ingredient{
-		Name: "Dextrose",
+		Name:      "Dextrose",
 		Comp:      linear.PointComposition(0, 0, 1.0, 0), // 100% sugar
 		Sweetener: linear.Dextrose,                       // POD=75, PAC=180 (less sweet, softer)
 	}

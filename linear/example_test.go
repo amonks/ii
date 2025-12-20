@@ -95,6 +95,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 		Protein:     4,
 		TotalCarbs:  22,
 		Sugars:      20,
+		AddedSugars: 20,
 	}
 
 	target := label.ToTarget()
