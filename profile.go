@@ -121,9 +121,9 @@ func clampInterval(i Interval, min float64) Interval {
 	return i
 }
 
-// ToProfile converts a IngredientBatch into a ConstituentProfile retaining
+// ToProfile converts a ingredientBatch into a ConstituentProfile retaining
 // all fractional and functional metadata.
-func (d IngredientBatch) ToProfile() ConstituentProfile {
+func (d ingredientBatch) ToProfile() ConstituentProfile {
 	id := d.ID
 	if id == "" {
 		id = NewIngredientID(d.Name)
@@ -229,17 +229,6 @@ func ProfileFromComposition(id IngredientID, name string, comp Composition) Cons
 		Functionals: functionals,
 		Economics:   economics,
 	}
-}
-
-// ToSpec converts a concrete ingredient batch into a spec with fixed intervals.
-func (d IngredientBatch) ToSpec() IngredientSpec {
-	return SpecFromProfile(d.ToProfile())
-}
-
-// ToInstance converts a concrete ingredient batch into an ingredient instance.
-func (d IngredientBatch) ToInstance() IngredientLot {
-	spec := d.ToSpec()
-	return NewIngredientLot(spec)
 }
 
 // AddedSugarsInterval returns the summed interval for non-lactose sugars.

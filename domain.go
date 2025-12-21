@@ -90,7 +90,7 @@ var (
 // DefaultIngredientCatalog returns the lazily constructed catalog for built-in ingredients.
 func DefaultIngredientCatalog() IngredientCatalog {
 	defaultCatalogOnce.Do(func() {
-		defaultCatalog = catalogFromBatches(IngredientBatchTable())
+		defaultCatalog = catalogFromProfiles(IngredientProfileTable())
 	})
 	return defaultCatalog
 }
@@ -156,12 +156,14 @@ func (c IngredientCatalog) Instances() map[IngredientID]IngredientLot {
 	return copy
 }
 
-func catalogFromBatches(batches map[string]IngredientBatch) IngredientCatalog {
-	specs := make(map[IngredientID]IngredientSpec, len(batches))
-	lots := make(map[IngredientID]IngredientLot, len(batches))
-	keyed := make(map[string]IngredientLot, len(batches))
-	for key, batch := range batches {
-		inst := batch.ToInstance()
+func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatalog {
+	specs := make(map[IngredientID]IngredientSpec, len(profiles))
+	lots := make(map[IngredientID]IngredientLot, len(profiles))
+	keyed := make(map[string]IngredientLot, len(profiles))
+	for key, profile := range profiles {
+		spec := SpecFromProfile(profile)
+		inst := NewIngredientLot(spec)
+		inst.Profile = profile
 		specs[inst.Ingredient.ID] = inst.Ingredient
 		lots[inst.Ingredient.ID] = inst
 		keyed[key] = inst

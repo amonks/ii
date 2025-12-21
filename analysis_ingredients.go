@@ -1,7 +1,7 @@
 package creamery
 
-// IngredientBatch represents a concrete ingredient lot (per-kilogram basis).
-type IngredientBatch struct {
+// ingredientBatch represents a concrete ingredient lot (per-kilogram basis).
+type ingredientBatch struct {
 	ID                 IngredientID
 	Name               string
 	Water              float64
@@ -36,7 +36,7 @@ type IngredientBatch struct {
 	AddedSugarsMax     float64
 }
 
-func cloneBatch(base IngredientBatch, overrides func(*IngredientBatch)) IngredientBatch {
+func cloneBatch(base ingredientBatch, overrides func(*ingredientBatch)) ingredientBatch {
 	copy := base
 	overrides(&copy)
 	if copy.Name == "" {
@@ -46,10 +46,18 @@ func cloneBatch(base IngredientBatch, overrides func(*IngredientBatch)) Ingredie
 	return copy
 }
 
-// IngredientBatchTable returns a map of rich ingredient definitions keyed by name.
-// This is a Go translation of non-linear/creamery/ingredients.py::default_ingredients.
-func IngredientBatchTable() map[string]IngredientBatch {
-	table := map[string]IngredientBatch{
+// ingredientBatchTable returns a map of rich ingredient definitions keyed by name.
+func IngredientProfileTable() map[string]ConstituentProfile {
+	batches := ingredientBatchTable()
+	profiles := make(map[string]ConstituentProfile, len(batches))
+	for key, batch := range batches {
+		profiles[key] = batch.ToProfile()
+	}
+	return profiles
+}
+
+func ingredientBatchTable() map[string]ingredientBatch {
+	table := map[string]ingredientBatch{
 		"water": {
 			ID:          NewIngredientID("water"),
 			Name:        "water",
@@ -382,7 +390,7 @@ func IngredientBatchTable() map[string]IngredientBatch {
 		key       string
 		display   string
 		comp      Composition
-		configure func(*IngredientBatch)
+		configure func(*ingredientBatch)
 	}{
 		{
 			key:     "liquid_sugar",
@@ -397,7 +405,7 @@ func IngredientBatchTable() map[string]IngredientBatch {
 			comp: Composition{
 				Other: Point(1.0),
 			},
-			configure: func(b *IngredientBatch) {
+			configure: func(b *ingredientBatch) {
 				b.Hydrocolloid = true
 			},
 		},
@@ -409,7 +417,7 @@ func IngredientBatchTable() map[string]IngredientBatch {
 				MSNF:  Point(0.20),
 				Sugar: Point(0.445),
 			},
-			configure: func(b *IngredientBatch) {
+			configure: func(b *ingredientBatch) {
 				b.AddedSugars = b.Sucrose
 				b.AddedSugarsMin = b.Sucrose * (1 - labelPercentEPS)
 				b.AddedSugarsMax = b.Sucrose * (1 + labelPercentEPS)
@@ -472,7 +480,7 @@ func IngredientBatchTable() map[string]IngredientBatch {
 		table[name] = ing
 	}
 
-	sugarFields := func(name string, fields []func(IngredientBatch) float64) {
+	sugarFields := func(name string, fields []func(ingredientBatch) float64) {
 		ing, ok := table[name]
 		if !ok {
 			return
@@ -509,20 +517,20 @@ func IngredientBatchTable() map[string]IngredientBatch {
 
 	setLactoseRange(append(dairyKeys, "cream_serum", "milk", "nonfat_milk"))
 
-	sugarFields("sucrose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Sucrose }})
-	sugarFields("dextrose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Glucose }})
-	sugarFields("fructose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Fructose }})
-	sugarFields("corn_syrup_42", []func(IngredientBatch) float64{
-		func(i IngredientBatch) float64 { return i.Glucose },
-		func(i IngredientBatch) float64 { return i.Fructose },
-		func(i IngredientBatch) float64 { return i.Maltodextrin },
+	sugarFields("sucrose", []func(ingredientBatch) float64{func(i ingredientBatch) float64 { return i.Sucrose }})
+	sugarFields("dextrose", []func(ingredientBatch) float64{func(i ingredientBatch) float64 { return i.Glucose }})
+	sugarFields("fructose", []func(ingredientBatch) float64{func(i ingredientBatch) float64 { return i.Fructose }})
+	sugarFields("corn_syrup_42", []func(ingredientBatch) float64{
+		func(i ingredientBatch) float64 { return i.Glucose },
+		func(i ingredientBatch) float64 { return i.Fructose },
+		func(i ingredientBatch) float64 { return i.Maltodextrin },
 	})
-	sugarFields("tapioca_syrup", []func(IngredientBatch) float64{
-		func(i IngredientBatch) float64 { return i.Glucose },
-		func(i IngredientBatch) float64 { return i.Fructose },
-		func(i IngredientBatch) float64 { return i.Maltodextrin },
+	sugarFields("tapioca_syrup", []func(ingredientBatch) float64{
+		func(i ingredientBatch) float64 { return i.Glucose },
+		func(i ingredientBatch) float64 { return i.Fructose },
+		func(i ingredientBatch) float64 { return i.Maltodextrin },
 	})
-	sugarFields("maltodextrin10", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Maltodextrin }})
+	sugarFields("maltodextrin10", []func(ingredientBatch) float64{func(i ingredientBatch) float64 { return i.Maltodextrin }})
 
 	for name, ing := range table {
 		if ing.SaturatedFat == 0 && ing.Fat > 0 {
@@ -582,10 +590,10 @@ func IngredientBatchTable() map[string]IngredientBatch {
 	return table
 }
 
-func batchFromComposition(key, display string, comp Composition) IngredientBatch {
+func batchFromComposition(key, display string, comp Composition) ingredientBatch {
 	profile := ProfileFromComposition(NewIngredientID(display), display, comp)
 	comps := profile.Components
-	return IngredientBatch{
+	return ingredientBatch{
 		ID:              profile.ID,
 		Name:            key,
 		Water:           comps.Water.Mid(),

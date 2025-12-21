@@ -24,12 +24,6 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		},
 	}
 
-	batch := IngredientBatch{
-		ID:      IngredientID("sucrose"),
-		Name:    "stock_sucrose",
-		Sucrose: 1.0,
-	}
-
 	sol := &Solution{
 		Weights: map[IngredientID]float64{
 			IngredientID("sucrose"): 0.5,
@@ -45,8 +39,8 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Overrun:     0,
 	}
 
-	inst := batch.ToInstance()
-	inst.Name = batch.Name
+	inst := NewIngredientLot(spec)
+	inst.Name = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 
 	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientSpec{spec}, goals, 0)
@@ -57,8 +51,8 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	if len(recipe.Components) != 1 {
 		t.Fatalf("expected 1 component, got %d", len(recipe.Components))
 	}
-	if recipe.Components[0].Ingredient.Name != batch.Name {
-		t.Fatalf("expected ingredient %s, got %s", batch.Name, recipe.Components[0].Ingredient.Name)
+	if recipe.Components[0].Ingredient.Name != inst.Name {
+		t.Fatalf("expected ingredient %s, got %s", inst.Name, recipe.Components[0].Ingredient.Name)
 	}
 	if recipe.Components[0].MassKg != 50 {
 		t.Fatalf("expected mass 50kg, got %f", recipe.Components[0].MassKg)
