@@ -18,11 +18,6 @@ type IngredientLot struct {
 	LotCode    string
 }
 
-// Backward-compatible aliases to preserve existing call sites while the
-// refactor migrates to the new type names.
-type Ingredient = IngredientSpec
-type IngredientInstance = IngredientLot
-
 // NewIngredientLot constructs an instance from a base ingredient.
 func NewIngredientLot(ing IngredientSpec) IngredientLot {
 	profile := ing.Profile
@@ -37,12 +32,6 @@ func NewIngredientLot(ing IngredientSpec) IngredientLot {
 		Profile:    profile,
 		Name:       profile.Name,
 	}
-}
-
-// NewIngredientInstance is provided for backward compatibility while the code
-// migrates to the new IngredientLot name.
-func NewIngredientInstance(ing Ingredient) IngredientInstance {
-	return NewIngredientLot(ing)
 }
 
 // EffectiveProfile returns the profile for the lot, falling back to the base
@@ -108,8 +97,8 @@ func DefaultIngredientCatalog() IngredientCatalog {
 
 // NewIngredientCatalog builds a catalog from a slice of ingredient specs. The
 // catalog automatically provisions default lots that mirror each spec.
-func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
-	specs := make(map[IngredientID]Ingredient, len(ingredients))
+func NewIngredientCatalog(ingredients []IngredientSpec) IngredientCatalog {
+	specs := make(map[IngredientID]IngredientSpec, len(ingredients))
 	lots := make(map[IngredientID]IngredientLot, len(ingredients))
 	for _, ing := range ingredients {
 		if ing.ID == "" {
@@ -132,8 +121,8 @@ func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
 }
 
 // All returns every ingredient in the catalog.
-func (c IngredientCatalog) All() []Ingredient {
-	all := make([]Ingredient, 0, len(c.specs))
+func (c IngredientCatalog) All() []IngredientSpec {
+	all := make([]IngredientSpec, 0, len(c.specs))
 	for _, ing := range c.specs {
 		all = append(all, ing)
 	}
@@ -141,26 +130,26 @@ func (c IngredientCatalog) All() []Ingredient {
 }
 
 // Get looks up an ingredient by ID.
-func (c IngredientCatalog) Get(id IngredientID) (Ingredient, bool) {
+func (c IngredientCatalog) Get(id IngredientID) (IngredientSpec, bool) {
 	ing, ok := c.specs[id]
 	return ing, ok
 }
 
 // Instance returns the default instance for an ingredient ID.
-func (c IngredientCatalog) Instance(id IngredientID) (IngredientInstance, bool) {
+func (c IngredientCatalog) Instance(id IngredientID) (IngredientLot, bool) {
 	inst, ok := c.lots[id]
 	return inst, ok
 }
 
 // InstanceByKey looks up an instance by its catalog key (e.g., "sucrose").
-func (c IngredientCatalog) InstanceByKey(key string) (IngredientInstance, bool) {
+func (c IngredientCatalog) InstanceByKey(key string) (IngredientLot, bool) {
 	inst, ok := c.keyed[key]
 	return inst, ok
 }
 
 // Instances returns a copy of the default instances keyed by ingredient ID.
-func (c IngredientCatalog) Instances() map[IngredientID]IngredientInstance {
-	copy := make(map[IngredientID]IngredientInstance, len(c.lots))
+func (c IngredientCatalog) Instances() map[IngredientID]IngredientLot {
+	copy := make(map[IngredientID]IngredientLot, len(c.lots))
 	for id, inst := range c.lots {
 		copy[id] = inst
 	}
@@ -168,9 +157,9 @@ func (c IngredientCatalog) Instances() map[IngredientID]IngredientInstance {
 }
 
 func catalogFromBatches(batches map[string]IngredientBatch) IngredientCatalog {
-	specs := make(map[IngredientID]Ingredient, len(batches))
-	lots := make(map[IngredientID]IngredientInstance, len(batches))
-	keyed := make(map[string]IngredientInstance, len(batches))
+	specs := make(map[IngredientID]IngredientSpec, len(batches))
+	lots := make(map[IngredientID]IngredientLot, len(batches))
+	keyed := make(map[string]IngredientLot, len(batches))
 	for key, batch := range batches {
 		inst := batch.ToInstance()
 		specs[inst.Ingredient.ID] = inst.Ingredient
@@ -184,9 +173,9 @@ func catalogFromBatches(batches map[string]IngredientBatch) IngredientCatalog {
 	}
 }
 
-// SpecFromProfile builds an Ingredient from an existing constituent profile.
-func SpecFromProfile(profile ConstituentProfile) Ingredient {
-	return Ingredient{
+// SpecFromProfile builds an IngredientSpec from an existing constituent profile.
+func SpecFromProfile(profile ConstituentProfile) IngredientSpec {
+	return IngredientSpec{
 		ID:      profile.ID,
 		Name:    profile.Name,
 		Profile: profile,
@@ -194,7 +183,7 @@ func SpecFromProfile(profile ConstituentProfile) Ingredient {
 }
 
 // SpecFromComposition constructs a spec from a higher-level composition.
-func SpecFromComposition(name string, comp Composition) Ingredient {
+func SpecFromComposition(name string, comp Composition) IngredientSpec {
 	profile := ProfileFromComposition(NewIngredientID(name), name, comp)
 	return SpecFromProfile(profile)
 }

@@ -52,7 +52,7 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println("### Interpreting the ingredient list")
 	fmt.Println("Using the label's ingredient order to constrain possible formulations:")
 
-	labelSpecs := []creamery.Ingredient{
+	labelSpecs := []creamery.IngredientSpec{
 		creamery.WholeMilk,
 		creamery.HeavyCream,
 		creamery.Sugar,
@@ -106,7 +106,7 @@ func TestFullWorkflow(t *testing.T) {
 	myNFDM := creamery.SpecFromComposition("Skim Milk Powder", creamery.PointComposition(0.01, 0.96, 0, 0))
 
 	catalog := creamery.DefaultIngredientCatalog()
-	var mySucrose creamery.Ingredient
+	var mySucrose creamery.IngredientSpec
 	if inst, ok := catalog.InstanceByKey("sucrose"); ok {
 		mySucrose = inst.Ingredient
 		mySucrose.Name = "Sucrose"
@@ -114,7 +114,7 @@ func TestFullWorkflow(t *testing.T) {
 		mySucrose.Profile.Name = mySucrose.Name
 		mySucrose.Profile.ID = mySucrose.ID
 	}
-	var myDextrose creamery.Ingredient
+	var myDextrose creamery.IngredientSpec
 	if inst, ok := catalog.InstanceByKey("dextrose"); ok {
 		myDextrose = inst.Ingredient
 		myDextrose.Name = "Dextrose"
@@ -144,7 +144,7 @@ func TestFullWorkflow(t *testing.T) {
 		myDextrose.Profile.PODInterval().Mid(),
 		myDextrose.Profile.PACInterval().Mid())
 
-	specs := []creamery.Ingredient{
+	specs := []creamery.IngredientSpec{
 		myCream,
 		myMilk,
 		myNFDM,

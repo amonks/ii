@@ -232,12 +232,12 @@ func ProfileFromComposition(id IngredientID, name string, comp Composition) Cons
 }
 
 // ToSpec converts a concrete ingredient batch into a spec with fixed intervals.
-func (d IngredientBatch) ToSpec() Ingredient {
+func (d IngredientBatch) ToSpec() IngredientSpec {
 	return SpecFromProfile(d.ToProfile())
 }
 
 // ToInstance converts a concrete ingredient batch into an ingredient instance.
-func (d IngredientBatch) ToInstance() IngredientInstance {
+func (d IngredientBatch) ToInstance() IngredientLot {
 	spec := d.ToSpec()
 	return NewIngredientLot(spec)
 }

@@ -2,7 +2,7 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []Ingredient, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
+func recipeFromSolution(sol *Solution, specs []IngredientSpec, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
 	if sol == nil {
 		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
 	}

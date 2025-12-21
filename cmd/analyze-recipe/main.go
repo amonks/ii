@@ -215,7 +215,7 @@ func printRecipe(r *creamery.Recipe) {
 	}
 }
 
-func instanceWithName(inst creamery.IngredientInstance, name string) creamery.IngredientInstance {
+func instanceWithName(inst creamery.IngredientLot, name string) creamery.IngredientLot {
 	if name == "" {
 		return inst
 	}

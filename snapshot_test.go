@@ -17,8 +17,8 @@ func TestBatchSnapshotTotals(t *testing.T) {
 	})
 
 	recipe := []RecipeComponent{
-		{Ingredient: NewIngredientInstance(cream), MassKg: 60},
-		{Ingredient: NewIngredientInstance(sugar), MassKg: 40},
+		{Ingredient: NewIngredientLot(cream), MassKg: 60},
+		{Ingredient: NewIngredientLot(sugar), MassKg: 40},
 	}
 
 	snapshot, err := NewBatchSnapshot(recipe)
@@ -40,8 +40,8 @@ func TestBatchSnapshotTotals(t *testing.T) {
 
 func TestBatchSnapshotFormulationBreakdownMatchesRecipe(t *testing.T) {
 	components := []RecipeComponent{
-		{Ingredient: NewIngredientInstance(SpecFromComposition("Cream", PointComposition(0.36, 0.08, 0, 0))), MassKg: 60},
-		{Ingredient: NewIngredientInstance(SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))), MassKg: 40},
+		{Ingredient: NewIngredientLot(SpecFromComposition("Cream", PointComposition(0.36, 0.08, 0, 0))), MassKg: 60},
+		{Ingredient: NewIngredientLot(SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))), MassKg: 40},
 	}
 	recipe, err := NewRecipe(components, 0)
 	if err != nil {
@@ -71,8 +71,8 @@ func TestBatchSnapshotFormulationBreakdownMatchesRecipe(t *testing.T) {
 
 func TestBatchSnapshotNutritionFactsSummaryMatchesRecipe(t *testing.T) {
 	components := []RecipeComponent{
-		{Ingredient: NewIngredientInstance(SpecFromComposition("Cream", PointComposition(0.36, 0.08, 0, 0))), MassKg: 60},
-		{Ingredient: NewIngredientInstance(SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))), MassKg: 40},
+		{Ingredient: NewIngredientLot(SpecFromComposition("Cream", PointComposition(0.36, 0.08, 0, 0))), MassKg: 60},
+		{Ingredient: NewIngredientLot(SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))), MassKg: 40},
 	}
 	recipe, err := NewRecipe(components, 0)
 	if err != nil {

@@ -1,8 +1,8 @@
 package creamery
 
-// specFromCatalog builds an Ingredient from the default catalog, overriding
+// specFromCatalog builds an IngredientSpec from the default catalog, overriding
 // the display name when provided.
-func specFromCatalog(key, displayName string) Ingredient {
+func specFromCatalog(key, displayName string) IngredientSpec {
 	inst, ok := DefaultIngredientCatalog().InstanceByKey(key)
 	if !ok {
 		if displayName == "" {
@@ -17,7 +17,7 @@ func specFromCatalog(key, displayName string) Ingredient {
 	return spec
 }
 
-func renameSpec(spec Ingredient, name string) Ingredient {
+func renameSpec(spec IngredientSpec, name string) IngredientSpec {
 	copy := spec
 	copy.Name = name
 	copy.ID = NewIngredientID(name)
@@ -54,9 +54,9 @@ var (
 )
 
 // StandardSpecs returns a slice of commonly used ingredient specs.
-func StandardSpecs() []Ingredient {
+func StandardSpecs() []IngredientSpec {
 	catalog := DefaultIngredientCatalog()
-	specs := make([]Ingredient, 0, len(standardSpecKeys)+1)
+	specs := make([]IngredientSpec, 0, len(standardSpecKeys)+1)
 	for _, entry := range standardSpecKeys {
 		inst, ok := catalog.InstanceByKey(entry.key)
 		if !ok {
@@ -73,9 +73,9 @@ func StandardSpecs() []Ingredient {
 }
 
 // StandardSpecMap provides the same specs keyed by their IngredientID.
-func StandardSpecMap() map[IngredientID]Ingredient {
+func StandardSpecMap() map[IngredientID]IngredientSpec {
 	specs := StandardSpecs()
-	lib := make(map[IngredientID]Ingredient, len(specs))
+	lib := make(map[IngredientID]IngredientSpec, len(specs))
 	for _, spec := range specs {
 		lib[spec.ID] = spec
 	}

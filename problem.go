@@ -8,7 +8,7 @@ import (
 
 // Problem defines an ice cream formulation problem.
 type Problem struct {
-	Specs []Ingredient
+	Specs []IngredientSpec
 
 	Target FormulationTarget
 
@@ -22,13 +22,13 @@ type Problem struct {
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
-func NewProblem(specs []Ingredient, target Composition) *Problem {
+func NewProblem(specs []IngredientSpec, target Composition) *Problem {
 	return NewFormulationProblem(specs, FormulationFromComposition(target))
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
-func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Problem {
-	canonical := make([]Ingredient, len(specs))
+func NewFormulationProblem(specs []IngredientSpec, target FormulationTarget) *Problem {
+	canonical := make([]IngredientSpec, len(specs))
 	specIndex := make(map[IngredientID]int, len(specs))
 	profiles := make([]ConstituentProfile, len(specs))
 	lots := make(map[IngredientID]IngredientLot, len(specs))
@@ -95,10 +95,10 @@ func (p *Problem) profileForIndex(i int) ConstituentProfile {
 	return p.profiles[i]
 }
 
-func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
+func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
 	idx, ok := p.specIndex[id]
 	if !ok {
-		return Ingredient{}, false
+		return IngredientSpec{}, false
 	}
 	return p.Specs[idx], true
 }
@@ -116,7 +116,7 @@ func (p *Problem) LotByID(id IngredientID) (IngredientLot, bool) {
 }
 
 // OverrideLots replaces default lots with the provided ones when the spec is present.
-func (p *Problem) OverrideLots(lots map[IngredientID]IngredientInstance) {
+func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 	for id, lot := range lots {
 		if _, ok := p.specIndex[id]; !ok {
 			continue
@@ -305,7 +305,7 @@ func (s Solution) String() string {
 
 // ImpliedMSNF calculates what composition a variable ingredient must have
 // to achieve the target, given the weights of all other ingredients.
-func (s Solution) ImpliedMSNF(specs []Ingredient, target Composition, id IngredientID) (Interval, bool) {
+func (s Solution) ImpliedMSNF(specs []IngredientSpec, target Composition, id IngredientID) (Interval, bool) {
 	varSpecIndex := -1
 	for i, spec := range specs {
 		if spec.ID == id {
