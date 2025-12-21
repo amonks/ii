@@ -577,17 +577,36 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 		}
 	}
 
-	// Compute achieved composition using ingredient midpoints
-	var fat, msnf, sugar, other float64
-	for i := range s.Problem.Specs {
-		profile := s.Problem.profileForIndex(i)
-		w := weights[i]
-		fat += w * profile.Components.Fat.Mid()
-		msnf += w * profile.MSNFInterval().Mid()
-		sugar += w * profile.AddedSugarsInterval().Mid()
-		other += w * profile.OtherSolidsInterval().Mid()
+	components := sumComponents(weights, s.Problem.profiles)
+	sol.Components = components
+	sol.Achieved = Composition{
+		Fat:   components.Fat,
+		MSNF:  components.MSNF,
+		Sugar: components.AddedSugarsInterval(),
+		Other: components.OtherSolids,
 	}
-
-	sol.Achieved = PointComposition(fat, msnf, sugar, other)
 	return sol
+}
+
+func sumComponents(weights []float64, profiles []ConstituentProfile) ConstituentComponents {
+	var agg ConstituentComponents
+	for i, w := range weights {
+		if w <= 0 {
+			continue
+		}
+		comps := profiles[i].Components
+		agg.Water = agg.Water.Add(comps.Water.Scale(w))
+		agg.Fat = agg.Fat.Add(comps.Fat.Scale(w))
+		agg.MSNF = agg.MSNF.Add(profiles[i].MSNFInterval().Scale(w))
+		agg.Protein = agg.Protein.Add(comps.Protein.Scale(w))
+		agg.Lactose = agg.Lactose.Add(comps.Lactose.Scale(w))
+		agg.Sucrose = agg.Sucrose.Add(comps.Sucrose.Scale(w))
+		agg.Glucose = agg.Glucose.Add(comps.Glucose.Scale(w))
+		agg.Fructose = agg.Fructose.Add(comps.Fructose.Scale(w))
+		agg.Maltodextrin = agg.Maltodextrin.Add(comps.Maltodextrin.Scale(w))
+		agg.Polyols = agg.Polyols.Add(comps.Polyols.Scale(w))
+		agg.Ash = agg.Ash.Add(comps.Ash.Scale(w))
+		agg.OtherSolids = agg.OtherSolids.Add(comps.OtherSolids.Scale(w))
+	}
+	return agg
 }

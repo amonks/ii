@@ -268,10 +268,11 @@ func (p *Problem) AddConstraint(coeffs map[IngredientID]float64, lower, upper fl
 
 // Solution represents a feasible (or partial) solution to a Problem.
 type Solution struct {
-	Weights  map[IngredientID]float64
-	Names    map[IngredientID]string
-	Lots     map[IngredientID]IngredientLot
-	Achieved Composition
+	Weights    map[IngredientID]float64
+	Names      map[IngredientID]string
+	Lots       map[IngredientID]IngredientLot
+	Achieved   Composition
+	Components ConstituentComponents
 }
 
 // String returns a human-readable representation.

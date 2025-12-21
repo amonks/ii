@@ -139,7 +139,10 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 		}
 	}
 
-	// Compute achieved composition using the LP's coefficients
+	components := sumComponents(weights, s.Problem.profiles)
+	sol.Components = components
+
+	// Compute achieved composition using the LP's sampled coefficients
 	var fat, msnf, sugar, other float64
 	for i, w := range weights {
 		fat += w * lpp.fatLo[i]
@@ -147,7 +150,6 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 		sugar += w * lpp.sugarLo[i]
 		other += w * lpp.otherLo[i]
 	}
-
 	sol.Achieved = PointComposition(fat, msnf, sugar, other)
 	return sol
 }
