@@ -195,8 +195,8 @@ var (
 	NonfatMilkVariable = Ingredient{
 		Name: "Nonfat Milk",
 		Comp: Composition{
-			Fat:   Range(0, 0.005),    // essentially fat-free
-			MSNF:  Range(0.09, 0.97),  // liquid skim to dry powder
+			Fat:   Range(0, 0.005),   // essentially fat-free
+			MSNF:  Range(0.09, 0.97), // liquid skim to dry powder
 			Sugar: Point(0),
 			Other: Point(0),
 		},
@@ -226,4 +226,15 @@ func StandardLibrary() map[string]Ingredient {
 		lib[ing.Name] = ing
 	}
 	return lib
+}
+
+// StandardProfiles converts the standard ingredient library to constituent profiles.
+func StandardProfiles() map[IngredientID]ConstituentProfile {
+	lib := StandardLibrary()
+	profiles := make(map[IngredientID]ConstituentProfile, len(lib))
+	for _, ing := range lib {
+		profile := ing.ToProfile()
+		profiles[profile.ID] = profile
+	}
+	return profiles
 }

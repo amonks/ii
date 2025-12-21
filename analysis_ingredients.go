@@ -2,6 +2,7 @@ package creamery
 
 // All composition values are expressed per kilogram of ingredient mass.
 type DetailedIngredient struct {
+	ID                 IngredientID
 	Name               string
 	Water              float64
 	Fat                float64
@@ -38,19 +39,26 @@ type DetailedIngredient struct {
 func cloneDetailed(base DetailedIngredient, overrides func(*DetailedIngredient)) DetailedIngredient {
 	copy := base
 	overrides(&copy)
+	if copy.Name == "" {
+		copy.Name = base.Name
+	}
+	copy.ID = NewIngredientID(copy.Name)
 	return copy
 }
 
 // DetailedIngredientTable returns a map of rich ingredient definitions keyed by name.
 // This is a Go translation of non-linear/creamery/ingredients.py::default_ingredients.
+
 func DetailedIngredientTable() map[string]DetailedIngredient {
 	table := map[string]DetailedIngredient{
 		"water": {
+			ID:          NewIngredientID("water"),
 			Name:        "water",
 			Water:       1.0,
 			EffectiveMW: mwSucrose,
 		},
 		"whole_milk": {
+			ID:                 NewIngredientID("whole_milk"),
 			Name:               "whole_milk",
 			Water:              0.873,
 			Fat:                0.0325,
@@ -62,6 +70,7 @@ func DetailedIngredientTable() map[string]DetailedIngredient {
 			CholesterolMgPerKg: mgPerKgFrom100g(14.0),
 		},
 		"cream_fat": {
+			ID:                 NewIngredientID("cream_fat"),
 			Name:               "cream_fat",
 			Water:              0.0,
 			Fat:                1.0,
@@ -508,6 +517,17 @@ func DetailedIngredientTable() map[string]DetailedIngredient {
 		}
 
 		table[name] = ing
+	}
+
+	for key, ing := range table {
+		if ing.ID == "" {
+			name := ing.Name
+			if name == "" {
+				name = key
+			}
+			ing.ID = NewIngredientID(name)
+		}
+		table[key] = ing
 	}
 
 	return table
