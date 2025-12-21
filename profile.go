@@ -53,19 +53,9 @@ func NewIngredientKey(name string) IngredientKey {
 	return IngredientKey(NewIngredientID(trimmed))
 }
 
-// ConstituentProfile captures the detailed breakdown (with uncertainty) plus
-// functional metadata for an ingredient specification or batch.
-type ConstituentProfile struct {
-	ID          IngredientID
-	Name        string
-	Components  ConstituentComponents
-	Nutrition   ConstituentNutrition
-	Functionals ConstituentFunctionals
-	Economics   ConstituentEconomics
-}
-
-// ConstituentComponents tracks fractions (per unit mass) for solids and water.
-type ConstituentComponents struct {
+// CompositionRange tracks fractional component intervals (per unit mass) for
+// solids and water.
+type CompositionRange struct {
 	Water        Interval
 	Fat          Interval
 	MSNF         Interval
@@ -78,6 +68,56 @@ type ConstituentComponents struct {
 	Polyols      Interval
 	Ash          Interval
 	OtherSolids  Interval
+}
+
+// ConstituentComponents is retained as an alias for CompositionRange while the
+// rest of the codebase migrates to the new name.
+type ConstituentComponents = CompositionRange
+
+// CompositionPoint captures a single realized composition, typically after all
+// solver weights have been applied to a blend.
+type CompositionPoint struct {
+	Water        float64
+	Fat          float64
+	MSNF         float64
+	Protein      float64
+	Lactose      float64
+	Sucrose      float64
+	Glucose      float64
+	Fructose     float64
+	Maltodextrin float64
+	Polyols      float64
+	Ash          float64
+	OtherSolids  float64
+}
+
+// Midpoint converts an interval-based composition into its midpoint values.
+func (r CompositionRange) Midpoint() CompositionPoint {
+	return CompositionPoint{
+		Water:        r.Water.Mid(),
+		Fat:          r.Fat.Mid(),
+		MSNF:         r.EffectiveMSNF().Mid(),
+		Protein:      r.Protein.Mid(),
+		Lactose:      r.Lactose.Mid(),
+		Sucrose:      r.Sucrose.Mid(),
+		Glucose:      r.Glucose.Mid(),
+		Fructose:     r.Fructose.Mid(),
+		Maltodextrin: r.Maltodextrin.Mid(),
+		Polyols:      r.Polyols.Mid(),
+		Ash:          r.Ash.Mid(),
+		OtherSolids:  r.OtherSolids.Mid(),
+	}
+}
+
+// ConstituentProfile captures the detailed breakdown (with uncertainty) plus
+// functional metadata for an ingredient specification or batch.
+type ConstituentProfile struct {
+	ID          IngredientID
+	Name        string
+	Components  CompositionRange
+	Nutrition   ConstituentNutrition
+	Functionals ConstituentFunctionals
+	Economics   ConstituentEconomics
 }
 
 // ConstituentNutrition stores macro-/micro-nutrient data that is not part of the
@@ -168,7 +208,7 @@ func (d ingredientBatch) ToProfile(fallbackName string) ConstituentProfile {
 	profile := ConstituentProfile{
 		ID:   id,
 		Name: name,
-		Components: ConstituentComponents{
+		Components: CompositionRange{
 			Water:        pointInterval(d.Water),
 			Fat:          pointInterval(d.Fat),
 			MSNF:         Interval{Lo: msnfLo, Hi: msnfHi},
@@ -206,7 +246,7 @@ func (d ingredientBatch) ToProfile(fallbackName string) ConstituentProfile {
 }
 
 // AddedSugarsInterval returns the summed interval for non-lactose sugars.
-func (c ConstituentComponents) AddedSugarsInterval() Interval {
+func (c CompositionRange) AddedSugarsInterval() Interval {
 	return c.Sucrose.
 		Add(c.Glucose).
 		Add(c.Fructose).
@@ -215,7 +255,7 @@ func (c ConstituentComponents) AddedSugarsInterval() Interval {
 }
 
 // EffectiveMSNF returns the MSNF interval or derives it from components when missing.
-func (c ConstituentComponents) EffectiveMSNF() Interval {
+func (c CompositionRange) EffectiveMSNF() Interval {
 	if c.MSNF.Lo != 0 || c.MSNF.Hi != 0 {
 		return c.MSNF
 	}

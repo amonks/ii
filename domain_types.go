@@ -2,43 +2,50 @@ package creamery
 
 import "strings"
 
-// IngredientDefinition is the canonical immutable ingredient specification shared
-// across the catalog, solver, and recipe layers.
-type IngredientDefinition struct {
+// Ingredient is the canonical immutable ingredient specification shared across
+// the catalog, solver, and recipe layers. It encapsulates the normalized
+// constituent profile plus optional catalog metadata such as a stable key.
+type Ingredient struct {
 	ID      IngredientID
 	Key     IngredientKey
 	Name    string
 	Profile ConstituentProfile
 }
 
-// LotDescriptor couples an ingredient definition with optional lot metadata
-// such as display name overrides and constituent overrides.
-type LotDescriptor struct {
-	Definition      *IngredientDefinition
+// Lot couples an ingredient definition with optional lot metadata such as
+// display name overrides and constituent overrides.
+type Lot struct {
+	Definition      *Ingredient
 	Label           string
 	LotCode         string
 	profileOverride *ConstituentProfile
 }
 
-// NewIngredientDefinition normalizes the provided profile metadata and returns
-// an immutable definition pointer.
-func NewIngredientDefinition(profile ConstituentProfile, key IngredientKey) *IngredientDefinition {
-	definition := IngredientDefinition{
+// NewIngredient normalizes the provided profile metadata and returns an
+// immutable ingredient value.
+func NewIngredient(profile ConstituentProfile, key IngredientKey) Ingredient {
+	ingredient := Ingredient{
 		ID:      profile.ID,
 		Key:     key,
 		Name:    profile.Name,
 		Profile: profile,
 	}
-	normalized := normalizeDefinition(definition)
+	return normalizeIngredient(ingredient)
+}
+
+// NewIngredientDefinition preserves the legacy constructor signature while the
+// codebase transitions to the new Ingredient type.
+func NewIngredientDefinition(profile ConstituentProfile, key IngredientKey) *Ingredient {
+	normalized := NewIngredient(profile, key)
 	return &normalized
 }
 
 // NewLot creates a lot descriptor for the provided definition.
-func NewLot(def *IngredientDefinition) LotDescriptor {
+func NewLot(def *Ingredient) Lot {
 	if def == nil {
-		return LotDescriptor{}
+		return Lot{}
 	}
-	return LotDescriptor{
+	return Lot{
 		Definition: def,
 		Label:      def.Name,
 	}
@@ -46,7 +53,7 @@ func NewLot(def *IngredientDefinition) LotDescriptor {
 
 // EffectiveProfile returns the constituent profile for the lot, applying any
 // overrides and ensuring IDs/names remain aligned with the definition.
-func (lot LotDescriptor) EffectiveProfile() ConstituentProfile {
+func (lot Lot) EffectiveProfile() ConstituentProfile {
 	if lot.Definition == nil {
 		return normalizeProfile(ConstituentProfile{}, "", lot.Label)
 	}
@@ -60,11 +67,11 @@ func (lot LotDescriptor) EffectiveProfile() ConstituentProfile {
 }
 
 // DisplayName exposes the preferred name for the lot.
-func (lot LotDescriptor) DisplayName() string {
+func (lot Lot) DisplayName() string {
 	return lot.displayName()
 }
 
-func (lot LotDescriptor) displayName() string {
+func (lot Lot) displayName() string {
 	if lot.Label != "" {
 		return lot.Label
 	}
@@ -79,7 +86,7 @@ func (lot LotDescriptor) displayName() string {
 
 // SetProfileOverride replaces the lot's constituent profile while keeping
 // definition metadata intact.
-func (lot *LotDescriptor) SetProfileOverride(profile ConstituentProfile) {
+func (lot *Lot) SetProfileOverride(profile ConstituentProfile) {
 	if lot == nil || lot.Definition == nil {
 		return
 	}
@@ -88,13 +95,13 @@ func (lot *LotDescriptor) SetProfileOverride(profile ConstituentProfile) {
 }
 
 // WithProfileOverride returns a copy of the lot with a different profile.
-func (lot LotDescriptor) WithProfileOverride(profile ConstituentProfile) LotDescriptor {
+func (lot Lot) WithProfileOverride(profile ConstituentProfile) Lot {
 	lot.SetProfileOverride(profile)
 	return lot
 }
 
 // WithDefinition returns a copy of the lot using the provided definition.
-func (lot LotDescriptor) WithDefinition(def *IngredientDefinition) LotDescriptor {
+func (lot Lot) WithDefinition(def *Ingredient) Lot {
 	if def == nil {
 		return lot
 	}
@@ -107,7 +114,7 @@ func (lot LotDescriptor) WithDefinition(def *IngredientDefinition) LotDescriptor
 }
 
 // WithSpec returns a copy of the lot backed by the provided spec value.
-func (lot LotDescriptor) WithSpec(spec IngredientDefinition) LotDescriptor {
+func (lot Lot) WithSpec(spec Ingredient) Lot {
 	normalized := normalizeSpec(spec)
 	definition := normalized
 	lot.Definition = &definition
@@ -119,7 +126,7 @@ func (lot LotDescriptor) WithSpec(spec IngredientDefinition) LotDescriptor {
 }
 
 // CostPerKg returns the midpoint cost for the lot's effective profile.
-func (lot LotDescriptor) CostPerKg() float64 {
+func (lot Lot) CostPerKg() float64 {
 	profile := lot.EffectiveProfile()
 	cost := profile.Economics.Cost
 	if cost.Lo == 0 && cost.Hi == 0 {
@@ -128,8 +135,8 @@ func (lot LotDescriptor) CostPerKg() float64 {
 	return cost.Mid()
 }
 
-// normalizeDefinition enforces ID/key/name/profile invariants on definitions.
-func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
+// normalizeIngredient enforces ID/key/name/profile invariants on definitions.
+func normalizeIngredient(def Ingredient) Ingredient {
 	def.Name = strings.TrimSpace(def.Name)
 	if def.ID == "" {
 		def.ID = NewIngredientID(def.Name)
@@ -146,8 +153,19 @@ func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
 }
 
 // DefaultLot returns a lot descriptor whose profile matches the definition.
-func (def IngredientDefinition) DefaultLot() LotDescriptor {
-	normalized := normalizeDefinition(def)
+func (def Ingredient) DefaultLot() Lot {
+	normalized := normalizeIngredient(def)
 	copy := normalized
 	return NewLot(&copy)
 }
+
+// Legacy helper retained for compatibility while call sites migrate to the new
+// normalizeIngredient name.
+func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
+	return normalizeIngredient(def)
+}
+
+// Backwards compatibility aliases while the rest of the codebase migrates to
+// the new Ingredient and Lot types.
+type IngredientDefinition = Ingredient
+type LotDescriptor = Lot

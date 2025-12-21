@@ -4,7 +4,7 @@ import "sync"
 
 // IngredientCatalog exposes canonical ingredient defs and their default lots.
 type IngredientCatalog struct {
-	defs  map[IngredientID]*IngredientDefinition
+	defs  map[IngredientID]*Ingredient
 	lots  map[IngredientID]LotDescriptor
 	keyed map[IngredientKey]IngredientID
 }
@@ -25,7 +25,7 @@ func DefaultIngredientCatalog() IngredientCatalog {
 // NewIngredientCatalog builds a catalog from a slice of ingredient specs. The
 // catalog automatically provisions default lots that mirror each spec.
 func NewIngredientCatalog(ingredients []IngredientDefinition) IngredientCatalog {
-	defs := make(map[IngredientID]*IngredientDefinition, len(ingredients))
+	defs := make(map[IngredientID]*Ingredient, len(ingredients))
 	lots := make(map[IngredientID]LotDescriptor, len(ingredients))
 	keyed := make(map[IngredientKey]IngredientID)
 
