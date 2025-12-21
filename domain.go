@@ -2,99 +2,11 @@ package creamery
 
 import "sync"
 
-// IngredientSpec represents an ingredient definition with uncertainty ranges.
-type IngredientSpec struct {
-	ID      IngredientID
-	Key     IngredientKey
-	Name    string
-	Profile ConstituentProfile
-}
-
-// IngredientLot represents a particular lot of an ingredient, optionally
-// overriding metadata such as the display name or constituent profile.
-type IngredientLot struct {
-	Ingredient IngredientSpec
-	Name       string
-	LotCode    string
-
-	profileOverride *ConstituentProfile
-}
+// Backwards compatibility aliases during the migration window.
+type IngredientSpec = IngredientDefinition
+type IngredientLot = LotDescriptor
 
 // NewIngredientLot constructs an instance from a base ingredient.
-func NewIngredientLot(ing IngredientSpec) IngredientLot {
-	ing = normalizeSpec(ing)
-	return IngredientLot{
-		Ingredient: ing,
-		Name:       ing.Name,
-	}
-}
-
-// EffectiveProfile returns the profile for the lot, falling back to the base
-// ingredient when no override is provided.
-func (inst IngredientLot) EffectiveProfile() ConstituentProfile {
-	spec := normalizeSpec(inst.Ingredient)
-	profile := spec.Profile
-	if inst.profileOverride != nil {
-		profile = normalizeProfile(*inst.profileOverride, spec.ID, inst.displayName())
-	} else if profile.Name == "" && inst.Name != "" {
-		profile.Name = inst.Name
-	}
-	return profile
-}
-
-// DisplayName returns the preferred name for the lot.
-func (inst IngredientLot) DisplayName() string {
-	return inst.displayName()
-}
-
-func (inst IngredientLot) displayName() string {
-	if inst.Name != "" {
-		return inst.Name
-	}
-	if inst.Ingredient.Name != "" {
-		return inst.Ingredient.Name
-	}
-	if inst.Ingredient.ID != "" {
-		return inst.Ingredient.ID.String()
-	}
-	return ""
-}
-
-// SetProfileOverride replaces the lot's constituent profile while keeping spec metadata.
-func (inst *IngredientLot) SetProfileOverride(profile ConstituentProfile) {
-	if inst == nil {
-		return
-	}
-	normalized := normalizeProfile(profile, inst.Ingredient.ID, inst.displayName())
-	inst.profileOverride = &normalized
-}
-
-// WithProfileOverride returns a copy of the lot with an updated constituent profile.
-func (inst IngredientLot) WithProfileOverride(profile ConstituentProfile) IngredientLot {
-	inst.SetProfileOverride(profile)
-	return inst
-}
-
-// WithSpec returns a copy of the lot using the provided normalized spec.
-func (inst IngredientLot) WithSpec(spec IngredientSpec) IngredientLot {
-	inst.Ingredient = normalizeSpec(spec)
-	if inst.Name == "" || inst.Name == inst.Ingredient.Name {
-		inst.Name = inst.Ingredient.Name
-	}
-	inst.profileOverride = nil
-	return inst
-}
-
-// CostPerKg returns the midpoint cost for the lot.
-func (inst IngredientLot) CostPerKg() float64 {
-	profile := inst.EffectiveProfile()
-	cost := profile.Economics.Cost
-	if cost.Lo == 0 && cost.Hi == 0 {
-		return 0
-	}
-	return cost.Mid()
-}
-
 // IngredientCatalog exposes canonical ingredient specs and their default lots.
 type IngredientCatalog struct {
 	specs map[IngredientID]IngredientSpec

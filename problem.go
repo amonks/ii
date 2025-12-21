@@ -7,9 +7,8 @@ import (
 )
 
 type ingredientEntry struct {
-	spec    IngredientSpec
-	lot     IngredientLot
-	profile ConstituentProfile
+	definition *IngredientDefinition
+	lot        LotDescriptor
 }
 
 // Problem defines an ice cream formulation problem.
