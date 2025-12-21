@@ -25,14 +25,20 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 			for j := range s.Problem.entries {
 				profile := s.Problem.profileForIndex(j)
 				point := sampleProfilePoint(profile, rng)
-				coeffs.fat[j] = point.fat
-				coeffs.msnf[j] = point.msnf
-				coeffs.sugar[j] = point.addedSugar
-				coeffs.other[j] = point.other
-				coeffs.protein[j] = point.protein
-				coeffs.lactose[j] = point.lactose
-				coeffs.totalSugar[j] = point.totalSugar
-				coeffs.water[j] = point.water
+				coeffs.set(componentFat, j, point.fat)
+				coeffs.set(componentMSNF, j, point.msnf)
+				coeffs.set(componentProtein, j, point.protein)
+				coeffs.set(componentLactose, j, point.lactose)
+				coeffs.set(componentOther, j, point.other)
+				coeffs.set(componentWater, j, point.water)
+				coeffs.set(componentSucrose, j, point.sucrose)
+				coeffs.set(componentGlucose, j, point.glucose)
+				coeffs.set(componentFructose, j, point.fructose)
+				coeffs.set(componentMaltodextrin, j, point.maltodextrin)
+				coeffs.set(componentPolyols, j, point.polyols)
+				coeffs.set(componentAsh, j, point.ash)
+				coeffs.set(componentAdded, j, point.addedSugar)
+				coeffs.set(componentTotal, j, point.totalSugar)
 				coeffs.pod[j] = point.pod
 				coeffs.pac[j] = point.pac
 			}
@@ -69,16 +75,22 @@ func sampleInterval(i Interval, rng *rand.Rand) float64 {
 }
 
 type profilePoint struct {
-	fat        float64
-	msnf       float64
-	addedSugar float64
-	other      float64
-	protein    float64
-	lactose    float64
-	totalSugar float64
-	water      float64
-	pod        float64
-	pac        float64
+	fat          float64
+	msnf         float64
+	sucrose      float64
+	glucose      float64
+	fructose     float64
+	maltodextrin float64
+	polyols      float64
+	addedSugar   float64
+	other        float64
+	protein      float64
+	lactose      float64
+	totalSugar   float64
+	water        float64
+	ash          float64
+	pod          float64
+	pac          float64
 }
 
 func sampleProfilePoint(profile ConstituentProfile, rng *rand.Rand) profilePoint {
@@ -91,6 +103,7 @@ func sampleProfilePoint(profile ConstituentProfile, rng *rand.Rand) profilePoint
 		water:   sampleInterval(comps.Water, rng),
 	}
 	ash := sampleInterval(comps.Ash, rng)
+	point.ash = ash
 	msnf := sampleInterval(comps.MSNF, rng)
 	if msnf == 0 {
 		msnf = point.protein + point.lactose + ash
@@ -104,6 +117,11 @@ func sampleProfilePoint(profile ConstituentProfile, rng *rand.Rand) profilePoint
 		maltodextrin: sampleInterval(comps.Maltodextrin, rng),
 		polyols:      sampleInterval(comps.Polyols, rng),
 	}
+	point.sucrose = sugars.sucrose
+	point.glucose = sugars.glucose
+	point.fructose = sugars.fructose
+	point.maltodextrin = sugars.maltodextrin
+	point.polyols = sugars.polyols
 	point.addedSugar = sugars.sucrose + sugars.glucose + sugars.fructose + sugars.maltodextrin + sugars.polyols
 	point.totalSugar = point.addedSugar + point.lactose
 
@@ -150,19 +168,13 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 	components := sumComponents(weights, s.Problem.entries)
 	sol.Components = components
 
-	// Compute achieved composition using the LP's sampled coefficients
-	var fat, msnf, sugar, other float64
-	for i, w := range weights {
-		fat += w * lpp.fatLo[i]
-		msnf += w * lpp.msnfLo[i]
-		sugar += w * lpp.sugarLo[i]
-		other += w * lpp.otherLo[i]
-	}
-	achieved := ComponentFractions{
-		Fat:         Point(fat),
-		MSNF:        Point(msnf),
-		Sucrose:     Point(sugar),
-		OtherSolids: Point(other),
+	achieved := ComponentFractions{}
+	for key, pair := range lpp.componentValues {
+		value := 0.0
+		for i, w := range weights {
+			value += w * pair.lo[i]
+		}
+		applyComponentValue(&achieved, key, value)
 	}
 	sol.Achieved = EnsureWater(achieved)
 	return sol

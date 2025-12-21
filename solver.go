@@ -10,32 +10,236 @@ import (
 
 const tolerance = 1e-9
 
+type componentKey string
+
+const (
+	componentFat          componentKey = "fat"
+	componentMSNF         componentKey = "msnf"
+	componentProtein      componentKey = "protein"
+	componentLactose      componentKey = "lactose"
+	componentSucrose      componentKey = "sucrose"
+	componentGlucose      componentKey = "glucose"
+	componentFructose     componentKey = "fructose"
+	componentMaltodextrin componentKey = "maltodextrin"
+	componentPolyols      componentKey = "polyols"
+	componentAsh          componentKey = "ash"
+	componentOther        componentKey = "other"
+	componentWater        componentKey = "water"
+	componentAdded        componentKey = "added_sugar"
+	componentTotal        componentKey = "total_sugar"
+)
+
+var componentKeyOrder = []componentKey{
+	componentFat,
+	componentMSNF,
+	componentProtein,
+	componentLactose,
+	componentSucrose,
+	componentGlucose,
+	componentFructose,
+	componentMaltodextrin,
+	componentPolyols,
+	componentAsh,
+	componentOther,
+	componentWater,
+	componentAdded,
+	componentTotal,
+}
+
+type coeffPair struct {
+	lo []float64
+	hi []float64
+}
+
 type coefficientSet struct {
-	fat        []float64
-	msnf       []float64
-	sugar      []float64
-	other      []float64
-	protein    []float64
-	lactose    []float64
-	totalSugar []float64
-	water      []float64
+	components map[componentKey][]float64
 	pod        []float64
 	pac        []float64
 }
 
 func newCoefficientSet(n int) coefficientSet {
-	return coefficientSet{
-		fat:        make([]float64, n),
-		msnf:       make([]float64, n),
-		sugar:      make([]float64, n),
-		other:      make([]float64, n),
-		protein:    make([]float64, n),
-		lactose:    make([]float64, n),
-		totalSugar: make([]float64, n),
-		water:      make([]float64, n),
+	set := coefficientSet{
+		components: make(map[componentKey][]float64, len(componentKeyOrder)),
 		pod:        make([]float64, n),
 		pac:        make([]float64, n),
 	}
+	for _, key := range componentKeyOrder {
+		set.components[key] = make([]float64, n)
+	}
+	return set
+}
+
+func (c coefficientSet) set(key componentKey, index int, value float64) {
+	if arr, ok := c.components[key]; ok {
+		arr[index] = value
+	}
+}
+
+func componentExtractor(key componentKey) func(ConstituentProfile) Interval {
+	switch key {
+	case componentFat:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Fat }
+	case componentMSNF:
+		return func(profile ConstituentProfile) Interval { return profile.MSNFInterval() }
+	case componentProtein:
+		return func(profile ConstituentProfile) Interval { return profile.ProteinInterval() }
+	case componentLactose:
+		return func(profile ConstituentProfile) Interval { return profile.LactoseInterval() }
+	case componentSucrose:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Sucrose }
+	case componentGlucose:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Glucose }
+	case componentFructose:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Fructose }
+	case componentMaltodextrin:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Maltodextrin }
+	case componentPolyols:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Polyols }
+	case componentAsh:
+		return func(profile ConstituentProfile) Interval { return profile.Components.Ash }
+	case componentOther:
+		return func(profile ConstituentProfile) Interval { return profile.OtherSolidsInterval() }
+	case componentWater:
+		return func(profile ConstituentProfile) Interval { return profile.WaterInterval() }
+	case componentAdded:
+		return func(profile ConstituentProfile) Interval { return profile.AddedSugarsInterval() }
+	case componentTotal:
+		return func(profile ConstituentProfile) Interval { return profile.TotalSugarInterval() }
+	default:
+		return nil
+	}
+}
+
+func targetIntervalForKey(target FormulationTarget, key componentKey) Interval {
+	switch key {
+	case componentFat:
+		return target.FatInterval()
+	case componentMSNF:
+		return target.MSNFInterval()
+	case componentProtein:
+		return target.Components.Protein
+	case componentLactose:
+		return target.Components.Lactose
+	case componentSucrose:
+		return target.Components.Sucrose
+	case componentGlucose:
+		return target.Components.Glucose
+	case componentFructose:
+		return target.Components.Fructose
+	case componentMaltodextrin:
+		return target.Components.Maltodextrin
+	case componentPolyols:
+		return target.Components.Polyols
+	case componentAsh:
+		return target.Components.Ash
+	case componentOther:
+		return target.Components.OtherSolids
+	case componentWater:
+		return target.WaterInterval()
+	case componentAdded:
+		return target.AddedSugarsInterval()
+	case componentTotal:
+		return target.TotalSugarsInterval()
+	default:
+		return Interval{}
+	}
+}
+
+func applyComponentValue(f *ComponentFractions, key componentKey, value float64) {
+	if f == nil {
+		return
+	}
+	switch key {
+	case componentFat:
+		f.Fat = Point(value)
+	case componentMSNF:
+		f.MSNF = Point(value)
+	case componentProtein:
+		f.Protein = Point(value)
+	case componentLactose:
+		f.Lactose = Point(value)
+	case componentSucrose:
+		f.Sucrose = Point(value)
+	case componentGlucose:
+		f.Glucose = Point(value)
+	case componentFructose:
+		f.Fructose = Point(value)
+	case componentMaltodextrin:
+		f.Maltodextrin = Point(value)
+	case componentPolyols:
+		f.Polyols = Point(value)
+	case componentAsh:
+		f.Ash = Point(value)
+	case componentOther:
+		f.OtherSolids = Point(value)
+	case componentWater:
+		f.Water = Point(value)
+	}
+}
+
+func newComponentPairs(n int) map[componentKey]*coeffPair {
+	pairs := make(map[componentKey]*coeffPair, len(componentKeyOrder))
+	for _, key := range componentKeyOrder {
+		pairs[key] = &coeffPair{
+			lo: make([]float64, n),
+			hi: make([]float64, n),
+		}
+	}
+	return pairs
+}
+
+func componentPairsFromEntries(entries []ingredientEntry) map[componentKey]*coeffPair {
+	pairs := newComponentPairs(len(entries))
+	for i, entry := range entries {
+		if entry.definition == nil {
+			continue
+		}
+		profile := entry.lot.EffectiveProfile()
+		for _, key := range componentKeyOrder {
+			extractor := componentExtractor(key)
+			if extractor == nil {
+				continue
+			}
+			interval := extractor(profile)
+			pair := pairs[key]
+			pair.lo[i] = interval.Lo
+			pair.hi[i] = interval.Hi
+		}
+	}
+	return pairs
+}
+
+func componentPairsFromCoeffs(coeffs coefficientSet, n int) map[componentKey]*coeffPair {
+	pairs := newComponentPairs(n)
+	for key, values := range coeffs.components {
+		pair, ok := pairs[key]
+		if !ok {
+			continue
+		}
+		copy(pair.lo, values)
+		copy(pair.hi, values)
+	}
+	return pairs
+}
+
+func buildComponentConstraints(values map[componentKey]*coeffPair, target FormulationTarget) []lpComponentConstraint {
+	constraints := make([]lpComponentConstraint, 0, len(values))
+	for _, key := range componentKeyOrder {
+		pair, ok := values[key]
+		if !ok {
+			continue
+		}
+		targetInterval := targetIntervalForKey(target, key)
+		if !intervalSpecified(targetInterval) {
+			continue
+		}
+		constraints = append(constraints, lpComponentConstraint{
+			key:    key,
+			coeffs: pair,
+			target: targetInterval,
+		})
+	}
+	return constraints
 }
 
 // Solver solves ice cream formulation problems.
@@ -67,27 +271,12 @@ func NewSolver(p *Problem) (*Solver, error) {
 type lpProblem struct {
 	n int // number of ingredients
 
-	// Coefficient intervals for each constituent
-	fatLo        []float64
-	fatHi        []float64
-	msnfLo       []float64
-	msnfHi       []float64
-	sugarLo      []float64 // added sugars (non-lactose)
-	sugarHi      []float64
-	otherLo      []float64
-	otherHi      []float64
-	proteinLo    []float64
-	proteinHi    []float64
-	lactoseLo    []float64
-	lactoseHi    []float64
-	totalSugarLo []float64
-	totalSugarHi []float64
-	waterLo      []float64
-	waterHi      []float64
-	podLo        []float64
-	podHi        []float64
-	pacLo        []float64
-	pacHi        []float64
+	componentValues      map[componentKey]*coeffPair
+	componentConstraints []lpComponentConstraint
+	podLo                []float64
+	podHi                []float64
+	pacLo                []float64
+	pacHi                []float64
 
 	// Bounds on each variable
 	lower []float64
@@ -109,6 +298,12 @@ type lpProblem struct {
 	idToIndex map[IngredientID]int
 }
 
+type lpComponentConstraint struct {
+	key    componentKey
+	coeffs *coeffPair
+	target Interval
+}
+
 // buildLP creates the LP formulation using midpoints of ingredient composition intervals.
 func (s *Solver) buildLP() *lpProblem {
 	p := s.Problem
@@ -122,28 +317,7 @@ func (s *Solver) buildLP() *lpProblem {
 
 	lpp := &lpProblem{
 		n:                n,
-		fatLo:            make([]float64, n),
-		fatHi:            make([]float64, n),
-		msnfLo:           make([]float64, n),
-		msnfHi:           make([]float64, n),
-		sugarLo:          make([]float64, n),
-		sugarHi:          make([]float64, n),
-		otherLo:          make([]float64, n),
-		otherHi:          make([]float64, n),
-		proteinLo:        make([]float64, n),
-		proteinHi:        make([]float64, n),
-		lactoseLo:        make([]float64, n),
-		lactoseHi:        make([]float64, n),
-		totalSugarLo:     make([]float64, n),
-		totalSugarHi:     make([]float64, n),
-		waterLo:          make([]float64, n),
-		waterHi:          make([]float64, n),
-		podLo:            make([]float64, n),
-		podHi:            make([]float64, n),
-		pacLo:            make([]float64, n),
-		pacHi:            make([]float64, n),
-		lower:            make([]float64, n),
-		upper:            make([]float64, n),
+		componentValues:  componentPairsFromEntries(p.entries),
 		target:           p.Target,
 		targetPOD:        p.Target.POD,
 		targetPAC:        p.Target.PAC,
@@ -152,40 +326,22 @@ func (s *Solver) buildLP() *lpProblem {
 		ids:              ids,
 		names:            names,
 		idToIndex:        idIndex,
+		podLo:            make([]float64, n),
+		podHi:            make([]float64, n),
+		pacLo:            make([]float64, n),
+		pacHi:            make([]float64, n),
+		lower:            make([]float64, n),
+		upper:            make([]float64, n),
 	}
+	lpp.componentConstraints = buildComponentConstraints(lpp.componentValues, p.Target)
 
 	for i, entry := range p.entries {
-		def := entry.definition
-		if def == nil {
+		if entry.definition == nil {
+			lpp.lower[i] = 0
+			lpp.upper[i] = 1
 			continue
 		}
 		profile := entry.lot.EffectiveProfile()
-		components := profile.Components
-		fat := components.Fat
-		msnf := profile.MSNFInterval()
-		sugar := profile.AddedSugarsInterval()
-		other := profile.OtherSolidsInterval()
-		protein := profile.ProteinInterval()
-		lactose := profile.LactoseInterval()
-		totalSugar := profile.TotalSugarInterval()
-		water := profile.WaterInterval()
-
-		lpp.fatLo[i] = fat.Lo
-		lpp.fatHi[i] = fat.Hi
-		lpp.msnfLo[i] = msnf.Lo
-		lpp.msnfHi[i] = msnf.Hi
-		lpp.sugarLo[i] = sugar.Lo
-		lpp.sugarHi[i] = sugar.Hi
-		lpp.otherLo[i] = other.Lo
-		lpp.otherHi[i] = other.Hi
-		lpp.proteinLo[i] = protein.Lo
-		lpp.proteinHi[i] = protein.Hi
-		lpp.lactoseLo[i] = lactose.Lo
-		lpp.lactoseHi[i] = lactose.Hi
-		lpp.totalSugarLo[i] = totalSugar.Lo
-		lpp.totalSugarHi[i] = totalSugar.Hi
-		lpp.waterLo[i] = water.Lo
-		lpp.waterHi[i] = water.Hi
 
 		pod := profile.PODInterval()
 		pac := profile.PACInterval()
@@ -194,8 +350,7 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.pacLo[i] = pac.Lo
 		lpp.pacHi[i] = pac.Hi
 
-		// Weight bounds
-		if bound, ok := p.WeightBounds[def.ID]; ok {
+		if bound, ok := p.WeightBounds[entry.definition.ID]; ok {
 			lpp.lower[i] = bound.Lo
 			lpp.upper[i] = bound.Hi
 		} else {
@@ -208,11 +363,12 @@ func (s *Solver) buildLP() *lpProblem {
 }
 
 // buildLPWithCoeffs creates an LP with specific coefficient values.
+
 func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	p := s.Problem
 	n := len(p.entries)
-	ids := p.IngredientIDs()
-	names := p.IngredientNames()
+	ids := s.Problem.IngredientIDs()
+	names := s.Problem.IngredientNames()
 	idIndex := make(map[IngredientID]int, n)
 	for i, id := range ids {
 		idIndex[id] = i
@@ -220,28 +376,7 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 
 	lpp := &lpProblem{
 		n:                n,
-		fatLo:            make([]float64, n),
-		fatHi:            make([]float64, n),
-		msnfLo:           make([]float64, n),
-		msnfHi:           make([]float64, n),
-		sugarLo:          make([]float64, n),
-		sugarHi:          make([]float64, n),
-		otherLo:          make([]float64, n),
-		otherHi:          make([]float64, n),
-		proteinLo:        make([]float64, n),
-		proteinHi:        make([]float64, n),
-		lactoseLo:        make([]float64, n),
-		lactoseHi:        make([]float64, n),
-		totalSugarLo:     make([]float64, n),
-		totalSugarHi:     make([]float64, n),
-		waterLo:          make([]float64, n),
-		waterHi:          make([]float64, n),
-		podLo:            make([]float64, n),
-		podHi:            make([]float64, n),
-		pacLo:            make([]float64, n),
-		pacHi:            make([]float64, n),
-		lower:            make([]float64, n),
-		upper:            make([]float64, n),
+		componentValues:  componentPairsFromCoeffs(coeffs, n),
 		target:           p.Target,
 		targetPOD:        p.Target.POD,
 		targetPAC:        p.Target.PAC,
@@ -250,36 +385,19 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 		ids:              ids,
 		names:            names,
 		idToIndex:        idIndex,
+		podLo:            make([]float64, n),
+		podHi:            make([]float64, n),
+		pacLo:            make([]float64, n),
+		pacHi:            make([]float64, n),
+		lower:            make([]float64, n),
+		upper:            make([]float64, n),
 	}
+	lpp.componentConstraints = buildComponentConstraints(lpp.componentValues, p.Target)
 
 	for i, entry := range p.entries {
-		fat := coeffs.fat[i]
-		msnf := coeffs.msnf[i]
-		sugar := coeffs.sugar[i]
-		other := coeffs.other[i]
-		protein := coeffs.protein[i]
-		lactose := coeffs.lactose[i]
-		totalSugar := coeffs.totalSugar[i]
-		water := coeffs.water[i]
 		pod := coeffs.pod[i]
 		pac := coeffs.pac[i]
 
-		lpp.fatLo[i] = fat
-		lpp.fatHi[i] = fat
-		lpp.msnfLo[i] = msnf
-		lpp.msnfHi[i] = msnf
-		lpp.sugarLo[i] = sugar
-		lpp.sugarHi[i] = sugar
-		lpp.otherLo[i] = other
-		lpp.otherHi[i] = other
-		lpp.proteinLo[i] = protein
-		lpp.proteinHi[i] = protein
-		lpp.lactoseLo[i] = lactose
-		lpp.lactoseHi[i] = lactose
-		lpp.totalSugarLo[i] = totalSugar
-		lpp.totalSugarHi[i] = totalSugar
-		lpp.waterLo[i] = water
-		lpp.waterHi[i] = water
 		lpp.podLo[i] = pod
 		lpp.podHi[i] = pod
 		lpp.pacLo[i] = pac
@@ -305,40 +423,7 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	n := lpp.n
 
-	type componentConstraint struct {
-		lo     []float64
-		hi     []float64
-		target Interval
-	}
-	componentConstraints := make([]componentConstraint, 0, 8)
-	if fatTarget := lpp.target.FatInterval(); intervalSpecified(fatTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.fatLo, lpp.fatHi, fatTarget})
-	}
-	if msnfTarget := lpp.target.MSNFInterval(); intervalSpecified(msnfTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.msnfLo, lpp.msnfHi, msnfTarget})
-	}
-	if otherTarget := lpp.target.OtherSolidsInterval(); intervalSpecified(otherTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.otherLo, lpp.otherHi, otherTarget})
-	}
-
-	if proteinTarget := lpp.target.ProteinInterval(); intervalSpecified(proteinTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.proteinLo, lpp.proteinHi, proteinTarget})
-	}
-	if lactoseTarget := lpp.target.LactoseInterval(); intervalSpecified(lactoseTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.lactoseLo, lpp.lactoseHi, lactoseTarget})
-	}
-	if addedTarget := lpp.target.AddedSugarsInterval(); intervalSpecified(addedTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.sugarLo, lpp.sugarHi, addedTarget})
-	}
-	if totalTarget := lpp.target.TotalSugarsInterval(); intervalSpecified(totalTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.totalSugarLo, lpp.totalSugarHi, totalTarget})
-	}
-	if waterTarget := lpp.target.WaterInterval(); intervalSpecified(waterTarget) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.waterLo, lpp.waterHi, waterTarget})
-	}
-
-	// Count inequality constraints:
-	componentRows := len(componentConstraints) * 2
+	componentRows := len(lpp.componentConstraints) * 2
 	numIneq := componentRows + 2*n
 	hasPOD := lpp.targetPOD.Hi > 0
 	hasPAC := lpp.targetPAC.Hi > 0
@@ -366,15 +451,15 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 
 	row := 0
 
-	for _, comp := range componentConstraints {
+	for _, comp := range lpp.componentConstraints {
 		for i := 0; i < n; i++ {
-			G.Set(row, i, -comp.lo[i])
+			G.Set(row, i, -comp.coeffs.lo[i])
 		}
 		h[row] = -comp.target.Lo
 		row++
 
 		for i := 0; i < n; i++ {
-			G.Set(row, i, comp.hi[i])
+			G.Set(row, i, comp.coeffs.hi[i])
 		}
 		h[row] = comp.target.Hi
 		row++
