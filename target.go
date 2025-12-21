@@ -91,10 +91,10 @@ func (t FormulationTarget) Validate() error {
 // FormulationFromComposition creates a formulation target when only the legacy
 // Composition is known (other fields default to zero intervals).
 func FormulationFromComposition(comp Composition) FormulationTarget {
-	profile := ProfileFromComposition("", "", comp)
+	components := comp.ToComponents()
 	return FormulationTarget{
 		Composition: comp,
-		Components:  profile.Components,
-		Water:       comp.Water(),
+		Components:  components,
+		Water:       components.Water,
 	}
 }

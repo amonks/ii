@@ -80,6 +80,22 @@ func ComponentNames() []string {
 	return []string{"Fat", "MSNF", "Sugar", "Other"}
 }
 
+// ToComponents expands the four-part composition into constituent components
+// using canonical dairy assumptions.
+func (c Composition) ToComponents() ConstituentComponents {
+	components := ConstituentComponents{
+		Fat:         c.Fat,
+		MSNF:        c.MSNF,
+		Sucrose:     c.Sugar,
+		OtherSolids: c.Other,
+		Water:       c.Water(),
+	}
+	components.Protein = c.MSNF.Scale(proteinFractionOfMSNF)
+	components.Lactose = c.MSNF.Scale(LactoseFractionOfMSNF)
+	components.Ash = clampInterval(c.MSNF.Sub(components.Protein.Add(components.Lactose)), 0)
+	return components
+}
+
 // CompositionFromProfile aggregates a constituent profile back into the legacy
 // four-component composition (fat, MSNF, sugar, other).
 func CompositionFromProfile(profile ConstituentProfile) Composition {

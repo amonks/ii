@@ -166,16 +166,32 @@ func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
 		return Formulation{}, errors.New("snapshot has zero total mass")
 	}
 
+	invBatch := 1 / batch
 	sugars := map[string]float64{
-		"sucrose":      b.SucroseMassKg / batch,
-		"glucose":      b.GlucoseMassKg / batch,
-		"fructose":     b.FructoseMassKg / batch,
-		"lactose":      b.Lactose.Mid / batch,
-		"polyols":      b.PolyolsMassKg / batch,
-		"maltodextrin": b.MaltodextrinMassKg / batch,
+		"sucrose":      b.SucroseMassKg * invBatch,
+		"glucose":      b.GlucoseMassKg * invBatch,
+		"fructose":     b.FructoseMassKg * invBatch,
+		"lactose":      b.Lactose.Mid * invBatch,
+		"polyols":      b.PolyolsMassKg * invBatch,
+		"maltodextrin": b.MaltodextrinMassKg * invBatch,
 	}
 
-	snf := (b.ProteinMassKg + b.Lactose.Mid + b.AshMassKg) / batch
+	components := ConstituentComponents{
+		Water:        Point(b.WaterPct),
+		Fat:          Point(b.FatPct),
+		Protein:      Point(b.ProteinMassKg * invBatch),
+		Lactose:      Point(b.Lactose.Mid * invBatch),
+		Sucrose:      Point(b.SucroseMassKg * invBatch),
+		Glucose:      Point(b.GlucoseMassKg * invBatch),
+		Fructose:     Point(b.FructoseMassKg * invBatch),
+		Maltodextrin: Point(b.MaltodextrinMassKg * invBatch),
+		Polyols:      Point(b.PolyolsMassKg * invBatch),
+		Ash:          Point(b.AshMassKg * invBatch),
+		OtherSolids:  Point(b.OtherSolidsMassKg * invBatch),
+	}
+
+	snf := (b.ProteinMassKg + b.Lactose.Mid + b.AshMassKg) * invBatch
+	components.MSNF = Point(snf)
 	stabilizer := b.PolymerSolidsKg / batch
 	emulsifier := b.EmulsifierMassKg / batch
 
@@ -187,6 +203,7 @@ func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
 		StabilizerPct: stabilizer,
 		EmulsifierPct: emulsifier,
 		ProteinPct:    b.ProteinPct,
+		Components:    components,
 	}, nil
 }
 
