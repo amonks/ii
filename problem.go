@@ -225,7 +225,7 @@ func (p *Problem) Validate() error {
 		seen[spec.ID] = true
 
 		profile := p.profileForIndex(i)
-		if err := profile.Composition().Valid(); err != nil {
+		if err := profile.Components.Validate(); err != nil {
 			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
 		}
 	}

@@ -34,23 +34,7 @@ func (c Composition) TotalSolids() Interval {
 
 // Valid checks if the composition is physically possible.
 func (c Composition) Valid() error {
-	if c.Fat.Lo < 0 || c.Fat.Hi > 1 {
-		return fmt.Errorf("fat out of range: %v", c.Fat)
-	}
-	if c.MSNF.Lo < 0 || c.MSNF.Hi > 1 {
-		return fmt.Errorf("MSNF out of range: %v", c.MSNF)
-	}
-	if c.Sugar.Lo < 0 || c.Sugar.Hi > 1 {
-		return fmt.Errorf("sugar out of range: %v", c.Sugar)
-	}
-	if c.Other.Lo < 0 || c.Other.Hi > 1 {
-		return fmt.Errorf("other out of range: %v", c.Other)
-	}
-	water := c.Water()
-	if water.Lo < 0 {
-		return fmt.Errorf("composition sums to more than 100%%: water would be %v", water)
-	}
-	return nil
+	return c.ToComponents().Validate()
 }
 
 // String returns a human-readable representation.
@@ -99,16 +83,20 @@ func (c Composition) ToComponents() ConstituentComponents {
 // CompositionFromProfile aggregates a constituent profile back into the legacy
 // four-component composition (fat, MSNF, sugar, other).
 func CompositionFromProfile(profile ConstituentProfile) Composition {
-	msnf := profile.MSNFInterval()
-	sugar := profile.Components.Sucrose.
-		Add(profile.Components.Glucose).
-		Add(profile.Components.Fructose).
-		Add(profile.Components.Maltodextrin).
-		Add(profile.Components.Polyols)
+	return CompositionFromComponents(profile.Components)
+}
+
+// CompositionFromComponents aggregates constituent components back into the four-part composition.
+func CompositionFromComponents(components ConstituentComponents) Composition {
+	sugar := components.Sucrose.
+		Add(components.Glucose).
+		Add(components.Fructose).
+		Add(components.Maltodextrin).
+		Add(components.Polyols)
 	return Composition{
-		Fat:   profile.Components.Fat,
-		MSNF:  msnf,
+		Fat:   components.Fat,
+		MSNF:  components.EffectiveMSNF(),
 		Sugar: sugar,
-		Other: profile.Components.OtherSolids,
+		Other: components.OtherSolids,
 	}
 }

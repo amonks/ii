@@ -204,23 +204,7 @@ func ProfileFromComposition(id IngredientID, name string, comp Composition) Cons
 	if id == "" {
 		id = NewIngredientID(name)
 	}
-	protein := comp.MSNF.Scale(proteinFractionOfMSNF)
-	lactose := comp.MSNF.Scale(LactoseFractionOfMSNF)
-	minerals := clampInterval(comp.MSNF.Sub(protein.Add(lactose)), 0)
-	components := ConstituentComponents{
-		Water:        comp.Water(),
-		Fat:          comp.Fat,
-		MSNF:         comp.MSNF,
-		Protein:      protein,
-		Lactose:      lactose,
-		Ash:          minerals,
-		Sucrose:      comp.Sugar,
-		OtherSolids:  comp.Other,
-		Glucose:      Point(0),
-		Fructose:     Point(0),
-		Maltodextrin: Point(0),
-		Polyols:      Point(0),
-	}
+	components := comp.ToComponents()
 	nutrition := ConstituentNutrition{
 		TransFat:           Point(0),
 		SaturatedFat:       Point(0),

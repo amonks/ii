@@ -63,27 +63,14 @@ func (t FormulationTarget) Validate() error {
 	if err := t.Composition.Valid(); err != nil {
 		return err
 	}
-	entries := []struct {
-		name string
-		iv   Interval
-	}{
-		{"protein", t.Components.Protein},
-		{"lactose", t.Components.Lactose},
-		{"sucrose", t.Components.Sucrose},
-		{"glucose", t.Components.Glucose},
-		{"fructose", t.Components.Fructose},
-		{"maltodextrin", t.Components.Maltodextrin},
-		{"polyols", t.Components.Polyols},
-		{"other solids", t.Components.OtherSolids},
-		{"water", t.Water},
+	if err := t.Components.Validate(); err != nil {
+		return fmt.Errorf("invalid constituent targets: %w", err)
 	}
-	for _, entry := range entries {
-		if entry.iv.Lo < 0 || entry.iv.Hi > 1 {
-			return fmt.Errorf("target %s interval out of range: %s", entry.name, entry.iv.String())
-		}
-		if entry.iv.Lo > entry.iv.Hi {
-			return fmt.Errorf("target %s interval has lo > hi: %s", entry.name, entry.iv.String())
-		}
+	if t.Water.Lo < 0 || t.Water.Hi > 1 {
+		return fmt.Errorf("target water interval out of range: %s", t.Water.String())
+	}
+	if t.Water.Lo > t.Water.Hi {
+		return fmt.Errorf("target water interval has lo > hi: %s", t.Water.String())
 	}
 	return nil
 }
