@@ -2,23 +2,27 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[IngredientID]IngredientInstance, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
+func recipeFromSolution(sol *Solution, specs []Ingredient, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
 	if sol == nil {
 		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
 	}
 
 	components := make([]RecipeComponent, 0, len(specs))
+	batchMass := goals.BatchMassKG
+	if batchMass <= 0 {
+		batchMass = 100
+	}
 
 	for _, spec := range specs {
 		w := sol.Weights[spec.ID]
 		if w <= 1e-6 {
 			continue
 		}
-		detail, ok := batches[spec.ID]
+		detail, ok := sol.Lots[spec.ID]
 		if !ok {
-			return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("missing detailed composition for %s (%s)", spec.Name, spec.ID)
+			detail = NewIngredientLot(spec)
 		}
-		mass := w * goals.BatchMassKG
+		mass := w * batchMass
 		components = append(components, RecipeComponent{
 			Ingredient: detail,
 			MassKg:     mass,

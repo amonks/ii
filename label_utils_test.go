@@ -37,6 +37,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Names: map[IngredientID]string{
 			IngredientID("sucrose"): "Fancy Sugar",
 		},
+		Lots: make(map[IngredientID]IngredientLot),
 	}
 
 	goals := LabelGoals{
@@ -46,11 +47,9 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 
 	inst := batch.ToInstance()
 	inst.Name = batch.Name
-	batches := map[IngredientID]IngredientInstance{
-		IngredientID("sucrose"): inst,
-	}
+	sol.Lots[IngredientID("sucrose")] = inst
 
-	recipe, _, _, _, err := recipeFromSolution(sol, []Ingredient{spec}, batches, goals, 0)
+	recipe, _, _, _, err := recipeFromSolution(sol, []Ingredient{spec}, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}

@@ -411,9 +411,14 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		return nil, fmt.Errorf("%s LP infeasible: %w", name, err)
 	}
 
-	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, builder.Specs(), builder.Batches(), goals, facts.SodiumMg)
+	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, builder.Specs(), goals, facts.SodiumMg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", name, err)
+	}
+
+	batchDetails := make(map[IngredientID]IngredientInstance, len(solution.Lots))
+	for id, lot := range solution.Lots {
+		batchDetails[id] = lot
 	}
 
 	return &LabelScenarioResult{
@@ -429,7 +434,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		Metrics:          metrics,
 		PintMassGrams:    pintMass,
 		Specs:            builder.Specs(),
-		BatchDetails:     builder.Batches(),
+		BatchDetails:     batchDetails,
 	}, nil
 }
 
