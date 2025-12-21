@@ -8,7 +8,9 @@ import (
 // Problem defines an ice cream formulation problem.
 type Problem struct {
 	// Ingredients available for use (order matters for labeling constraints)
-	Ingredients []Ingredient
+	Ingredients   []Ingredient
+	ingredientIDs []IngredientID
+	idToName      map[IngredientID]string
 
 	// Target composition to achieve
 	Target FormulationTarget
@@ -41,8 +43,23 @@ func NewProblem(ingredients []Ingredient, target Composition) *Problem {
 
 // NewFormulationProblem creates a problem using the richer formulation target.
 func NewFormulationProblem(ingredients []Ingredient, target FormulationTarget) *Problem {
+	canonical := make([]Ingredient, len(ingredients))
+	idToName := make(map[IngredientID]string, len(ingredients))
+	for i, ing := range ingredients {
+		ing = canonicalizeIngredient(ing)
+		canonical[i] = ing
+		idToName[ing.ID] = ing.Name
+	}
 	return &Problem{
-		Ingredients:  ingredients,
+		Ingredients: canonical,
+		ingredientIDs: func() []IngredientID {
+			ids := make([]IngredientID, len(canonical))
+			for i, ing := range canonical {
+				ids[i] = ing.ID
+			}
+			return ids
+		}(),
+		idToName:     idToName,
 		Target:       target,
 		TargetPOD:    target.POD,
 		TargetPAC:    target.PAC,
@@ -141,6 +158,14 @@ func (p *Problem) IngredientNames() []string {
 		names[i] = ing.Name
 	}
 	return names
+}
+
+func (p *Problem) nameForID(id IngredientID) (string, bool) {
+	if p.idToName == nil {
+		return "", false
+	}
+	name, ok := p.idToName[id]
+	return name, ok
 }
 
 // AddConstraint appends a linear constraint of the form lower <= sum(coeff_i * w_i) <= upper.

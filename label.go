@@ -5,8 +5,8 @@ import "math"
 // LabelGroup bundles ingredients that appear together on a consumer label.
 type LabelGroup struct {
 	Name                 string
-	Keys                 []string
-	FractionBounds       map[string]Interval
+	Keys                 []IngredientID
+	FractionBounds       map[IngredientID]Interval
 	EnforceInternalOrder bool
 }
 
@@ -70,27 +70,35 @@ func ApplyGroupBounds(p *Problem, groups []LabelGroup) {
 		if len(group.Keys) == 0 {
 			continue
 		}
-		for key, bounds := range group.FractionBounds {
-			if len(group.Keys) == 1 && group.Keys[0] == key {
+		for keyID, bounds := range group.FractionBounds {
+			keyName, ok := p.nameForID(keyID)
+			if !ok {
+				continue
+			}
+			if len(group.Keys) == 1 && group.Keys[0] == keyID {
 				continue
 			}
 			// key <= hi * group_total
 			if bounds.Hi < math.Inf(1) {
 				coeffs := make(map[string]float64, len(group.Keys)+1)
-				coeffs[key] = 1
-				for _, member := range group.Keys {
-					coeffs[member] -= bounds.Hi
+				coeffs[keyName] = 1
+				for _, memberID := range group.Keys {
+					if memberName, ok := p.nameForID(memberID); ok {
+						coeffs[memberName] -= bounds.Hi
+					}
 				}
-				p.AddConstraint(coeffs, math.Inf(-1), 0, group.Name+":"+key+":hi")
+				p.AddConstraint(coeffs, math.Inf(-1), 0, group.Name+":"+keyName+":hi")
 			}
 			// key >= lo * group_total
 			if bounds.Lo > 0 {
 				coeffs := make(map[string]float64, len(group.Keys)+1)
-				coeffs[key] = 1
-				for _, member := range group.Keys {
-					coeffs[member] -= bounds.Lo
+				coeffs[keyName] = 1
+				for _, memberID := range group.Keys {
+					if memberName, ok := p.nameForID(memberID); ok {
+						coeffs[memberName] -= bounds.Lo
+					}
 				}
-				p.AddConstraint(coeffs, 0, math.Inf(1), group.Name+":"+key+":lo")
+				p.AddConstraint(coeffs, 0, math.Inf(1), group.Name+":"+keyName+":lo")
 			}
 		}
 	}
@@ -109,10 +117,14 @@ func ApplyLabelOrder(p *Problem, groups []LabelGroup, epsilon float64) {
 		}
 		coeffs := make(map[string]float64, len(earlier.Keys)+len(later.Keys))
 		for _, key := range later.Keys {
-			coeffs[key] = 1
+			if name, ok := p.nameForID(key); ok {
+				coeffs[name] = 1
+			}
 		}
 		for _, key := range earlier.Keys {
-			coeffs[key] -= 1
+			if name, ok := p.nameForID(key); ok {
+				coeffs[name] -= 1
+			}
 		}
 		p.AddConstraint(coeffs, math.Inf(-1), -epsilon, "label_order")
 	}
@@ -124,9 +136,14 @@ func ApplyLabelOrder(p *Problem, groups []LabelGroup, epsilon float64) {
 		for i := 0; i < len(group.Keys)-1; i++ {
 			a := group.Keys[i]
 			b := group.Keys[i+1]
+			aName, aOK := p.nameForID(a)
+			bName, bOK := p.nameForID(b)
+			if !aOK || !bOK {
+				continue
+			}
 			coeffs := map[string]float64{
-				b: 1,
-				a: -1,
+				bName: 1,
+				aName: -1,
 			}
 			p.AddConstraint(coeffs, math.Inf(-1), 0, group.Name+":internal")
 		}

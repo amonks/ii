@@ -4,6 +4,7 @@ import "fmt"
 
 // Ingredient represents a component that can be used in ice cream.
 type Ingredient struct {
+	ID        IngredientID
 	Name      string
 	Comp      Composition
 	Sweetener SweetenerProps // POD/PAC for this ingredient's sugar content
@@ -12,6 +13,16 @@ type Ingredient struct {
 // String returns a human-readable representation.
 func (i Ingredient) String() string {
 	return fmt.Sprintf("%s: %s", i.Name, i.Comp)
+}
+
+func canonicalizeIngredient(ing Ingredient) Ingredient {
+	if ing.ID == "" {
+		ing.ID = NewIngredientID(ing.Name)
+	}
+	if ing.Name == "" {
+		ing.Name = ing.ID.String()
+	}
+	return ing
 }
 
 // Common dairy ingredients with typical composition ranges.

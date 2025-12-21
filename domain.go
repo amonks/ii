@@ -32,11 +32,13 @@ func SpecFromComposition(name string, comp Composition, sweetener SweetenerProps
 // LegacyIngredient converts the spec into the legacy Ingredient type.
 func (spec IngredientSpec) LegacyIngredient() Ingredient {
 	comp := CompositionFromProfile(spec.Profile)
-	return Ingredient{
+	legacy := Ingredient{
+		ID:        spec.ID,
 		Name:      spec.Name,
 		Comp:      comp,
 		Sweetener: spec.Sweetener,
 	}
+	return canonicalizeIngredient(legacy)
 }
 
 // NewIngredientLibrary builds a library from constituent profiles.

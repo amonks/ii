@@ -75,6 +75,21 @@ func (s *scenarioIngredients) Batches() map[string]IngredientBatch {
 	return s.batches
 }
 
+func (s *scenarioIngredients) id(name string) IngredientID {
+	if batch, ok := s.batches[name]; ok && batch.ID != "" {
+		return batch.ID
+	}
+	return NewIngredientID(name)
+}
+
+func (s *scenarioIngredients) idList(names ...string) []IngredientID {
+	result := make([]IngredientID, 0, len(names))
+	for _, name := range names {
+		result = append(result, s.id(name))
+	}
+	return result
+}
+
 // SolveBenAndJerryVanilla recreates the Ben & Jerry's Vanilla label problem.
 func SolveBenAndJerryVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
@@ -105,26 +120,26 @@ func SolveBenAndJerryVanilla() (*LabelScenarioResult, error) {
 	groups := []LabelGroup{
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "skim_milk", Keys: []string{"skim_milk"}},
+		{Name: "skim_milk", Keys: []IngredientID{builder.id("skim_milk")}},
 		{
 			Name:                 "liquid_sugar",
-			Keys:                 []string{"liquid_sugar_sucrose", "liquid_sugar_water"},
+			Keys:                 []IngredientID{builder.id("liquid_sugar_sucrose"), builder.id("liquid_sugar_water")},
 			EnforceInternalOrder: true,
 		},
-		{Name: "water", Keys: []string{"water"}},
-		{Name: "egg_yolk", Keys: []string{"egg_yolk"}},
-		{Name: "sucrose", Keys: []string{"sucrose"}},
-		{Name: "guar_gum", Keys: []string{"guar_gum"}},
-		{Name: "vanilla_extract", Keys: []string{"vanilla_extract"}},
-		{Name: "vanilla_beans", Keys: []string{"vanilla_beans"}},
-		{Name: "carrageenan", Keys: []string{"carrageenan"}},
+		{Name: "water", Keys: []IngredientID{builder.id("water")}},
+		{Name: "egg_yolk", Keys: []IngredientID{builder.id("egg_yolk")}},
+		{Name: "sucrose", Keys: []IngredientID{builder.id("sucrose")}},
+		{Name: "guar_gum", Keys: []IngredientID{builder.id("guar_gum")}},
+		{Name: "vanilla_extract", Keys: []IngredientID{builder.id("vanilla_extract")}},
+		{Name: "vanilla_beans", Keys: []IngredientID{builder.id("vanilla_beans")}},
+		{Name: "carrageenan", Keys: []IngredientID{builder.id("carrageenan")}},
 	}
-	presence := []string{"cream_fat", "cream_serum", "skim_milk", "liquid_sugar_sucrose", "liquid_sugar_water", "water", "egg_yolk", "sucrose", "guar_gum", "vanilla_extract", "vanilla_beans", "carrageenan"}
+	presence := builder.idList("cream_fat", "cream_serum", "skim_milk", "liquid_sugar_sucrose", "liquid_sugar_water", "water", "egg_yolk", "sucrose", "guar_gum", "vanilla_extract", "vanilla_beans", "carrageenan")
 	labelIngredients := []string{"cream", "skim milk", "liquid sugar (sucrose, water)", "water", "egg yolks", "sugar", "guar gum", "vanilla extract", "vanilla beans", "carrageenan"}
 	return solveLabelScenario("Ben & Jerry's Vanilla", facts, 430.0, builder, groups, presence, labelIngredients)
 }
@@ -152,19 +167,19 @@ func SolveJenisSweetCream() (*LabelScenarioResult, error) {
 		CholesterolMg:     55.0,
 	}
 	groups := []LabelGroup{
-		{Name: "milk", Keys: []string{"milk"}},
+		{Name: "milk", Keys: []IngredientID{builder.id("milk")}},
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "cane_sugar", Keys: []string{"cane_sugar"}},
-		{Name: "nonfat_milk", Keys: []string{"nonfat_milk"}},
-		{Name: "tapioca_syrup", Keys: []string{"tapioca_syrup"}},
+		{Name: "cane_sugar", Keys: []IngredientID{builder.id("cane_sugar")}},
+		{Name: "nonfat_milk", Keys: []IngredientID{builder.id("nonfat_milk")}},
+		{Name: "tapioca_syrup", Keys: []IngredientID{builder.id("tapioca_syrup")}},
 	}
-	presence := []string{"milk", "cream_fat", "cream_serum", "cane_sugar", "nonfat_milk", "tapioca_syrup"}
+	presence := builder.idList("milk", "cream_fat", "cream_serum", "cane_sugar", "nonfat_milk", "tapioca_syrup")
 	labelIngredients := []string{"milk", "cream", "cane sugar", "nonfat milk", "tapioca syrup"}
 	return solveLabelScenario("Jeni's Sweet Cream", facts, facts.ServingSizeGrams*3.0, builder, groups, presence, labelIngredients)
 }
@@ -194,17 +209,17 @@ func SolveHaagenDazsVanilla() (*LabelScenarioResult, error) {
 	groups := []LabelGroup{
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "skim_milk", Keys: []string{"skim_milk"}},
-		{Name: "cane_sugar", Keys: []string{"cane_sugar"}},
-		{Name: "egg_yolk", Keys: []string{"egg_yolk"}},
-		{Name: "vanilla_extract", Keys: []string{"vanilla_extract"}},
+		{Name: "skim_milk", Keys: []IngredientID{builder.id("skim_milk")}},
+		{Name: "cane_sugar", Keys: []IngredientID{builder.id("cane_sugar")}},
+		{Name: "egg_yolk", Keys: []IngredientID{builder.id("egg_yolk")}},
+		{Name: "vanilla_extract", Keys: []IngredientID{builder.id("vanilla_extract")}},
 	}
-	presence := []string{"cream_fat", "cream_serum", "skim_milk", "cane_sugar", "egg_yolk", "vanilla_extract"}
+	presence := builder.idList("cream_fat", "cream_serum", "skim_milk", "cane_sugar", "egg_yolk", "vanilla_extract")
 	labelIngredients := []string{"cream", "skim milk", "cane sugar", "egg yolks", "vanilla extract"}
 	return solveLabelScenario("Haagen-Dazs Vanilla", facts, facts.ServingSizeGrams*3.0, builder, groups, presence, labelIngredients)
 }
@@ -240,23 +255,23 @@ func SolveBrighamsVanilla() (*LabelScenarioResult, error) {
 	groups := []LabelGroup{
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "milk", Keys: []string{"milk"}},
-		{Name: "sugar", Keys: []string{"sugar"}},
-		{Name: "vanilla_extract", Keys: []string{"vanilla_extract"}},
-		{Name: "guar_gum", Keys: []string{"guar_gum"}},
-		{Name: "salt", Keys: []string{"salt"}},
-		{Name: "mono_diglycerides", Keys: []string{"mono_diglycerides"}},
-		{Name: "ps80", Keys: []string{"ps80"}},
-		{Name: "carrageenan", Keys: []string{"carrageenan"}},
-		{Name: "potassium_phosphate", Keys: []string{"potassium_phosphate"}},
-		{Name: "cellulose_gum", Keys: []string{"cellulose_gum"}},
+		{Name: "milk", Keys: []IngredientID{builder.id("milk")}},
+		{Name: "sugar", Keys: []IngredientID{builder.id("sugar")}},
+		{Name: "vanilla_extract", Keys: []IngredientID{builder.id("vanilla_extract")}},
+		{Name: "guar_gum", Keys: []IngredientID{builder.id("guar_gum")}},
+		{Name: "salt", Keys: []IngredientID{builder.id("salt")}},
+		{Name: "mono_diglycerides", Keys: []IngredientID{builder.id("mono_diglycerides")}},
+		{Name: "ps80", Keys: []IngredientID{builder.id("ps80")}},
+		{Name: "carrageenan", Keys: []IngredientID{builder.id("carrageenan")}},
+		{Name: "potassium_phosphate", Keys: []IngredientID{builder.id("potassium_phosphate")}},
+		{Name: "cellulose_gum", Keys: []IngredientID{builder.id("cellulose_gum")}},
 	}
-	presence := []string{"cream_fat", "cream_serum", "milk", "sugar", "vanilla_extract", "guar_gum", "salt", "mono_diglycerides", "ps80", "carrageenan", "potassium_phosphate", "cellulose_gum"}
+	presence := builder.idList("cream_fat", "cream_serum", "milk", "sugar", "vanilla_extract", "guar_gum", "salt", "mono_diglycerides", "ps80", "carrageenan", "potassium_phosphate", "cellulose_gum")
 	labelIngredients := []string{"cream", "milk", "sugar", "vanilla extract", "guar gum", "salt", "mono & diglycerides", "ps80", "carrageenan", "potassium phosphate", "cellulose gum"}
 	return solveLabelScenario("Brigham's Vanilla", facts, facts.ServingSizeGrams*3.0, builder, groups, presence, labelIngredients)
 }
@@ -284,20 +299,20 @@ func SolveBreyersVanilla() (*LabelScenarioResult, error) {
 		CholesterolMg:     25.0,
 	}
 	groups := []LabelGroup{
-		{Name: "milk", Keys: []string{"milk"}},
+		{Name: "milk", Keys: []IngredientID{builder.id("milk")}},
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "sugar", Keys: []string{"sugar"}},
-		{Name: "skim_milk", Keys: []string{"skim_milk"}},
-		{Name: "tara_gum", Keys: []string{"tara_gum"}},
-		{Name: "natural_flavor", Keys: []string{"natural_flavor"}},
+		{Name: "sugar", Keys: []IngredientID{builder.id("sugar")}},
+		{Name: "skim_milk", Keys: []IngredientID{builder.id("skim_milk")}},
+		{Name: "tara_gum", Keys: []IngredientID{builder.id("tara_gum")}},
+		{Name: "natural_flavor", Keys: []IngredientID{builder.id("natural_flavor")}},
 	}
-	presence := []string{"milk", "cream_fat", "cream_serum", "sugar", "skim_milk", "tara_gum", "natural_flavor"}
+	presence := builder.idList("milk", "cream_fat", "cream_serum", "sugar", "skim_milk", "tara_gum", "natural_flavor")
 	labelIngredients := []string{"milk", "cream", "sugar", "skim milk", "tara gum", "natural flavor"}
 	return solveLabelScenario("Breyers Vanilla", facts, facts.ServingSizeGrams*3.0, builder, groups, presence, labelIngredients)
 }
@@ -332,29 +347,29 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 		CholesterolMg:     45.0,
 	}
 	groups := []LabelGroup{
-		{Name: "milk", Keys: []string{"milk"}},
-		{Name: "sugar", Keys: []string{"sugar"}},
+		{Name: "milk", Keys: []IngredientID{builder.id("milk")}},
+		{Name: "sugar", Keys: []IngredientID{builder.id("sugar")}},
 		{
 			Name: "cream",
-			Keys: []string{"cream_fat", "cream_serum"},
-			FractionBounds: map[string]Interval{
-				"cream_fat": RangeWithEps(0.18, 0.50),
+			Keys: []IngredientID{builder.id("cream_fat"), builder.id("cream_serum")},
+			FractionBounds: map[IngredientID]Interval{
+				builder.id("cream_fat"): RangeWithEps(0.18, 0.50),
 			},
 		},
-		{Name: "dextrose", Keys: []string{"dextrose"}},
-		{Name: "vanilla_extract", Keys: []string{"vanilla_extract"}},
-		{Name: "sunflower_lecithin", Keys: []string{"sunflower_lecithin"}},
-		{Name: "carob_bean_gum", Keys: []string{"carob_bean_gum"}},
-		{Name: "guar_gum", Keys: []string{"guar_gum"}},
-		{Name: "natural_flavor", Keys: []string{"natural_flavor"}},
-		{Name: "lemon_peel", Keys: []string{"lemon_peel"}},
+		{Name: "dextrose", Keys: []IngredientID{builder.id("dextrose")}},
+		{Name: "vanilla_extract", Keys: []IngredientID{builder.id("vanilla_extract")}},
+		{Name: "sunflower_lecithin", Keys: []IngredientID{builder.id("sunflower_lecithin")}},
+		{Name: "carob_bean_gum", Keys: []IngredientID{builder.id("carob_bean_gum")}},
+		{Name: "guar_gum", Keys: []IngredientID{builder.id("guar_gum")}},
+		{Name: "natural_flavor", Keys: []IngredientID{builder.id("natural_flavor")}},
+		{Name: "lemon_peel", Keys: []IngredientID{builder.id("lemon_peel")}},
 	}
-	presence := []string{"milk", "sugar", "cream_fat", "cream_serum", "dextrose", "vanilla_extract", "sunflower_lecithin", "carob_bean_gum", "guar_gum", "natural_flavor", "lemon_peel"}
+	presence := builder.idList("milk", "sugar", "cream_fat", "cream_serum", "dextrose", "vanilla_extract", "sunflower_lecithin", "carob_bean_gum", "guar_gum", "natural_flavor", "lemon_peel")
 	labelIngredients := []string{"milk", "sugar", "cream", "dextrose", "vanilla extract", "sunflower lecithin", "carob bean gum", "guar gum", "natural flavor", "lemon peel"}
 	return solveLabelScenario("Talenti Vanilla Bean", facts, facts.ServingSizeGrams*3.0, builder, groups, presence, labelIngredients)
 }
 
-func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, builder *scenarioIngredients, groups []LabelGroup, presence []string, labelIngredients []string) (*LabelScenarioResult, error) {
+func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, builder *scenarioIngredients, groups []LabelGroup, presence []IngredientID, labelIngredients []string) (*LabelScenarioResult, error) {
 	goals := GoalsFromLabel(facts, pintMass, defaultServeTempC, defaultDrawTempC, defaultShearRate)
 	target := scenarioTargetFromFacts(facts)
 
@@ -418,8 +433,12 @@ func scenarioTargetFromFacts(facts NutritionFacts) FormulationTarget {
 	return label.ToTarget()
 }
 
-func setPresenceFloor(p *Problem, names []string) error {
-	for _, name := range names {
+func setPresenceFloor(p *Problem, ids []IngredientID) error {
+	for _, id := range ids {
+		name, ok := p.nameForID(id)
+		if !ok {
+			continue
+		}
 		if err := p.SetMinWeight(name, presenceFloorFraction); err != nil {
 			return err
 		}
