@@ -94,6 +94,10 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 			fmt.Printf("    ---\n")
 			fmt.Printf("    Nonfat Milk form: %s\n", desc)
 		}
+
+		assertCompositionWithinTarget(t, compTarget, s.Achieved, fmt.Sprintf("Jenis recipe %d", i+1))
+		sweetener := creamery.AnalyzeSweeteners(s, ingredients)
+		assertSweetenersMatchTarget(t, target, sweetener, fmt.Sprintf("Jenis recipe %d", i+1))
 	}
 
 	fmt.Println()

@@ -197,6 +197,7 @@ func TestFullWorkflow(t *testing.T) {
 		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, compTarget.MSNF)
 		fmt.Printf("  Sugar: %.2f%%  (target: %s)\n", s.Achieved.Sugar.Mid()*100, compTarget.Sugar)
 		fmt.Printf("  Water: %.2f%%\n", s.Achieved.Water().Mid()*100)
+		assertCompositionWithinTarget(t, compTarget, s.Achieved, fmt.Sprintf("Recipe %d", i+1))
 
 		// POD/PAC analysis
 		sweetener := creamery.AnalyzeSweeteners(s, ingredients)
@@ -204,6 +205,7 @@ func TestFullWorkflow(t *testing.T) {
 		fmt.Println("Sweetener analysis:")
 		fmt.Printf("  POD: %.1f (equivalent to %.1f%% sucrose)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
 		fmt.Printf("  PAC: %.1f → %s\n", sweetener.TotalPAC, sweetener.RelativeSoftness())
+		assertSweetenersMatchTarget(t, target, sweetener, fmt.Sprintf("Recipe %d", i+1))
 
 		// Scale to a practical batch size
 		batchGrams := 1000.0
@@ -262,5 +264,7 @@ func TestFullWorkflow(t *testing.T) {
 		fmt.Println()
 		fmt.Printf("Result: POD=%.1f, PAC=%.1f → %s\n",
 			sweetener2.TotalPOD, sweetener2.TotalPAC, sweetener2.RelativeSoftness())
+		assertSweetenersMatchTarget(t, problem2.Target, sweetener2, "PAC-optimized recipe")
+		assertIntervalContains(t, problem2.TargetPAC, sweetener2.TotalPAC, "PAC-optimized recipe PAC")
 	}
 }
