@@ -33,7 +33,7 @@ Refactor the creamery domain model to distinguish canonical specs, measured lots
 [x] 4. Refactor RecipeComponent, BatchSnapshot aggregation, and analysis helpers to consume IngredientLot data directly.
 [x] 5. Add canonical conversion helpers on ConstituentProfile/BatchSnapshot (to Composition, NutritionFacts, etc.) and replace ad-hoc math.
 [x] 6. Expand FormulationTarget into profile-interval form with validation; update FDA/label ingestion and solver constraint wiring.
-[ ] 7. Refresh CLI tools/tests/docs to compile with the new model and document the updated domain types.
+[x] 7. Refresh CLI tools/tests/docs to compile with the new model and document the updated domain types.
 
 ## Testing and validation
 - Re-run existing Go tests (`go test ./...`).
