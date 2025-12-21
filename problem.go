@@ -88,7 +88,7 @@ func (p *Problem) IngredientNames() []string {
 }
 
 func (p *Problem) compositionForIndex(i int) Composition {
-	return CompositionFromProfile(p.profiles[i])
+	return p.profiles[i].Composition()
 }
 
 func (p *Problem) profileForIndex(i int) ConstituentProfile {
@@ -220,7 +220,7 @@ func (p *Problem) Validate() error {
 		seen[spec.ID] = true
 
 		profile := p.profileForIndex(i)
-		if err := CompositionFromProfile(profile).Valid(); err != nil {
+		if err := profile.Composition().Valid(); err != nil {
 			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
 		}
 	}

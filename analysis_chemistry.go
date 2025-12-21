@@ -59,6 +59,7 @@ type BatchSnapshot struct {
 	SaturatedFat           IntervalMass
 	AddedSugars            IntervalMass
 	EmulsifierPower        float64
+	EmulsifierMassKg       float64
 	BoundWaterKg           float64
 	PolymerSolidsKg        float64
 	ColligativeMoles       float64
@@ -123,6 +124,7 @@ func NewBatchSnapshot(components []RecipeComponent) (BatchSnapshot, error) {
 		SaturatedFat:       totals.saturated,
 		AddedSugars:        totals.added,
 		EmulsifierPower:    totals.emulsifier,
+		EmulsifierMassKg:   totals.emulsifierMass,
 		BoundWaterKg:       totals.boundWater,
 		PolymerSolidsKg:    totals.polymerSolids,
 		ColligativeMoles:   totals.colligativeMoles,
@@ -154,6 +156,88 @@ func NewBatchSnapshot(components []RecipeComponent) (BatchSnapshot, error) {
 	snapshot.CostPerKg = snapshot.CostTotal / safeTotal
 
 	return snapshot, nil
+}
+
+// FormulationBreakdown summarizes a batch snapshot into the lightweight
+// Formulation struct used by analyses and reporting.
+func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
+	batch := b.TotalMassKg
+	if batch <= 0 {
+		return Formulation{}, errors.New("snapshot has zero total mass")
+	}
+
+	sugars := map[string]float64{
+		"sucrose":      b.SucroseMassKg / batch,
+		"glucose":      b.GlucoseMassKg / batch,
+		"fructose":     b.FructoseMassKg / batch,
+		"lactose":      b.Lactose.Mid / batch,
+		"polyols":      b.PolyolsMassKg / batch,
+		"maltodextrin": b.MaltodextrinMassKg / batch,
+	}
+
+	snf := (b.ProteinMassKg + b.Lactose.Mid + b.AshMassKg) / batch
+	stabilizer := b.PolymerSolidsKg / batch
+	emulsifier := b.EmulsifierMassKg / batch
+
+	return Formulation{
+		MilkfatPct:    b.FatPct,
+		SNFPct:        snf,
+		WaterPct:      b.WaterPct,
+		SugarsPct:     sugars,
+		StabilizerPct: stabilizer,
+		EmulsifierPct: emulsifier,
+		ProteinPct:    b.ProteinPct,
+	}, nil
+}
+
+// NutritionFactsSummary renders per-serving nutrition data from the snapshot.
+func (b BatchSnapshot) NutritionFactsSummary(servingSizeGrams float64, sodiumMg float64) (NutritionFacts, error) {
+	batch := b.TotalMassKg
+	if batch <= 0 {
+		return NutritionFacts{}, errors.New("snapshot has zero total mass")
+	}
+
+	fatPct := b.FatPct
+	sugarsPct := b.TotalSugarsPct
+	proteinPct := b.ProteinPct
+	snfPct := (b.ProteinMassKg + b.Lactose.Mid + b.AshMassKg) / batch
+	carbsPct := sugarsPct + snfPct - proteinPct
+	transFatPct := b.TransFatPct
+	saturatedFatPct := b.SaturatedFatPct
+	addedSugarsPct := b.AddedSugarsPct
+
+	fatG := fatPct * servingSizeGrams
+	carbsG := carbsPct * servingSizeGrams
+	proteinG := proteinPct * servingSizeGrams
+	sugarsG := sugarsPct * servingSizeGrams
+	transFatG := transFatPct * servingSizeGrams
+	satFatG := saturatedFatPct * servingSizeGrams
+	addedSugarsG := addedSugarsPct * servingSizeGrams
+	cholMgPerKg := b.CholesterolMgPerKg
+	cholMg := cholMgPerKg * (servingSizeGrams / 1000.0)
+	calories := 9*fatG + 4*carbsG + 4*proteinG
+
+	return NutritionFacts{
+		ServingSizeGrams:   servingSizeGrams,
+		Calories:           calories,
+		TotalFatGrams:      fatG,
+		TotalCarbGrams:     carbsG,
+		TotalSugarsGrams:   sugarsG,
+		ProteinGrams:       proteinG,
+		SodiumMg:           sodiumMg,
+		SaturatedFatGrams:  satFatG,
+		SaturatedFatPct:    saturatedFatPct,
+		TransFatGrams:      transFatG,
+		TransFatPct:        transFatPct,
+		AddedSugarsGrams:   addedSugarsG,
+		AddedSugarsPct:     addedSugarsPct,
+		FatPct:             fatPct,
+		CarbsPct:           carbsPct,
+		SugarsPct:          sugarsPct,
+		ProteinPct:         proteinPct,
+		CholesterolMg:      cholMg,
+		CholesterolMgPerKg: cholMgPerKg,
+	}, nil
 }
 
 // BuildProperties aggregates components and applies process calculations.
@@ -232,6 +316,7 @@ type batchTotals struct {
 	polyols          float64
 	transFat         float64
 	emulsifier       float64
+	emulsifierMass   float64
 	boundWater       float64
 	polymerSolids    float64
 	colligativeMoles float64
@@ -276,6 +361,9 @@ func accumulateComponents(components []RecipeComponent) batchTotals {
 		if profile.Functionals.Hydrocolloid {
 			polymer := fractions.OtherSolids + fractions.Maltodextrin + fractions.Polyols
 			totals.polymerSolids += mass * polymer
+		}
+		if profile.Functionals.EmulsifierPower.Mid() > 0 {
+			totals.emulsifierMass += mass
 		}
 		totals.colligativeMoles += colligativeContribution(mass, fractions, profile.Functionals)
 		totals.cost += mass * profile.Economics.Cost.Mid()

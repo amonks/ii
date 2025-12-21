@@ -172,48 +172,7 @@ func (r *Recipe) Formulation() (Formulation, error) {
 	if err != nil {
 		return Formulation{}, err
 	}
-	batch := snapshot.TotalMassKg
-	if batch <= 0 {
-		return Formulation{}, errors.New("recipe has zero total mass")
-	}
-	fat := snapshot.FatPct
-	protein := snapshot.ProteinPct
-	water := snapshot.WaterPct
-	snf := (snapshot.ProteinMassKg + snapshot.Lactose.Mid + snapshot.AshMassKg) / batch
-	sugars := map[string]float64{
-		"sucrose":      snapshot.SucroseMassKg / batch,
-		"glucose":      snapshot.GlucoseMassKg / batch,
-		"fructose":     snapshot.FructoseMassKg / batch,
-		"lactose":      snapshot.Lactose.Mid / batch,
-		"polyols":      snapshot.PolyolsMassKg / batch,
-		"maltodextrin": snapshot.MaltodextrinMassKg / batch,
-	}
-
-	stabilizer := 0.0
-	emulsifier := 0.0
-	for _, comp := range r.Components {
-		if comp.MassKg <= 0 {
-			continue
-		}
-		profile := comp.Ingredient.EffectiveProfile()
-		fractions := ConstituentsFromProfile(profile)
-		if profile.Functionals.Hydrocolloid {
-			stabilizer += comp.MassKg * (fractions.OtherSolids + fractions.Maltodextrin + fractions.Polyols)
-		}
-		if profile.Functionals.EmulsifierPower.Mid() > 0 {
-			emulsifier += comp.MassKg
-		}
-	}
-
-	return Formulation{
-		MilkfatPct:    fat,
-		SNFPct:        snf,
-		WaterPct:      water,
-		SugarsPct:     sugars,
-		StabilizerPct: stabilizer / batch,
-		EmulsifierPct: emulsifier / batch,
-		ProteinPct:    protein,
-	}, nil
+	return snapshot.FormulationBreakdown()
 }
 
 // SweetnessPct returns the sucrose-equivalent solids percentage.
@@ -284,49 +243,5 @@ func (r *Recipe) NutritionFacts(servingSizeGrams float64, sodiumMg float64) (Nut
 	if err != nil {
 		return NutritionFacts{}, err
 	}
-	batch := snapshot.TotalMassKg
-	if batch <= 0 {
-		return NutritionFacts{}, errors.New("recipe has zero total mass")
-	}
-	fatPct := snapshot.FatPct
-	sugarsPct := snapshot.TotalSugarsPct
-	proteinPct := snapshot.ProteinPct
-	snfPct := (snapshot.ProteinMassKg + snapshot.Lactose.Mid + snapshot.AshMassKg) / batch
-	carbsPct := sugarsPct + snfPct - proteinPct
-	transFatPct := snapshot.TransFatPct
-	saturatedFatPct := snapshot.SaturatedFatPct
-	addedSugarsPct := snapshot.AddedSugarsPct
-
-	fatG := fatPct * servingSizeGrams
-	carbsG := carbsPct * servingSizeGrams
-	proteinG := proteinPct * servingSizeGrams
-	sugarsG := sugarsPct * servingSizeGrams
-	transFatG := transFatPct * servingSizeGrams
-	satFatG := saturatedFatPct * servingSizeGrams
-	addedSugarsG := addedSugarsPct * servingSizeGrams
-	cholMgPerKg := snapshot.CholesterolMgPerKg
-	cholMg := cholMgPerKg * (servingSizeGrams / 1000.0)
-	calories := 9*fatG + 4*carbsG + 4*proteinG
-
-	return NutritionFacts{
-		ServingSizeGrams:   servingSizeGrams,
-		Calories:           calories,
-		TotalFatGrams:      fatG,
-		TotalCarbGrams:     carbsG,
-		TotalSugarsGrams:   sugarsG,
-		ProteinGrams:       proteinG,
-		SodiumMg:           sodiumMg,
-		SaturatedFatGrams:  satFatG,
-		SaturatedFatPct:    saturatedFatPct,
-		TransFatGrams:      transFatG,
-		TransFatPct:        transFatPct,
-		AddedSugarsGrams:   addedSugarsG,
-		AddedSugarsPct:     addedSugarsPct,
-		FatPct:             fatPct,
-		CarbsPct:           carbsPct,
-		SugarsPct:          sugarsPct,
-		ProteinPct:         proteinPct,
-		CholesterolMg:      cholMg,
-		CholesterolMgPerKg: cholMgPerKg,
-	}, nil
+	return snapshot.NutritionFactsSummary(servingSizeGrams, sodiumMg)
 }

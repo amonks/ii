@@ -293,3 +293,8 @@ func (p ConstituentProfile) OtherSolidsInterval() Interval {
 func (p ConstituentProfile) TotalSugarInterval() Interval {
 	return p.AddedSugarsInterval().Add(p.LactoseInterval())
 }
+
+// Composition returns the aggregated four-component composition for the profile.
+func (p ConstituentProfile) Composition() Composition {
+	return CompositionFromProfile(p)
+}
