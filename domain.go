@@ -5,6 +5,7 @@ import "sync"
 // IngredientSpec represents an ingredient definition with uncertainty ranges.
 type IngredientSpec struct {
 	ID      IngredientID
+	Key     IngredientKey
 	Name    string
 	Profile ConstituentProfile
 }
@@ -98,7 +99,7 @@ func (inst IngredientLot) CostPerKg() float64 {
 type IngredientCatalog struct {
 	specs map[IngredientID]IngredientSpec
 	lots  map[IngredientID]IngredientLot
-	keyed map[string]IngredientLot
+	keyed map[IngredientKey]IngredientLot
 }
 
 var (
@@ -119,21 +120,31 @@ func DefaultIngredientCatalog() IngredientCatalog {
 func NewIngredientCatalog(ingredients []IngredientSpec) IngredientCatalog {
 	specs := make(map[IngredientID]IngredientSpec, len(ingredients))
 	lots := make(map[IngredientID]IngredientLot, len(ingredients))
+	keyed := make(map[IngredientKey]IngredientLot)
 	for _, ing := range ingredients {
 		ing = normalizeSpec(ing)
 		if existing, ok := specs[ing.ID]; ok && existing.Name != ing.Name {
 			if len(ing.Name) > len(existing.Name) {
 				specs[ing.ID] = ing
+				lot := NewIngredientLot(ing)
+				lots[ing.ID] = lot
+				if ing.Key != "" {
+					keyed[ing.Key] = lot
+				}
 			}
 			continue
 		}
 		specs[ing.ID] = ing
-		lots[ing.ID] = NewIngredientLot(ing)
+		lot := NewIngredientLot(ing)
+		lots[ing.ID] = lot
+		if ing.Key != "" {
+			keyed[ing.Key] = lot
+		}
 	}
 	return IngredientCatalog{
 		specs: specs,
 		lots:  lots,
-		keyed: make(map[string]IngredientLot),
+		keyed: keyed,
 	}
 }
 
@@ -160,7 +171,14 @@ func (c IngredientCatalog) Instance(id IngredientID) (IngredientLot, bool) {
 
 // InstanceByKey looks up an instance by its catalog key (e.g., "sucrose").
 func (c IngredientCatalog) InstanceByKey(key string) (IngredientLot, bool) {
-	inst, ok := c.keyed[key]
+	if key == "" {
+		return IngredientLot{}, false
+	}
+	normalized := NewIngredientKey(key)
+	if normalized == "" {
+		return IngredientLot{}, false
+	}
+	inst, ok := c.keyed[normalized]
 	return inst, ok
 }
 
@@ -176,14 +194,19 @@ func (c IngredientCatalog) Instances() map[IngredientID]IngredientLot {
 func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatalog {
 	specs := make(map[IngredientID]IngredientSpec, len(profiles))
 	lots := make(map[IngredientID]IngredientLot, len(profiles))
-	keyed := make(map[string]IngredientLot, len(profiles))
+	keyed := make(map[IngredientKey]IngredientLot, len(profiles))
 	for key, profile := range profiles {
 		spec := SpecFromProfile(profile)
+		if spec.Key == "" {
+			spec.Key = NewIngredientKey(key)
+		}
 		inst := NewIngredientLot(spec)
 		inst.SetProfileOverride(profile)
 		specs[inst.Ingredient.ID] = inst.Ingredient
 		lots[inst.Ingredient.ID] = inst
-		keyed[key] = inst
+		if inst.Ingredient.Key != "" {
+			keyed[inst.Ingredient.Key] = inst
+		}
 	}
 	return IngredientCatalog{
 		specs: specs,
@@ -211,6 +234,7 @@ func normalizeSpec(spec IngredientSpec) IngredientSpec {
 	if spec.Name == "" {
 		spec.Name = "ingredient"
 	}
+	spec.Key = canonicalIngredientKey(spec.Key, spec.ID)
 	spec.Profile = normalizeProfile(spec.Profile, spec.ID, spec.Name)
 	return spec
 }
@@ -236,6 +260,16 @@ func normalizeProfile(profile ConstituentProfile, fallbackID IngredientID, fallb
 		copy.Name = copy.ID.String()
 	}
 	return copy
+}
+
+func canonicalIngredientKey(key IngredientKey, fallback IngredientID) IngredientKey {
+	if key != "" {
+		return NewIngredientKey(key.String())
+	}
+	if fallback != "" {
+		return IngredientKey(fallback)
+	}
+	return ""
 }
 
 // SpecFromComposition constructs a spec from a higher-level composition.

@@ -24,3 +24,18 @@ func TestStandardSpecsIncludeHeavyCream(t *testing.T) {
 		t.Fatalf("expected heavy cream fat near 0.36, got %.3f", fat)
 	}
 }
+
+func TestCustomCatalogRegistersKeys(t *testing.T) {
+	spec := SpecFromComposition("My Sugar", PointComposition(0, 0, 1, 0))
+	spec.Key = NewIngredientKey("custom_sugar")
+	spec = renameSpec(spec, "Fancy Sugar")
+
+	catalog := NewIngredientCatalog([]IngredientSpec{spec})
+	inst, ok := catalog.InstanceByKey("custom_sugar")
+	if !ok {
+		t.Fatalf("expected catalog to resolve custom key")
+	}
+	if got := inst.DisplayName(); got != "Fancy Sugar" {
+		t.Fatalf("expected renamed spec to propagate, got %s", got)
+	}
+}

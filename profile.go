@@ -36,6 +36,23 @@ func NewIngredientID(name string) IngredientID {
 	return IngredientID(id)
 }
 
+// IngredientKey captures the canonical catalog key for an ingredient entry.
+type IngredientKey string
+
+// String returns the string form of the key.
+func (k IngredientKey) String() string {
+	return string(k)
+}
+
+// NewIngredientKey normalizes a free-form key into snake_case.
+func NewIngredientKey(name string) IngredientKey {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return ""
+	}
+	return IngredientKey(NewIngredientID(trimmed))
+}
+
 // ConstituentProfile captures the detailed breakdown (with uncertainty) plus
 // functional metadata for an ingredient specification or batch.
 type ConstituentProfile struct {

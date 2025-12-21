@@ -8,7 +8,9 @@ func specFromCatalog(key, displayName string) IngredientSpec {
 		if displayName == "" {
 			displayName = key
 		}
-		return SpecFromComposition(displayName, Composition{})
+		spec := SpecFromComposition(displayName, Composition{})
+		spec.Key = NewIngredientKey(key)
+		return normalizeSpec(spec)
 	}
 	spec := inst.Ingredient
 	if displayName != "" {
@@ -18,11 +20,16 @@ func specFromCatalog(key, displayName string) IngredientSpec {
 }
 
 func renameSpec(spec IngredientSpec, name string) IngredientSpec {
+	key := spec.Key
 	spec.Name = name
 	spec.ID = NewIngredientID(name)
 	spec.Profile.Name = name
 	spec.Profile.ID = spec.ID
-	return normalizeSpec(spec)
+	spec = normalizeSpec(spec)
+	if key != "" {
+		spec.Key = key
+	}
+	return spec
 }
 
 // Standard ingredient specifications with typical compositions.
