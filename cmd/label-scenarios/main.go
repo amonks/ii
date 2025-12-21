@@ -85,11 +85,11 @@ func printScenario(result *creamery.LabelScenarioResult) {
 		fmt.Printf("  - %s\n", item)
 	}
 
-	fmt.Println("\nSolution weights:")
+	fmt.Println("\nSolution fractions:")
+	fractions := fractionsByIngredientID(result.Recipe)
 	for _, spec := range result.Specs {
-		w := result.Solution.Weights[spec.ID]
-		if w > 1e-4 {
-			fmt.Printf("  %s (%s): %.2f%%\n", spec.Name, spec.ID, w*100)
+		if frac := fractions[spec.ID]; frac > 1e-4 {
+			fmt.Printf("  %s (%s): %.2f%%\n", spec.Name, spec.ID, frac*100)
 		}
 	}
 
@@ -173,4 +173,25 @@ func printStandardSpecs() {
 			comps.Water.Mid()*100,
 		)
 	}
+}
+
+func fractionsByIngredientID(recipe *creamery.Recipe) map[creamery.IngredientID]float64 {
+	fractions := make(map[creamery.IngredientID]float64)
+	if recipe == nil {
+		return fractions
+	}
+	for _, portion := range recipe.Portions {
+		if portion.Fraction <= 0 {
+			continue
+		}
+		if portion.Lot.Definition == nil {
+			continue
+		}
+		id := portion.Lot.Definition.ID
+		if id == "" {
+			continue
+		}
+		fractions[id] += portion.Fraction
+	}
+	return fractions
 }

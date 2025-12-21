@@ -1,6 +1,9 @@
 package creamery
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	spec := IngredientDefinition{
@@ -57,5 +60,71 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	}
 	if masses[0].MassKg != 50 {
 		t.Fatalf("expected mass 50kg, got %f", masses[0].MassKg)
+	}
+}
+
+func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
+	sucrose := IngredientDefinition{
+		ID:   IngredientID("sucrose"),
+		Name: "Sucrose",
+		Profile: ConstituentProfile{
+			ID:   IngredientID("sucrose"),
+			Name: "Sucrose",
+			Components: ConstituentComponents{
+				Sucrose: Point(1.0),
+			},
+		},
+	}
+	cream := IngredientDefinition{
+		ID:   IngredientID("cream"),
+		Name: "Cream",
+		Profile: ConstituentProfile{
+			ID:   IngredientID("cream"),
+			Name: "Cream",
+			Components: ConstituentComponents{
+				Fat:   Point(0.36),
+				Water: Point(0.64),
+			},
+		},
+	}
+
+	specs := []IngredientDefinition{sucrose, cream}
+	sol := &Solution{
+		Weights: map[IngredientID]float64{
+			sucrose.ID: 0.6,
+			cream.ID:   0.4,
+		},
+		Lots: map[IngredientID]LotDescriptor{
+			sucrose.ID: sucrose.DefaultLot(),
+			cream.ID:   cream.DefaultLot(),
+		},
+	}
+
+	goals := LabelGoals{
+		BatchMassKG: 80,
+		Overrun:     0,
+	}
+
+	recipe, _, _, _, err := recipeFromSolution(sol, specs, goals, 0)
+	if err != nil {
+		t.Fatalf("recipeFromSolution returned error: %v", err)
+	}
+	if recipe == nil {
+		t.Fatal("expected recipe")
+	}
+
+	fractions := make(map[IngredientID]float64)
+	for _, portion := range recipe.Portions {
+		if portion.Lot.Definition == nil {
+			continue
+		}
+		fractions[portion.Lot.Definition.ID] += portion.Fraction
+	}
+
+	for id, expected := range sol.Weights {
+		got := fractions[id]
+		if math.Abs(got-expected) > 1e-6 {
+			t.Fatalf("fraction mismatch for %s: got %.6f want %.6f", id, got, expected)
+		}
 	}
 }
