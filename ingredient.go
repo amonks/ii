@@ -1,48 +1,43 @@
 package creamery
 
-// specFromCatalog builds an IngredientDefinition from the default catalog.
-func specFromCatalog(key string) IngredientDefinition {
+import "fmt"
+
+// specFromCatalog resolves a catalog key to its canonical spec, returning an
+// error when the key is unknown or lacks definition metadata.
+func specFromCatalog(key string) (IngredientDefinition, error) {
 	inst, ok := DefaultIngredientCatalog().InstanceByKey(key)
-	if !ok {
-		name := FriendlyIngredientName(key)
-		profile := ConstituentProfile{
-			ID:         NewIngredientID(name),
-			Name:       name,
-			Components: EnsureWater(ComponentFractions{}),
-		}
-		return SpecFromProfile(profile)
+	if !ok || inst.Definition == nil {
+		return IngredientDefinition{}, fmt.Errorf("ingredient %q not found in catalog", key)
 	}
-	def := inst.Definition
-	if def == nil {
-		name := FriendlyIngredientName(key)
-		profile := ConstituentProfile{
-			ID:         NewIngredientID(name),
-			Name:       name,
-			Components: EnsureWater(ComponentFractions{}),
-		}
-		return SpecFromProfile(profile)
+	return *inst.Definition, nil
+}
+
+func mustSpecFromCatalog(key string) IngredientDefinition {
+	spec, err := specFromCatalog(key)
+	if err != nil {
+		panic(err)
 	}
-	return *def
+	return spec
 }
 
 // Standard ingredient specifications with typical compositions.
 var (
-	HeavyCream = specFromCatalog("heavy_cream")
-	LightCream = specFromCatalog("light_cream")
-	WholeMilk  = specFromCatalog("whole_milk")
-	SkimMilk   = specFromCatalog("skim_milk")
+	HeavyCream = mustSpecFromCatalog("heavy_cream")
+	LightCream = mustSpecFromCatalog("light_cream")
+	WholeMilk  = mustSpecFromCatalog("whole_milk")
+	SkimMilk   = mustSpecFromCatalog("skim_milk")
 
-	NonfatDryMilk          = specFromCatalog("skim_milk_powder")
-	SweetenedCondensedMilk = specFromCatalog("sweetened_condensed_milk")
-	Butter                 = specFromCatalog("butter")
-	EggYolks               = specFromCatalog("egg_yolk")
-	Sugar                  = specFromCatalog("sucrose")
-	CornSyrup              = specFromCatalog("corn_syrup_42")
-	LiquidSugar            = specFromCatalog("liquid_sugar")
-	CocoaPowder            = specFromCatalog("cocoa_powder")
-	VanillaExtract         = specFromCatalog("vanilla_extract")
-	Stabilizer             = specFromCatalog("stabilizer")
-	TapiocaSyrup           = specFromCatalog("tapioca_syrup")
+	NonfatDryMilk          = mustSpecFromCatalog("skim_milk_powder")
+	SweetenedCondensedMilk = mustSpecFromCatalog("sweetened_condensed_milk")
+	Butter                 = mustSpecFromCatalog("butter")
+	EggYolks               = mustSpecFromCatalog("egg_yolk")
+	Sugar                  = mustSpecFromCatalog("sucrose")
+	CornSyrup              = mustSpecFromCatalog("corn_syrup_42")
+	LiquidSugar            = mustSpecFromCatalog("liquid_sugar")
+	CocoaPowder            = mustSpecFromCatalog("cocoa_powder")
+	VanillaExtract         = mustSpecFromCatalog("vanilla_extract")
+	Stabilizer             = mustSpecFromCatalog("stabilizer")
+	TapiocaSyrup           = mustSpecFromCatalog("tapioca_syrup")
 
 	NonfatMilkVariable = buildNonfatMilkVariable()
 )
