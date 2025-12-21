@@ -2,7 +2,7 @@ package creamery
 
 // BlendComponent couples an ingredient lot with a weight contribution.
 type BlendComponent struct {
-	Lot    IngredientLot
+	Lot    LotDescriptor
 	Weight float64
 }
 

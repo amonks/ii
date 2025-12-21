@@ -2,14 +2,8 @@ package creamery
 
 import "sync"
 
-// IngredientSpec remains as a convenience alias while the new domain model
-// migrates callers to use IngredientDefinition pointers internally.
-type IngredientSpec = IngredientDefinition
-
-type IngredientLot = LotDescriptor
-
-// NewIngredientLot constructs a lot descriptor from a spec value.
-func NewIngredientLot(spec IngredientSpec) IngredientLot {
+// NewLotDescriptor constructs a lot descriptor from a spec value.
+func NewLotDescriptor(spec IngredientDefinition) LotDescriptor {
 	normalized := normalizeSpec(spec)
 	definition := normalized
 	return NewLot(&definition)
@@ -18,7 +12,7 @@ func NewIngredientLot(spec IngredientSpec) IngredientLot {
 // IngredientCatalog exposes canonical ingredient defs and their default lots.
 type IngredientCatalog struct {
 	defs  map[IngredientID]*IngredientDefinition
-	lots  map[IngredientID]IngredientLot
+	lots  map[IngredientID]LotDescriptor
 	keyed map[IngredientKey]IngredientID
 }
 
@@ -37,9 +31,9 @@ func DefaultIngredientCatalog() IngredientCatalog {
 
 // NewIngredientCatalog builds a catalog from a slice of ingredient specs. The
 // catalog automatically provisions default lots that mirror each spec.
-func NewIngredientCatalog(ingredients []IngredientSpec) IngredientCatalog {
+func NewIngredientCatalog(ingredients []IngredientDefinition) IngredientCatalog {
 	defs := make(map[IngredientID]*IngredientDefinition, len(ingredients))
-	lots := make(map[IngredientID]IngredientLot, len(ingredients))
+	lots := make(map[IngredientID]LotDescriptor, len(ingredients))
 	keyed := make(map[IngredientKey]IngredientID)
 
 	for _, ing := range ingredients {
@@ -84,31 +78,31 @@ func (c IngredientCatalog) Get(id IngredientID) (*IngredientDefinition, bool) {
 }
 
 // Instance returns the default lot for an ingredient ID.
-func (c IngredientCatalog) Instance(id IngredientID) (IngredientLot, bool) {
+func (c IngredientCatalog) Instance(id IngredientID) (LotDescriptor, bool) {
 	lot, ok := c.lots[id]
 	return lot, ok
 }
 
 // InstanceByKey looks up an instance by its catalog key (e.g., "sucrose").
-func (c IngredientCatalog) InstanceByKey(key string) (IngredientLot, bool) {
+func (c IngredientCatalog) InstanceByKey(key string) (LotDescriptor, bool) {
 	if key == "" {
-		return IngredientLot{}, false
+		return LotDescriptor{}, false
 	}
 	normalized := NewIngredientKey(key)
 	if normalized == "" {
-		return IngredientLot{}, false
+		return LotDescriptor{}, false
 	}
 	id, ok := c.keyed[normalized]
 	if !ok {
-		return IngredientLot{}, false
+		return LotDescriptor{}, false
 	}
 	lot, ok := c.lots[id]
 	return lot, ok
 }
 
 // Instances returns a copy of the default instances keyed by ingredient ID.
-func (c IngredientCatalog) Instances() map[IngredientID]IngredientLot {
-	copy := make(map[IngredientID]IngredientLot, len(c.lots))
+func (c IngredientCatalog) Instances() map[IngredientID]LotDescriptor {
+	copy := make(map[IngredientID]LotDescriptor, len(c.lots))
 	for id, inst := range c.lots {
 		copy[id] = inst
 	}
@@ -116,7 +110,7 @@ func (c IngredientCatalog) Instances() map[IngredientID]IngredientLot {
 }
 
 func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatalog {
-	specs := make([]IngredientSpec, 0, len(profiles))
+	specs := make([]IngredientDefinition, 0, len(profiles))
 	overrides := make(map[IngredientID]ConstituentProfile, len(profiles))
 	for key, profile := range profiles {
 		spec := SpecFromProfile(profile)
@@ -139,16 +133,16 @@ func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatal
 	return catalog
 }
 
-// SpecFromProfile builds an IngredientSpec from an existing constituent profile.
-func SpecFromProfile(profile ConstituentProfile) IngredientSpec {
-	return normalizeSpec(IngredientSpec{
+// SpecFromProfile builds an IngredientDefinition from an existing constituent profile.
+func SpecFromProfile(profile ConstituentProfile) IngredientDefinition {
+	return normalizeSpec(IngredientDefinition{
 		ID:      profile.ID,
 		Name:    profile.Name,
 		Profile: profile,
 	})
 }
 
-func normalizeSpec(spec IngredientSpec) IngredientSpec {
+func normalizeSpec(spec IngredientDefinition) IngredientDefinition {
 	if spec.ID == "" {
 		spec.ID = NewIngredientID(spec.Name)
 	}
@@ -197,7 +191,7 @@ func canonicalIngredientKey(key IngredientKey, fallback IngredientID) Ingredient
 }
 
 // SpecFromComposition constructs a spec from a higher-level composition.
-func SpecFromComposition(name string, comp Composition) IngredientSpec {
+func SpecFromComposition(name string, comp Composition) IngredientDefinition {
 	profile := ProfileFromComposition(NewIngredientID(name), name, comp)
 	return SpecFromProfile(profile)
 }

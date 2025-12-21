@@ -25,12 +25,12 @@ Rebuild the domain model around immutable ingredient definitions, lightweight lo
 - `Blend` feeds a reworked `BatchReport` builder that replaces ad-hoc aggregation helpers.
 
 ## Action items
-[ ] **Step 1 — Introduce core types:** add `IngredientDefinition`, `LotDescriptor`, normalization helpers, and constructor functions; keep legacy types temporarily aliased for compatibility.
-[ ] **Step 2 — Rebuild catalog:** refactor catalog construction to emit definitions/lots using the new types, update `IngredientProfileTable` consumers, and adjust standard spec helpers.
-[ ] **Step 3 — Update Problem ingestion:** store definition pointers + lot descriptors in `Problem`, expose helper accessors, and adapt tests/consumers (weight bounds, override logic).
-[ ] **Step 4 — Solver integration:** change solver setup to read definitions directly, ensure coefficient extraction pulls from definition/lot pointers, and update `Solution` to wrap a `Blend`.
-[ ] **Step 5 — Batch/recipe plumbing:** introduce the `Blend` struct plus aggregation helpers, update `BatchProfile`, `Recipe`, and label utilities to consume blends instead of rebuilding component maps.
-[ ] **Step 6 — Clean up legacy structures:** remove old spec/lot structs, rename files, run targeted gofmt/go test, and adjust docs/examples to reference the new domain terminology.
+[x] **Step 1 — Introduce core types:** add `IngredientDefinition`, `LotDescriptor`, normalization helpers, and constructor functions; keep legacy types temporarily aliased for compatibility.
+[x] **Step 2 — Rebuild catalog:** refactor catalog construction to emit definitions/lots using the new types, update `IngredientProfileTable` consumers, and adjust standard spec helpers.
+[x] **Step 3 — Update Problem ingestion:** store definition pointers + lot descriptors in `Problem`, expose helper accessors, and adapt tests/consumers (weight bounds, override logic).
+[x] **Step 4 — Solver integration:** change solver setup to read definitions directly, ensure coefficient extraction pulls from definition/lot pointers, and update `Solution` to wrap a `Blend`.
+[x] **Step 5 — Batch/recipe plumbing:** introduce the `Blend` struct plus aggregation helpers, update `BatchProfile`, `Recipe`, and label utilities to consume blends instead of rebuilding component maps.
+[x] **Step 6 — Clean up legacy structures:** remove old spec/lot structs, rename files, run targeted gofmt/go test, and adjust docs/examples to reference the new domain terminology.
 
 ## Testing and validation
 - `go test ./...` after each major refactor (at least after steps 3, 5, and 6).

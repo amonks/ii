@@ -113,7 +113,7 @@ func (lot LotDescriptor) WithDefinition(def *IngredientDefinition) LotDescriptor
 }
 
 // WithSpec returns a copy of the lot backed by the provided spec value.
-func (lot LotDescriptor) WithSpec(spec IngredientSpec) LotDescriptor {
+func (lot LotDescriptor) WithSpec(spec IngredientDefinition) LotDescriptor {
 	normalized := normalizeSpec(spec)
 	definition := normalized
 	lot.Definition = &definition

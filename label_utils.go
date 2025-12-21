@@ -2,7 +2,7 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []IngredientSpec, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
+func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
 	if sol == nil {
 		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
 	}
@@ -33,7 +33,7 @@ func recipeFromSolution(sol *Solution, specs []IngredientSpec, goals LabelGoals,
 			}
 			detail, ok := sol.Lots[spec.ID]
 			if !ok {
-				detail = NewIngredientLot(spec)
+				detail = NewLotDescriptor(spec)
 			}
 			mass := w * batchMass
 			components = append(components, RecipeComponent{

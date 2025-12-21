@@ -50,7 +50,7 @@ type ProductionSettings struct {
 
 // RecipeComponent couples an ingredient lot with a batch weight (kg).
 type RecipeComponent struct {
-	Ingredient IngredientLot
+	Ingredient LotDescriptor
 	MassKg     float64
 }
 
@@ -93,7 +93,7 @@ func NewRecipe(components []RecipeComponent, overrun float64) (*Recipe, error) {
 	}, nil
 }
 
-func NewRecipeFromWeights(ingredients []IngredientLot, weights []float64, overrun float64) (*Recipe, error) {
+func NewRecipeFromWeights(ingredients []LotDescriptor, weights []float64, overrun float64) (*Recipe, error) {
 	if len(ingredients) != len(weights) {
 		return nil, errors.New("ingredient and weight slices must have equal length")
 	}

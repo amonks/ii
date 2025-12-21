@@ -7,7 +7,7 @@ func TestBuildBatchProfileMatchesSweetenerAnalysis(t *testing.T) {
 	milk := SpecFromComposition("Milk", PointComposition(0.032, 0.09, 0.05, 0.01))
 	sugar := SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))
 
-	specs := []IngredientSpec{cream, milk, sugar}
+	specs := []IngredientDefinition{cream, milk, sugar}
 	weights := map[IngredientID]float64{
 		cream.ID: 0.4,
 		milk.ID:  0.4,

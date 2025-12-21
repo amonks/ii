@@ -7,7 +7,7 @@ type BatchProfile struct {
 }
 
 // BuildBatchProfile accumulates constituent components and sweetener metrics for the given weights.
-func BuildBatchProfile(weights map[IngredientID]float64, specs []IngredientSpec, lots map[IngredientID]IngredientLot) BatchProfile {
+func BuildBatchProfile(weights map[IngredientID]float64, specs []IngredientDefinition, lots map[IngredientID]LotDescriptor) BatchProfile {
 	var profile BatchProfile
 
 	for _, spec := range specs {

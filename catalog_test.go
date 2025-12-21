@@ -33,7 +33,7 @@ func TestCustomCatalogRegistersKeys(t *testing.T) {
 	spec.Key = NewIngredientKey("custom_sugar")
 	spec = renameSpec(spec, "Fancy Sugar")
 
-	catalog := NewIngredientCatalog([]IngredientSpec{spec})
+	catalog := NewIngredientCatalog([]IngredientDefinition{spec})
 	inst, ok := catalog.InstanceByKey("custom_sugar")
 	if !ok {
 		t.Fatalf("expected catalog to resolve custom key")

@@ -23,30 +23,30 @@ type LabelScenarioResult struct {
 	ServingSizeGrams float64
 	Metrics          BatchSnapshot
 	PintMassGrams    float64
-	Specs            []IngredientSpec
+	Specs            []IngredientDefinition
 	BatchProfile     BatchProfile
-	BatchDetails     map[IngredientID]IngredientLot
+	BatchDetails     map[IngredientID]LotDescriptor
 }
 
 type scenarioIngredients struct {
 	catalog  IngredientCatalog
-	batches  map[IngredientID]IngredientLot
-	specs    []IngredientSpec
-	lots     []IngredientLot
+	batches  map[IngredientID]LotDescriptor
+	specs    []IngredientDefinition
+	lots     []LotDescriptor
 	nameToID map[string]IngredientID
 }
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
 		catalog:  DefaultIngredientCatalog(),
-		batches:  make(map[IngredientID]IngredientLot),
-		specs:    make([]IngredientSpec, 0),
-		lots:     make([]IngredientLot, 0),
+		batches:  make(map[IngredientID]LotDescriptor),
+		specs:    make([]IngredientDefinition, 0),
+		lots:     make([]LotDescriptor, 0),
 		nameToID: make(map[string]IngredientID),
 	}
 }
 
-func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientLot)) {
+func (s *scenarioIngredients) addClone(key, name string, override func(*LotDescriptor)) {
 	base, ok := s.catalog.InstanceByKey(key)
 	if !ok {
 		return
@@ -61,10 +61,10 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*Ingredie
 	s.addDetail(inst)
 }
 
-func (s *scenarioIngredients) addDetail(inst IngredientLot) {
+func (s *scenarioIngredients) addDetail(inst LotDescriptor) {
 	profile := inst.EffectiveProfile()
 	s.nameToID[profile.Name] = profile.ID
-	spec := IngredientSpec{}
+	spec := IngredientDefinition{}
 	if inst.Definition != nil {
 		spec = *inst.Definition
 	}
@@ -78,26 +78,26 @@ func (s *scenarioIngredients) addDetail(inst IngredientLot) {
 	s.lots = append(s.lots, inst)
 }
 
-func (s *scenarioIngredients) Specs() []IngredientSpec {
+func (s *scenarioIngredients) Specs() []IngredientDefinition {
 	return s.specs
 }
 
-func (s *scenarioIngredients) Lots() []IngredientLot {
-	result := make([]IngredientLot, len(s.lots))
+func (s *scenarioIngredients) Lots() []LotDescriptor {
+	result := make([]LotDescriptor, len(s.lots))
 	copy(result, s.lots)
 	return result
 }
 
-func (s *scenarioIngredients) Batches() map[IngredientID]IngredientLot {
-	copy := make(map[IngredientID]IngredientLot, len(s.batches))
+func (s *scenarioIngredients) Batches() map[IngredientID]LotDescriptor {
+	copy := make(map[IngredientID]LotDescriptor, len(s.batches))
 	for id, batch := range s.batches {
 		copy[id] = batch
 	}
 	return copy
 }
 
-func renameInstance(inst IngredientLot, name string) IngredientLot {
-	spec := IngredientSpec{}
+func renameInstance(inst LotDescriptor, name string) LotDescriptor {
+	spec := IngredientDefinition{}
 	if inst.Definition != nil {
 		spec = *inst.Definition
 	}
@@ -360,8 +360,8 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 	builder.addClone("lecithin", "sunflower_lecithin", nil)
 	builder.addClone("locust_bean_gum", "carob_bean_gum", nil)
 	builder.addClone("guar_gum", "guar_gum", nil)
-	builder.addClone("vanilla_extract", "natural_flavor", func(inst *IngredientLot) {
-		spec := IngredientSpec{}
+	builder.addClone("vanilla_extract", "natural_flavor", func(inst *LotDescriptor) {
+		spec := IngredientDefinition{}
 		if inst.Definition != nil {
 			spec = *inst.Definition
 		}
@@ -443,7 +443,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	}
 
 	batchProfile := BuildBatchProfile(solution.Weights, specs, solution.Lots)
-	batchDetails := make(map[IngredientID]IngredientLot, len(solution.Lots))
+	batchDetails := make(map[IngredientID]LotDescriptor, len(solution.Lots))
 	for id, lot := range solution.Lots {
 		batchDetails[id] = lot
 	}

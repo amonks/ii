@@ -40,7 +40,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 
 	// "Nonfat Milk" - could be any concentration from liquid to powder
 	// Tapioca syrup - used as stabilizer (starch), not primarily for sugar
-	specs := []creamery.IngredientSpec{
+	specs := []creamery.IngredientDefinition{
 		creamery.WholeMilk,
 		creamery.HeavyCream,
 		creamery.Sugar,

@@ -3,7 +3,7 @@ package creamery
 import "testing"
 
 func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
-	spec := IngredientSpec{
+	spec := IngredientDefinition{
 		ID:   IngredientID("sucrose"),
 		Name: "Fancy Sugar",
 		Profile: ConstituentProfile{
@@ -31,7 +31,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Names: map[IngredientID]string{
 			IngredientID("sucrose"): "Fancy Sugar",
 		},
-		Lots: make(map[IngredientID]IngredientLot),
+		Lots: make(map[IngredientID]LotDescriptor),
 	}
 
 	goals := LabelGoals{
@@ -39,11 +39,11 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Overrun:     0,
 	}
 
-	inst := NewIngredientLot(spec)
+	inst := NewLotDescriptor(spec)
 	inst.Label = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 
-	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientSpec{spec}, goals, 0)
+	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientDefinition{spec}, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}

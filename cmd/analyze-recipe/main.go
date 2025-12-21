@@ -215,11 +215,11 @@ func printRecipe(r *creamery.Recipe) {
 	}
 }
 
-func instanceWithName(inst creamery.IngredientLot, name string) creamery.IngredientLot {
+func instanceWithName(inst creamery.LotDescriptor, name string) creamery.LotDescriptor {
 	if name == "" {
 		return inst
 	}
-	spec := creamery.IngredientSpec{}
+	spec := creamery.IngredientDefinition{}
 	if inst.Definition != nil {
 		spec = *inst.Definition
 	}
