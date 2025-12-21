@@ -205,7 +205,7 @@ func (p *Problem) Validate() error {
 		return fmt.Errorf("no ingredients specified")
 	}
 
-	if err := p.Target.Composition.Valid(); err != nil {
+	if err := p.Target.Validate(); err != nil {
 		return fmt.Errorf("invalid target: %w", err)
 	}
 

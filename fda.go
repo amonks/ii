@@ -181,12 +181,19 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 	addedPAC := addedSugarFrac.Scale(SucrosePAC)
 	lactosePAC := lactoseFrac.Scale(LactosePAC)
 
-	return FormulationTarget{
-		Composition: comp,
+	components := ConstituentComponents{
+		Fat:         fatFrac,
+		MSNF:        msnfFrac,
 		Protein:     proteinFrac,
 		Lactose:     lactoseFrac,
-		AddedSugars: addedSugarFrac,
-		TotalSugars: totalSugarFrac,
+		Sucrose:     addedSugarFrac,
+		OtherSolids: otherFrac,
+		Water:       waterFrac,
+	}
+
+	return FormulationTarget{
+		Composition: comp,
+		Components:  components,
 		Water:       waterFrac,
 		POD:         addedPOD.Add(lactosePOD),
 		PAC:         addedPAC.Add(lactosePAC),

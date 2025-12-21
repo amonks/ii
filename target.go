@@ -1,17 +1,16 @@
 package creamery
 
+import "fmt"
+
 // FormulationTarget captures macro and functional targets inferred from a label
 // or other specification source.
 type FormulationTarget struct {
 	Composition Composition
 
-	Protein     Interval
-	Lactose     Interval
-	AddedSugars Interval
-	TotalSugars Interval
-	Water       Interval
-	POD         Interval
-	PAC         Interval
+	Components ConstituentComponents
+	Water      Interval
+	POD        Interval
+	PAC        Interval
 }
 
 // CompositionTarget returns the legacy composition portion of the goal.
@@ -34,10 +33,68 @@ func (t FormulationTarget) String() string {
 	return t.Composition.String()
 }
 
+// ProteinInterval exposes the target protein interval.
+func (t FormulationTarget) ProteinInterval() Interval {
+	return t.Components.Protein
+}
+
+// LactoseInterval exposes the target lactose interval.
+func (t FormulationTarget) LactoseInterval() Interval {
+	return t.Components.Lactose
+}
+
+// AddedSugarsInterval exposes the summed interval for added sugars.
+func (t FormulationTarget) AddedSugarsInterval() Interval {
+	return t.Components.AddedSugarsInterval()
+}
+
+// TotalSugarsInterval exposes lactose plus added sugars.
+func (t FormulationTarget) TotalSugarsInterval() Interval {
+	return t.AddedSugarsInterval().Add(t.Components.Lactose)
+}
+
+// WaterInterval returns the explicit water interval constraint.
+func (t FormulationTarget) WaterInterval() Interval {
+	return t.Water
+}
+
+// Validate ensures the target intervals are well-formed.
+func (t FormulationTarget) Validate() error {
+	if err := t.Composition.Valid(); err != nil {
+		return err
+	}
+	entries := []struct {
+		name string
+		iv   Interval
+	}{
+		{"protein", t.Components.Protein},
+		{"lactose", t.Components.Lactose},
+		{"sucrose", t.Components.Sucrose},
+		{"glucose", t.Components.Glucose},
+		{"fructose", t.Components.Fructose},
+		{"maltodextrin", t.Components.Maltodextrin},
+		{"polyols", t.Components.Polyols},
+		{"other solids", t.Components.OtherSolids},
+		{"water", t.Water},
+	}
+	for _, entry := range entries {
+		if entry.iv.Lo < 0 || entry.iv.Hi > 1 {
+			return fmt.Errorf("target %s interval out of range: %s", entry.name, entry.iv.String())
+		}
+		if entry.iv.Lo > entry.iv.Hi {
+			return fmt.Errorf("target %s interval has lo > hi: %s", entry.name, entry.iv.String())
+		}
+	}
+	return nil
+}
+
 // FormulationFromComposition creates a formulation target when only the legacy
 // Composition is known (other fields default to zero intervals).
 func FormulationFromComposition(comp Composition) FormulationTarget {
+	profile := ProfileFromComposition("", "", comp)
 	return FormulationTarget{
 		Composition: comp,
+		Components:  profile.Components,
+		Water:       comp.Water(),
 	}
 }

@@ -314,20 +314,20 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 		{lpp.otherLo, lpp.otherHi, targetComp.Other},
 	}
 
-	if intervalSpecified(lpp.target.Protein) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.proteinLo, lpp.proteinHi, lpp.target.Protein})
+	if proteinTarget := lpp.target.ProteinInterval(); intervalSpecified(proteinTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.proteinLo, lpp.proteinHi, proteinTarget})
 	}
-	if intervalSpecified(lpp.target.Lactose) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.lactoseLo, lpp.lactoseHi, lpp.target.Lactose})
+	if lactoseTarget := lpp.target.LactoseInterval(); intervalSpecified(lactoseTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.lactoseLo, lpp.lactoseHi, lactoseTarget})
 	}
-	if intervalSpecified(lpp.target.AddedSugars) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.sugarLo, lpp.sugarHi, lpp.target.AddedSugars})
+	if addedTarget := lpp.target.AddedSugarsInterval(); intervalSpecified(addedTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.sugarLo, lpp.sugarHi, addedTarget})
 	}
-	if intervalSpecified(lpp.target.TotalSugars) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.totalSugarLo, lpp.totalSugarHi, lpp.target.TotalSugars})
+	if totalTarget := lpp.target.TotalSugarsInterval(); intervalSpecified(totalTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.totalSugarLo, lpp.totalSugarHi, totalTarget})
 	}
-	if intervalSpecified(lpp.target.Water) {
-		componentConstraints = append(componentConstraints, componentConstraint{lpp.waterLo, lpp.waterHi, lpp.target.Water})
+	if waterTarget := lpp.target.WaterInterval(); intervalSpecified(waterTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.waterLo, lpp.waterHi, waterTarget})
 	}
 
 	// Count inequality constraints:
