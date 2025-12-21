@@ -23,19 +23,23 @@ type LabelScenarioResult struct {
 	ServingSizeGrams float64
 	Metrics          map[string]float64
 	PintMassGrams    float64
+	Specs            []IngredientSpec
+	BatchDetails     map[IngredientID]IngredientBatch
 }
 
 type scenarioIngredients struct {
-	table   map[string]IngredientBatch
-	batches map[string]IngredientBatch
-	specs   []IngredientSpec
+	table    map[string]IngredientBatch
+	batches  map[IngredientID]IngredientBatch
+	specs    []IngredientSpec
+	nameToID map[string]IngredientID
 }
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
-		table:   IngredientBatchTable(),
-		batches: make(map[string]IngredientBatch),
-		specs:   make([]IngredientSpec, 0),
+		table:    IngredientBatchTable(),
+		batches:  make(map[IngredientID]IngredientBatch),
+		specs:    make([]IngredientSpec, 0),
+		nameToID: make(map[string]IngredientID),
 	}
 }
 
@@ -55,7 +59,11 @@ func (s *scenarioIngredients) addCustom(detail IngredientBatch) {
 }
 
 func (s *scenarioIngredients) addDetail(detail IngredientBatch) {
-	s.batches[detail.Name] = detail
+	if detail.ID == "" {
+		detail.ID = NewIngredientID(detail.Name)
+	}
+	s.nameToID[detail.Name] = detail.ID
+	s.batches[detail.ID] = detail
 	s.specs = append(s.specs, ingredientSpecFromBatch(detail))
 }
 
@@ -71,13 +79,17 @@ func (s *scenarioIngredients) LegacyIngredients() []Ingredient {
 	return legacy
 }
 
-func (s *scenarioIngredients) Batches() map[string]IngredientBatch {
-	return s.batches
+func (s *scenarioIngredients) Batches() map[IngredientID]IngredientBatch {
+	copy := make(map[IngredientID]IngredientBatch, len(s.batches))
+	for id, batch := range s.batches {
+		copy[id] = batch
+	}
+	return copy
 }
 
 func (s *scenarioIngredients) id(name string) IngredientID {
-	if batch, ok := s.batches[name]; ok && batch.ID != "" {
-		return batch.ID
+	if id, ok := s.nameToID[name]; ok {
+		return id
 	}
 	return NewIngredientID(name)
 }
@@ -413,6 +425,8 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		ServingSizeGrams: serving,
 		Metrics:          metrics,
 		PintMassGrams:    pintMass,
+		Specs:            builder.Specs(),
+		BatchDetails:     builder.Batches(),
 	}, nil
 }
 

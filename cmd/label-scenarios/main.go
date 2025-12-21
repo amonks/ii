@@ -80,12 +80,17 @@ func printScenario(result *creamery.LabelScenarioResult) {
 	}
 
 	fmt.Println("\nSolution weights:")
-	for _, ing := range result.Problem.Ingredients {
-		w := result.Solution.Weights[ing.Name]
+	for _, spec := range result.Specs {
+		w := result.Solution.Weights[spec.Name]
 		if w > 1e-4 {
-			fmt.Printf("  %s: %.2f%%\n", ing.Name, w*100)
+			fmt.Printf("  %s (%s): %.2f%%\n", spec.Name, spec.ID, w*100)
 		}
 	}
+
+	sweetener := creamery.AnalyzeSweeteners(result.Solution, result.Problem.Ingredients)
+	fmt.Println("\nSweetener analysis:")
+	fmt.Printf("  POD: %.1f (%.1f%% sucrose equivalent)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
+	fmt.Printf("  PAC: %.1f (added %.1f / lactose %.1f)\n", sweetener.TotalPAC, sweetener.AddedSugarPAC, sweetener.LactosePAC)
 
 	fmt.Println("\nMix Recipe:")
 	printRecipe(result.Recipe)

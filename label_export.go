@@ -97,6 +97,29 @@ td { padding:0.2rem 0; }
 		}
 
 		b.WriteString(`</div>`)
+
+		if res.Solution != nil && res.Problem != nil {
+			sweetener := AnalyzeSweeteners(res.Solution, res.Problem.Ingredients)
+			if sweetener.TotalPOD > 0 || sweetener.TotalPAC > 0 {
+				b.WriteString(`<div class="grid">`)
+				b.WriteString(`<div class="card"><h3>Sweetener Analysis</h3><table>`)
+				b.WriteString(fmt.Sprintf(`<tr><td>Total POD</td><td>%.1f</td></tr>`, sweetener.TotalPOD))
+				b.WriteString(fmt.Sprintf(`<tr><td>Total PAC</td><td>%.1f</td></tr>`, sweetener.TotalPAC))
+				b.WriteString(fmt.Sprintf(`<tr><td>Added sugars POD</td><td>%.1f</td></tr>`, sweetener.AddedSugarPOD))
+				b.WriteString(fmt.Sprintf(`<tr><td>Lactose POD</td><td>%.1f</td></tr>`, sweetener.LactosePOD))
+				b.WriteString(fmt.Sprintf(`<tr><td>Added sugars PAC</td><td>%.1f</td></tr>`, sweetener.AddedSugarPAC))
+				b.WriteString(fmt.Sprintf(`<tr><td>Lactose PAC</td><td>%.1f</td></tr>`, sweetener.LactosePAC))
+				b.WriteString(`</table></div>`)
+
+				b.WriteString(`<div class="card"><h3>Ingredient IDs</h3><p>`)
+				for _, spec := range res.Specs {
+					b.WriteString(fmt.Sprintf(`<span class="tag">%s</span>`, html.EscapeString(spec.ID.String())))
+				}
+				b.WriteString(`</p></div>`)
+				b.WriteString(`</div>`)
+			}
+		}
+
 		b.WriteString(fmt.Sprintf(`<p><span class="tag">Serving size %.1f g</span><span class="tag">Pint mass %.1f g</span></p>`, res.ServingSizeGrams, res.PintMassGrams))
 		b.WriteString(`</section>`)
 	}

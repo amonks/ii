@@ -2,7 +2,7 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []IngredientSpec, batches map[string]IngredientBatch, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, map[string]float64, error) {
+func recipeFromSolution(sol *Solution, specs []IngredientSpec, batches map[IngredientID]IngredientBatch, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, map[string]float64, error) {
 	if sol == nil {
 		return nil, NutritionFacts{}, 0, nil, fmt.Errorf("nil solution")
 	}
@@ -17,9 +17,9 @@ func recipeFromSolution(sol *Solution, specs []IngredientSpec, batches map[strin
 		if w <= 1e-6 {
 			continue
 		}
-		detail, ok := batches[spec.Name]
+		detail, ok := batches[spec.ID]
 		if !ok {
-			return nil, NutritionFacts{}, 0, nil, fmt.Errorf("missing detailed composition for %s", spec.Name)
+			return nil, NutritionFacts{}, 0, nil, fmt.Errorf("missing detailed composition for %s (%s)", spec.Name, spec.ID)
 		}
 		mass := w * goals.BatchMassKG
 		entry := detail
