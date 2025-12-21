@@ -37,13 +37,14 @@ func TestFullWorkflow(t *testing.T) {
 
 	// Derive target composition from label
 	target := label.ToTarget()
+	compTarget := target.CompositionTarget()
 
 	fmt.Println()
 	fmt.Println("Derived formulation targets (with FDA rounding uncertainty):")
-	fmt.Printf("  Fat:   %s\n", target.Fat)
-	fmt.Printf("  MSNF:  %s\n", target.MSNF)
-	fmt.Printf("  Sugar: %s\n", target.Sugar)
-	fmt.Printf("  Water: %s (derived)\n", target.Water())
+	fmt.Printf("  Fat:   %s\n", compTarget.Fat)
+	fmt.Printf("  MSNF:  %s\n", compTarget.MSNF)
+	fmt.Printf("  Sugar: %s\n", compTarget.Sugar)
+	fmt.Printf("  Water: %s (derived)\n", compTarget.Water())
 
 	fmt.Println()
 	fmt.Println("### Interpreting the ingredient list")
@@ -57,7 +58,7 @@ func TestFullWorkflow(t *testing.T) {
 		creamery.TapiocaSyrup,
 	}
 
-	labelProblem := creamery.NewProblem(labelIngredients, target)
+	labelProblem := creamery.NewProblem(labelIngredients, compTarget)
 	labelProblem.OrderConstraints = true
 
 	labelSolver, err := creamery.NewSolver(labelProblem)
@@ -82,7 +83,7 @@ func TestFullWorkflow(t *testing.T) {
 					fmt.Printf("      %-18s %5.1f%%\n", name+":", w*100)
 				}
 			}
-			if impliedMSNF, ok := s.ImpliedMSNF(labelIngredients, target, "Nonfat Milk"); ok {
+			if impliedMSNF, ok := s.ImpliedMSNF(labelIngredients, compTarget, "Nonfat Milk"); ok {
 				desc := creamery.DescribeNonfatMilk(impliedMSNF)
 				fmt.Printf("      └─ Nonfat milk form: %s\n", desc)
 			}
@@ -140,7 +141,7 @@ func TestFullWorkflow(t *testing.T) {
 		myDextrose,
 	}
 
-	problem := creamery.NewProblem(ingredients, target)
+	problem := creamery.NewProblem(ingredients, compTarget)
 
 	solver, err := creamery.NewSolver(problem)
 	if err != nil {
@@ -188,9 +189,9 @@ func TestFullWorkflow(t *testing.T) {
 		// Print achieved composition
 		fmt.Println()
 		fmt.Println("Achieved composition:")
-		fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", s.Achieved.Fat.Mid()*100, target.Fat)
-		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, target.MSNF)
-		fmt.Printf("  Sugar: %.2f%%  (target: %s)\n", s.Achieved.Sugar.Mid()*100, target.Sugar)
+		fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", s.Achieved.Fat.Mid()*100, compTarget.Fat)
+		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, compTarget.MSNF)
+		fmt.Printf("  Sugar: %.2f%%  (target: %s)\n", s.Achieved.Sugar.Mid()*100, compTarget.Sugar)
 		fmt.Printf("  Water: %.2f%%\n", s.Achieved.Water().Mid()*100)
 
 		// POD/PAC analysis
@@ -226,7 +227,7 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println()
 
 	// Create a new problem with PAC target
-	problem2 := creamery.NewProblem(ingredients, target)
+	problem2 := creamery.NewProblem(ingredients, compTarget)
 	problem2.TargetPAC = creamery.Range(28, 32) // target "firm" texture
 
 	solver2, _ := creamery.NewSolver(problem2)

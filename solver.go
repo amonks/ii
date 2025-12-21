@@ -39,20 +39,34 @@ func NewSolver(p *Problem) (*Solver, error) {
 type lpProblem struct {
 	n int // number of ingredients
 
-	// Coefficient matrices (using midpoints of intervals for basic solving)
-	fat   []float64
-	msnf  []float64
-	sugar []float64
-	other []float64
-	pod   []float64 // POD contribution per unit weight
-	pac   []float64 // PAC contribution per unit weight
+	// Coefficient intervals for each constituent
+	fatLo        []float64
+	fatHi        []float64
+	msnfLo       []float64
+	msnfHi       []float64
+	sugarLo      []float64 // added sugars (non-lactose)
+	sugarHi      []float64
+	otherLo      []float64
+	otherHi      []float64
+	proteinLo    []float64
+	proteinHi    []float64
+	lactoseLo    []float64
+	lactoseHi    []float64
+	totalSugarLo []float64
+	totalSugarHi []float64
+	waterLo      []float64
+	waterHi      []float64
+	podLo        []float64
+	podHi        []float64
+	pacLo        []float64
+	pacHi        []float64
 
 	// Bounds on each variable
 	lower []float64
 	upper []float64
 
 	// Target intervals
-	target    Composition
+	target    FormulationTarget
 	targetPOD Interval
 	targetPAC Interval
 
@@ -78,12 +92,26 @@ func (s *Solver) buildLP() *lpProblem {
 
 	lpp := &lpProblem{
 		n:                n,
-		fat:              make([]float64, n),
-		msnf:             make([]float64, n),
-		sugar:            make([]float64, n),
-		other:            make([]float64, n),
-		pod:              make([]float64, n),
-		pac:              make([]float64, n),
+		fatLo:            make([]float64, n),
+		fatHi:            make([]float64, n),
+		msnfLo:           make([]float64, n),
+		msnfHi:           make([]float64, n),
+		sugarLo:          make([]float64, n),
+		sugarHi:          make([]float64, n),
+		otherLo:          make([]float64, n),
+		otherHi:          make([]float64, n),
+		proteinLo:        make([]float64, n),
+		proteinHi:        make([]float64, n),
+		lactoseLo:        make([]float64, n),
+		lactoseHi:        make([]float64, n),
+		totalSugarLo:     make([]float64, n),
+		totalSugarHi:     make([]float64, n),
+		waterLo:          make([]float64, n),
+		waterHi:          make([]float64, n),
+		podLo:            make([]float64, n),
+		podHi:            make([]float64, n),
+		pacLo:            make([]float64, n),
+		pacHi:            make([]float64, n),
 		lower:            make([]float64, n),
 		upper:            make([]float64, n),
 		target:           p.Target,
@@ -96,20 +124,38 @@ func (s *Solver) buildLP() *lpProblem {
 	}
 
 	for i, ing := range p.Ingredients {
-		// Use midpoints for coefficient estimation
-		lpp.fat[i] = ing.Comp.Fat.Mid()
-		lpp.msnf[i] = ing.Comp.MSNF.Mid()
-		lpp.sugar[i] = ing.Comp.Sugar.Mid()
-		lpp.other[i] = ing.Comp.Other.Mid()
+		fat := ing.Comp.Fat
+		msnf := ing.Comp.MSNF
+		sugar := ing.Comp.Sugar
+		other := ing.Comp.Other
+		protein := msnf.Scale(proteinFractionOfMSNF)
+		lactose := msnf.Scale(LactoseFractionOfMSNF)
+		totalSugar := sugar.Add(lactose)
+		water := ing.Comp.Water()
+
+		lpp.fatLo[i] = fat.Lo
+		lpp.fatHi[i] = fat.Hi
+		lpp.msnfLo[i] = msnf.Lo
+		lpp.msnfHi[i] = msnf.Hi
+		lpp.sugarLo[i] = sugar.Lo
+		lpp.sugarHi[i] = sugar.Hi
+		lpp.otherLo[i] = other.Lo
+		lpp.otherHi[i] = other.Hi
+		lpp.proteinLo[i] = protein.Lo
+		lpp.proteinHi[i] = protein.Hi
+		lpp.lactoseLo[i] = lactose.Lo
+		lpp.lactoseHi[i] = lactose.Hi
+		lpp.totalSugarLo[i] = totalSugar.Lo
+		lpp.totalSugarHi[i] = totalSugar.Hi
+		lpp.waterLo[i] = water.Lo
+		lpp.waterHi[i] = water.Hi
 
 		// POD/PAC coefficients: contribution per unit weight of ingredient
-		// = (sugar content × sweetener POD/PAC) + (MSNF × lactose fraction × lactose POD/PAC)
-		sugarContent := ing.Comp.Sugar.Mid()
-		msnfContent := ing.Comp.MSNF.Mid()
-		lactoseContent := msnfContent * LactoseFractionOfMSNF
-
-		lpp.pod[i] = sugarContent*ing.Sweetener.POD + lactoseContent*LactosePOD
-		lpp.pac[i] = sugarContent*ing.Sweetener.PAC + lactoseContent*LactosePAC
+		// = (added sugar × sweetener POD/PAC) + (lactose × lactose POD/PAC)
+		lpp.podLo[i] = lpp.sugarLo[i]*ing.Sweetener.POD + lpp.lactoseLo[i]*LactosePOD
+		lpp.podHi[i] = lpp.sugarHi[i]*ing.Sweetener.POD + lpp.lactoseHi[i]*LactosePOD
+		lpp.pacLo[i] = lpp.sugarLo[i]*ing.Sweetener.PAC + lpp.lactoseLo[i]*LactosePAC
+		lpp.pacHi[i] = lpp.sugarHi[i]*ing.Sweetener.PAC + lpp.lactoseHi[i]*LactosePAC
 
 		// Weight bounds
 		if bound, ok := p.WeightBounds[ing.Name]; ok {
@@ -136,12 +182,26 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 
 	lpp := &lpProblem{
 		n:                n,
-		fat:              fatCoeffs,
-		msnf:             msnfCoeffs,
-		sugar:            sugarCoeffs,
-		other:            otherCoeffs,
-		pod:              make([]float64, n),
-		pac:              make([]float64, n),
+		fatLo:            make([]float64, n),
+		fatHi:            make([]float64, n),
+		msnfLo:           make([]float64, n),
+		msnfHi:           make([]float64, n),
+		sugarLo:          make([]float64, n),
+		sugarHi:          make([]float64, n),
+		otherLo:          make([]float64, n),
+		otherHi:          make([]float64, n),
+		proteinLo:        make([]float64, n),
+		proteinHi:        make([]float64, n),
+		lactoseLo:        make([]float64, n),
+		lactoseHi:        make([]float64, n),
+		totalSugarLo:     make([]float64, n),
+		totalSugarHi:     make([]float64, n),
+		waterLo:          make([]float64, n),
+		waterHi:          make([]float64, n),
+		podLo:            make([]float64, n),
+		podHi:            make([]float64, n),
+		pacLo:            make([]float64, n),
+		pacHi:            make([]float64, n),
 		lower:            make([]float64, n),
 		upper:            make([]float64, n),
 		target:           p.Target,
@@ -154,6 +214,39 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 	}
 
 	for i, ing := range p.Ingredients {
+		fat := fatCoeffs[i]
+		msnf := msnfCoeffs[i]
+		sugar := sugarCoeffs[i]
+		other := otherCoeffs[i]
+
+		lpp.fatLo[i] = fat
+		lpp.fatHi[i] = fat
+		lpp.msnfLo[i] = msnf
+		lpp.msnfHi[i] = msnf
+		lpp.sugarLo[i] = sugar
+		lpp.sugarHi[i] = sugar
+		lpp.otherLo[i] = other
+		lpp.otherHi[i] = other
+
+		protein := proteinFractionOfMSNF * msnf
+		lactose := LactoseFractionOfMSNF * msnf
+		totalSugar := sugar + lactose
+		water := math.Max(0, 1-(fat+msnf+sugar+other))
+
+		lpp.proteinLo[i] = protein
+		lpp.proteinHi[i] = protein
+		lpp.lactoseLo[i] = lactose
+		lpp.lactoseHi[i] = lactose
+		lpp.totalSugarLo[i] = totalSugar
+		lpp.totalSugarHi[i] = totalSugar
+		lpp.waterLo[i] = water
+		lpp.waterHi[i] = water
+
+		lpp.podLo[i] = sugar*ing.Sweetener.POD + lactose*LactosePOD
+		lpp.podHi[i] = lpp.podLo[i]
+		lpp.pacLo[i] = sugar*ing.Sweetener.PAC + lactose*LactosePAC
+		lpp.pacHi[i] = lpp.pacLo[i]
+
 		if bound, ok := p.WeightBounds[ing.Name]; ok {
 			lpp.lower[i] = bound.Lo
 			lpp.upper[i] = bound.Hi
@@ -162,10 +255,6 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 			lpp.upper[i] = 1
 		}
 
-		// POD/PAC coefficients (using the provided sugar/msnf coefficients)
-		lactoseContent := msnfCoeffs[i] * LactoseFractionOfMSNF
-		lpp.pod[i] = sugarCoeffs[i]*ing.Sweetener.POD + lactoseContent*LactosePOD
-		lpp.pac[i] = sugarCoeffs[i]*ing.Sweetener.PAC + lactoseContent*LactosePAC
 	}
 
 	return lpp
@@ -177,14 +266,38 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	n := lpp.n
 
-	// Count inequality constraints:
-	// - 8 inequalities: 2 per composition component (lo <= sum <= hi)
-	// - 0-2 for POD target (if set)
-	// - 0-2 for PAC target (if set)
-	// - 2n inequalities: lower and upper bounds on each variable
-	// - n-1 inequalities: ordering constraints (if enabled)
+	targetComp := lpp.target.Composition
+	type componentConstraint struct {
+		lo     []float64
+		hi     []float64
+		target Interval
+	}
+	componentConstraints := []componentConstraint{
+		{lpp.fatLo, lpp.fatHi, targetComp.Fat},
+		{lpp.msnfLo, lpp.msnfHi, targetComp.MSNF},
+		{lpp.sugarLo, lpp.sugarHi, targetComp.Sugar},
+		{lpp.otherLo, lpp.otherHi, targetComp.Other},
+	}
 
-	numIneq := 8 + 2*n
+	if intervalSpecified(lpp.target.Protein) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.proteinLo, lpp.proteinHi, lpp.target.Protein})
+	}
+	if intervalSpecified(lpp.target.Lactose) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.lactoseLo, lpp.lactoseHi, lpp.target.Lactose})
+	}
+	if intervalSpecified(lpp.target.AddedSugars) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.sugarLo, lpp.sugarHi, lpp.target.AddedSugars})
+	}
+	if intervalSpecified(lpp.target.TotalSugars) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.totalSugarLo, lpp.totalSugarHi, lpp.target.TotalSugars})
+	}
+	if intervalSpecified(lpp.target.Water) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.waterLo, lpp.waterHi, lpp.target.Water})
+	}
+
+	// Count inequality constraints:
+	componentRows := len(componentConstraints) * 2
+	numIneq := componentRows + 2*n
 	hasPOD := lpp.targetPOD.Hi > 0
 	hasPAC := lpp.targetPAC.Hi > 0
 	if hasPOD {
@@ -211,69 +324,30 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 
 	row := 0
 
-	// Fat constraints: target.Lo <= sum(w_i * fat_i) <= target.Hi
-	// Rewrite as: -sum <= -Lo and sum <= Hi
-	for i := 0; i < n; i++ {
-		G.Set(row, i, -lpp.fat[i])
-	}
-	h[row] = -lpp.target.Fat.Lo
-	row++
+	for _, comp := range componentConstraints {
+		for i := 0; i < n; i++ {
+			G.Set(row, i, -comp.lo[i])
+		}
+		h[row] = -comp.target.Lo
+		row++
 
-	for i := 0; i < n; i++ {
-		G.Set(row, i, lpp.fat[i])
+		for i := 0; i < n; i++ {
+			G.Set(row, i, comp.hi[i])
+		}
+		h[row] = comp.target.Hi
+		row++
 	}
-	h[row] = lpp.target.Fat.Hi
-	row++
-
-	// MSNF constraints
-	for i := 0; i < n; i++ {
-		G.Set(row, i, -lpp.msnf[i])
-	}
-	h[row] = -lpp.target.MSNF.Lo
-	row++
-
-	for i := 0; i < n; i++ {
-		G.Set(row, i, lpp.msnf[i])
-	}
-	h[row] = lpp.target.MSNF.Hi
-	row++
-
-	// Sugar constraints
-	for i := 0; i < n; i++ {
-		G.Set(row, i, -lpp.sugar[i])
-	}
-	h[row] = -lpp.target.Sugar.Lo
-	row++
-
-	for i := 0; i < n; i++ {
-		G.Set(row, i, lpp.sugar[i])
-	}
-	h[row] = lpp.target.Sugar.Hi
-	row++
-
-	// Other constraints
-	for i := 0; i < n; i++ {
-		G.Set(row, i, -lpp.other[i])
-	}
-	h[row] = -lpp.target.Other.Lo
-	row++
-
-	for i := 0; i < n; i++ {
-		G.Set(row, i, lpp.other[i])
-	}
-	h[row] = lpp.target.Other.Hi
-	row++
 
 	// POD constraints (if set)
 	if hasPOD {
 		for i := 0; i < n; i++ {
-			G.Set(row, i, -lpp.pod[i])
+			G.Set(row, i, -lpp.podLo[i])
 		}
 		h[row] = -lpp.targetPOD.Lo
 		row++
 
 		for i := 0; i < n; i++ {
-			G.Set(row, i, lpp.pod[i])
+			G.Set(row, i, lpp.podHi[i])
 		}
 		h[row] = lpp.targetPOD.Hi
 		row++
@@ -282,13 +356,13 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	// PAC constraints (if set)
 	if hasPAC {
 		for i := 0; i < n; i++ {
-			G.Set(row, i, -lpp.pac[i])
+			G.Set(row, i, -lpp.pacLo[i])
 		}
 		h[row] = -lpp.targetPAC.Lo
 		row++
 
 		for i := 0; i < n; i++ {
-			G.Set(row, i, lpp.pac[i])
+			G.Set(row, i, lpp.pacHi[i])
 		}
 		h[row] = lpp.targetPAC.Hi
 		row++
@@ -363,6 +437,10 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	copy(x, xNew[:n])
 
 	return opt, x, nil
+}
+
+func intervalSpecified(iv Interval) bool {
+	return iv.Lo != 0 || iv.Hi != 0
 }
 
 // Feasible checks if the problem has any feasible solution.

@@ -23,6 +23,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 	}
 
 	target := label.ToTarget()
+	compTarget := target.CompositionTarget()
 
 	fmt.Println("=== Jeni's Sweet Cream Reverse Engineering ===")
 	fmt.Println()
@@ -31,9 +32,9 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 		label.ServingSize, label.Calories, label.TotalFat, label.Protein, label.Sugars)
 	fmt.Println()
 	fmt.Println("Derived targets (with FDA rounding uncertainty):")
-	fmt.Printf("  Fat:   %s\n", target.Fat)
-	fmt.Printf("  MSNF:  %s  (from protein)\n", target.MSNF)
-	fmt.Printf("  Sugar: %s\n", target.Sugar)
+	fmt.Printf("  Fat:   %s\n", compTarget.Fat)
+	fmt.Printf("  MSNF:  %s  (from protein)\n", compTarget.MSNF)
+	fmt.Printf("  Sugar: %s\n", compTarget.Sugar)
 
 	// "Nonfat Milk" - could be any concentration from liquid to powder
 	// Tapioca syrup - used as stabilizer (starch), not primarily for sugar
@@ -45,7 +46,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 		creamery.TapiocaSyrup,
 	}
 
-	problem := creamery.NewProblem(ingredients, target)
+	problem := creamery.NewProblem(ingredients, compTarget)
 	problem.OrderConstraints = true
 
 	solver, err := creamery.NewSolver(problem)
@@ -88,7 +89,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 		}
 
 		// What concentration must the Nonfat Milk be?
-		if impliedMSNF, ok := s.ImpliedMSNF(ingredients, target, "Nonfat Milk"); ok {
+		if impliedMSNF, ok := s.ImpliedMSNF(ingredients, compTarget, "Nonfat Milk"); ok {
 			desc := creamery.DescribeNonfatMilk(impliedMSNF)
 			fmt.Printf("    ---\n")
 			fmt.Printf("    Nonfat Milk form: %s\n", desc)

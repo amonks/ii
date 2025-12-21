@@ -85,10 +85,13 @@ type NutritionLabel struct {
 	AddedSugars float64 // grams of added sugars (0 if not declared or none)
 }
 
-// ToTarget converts FDA label values to a target Composition with
+// ToTarget converts FDA label values to a formulation target with
 // appropriate uncertainty intervals from rounding.
-func (l NutritionLabel) ToTarget() Composition {
+func (l NutritionLabel) ToTarget() FormulationTarget {
 	serving := l.ServingSize
+	if serving <= 0 {
+		serving = 1
+	}
 
 	// Convert gram intervals to fraction intervals
 	fatGrams := FatInterval(l.TotalFat)
@@ -104,6 +107,11 @@ func (l NutritionLabel) ToTarget() Composition {
 	fatFrac := Interval{
 		Lo: math.Max(0, fatGrams.Lo/serving),
 		Hi: math.Min(1, fatGrams.Hi/serving),
+	}
+
+	proteinFrac := Interval{
+		Lo: math.Max(0, proteinGrams.Lo/serving),
+		Hi: math.Min(1, proteinGrams.Hi/serving),
 	}
 
 	// For MSNF: estimate from protein
@@ -135,21 +143,53 @@ func (l NutritionLabel) ToTarget() Composition {
 		}
 	}
 
-	// Sugar fraction
-	sugarFrac := Interval{
+	// Added sugar fraction (non-lactose)
+	addedSugarFrac := Interval{
 		Lo: math.Max(0, addedSugarGrams.Lo/serving),
 		Hi: math.Min(1, addedSugarGrams.Hi/serving),
+	}
+
+	// Total sugar fraction (includes lactose)
+	totalSugarFrac := Interval{
+		Lo: math.Max(0, sugarGrams.Lo/serving),
+		Hi: math.Min(1, sugarGrams.Hi/serving),
 	}
 
 	// Other: hard to estimate from label, use wide range
 	// Could be 0-5% typically
 	otherFrac := Range(0, 0.05)
 
-	return Composition{
+	lactoseFrac := msnfFrac.Scale(LactoseFractionOfMSNF)
+
+	const derivedComponentSlack = 0.35
+	proteinFrac = widenInterval(proteinFrac, derivedComponentSlack)
+	msnfFrac = widenInterval(msnfFrac, labelPercentEPS)
+	lactoseFrac = widenInterval(lactoseFrac, derivedComponentSlack)
+	addedSugarFrac = widenInterval(addedSugarFrac, labelPercentEPS)
+	totalSugarFrac = widenInterval(totalSugarFrac, labelPercentEPS)
+
+	comp := Composition{
 		Fat:   fatFrac,
 		MSNF:  msnfFrac,
-		Sugar: sugarFrac,
+		Sugar: addedSugarFrac,
 		Other: otherFrac,
+	}
+
+	waterFrac := widenInterval(comp.Water(), 0.2)
+	addedPOD := addedSugarFrac.Scale(SucrosePOD)
+	lactosePOD := lactoseFrac.Scale(LactosePOD)
+	addedPAC := addedSugarFrac.Scale(SucrosePAC)
+	lactosePAC := lactoseFrac.Scale(LactosePAC)
+
+	return FormulationTarget{
+		Composition: comp,
+		Protein:     proteinFrac,
+		Lactose:     lactoseFrac,
+		AddedSugars: addedSugarFrac,
+		TotalSugars: totalSugarFrac,
+		Water:       waterFrac,
+		POD:         addedPOD.Add(lactosePOD),
+		PAC:         addedPAC.Add(lactosePAC),
 	}
 }
 
@@ -171,4 +211,19 @@ func CaloriesFromComposition(c Composition, servingGrams float64) Interval {
 	otherCal := c.Other.Scale(servingGrams * 2)
 
 	return fatCal.Add(msnfCal).Add(sugarCal).Add(otherCal)
+}
+
+func widenInterval(iv Interval, slack float64) Interval {
+	if slack <= 0 {
+		return iv
+	}
+	if iv.Lo == 0 && iv.Hi == 0 {
+		return iv
+	}
+	lo := math.Max(0, iv.Lo*(1-slack))
+	hi := math.Min(1, iv.Hi*(1+slack))
+	if lo > hi {
+		lo = hi
+	}
+	return Interval{Lo: lo, Hi: hi}
 }

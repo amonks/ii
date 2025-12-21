@@ -99,6 +99,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	}
 
 	target := label.ToTarget()
+	compTarget := target.CompositionTarget()
 
 	fmt.Println("=== Workflow 1: Label -> Formulation ===")
 	fmt.Printf("Label: %dg serving, %d cal, %dg fat, %dg protein, %dg carbs, %dg sugar\n",
@@ -114,7 +115,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 		creamery.EggYolks,
 	}
 
-	problem := creamery.NewProblem(ingredients, target)
+	problem := creamery.NewProblem(ingredients, compTarget)
 	problem.OrderConstraints = true // enforce label ordering
 
 	solver, err := creamery.NewSolver(problem)

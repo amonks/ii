@@ -26,16 +26,16 @@ type LabelScenarioResult struct {
 }
 
 type scenarioIngredients struct {
-	table       map[string]IngredientBatch
-	batches     map[string]IngredientBatch
-	specs       []IngredientSpec
+	table   map[string]IngredientBatch
+	batches map[string]IngredientBatch
+	specs   []IngredientSpec
 }
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
-		table:       IngredientBatchTable(),
-		batches:     make(map[string]IngredientBatch),
-		specs:       make([]IngredientSpec, 0),
+		table:   IngredientBatchTable(),
+		batches: make(map[string]IngredientBatch),
+		specs:   make([]IngredientSpec, 0),
 	}
 }
 
@@ -358,12 +358,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	goals := GoalsFromLabel(facts, pintMass, defaultServeTempC, defaultDrawTempC, defaultShearRate)
 	target := scenarioTargetFromFacts(facts)
 
-	problem := &Problem{
-		Ingredients:      builder.LegacyIngredients(),
-		Target:           target,
-		WeightBounds:     make(map[string]Interval),
-		OrderConstraints: false,
-	}
+	problem := NewFormulationProblem(builder.LegacyIngredients(), target)
 
 	if err := setPresenceFloor(problem, presence); err != nil {
 		return nil, err
@@ -410,7 +405,7 @@ func ingredientSpecFromBatch(detail IngredientBatch, sweetener SweetenerProps) I
 	return SpecFromProfile(detail.ToProfile(), sweetener)
 }
 
-func scenarioTargetFromFacts(facts NutritionFacts) Composition {
+func scenarioTargetFromFacts(facts NutritionFacts) FormulationTarget {
 	label := NutritionLabel{
 		ServingSize: facts.ServingSizeGrams,
 		Calories:    facts.Calories,

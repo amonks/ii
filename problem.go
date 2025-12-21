@@ -11,7 +11,7 @@ type Problem struct {
 	Ingredients []Ingredient
 
 	// Target composition to achieve
-	Target Composition
+	Target FormulationTarget
 
 	// TargetPOD is the target sweetening power range (optional).
 	// If non-zero, constrains the total POD (including lactose from MSNF).
@@ -34,11 +34,18 @@ type Problem struct {
 	Constraints []LinearConstraint
 }
 
-// NewProblem creates a problem with the given ingredients and target.
+// NewProblem creates a problem with the given ingredients and legacy composition target.
 func NewProblem(ingredients []Ingredient, target Composition) *Problem {
+	return NewFormulationProblem(ingredients, FormulationFromComposition(target))
+}
+
+// NewFormulationProblem creates a problem using the richer formulation target.
+func NewFormulationProblem(ingredients []Ingredient, target FormulationTarget) *Problem {
 	return &Problem{
 		Ingredients:  ingredients,
 		Target:       target,
+		TargetPOD:    target.POD,
+		TargetPAC:    target.PAC,
 		WeightBounds: make(map[string]Interval),
 	}
 }
@@ -91,7 +98,7 @@ func (p *Problem) Validate() error {
 		return fmt.Errorf("no ingredients specified")
 	}
 
-	if err := p.Target.Valid(); err != nil {
+	if err := p.Target.Composition.Valid(); err != nil {
 		return fmt.Errorf("invalid target: %w", err)
 	}
 
