@@ -15,42 +15,35 @@ func canonicalLot(lot LotDescriptor, cache map[IngredientID]*IngredientDefinitio
 	if cache == nil {
 		cache = make(map[IngredientID]*IngredientDefinition)
 	}
-	if lot.Definition != nil {
-		normalized := normalizeDefinition(*lot.Definition)
-		if cached, ok := cache[normalized.ID]; ok {
-			lot = lot.WithDefinition(cached)
+
+	assignDefinition := func(def IngredientDefinition) (LotDescriptor, *IngredientDefinition) {
+		definition := normalizeDefinition(def)
+		if cached, ok := cache[definition.ID]; ok {
+			lot.Definition = cached
 			if lot.Label == "" {
 				lot.Label = cached.Name
 			}
 			return lot, cached
 		}
-		definition := normalized
 		cache[definition.ID] = &definition
-		lot = lot.WithDefinition(&definition)
+		lot.Definition = &definition
 		if lot.Label == "" {
 			lot.Label = definition.Name
 		}
 		return lot, &definition
 	}
+
+	if lot.Definition != nil {
+		return assignDefinition(*lot.Definition)
+	}
+
 	profile := lot.EffectiveProfile()
-	definition := normalizeDefinition(IngredientDefinition{
+	def := IngredientDefinition{
 		ID:      profile.ID,
 		Name:    lot.Label,
 		Profile: profile,
-	})
-	if cached, ok := cache[definition.ID]; ok {
-		lot = lot.WithDefinition(cached)
-		if lot.Label == "" {
-			lot.Label = cached.Name
-		}
-		return lot, cached
 	}
-	cache[definition.ID] = &definition
-	lot = lot.WithDefinition(&definition)
-	if lot.Label == "" {
-		lot.Label = definition.Name
-	}
-	return lot, &definition
+	return assignDefinition(def)
 }
 
 // Problem defines an ice cream formulation problem.
