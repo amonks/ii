@@ -114,24 +114,28 @@ func TestFullWorkflow(t *testing.T) {
 		Comp: creamery.PointComposition(0.01, 0.96, 0, 0), // 1% fat, 96% MSNF
 	}
 
-	mySucrose := creamery.Ingredient{
-		Name:      "Sucrose",
-		Comp:      creamery.PointComposition(0, 0, 1.0, 0), // 100% sugar
-		Sweetener: creamery.Sucrose,                        // POD=100, PAC=100
-	}
+	mySucroseBatch := creamery.IngredientBatchTable()["sucrose"]
+	mySucroseBatch.Name = "Sucrose"
+	mySucrose := mySucroseBatch.ToSpec().LegacyIngredient()
 
-	myDextrose := creamery.Ingredient{
-		Name:      "Dextrose",
-		Comp:      creamery.PointComposition(0, 0, 1.0, 0), // 100% sugar
-		Sweetener: creamery.Dextrose,                       // POD=75, PAC=180 (less sweet, softer)
-	}
+	myDextroseBatch := creamery.IngredientBatchTable()["dextrose"]
+	myDextroseBatch.Name = "Dextrose"
+	myDextrose := myDextroseBatch.ToSpec().LegacyIngredient()
 
 	fmt.Println("Ingredients on hand:")
 	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.1f%%\n", myCream.Name, myCream.Comp.Fat.Mid()*100, myCream.Comp.MSNF.Mid()*100)
 	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilk.Comp.Fat.Mid()*100, myMilk.Comp.MSNF.Mid()*100)
 	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDM.Comp.Fat.Mid()*100, myNFDM.Comp.MSNF.Mid()*100)
-	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f\n", mySucrose.Name, mySucrose.Comp.Sugar.Mid()*100, mySucrose.Sweetener.POD, mySucrose.Sweetener.PAC)
-	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f (less sweet, more softening)\n", myDextrose.Name, myDextrose.Comp.Sugar.Mid()*100, myDextrose.Sweetener.POD, myDextrose.Sweetener.PAC)
+	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f\n",
+		mySucrose.Name,
+		mySucrose.Comp.Sugar.Mid()*100,
+		mySucrose.Profile.PODInterval().Mid(),
+		mySucrose.Profile.PACInterval().Mid())
+	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f (less sweet, more softening)\n",
+		myDextrose.Name,
+		myDextrose.Comp.Sugar.Mid()*100,
+		myDextrose.Profile.PODInterval().Mid(),
+		myDextrose.Profile.PACInterval().Mid())
 
 	ingredients := []creamery.Ingredient{
 		myCream,

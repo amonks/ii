@@ -4,10 +4,10 @@ import "fmt"
 
 // Ingredient represents a component that can be used in ice cream.
 type Ingredient struct {
-	ID        IngredientID
-	Name      string
-	Comp      Composition
-	Sweetener SweetenerProps // POD/PAC for this ingredient's sugar content
+	ID      IngredientID
+	Name    string
+	Comp    Composition
+	Profile ConstituentProfile
 }
 
 // String returns a human-readable representation.
@@ -22,7 +22,39 @@ func canonicalizeIngredient(ing Ingredient) Ingredient {
 	if ing.Name == "" {
 		ing.Name = ing.ID.String()
 	}
+	if ing.Profile.ID == "" && ing.Profile.Name == "" {
+		ing.Profile = ProfileFromComposition(ing.ID, ing.Name, ing.Comp)
+	} else {
+		if ing.Profile.ID == "" {
+			ing.Profile.ID = ing.ID
+		}
+		if ing.Profile.Name == "" {
+			ing.Profile.Name = ing.Name
+		}
+	}
+	// Keep Composition in sync with profile if missing.
+	if isZeroComposition(ing.Comp) {
+		ing.Comp = CompositionFromProfile(ing.Profile)
+	}
 	return ing
+}
+
+func isZeroComposition(c Composition) bool {
+	return c.Fat.Lo == 0 && c.Fat.Hi == 0 &&
+		c.MSNF.Lo == 0 && c.MSNF.Hi == 0 &&
+		c.Sugar.Lo == 0 && c.Sugar.Hi == 0 &&
+		c.Other.Lo == 0 && c.Other.Hi == 0
+}
+
+func legacyIngredientFromBatch(key, displayName string) Ingredient {
+	batch, ok := IngredientBatchTable()[key]
+	if !ok {
+		return Ingredient{Name: displayName}
+	}
+	if displayName != "" {
+		batch.Name = displayName
+	}
+	return batch.ToSpec().LegacyIngredient()
 }
 
 // Common dairy ingredients with typical composition ranges.
@@ -92,7 +124,6 @@ var (
 			Sugar: Range(0.43, 0.47),
 			Other: Point(0),
 		},
-		Sweetener: Sucrose, // POD=100, PAC=100
 	}
 
 	// Butter: ~80% fat, ~2% MSNF
@@ -126,20 +157,10 @@ var (
 			Sugar: Point(1.0),
 			Other: Point(0),
 		},
-		Sweetener: Sucrose, // POD=100, PAC=100
 	}
 
 	// Corn syrup (42 DE): mostly glucose/maltose
-	CornSyrup = Ingredient{
-		Name: "Corn Syrup",
-		Comp: Composition{
-			Fat:   Point(0),
-			MSNF:  Point(0),
-			Sugar: Range(0.75, 0.82), // rest is water
-			Other: Point(0),
-		},
-		Sweetener: CornSyrup42, // POD=50, PAC=90
-	}
+	CornSyrup = legacyIngredientFromBatch("corn_syrup_42", "Corn Syrup")
 
 	// Liquid sugar (sucrose + water, typically 67% sugar)
 	LiquidSugar = Ingredient{
@@ -150,7 +171,6 @@ var (
 			Sugar: Range(0.65, 0.68),
 			Other: Point(0),
 		},
-		Sweetener: Sucrose, // POD=100, PAC=100
 	}
 
 	// Cocoa powder: mostly other solids, some fat
@@ -186,18 +206,8 @@ var (
 		},
 	}
 
-	// Tapioca syrup: similar to corn syrup, mostly glucose/maltose
-	// Used more for starch (stabilizer) than sugar in some applications
-	TapiocaSyrup = Ingredient{
-		Name: "Tapioca Syrup",
-		Comp: Composition{
-			Fat:   Point(0),
-			MSNF:  Point(0),
-			Sugar: Range(0.70, 0.80), // rest is water
-			Other: Range(0, 0.05),    // starch content varies
-		},
-		Sweetener: TapiocaSyrupS, // POD=50, PAC=90
-	}
+	// Tapioca syrup: similar to corn syrup, mostly glucose/maltodextrin
+	TapiocaSyrup = legacyIngredientFromBatch("tapioca_syrup", "Tapioca Syrup")
 
 	// Nonfat Milk (variable concentration): could be liquid skim, powder,
 	// or reconstituted to any concentration. MSNF ranges from ~9% (liquid)
@@ -255,7 +265,7 @@ func StandardSpecs() map[IngredientID]IngredientSpec {
 	lib := StandardLibrary()
 	specs := make(map[IngredientID]IngredientSpec, len(lib))
 	for _, ing := range lib {
-		spec := SpecFromComposition(ing.Name, ing.Comp, ing.Sweetener)
+		spec := SpecFromComposition(ing.Name, ing.Comp)
 		specs[spec.ID] = spec
 	}
 	return specs

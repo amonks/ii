@@ -150,12 +150,12 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.waterLo[i] = water.Lo
 		lpp.waterHi[i] = water.Hi
 
-		// POD/PAC coefficients: contribution per unit weight of ingredient
-		// = (added sugar × sweetener POD/PAC) + (lactose × lactose POD/PAC)
-		lpp.podLo[i] = lpp.sugarLo[i]*ing.Sweetener.POD + lpp.lactoseLo[i]*LactosePOD
-		lpp.podHi[i] = lpp.sugarHi[i]*ing.Sweetener.POD + lpp.lactoseHi[i]*LactosePOD
-		lpp.pacLo[i] = lpp.sugarLo[i]*ing.Sweetener.PAC + lpp.lactoseLo[i]*LactosePAC
-		lpp.pacHi[i] = lpp.sugarHi[i]*ing.Sweetener.PAC + lpp.lactoseHi[i]*LactosePAC
+		pod := ing.Profile.PODInterval()
+		pac := ing.Profile.PACInterval()
+		lpp.podLo[i] = pod.Lo
+		lpp.podHi[i] = pod.Hi
+		lpp.pacLo[i] = pac.Lo
+		lpp.pacHi[i] = pac.Hi
 
 		// Weight bounds
 		if bound, ok := p.WeightBounds[ing.Name]; ok {
@@ -242,10 +242,11 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		lpp.waterLo[i] = water
 		lpp.waterHi[i] = water
 
-		lpp.podLo[i] = sugar*ing.Sweetener.POD + lactose*LactosePOD
-		lpp.podHi[i] = lpp.podLo[i]
-		lpp.pacLo[i] = sugar*ing.Sweetener.PAC + lactose*LactosePAC
-		lpp.pacHi[i] = lpp.pacLo[i]
+		pod, pac := sweetnessFromSample(ing.Profile, msnf, sugar)
+		lpp.podLo[i] = pod
+		lpp.podHi[i] = pod
+		lpp.pacLo[i] = pac
+		lpp.pacHi[i] = pac
 
 		if bound, ok := p.WeightBounds[ing.Name]; ok {
 			lpp.lower[i] = bound.Lo

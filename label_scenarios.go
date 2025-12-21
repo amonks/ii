@@ -39,7 +39,7 @@ func newScenarioIngredients() *scenarioIngredients {
 	}
 }
 
-func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientBatch), sweetener SweetenerProps) {
+func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientBatch)) {
 	base := s.table[key]
 	detail := cloneBatch(base, func(d *IngredientBatch) {
 		d.Name = name
@@ -47,16 +47,16 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*Ingredie
 			override(d)
 		}
 	})
-	s.addDetail(detail, sweetener)
+	s.addDetail(detail)
 }
 
-func (s *scenarioIngredients) addCustom(detail IngredientBatch, sweetener SweetenerProps) {
-	s.addDetail(detail, sweetener)
+func (s *scenarioIngredients) addCustom(detail IngredientBatch) {
+	s.addDetail(detail)
 }
 
-func (s *scenarioIngredients) addDetail(detail IngredientBatch, sweetener SweetenerProps) {
+func (s *scenarioIngredients) addDetail(detail IngredientBatch) {
 	s.batches[detail.Name] = detail
-	s.specs = append(s.specs, ingredientSpecFromBatch(detail, sweetener))
+	s.specs = append(s.specs, ingredientSpecFromBatch(detail))
 }
 
 func (s *scenarioIngredients) Specs() []IngredientSpec {
@@ -93,18 +93,18 @@ func (s *scenarioIngredients) idList(names ...string) []IngredientID {
 // SolveBenAndJerryVanilla recreates the Ben & Jerry's Vanilla label problem.
 func SolveBenAndJerryVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("skim_milk", "skim_milk", nil, SweetenerProps{})
-	builder.addClone("water", "water", nil, SweetenerProps{})
-	builder.addClone("egg_yolk", "egg_yolk", nil, SweetenerProps{})
-	builder.addClone("sucrose", "sucrose", nil, Sucrose)
-	builder.addClone("guar_gum", "guar_gum", nil, SweetenerProps{})
-	builder.addClone("vanilla_extract", "vanilla_extract", nil, SweetenerProps{})
-	builder.addClone("vanilla_beans", "vanilla_beans", nil, SweetenerProps{})
-	builder.addClone("carrageenan", "carrageenan", nil, SweetenerProps{})
-	builder.addClone("sucrose", "liquid_sugar_sucrose", nil, Sucrose)
-	builder.addClone("water", "liquid_sugar_water", nil, SweetenerProps{})
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("skim_milk", "skim_milk", nil)
+	builder.addClone("water", "water", nil)
+	builder.addClone("egg_yolk", "egg_yolk", nil)
+	builder.addClone("sucrose", "sucrose", nil)
+	builder.addClone("guar_gum", "guar_gum", nil)
+	builder.addClone("vanilla_extract", "vanilla_extract", nil)
+	builder.addClone("vanilla_beans", "vanilla_beans", nil)
+	builder.addClone("carrageenan", "carrageenan", nil)
+	builder.addClone("sucrose", "liquid_sugar_sucrose", nil)
+	builder.addClone("water", "liquid_sugar_water", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  143.0,
@@ -146,12 +146,12 @@ func SolveBenAndJerryVanilla() (*LabelScenarioResult, error) {
 
 func SolveJenisSweetCream() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("milk", "milk", nil, SweetenerProps{})
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("sucrose", "cane_sugar", nil, Sucrose)
-	builder.addClone("skim_milk", "nonfat_milk", nil, SweetenerProps{})
-	builder.addClone("tapioca_syrup", "tapioca_syrup", nil, TapiocaSyrupS)
+	builder.addClone("milk", "milk", nil)
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("sucrose", "cane_sugar", nil)
+	builder.addClone("skim_milk", "nonfat_milk", nil)
+	builder.addClone("tapioca_syrup", "tapioca_syrup", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  124.0,
@@ -186,12 +186,12 @@ func SolveJenisSweetCream() (*LabelScenarioResult, error) {
 
 func SolveHaagenDazsVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("skim_milk", "skim_milk", nil, SweetenerProps{})
-	builder.addClone("sucrose", "cane_sugar", nil, Sucrose)
-	builder.addClone("egg_yolk", "egg_yolk", nil, SweetenerProps{})
-	builder.addClone("vanilla_extract", "vanilla_extract", nil, SweetenerProps{})
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("skim_milk", "skim_milk", nil)
+	builder.addClone("sucrose", "cane_sugar", nil)
+	builder.addClone("egg_yolk", "egg_yolk", nil)
+	builder.addClone("vanilla_extract", "vanilla_extract", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  129.0,
@@ -226,18 +226,18 @@ func SolveHaagenDazsVanilla() (*LabelScenarioResult, error) {
 
 func SolveBrighamsVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("milk", "milk", nil, SweetenerProps{})
-	builder.addClone("sucrose", "sugar", nil, Sucrose)
-	builder.addClone("vanilla_extract", "vanilla_extract", nil, SweetenerProps{})
-	builder.addClone("guar_gum", "guar_gum", nil, SweetenerProps{})
-	builder.addClone("salt", "salt", nil, SweetenerProps{})
-	builder.addClone("mono_diglycerides", "mono_diglycerides", nil, SweetenerProps{})
-	builder.addClone("ps80", "ps80", nil, SweetenerProps{})
-	builder.addClone("carrageenan", "carrageenan", nil, SweetenerProps{})
-	builder.addClone("potassium_phosphate", "potassium_phosphate", nil, SweetenerProps{})
-	builder.addClone("xanthan", "cellulose_gum", nil, SweetenerProps{})
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("milk", "milk", nil)
+	builder.addClone("sucrose", "sugar", nil)
+	builder.addClone("vanilla_extract", "vanilla_extract", nil)
+	builder.addClone("guar_gum", "guar_gum", nil)
+	builder.addClone("salt", "salt", nil)
+	builder.addClone("mono_diglycerides", "mono_diglycerides", nil)
+	builder.addClone("ps80", "ps80", nil)
+	builder.addClone("carrageenan", "carrageenan", nil)
+	builder.addClone("potassium_phosphate", "potassium_phosphate", nil)
+	builder.addClone("xanthan", "cellulose_gum", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  111.0,
@@ -278,13 +278,13 @@ func SolveBrighamsVanilla() (*LabelScenarioResult, error) {
 
 func SolveBreyersVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("milk", "milk", nil, SweetenerProps{})
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("sucrose", "sugar", nil, Sucrose)
-	builder.addClone("skim_milk", "skim_milk", nil, SweetenerProps{})
-	builder.addClone("tara_gum", "tara_gum", nil, SweetenerProps{})
-	builder.addClone("vanilla_extract", "natural_flavor", nil, SweetenerProps{})
+	builder.addClone("milk", "milk", nil)
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("sucrose", "sugar", nil)
+	builder.addClone("skim_milk", "skim_milk", nil)
+	builder.addClone("tara_gum", "tara_gum", nil)
+	builder.addClone("vanilla_extract", "natural_flavor", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  88.0,
@@ -319,20 +319,20 @@ func SolveBreyersVanilla() (*LabelScenarioResult, error) {
 
 func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 	builder := newScenarioIngredients()
-	builder.addClone("milk", "milk", nil, SweetenerProps{})
-	builder.addClone("sucrose", "sugar", nil, Sucrose)
-	builder.addClone("cream_fat", "cream_fat", nil, SweetenerProps{})
-	builder.addClone("cream_serum", "cream_serum", nil, SweetenerProps{})
-	builder.addClone("dextrose", "dextrose", nil, Dextrose)
-	builder.addClone("vanilla_extract", "vanilla_extract", nil, SweetenerProps{})
-	builder.addClone("lecithin", "sunflower_lecithin", nil, SweetenerProps{})
-	builder.addClone("locust_bean_gum", "carob_bean_gum", nil, SweetenerProps{})
-	builder.addClone("guar_gum", "guar_gum", nil, SweetenerProps{})
+	builder.addClone("milk", "milk", nil)
+	builder.addClone("sucrose", "sugar", nil)
+	builder.addClone("cream_fat", "cream_fat", nil)
+	builder.addClone("cream_serum", "cream_serum", nil)
+	builder.addClone("dextrose", "dextrose", nil)
+	builder.addClone("vanilla_extract", "vanilla_extract", nil)
+	builder.addClone("lecithin", "sunflower_lecithin", nil)
+	builder.addClone("locust_bean_gum", "carob_bean_gum", nil)
+	builder.addClone("guar_gum", "guar_gum", nil)
 	builder.addClone("vanilla_extract", "natural_flavor", func(d *IngredientBatch) {
 		d.Water = 0.60
 		d.OtherSolids = 0.40
-	}, SweetenerProps{})
-	builder.addClone("lemon_peel", "lemon_peel", nil, SweetenerProps{})
+	})
+	builder.addClone("lemon_peel", "lemon_peel", nil)
 
 	facts := NutritionFacts{
 		ServingSizeGrams:  128.0,
@@ -416,8 +416,8 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	}, nil
 }
 
-func ingredientSpecFromBatch(detail IngredientBatch, sweetener SweetenerProps) IngredientSpec {
-	return SpecFromProfile(detail.ToProfile(), sweetener)
+func ingredientSpecFromBatch(detail IngredientBatch) IngredientSpec {
+	return SpecFromProfile(detail.ToProfile())
 }
 
 func scenarioTargetFromFacts(facts NutritionFacts) FormulationTarget {

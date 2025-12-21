@@ -222,6 +222,30 @@ func (ing Ingredient) ToProfile() ConstituentProfile {
 }
 
 // ToSpec converts a concrete ingredient batch into a spec with fixed intervals.
-func (d IngredientBatch) ToSpec(sweetener SweetenerProps) IngredientSpec {
-	return SpecFromProfile(d.ToProfile(), sweetener)
+func (d IngredientBatch) ToSpec() IngredientSpec {
+	return SpecFromProfile(d.ToProfile())
+}
+
+// AddedSugarsInterval returns the summed interval for non-lactose sugars.
+func (c ConstituentComponents) AddedSugarsInterval() Interval {
+	return c.Sucrose.
+		Add(c.Glucose).
+		Add(c.Fructose).
+		Add(c.Maltodextrin).
+		Add(c.Polyols)
+}
+
+// AddedSugarsInterval exposes the summed added sugars interval on the profile.
+func (p ConstituentProfile) AddedSugarsInterval() Interval {
+	return p.Components.AddedSugarsInterval()
+}
+
+// LactoseInterval returns the lactose interval for the profile.
+func (p ConstituentProfile) LactoseInterval() Interval {
+	return p.Components.Lactose
+}
+
+// TotalSugarInterval returns added sugars plus lactose.
+func (p ConstituentProfile) TotalSugarInterval() Interval {
+	return p.AddedSugarsInterval().Add(p.LactoseInterval())
 }

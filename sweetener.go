@@ -26,52 +26,203 @@ const (
 	LactosePOD = 16
 	LactosePAC = 100
 
-	// Corn syrup (42 DE) - less sweet, moderate PAC
-	CornSyrup42POD = 50
-	CornSyrup42PAC = 90
-
-	// Corn syrup solids (36 DE)
-	CornSyrupSolids36POD = 35
-	CornSyrupSolids36PAC = 80
-
-	// Invert sugar
-	InvertSugarPOD = 130
-	InvertSugarPAC = 190
-
 	// Maltodextrin (low DE) - barely sweet, low PAC
 	MaltodextrinPOD = 10
-	MaltodextrinPAC = 25
 
-	// Trehalose - half as sweet, similar PAC
-	TrehalosePOD = 45
-	TrehalosePAC = 100
-
-	// Tapioca syrup (similar to corn syrup ~42 DE)
-	TapiocaSyrupPOD = 50
-	TapiocaSyrupPAC = 90
-)
-
-// SweetenerProps holds POD and PAC for a sweetener.
-type SweetenerProps struct {
-	POD float64 // sweetening power (sucrose = 100)
-	PAC float64 // anti-freezing power (sucrose = 100)
-}
-
-// Common sweetener properties
-var (
-	Sucrose       = SweetenerProps{POD: SucrosePOD, PAC: SucrosePAC}
-	Dextrose      = SweetenerProps{POD: DextrosePOD, PAC: DextrosePAC}
-	Fructose      = SweetenerProps{POD: FructosePOD, PAC: FructosePAC}
-	Lactose       = SweetenerProps{POD: LactosePOD, PAC: LactosePAC}
-	CornSyrup42   = SweetenerProps{POD: CornSyrup42POD, PAC: CornSyrup42PAC}
-	InvertSugar   = SweetenerProps{POD: InvertSugarPOD, PAC: InvertSugarPAC}
-	Maltodextrin  = SweetenerProps{POD: MaltodextrinPOD, PAC: MaltodextrinPAC}
-	TapiocaSyrupS = SweetenerProps{POD: TapiocaSyrupPOD, PAC: TapiocaSyrupPAC}
+	// Polyols (typical sweetness ~0.6 vs sucrose)
+	PolyolPOD = 60
 )
 
 // LactoseFractionOfMSNF is the approximate fraction of MSNF that is lactose.
 // MSNF is roughly: 38% protein, 54% lactose, 8% minerals
 const LactoseFractionOfMSNF = 0.54
+
+const (
+	defaultMaltodextrinDP = 10.0
+	defaultPolyolMW       = mwSorbitol
+	pacPerMole            = mwSucrose / 10.0
+)
+
+func osmoticFactor(f ConstituentFunctionals) float64 {
+	coeff := f.OsmoticCoeff
+	if coeff == 0 {
+		coeff = 1
+	}
+	vh := f.VHFactor
+	if vh == 0 {
+		vh = 1
+	}
+	return coeff * vh
+}
+
+func maltodextrinDP(f ConstituentFunctionals) float64 {
+	if f.MaltodextrinDP > 0 {
+		return f.MaltodextrinDP
+	}
+	return defaultMaltodextrinDP
+}
+
+func polyolMW(f ConstituentFunctionals) float64 {
+	if f.PolyolMW > 0 {
+		return f.PolyolMW
+	}
+	return defaultPolyolMW
+}
+
+type sugarShare struct {
+	sucrose      float64
+	glucose      float64
+	fructose     float64
+	maltodextrin float64
+	polyols      float64
+}
+
+type sugarMasses struct {
+	sucrose      float64
+	glucose      float64
+	fructose     float64
+	maltodextrin float64
+	polyols      float64
+}
+
+func sugarShareForProfile(profile ConstituentProfile) sugarShare {
+	comps := profile.Components
+	values := []float64{
+		comps.Sucrose.Mid(),
+		comps.Glucose.Mid(),
+		comps.Fructose.Mid(),
+		comps.Maltodextrin.Mid(),
+		comps.Polyols.Mid(),
+	}
+	total := 0.0
+	for _, v := range values {
+		total += v
+	}
+	if total <= 0 {
+		return sugarShare{sucrose: 1}
+	}
+	inv := 1 / total
+	return sugarShare{
+		sucrose:      values[0] * inv,
+		glucose:      values[1] * inv,
+		fructose:     values[2] * inv,
+		maltodextrin: values[3] * inv,
+		polyols:      values[4] * inv,
+	}
+}
+
+func (s sugarShare) scale(total float64) sugarMasses {
+	return sugarMasses{
+		sucrose:      total * s.sucrose,
+		glucose:      total * s.glucose,
+		fructose:     total * s.fructose,
+		maltodextrin: total * s.maltodextrin,
+		polyols:      total * s.polyols,
+	}
+}
+
+func addedPODFromMasses(m sugarMasses) float64 {
+	return m.sucrose*SucrosePOD +
+		m.glucose*DextrosePOD +
+		m.fructose*FructosePOD +
+		m.maltodextrin*MaltodextrinPOD +
+		m.polyols*PolyolPOD
+}
+
+func addedPACFromMasses(m sugarMasses, funcs ConstituentFunctionals) float64 {
+	dp := maltodextrinDP(funcs)
+	polyMW := polyolMW(funcs)
+	factor := osmoticFactor(funcs)
+	moles := m.sucrose*1000.0/mwSucrose +
+		m.glucose*1000.0/mwGlucose +
+		m.fructose*1000.0/mwFructose +
+		m.maltodextrin*1000.0/(mwGlucose*dp) +
+		m.polyols*1000.0/polyMW
+	return moles * pacPerMole * factor
+}
+
+func lactosePACFromMass(lactose float64, funcs ConstituentFunctionals) float64 {
+	moles := lactose * 1000.0 / mwLactose
+	return moles * pacPerMole * osmoticFactor(funcs)
+}
+
+func sweetnessFromSample(profile ConstituentProfile, msnf, sugar float64) (float64, float64) {
+	share := sugarShareForProfile(profile)
+	masses := share.scale(sugar)
+	addedPOD := addedPODFromMasses(masses)
+	addedPAC := addedPACFromMasses(masses, profile.Functionals)
+	lactose := msnf * LactoseFractionOfMSNF
+	lactosePOD := lactose * LactosePOD
+	lactosePAC := lactosePACFromMass(lactose, profile.Functionals)
+	return addedPOD + lactosePOD, addedPAC + lactosePAC
+}
+
+func profileAddedPOD(profile ConstituentProfile) Interval {
+	comps := profile.Components
+	pod := comps.Sucrose.Scale(SucrosePOD).
+		Add(comps.Glucose.Scale(DextrosePOD)).
+		Add(comps.Fructose.Scale(FructosePOD)).
+		Add(comps.Maltodextrin.Scale(MaltodextrinPOD)).
+		Add(comps.Polyols.Scale(PolyolPOD))
+	return pod
+}
+
+func pacIntervalsFromProfile(profile ConstituentProfile) (Interval, Interval) {
+	comps := profile.Components
+	funcs := profile.Functionals
+
+	factor := osmoticFactor(funcs)
+	dp := maltodextrinDP(funcs)
+	polyMW := polyolMW(funcs)
+
+	addedMoles := Interval{}
+	addedMoles = addedMoles.Add(comps.Sucrose.Scale(1000.0 / mwSucrose))
+	addedMoles = addedMoles.Add(comps.Glucose.Scale(1000.0 / mwGlucose))
+	addedMoles = addedMoles.Add(comps.Fructose.Scale(1000.0 / mwFructose))
+	addedMoles = addedMoles.Add(comps.Maltodextrin.Scale(1000.0 / (mwGlucose * dp)))
+	addedMoles = addedMoles.Add(comps.Polyols.Scale(1000.0 / polyMW))
+	if funcs.EffectiveMW > 0 {
+		addedMoles = addedMoles.Add(comps.OtherSolids.Scale(1000.0 / funcs.EffectiveMW))
+	}
+	addedMoles = addedMoles.Scale(factor)
+
+	lactoseMoles := comps.Lactose.Scale(1000.0 / mwLactose).Scale(factor)
+
+	return addedMoles.Scale(pacPerMole), lactoseMoles.Scale(pacPerMole)
+}
+
+// AddedPODInterval returns the added sugar sweetness contribution.
+func (p ConstituentProfile) AddedPODInterval() Interval {
+	return profileAddedPOD(p)
+}
+
+// LactosePODInterval returns the lactose sweetness contribution.
+func (p ConstituentProfile) LactosePODInterval() Interval {
+	return p.Components.Lactose.Scale(LactosePOD)
+}
+
+// PODInterval returns the total sweetness contribution.
+func (p ConstituentProfile) PODInterval() Interval {
+	return p.AddedPODInterval().Add(p.LactosePODInterval())
+}
+
+// AddedPACInterval returns the freezing point depression from added sugars.
+func (p ConstituentProfile) AddedPACInterval() Interval {
+	added, _ := pacIntervalsFromProfile(p)
+	return added
+}
+
+// LactosePACInterval returns the freezing point depression from lactose.
+func (p ConstituentProfile) LactosePACInterval() Interval {
+	_, lactose := pacIntervalsFromProfile(p)
+	return lactose
+}
+
+// PACInterval returns the total freezing point depression contribution.
+func (p ConstituentProfile) PACInterval() Interval {
+	added, lactose := pacIntervalsFromProfile(p)
+	return added.Add(lactose)
+}
 
 // SweetenerAnalysis calculates POD and PAC for a solution.
 // This accounts for:
@@ -85,10 +236,10 @@ type SweetenerAnalysis struct {
 	TotalPAC float64
 
 	// Breakdown
-	AddedSugarPOD  float64
-	AddedSugarPAC  float64
-	LactosePOD     float64
-	LactosePAC     float64
+	AddedSugarPOD float64
+	AddedSugarPAC float64
+	LactosePOD    float64
+	LactosePAC    float64
 }
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
@@ -96,23 +247,22 @@ func AnalyzeSweeteners(sol *Solution, ingredients []Ingredient) SweetenerAnalysi
 	var analysis SweetenerAnalysis
 
 	for _, ing := range ingredients {
+		ing = canonicalizeIngredient(ing)
 		w := sol.Weights[ing.Name]
 		if w < 0.001 {
 			continue
 		}
 
-		// Lactose contribution from MSNF
-		msnf := ing.Comp.MSNF.Mid()
-		lactose := msnf * LactoseFractionOfMSNF * w
-		analysis.LactosePOD += lactose * LactosePOD
-		analysis.LactosePAC += lactose * LactosePAC
+		profile := ing.Profile
+		addedPOD := profile.AddedPODInterval().Mid()
+		lactosePOD := profile.LactosePODInterval().Mid()
+		addedPAC := profile.AddedPACInterval().Mid()
+		lactosePAC := profile.LactosePACInterval().Mid()
 
-		// Added sugar contribution
-		sugar := ing.Comp.Sugar.Mid() * w
-		if sugar > 0 && ing.Sweetener.POD > 0 {
-			analysis.AddedSugarPOD += sugar * ing.Sweetener.POD
-			analysis.AddedSugarPAC += sugar * ing.Sweetener.PAC
-		}
+		analysis.AddedSugarPOD += w * addedPOD
+		analysis.LactosePOD += w * lactosePOD
+		analysis.AddedSugarPAC += w * addedPAC
+		analysis.LactosePAC += w * lactosePAC
 	}
 
 	analysis.TotalPOD = analysis.AddedSugarPOD + analysis.LactosePOD
