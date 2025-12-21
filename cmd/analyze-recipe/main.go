@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math"
+	"sort"
 
 	"github.com/amonks/creamery"
 )
@@ -14,7 +16,13 @@ type component struct {
 	Label    string
 }
 
+var (
+	listPantry = flag.Bool("list-pantry", false, "List available pantry ingredients and exit")
+)
+
 func main() {
+	flag.Parse()
+
 	components := []component{
 		{"cream36", 0.432, "Cream (36%)"},
 		{"whole_milk", 0.267, "Whole milk (3.25%)"},
@@ -22,8 +30,13 @@ func main() {
 		{"sucrose", 0.190, "Sucrose"},
 	}
 
-	const batchMass = 100.0
 	pantry := creamery.IngredientBatchTable()
+	if *listPantry {
+		printPantry(pantry)
+		return
+	}
+
+	const batchMass = 100.0
 
 	keys := make([]string, 0, len(components))
 	weights := make([]float64, 0, len(components))
@@ -195,6 +208,28 @@ func printRecipe(r *creamery.Recipe) {
 			continue
 		}
 		fmt.Printf("  %-20s %6.2f%%\n", e.name, e.value*100)
+	}
+}
+
+func printPantry(pantry map[string]creamery.IngredientBatch) {
+	keys := make([]string, 0, len(pantry))
+	for key := range pantry {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	fmt.Println("Available pantry ingredients:")
+	for _, key := range keys {
+		batch := pantry[key]
+		profile := batch.ToProfile()
+		comp := creamery.CompositionFromProfile(profile)
+		fmt.Printf("  - %-20s ID=%-16s label=%-20s fat=%5.1f%% msnf=%5.1f%% sugar=%5.1f%%\n",
+			key,
+			profile.ID,
+			batch.Name,
+			comp.Fat.Mid()*100,
+			comp.MSNF.Mid()*100,
+			comp.Sugar.Mid()*100,
+		)
 	}
 }
 

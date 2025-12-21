@@ -14,10 +14,16 @@ import (
 var (
 	scenarioFlag = flag.String("scenario", "all", "Comma-separated scenario ids (all, ben, jenis, haagen, brighams, breyers, talenti)")
 	htmlOutput   = flag.String("html", "", "Optional path to write an HTML report")
+	listSpecs    = flag.Bool("list-specs", false, "List built-in ingredient specs and exit")
 )
 
 func main() {
 	flag.Parse()
+
+	if *listSpecs {
+		printStandardSpecs()
+		return
+	}
 
 	registry := map[string]func() (*creamery.LabelScenarioResult, error){
 		"ben":      creamery.SolveBenAndJerryVanilla,
@@ -140,5 +146,29 @@ func printRecipe(r *creamery.Recipe) {
 		for _, note := range r.Notes {
 			fmt.Printf("    - %s\n", note)
 		}
+	}
+}
+
+func printStandardSpecs() {
+	specs := creamery.StandardSpecMap()
+	ids := make([]creamery.IngredientID, 0, len(specs))
+	for id := range specs {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		return ids[i] < ids[j]
+	})
+	fmt.Println("Standard ingredient specs:")
+	for _, id := range ids {
+		spec := specs[id]
+		comp := creamery.CompositionFromProfile(spec.Profile)
+		fmt.Printf("  %-16s %-24s fat=%5.1f%% msnf=%5.1f%% sugar=%5.1f%% other=%5.1f%%\n",
+			spec.ID,
+			spec.Name,
+			comp.Fat.Mid()*100,
+			comp.MSNF.Mid()*100,
+			comp.Sugar.Mid()*100,
+			comp.Other.Mid()*100,
+		)
 	}
 }
