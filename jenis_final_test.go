@@ -83,7 +83,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 	fmt.Println("Estimated formulations:")
 	for i, s := range samples {
 		fmt.Printf("\n  Recipe %d:\n", i+1)
-		for _, spec := range problem.Specs {
+		for _, spec := range problem.Specs() {
 			w := s.Weights[spec.ID]
 			if w > 0.005 {
 				fmt.Printf("    %-18s %5.1f%%\n", spec.Name+":", w*100)

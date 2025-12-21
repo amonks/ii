@@ -80,7 +80,7 @@ func TestFullWorkflow(t *testing.T) {
 		for i := 0; i < limit; i++ {
 			s := labelSamples[i]
 			fmt.Printf("    Option %d:\n", i+1)
-			for _, spec := range labelProblem.Specs {
+			for _, spec := range labelProblem.Specs() {
 				if w := s.Weights[spec.ID]; w > 0.005 {
 					fmt.Printf("      %-18s %5.1f%%\n", spec.Name+":", w*100)
 				}

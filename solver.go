@@ -112,7 +112,7 @@ type lpProblem struct {
 // buildLP creates the LP formulation using midpoints of ingredient composition intervals.
 func (s *Solver) buildLP() *lpProblem {
 	p := s.Problem
-	n := len(p.Specs)
+	n := len(p.entries)
 	ids := p.IngredientIDs()
 	names := p.IngredientNames()
 	idIndex := make(map[IngredientID]int, n)
@@ -154,8 +154,9 @@ func (s *Solver) buildLP() *lpProblem {
 		idToIndex:        idIndex,
 	}
 
-	for i, spec := range p.Specs {
-		profile := p.profileForIndex(i)
+	for i, entry := range p.entries {
+		spec := entry.spec
+		profile := entry.profile
 		components := profile.Components
 		fat := components.Fat
 		msnf := profile.MSNFInterval()
@@ -206,7 +207,7 @@ func (s *Solver) buildLP() *lpProblem {
 // buildLPWithCoeffs creates an LP with specific coefficient values.
 func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	p := s.Problem
-	n := len(p.Specs)
+	n := len(p.entries)
 	ids := p.IngredientIDs()
 	names := p.IngredientNames()
 	idIndex := make(map[IngredientID]int, n)
@@ -248,8 +249,8 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 		idToIndex:        idIndex,
 	}
 
-	for i := range p.Specs {
-		spec := p.Specs[i]
+	for i := range p.entries {
+		spec := p.entries[i].spec
 		fat := coeffs.fat[i]
 		msnf := coeffs.msnf[i]
 		sugar := coeffs.sugar[i]
@@ -577,27 +578,22 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 		}
 	}
 
-	components := sumComponents(weights, s.Problem.profiles)
+	components := sumComponents(weights, s.Problem.entries)
 	sol.Components = components
-	sol.Achieved = Composition{
-		Fat:   components.Fat,
-		MSNF:  components.MSNF,
-		Sugar: components.AddedSugarsInterval(),
-		Other: components.OtherSolids,
-	}
+	sol.Achieved = CompositionFromComponents(components)
 	return sol
 }
 
-func sumComponents(weights []float64, profiles []ConstituentProfile) ConstituentComponents {
+func sumComponents(weights []float64, entries []ingredientEntry) ConstituentComponents {
 	var agg ConstituentComponents
 	for i, w := range weights {
 		if w <= 0 {
 			continue
 		}
-		comps := profiles[i].Components
+		comps := entries[i].profile.Components
 		agg.Water = agg.Water.Add(comps.Water.Scale(w))
 		agg.Fat = agg.Fat.Add(comps.Fat.Scale(w))
-		agg.MSNF = agg.MSNF.Add(profiles[i].MSNFInterval().Scale(w))
+		agg.MSNF = agg.MSNF.Add(entries[i].profile.MSNFInterval().Scale(w))
 		agg.Protein = agg.Protein.Add(comps.Protein.Scale(w))
 		agg.Lactose = agg.Lactose.Add(comps.Lactose.Scale(w))
 		agg.Sucrose = agg.Sucrose.Add(comps.Sucrose.Scale(w))

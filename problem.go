@@ -6,19 +6,22 @@ import (
 	"strings"
 )
 
+type ingredientEntry struct {
+	spec    IngredientSpec
+	lot     IngredientLot
+	profile ConstituentProfile
+}
+
 // Problem defines an ice cream formulation problem.
 type Problem struct {
-	Specs []IngredientSpec
-
 	Target FormulationTarget
 
 	WeightBounds     map[IngredientID]Interval
 	OrderConstraints bool
 	Constraints      []LinearConstraint
 
+	entries   []ingredientEntry
 	specIndex map[IngredientID]int
-	profiles  []ConstituentProfile
-	lots      []IngredientLot
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
@@ -32,34 +35,35 @@ func NewProblem(specs []IngredientSpec, target Composition) *Problem {
 
 // NewFormulationProblem creates a problem using the richer formulation target.
 func NewFormulationProblem(lots []IngredientLot, target FormulationTarget) *Problem {
-	canonicalLots := make([]IngredientLot, len(lots))
-	canonicalSpecs := make([]IngredientSpec, len(lots))
+	entries := make([]ingredientEntry, len(lots))
 	specIndex := make(map[IngredientID]int, len(lots))
-	profiles := make([]ConstituentProfile, len(lots))
 	for i, lot := range lots {
-		spec := lot.Ingredient
-		if spec.ID == "" {
-			spec.ID = NewIngredientID(spec.Name)
-		}
-		if spec.Name == "" {
-			spec.Name = spec.ID.String()
-		}
+		spec := normalizeSpec(lot.Ingredient)
 		lot.Ingredient = spec
 		profile := lot.EffectiveProfile()
-		canonicalLots[i] = lot
-		canonicalSpecs[i] = spec
+		entries[i] = ingredientEntry{
+			spec:    spec,
+			lot:     lot,
+			profile: profile,
+		}
 		specIndex[spec.ID] = i
-		profiles[i] = profile
 	}
 	return &Problem{
-		Specs:        canonicalSpecs,
 		Target:       target,
 		WeightBounds: make(map[IngredientID]Interval),
 		Constraints:  make([]LinearConstraint, 0),
+		entries:      entries,
 		specIndex:    specIndex,
-		profiles:     profiles,
-		lots:         canonicalLots,
 	}
+}
+
+// Specs returns a copy of the ingredient specs in order.
+func (p *Problem) Specs() []IngredientSpec {
+	specs := make([]IngredientSpec, len(p.entries))
+	for i, entry := range p.entries {
+		specs[i] = entry.spec
+	}
+	return specs
 }
 
 // LinearConstraint represents a linear expression over ingredient weights.
@@ -72,28 +76,28 @@ type LinearConstraint struct {
 
 // IngredientIDs returns the spec IDs in order.
 func (p *Problem) IngredientIDs() []IngredientID {
-	ids := make([]IngredientID, len(p.Specs))
-	for i, spec := range p.Specs {
-		ids[i] = spec.ID
+	ids := make([]IngredientID, len(p.entries))
+	for i, entry := range p.entries {
+		ids[i] = entry.spec.ID
 	}
 	return ids
 }
 
 // IngredientNames returns the spec names in order (for display only).
 func (p *Problem) IngredientNames() []string {
-	names := make([]string, len(p.Specs))
-	for i, spec := range p.Specs {
-		names[i] = spec.Name
+	names := make([]string, len(p.entries))
+	for i, entry := range p.entries {
+		names[i] = entry.spec.Name
 	}
 	return names
 }
 
 func (p *Problem) compositionForIndex(i int) Composition {
-	return p.profiles[i].Composition()
+	return p.entries[i].profile.Composition()
 }
 
 func (p *Problem) profileForIndex(i int) ConstituentProfile {
-	return p.profiles[i]
+	return p.entries[i].profile
 }
 
 func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
@@ -101,13 +105,13 @@ func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
 	if !ok {
 		return IngredientSpec{}, false
 	}
-	return p.Specs[idx], true
+	return p.entries[idx].spec, true
 }
 
 // LotByID returns the registered ingredient lot for the given ID.
 func (p *Problem) LotByID(id IngredientID) (IngredientLot, bool) {
-	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.lots) {
-		return p.lots[idx], true
+	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.entries) {
+		return p.entries[idx].lot, true
 	}
 	return IngredientLot{}, false
 }
@@ -119,7 +123,7 @@ func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 		if !ok {
 			continue
 		}
-		spec := p.Specs[idx]
+		spec := p.entries[idx].spec
 		if lot.Ingredient.ID == "" {
 			lot.Ingredient.ID = spec.ID
 		}
@@ -127,17 +131,19 @@ func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 			lot.Ingredient.Name = spec.Name
 		}
 		profile := lot.EffectiveProfile()
-		p.lots[idx] = lot
-		p.profiles[idx] = profile
-		p.Specs[idx] = lot.Ingredient
+		p.entries[idx] = ingredientEntry{
+			spec:    normalizeSpec(lot.Ingredient),
+			lot:     lot,
+			profile: profile,
+		}
 	}
 }
 
 // Lots returns a copy of the problem's ingredient lots.
 func (p *Problem) Lots() map[IngredientID]IngredientLot {
-	copy := make(map[IngredientID]IngredientLot, len(p.lots))
-	for _, lot := range p.lots {
-		copy[lot.Ingredient.ID] = lot
+	copy := make(map[IngredientID]IngredientLot, len(p.entries))
+	for _, entry := range p.entries {
+		copy[entry.spec.ID] = entry.lot
 	}
 	return copy
 }
@@ -178,9 +184,9 @@ func (p *Problem) SetMaxWeight(id IngredientID, max float64) error {
 
 // IDByName returns the ingredient ID for a human-readable name.
 func (p *Problem) IDByName(name string) (IngredientID, bool) {
-	for _, spec := range p.Specs {
-		if spec.Name == name {
-			return spec.ID, true
+	for _, entry := range p.entries {
+		if entry.spec.Name == name {
+			return entry.spec.ID, true
 		}
 	}
 	return "", false
@@ -206,7 +212,7 @@ func (p *Problem) SetMaxWeightByName(name string, max float64) error {
 
 // Validate checks that the problem is well-formed.
 func (p *Problem) Validate() error {
-	if len(p.Specs) == 0 {
+	if len(p.entries) == 0 {
 		return fmt.Errorf("no ingredients specified")
 	}
 
@@ -215,7 +221,8 @@ func (p *Problem) Validate() error {
 	}
 
 	seen := make(map[IngredientID]bool)
-	for i, spec := range p.Specs {
+	for i, entry := range p.entries {
+		spec := entry.spec
 		if spec.ID == "" {
 			return fmt.Errorf("ingredient %d missing ID", i)
 		}
@@ -224,8 +231,7 @@ func (p *Problem) Validate() error {
 		}
 		seen[spec.ID] = true
 
-		profile := p.profileForIndex(i)
-		if err := profile.Components.Validate(); err != nil {
+		if err := entry.profile.Components.Validate(); err != nil {
 			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
 		}
 	}

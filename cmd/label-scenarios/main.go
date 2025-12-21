@@ -93,7 +93,7 @@ func printScenario(result *creamery.LabelScenarioResult) {
 		}
 	}
 
-	sweetener := creamery.AnalyzeSweeteners(result.Solution, result.Problem.Specs)
+	sweetener := creamery.AnalyzeSweeteners(result.Solution, result.Problem.Specs())
 	fmt.Println("\nSweetener analysis:")
 	fmt.Printf("  POD: %.1f (%.1f%% sucrose equivalent)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
 	fmt.Printf("  PAC: %.1f (added %.1f / lactose %.1f)\n", sweetener.TotalPAC, sweetener.AddedSugarPAC, sweetener.LactosePAC)
