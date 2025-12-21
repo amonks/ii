@@ -2,24 +2,29 @@ package creamery
 
 import "sync"
 
-// Ingredient represents an ingredient definition with uncertainty ranges.
-type Ingredient struct {
+// IngredientSpec represents an ingredient definition with uncertainty ranges.
+type IngredientSpec struct {
 	ID      IngredientID
 	Name    string
 	Profile ConstituentProfile
 }
 
-// IngredientInstance represents a particular lot of an ingredient, optionally
+// IngredientLot represents a particular lot of an ingredient, optionally
 // overriding metadata such as the display name or constituent profile.
-type IngredientInstance struct {
-	Ingredient Ingredient
+type IngredientLot struct {
+	Ingredient IngredientSpec
 	Profile    ConstituentProfile
 	Name       string
 	LotCode    string
 }
 
-// NewIngredientInstance constructs an instance from a base ingredient.
-func NewIngredientInstance(ing Ingredient) IngredientInstance {
+// Backward-compatible aliases to preserve existing call sites while the
+// refactor migrates to the new type names.
+type Ingredient = IngredientSpec
+type IngredientInstance = IngredientLot
+
+// NewIngredientLot constructs an instance from a base ingredient.
+func NewIngredientLot(ing IngredientSpec) IngredientLot {
 	profile := ing.Profile
 	if profile.ID == "" {
 		profile.ID = ing.ID
@@ -27,16 +32,22 @@ func NewIngredientInstance(ing Ingredient) IngredientInstance {
 	if profile.Name == "" {
 		profile.Name = ing.Name
 	}
-	return IngredientInstance{
+	return IngredientLot{
 		Ingredient: ing,
 		Profile:    profile,
 		Name:       profile.Name,
 	}
 }
 
-// EffectiveProfile returns the profile for the instance, falling back to the
-// base ingredient when no override is provided.
-func (inst IngredientInstance) EffectiveProfile() ConstituentProfile {
+// NewIngredientInstance is provided for backward compatibility while the code
+// migrates to the new IngredientLot name.
+func NewIngredientInstance(ing Ingredient) IngredientInstance {
+	return NewIngredientLot(ing)
+}
+
+// EffectiveProfile returns the profile for the lot, falling back to the base
+// ingredient when no override is provided.
+func (inst IngredientLot) EffectiveProfile() ConstituentProfile {
 	profile := inst.Profile
 	if profile.ID == "" {
 		profile.ID = inst.Ingredient.ID
@@ -54,8 +65,8 @@ func (inst IngredientInstance) EffectiveProfile() ConstituentProfile {
 	return profile
 }
 
-// DisplayName returns the preferred name for the instance.
-func (inst IngredientInstance) DisplayName() string {
+// DisplayName returns the preferred name for the lot.
+func (inst IngredientLot) DisplayName() string {
 	if inst.Name != "" {
 		return inst.Name
 	}
@@ -65,8 +76,8 @@ func (inst IngredientInstance) DisplayName() string {
 	return inst.Ingredient.ID.String()
 }
 
-// CostPerKg returns the midpoint cost for the instance.
-func (inst IngredientInstance) CostPerKg() float64 {
+// CostPerKg returns the midpoint cost for the lot.
+func (inst IngredientLot) CostPerKg() float64 {
 	profile := inst.EffectiveProfile()
 	cost := profile.Economics.Cost
 	if cost.Lo == 0 && cost.Hi == 0 {
