@@ -65,6 +65,7 @@ type BatchSnapshot struct {
 	ColligativeMoles       float64
 	CholesterolMgTotal     float64
 	SweetnessEq            float64
+	Sweeteners             SweetenerAnalysis
 	CostTotal              float64
 	MixVolumeL             float64
 	WaterPct               float64
@@ -130,6 +131,7 @@ func NewBatchSnapshot(components []RecipeComponent) (BatchSnapshot, error) {
 		ColligativeMoles:   totals.colligativeMoles,
 		CholesterolMgTotal: totals.cholesterol,
 		SweetnessEq:        totals.sweetness,
+		Sweeteners:         totals.sweeteners,
 		CostTotal:          totals.cost,
 		MixVolumeL:         totals.total / mixDensityKgPerL,
 	}
@@ -342,6 +344,7 @@ type batchTotals struct {
 	lactose          IntervalMass
 	saturated        IntervalMass
 	sweetness        float64
+	sweeteners       SweetenerAnalysis
 	cost             float64
 }
 
@@ -355,6 +358,7 @@ func accumulateComponents(components []RecipeComponent) batchTotals {
 		fractions := ConstituentsFromProfile(profile)
 		mass := comp.MassKg
 
+		addSweetenerContribution(&totals.sweeteners, profile, mass)
 		totals.total += mass
 		totals.water += mass * fractions.Water
 		totals.fat += mass * fractions.Fat
@@ -393,6 +397,7 @@ func accumulateComponents(components []RecipeComponent) batchTotals {
 		totals.maltodextrin*0.20 +
 		totals.polyols*0.60
 
+	finalizeSweetenerTotals(&totals.sweeteners)
 	return totals
 }
 

@@ -24,7 +24,6 @@ type LabelScenarioResult struct {
 	Metrics          BatchSnapshot
 	PintMassGrams    float64
 	Specs            []IngredientDefinition
-	BatchProfile     BatchProfile
 	BatchDetails     map[IngredientID]LotDescriptor
 }
 
@@ -441,7 +440,6 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", name, err)
 	}
 
-	batchProfile := BuildBatchProfile(solution.Weights, specs, solution.Lots)
 	batchDetails := make(map[IngredientID]LotDescriptor, len(solution.Lots))
 	for id, lot := range solution.Lots {
 		batchDetails[id] = lot
@@ -460,7 +458,6 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		Metrics:          metrics,
 		PintMassGrams:    pintMass,
 		Specs:            specs,
-		BatchProfile:     batchProfile,
 		BatchDetails:     batchDetails,
 	}, nil
 }

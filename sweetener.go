@@ -224,6 +224,24 @@ func (p ConstituentProfile) PACInterval() Interval {
 	return added.Add(lactose)
 }
 
+func addSweetenerContribution(analysis *SweetenerAnalysis, profile ConstituentProfile, weight float64) {
+	if analysis == nil || weight <= 0 {
+		return
+	}
+	analysis.AddedSugarPOD += weight * profile.AddedPODInterval().Mid()
+	analysis.LactosePOD += weight * profile.LactosePODInterval().Mid()
+	analysis.AddedSugarPAC += weight * profile.AddedPACInterval().Mid()
+	analysis.LactosePAC += weight * profile.LactosePACInterval().Mid()
+}
+
+func finalizeSweetenerTotals(analysis *SweetenerAnalysis) {
+	if analysis == nil {
+		return
+	}
+	analysis.TotalPOD = analysis.AddedSugarPOD + analysis.LactosePOD
+	analysis.TotalPAC = analysis.AddedSugarPAC + analysis.LactosePAC
+}
+
 // SweetenerAnalysis calculates POD and PAC for a solution.
 // This accounts for:
 // - Added sugars (using each ingredient's sweetener properties)
@@ -244,11 +262,36 @@ type SweetenerAnalysis struct {
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
 func AnalyzeSweeteners(sol *Solution, specs []IngredientDefinition) SweetenerAnalysis {
-	if len(sol.Blend.Components) > 0 {
-		return BuildBatchProfileFromBlend(sol.Blend).Sweeteners
+	if sol == nil {
+		return SweetenerAnalysis{}
 	}
-	profile := BuildBatchProfile(sol.Weights, specs, sol.Lots)
-	return profile.Sweeteners
+	components, err := componentsFromSolution(sol, specs, 1)
+	if err != nil {
+		return SweetenerAnalysis{}
+	}
+	return SweetenersFromComponents(components)
+}
+
+// SweetenersFromRecipe aggregates POD/PAC directly from a recipe definition.
+func SweetenersFromRecipe(recipe *Recipe) SweetenerAnalysis {
+	if recipe == nil {
+		return SweetenerAnalysis{}
+	}
+	return SweetenersFromComponents(recipe.MassComponents())
+}
+
+// SweetenersFromComponents aggregates POD/PAC for arbitrary recipe components.
+func SweetenersFromComponents(components []RecipeComponent) SweetenerAnalysis {
+	var analysis SweetenerAnalysis
+	for _, comp := range components {
+		if comp.MassKg <= 0 {
+			continue
+		}
+		profile := comp.Ingredient.EffectiveProfile()
+		addSweetenerContribution(&analysis, profile, comp.MassKg)
+	}
+	finalizeSweetenerTotals(&analysis)
+	return analysis
 }
 
 // EquivalentSucrose returns the amount of sucrose that would give the same sweetness.

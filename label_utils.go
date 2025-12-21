@@ -7,40 +7,14 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
 	}
 
-	components := make([]RecipeComponent, 0, len(specs))
 	batchMass := goals.BatchMassKG
 	if batchMass <= 0 {
 		batchMass = 100
 	}
 
-	if len(sol.Blend.Components) > 0 {
-		blend := sol.Blend.AsFractions()
-		for _, comp := range blend.Components {
-			if comp.Fraction <= 1e-6 {
-				continue
-			}
-			mass := comp.Fraction * batchMass
-			components = append(components, RecipeComponent{
-				Ingredient: comp.Lot,
-				MassKg:     mass,
-			})
-		}
-	} else {
-		for _, spec := range specs {
-			w := sol.Weights[spec.ID]
-			if w <= 1e-6 {
-				continue
-			}
-			detail, ok := sol.Lots[spec.ID]
-			if !ok {
-				detail = spec.DefaultLot()
-			}
-			mass := w * batchMass
-			components = append(components, RecipeComponent{
-				Ingredient: detail,
-				MassKg:     mass,
-			})
-		}
+	components, err := componentsFromSolution(sol, specs, batchMass)
+	if err != nil {
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
 	}
 
 	recipe, err := NewRecipe(components, goals.Overrun)
