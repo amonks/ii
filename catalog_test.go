@@ -8,7 +8,10 @@ func TestDefaultIngredientCatalogProvidesInstances(t *testing.T) {
 	if !ok {
 		t.Fatalf("default catalog missing sucrose")
 	}
-	if got := inst.Ingredient.Profile.Components.Sucrose.Mid(); got < 0.99 {
+	if inst.Definition == nil {
+		t.Fatalf("sucrose instance missing definition")
+	}
+	if got := inst.Definition.Profile.Components.Sucrose.Mid(); got < 0.99 {
 		t.Fatalf("expected sucrose fraction near 1, got %.2f", got)
 	}
 }

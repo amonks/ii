@@ -219,13 +219,16 @@ func instanceWithName(inst creamery.IngredientLot, name string) creamery.Ingredi
 	if name == "" {
 		return inst
 	}
-	spec := inst.Ingredient
+	spec := creamery.IngredientSpec{}
+	if inst.Definition != nil {
+		spec = *inst.Definition
+	}
 	spec.Name = name
 	spec.ID = creamery.NewIngredientID(name)
 	spec.Profile.Name = name
 	spec.Profile.ID = spec.ID
 	inst = inst.WithSpec(spec)
-	inst.Name = name
+	inst.Label = name
 	return inst
 }
 

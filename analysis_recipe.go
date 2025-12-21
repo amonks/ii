@@ -72,7 +72,8 @@ func NewRecipe(components []RecipeComponent, overrun float64) (*Recipe, error) {
 	}
 	clean := make([]RecipeComponent, 0, len(components))
 	for _, comp := range components {
-		if comp.Ingredient.Ingredient.ID == "" && comp.Ingredient.DisplayName() == "" {
+		def := comp.Ingredient.Definition
+		if (def == nil || def.ID == "") && comp.Ingredient.DisplayName() == "" {
 			return nil, errors.New("component ingredient cannot be empty")
 		}
 		if comp.MassKg < 0 {

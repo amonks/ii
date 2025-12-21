@@ -107,16 +107,16 @@ func TestFullWorkflow(t *testing.T) {
 
 	catalog := creamery.DefaultIngredientCatalog()
 	var mySucrose creamery.IngredientSpec
-	if inst, ok := catalog.InstanceByKey("sucrose"); ok {
-		mySucrose = inst.Ingredient
+	if inst, ok := catalog.InstanceByKey("sucrose"); ok && inst.Definition != nil {
+		mySucrose = *inst.Definition
 		mySucrose.Name = "Sucrose"
 		mySucrose.ID = creamery.NewIngredientID(mySucrose.Name)
 		mySucrose.Profile.Name = mySucrose.Name
 		mySucrose.Profile.ID = mySucrose.ID
 	}
 	var myDextrose creamery.IngredientSpec
-	if inst, ok := catalog.InstanceByKey("dextrose"); ok {
-		myDextrose = inst.Ingredient
+	if inst, ok := catalog.InstanceByKey("dextrose"); ok && inst.Definition != nil {
+		myDextrose = *inst.Definition
 		myDextrose.Name = "Dextrose"
 		myDextrose.ID = creamery.NewIngredientID(myDextrose.Name)
 		myDextrose.Profile.Name = myDextrose.Name

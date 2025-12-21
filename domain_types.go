@@ -1,5 +1,7 @@
 package creamery
 
+import "strings"
+
 // IngredientDefinition is the canonical immutable ingredient specification shared
 // across the catalog, solver, and recipe layers.
 type IngredientDefinition struct {
@@ -13,7 +15,7 @@ type IngredientDefinition struct {
 // such as display name overrides and constituent overrides.
 type LotDescriptor struct {
 	Definition      *IngredientDefinition
-	DisplayName     string
+	Label           string
 	LotCode         string
 	profileOverride *ConstituentProfile
 }
@@ -43,8 +45,8 @@ func NewLot(def *IngredientDefinition) LotDescriptor {
 		return LotDescriptor{}
 	}
 	return LotDescriptor{
-		Definition:  def,
-		DisplayName: def.Name,
+		Definition: def,
+		Label:      def.Name,
 	}
 }
 
@@ -52,13 +54,13 @@ func NewLot(def *IngredientDefinition) LotDescriptor {
 // overrides and ensuring IDs/names remain aligned with the definition.
 func (lot LotDescriptor) EffectiveProfile() ConstituentProfile {
 	if lot.Definition == nil {
-		return normalizeProfile(ConstituentProfile{}, "", lot.DisplayName)
+		return normalizeProfile(ConstituentProfile{}, "", lot.Label)
 	}
 	profile := lot.Definition.Profile
 	if lot.profileOverride != nil {
 		profile = normalizeProfile(*lot.profileOverride, lot.Definition.ID, lot.displayName())
-	} else if profile.Name == "" && lot.DisplayName != "" {
-		profile.Name = lot.DisplayName
+	} else if profile.Name == "" && lot.Label != "" {
+		profile.Name = lot.Label
 	}
 	return profile
 }
@@ -69,8 +71,8 @@ func (lot LotDescriptor) DisplayName() string {
 }
 
 func (lot LotDescriptor) displayName() string {
-	if lot.DisplayName != "" {
-		return lot.DisplayName
+	if lot.Label != "" {
+		return lot.Label
 	}
 	if lot.Definition != nil && lot.Definition.Name != "" {
 		return lot.Definition.Name
@@ -103,15 +105,38 @@ func (lot LotDescriptor) WithDefinition(def *IngredientDefinition) LotDescriptor
 		return lot
 	}
 	lot.Definition = def
-	if lot.DisplayName == "" || lot.DisplayName == def.Name {
-		lot.DisplayName = def.Name
+	if lot.Label == "" || lot.Label == def.Name {
+		lot.Label = def.Name
 	}
 	lot.profileOverride = nil
 	return lot
 }
 
+// WithSpec returns a copy of the lot backed by the provided spec value.
+func (lot LotDescriptor) WithSpec(spec IngredientSpec) LotDescriptor {
+	normalized := normalizeSpec(spec)
+	definition := normalized
+	lot.Definition = &definition
+	if lot.Label == "" || lot.Label == definition.Name {
+		lot.Label = definition.Name
+	}
+	lot.profileOverride = nil
+	return lot
+}
+
+// CostPerKg returns the midpoint cost for the lot's effective profile.
+func (lot LotDescriptor) CostPerKg() float64 {
+	profile := lot.EffectiveProfile()
+	cost := profile.Economics.Cost
+	if cost.Lo == 0 && cost.Hi == 0 {
+		return 0
+	}
+	return cost.Mid()
+}
+
 // normalizeDefinition enforces ID/key/name/profile invariants on definitions.
 func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
+	def.Name = strings.TrimSpace(def.Name)
 	if def.ID == "" {
 		def.ID = NewIngredientID(def.Name)
 	}

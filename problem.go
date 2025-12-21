@@ -11,6 +11,48 @@ type ingredientEntry struct {
 	lot        LotDescriptor
 }
 
+func canonicalLot(lot IngredientLot, cache map[IngredientID]*IngredientDefinition) (IngredientLot, *IngredientDefinition) {
+	if cache == nil {
+		cache = make(map[IngredientID]*IngredientDefinition)
+	}
+	if lot.Definition != nil {
+		normalized := normalizeDefinition(*lot.Definition)
+		if cached, ok := cache[normalized.ID]; ok {
+			lot = lot.WithDefinition(cached)
+			if lot.Label == "" {
+				lot.Label = cached.Name
+			}
+			return lot, cached
+		}
+		definition := normalized
+		cache[definition.ID] = &definition
+		lot = lot.WithDefinition(&definition)
+		if lot.Label == "" {
+			lot.Label = definition.Name
+		}
+		return lot, &definition
+	}
+	profile := lot.EffectiveProfile()
+	definition := normalizeDefinition(IngredientDefinition{
+		ID:      profile.ID,
+		Name:    lot.Label,
+		Profile: profile,
+	})
+	if cached, ok := cache[definition.ID]; ok {
+		lot = lot.WithDefinition(cached)
+		if lot.Label == "" {
+			lot.Label = cached.Name
+		}
+		return lot, cached
+	}
+	cache[definition.ID] = &definition
+	lot = lot.WithDefinition(&definition)
+	if lot.Label == "" {
+		lot.Label = definition.Name
+	}
+	return lot, &definition
+}
+
 // Problem defines an ice cream formulation problem.
 type Problem struct {
 	Target FormulationTarget
@@ -36,16 +78,17 @@ func NewProblem(specs []IngredientSpec, target Composition) *Problem {
 func NewFormulationProblem(lots []IngredientLot, target FormulationTarget) *Problem {
 	entries := make([]ingredientEntry, len(lots))
 	specIndex := make(map[IngredientID]int, len(lots))
+	defCache := make(map[IngredientID]*IngredientDefinition, len(lots))
 	for i, lot := range lots {
-		spec := normalizeSpec(lot.Ingredient)
-		lot.Ingredient = spec
-		profile := lot.EffectiveProfile()
-		entries[i] = ingredientEntry{
-			spec:    spec,
-			lot:     lot,
-			profile: profile,
+		normalizedLot, def := canonicalLot(lot, defCache)
+		if def == nil {
+			continue
 		}
-		specIndex[spec.ID] = i
+		entries[i] = ingredientEntry{
+			definition: def,
+			lot:        normalizedLot,
+		}
+		specIndex[def.ID] = i
 	}
 	return &Problem{
 		Target:       target,
@@ -60,7 +103,9 @@ func NewFormulationProblem(lots []IngredientLot, target FormulationTarget) *Prob
 func (p *Problem) Specs() []IngredientSpec {
 	specs := make([]IngredientSpec, len(p.entries))
 	for i, entry := range p.entries {
-		specs[i] = entry.spec
+		if entry.definition != nil {
+			specs[i] = *entry.definition
+		}
 	}
 	return specs
 }
@@ -77,7 +122,9 @@ type LinearConstraint struct {
 func (p *Problem) IngredientIDs() []IngredientID {
 	ids := make([]IngredientID, len(p.entries))
 	for i, entry := range p.entries {
-		ids[i] = entry.spec.ID
+		if entry.definition != nil {
+			ids[i] = entry.definition.ID
+		}
 	}
 	return ids
 }
@@ -86,17 +133,19 @@ func (p *Problem) IngredientIDs() []IngredientID {
 func (p *Problem) IngredientNames() []string {
 	names := make([]string, len(p.entries))
 	for i, entry := range p.entries {
-		names[i] = entry.spec.Name
+		if entry.definition != nil {
+			names[i] = entry.definition.Name
+		}
 	}
 	return names
 }
 
 func (p *Problem) compositionForIndex(i int) Composition {
-	return p.entries[i].profile.Composition()
+	return p.entries[i].lot.EffectiveProfile().Composition()
 }
 
 func (p *Problem) profileForIndex(i int) ConstituentProfile {
-	return p.entries[i].profile
+	return p.entries[i].lot.EffectiveProfile()
 }
 
 func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
@@ -104,7 +153,10 @@ func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
 	if !ok {
 		return IngredientSpec{}, false
 	}
-	return p.entries[idx].spec, true
+	if p.entries[idx].definition == nil {
+		return IngredientSpec{}, false
+	}
+	return *p.entries[idx].definition, true
 }
 
 // LotByID returns the registered ingredient lot for the given ID.
@@ -122,18 +174,17 @@ func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 		if !ok {
 			continue
 		}
-		spec := p.entries[idx].spec
-		if lot.Ingredient.ID == "" {
-			lot.Ingredient.ID = spec.ID
+		entry := p.entries[idx]
+		normalizedLot, _ := canonicalLot(lot, nil)
+		if entry.definition != nil {
+			normalizedLot.Definition = entry.definition
+			if normalizedLot.Label == "" {
+				normalizedLot.Label = entry.definition.Name
+			}
 		}
-		if lot.Ingredient.Name == "" {
-			lot.Ingredient.Name = spec.Name
-		}
-		profile := lot.EffectiveProfile()
 		p.entries[idx] = ingredientEntry{
-			spec:    normalizeSpec(lot.Ingredient),
-			lot:     lot,
-			profile: profile,
+			definition: entry.definition,
+			lot:        normalizedLot,
 		}
 	}
 }
@@ -142,7 +193,10 @@ func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 func (p *Problem) Lots() map[IngredientID]IngredientLot {
 	copy := make(map[IngredientID]IngredientLot, len(p.entries))
 	for _, entry := range p.entries {
-		copy[entry.spec.ID] = entry.lot
+		if entry.definition == nil {
+			continue
+		}
+		copy[entry.definition.ID] = entry.lot
 	}
 	return copy
 }
@@ -184,8 +238,8 @@ func (p *Problem) SetMaxWeight(id IngredientID, max float64) error {
 // IDByName returns the ingredient ID for a human-readable name.
 func (p *Problem) IDByName(name string) (IngredientID, bool) {
 	for _, entry := range p.entries {
-		if entry.spec.Name == name {
-			return entry.spec.ID, true
+		if entry.definition != nil && entry.definition.Name == name {
+			return entry.definition.ID, true
 		}
 	}
 	return "", false
@@ -221,17 +275,20 @@ func (p *Problem) Validate() error {
 
 	seen := make(map[IngredientID]bool)
 	for i, entry := range p.entries {
-		spec := entry.spec
-		if spec.ID == "" {
+		if entry.definition == nil {
+			return fmt.Errorf("ingredient %d missing definition", i)
+		}
+		id := entry.definition.ID
+		if id == "" {
 			return fmt.Errorf("ingredient %d missing ID", i)
 		}
-		if seen[spec.ID] {
-			return fmt.Errorf("duplicate ingredient: %s", spec.Name)
+		if seen[id] {
+			return fmt.Errorf("duplicate ingredient: %s", entry.definition.Name)
 		}
-		seen[spec.ID] = true
+		seen[id] = true
 
-		if err := entry.profile.Components.Validate(); err != nil {
-			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
+		if err := entry.lot.EffectiveProfile().Components.Validate(); err != nil {
+			return fmt.Errorf("invalid ingredient %s: %w", entry.definition.Name, err)
 		}
 	}
 

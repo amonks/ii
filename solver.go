@@ -155,8 +155,11 @@ func (s *Solver) buildLP() *lpProblem {
 	}
 
 	for i, entry := range p.entries {
-		spec := entry.spec
-		profile := entry.profile
+		def := entry.definition
+		if def == nil {
+			continue
+		}
+		profile := entry.lot.EffectiveProfile()
 		components := profile.Components
 		fat := components.Fat
 		msnf := profile.MSNFInterval()
@@ -192,7 +195,7 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.pacHi[i] = pac.Hi
 
 		// Weight bounds
-		if bound, ok := p.WeightBounds[spec.ID]; ok {
+		if bound, ok := p.WeightBounds[def.ID]; ok {
 			lpp.lower[i] = bound.Lo
 			lpp.upper[i] = bound.Hi
 		} else {
@@ -249,8 +252,7 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 		idToIndex:        idIndex,
 	}
 
-	for i := range p.entries {
-		spec := p.entries[i].spec
+	for i, entry := range p.entries {
 		fat := coeffs.fat[i]
 		msnf := coeffs.msnf[i]
 		sugar := coeffs.sugar[i]
@@ -283,14 +285,15 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 		lpp.pacLo[i] = pac
 		lpp.pacHi[i] = pac
 
-		if bound, ok := p.WeightBounds[spec.ID]; ok {
-			lpp.lower[i] = bound.Lo
-			lpp.upper[i] = bound.Hi
-		} else {
-			lpp.lower[i] = 0
-			lpp.upper[i] = 1
+		if entry.definition != nil {
+			if bound, ok := p.WeightBounds[entry.definition.ID]; ok {
+				lpp.lower[i] = bound.Lo
+				lpp.upper[i] = bound.Hi
+				continue
+			}
 		}
-
+		lpp.lower[i] = 0
+		lpp.upper[i] = 1
 	}
 
 	return lpp
@@ -590,7 +593,7 @@ func sumComponents(weights []float64, entries []ingredientEntry) ConstituentComp
 		if w <= 0 {
 			continue
 		}
-		accumulateProfile(&agg, entries[i].profile, w)
+		accumulateProfile(&agg, entries[i].lot.EffectiveProfile(), w)
 	}
 	return agg
 }

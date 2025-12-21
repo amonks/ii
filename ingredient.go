@@ -12,7 +12,13 @@ func specFromCatalog(key, displayName string) IngredientSpec {
 		spec.Key = NewIngredientKey(key)
 		return normalizeSpec(spec)
 	}
-	spec := inst.Ingredient
+	def := inst.Definition
+	if def == nil {
+		spec := SpecFromComposition(displayName, Composition{})
+		spec.Key = NewIngredientKey(key)
+		return normalizeSpec(spec)
+	}
+	spec := *def
 	if displayName != "" {
 		spec = renameSpec(spec, displayName)
 	}
@@ -68,7 +74,10 @@ func StandardSpecs() []IngredientSpec {
 		if !ok {
 			continue
 		}
-		spec := inst.Ingredient
+		if inst.Definition == nil {
+			continue
+		}
+		spec := *inst.Definition
 		if entry.display != "" {
 			spec = renameSpec(spec, entry.display)
 		}

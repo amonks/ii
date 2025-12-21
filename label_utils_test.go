@@ -40,7 +40,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	}
 
 	inst := NewIngredientLot(spec)
-	inst.Name = "stock_sucrose"
+	inst.Label = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 
 	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientSpec{spec}, goals, 0)
@@ -51,8 +51,8 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	if len(recipe.Components) != 1 {
 		t.Fatalf("expected 1 component, got %d", len(recipe.Components))
 	}
-	if recipe.Components[0].Ingredient.Name != inst.Name {
-		t.Fatalf("expected ingredient %s, got %s", inst.Name, recipe.Components[0].Ingredient.Name)
+	if recipe.Components[0].Ingredient.DisplayName() != inst.DisplayName() {
+		t.Fatalf("expected ingredient %s, got %s", inst.DisplayName(), recipe.Components[0].Ingredient.DisplayName())
 	}
 	if recipe.Components[0].MassKg != 50 {
 		t.Fatalf("expected mass 50kg, got %f", recipe.Components[0].MassKg)
