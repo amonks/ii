@@ -243,17 +243,16 @@ type SweetenerAnalysis struct {
 }
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
-func AnalyzeSweeteners(sol *Solution, ingredients []Ingredient) SweetenerAnalysis {
+func AnalyzeSweeteners(sol *Solution, specs []IngredientSpec) SweetenerAnalysis {
 	var analysis SweetenerAnalysis
 
-	for _, ing := range ingredients {
-		ing = canonicalizeIngredient(ing)
-		w := sol.Weights[ing.Name]
+	for _, spec := range specs {
+		w := sol.Weights[spec.ID]
 		if w < 0.001 {
 			continue
 		}
 
-		profile := ing.Profile
+		profile := spec.Profile
 		addedPOD := profile.AddedPODInterval().Mid()
 		lactosePOD := profile.LactosePODInterval().Mid()
 		addedPAC := profile.AddedPACInterval().Mid()

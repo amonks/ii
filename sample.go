@@ -11,6 +11,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 		rng = rand.New(rand.NewSource(42))
 	}
 
+	ids := s.Problem.IngredientIDs()
 	names := s.Problem.IngredientNames()
 	n := len(names)
 	solutions := make([]*Solution, 0, count)
@@ -25,11 +26,12 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 			sugar := make([]float64, n)
 			other := make([]float64, n)
 
-			for j, ing := range s.Problem.Ingredients {
-				fat[j] = sampleInterval(ing.Comp.Fat, rng)
-				msnf[j] = sampleInterval(ing.Comp.MSNF, rng)
-				sugar[j] = sampleInterval(ing.Comp.Sugar, rng)
-				other[j] = sampleInterval(ing.Comp.Other, rng)
+			for j := range s.Problem.Specs {
+				comp := s.Problem.compositionForIndex(j)
+				fat[j] = sampleInterval(comp.Fat, rng)
+				msnf[j] = sampleInterval(comp.MSNF, rng)
+				sugar[j] = sampleInterval(comp.Sugar, rng)
+				other[j] = sampleInterval(comp.Other, rng)
 			}
 
 			lpp = s.buildLPWithCoeffs(fat, msnf, sugar, other)
@@ -48,7 +50,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 			continue // skip infeasible samples
 		}
 
-		sol := s.weightsToSolutionWithCoeffs(weights, names, lpp)
+		sol := s.weightsToSolutionWithCoeffs(weights, ids, names, lpp)
 		solutions = append(solutions, sol)
 	}
 
@@ -64,13 +66,16 @@ func sampleInterval(i Interval, rng *rand.Rand) float64 {
 }
 
 // weightsToSolutionWithCoeffs converts weights using specific coefficients.
-func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, names []string, lpp *lpProblem) *Solution {
+func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []IngredientID, names []string, lpp *lpProblem) *Solution {
 	sol := &Solution{
-		Weights: make(map[string]float64),
+		Weights: make(map[IngredientID]float64),
+		Names:   make(map[IngredientID]string, len(ids)),
 	}
 
 	for i, w := range weights {
-		sol.Weights[names[i]] = w
+		id := ids[i]
+		sol.Weights[id] = w
+		sol.Names[id] = names[i]
 	}
 
 	// Compute achieved composition using the LP's coefficients
@@ -90,6 +95,7 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, names []string, 
 // This explores the "corners" of the solution space by maximizing and
 // minimizing each ingredient's weight.
 func (s *Solver) ExtremePoints() ([]*Solution, error) {
+	ids := s.Problem.IngredientIDs()
 	names := s.Problem.IngredientNames()
 	n := len(names)
 	lpp := s.buildLP()
@@ -102,7 +108,7 @@ func (s *Solver) ExtremePoints() ([]*Solution, error) {
 		minObj[i] = 1
 		_, weights, err := lpp.solve(minObj)
 		if err == nil {
-			solutions = append(solutions, s.weightsToSolution(weights, names))
+			solutions = append(solutions, s.weightsToSolution(weights, ids, names))
 		}
 
 		// Maximize w_i
@@ -110,7 +116,7 @@ func (s *Solver) ExtremePoints() ([]*Solution, error) {
 		maxObj[i] = -1
 		_, weights, err = lpp.solve(maxObj)
 		if err == nil {
-			solutions = append(solutions, s.weightsToSolution(weights, names))
+			solutions = append(solutions, s.weightsToSolution(weights, ids, names))
 		}
 	}
 
@@ -145,8 +151,8 @@ func solutionsEqual(a, b *Solution, tolerance float64) bool {
 		return false
 	}
 
-	for name, wa := range a.Weights {
-		wb, ok := b.Weights[name]
+	for id, wa := range a.Weights {
+		wb, ok := b.Weights[id]
 		if !ok {
 			return false
 		}

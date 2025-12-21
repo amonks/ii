@@ -37,6 +37,8 @@ func TestFullWorkflow(t *testing.T) {
 
 	// Derive target composition from label
 	target := label.ToTarget()
+	target.POD = creamery.Interval{}
+	target.PAC = creamery.Interval{}
 	compTarget := target.CompositionTarget()
 
 	fmt.Println()
@@ -50,7 +52,7 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println("### Interpreting the ingredient list")
 	fmt.Println("Using the label's ingredient order to constrain possible formulations:")
 
-	labelIngredients := []creamery.Ingredient{
+	labelSpecs := []creamery.IngredientSpec{
 		creamery.WholeMilk,
 		creamery.HeavyCream,
 		creamery.Sugar,
@@ -58,7 +60,7 @@ func TestFullWorkflow(t *testing.T) {
 		creamery.TapiocaSyrup,
 	}
 
-	labelProblem := creamery.NewProblem(labelIngredients, compTarget)
+	labelProblem := creamery.NewProblem(labelSpecs, compTarget)
 	labelProblem.OrderConstraints = true
 
 	labelSolver, err := creamery.NewSolver(labelProblem)
@@ -78,12 +80,12 @@ func TestFullWorkflow(t *testing.T) {
 		for i := 0; i < limit; i++ {
 			s := labelSamples[i]
 			fmt.Printf("    Option %d:\n", i+1)
-			for _, name := range labelProblem.IngredientNames() {
-				if w := s.Weights[name]; w > 0.005 {
-					fmt.Printf("      %-18s %5.1f%%\n", name+":", w*100)
+			for _, spec := range labelProblem.Specs {
+				if w := s.Weights[spec.ID]; w > 0.005 {
+					fmt.Printf("      %-18s %5.1f%%\n", spec.Name+":", w*100)
 				}
 			}
-			if impliedMSNF, ok := s.ImpliedMSNF(labelIngredients, compTarget, "Nonfat Milk"); ok {
+			if impliedMSNF, ok := s.ImpliedMSNF(labelSpecs, compTarget, creamery.NonfatMilkVariable.ID); ok {
 				desc := creamery.DescribeNonfatMilk(impliedMSNF)
 				fmt.Printf("      └─ Nonfat milk form: %s\n", desc)
 			}
@@ -99,45 +101,37 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println()
 
 	// Define our specific ingredients with KNOWN compositions (point values)
-	myCream := creamery.Ingredient{
-		Name: "Cream (36%)",
-		Comp: creamery.PointComposition(0.36, 0.055, 0, 0), // 36% fat, 5.5% MSNF
-	}
-
-	myMilk := creamery.Ingredient{
-		Name: "Whole Milk (3.25%)",
-		Comp: creamery.PointComposition(0.0325, 0.0875, 0, 0), // 3.25% fat, 8.75% MSNF
-	}
-
-	myNFDM := creamery.Ingredient{
-		Name: "Skim Milk Powder",
-		Comp: creamery.PointComposition(0.01, 0.96, 0, 0), // 1% fat, 96% MSNF
-	}
+	myCream := creamery.SpecFromComposition("Cream (36%)", creamery.PointComposition(0.36, 0.055, 0, 0))
+	myMilk := creamery.SpecFromComposition("Whole Milk (3.25%)", creamery.PointComposition(0.0325, 0.0875, 0, 0))
+	myNFDM := creamery.SpecFromComposition("Skim Milk Powder", creamery.PointComposition(0.01, 0.96, 0, 0))
 
 	mySucroseBatch := creamery.IngredientBatchTable()["sucrose"]
 	mySucroseBatch.Name = "Sucrose"
-	mySucrose := mySucroseBatch.ToSpec().LegacyIngredient()
+	mySucrose := mySucroseBatch.ToSpec()
 
 	myDextroseBatch := creamery.IngredientBatchTable()["dextrose"]
 	myDextroseBatch.Name = "Dextrose"
-	myDextrose := myDextroseBatch.ToSpec().LegacyIngredient()
+	myDextrose := myDextroseBatch.ToSpec()
 
 	fmt.Println("Ingredients on hand:")
-	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.1f%%\n", myCream.Name, myCream.Comp.Fat.Mid()*100, myCream.Comp.MSNF.Mid()*100)
-	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilk.Comp.Fat.Mid()*100, myMilk.Comp.MSNF.Mid()*100)
-	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDM.Comp.Fat.Mid()*100, myNFDM.Comp.MSNF.Mid()*100)
+	myCreamComp := creamery.CompositionFromProfile(myCream.Profile)
+	myMilkComp := creamery.CompositionFromProfile(myMilk.Profile)
+	myNFDMComp := creamery.CompositionFromProfile(myNFDM.Profile)
+	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.1f%%\n", myCream.Name, myCreamComp.Fat.Mid()*100, myCreamComp.MSNF.Mid()*100)
+	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilkComp.Fat.Mid()*100, myMilkComp.MSNF.Mid()*100)
+	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDMComp.Fat.Mid()*100, myNFDMComp.MSNF.Mid()*100)
 	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f\n",
 		mySucrose.Name,
-		mySucrose.Comp.Sugar.Mid()*100,
+		creamery.CompositionFromProfile(mySucrose.Profile).Sugar.Mid()*100,
 		mySucrose.Profile.PODInterval().Mid(),
 		mySucrose.Profile.PACInterval().Mid())
 	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f (less sweet, more softening)\n",
 		myDextrose.Name,
-		myDextrose.Comp.Sugar.Mid()*100,
+		creamery.CompositionFromProfile(myDextrose.Profile).Sugar.Mid()*100,
 		myDextrose.Profile.PODInterval().Mid(),
 		myDextrose.Profile.PACInterval().Mid())
 
-	ingredients := []creamery.Ingredient{
+	specs := []creamery.IngredientSpec{
 		myCream,
 		myMilk,
 		myNFDM,
@@ -145,7 +139,7 @@ func TestFullWorkflow(t *testing.T) {
 		myDextrose,
 	}
 
-	problem := creamery.NewProblem(ingredients, compTarget)
+	problem := creamery.NewProblem(specs, compTarget)
 
 	solver, err := creamery.NewSolver(problem)
 	if err != nil {
@@ -166,9 +160,9 @@ func TestFullWorkflow(t *testing.T) {
 	}
 
 	fmt.Println("Feasible ingredient ranges:")
-	for _, ing := range ingredients {
-		r := bounds.WeightRanges[ing.Name]
-		fmt.Printf("  %-20s %5.1f%% - %5.1f%%\n", ing.Name, r.Lo*100, r.Hi*100)
+	for _, spec := range specs {
+		r := bounds.WeightRanges[spec.ID]
+		fmt.Printf("  %-20s %5.1f%% - %5.1f%%\n", spec.Name, r.Lo*100, r.Hi*100)
 	}
 
 	// Get diverse sample recipes
@@ -183,10 +177,10 @@ func TestFullWorkflow(t *testing.T) {
 
 		// Print recipe
 		fmt.Println("Ingredients:")
-		for _, ing := range ingredients {
-			w := s.Weights[ing.Name]
+		for _, spec := range specs {
+			w := s.Weights[spec.ID]
 			if w > 0.001 {
-				fmt.Printf("  %-20s %5.1f%%\n", ing.Name, w*100)
+				fmt.Printf("  %-20s %5.1f%%\n", spec.Name, w*100)
 			}
 		}
 
@@ -200,7 +194,7 @@ func TestFullWorkflow(t *testing.T) {
 		assertCompositionWithinTarget(t, compTarget, s.Achieved, fmt.Sprintf("Recipe %d", i+1))
 
 		// POD/PAC analysis
-		sweetener := creamery.AnalyzeSweeteners(s, ingredients)
+		sweetener := creamery.AnalyzeSweeteners(s, specs)
 		fmt.Println()
 		fmt.Println("Sweetener analysis:")
 		fmt.Printf("  POD: %.1f (equivalent to %.1f%% sucrose)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
@@ -211,11 +205,11 @@ func TestFullWorkflow(t *testing.T) {
 		batchGrams := 1000.0
 		fmt.Println()
 		fmt.Printf("For a %.0fg batch:\n", batchGrams)
-		for _, ing := range ingredients {
-			w := s.Weights[ing.Name]
+		for _, spec := range specs {
+			w := s.Weights[spec.ID]
 			if w > 0.001 {
 				grams := w * batchGrams
-				fmt.Printf("  %-20s %6.1fg\n", ing.Name, grams)
+				fmt.Printf("  %-20s %6.1fg\n", spec.Name, grams)
 			}
 		}
 	}
@@ -233,8 +227,8 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println()
 
 	// Create a new problem with PAC target
-	problem2 := creamery.NewProblem(ingredients, compTarget)
-	problem2.TargetPAC = creamery.Range(28, 32) // target "firm" texture
+	problem2 := creamery.NewProblem(specs, compTarget)
+	problem2.Target.PAC = creamery.Range(28, 32) // target "firm" texture
 
 	solver2, _ := creamery.NewSolver(problem2)
 	bounds2, _ := solver2.FindBounds()
@@ -243,28 +237,28 @@ func TestFullWorkflow(t *testing.T) {
 		fmt.Println("No feasible solution with PAC constraint!")
 	} else {
 		fmt.Println("With PAC target [28-32]:")
-		for _, ing := range ingredients {
-			r := bounds2.WeightRanges[ing.Name]
+		for _, spec := range specs {
+			r := bounds2.WeightRanges[spec.ID]
 			if r.Hi > 0.001 {
-				fmt.Printf("  %-20s %5.1f%% - %5.1f%%\n", ing.Name, r.Lo*100, r.Hi*100)
+				fmt.Printf("  %-20s %5.1f%% - %5.1f%%\n", spec.Name, r.Lo*100, r.Hi*100)
 			}
 		}
 
 		sample2, _ := solver2.FindSolution()
-		sweetener2 := creamery.AnalyzeSweeteners(sample2, ingredients)
+		sweetener2 := creamery.AnalyzeSweeteners(sample2, specs)
 
 		fmt.Println()
 		fmt.Println("PAC-optimized recipe (1000g batch):")
-		for _, ing := range ingredients {
-			w := sample2.Weights[ing.Name]
+		for _, spec := range specs {
+			w := sample2.Weights[spec.ID]
 			if w > 0.001 {
-				fmt.Printf("  %-20s %6.1fg\n", ing.Name, w*1000)
+				fmt.Printf("  %-20s %6.1fg\n", spec.Name, w*1000)
 			}
 		}
 		fmt.Println()
 		fmt.Printf("Result: POD=%.1f, PAC=%.1f → %s\n",
 			sweetener2.TotalPOD, sweetener2.TotalPAC, sweetener2.RelativeSoftness())
 		assertSweetenersMatchTarget(t, problem2.Target, sweetener2, "PAC-optimized recipe")
-		assertIntervalContains(t, problem2.TargetPAC, sweetener2.TotalPAC, "PAC-optimized recipe PAC")
+		assertIntervalContains(t, problem2.Target.PAC, sweetener2.TotalPAC, "PAC-optimized recipe PAC")
 	}
 }

@@ -3,115 +3,157 @@ package creamery
 import (
 	"fmt"
 	"slices"
+	"strings"
 )
 
 // Problem defines an ice cream formulation problem.
 type Problem struct {
-	// Ingredients available for use (order matters for labeling constraints)
-	Ingredients   []Ingredient
-	ingredientIDs []IngredientID
-	idToName      map[IngredientID]string
+	Specs []IngredientSpec
 
-	// Target composition to achieve
 	Target FormulationTarget
 
-	// TargetPOD is the target sweetening power range (optional).
-	// If non-zero, constrains the total POD (including lactose from MSNF).
-	TargetPOD Interval
-
-	// TargetPAC is the target anti-freezing power range (optional).
-	// If non-zero, constrains the total PAC (including lactose from MSNF).
-	TargetPAC Interval
-
-	// WeightBounds constrains individual ingredient weights (optional)
-	// Keys are ingredient names, values are [min, max] weight fractions
-	WeightBounds map[string]Interval
-
-	// OrderConstraints specifies that ingredients must be in descending
-	// weight order as listed. This reflects FDA labeling requirements.
-	// If true, Ingredients[0] >= Ingredients[1] >= ... by weight.
+	WeightBounds     map[IngredientID]Interval
 	OrderConstraints bool
+	Constraints      []LinearConstraint
 
-	// Additional linear constraints of the form lower <= sum(coeff_i * w_i) <= upper.
-	Constraints []LinearConstraint
+	specIndex    map[IngredientID]int
+	compositions []Composition
 }
 
-// NewProblem creates a problem with the given ingredients and legacy composition target.
-func NewProblem(ingredients []Ingredient, target Composition) *Problem {
-	return NewFormulationProblem(ingredients, FormulationFromComposition(target))
+// NewProblem creates a problem with the given specs and legacy composition target.
+func NewProblem(specs []IngredientSpec, target Composition) *Problem {
+	return NewFormulationProblem(specs, FormulationFromComposition(target))
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
-func NewFormulationProblem(ingredients []Ingredient, target FormulationTarget) *Problem {
-	canonical := make([]Ingredient, len(ingredients))
-	idToName := make(map[IngredientID]string, len(ingredients))
-	for i, ing := range ingredients {
-		ing = canonicalizeIngredient(ing)
-		canonical[i] = ing
-		idToName[ing.ID] = ing.Name
+func NewFormulationProblem(specs []IngredientSpec, target FormulationTarget) *Problem {
+	canonical := make([]IngredientSpec, len(specs))
+	specIndex := make(map[IngredientID]int, len(specs))
+	compositions := make([]Composition, len(specs))
+	for i, spec := range specs {
+		if spec.ID == "" {
+			spec.ID = NewIngredientID(spec.Name)
+		}
+		if spec.Name == "" {
+			spec.Name = spec.ID.String()
+		}
+		canonical[i] = spec
+		specIndex[spec.ID] = i
+		compositions[i] = CompositionFromProfile(spec.Profile)
 	}
 	return &Problem{
-		Ingredients: canonical,
-		ingredientIDs: func() []IngredientID {
-			ids := make([]IngredientID, len(canonical))
-			for i, ing := range canonical {
-				ids[i] = ing.ID
-			}
-			return ids
-		}(),
-		idToName:     idToName,
+		Specs:        canonical,
 		Target:       target,
-		TargetPOD:    target.POD,
-		TargetPAC:    target.PAC,
-		WeightBounds: make(map[string]Interval),
+		WeightBounds: make(map[IngredientID]Interval),
+		Constraints:  make([]LinearConstraint, 0),
+		specIndex:    specIndex,
+		compositions: compositions,
 	}
 }
 
 // LinearConstraint represents a linear expression over ingredient weights.
 type LinearConstraint struct {
-	Coeffs map[string]float64
+	Coeffs map[IngredientID]float64
 	Lower  float64
 	Upper  float64
 	Note   string
 }
 
+// IngredientIDs returns the spec IDs in order.
+func (p *Problem) IngredientIDs() []IngredientID {
+	ids := make([]IngredientID, len(p.Specs))
+	for i, spec := range p.Specs {
+		ids[i] = spec.ID
+	}
+	return ids
+}
+
+// IngredientNames returns the spec names in order (for display only).
+func (p *Problem) IngredientNames() []string {
+	names := make([]string, len(p.Specs))
+	for i, spec := range p.Specs {
+		names[i] = spec.Name
+	}
+	return names
+}
+
+func (p *Problem) compositionForIndex(i int) Composition {
+	return p.compositions[i]
+}
+
+func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
+	idx, ok := p.specIndex[id]
+	if !ok {
+		return IngredientSpec{}, false
+	}
+	return p.Specs[idx], true
+}
+
+func (p *Problem) nameForID(id IngredientID) string {
+	if spec, ok := p.specByID(id); ok {
+		return spec.Name
+	}
+	return id.String()
+}
+
 // SetWeightBound constrains an ingredient's weight to [lo, hi].
-func (p *Problem) SetWeightBound(name string, lo, hi float64) error {
-	found := false
-	for _, ing := range p.Ingredients {
-		if ing.Name == name {
-			found = true
-			break
-		}
+func (p *Problem) SetWeightBound(id IngredientID, lo, hi float64) error {
+	if _, ok := p.specIndex[id]; !ok {
+		return fmt.Errorf("unknown ingredient: %s", id)
 	}
-	if !found {
-		return fmt.Errorf("unknown ingredient: %s", name)
-	}
-	p.WeightBounds[name] = Range(lo, hi)
+	p.WeightBounds[id] = Range(lo, hi)
 	return nil
 }
 
 // SetMinWeight sets a minimum weight for an ingredient.
-func (p *Problem) SetMinWeight(name string, min float64) error {
-	bound, ok := p.WeightBounds[name]
+func (p *Problem) SetMinWeight(id IngredientID, min float64) error {
+	bound, ok := p.WeightBounds[id]
 	if !ok {
 		bound = Range(0, 1)
 	}
-	return p.SetWeightBound(name, min, bound.Hi)
+	return p.SetWeightBound(id, min, bound.Hi)
 }
 
 // SetMaxWeight sets a maximum weight for an ingredient.
-func (p *Problem) SetMaxWeight(name string, max float64) error {
-	bound, ok := p.WeightBounds[name]
+func (p *Problem) SetMaxWeight(id IngredientID, max float64) error {
+	bound, ok := p.WeightBounds[id]
 	if !ok {
 		bound = Range(0, 1)
 	}
-	return p.SetWeightBound(name, bound.Lo, max)
+	return p.SetWeightBound(id, bound.Lo, max)
+}
+
+// IDByName returns the ingredient ID for a human-readable name.
+func (p *Problem) IDByName(name string) (IngredientID, bool) {
+	for _, spec := range p.Specs {
+		if spec.Name == name {
+			return spec.ID, true
+		}
+	}
+	return "", false
+}
+
+// SetMinWeightByName is a convenience wrapper around SetMinWeight.
+func (p *Problem) SetMinWeightByName(name string, min float64) error {
+	id, ok := p.IDByName(name)
+	if !ok {
+		return fmt.Errorf("unknown ingredient: %s", name)
+	}
+	return p.SetMinWeight(id, min)
+}
+
+// SetMaxWeightByName is a convenience wrapper around SetMaxWeight.
+func (p *Problem) SetMaxWeightByName(name string, max float64) error {
+	id, ok := p.IDByName(name)
+	if !ok {
+		return fmt.Errorf("unknown ingredient: %s", name)
+	}
+	return p.SetMaxWeight(id, max)
 }
 
 // Validate checks that the problem is well-formed.
 func (p *Problem) Validate() error {
-	if len(p.Ingredients) == 0 {
+	if len(p.Specs) == 0 {
 		return fmt.Errorf("no ingredients specified")
 	}
 
@@ -119,28 +161,32 @@ func (p *Problem) Validate() error {
 		return fmt.Errorf("invalid target: %w", err)
 	}
 
-	names := make(map[string]bool)
-	for _, ing := range p.Ingredients {
-		if names[ing.Name] {
-			return fmt.Errorf("duplicate ingredient: %s", ing.Name)
+	seen := make(map[IngredientID]bool)
+	for i, spec := range p.Specs {
+		if spec.ID == "" {
+			return fmt.Errorf("ingredient %d missing ID", i)
 		}
-		names[ing.Name] = true
+		if seen[spec.ID] {
+			return fmt.Errorf("duplicate ingredient: %s", spec.Name)
+		}
+		seen[spec.ID] = true
 
-		if err := ing.Comp.Valid(); err != nil {
-			return fmt.Errorf("invalid ingredient %s: %w", ing.Name, err)
+		comp := p.compositionForIndex(i)
+		if err := comp.Valid(); err != nil {
+			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
 		}
 	}
 
-	for name := range p.WeightBounds {
-		if !names[name] {
-			return fmt.Errorf("weight bound for unknown ingredient: %s", name)
+	for id := range p.WeightBounds {
+		if !seen[id] {
+			return fmt.Errorf("weight bound for unknown ingredient: %s", id)
 		}
 	}
 
 	for i, constraint := range p.Constraints {
-		for name := range constraint.Coeffs {
-			if !names[name] {
-				return fmt.Errorf("constraint %d references unknown ingredient %s", i, name)
+		for id := range constraint.Coeffs {
+			if !seen[id] {
+				return fmt.Errorf("constraint %d references unknown ingredient %s", i, id)
 			}
 		}
 		if constraint.Lower > constraint.Upper {
@@ -151,26 +197,9 @@ func (p *Problem) Validate() error {
 	return nil
 }
 
-// IngredientNames returns the names of ingredients in order.
-func (p *Problem) IngredientNames() []string {
-	names := make([]string, len(p.Ingredients))
-	for i, ing := range p.Ingredients {
-		names[i] = ing.Name
-	}
-	return names
-}
-
-func (p *Problem) nameForID(id IngredientID) (string, bool) {
-	if p.idToName == nil {
-		return "", false
-	}
-	name, ok := p.idToName[id]
-	return name, ok
-}
-
 // AddConstraint appends a linear constraint of the form lower <= sum(coeff_i * w_i) <= upper.
-func (p *Problem) AddConstraint(coeffs map[string]float64, lower, upper float64, note string) {
-	copied := make(map[string]float64, len(coeffs))
+func (p *Problem) AddConstraint(coeffs map[IngredientID]float64, lower, upper float64, note string) {
+	copied := make(map[IngredientID]float64, len(coeffs))
 	for k, v := range coeffs {
 		copied[k] = v
 	}
@@ -184,100 +213,137 @@ func (p *Problem) AddConstraint(coeffs map[string]float64, lower, upper float64,
 
 // Solution represents a feasible (or partial) solution to a Problem.
 type Solution struct {
-	// Weights maps ingredient names to their weight fractions.
-	Weights map[string]float64
-
-	// Achieved is the composition achieved by this solution.
+	Weights  map[IngredientID]float64
+	Names    map[IngredientID]string
 	Achieved Composition
 }
 
 // String returns a human-readable representation.
 func (s Solution) String() string {
-	names := make([]string, 0, len(s.Weights))
-	for name := range s.Weights {
-		names = append(names, name)
+	if len(s.Weights) == 0 {
+		return "Recipe: <empty>"
 	}
-	slices.Sort(names)
-
+	type entry struct {
+		name   string
+		weight float64
+	}
+	entries := make([]entry, 0, len(s.Weights))
+	for id, w := range s.Weights {
+		name := id.String()
+		if s.Names != nil && s.Names[id] != "" {
+			name = s.Names[id]
+		}
+		entries = append(entries, entry{name: name, weight: w})
+	}
+	slices.SortFunc(entries, func(a, b entry) int {
+		if a.name < b.name {
+			return -1
+		}
+		if a.name > b.name {
+			return 1
+		}
+		return 0
+	})
 	result := "Recipe:\n"
-	for _, name := range names {
-		w := s.Weights[name]
-		if w > 0.001 { // skip negligible amounts
-			result += fmt.Sprintf("  %s: %.2f%%\n", name, w*100)
+	for _, e := range entries {
+		if e.weight > 0.001 {
+			result += fmt.Sprintf("  %s: %.2f%%\n", e.name, e.weight*100)
 		}
 	}
 	result += fmt.Sprintf("Achieved: %s", s.Achieved)
 	return result
 }
 
-// Bounds represents the feasible range for each ingredient weight.
-type Bounds struct {
-	// WeightRanges maps ingredient names to their feasible weight intervals.
-	WeightRanges map[string]Interval
-
-	// Feasible is true if any solution exists.
-	Feasible bool
-}
-
-// ImpliedComposition calculates what composition a variable ingredient must have
+// ImpliedMSNF calculates what composition a variable ingredient must have
 // to achieve the target, given the weights of all other ingredients.
-// Returns the required MSNF fraction for the named ingredient.
-// This is useful for ingredients like "Nonfat Milk" that could be any concentration.
-func (s Solution) ImpliedMSNF(ingredients []Ingredient, target Composition, name string) (Interval, bool) {
-	// Find the ingredient
-	var varIngredient Ingredient
-	varWeight := s.Weights[name]
-	found := false
-	for _, ing := range ingredients {
-		if ing.Name == name {
-			varIngredient = ing
-			found = true
+func (s Solution) ImpliedMSNF(specs []IngredientSpec, target Composition, id IngredientID) (Interval, bool) {
+	varSpecIndex := -1
+	for i, spec := range specs {
+		if spec.ID == id {
+			varSpecIndex = i
 			break
 		}
 	}
-	if !found || varWeight < 0.001 {
+	if varSpecIndex == -1 {
 		return Interval{}, false
 	}
 
-	// Calculate MSNF contribution from all OTHER ingredients
-	var otherMSNF float64
-	for _, ing := range ingredients {
-		if ing.Name == name {
-			continue
-		}
-		w := s.Weights[ing.Name]
-		otherMSNF += w * ing.Comp.MSNF.Mid()
+	varWeight := s.Weights[id]
+	if varWeight < 0.001 {
+		return Interval{}, false
 	}
 
-	// Required MSNF from the variable ingredient
-	// target.MSNF = otherMSNF + varWeight * varMSNF
-	// varMSNF = (target.MSNF - otherMSNF) / varWeight
+	varSpec := specs[varSpecIndex]
+	varComp := CompositionFromProfile(varSpec.Profile)
+
+	var otherMSNF float64
+	for _, spec := range specs {
+		if spec.ID == id {
+			continue
+		}
+		w := s.Weights[spec.ID]
+		comp := CompositionFromProfile(spec.Profile)
+		otherMSNF += w * comp.MSNF.Mid()
+	}
+
 	requiredLo := (target.MSNF.Lo - otherMSNF) / varWeight
 	requiredHi := (target.MSNF.Hi - otherMSNF) / varWeight
 
-	// Clamp to ingredient's possible range
-	possibleLo := varIngredient.Comp.MSNF.Lo
-	possibleHi := varIngredient.Comp.MSNF.Hi
+	possibleLo := varComp.MSNF.Lo
+	possibleHi := varComp.MSNF.Hi
 
 	impliedLo := max(requiredLo, possibleLo)
 	impliedHi := min(requiredHi, possibleHi)
 
 	if impliedLo > impliedHi {
-		return Interval{}, false // impossible
+		return Interval{}, false
 	}
 
 	return Interval{Lo: impliedLo, Hi: impliedHi}, true
 }
 
+// Bounds represents the feasible range for each ingredient weight.
+type Bounds struct {
+	WeightRanges map[IngredientID]Interval
+	Names        map[IngredientID]string
+	Feasible     bool
+}
+
+func (b Bounds) displayName(id IngredientID) string {
+	if b.Names != nil && b.Names[id] != "" {
+		return b.Names[id]
+	}
+	return id.String()
+}
+
+// String returns a human-readable representation of feasible ranges.
+func (b Bounds) String() string {
+	if !b.Feasible {
+		return "No feasible solution"
+	}
+
+	ids := make([]IngredientID, 0, len(b.WeightRanges))
+	for id := range b.WeightRanges {
+		ids = append(ids, id)
+	}
+	slices.SortFunc(ids, func(a, idB IngredientID) int {
+		nameA := b.displayName(a)
+		nameB := b.displayName(idB)
+		return strings.Compare(nameA, nameB)
+	})
+
+	var builder strings.Builder
+	builder.WriteString("Feasible ranges:\n")
+	for _, id := range ids {
+		r := b.WeightRanges[id]
+		builder.WriteString(fmt.Sprintf("  %s: [%.2f%%, %.2f%%]\n", b.displayName(id), r.Lo*100, r.Hi*100))
+	}
+	return builder.String()
+}
+
 // DescribeNonfatMilk interprets an MSNF fraction as a practical description.
-// Returns a human-readable string describing what form the nonfat milk is in.
 func DescribeNonfatMilk(msnf Interval) string {
 	mid := msnf.Mid()
-
-	// Liquid skim milk: ~9% MSNF
-	// Evaporated skim: ~20% MSNF
-	// Condensed (no sugar): ~25-30% MSNF
-	// Dry powder: ~97% MSNF
 
 	switch {
 	case mid < 0.12:
@@ -286,9 +352,6 @@ func DescribeNonfatMilk(msnf Interval) string {
 		waterPct := 100 - mid*100
 		return fmt.Sprintf("concentrated skim (~%.0f%% water, %.0f%% MSNF)", waterPct, mid*100)
 	case mid < 0.50:
-		// Reconstituted: X parts water to 1 part powder
-		// If final is Y% MSNF and powder is 97% MSNF:
-		// Y = 97 / (1 + X) => X = 97/Y - 1
 		ratio := 0.97/mid - 1
 		return fmt.Sprintf("reconstituted NFDM (~%.1f:1 water:powder, %.0f%% MSNF)", ratio, mid*100)
 	case mid < 0.85:
@@ -297,24 +360,4 @@ func DescribeNonfatMilk(msnf Interval) string {
 	default:
 		return fmt.Sprintf("nonfat dry milk powder (%.0f%% MSNF)", mid*100)
 	}
-}
-
-// String returns a human-readable representation.
-func (b Bounds) String() string {
-	if !b.Feasible {
-		return "No feasible solution"
-	}
-
-	names := make([]string, 0, len(b.WeightRanges))
-	for name := range b.WeightRanges {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-
-	result := "Feasible ranges:\n"
-	for _, name := range names {
-		r := b.WeightRanges[name]
-		result += fmt.Sprintf("  %s: [%.2f%%, %.2f%%]\n", name, r.Lo*100, r.Hi*100)
-	}
-	return result
 }

@@ -31,8 +31,11 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	}
 
 	sol := &Solution{
-		Weights: map[string]float64{
-			"Fancy Sugar": 0.5,
+		Weights: map[IngredientID]float64{
+			IngredientID("sucrose"): 0.5,
+		},
+		Names: map[IngredientID]string{
+			IngredientID("sucrose"): "Fancy Sugar",
 		},
 	}
 

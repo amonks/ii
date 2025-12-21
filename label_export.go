@@ -99,7 +99,7 @@ td { padding:0.2rem 0; }
 		b.WriteString(`</div>`)
 
 		if res.Solution != nil && res.Problem != nil {
-			sweetener := AnalyzeSweeteners(res.Solution, res.Problem.Ingredients)
+			sweetener := AnalyzeSweeteners(res.Solution, res.Problem.Specs)
 			if sweetener.TotalPOD > 0 || sweetener.TotalPAC > 0 {
 				b.WriteString(`<div class="grid">`)
 				b.WriteString(`<div class="card"><h3>Sweetener Analysis</h3><table>`)

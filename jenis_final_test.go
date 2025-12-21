@@ -23,6 +23,8 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 	}
 
 	target := label.ToTarget()
+	target.POD = creamery.Interval{}
+	target.PAC = creamery.Interval{}
 	compTarget := target.CompositionTarget()
 
 	fmt.Println("=== Jeni's Sweet Cream Reverse Engineering ===")
@@ -38,7 +40,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 
 	// "Nonfat Milk" - could be any concentration from liquid to powder
 	// Tapioca syrup - used as stabilizer (starch), not primarily for sugar
-	ingredients := []creamery.Ingredient{
+	specs := []creamery.IngredientSpec{
 		creamery.WholeMilk,
 		creamery.HeavyCream,
 		creamery.Sugar,
@@ -46,7 +48,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 		creamery.TapiocaSyrup,
 	}
 
-	problem := creamery.NewProblem(ingredients, compTarget)
+	problem := creamery.NewProblem(specs, compTarget)
 	problem.OrderConstraints = true
 
 	solver, err := creamery.NewSolver(problem)
@@ -81,22 +83,22 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 	fmt.Println("Estimated formulations:")
 	for i, s := range samples {
 		fmt.Printf("\n  Recipe %d:\n", i+1)
-		for _, name := range problem.IngredientNames() {
-			w := s.Weights[name]
+		for _, spec := range problem.Specs {
+			w := s.Weights[spec.ID]
 			if w > 0.005 {
-				fmt.Printf("    %-18s %5.1f%%\n", name+":", w*100)
+				fmt.Printf("    %-18s %5.1f%%\n", spec.Name+":", w*100)
 			}
 		}
 
 		// What concentration must the Nonfat Milk be?
-		if impliedMSNF, ok := s.ImpliedMSNF(ingredients, compTarget, "Nonfat Milk"); ok {
+		if impliedMSNF, ok := s.ImpliedMSNF(specs, compTarget, creamery.NonfatMilkVariable.ID); ok {
 			desc := creamery.DescribeNonfatMilk(impliedMSNF)
 			fmt.Printf("    ---\n")
 			fmt.Printf("    Nonfat Milk form: %s\n", desc)
 		}
 
 		assertCompositionWithinTarget(t, compTarget, s.Achieved, fmt.Sprintf("Jenis recipe %d", i+1))
-		sweetener := creamery.AnalyzeSweeteners(s, ingredients)
+		sweetener := creamery.AnalyzeSweeteners(s, specs)
 		assertSweetenersMatchTarget(t, target, sweetener, fmt.Sprintf("Jenis recipe %d", i+1))
 	}
 

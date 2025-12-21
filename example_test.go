@@ -19,14 +19,14 @@ func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	}
 
 	// Available ingredients
-	ingredients := []creamery.Ingredient{
+	specs := []creamery.IngredientSpec{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,
 		creamery.NonfatDryMilk,
 	}
 
-	problem := creamery.NewProblem(ingredients, target)
+	problem := creamery.NewProblem(specs, target)
 
 	solver, err := creamery.NewSolver(problem)
 	if err != nil {
@@ -70,8 +70,12 @@ func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	}
 	for i, s := range samples {
 		fmt.Printf("Sample %d:\n", i+1)
-		for name, w := range s.Weights {
+		for id, w := range s.Weights {
 			if w > 0.01 {
+				name := s.Names[id]
+				if name == "" {
+					name = id.String()
+				}
 				fmt.Printf("  %s: %.1f%%\n", name, w*100)
 			}
 		}
@@ -108,14 +112,14 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	fmt.Printf("Derived target: %s\n\n", target)
 
 	// Ingredients in label order (descending by weight)
-	ingredients := []creamery.Ingredient{
+	specs := []creamery.IngredientSpec{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,
 		creamery.EggYolks,
 	}
 
-	problem := creamery.NewProblem(ingredients, compTarget)
+	problem := creamery.NewProblem(specs, compTarget)
 	problem.OrderConstraints = true // enforce label ordering
 
 	solver, err := creamery.NewSolver(problem)
@@ -149,8 +153,12 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	fmt.Println("Possible formulations:")
 	for i, s := range samples {
 		fmt.Printf("\nFormulation %d:\n", i+1)
-		for name, w := range s.Weights {
+		for id, w := range s.Weights {
 			if w > 0.01 {
+				name := s.Names[id]
+				if name == "" {
+					name = id.String()
+				}
 				fmt.Printf("  %s: %.1f%%\n", name, w*100)
 			}
 		}
@@ -167,14 +175,14 @@ func TestWithTighterConstraints(t *testing.T) {
 		Other: creamery.Range(0, 0.01),
 	}
 
-	ingredients := []creamery.Ingredient{
+	specs2 := []creamery.IngredientSpec{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,
 		creamery.NonfatDryMilk,
 	}
 
-	problem := creamery.NewProblem(ingredients, target)
+	problem := creamery.NewProblem(specs2, target)
 
 	// First pass: see what's possible
 	solver, _ := creamery.NewSolver(problem)
@@ -185,7 +193,9 @@ func TestWithTighterConstraints(t *testing.T) {
 	fmt.Println(bounds1)
 
 	// User decides: "I want at least 35% cream for richness"
-	problem.SetMinWeight("Heavy Cream", 0.35)
+	if err := problem.SetMinWeightByName("Heavy Cream", 0.35); err != nil {
+		t.Fatalf("failed to set min weight: %v", err)
+	}
 
 	solver2, _ := creamery.NewSolver(problem)
 	bounds2, _ := solver2.FindBounds()
@@ -194,7 +204,9 @@ func TestWithTighterConstraints(t *testing.T) {
 	fmt.Println(bounds2)
 
 	// "And I want to minimize milk powder"
-	problem.SetMaxWeight("Nonfat Dry Milk", 0.05)
+	if err := problem.SetMaxWeightByName("Nonfat Dry Milk", 0.05); err != nil {
+		t.Fatalf("failed to set max weight: %v", err)
+	}
 
 	solver3, _ := creamery.NewSolver(problem)
 	bounds3, err := solver3.FindBounds()

@@ -71,32 +71,25 @@ func ApplyGroupBounds(p *Problem, groups []LabelGroup) {
 			continue
 		}
 		for keyID, bounds := range group.FractionBounds {
-			keyName, ok := p.nameForID(keyID)
-			if !ok {
-				continue
-			}
+			keyName := p.nameForID(keyID)
 			if len(group.Keys) == 1 && group.Keys[0] == keyID {
 				continue
 			}
 			// key <= hi * group_total
 			if bounds.Hi < math.Inf(1) {
-				coeffs := make(map[string]float64, len(group.Keys)+1)
-				coeffs[keyName] = 1
+				coeffs := make(map[IngredientID]float64, len(group.Keys)+1)
+				coeffs[keyID] = 1
 				for _, memberID := range group.Keys {
-					if memberName, ok := p.nameForID(memberID); ok {
-						coeffs[memberName] -= bounds.Hi
-					}
+					coeffs[memberID] -= bounds.Hi
 				}
 				p.AddConstraint(coeffs, math.Inf(-1), 0, group.Name+":"+keyName+":hi")
 			}
 			// key >= lo * group_total
 			if bounds.Lo > 0 {
-				coeffs := make(map[string]float64, len(group.Keys)+1)
-				coeffs[keyName] = 1
+				coeffs := make(map[IngredientID]float64, len(group.Keys)+1)
+				coeffs[keyID] = 1
 				for _, memberID := range group.Keys {
-					if memberName, ok := p.nameForID(memberID); ok {
-						coeffs[memberName] -= bounds.Lo
-					}
+					coeffs[memberID] -= bounds.Lo
 				}
 				p.AddConstraint(coeffs, 0, math.Inf(1), group.Name+":"+keyName+":lo")
 			}
@@ -115,16 +108,12 @@ func ApplyLabelOrder(p *Problem, groups []LabelGroup, epsilon float64) {
 		if len(earlier.Keys) == 0 || len(later.Keys) == 0 {
 			continue
 		}
-		coeffs := make(map[string]float64, len(earlier.Keys)+len(later.Keys))
+		coeffs := make(map[IngredientID]float64, len(earlier.Keys)+len(later.Keys))
 		for _, key := range later.Keys {
-			if name, ok := p.nameForID(key); ok {
-				coeffs[name] = 1
-			}
+			coeffs[key] = 1
 		}
 		for _, key := range earlier.Keys {
-			if name, ok := p.nameForID(key); ok {
-				coeffs[name] -= 1
-			}
+			coeffs[key] -= 1
 		}
 		p.AddConstraint(coeffs, math.Inf(-1), -epsilon, "label_order")
 	}
@@ -136,14 +125,9 @@ func ApplyLabelOrder(p *Problem, groups []LabelGroup, epsilon float64) {
 		for i := 0; i < len(group.Keys)-1; i++ {
 			a := group.Keys[i]
 			b := group.Keys[i+1]
-			aName, aOK := p.nameForID(a)
-			bName, bOK := p.nameForID(b)
-			if !aOK || !bOK {
-				continue
-			}
-			coeffs := map[string]float64{
-				bName: 1,
-				aName: -1,
+			coeffs := map[IngredientID]float64{
+				b: 1,
+				a: -1,
 			}
 			p.AddConstraint(coeffs, math.Inf(-1), 0, group.Name+":internal")
 		}

@@ -51,6 +51,7 @@ type ConstituentProfile struct {
 type ConstituentComponents struct {
 	Water        Interval
 	Fat          Interval
+	MSNF         Interval
 	Protein      Interval
 	Lactose      Interval
 	Sucrose      Interval
@@ -127,12 +128,26 @@ func (d IngredientBatch) ToProfile() ConstituentProfile {
 	if id == "" {
 		id = NewIngredientID(d.Name)
 	}
+	lactoseLo := d.LactoseMin
+	if lactoseLo == 0 {
+		lactoseLo = d.Lactose
+	}
+	lactoseHi := d.LactoseMax
+	if lactoseHi == 0 {
+		lactoseHi = d.Lactose
+	}
+	msnfLo := d.Protein + lactoseLo + d.Ash
+	msnfHi := d.Protein + lactoseHi + d.Ash
+	if msnfHi < msnfLo {
+		msnfHi = msnfLo
+	}
 	profile := ConstituentProfile{
 		ID:   id,
 		Name: d.Name,
 		Components: ConstituentComponents{
 			Water:        pointInterval(d.Water),
 			Fat:          pointInterval(d.Fat),
+			MSNF:         Interval{Lo: msnfLo, Hi: msnfHi},
 			Protein:      pointInterval(d.Protein),
 			Lactose:      intervalFromBounds(d.Lactose, d.LactoseMin, d.LactoseMax),
 			Sucrose:      pointInterval(d.Sucrose),
@@ -178,6 +193,7 @@ func ProfileFromComposition(id IngredientID, name string, comp Composition) Cons
 	components := ConstituentComponents{
 		Water:        comp.Water(),
 		Fat:          comp.Fat,
+		MSNF:         comp.MSNF,
 		Protein:      protein,
 		Lactose:      lactose,
 		Ash:          minerals,
@@ -213,12 +229,6 @@ func ProfileFromComposition(id IngredientID, name string, comp Composition) Cons
 		Functionals: functionals,
 		Economics:   economics,
 	}
-}
-
-// ToProfile converts the legacy Ingredient type into a ConstituentProfile using
-// approximate constituent splits based on dairy heuristics.
-func (ing Ingredient) ToProfile() ConstituentProfile {
-	return ProfileFromComposition(NewIngredientID(ing.Name), ing.Name, ing.Comp)
 }
 
 // ToSpec converts a concrete ingredient batch into a spec with fixed intervals.

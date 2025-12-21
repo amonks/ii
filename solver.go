@@ -76,18 +76,20 @@ type lpProblem struct {
 	// Optional linear constraints
 	constraints []LinearConstraint
 
-	names       []string
-	nameToIndex map[string]int
+	ids       []IngredientID
+	names     []string
+	idToIndex map[IngredientID]int
 }
 
 // buildLP creates the LP formulation using midpoints of ingredient composition intervals.
 func (s *Solver) buildLP() *lpProblem {
 	p := s.Problem
-	n := len(p.Ingredients)
+	n := len(p.Specs)
+	ids := p.IngredientIDs()
 	names := p.IngredientNames()
-	nameIndex := make(map[string]int, n)
-	for i, name := range names {
-		nameIndex[name] = i
+	idIndex := make(map[IngredientID]int, n)
+	for i, id := range ids {
+		idIndex[id] = i
 	}
 
 	lpp := &lpProblem{
@@ -115,23 +117,25 @@ func (s *Solver) buildLP() *lpProblem {
 		lower:            make([]float64, n),
 		upper:            make([]float64, n),
 		target:           p.Target,
-		targetPOD:        p.TargetPOD,
-		targetPAC:        p.TargetPAC,
+		targetPOD:        p.Target.POD,
+		targetPAC:        p.Target.PAC,
 		orderConstraints: p.OrderConstraints,
 		constraints:      p.Constraints,
+		ids:              ids,
 		names:            names,
-		nameToIndex:      nameIndex,
+		idToIndex:        idIndex,
 	}
 
-	for i, ing := range p.Ingredients {
-		fat := ing.Comp.Fat
-		msnf := ing.Comp.MSNF
-		sugar := ing.Comp.Sugar
-		other := ing.Comp.Other
+	for i, spec := range p.Specs {
+		comp := p.compositionForIndex(i)
+		fat := comp.Fat
+		msnf := comp.MSNF
+		sugar := comp.Sugar
+		other := comp.Other
 		protein := msnf.Scale(proteinFractionOfMSNF)
 		lactose := msnf.Scale(LactoseFractionOfMSNF)
 		totalSugar := sugar.Add(lactose)
-		water := ing.Comp.Water()
+		water := comp.Water()
 
 		lpp.fatLo[i] = fat.Lo
 		lpp.fatHi[i] = fat.Hi
@@ -150,15 +154,15 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.waterLo[i] = water.Lo
 		lpp.waterHi[i] = water.Hi
 
-		pod := ing.Profile.PODInterval()
-		pac := ing.Profile.PACInterval()
+		pod := spec.Profile.PODInterval()
+		pac := spec.Profile.PACInterval()
 		lpp.podLo[i] = pod.Lo
 		lpp.podHi[i] = pod.Hi
 		lpp.pacLo[i] = pac.Lo
 		lpp.pacHi[i] = pac.Hi
 
 		// Weight bounds
-		if bound, ok := p.WeightBounds[ing.Name]; ok {
+		if bound, ok := p.WeightBounds[spec.ID]; ok {
 			lpp.lower[i] = bound.Lo
 			lpp.upper[i] = bound.Hi
 		} else {
@@ -173,11 +177,12 @@ func (s *Solver) buildLP() *lpProblem {
 // buildLPWithCoeffs creates an LP with specific coefficient values.
 func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoeffs []float64) *lpProblem {
 	p := s.Problem
-	n := len(p.Ingredients)
+	n := len(p.Specs)
+	ids := p.IngredientIDs()
 	names := p.IngredientNames()
-	nameIndex := make(map[string]int, n)
-	for i, name := range names {
-		nameIndex[name] = i
+	idIndex := make(map[IngredientID]int, n)
+	for i, id := range ids {
+		idIndex[id] = i
 	}
 
 	lpp := &lpProblem{
@@ -205,15 +210,16 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		lower:            make([]float64, n),
 		upper:            make([]float64, n),
 		target:           p.Target,
-		targetPOD:        p.TargetPOD,
-		targetPAC:        p.TargetPAC,
+		targetPOD:        p.Target.POD,
+		targetPAC:        p.Target.PAC,
 		orderConstraints: p.OrderConstraints,
 		constraints:      p.Constraints,
+		ids:              ids,
 		names:            names,
-		nameToIndex:      nameIndex,
+		idToIndex:        idIndex,
 	}
 
-	for i, ing := range p.Ingredients {
+	for i, spec := range p.Specs {
 		fat := fatCoeffs[i]
 		msnf := msnfCoeffs[i]
 		sugar := sugarCoeffs[i]
@@ -242,13 +248,13 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		lpp.waterLo[i] = water
 		lpp.waterHi[i] = water
 
-		pod, pac := sweetnessFromSample(ing.Profile, msnf, sugar)
+		pod, pac := sweetnessFromSample(spec.Profile, msnf, sugar)
 		lpp.podLo[i] = pod
 		lpp.podHi[i] = pod
 		lpp.pacLo[i] = pac
 		lpp.pacHi[i] = pac
 
-		if bound, ok := p.WeightBounds[ing.Name]; ok {
+		if bound, ok := p.WeightBounds[spec.ID]; ok {
 			lpp.lower[i] = bound.Lo
 			lpp.upper[i] = bound.Hi
 		} else {
@@ -396,8 +402,8 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	// Additional linear constraints
 	for _, constraint := range lpp.constraints {
 		if constraint.Upper < math.Inf(1) {
-			for name, coeff := range constraint.Coeffs {
-				if idx, ok := lpp.nameToIndex[name]; ok {
+			for id, coeff := range constraint.Coeffs {
+				if idx, ok := lpp.idToIndex[id]; ok {
 					G.Set(row, idx, coeff)
 				}
 			}
@@ -405,8 +411,8 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 			row++
 		}
 		if constraint.Lower > math.Inf(-1) {
-			for name, coeff := range constraint.Coeffs {
-				if idx, ok := lpp.nameToIndex[name]; ok {
+			for id, coeff := range constraint.Coeffs {
+				if idx, ok := lpp.idToIndex[id]; ok {
 					G.Set(row, idx, -coeff)
 				}
 			}
@@ -463,11 +469,16 @@ func (s *Solver) Feasible() (bool, error) {
 func (s *Solver) FindBounds() (*Bounds, error) {
 	lpp := s.buildLP()
 	n := lpp.n
+	ids := s.Problem.IngredientIDs()
 	names := s.Problem.IngredientNames()
 
 	bounds := &Bounds{
-		WeightRanges: make(map[string]Interval),
+		WeightRanges: make(map[IngredientID]Interval),
+		Names:        make(map[IngredientID]string, len(ids)),
 		Feasible:     false,
+	}
+	for i, id := range ids {
+		bounds.Names[id] = names[i]
 	}
 
 	// First check feasibility
@@ -496,7 +507,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 			return nil, fmt.Errorf("error finding max for %s: %w", names[i], err)
 		}
 
-		bounds.WeightRanges[names[i]] = Interval{
+		bounds.WeightRanges[ids[i]] = Interval{
 			Lo: math.Max(0, minVal),
 			Hi: math.Min(1, -maxVal),
 		}
@@ -508,6 +519,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 // FindSolution finds a single feasible solution (if one exists).
 func (s *Solver) FindSolution() (*Solution, error) {
 	lpp := s.buildLP()
+	ids := s.Problem.IngredientIDs()
 	names := s.Problem.IngredientNames()
 
 	// Use zero objective to find any feasible point
@@ -517,27 +529,31 @@ func (s *Solver) FindSolution() (*Solution, error) {
 		return nil, fmt.Errorf("no feasible solution: %w", err)
 	}
 
-	return s.weightsToSolution(x, names), nil
+	return s.weightsToSolution(x, ids, names), nil
 }
 
 // weightsToSolution converts raw weights to a Solution.
-func (s *Solver) weightsToSolution(weights []float64, names []string) *Solution {
+func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names []string) *Solution {
 	sol := &Solution{
-		Weights: make(map[string]float64),
+		Weights: make(map[IngredientID]float64),
+		Names:   make(map[IngredientID]string, len(ids)),
 	}
 
 	for i, w := range weights {
-		sol.Weights[names[i]] = w
+		id := ids[i]
+		sol.Weights[id] = w
+		sol.Names[id] = names[i]
 	}
 
 	// Compute achieved composition using ingredient midpoints
 	var fat, msnf, sugar, other float64
-	for i, ing := range s.Problem.Ingredients {
+	for i := range s.Problem.Specs {
+		comp := s.Problem.compositionForIndex(i)
 		w := weights[i]
-		fat += w * ing.Comp.Fat.Mid()
-		msnf += w * ing.Comp.MSNF.Mid()
-		sugar += w * ing.Comp.Sugar.Mid()
-		other += w * ing.Comp.Other.Mid()
+		fat += w * comp.Fat.Mid()
+		msnf += w * comp.MSNF.Mid()
+		sugar += w * comp.Sugar.Mid()
+		other += w * comp.Other.Mid()
 	}
 
 	sol.Achieved = PointComposition(fat, msnf, sugar, other)

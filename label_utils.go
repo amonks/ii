@@ -13,7 +13,7 @@ func recipeFromSolution(sol *Solution, specs []IngredientSpec, batches map[Ingre
 	components := make([]RecipeComponent, 0, len(specs))
 
 	for _, spec := range specs {
-		w := sol.Weights[spec.Name]
+		w := sol.Weights[spec.ID]
 		if w <= 1e-6 {
 			continue
 		}

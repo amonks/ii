@@ -71,14 +71,6 @@ func (s *scenarioIngredients) Specs() []IngredientSpec {
 	return s.specs
 }
 
-func (s *scenarioIngredients) LegacyIngredients() []Ingredient {
-	legacy := make([]Ingredient, len(s.specs))
-	for i, spec := range s.specs {
-		legacy[i] = spec.LegacyIngredient()
-	}
-	return legacy
-}
-
 func (s *scenarioIngredients) Batches() map[IngredientID]IngredientBatch {
 	copy := make(map[IngredientID]IngredientBatch, len(s.batches))
 	for id, batch := range s.batches {
@@ -385,7 +377,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	goals := GoalsFromLabel(facts, pintMass, defaultServeTempC, defaultDrawTempC, defaultShearRate)
 	target := scenarioTargetFromFacts(facts)
 
-	problem := NewFormulationProblem(builder.LegacyIngredients(), target)
+	problem := NewFormulationProblem(builder.Specs(), target)
 
 	if err := setPresenceFloor(problem, presence); err != nil {
 		return nil, err
@@ -449,11 +441,7 @@ func scenarioTargetFromFacts(facts NutritionFacts) FormulationTarget {
 
 func setPresenceFloor(p *Problem, ids []IngredientID) error {
 	for _, id := range ids {
-		name, ok := p.nameForID(id)
-		if !ok {
-			continue
-		}
-		if err := p.SetMinWeight(name, presenceFloorFraction); err != nil {
+		if err := p.SetMinWeight(id, presenceFloorFraction); err != nil {
 			return err
 		}
 	}
