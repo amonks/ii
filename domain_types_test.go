@@ -1,0 +1,68 @@
+package creamery
+
+import "testing"
+
+func TestNewIngredientDefinitionNormalizes(t *testing.T) {
+	profile := ConstituentProfile{
+		ID:   "",
+		Name: " Heavy Cream ",
+		Components: ConstituentComponents{
+			Fat:     Point(0.3),
+			MSNF:    Point(0.08),
+			Water:   Point(0.5),
+			Sucrose: Point(0.12),
+		},
+	}
+	def := NewIngredientDefinition(profile, IngredientKey("HEAVY CREAM"))
+	if def.ID == "" {
+		t.Fatalf("expected normalized ID, got empty")
+	}
+	if def.Name != "Heavy Cream" {
+		t.Fatalf("expected name normalized, got %q", def.Name)
+	}
+	if def.Key == "" {
+		t.Fatalf("expected key normalized, got empty")
+	}
+	if err := def.Profile.Components.Validate(); err != nil {
+		t.Fatalf("profile should validate: %v", err)
+	}
+}
+
+func TestLotDescriptorEffectiveProfileOverride(t *testing.T) {
+	profile := ConstituentProfile{
+		ID:   IngredientID("cream"),
+		Name: "Cream",
+		Components: ConstituentComponents{
+			Fat:     Point(0.3),
+			MSNF:    Point(0.08),
+			Water:   Point(0.5),
+			Sucrose: Point(0.12),
+		},
+	}
+	def := NewIngredientDefinition(profile, "")
+	lot := NewLot(def)
+
+	override := profile
+	override.Components.Fat = Point(0.35)
+	lot.SetProfileOverride(override)
+	effective := lot.EffectiveProfile()
+	if effective.Components.Fat.Lo != 0.35 {
+		t.Fatalf("expected override fat 0.35, got %.2f", effective.Components.Fat.Lo)
+	}
+	if effective.ID != def.ID {
+		t.Fatalf("expected override to retain definition ID")
+	}
+}
+
+func TestLotDescriptorDisplayNameFallback(t *testing.T) {
+	profile := ConstituentProfile{
+		ID:         IngredientID("test"),
+		Name:       "",
+		Components: ConstituentComponents{},
+	}
+	def := NewIngredientDefinition(profile, "")
+	lot := LotDescriptor{Definition: def}
+	if got := lot.DisplayName(); got == "" {
+		t.Fatalf("expected fallback display name, got empty")
+	}
+}
