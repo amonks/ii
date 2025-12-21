@@ -410,6 +410,20 @@ func ingredientBatchTable() map[string]ingredientBatch {
 			},
 		},
 		{
+			key:     "avacream",
+			display: "Avacream",
+			fractions: ComponentFractions{
+				Water:       Point(0.02),
+				Fat:         Point(0.08),
+				OtherSolids: Point(0.90),
+			},
+			configure: func(b *ingredientBatch) {
+				b.Hydrocolloid = true
+				b.EmulsifierPower = 0.4
+				b.WaterBinding = 4.0
+			},
+		},
+		{
 			key:     "sweetened_condensed_milk",
 			display: "Sweetened Condensed Milk",
 			fractions: ComponentFractions{

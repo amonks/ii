@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Batch Log</title>
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1f2933;
+      background: #f7fafc;
+    }
+    body {
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    h1, h2, h3 {
+      margin: 0 0 .5rem 0;
+    }
+    header {
+      margin-bottom: 2rem;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 10px 15px -12px rgba(15,23,42,0.35);
+    }
+    .stat-label {
+      font-size: .85rem;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      background: white;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -12px rgba(15,23,42,0.35);
+    }
+    th, td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      font-size: 0.85rem;
+      color: #475569;
+      text-transform: uppercase;
+    }
+    .entry {
+      background: white;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -12px rgba(15,23,42,0.35);
+    }
+    .entry-meta {
+      color: #475569;
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.1rem 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      margin-right: 0.25rem;
+    }
+    .notes {
+      margin-top: 0.6rem;
+      padding-left: 1rem;
+    }
+    .issues {
+      color: #b91c1c;
+      font-size: 0.9rem;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .metric-card {
+      background: #f8fafc;
+      border-radius: 0.4rem;
+      padding: 0.6rem;
+      border: 1px solid #e2e8f0;
+    }
+    .metric-card .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .metric-card .stat-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .metrics-table {
+      margin-top: 1rem;
+    }
+    pre.note-block {
+      background: #0f172a0d;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.3rem;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      color: #1f2933;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Batch Log</h1>
+    <p>Generated {{formatDateTime .GeneratedAt}} from {{.SourcePath}}</p>
+  </header>
+
+  <section class="summary-grid">
+    <div class="stat">
+      <div class="stat-label">Batches</div>
+      <div class="stat-value">{{.Analytics.Summary.TotalBatches}}</div>
+      <div class="stat-label">Valid {{.Analytics.Summary.ValidSnapshots}} / Invalid {{.Analytics.Summary.InvalidEntries}}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Date Range</div>
+      <div class="stat-value">{{formatDate .Analytics.Summary.EarliestDate}}</div>
+      <div class="stat-label">to {{formatDate .Analytics.Summary.LatestDate}}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Entries w/ Issues</div>
+      <div class="stat-value">{{.Analytics.Summary.EntriesWithIssues}}</div>
+      <div class="stat-label">{{.Analytics.Summary.EntriesMissingDate}} missing dates</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Tracked Ingredients</div>
+      <div class="stat-value">{{len .Analytics.Summary.IngredientTotals}}</div>
+      <div class="stat-label">unique ingredients</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Top Ingredients</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ingredient</th>
+          <th>Total Mass (kg)</th>
+          <th>Appearances</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Analytics.Summary.IngredientTotals}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td>{{printf "%.2f" .TotalMassKg}}</td>
+          <td>{{.BatchCount}}</td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="3">No ingredient data yet.</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Entries</h2>
+    {{range .Analytics.Entries}}
+    <article class="entry">
+      <h3>{{.Entry.Label}}</h3>
+      <div class="entry-meta">
+        {{if .Entry.Recipe}}<strong>{{.Entry.Recipe}}</strong>{{end}}
+      </div>
+      {{if .Snapshot}}
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="stat-label">Total Mass</div>
+          <div class="stat-value">{{printf "%.2f kg" .Snapshot.TotalMassKg}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Water</div>
+          <div class="stat-value">{{formatPercent .Snapshot.WaterPct}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Solids</div>
+          <div class="stat-value">{{formatPercent .Snapshot.SolidsPct}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Fat</div>
+          <div class="stat-value">{{formatPercent .Snapshot.FatPct}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Total Sugars</div>
+          <div class="stat-value">{{formatPercent .Snapshot.TotalSugarsPct}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Added Sugars</div>
+          <div class="stat-value">{{formatPercent .Snapshot.AddedSugarsPct}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Ice Fraction</div>
+          <div class="stat-value">{{formatPercent .Snapshot.IceFractionAtServe}}</div>
+        </div>
+        <div class="metric-card">
+          <div class="stat-label">Cost</div>
+          <div class="stat-value">{{formatCurrencyPerKg .Snapshot.CostPerKg}}</div>
+        </div>
+      </div>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th colspan="2">Composition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Water</td><td>{{formatPercent .Snapshot.WaterPct}}</td></tr>
+          <tr><td>Solids</td><td>{{formatPercent .Snapshot.SolidsPct}}</td></tr>
+          <tr><td>Fat</td><td>{{formatPercent .Snapshot.FatPct}}</td></tr>
+          <tr><td>Protein</td><td>{{formatPercent .Snapshot.ProteinPct}}</td></tr>
+          <tr><td>Lactose</td><td>{{formatPercent .Snapshot.LactosePct}}</td></tr>
+          <tr><td>Total sugars</td><td>{{formatPercent .Snapshot.TotalSugarsPct}}</td></tr>
+          <tr><td>Added sugars</td><td>{{formatPercent .Snapshot.AddedSugarsPct}}</td></tr>
+        </tbody>
+      </table>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th colspan="2">Process Metrics</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Freezing point</td><td>{{printf "%.2f °C" .Snapshot.FreezingPointC}}</td></tr>
+          <tr><td>Viscosity @ serve</td><td>{{printf "%.4f Pa·s" .Snapshot.ViscosityAtServe}}</td></tr>
+          <tr><td>Estimated overrun</td><td>{{formatPercent .Snapshot.OverrunEstimate}}</td></tr>
+          <tr><td>Hardness index</td><td>{{printf "%.2f" .Snapshot.HardnessIndex}}</td></tr>
+          <tr><td>Meltdown index</td><td>{{printf "%.2f" .Snapshot.MeltdownIndex}}</td></tr>
+          <tr><td>Lactose supersat.</td><td>{{printf "%.2f×" .Snapshot.LactoseSupersaturation}}</td></tr>
+          <tr><td>Freezer load</td><td>{{printf "%.1f kJ" .Snapshot.FreezerLoadKJ}}</td></tr>
+        </tbody>
+      </table>
+      {{end}}
+      {{if .Issues}}
+      <div class="issues">
+        Issues: {{join .Issues "; "}}
+      </div>
+      {{end}}
+      {{if .Entry.ProcessNotes}}
+      <div class="notes">
+        <div><strong>Process</strong></div>
+        {{range .Entry.ProcessNotes}}
+        <pre class="note-block">{{.}}</pre>
+        {{end}}
+      </div>
+      {{end}}
+      {{if .Entry.TastingNotes}}
+      <div class="notes">
+        <div><strong>Tasting</strong></div>
+        {{range .Entry.TastingNotes}}
+        <pre class="note-block">{{.}}</pre>
+        {{end}}
+      </div>
+      {{end}}
+    </article>
+    {{else}}
+    <p>No entries found.</p>
+    {{end}}
+  </section>
+</body>
+</html>
