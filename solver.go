@@ -572,14 +572,22 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 		Lots:    make(map[IngredientID]IngredientLot, len(ids)),
 	}
 
+	blend := make([]BlendComponent, 0, len(weights))
 	for i, w := range weights {
 		id := ids[i]
 		sol.Weights[id] = w
 		sol.Names[id] = names[i]
 		if lot, ok := s.Problem.LotByID(id); ok {
 			sol.Lots[id] = lot
+			if w > 0 {
+				blend = append(blend, BlendComponent{
+					Lot:    lot,
+					Weight: w,
+				})
+			}
 		}
 	}
+	sol.Blend = Blend{Components: blend}
 
 	components := sumComponents(weights, s.Problem.entries)
 	sol.Components = components

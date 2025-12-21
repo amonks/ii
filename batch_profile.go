@@ -29,6 +29,21 @@ func BuildBatchProfile(weights map[IngredientID]float64, specs []IngredientSpec,
 	return profile
 }
 
+// BuildBatchProfileFromBlend aggregates components directly from a blend.
+func BuildBatchProfileFromBlend(blend Blend) BatchProfile {
+	var profile BatchProfile
+	for _, comp := range blend.Components {
+		if comp.Weight <= 0 {
+			continue
+		}
+		sourceProfile := comp.Lot.EffectiveProfile()
+		accumulateProfile(&profile.Components, sourceProfile, comp.Weight)
+		addSweetenerContribution(&profile.Sweeteners, sourceProfile, comp.Weight)
+	}
+	finalizeSweetenerTotals(&profile.Sweeteners)
+	return profile
+}
+
 func accumulateProfile(total *ConstituentComponents, profile ConstituentProfile, weight float64) {
 	if weight <= 0 {
 		return

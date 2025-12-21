@@ -244,6 +244,9 @@ type SweetenerAnalysis struct {
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
 func AnalyzeSweeteners(sol *Solution, specs []IngredientSpec) SweetenerAnalysis {
+	if len(sol.Blend.Components) > 0 {
+		return BuildBatchProfileFromBlend(sol.Blend).Sweeteners
+	}
 	profile := BuildBatchProfile(sol.Weights, specs, sol.Lots)
 	return profile.Sweeteners
 }

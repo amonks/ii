@@ -13,20 +13,34 @@ func recipeFromSolution(sol *Solution, specs []IngredientSpec, goals LabelGoals,
 		batchMass = 100
 	}
 
-	for _, spec := range specs {
-		w := sol.Weights[spec.ID]
-		if w <= 1e-6 {
-			continue
+	if len(sol.Blend.Components) > 0 {
+		blend := sol.Blend.AsFractions()
+		for _, comp := range blend.Components {
+			if comp.Weight <= 1e-6 {
+				continue
+			}
+			mass := comp.Weight * batchMass
+			components = append(components, RecipeComponent{
+				Ingredient: comp.Lot,
+				MassKg:     mass,
+			})
 		}
-		detail, ok := sol.Lots[spec.ID]
-		if !ok {
-			detail = NewIngredientLot(spec)
+	} else {
+		for _, spec := range specs {
+			w := sol.Weights[spec.ID]
+			if w <= 1e-6 {
+				continue
+			}
+			detail, ok := sol.Lots[spec.ID]
+			if !ok {
+				detail = NewIngredientLot(spec)
+			}
+			mass := w * batchMass
+			components = append(components, RecipeComponent{
+				Ingredient: detail,
+				MassKg:     mass,
+			})
 		}
-		mass := w * batchMass
-		components = append(components, RecipeComponent{
-			Ingredient: detail,
-			MassKg:     mass,
-		})
 	}
 
 	recipe, err := NewRecipe(components, goals.Overrun)
