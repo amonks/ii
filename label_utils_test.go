@@ -3,7 +3,7 @@ package creamery
 import "testing"
 
 func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
-	spec := IngredientSpec{
+	spec := Ingredient{
 		ID:   IngredientID("sucrose"),
 		Name: "Fancy Sugar",
 		Profile: ConstituentProfile{
@@ -48,7 +48,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		IngredientID("sucrose"): batch,
 	}
 
-	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientSpec{spec}, batches, goals, 0)
+	recipe, _, _, _, err := recipeFromSolution(sol, []Ingredient{spec}, batches, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}

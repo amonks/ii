@@ -1,8 +1,8 @@
 package creamery
 
-// specFromBatch builds an IngredientSpec from a detailed batch entry, overriding
+// specFromBatch builds an Ingredient from a detailed batch entry, overriding
 // the display name when provided.
-func specFromBatch(key, displayName string) IngredientSpec {
+func specFromBatch(key, displayName string) Ingredient {
 	batch, ok := IngredientBatchTable()[key]
 	if !ok {
 		return SpecFromComposition(displayName, Composition{})
@@ -114,8 +114,8 @@ var (
 )
 
 // StandardSpecs returns a slice of commonly used ingredient specs.
-func StandardSpecs() []IngredientSpec {
-	return []IngredientSpec{
+func StandardSpecs() []Ingredient {
+	return []Ingredient{
 		HeavyCream,
 		LightCream,
 		WholeMilk,
@@ -136,9 +136,9 @@ func StandardSpecs() []IngredientSpec {
 }
 
 // StandardSpecMap provides the same specs keyed by their IngredientID.
-func StandardSpecMap() map[IngredientID]IngredientSpec {
+func StandardSpecMap() map[IngredientID]Ingredient {
 	specs := StandardSpecs()
-	lib := make(map[IngredientID]IngredientSpec, len(specs))
+	lib := make(map[IngredientID]Ingredient, len(specs))
 	for _, spec := range specs {
 		lib[spec.ID] = spec
 	}

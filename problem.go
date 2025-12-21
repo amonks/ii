@@ -8,7 +8,7 @@ import (
 
 // Problem defines an ice cream formulation problem.
 type Problem struct {
-	Specs []IngredientSpec
+	Specs []Ingredient
 
 	Target FormulationTarget
 
@@ -21,13 +21,13 @@ type Problem struct {
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
-func NewProblem(specs []IngredientSpec, target Composition) *Problem {
+func NewProblem(specs []Ingredient, target Composition) *Problem {
 	return NewFormulationProblem(specs, FormulationFromComposition(target))
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
-func NewFormulationProblem(specs []IngredientSpec, target FormulationTarget) *Problem {
-	canonical := make([]IngredientSpec, len(specs))
+func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Problem {
+	canonical := make([]Ingredient, len(specs))
 	specIndex := make(map[IngredientID]int, len(specs))
 	compositions := make([]Composition, len(specs))
 	for i, spec := range specs {
@@ -81,10 +81,10 @@ func (p *Problem) compositionForIndex(i int) Composition {
 	return p.compositions[i]
 }
 
-func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
+func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
 	idx, ok := p.specIndex[id]
 	if !ok {
-		return IngredientSpec{}, false
+		return Ingredient{}, false
 	}
 	return p.Specs[idx], true
 }
@@ -256,7 +256,7 @@ func (s Solution) String() string {
 
 // ImpliedMSNF calculates what composition a variable ingredient must have
 // to achieve the target, given the weights of all other ingredients.
-func (s Solution) ImpliedMSNF(specs []IngredientSpec, target Composition, id IngredientID) (Interval, bool) {
+func (s Solution) ImpliedMSNF(specs []Ingredient, target Composition, id IngredientID) (Interval, bool) {
 	varSpecIndex := -1
 	for i, spec := range specs {
 		if spec.ID == id {

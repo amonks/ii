@@ -52,7 +52,7 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println("### Interpreting the ingredient list")
 	fmt.Println("Using the label's ingredient order to constrain possible formulations:")
 
-	labelSpecs := []creamery.IngredientSpec{
+	labelSpecs := []creamery.Ingredient{
 		creamery.WholeMilk,
 		creamery.HeavyCream,
 		creamery.Sugar,
@@ -131,7 +131,7 @@ func TestFullWorkflow(t *testing.T) {
 		myDextrose.Profile.PODInterval().Mid(),
 		myDextrose.Profile.PACInterval().Mid())
 
-	specs := []creamery.IngredientSpec{
+	specs := []creamery.Ingredient{
 		myCream,
 		myMilk,
 		myNFDM,

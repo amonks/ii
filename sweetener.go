@@ -243,7 +243,7 @@ type SweetenerAnalysis struct {
 }
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
-func AnalyzeSweeteners(sol *Solution, specs []IngredientSpec) SweetenerAnalysis {
+func AnalyzeSweeteners(sol *Solution, specs []Ingredient) SweetenerAnalysis {
 	var analysis SweetenerAnalysis
 
 	for _, spec := range specs {

@@ -23,14 +23,14 @@ type LabelScenarioResult struct {
 	ServingSizeGrams float64
 	Metrics          map[string]float64
 	PintMassGrams    float64
-	Specs            []IngredientSpec
+	Specs            []Ingredient
 	BatchDetails     map[IngredientID]IngredientBatch
 }
 
 type scenarioIngredients struct {
 	table    map[string]IngredientBatch
 	batches  map[IngredientID]IngredientBatch
-	specs    []IngredientSpec
+	specs    []Ingredient
 	nameToID map[string]IngredientID
 }
 
@@ -38,7 +38,7 @@ func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
 		table:    IngredientBatchTable(),
 		batches:  make(map[IngredientID]IngredientBatch),
-		specs:    make([]IngredientSpec, 0),
+		specs:    make([]Ingredient, 0),
 		nameToID: make(map[string]IngredientID),
 	}
 }
@@ -67,7 +67,7 @@ func (s *scenarioIngredients) addDetail(detail IngredientBatch) {
 	s.specs = append(s.specs, ingredientSpecFromBatch(detail))
 }
 
-func (s *scenarioIngredients) Specs() []IngredientSpec {
+func (s *scenarioIngredients) Specs() []Ingredient {
 	return s.specs
 }
 
@@ -422,7 +422,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	}, nil
 }
 
-func ingredientSpecFromBatch(detail IngredientBatch) IngredientSpec {
+func ingredientSpecFromBatch(detail IngredientBatch) Ingredient {
 	return SpecFromProfile(detail.ToProfile())
 }
 
