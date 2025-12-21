@@ -2,13 +2,6 @@ package creamery
 
 import "sync"
 
-// NewLotDescriptor constructs a lot descriptor from a spec value.
-func NewLotDescriptor(spec IngredientDefinition) LotDescriptor {
-	normalized := normalizeSpec(spec)
-	definition := normalized
-	return NewLot(&definition)
-}
-
 // IngredientCatalog exposes canonical ingredient defs and their default lots.
 type IngredientCatalog struct {
 	defs  map[IngredientID]*IngredientDefinition

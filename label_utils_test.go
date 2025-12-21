@@ -39,7 +39,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Overrun:     0,
 	}
 
-	inst := NewLotDescriptor(spec)
+	inst := spec.DefaultLot()
 	inst.Label = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 

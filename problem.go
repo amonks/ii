@@ -69,7 +69,7 @@ type Problem struct {
 func NewProblem(specs []IngredientDefinition, target Composition) *Problem {
 	lots := make([]LotDescriptor, len(specs))
 	for i, spec := range specs {
-		lots[i] = NewLotDescriptor(spec)
+		lots[i] = spec.DefaultLot()
 	}
 	return NewFormulationProblem(lots, FormulationFromComposition(target))
 }

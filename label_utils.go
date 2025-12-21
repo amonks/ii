@@ -33,7 +33,7 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 			}
 			detail, ok := sol.Lots[spec.ID]
 			if !ok {
-				detail = NewLotDescriptor(spec)
+				detail = spec.DefaultLot()
 			}
 			mass := w * batchMass
 			components = append(components, RecipeComponent{

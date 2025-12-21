@@ -150,3 +150,10 @@ func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
 	def.Profile = normalizeProfile(def.Profile, def.ID, def.Name)
 	return def
 }
+
+// DefaultLot returns a lot descriptor whose profile matches the definition.
+func (def IngredientDefinition) DefaultLot() LotDescriptor {
+	normalized := normalizeDefinition(def)
+	copy := normalized
+	return NewLot(&copy)
+}
