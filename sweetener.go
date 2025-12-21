@@ -244,30 +244,8 @@ type SweetenerAnalysis struct {
 
 // AnalyzeSweeteners computes POD/PAC for a solution.
 func AnalyzeSweeteners(sol *Solution, specs []IngredientSpec) SweetenerAnalysis {
-	var analysis SweetenerAnalysis
-
-	for _, spec := range specs {
-		w := sol.Weights[spec.ID]
-		if w < 0.001 {
-			continue
-		}
-
-		profile := spec.Profile
-		addedPOD := profile.AddedPODInterval().Mid()
-		lactosePOD := profile.LactosePODInterval().Mid()
-		addedPAC := profile.AddedPACInterval().Mid()
-		lactosePAC := profile.LactosePACInterval().Mid()
-
-		analysis.AddedSugarPOD += w * addedPOD
-		analysis.LactosePOD += w * lactosePOD
-		analysis.AddedSugarPAC += w * addedPAC
-		analysis.LactosePAC += w * lactosePAC
-	}
-
-	analysis.TotalPOD = analysis.AddedSugarPOD + analysis.LactosePOD
-	analysis.TotalPAC = analysis.AddedSugarPAC + analysis.LactosePAC
-
-	return analysis
+	profile := BuildBatchProfile(sol.Weights, specs, sol.Lots)
+	return profile.Sweeteners
 }
 
 // EquivalentSucrose returns the amount of sucrose that would give the same sweetness.

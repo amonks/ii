@@ -24,6 +24,7 @@ type LabelScenarioResult struct {
 	Metrics          BatchSnapshot
 	PintMassGrams    float64
 	Specs            []IngredientSpec
+	BatchProfile     BatchProfile
 	BatchDetails     map[IngredientID]IngredientLot
 }
 
@@ -401,6 +402,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 
 	problem := NewFormulationProblem(builder.Lots(), target)
 	problem.OverrideLots(builder.Batches())
+	specs := builder.Specs()
 
 	if err := setPresenceFloor(problem, presence); err != nil {
 		return nil, err
@@ -423,11 +425,12 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		return nil, fmt.Errorf("%s LP infeasible: %w", name, err)
 	}
 
-	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, builder.Specs(), goals, facts.SodiumMg)
+	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, specs, goals, facts.SodiumMg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", name, err)
 	}
 
+	batchProfile := BuildBatchProfile(solution.Weights, specs, solution.Lots)
 	batchDetails := make(map[IngredientID]IngredientLot, len(solution.Lots))
 	for id, lot := range solution.Lots {
 		batchDetails[id] = lot
@@ -445,7 +448,8 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		ServingSizeGrams: serving,
 		Metrics:          metrics,
 		PintMassGrams:    pintMass,
-		Specs:            builder.Specs(),
+		Specs:            specs,
+		BatchProfile:     batchProfile,
 		BatchDetails:     batchDetails,
 	}, nil
 }

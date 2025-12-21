@@ -590,19 +590,7 @@ func sumComponents(weights []float64, entries []ingredientEntry) ConstituentComp
 		if w <= 0 {
 			continue
 		}
-		comps := entries[i].profile.Components
-		agg.Water = agg.Water.Add(comps.Water.Scale(w))
-		agg.Fat = agg.Fat.Add(comps.Fat.Scale(w))
-		agg.MSNF = agg.MSNF.Add(entries[i].profile.MSNFInterval().Scale(w))
-		agg.Protein = agg.Protein.Add(comps.Protein.Scale(w))
-		agg.Lactose = agg.Lactose.Add(comps.Lactose.Scale(w))
-		agg.Sucrose = agg.Sucrose.Add(comps.Sucrose.Scale(w))
-		agg.Glucose = agg.Glucose.Add(comps.Glucose.Scale(w))
-		agg.Fructose = agg.Fructose.Add(comps.Fructose.Scale(w))
-		agg.Maltodextrin = agg.Maltodextrin.Add(comps.Maltodextrin.Scale(w))
-		agg.Polyols = agg.Polyols.Add(comps.Polyols.Scale(w))
-		agg.Ash = agg.Ash.Add(comps.Ash.Scale(w))
-		agg.OtherSolids = agg.OtherSolids.Add(comps.OtherSolids.Scale(w))
+		accumulateProfile(&agg, entries[i].profile, w)
 	}
 	return agg
 }
