@@ -23,11 +23,11 @@ func main() {
 	}
 
 	const batchMass = 100.0
-	pantry := creamery.DetailedIngredientTable()
+	pantry := creamery.IngredientBatchTable()
 
 	keys := make([]string, 0, len(components))
 	weights := make([]float64, 0, len(components))
-	table := make(map[string]creamery.DetailedIngredient, len(components))
+	table := make(map[string]creamery.IngredientBatch, len(components))
 	recipeComponents := make([]creamery.RecipeComponent, 0, len(components))
 
 	for _, comp := range components {

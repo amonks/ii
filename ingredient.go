@@ -238,3 +238,14 @@ func StandardProfiles() map[IngredientID]ConstituentProfile {
 	}
 	return profiles
 }
+
+// StandardSpecs returns ingredient specs for the common ingredient library.
+func StandardSpecs() map[IngredientID]IngredientSpec {
+	lib := StandardLibrary()
+	specs := make(map[IngredientID]IngredientSpec, len(lib))
+	for _, ing := range lib {
+		spec := SpecFromComposition(ing.Name, ing.Comp, ing.Sweetener)
+		specs[spec.ID] = spec
+	}
+	return specs
+}

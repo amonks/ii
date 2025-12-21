@@ -2,30 +2,30 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, ingredients []Ingredient, detailed map[string]DetailedIngredient, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, map[string]float64, error) {
+func recipeFromSolution(sol *Solution, specs []IngredientSpec, batches map[string]IngredientBatch, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, map[string]float64, error) {
 	if sol == nil {
 		return nil, NutritionFacts{}, 0, nil, fmt.Errorf("nil solution")
 	}
 
-	keys := make([]string, 0, len(ingredients))
-	weights := make([]float64, 0, len(ingredients))
-	table := make(map[string]DetailedIngredient, len(ingredients))
-	components := make([]RecipeComponent, 0, len(ingredients))
+	keys := make([]string, 0, len(specs))
+	weights := make([]float64, 0, len(specs))
+	table := make(map[string]IngredientBatch, len(specs))
+	components := make([]RecipeComponent, 0, len(specs))
 
-	for _, ing := range ingredients {
-		w := sol.Weights[ing.Name]
+	for _, spec := range specs {
+		w := sol.Weights[spec.Name]
 		if w <= 1e-6 {
 			continue
 		}
-		detail, ok := detailed[ing.Name]
+		detail, ok := batches[spec.Name]
 		if !ok {
-			return nil, NutritionFacts{}, 0, nil, fmt.Errorf("missing detailed composition for %s", ing.Name)
+			return nil, NutritionFacts{}, 0, nil, fmt.Errorf("missing detailed composition for %s", spec.Name)
 		}
 		mass := w * goals.BatchMassKG
 		entry := detail
-		keys = append(keys, ing.Name)
+		keys = append(keys, spec.Name)
 		weights = append(weights, mass)
-		table[ing.Name] = entry
+		table[spec.Name] = entry
 		components = append(components, RecipeComponent{
 			Ingredient: &entry,
 			MassKg:     mass,

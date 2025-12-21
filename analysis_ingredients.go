@@ -1,7 +1,7 @@
 package creamery
 
-// All composition values are expressed per kilogram of ingredient mass.
-type DetailedIngredient struct {
+// IngredientBatch represents a concrete ingredient lot (per-kilogram basis).
+type IngredientBatch struct {
 	ID                 IngredientID
 	Name               string
 	Water              float64
@@ -36,7 +36,7 @@ type DetailedIngredient struct {
 	AddedSugarsMax     float64
 }
 
-func cloneDetailed(base DetailedIngredient, overrides func(*DetailedIngredient)) DetailedIngredient {
+func cloneBatch(base IngredientBatch, overrides func(*IngredientBatch)) IngredientBatch {
 	copy := base
 	overrides(&copy)
 	if copy.Name == "" {
@@ -46,11 +46,10 @@ func cloneDetailed(base DetailedIngredient, overrides func(*DetailedIngredient))
 	return copy
 }
 
-// DetailedIngredientTable returns a map of rich ingredient definitions keyed by name.
+// IngredientBatchTable returns a map of rich ingredient definitions keyed by name.
 // This is a Go translation of non-linear/creamery/ingredients.py::default_ingredients.
-
-func DetailedIngredientTable() map[string]DetailedIngredient {
-	table := map[string]DetailedIngredient{
+func IngredientBatchTable() map[string]IngredientBatch {
+	table := map[string]IngredientBatch{
 		"water": {
 			ID:          NewIngredientID("water"),
 			Name:        "water",
@@ -423,7 +422,7 @@ func DetailedIngredientTable() map[string]DetailedIngredient {
 		table[name] = ing
 	}
 
-	sugarFields := func(name string, fields []func(DetailedIngredient) float64) {
+	sugarFields := func(name string, fields []func(IngredientBatch) float64) {
 		ing, ok := table[name]
 		if !ok {
 			return
@@ -460,20 +459,20 @@ func DetailedIngredientTable() map[string]DetailedIngredient {
 
 	setLactoseRange(append(dairyKeys, "cream_serum", "milk", "nonfat_milk"))
 
-	sugarFields("sucrose", []func(DetailedIngredient) float64{func(i DetailedIngredient) float64 { return i.Sucrose }})
-	sugarFields("dextrose", []func(DetailedIngredient) float64{func(i DetailedIngredient) float64 { return i.Glucose }})
-	sugarFields("fructose", []func(DetailedIngredient) float64{func(i DetailedIngredient) float64 { return i.Fructose }})
-	sugarFields("corn_syrup_42", []func(DetailedIngredient) float64{
-		func(i DetailedIngredient) float64 { return i.Glucose },
-		func(i DetailedIngredient) float64 { return i.Fructose },
-		func(i DetailedIngredient) float64 { return i.Maltodextrin },
+	sugarFields("sucrose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Sucrose }})
+	sugarFields("dextrose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Glucose }})
+	sugarFields("fructose", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Fructose }})
+	sugarFields("corn_syrup_42", []func(IngredientBatch) float64{
+		func(i IngredientBatch) float64 { return i.Glucose },
+		func(i IngredientBatch) float64 { return i.Fructose },
+		func(i IngredientBatch) float64 { return i.Maltodextrin },
 	})
-	sugarFields("tapioca_syrup", []func(DetailedIngredient) float64{
-		func(i DetailedIngredient) float64 { return i.Glucose },
-		func(i DetailedIngredient) float64 { return i.Fructose },
-		func(i DetailedIngredient) float64 { return i.Maltodextrin },
+	sugarFields("tapioca_syrup", []func(IngredientBatch) float64{
+		func(i IngredientBatch) float64 { return i.Glucose },
+		func(i IngredientBatch) float64 { return i.Fructose },
+		func(i IngredientBatch) float64 { return i.Maltodextrin },
 	})
-	sugarFields("maltodextrin10", []func(DetailedIngredient) float64{func(i DetailedIngredient) float64 { return i.Maltodextrin }})
+	sugarFields("maltodextrin10", []func(IngredientBatch) float64{func(i IngredientBatch) float64 { return i.Maltodextrin }})
 
 	for name, ing := range table {
 		if ing.SaturatedFat == 0 && ing.Fat > 0 {

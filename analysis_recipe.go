@@ -49,7 +49,7 @@ type ProductionSettings struct {
 
 // RecipeComponent couples an ingredient with a batch weight (kg).
 type RecipeComponent struct {
-	Ingredient *DetailedIngredient
+	Ingredient *IngredientBatch
 	MassKg     float64
 }
 
@@ -91,7 +91,7 @@ func NewRecipe(components []RecipeComponent, overrun float64) (*Recipe, error) {
 	}, nil
 }
 
-func NewRecipeFromWeights(ingredients []*DetailedIngredient, weights []float64, overrun float64) (*Recipe, error) {
+func NewRecipeFromWeights(ingredients []*IngredientBatch, weights []float64, overrun float64) (*Recipe, error) {
 	if len(ingredients) != len(weights) {
 		return nil, errors.New("ingredient and weight slices must have equal length")
 	}
@@ -161,11 +161,11 @@ func (r *Recipe) Fractions() map[string]float64 {
 	return fractions
 }
 
-func (r *Recipe) namedWeights() ([]string, []float64, map[string]DetailedIngredient) {
+func (r *Recipe) namedWeights() ([]string, []float64, map[string]IngredientBatch) {
 	index := make(map[string]int)
 	keys := make([]string, 0, len(r.Components))
 	weights := make([]float64, 0, len(r.Components))
-	table := make(map[string]DetailedIngredient, len(r.Components))
+	table := make(map[string]IngredientBatch, len(r.Components))
 
 	for _, comp := range r.Components {
 		if comp.MassKg <= 0 || comp.Ingredient == nil {

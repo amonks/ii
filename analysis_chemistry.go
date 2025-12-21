@@ -24,7 +24,7 @@ func defaultMixOptions(opts MixOptions) MixOptions {
 	return opts
 }
 
-func componentSums(keys []string, weights []float64, ingredients map[string]DetailedIngredient) map[string]float64 {
+func componentSums(keys []string, weights []float64, ingredients map[string]IngredientBatch) map[string]float64 {
 	totals := map[string]float64{
 		"total":             0,
 		"water":             0,
@@ -208,7 +208,7 @@ func freezerLoad(totals map[string]float64, drawTemp float64, iceFraction float6
 	return cp*totals["total"]*deltaT + latent
 }
 
-func BuildProperties(keys []string, weights []float64, ingredients map[string]DetailedIngredient, opts MixOptions) map[string]float64 {
+func BuildProperties(keys []string, weights []float64, ingredients map[string]IngredientBatch, opts MixOptions) map[string]float64 {
 	opts = defaultMixOptions(opts)
 	totals := componentSums(keys, weights, ingredients)
 	safeTotal := math.Max(1e-9, totals["total"])

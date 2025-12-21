@@ -26,22 +26,22 @@ type LabelScenarioResult struct {
 }
 
 type scenarioIngredients struct {
-	table       map[string]DetailedIngredient
-	details     map[string]DetailedIngredient
-	ingredients []Ingredient
+	table       map[string]IngredientBatch
+	batches     map[string]IngredientBatch
+	specs       []IngredientSpec
 }
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
-		table:       DetailedIngredientTable(),
-		details:     make(map[string]DetailedIngredient),
-		ingredients: make([]Ingredient, 0),
+		table:       IngredientBatchTable(),
+		batches:     make(map[string]IngredientBatch),
+		specs:       make([]IngredientSpec, 0),
 	}
 }
 
-func (s *scenarioIngredients) addClone(key, name string, override func(*DetailedIngredient), sweetener SweetenerProps) {
+func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientBatch), sweetener SweetenerProps) {
 	base := s.table[key]
-	detail := cloneDetailed(base, func(d *DetailedIngredient) {
+	detail := cloneBatch(base, func(d *IngredientBatch) {
 		d.Name = name
 		if override != nil {
 			override(d)
@@ -50,21 +50,29 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*Detailed
 	s.addDetail(detail, sweetener)
 }
 
-func (s *scenarioIngredients) addCustom(detail DetailedIngredient, sweetener SweetenerProps) {
+func (s *scenarioIngredients) addCustom(detail IngredientBatch, sweetener SweetenerProps) {
 	s.addDetail(detail, sweetener)
 }
 
-func (s *scenarioIngredients) addDetail(detail DetailedIngredient, sweetener SweetenerProps) {
-	s.details[detail.Name] = detail
-	s.ingredients = append(s.ingredients, ingredientFromDetail(detail, sweetener))
+func (s *scenarioIngredients) addDetail(detail IngredientBatch, sweetener SweetenerProps) {
+	s.batches[detail.Name] = detail
+	s.specs = append(s.specs, ingredientSpecFromBatch(detail, sweetener))
 }
 
-func (s *scenarioIngredients) Ingredients() []Ingredient {
-	return s.ingredients
+func (s *scenarioIngredients) Specs() []IngredientSpec {
+	return s.specs
 }
 
-func (s *scenarioIngredients) Details() map[string]DetailedIngredient {
-	return s.details
+func (s *scenarioIngredients) LegacyIngredients() []Ingredient {
+	legacy := make([]Ingredient, len(s.specs))
+	for i, spec := range s.specs {
+		legacy[i] = spec.LegacyIngredient()
+	}
+	return legacy
+}
+
+func (s *scenarioIngredients) Batches() map[string]IngredientBatch {
+	return s.batches
 }
 
 // SolveBenAndJerryVanilla recreates the Ben & Jerry's Vanilla label problem.
@@ -305,7 +313,7 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 	builder.addClone("lecithin", "sunflower_lecithin", nil, SweetenerProps{})
 	builder.addClone("locust_bean_gum", "carob_bean_gum", nil, SweetenerProps{})
 	builder.addClone("guar_gum", "guar_gum", nil, SweetenerProps{})
-	builder.addClone("vanilla_extract", "natural_flavor", func(d *DetailedIngredient) {
+	builder.addClone("vanilla_extract", "natural_flavor", func(d *IngredientBatch) {
 		d.Water = 0.60
 		d.OtherSolids = 0.40
 	}, SweetenerProps{})
@@ -351,7 +359,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	target := scenarioTargetFromFacts(facts)
 
 	problem := &Problem{
-		Ingredients:      builder.Ingredients(),
+		Ingredients:      builder.LegacyIngredients(),
 		Target:           target,
 		WeightBounds:     make(map[string]Interval),
 		OrderConstraints: false,
@@ -378,7 +386,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		return nil, fmt.Errorf("%s LP infeasible: %w", name, err)
 	}
 
-	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, builder.Ingredients(), builder.Details(), goals, facts.SodiumMg)
+	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, builder.Specs(), builder.Batches(), goals, facts.SodiumMg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", name, err)
 	}
@@ -398,20 +406,8 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	}, nil
 }
 
-func ingredientFromDetail(detail DetailedIngredient, sweetener SweetenerProps) Ingredient {
-	msnf := detail.Protein + detail.Lactose + detail.Ash
-	sugar := detail.Sucrose + detail.Glucose + detail.Fructose + detail.Maltodextrin + detail.Polyols
-	comp := Composition{
-		Fat:   Point(detail.Fat),
-		MSNF:  Point(msnf),
-		Sugar: Point(sugar),
-		Other: Point(detail.OtherSolids),
-	}
-	return Ingredient{
-		Name:      detail.Name,
-		Comp:      comp,
-		Sweetener: sweetener,
-	}
+func ingredientSpecFromBatch(detail IngredientBatch, sweetener SweetenerProps) IngredientSpec {
+	return SpecFromProfile(detail.ToProfile(), sweetener)
 }
 
 func scenarioTargetFromFacts(facts NutritionFacts) Composition {
