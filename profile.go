@@ -245,6 +245,14 @@ func (c ConstituentComponents) AddedSugarsInterval() Interval {
 		Add(c.Polyols)
 }
 
+// EffectiveMSNF returns the MSNF interval or derives it from components when missing.
+func (c ConstituentComponents) EffectiveMSNF() Interval {
+	if c.MSNF.Lo != 0 || c.MSNF.Hi != 0 {
+		return c.MSNF
+	}
+	return c.Protein.Add(c.Lactose).Add(c.Ash)
+}
+
 // AddedSugarsInterval exposes the summed added sugars interval on the profile.
 func (p ConstituentProfile) AddedSugarsInterval() Interval {
 	return p.Components.AddedSugarsInterval()
@@ -253,6 +261,26 @@ func (p ConstituentProfile) AddedSugarsInterval() Interval {
 // LactoseInterval returns the lactose interval for the profile.
 func (p ConstituentProfile) LactoseInterval() Interval {
 	return p.Components.Lactose
+}
+
+// ProteinInterval returns the protein interval for the profile.
+func (p ConstituentProfile) ProteinInterval() Interval {
+	return p.Components.Protein
+}
+
+// MSNFInterval returns the milk solids non-fat interval for the profile.
+func (p ConstituentProfile) MSNFInterval() Interval {
+	return p.Components.EffectiveMSNF()
+}
+
+// WaterInterval returns the water interval for the profile.
+func (p ConstituentProfile) WaterInterval() Interval {
+	return p.Components.Water
+}
+
+// OtherSolidsInterval returns the other solids interval for the profile.
+func (p ConstituentProfile) OtherSolidsInterval() Interval {
+	return p.Components.OtherSolids
 }
 
 // TotalSugarInterval returns added sugars plus lactose.

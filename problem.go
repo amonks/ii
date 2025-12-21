@@ -16,8 +16,8 @@ type Problem struct {
 	OrderConstraints bool
 	Constraints      []LinearConstraint
 
-	specIndex    map[IngredientID]int
-	compositions []Composition
+	specIndex map[IngredientID]int
+	profiles  []ConstituentProfile
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
@@ -29,7 +29,7 @@ func NewProblem(specs []Ingredient, target Composition) *Problem {
 func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Problem {
 	canonical := make([]Ingredient, len(specs))
 	specIndex := make(map[IngredientID]int, len(specs))
-	compositions := make([]Composition, len(specs))
+	profiles := make([]ConstituentProfile, len(specs))
 	for i, spec := range specs {
 		if spec.ID == "" {
 			spec.ID = NewIngredientID(spec.Name)
@@ -37,9 +37,15 @@ func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Proble
 		if spec.Name == "" {
 			spec.Name = spec.ID.String()
 		}
+		if spec.Profile.ID == "" {
+			spec.Profile.ID = spec.ID
+		}
+		if spec.Profile.Name == "" {
+			spec.Profile.Name = spec.Name
+		}
 		canonical[i] = spec
 		specIndex[spec.ID] = i
-		compositions[i] = CompositionFromProfile(spec.Profile)
+		profiles[i] = spec.Profile
 	}
 	return &Problem{
 		Specs:        canonical,
@@ -47,7 +53,7 @@ func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Proble
 		WeightBounds: make(map[IngredientID]Interval),
 		Constraints:  make([]LinearConstraint, 0),
 		specIndex:    specIndex,
-		compositions: compositions,
+		profiles:     profiles,
 	}
 }
 
@@ -78,7 +84,11 @@ func (p *Problem) IngredientNames() []string {
 }
 
 func (p *Problem) compositionForIndex(i int) Composition {
-	return p.compositions[i]
+	return CompositionFromProfile(p.profiles[i])
+}
+
+func (p *Problem) profileForIndex(i int) ConstituentProfile {
+	return p.profiles[i]
 }
 
 func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
@@ -171,8 +181,8 @@ func (p *Problem) Validate() error {
 		}
 		seen[spec.ID] = true
 
-		comp := p.compositionForIndex(i)
-		if err := comp.Valid(); err != nil {
+		profile := p.profileForIndex(i)
+		if err := CompositionFromProfile(profile).Valid(); err != nil {
 			return fmt.Errorf("invalid ingredient %s: %w", spec.Name, err)
 		}
 	}

@@ -10,6 +10,34 @@ import (
 
 const tolerance = 1e-9
 
+type coefficientSet struct {
+	fat        []float64
+	msnf       []float64
+	sugar      []float64
+	other      []float64
+	protein    []float64
+	lactose    []float64
+	totalSugar []float64
+	water      []float64
+	pod        []float64
+	pac        []float64
+}
+
+func newCoefficientSet(n int) coefficientSet {
+	return coefficientSet{
+		fat:        make([]float64, n),
+		msnf:       make([]float64, n),
+		sugar:      make([]float64, n),
+		other:      make([]float64, n),
+		protein:    make([]float64, n),
+		lactose:    make([]float64, n),
+		totalSugar: make([]float64, n),
+		water:      make([]float64, n),
+		pod:        make([]float64, n),
+		pac:        make([]float64, n),
+	}
+}
+
 // Solver solves ice cream formulation problems.
 type Solver struct {
 	Problem *Problem
@@ -127,15 +155,16 @@ func (s *Solver) buildLP() *lpProblem {
 	}
 
 	for i, spec := range p.Specs {
-		comp := p.compositionForIndex(i)
-		fat := comp.Fat
-		msnf := comp.MSNF
-		sugar := comp.Sugar
-		other := comp.Other
-		protein := msnf.Scale(proteinFractionOfMSNF)
-		lactose := msnf.Scale(LactoseFractionOfMSNF)
-		totalSugar := sugar.Add(lactose)
-		water := comp.Water()
+		profile := p.profileForIndex(i)
+		components := profile.Components
+		fat := components.Fat
+		msnf := profile.MSNFInterval()
+		sugar := profile.AddedSugarsInterval()
+		other := profile.OtherSolidsInterval()
+		protein := profile.ProteinInterval()
+		lactose := profile.LactoseInterval()
+		totalSugar := profile.TotalSugarInterval()
+		water := profile.WaterInterval()
 
 		lpp.fatLo[i] = fat.Lo
 		lpp.fatHi[i] = fat.Hi
@@ -154,8 +183,8 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.waterLo[i] = water.Lo
 		lpp.waterHi[i] = water.Hi
 
-		pod := spec.Profile.PODInterval()
-		pac := spec.Profile.PACInterval()
+		pod := profile.PODInterval()
+		pac := profile.PACInterval()
 		lpp.podLo[i] = pod.Lo
 		lpp.podHi[i] = pod.Hi
 		lpp.pacLo[i] = pac.Lo
@@ -175,7 +204,7 @@ func (s *Solver) buildLP() *lpProblem {
 }
 
 // buildLPWithCoeffs creates an LP with specific coefficient values.
-func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoeffs []float64) *lpProblem {
+func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	p := s.Problem
 	n := len(p.Specs)
 	ids := p.IngredientIDs()
@@ -219,11 +248,18 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		idToIndex:        idIndex,
 	}
 
-	for i, spec := range p.Specs {
-		fat := fatCoeffs[i]
-		msnf := msnfCoeffs[i]
-		sugar := sugarCoeffs[i]
-		other := otherCoeffs[i]
+	for i := range p.Specs {
+		spec := p.Specs[i]
+		fat := coeffs.fat[i]
+		msnf := coeffs.msnf[i]
+		sugar := coeffs.sugar[i]
+		other := coeffs.other[i]
+		protein := coeffs.protein[i]
+		lactose := coeffs.lactose[i]
+		totalSugar := coeffs.totalSugar[i]
+		water := coeffs.water[i]
+		pod := coeffs.pod[i]
+		pac := coeffs.pac[i]
 
 		lpp.fatLo[i] = fat
 		lpp.fatHi[i] = fat
@@ -233,12 +269,6 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		lpp.sugarHi[i] = sugar
 		lpp.otherLo[i] = other
 		lpp.otherHi[i] = other
-
-		protein := proteinFractionOfMSNF * msnf
-		lactose := LactoseFractionOfMSNF * msnf
-		totalSugar := sugar + lactose
-		water := math.Max(0, 1-(fat+msnf+sugar+other))
-
 		lpp.proteinLo[i] = protein
 		lpp.proteinHi[i] = protein
 		lpp.lactoseLo[i] = lactose
@@ -247,8 +277,6 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		lpp.totalSugarHi[i] = totalSugar
 		lpp.waterLo[i] = water
 		lpp.waterHi[i] = water
-
-		pod, pac := sweetnessFromSample(spec.Profile, msnf, sugar)
 		lpp.podLo[i] = pod
 		lpp.podHi[i] = pod
 		lpp.pacLo[i] = pac
@@ -548,12 +576,12 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 	// Compute achieved composition using ingredient midpoints
 	var fat, msnf, sugar, other float64
 	for i := range s.Problem.Specs {
-		comp := s.Problem.compositionForIndex(i)
+		profile := s.Problem.profileForIndex(i)
 		w := weights[i]
-		fat += w * comp.Fat.Mid()
-		msnf += w * comp.MSNF.Mid()
-		sugar += w * comp.Sugar.Mid()
-		other += w * comp.Other.Mid()
+		fat += w * profile.Components.Fat.Mid()
+		msnf += w * profile.MSNFInterval().Mid()
+		sugar += w * profile.AddedSugarsInterval().Mid()
+		other += w * profile.OtherSolidsInterval().Mid()
 	}
 
 	sol.Achieved = PointComposition(fat, msnf, sugar, other)

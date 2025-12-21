@@ -83,10 +83,7 @@ func ComponentNames() []string {
 // CompositionFromProfile aggregates a constituent profile back into the legacy
 // four-component composition (fat, MSNF, sugar, other).
 func CompositionFromProfile(profile ConstituentProfile) Composition {
-	msnf := profile.Components.MSNF
-	if msnf.Lo == 0 && msnf.Hi == 0 {
-		msnf = profile.Components.Protein.Add(profile.Components.Lactose).Add(profile.Components.Ash)
-	}
+	msnf := profile.MSNFInterval()
 	sugar := profile.Components.Sucrose.
 		Add(profile.Components.Glucose).
 		Add(profile.Components.Fructose).

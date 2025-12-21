@@ -1,6 +1,7 @@
 package creamery
 
 import (
+	"math"
 	"math/rand"
 )
 
@@ -20,21 +21,23 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 		var lpp *lpProblem
 
 		if varyCoeffs {
-			// Sample random coefficients within ingredient intervals
-			fat := make([]float64, n)
-			msnf := make([]float64, n)
-			sugar := make([]float64, n)
-			other := make([]float64, n)
-
+			coeffs := newCoefficientSet(n)
 			for j := range s.Problem.Specs {
-				comp := s.Problem.compositionForIndex(j)
-				fat[j] = sampleInterval(comp.Fat, rng)
-				msnf[j] = sampleInterval(comp.MSNF, rng)
-				sugar[j] = sampleInterval(comp.Sugar, rng)
-				other[j] = sampleInterval(comp.Other, rng)
+				profile := s.Problem.profileForIndex(j)
+				point := sampleProfilePoint(profile, rng)
+				coeffs.fat[j] = point.fat
+				coeffs.msnf[j] = point.msnf
+				coeffs.sugar[j] = point.addedSugar
+				coeffs.other[j] = point.other
+				coeffs.protein[j] = point.protein
+				coeffs.lactose[j] = point.lactose
+				coeffs.totalSugar[j] = point.totalSugar
+				coeffs.water[j] = point.water
+				coeffs.pod[j] = point.pod
+				coeffs.pac[j] = point.pac
 			}
 
-			lpp = s.buildLPWithCoeffs(fat, msnf, sugar, other)
+			lpp = s.buildLPWithCoeffs(coeffs)
 		} else {
 			lpp = s.buildLP()
 		}
@@ -63,6 +66,60 @@ func sampleInterval(i Interval, rng *rand.Rand) float64 {
 		return i.Lo
 	}
 	return i.Lo + rng.Float64()*(i.Hi-i.Lo)
+}
+
+type profilePoint struct {
+	fat        float64
+	msnf       float64
+	addedSugar float64
+	other      float64
+	protein    float64
+	lactose    float64
+	totalSugar float64
+	water      float64
+	pod        float64
+	pac        float64
+}
+
+func sampleProfilePoint(profile ConstituentProfile, rng *rand.Rand) profilePoint {
+	comps := profile.Components
+	point := profilePoint{
+		fat:     sampleInterval(comps.Fat, rng),
+		protein: sampleInterval(comps.Protein, rng),
+		lactose: sampleInterval(comps.Lactose, rng),
+		other:   sampleInterval(comps.OtherSolids, rng),
+		water:   sampleInterval(comps.Water, rng),
+	}
+	ash := sampleInterval(comps.Ash, rng)
+	msnf := sampleInterval(comps.MSNF, rng)
+	if msnf == 0 {
+		msnf = point.protein + point.lactose + ash
+	}
+	point.msnf = msnf
+
+	sugars := sugarMasses{
+		sucrose:      sampleInterval(comps.Sucrose, rng),
+		glucose:      sampleInterval(comps.Glucose, rng),
+		fructose:     sampleInterval(comps.Fructose, rng),
+		maltodextrin: sampleInterval(comps.Maltodextrin, rng),
+		polyols:      sampleInterval(comps.Polyols, rng),
+	}
+	point.addedSugar = sugars.sucrose + sugars.glucose + sugars.fructose + sugars.maltodextrin + sugars.polyols
+	point.totalSugar = point.addedSugar + point.lactose
+
+	addedPOD := addedPODFromMasses(sugars)
+	addedPAC := addedPACFromMasses(sugars, profile.Functionals)
+	lactosePOD := point.lactose * LactosePOD
+	lactosePAC := lactosePACFromMass(point.lactose, profile.Functionals)
+	point.pod = addedPOD + lactosePOD
+	point.pac = addedPAC + lactosePAC
+
+	if point.water <= 0 {
+		total := point.fat + point.msnf + point.addedSugar + point.other
+		point.water = math.Max(0, 1-total)
+	}
+
+	return point
 }
 
 // weightsToSolutionWithCoeffs converts weights using specific coefficients.
