@@ -51,7 +51,7 @@ func IngredientProfileTable() map[string]ConstituentProfile {
 	batches := ingredientBatchTable()
 	profiles := make(map[string]ConstituentProfile, len(batches))
 	for key, batch := range batches {
-		profiles[key] = batch.ToProfile()
+		profiles[key] = batch.ToProfile(key)
 	}
 	return profiles
 }

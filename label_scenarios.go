@@ -97,11 +97,10 @@ func (s *scenarioIngredients) Batches() map[IngredientID]LotDescriptor {
 }
 
 func renameInstance(inst LotDescriptor, name string) LotDescriptor {
-	spec := IngredientDefinition{}
-	if inst.Definition != nil {
-		spec = *inst.Definition
-	}
-	spec = renameSpec(spec, name)
+	profile := inst.EffectiveProfile()
+	profile.Name = name
+	profile.ID = NewIngredientID(name)
+	spec := SpecFromProfile(profile)
 	inst = inst.WithSpec(spec)
 	inst.Label = name
 	return inst

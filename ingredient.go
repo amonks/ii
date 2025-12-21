@@ -1,84 +1,48 @@
 package creamery
 
-// specFromCatalog builds an IngredientDefinition from the default catalog, overriding
-// the display name when provided.
-func specFromCatalog(key, displayName string) IngredientDefinition {
+// specFromCatalog builds an IngredientDefinition from the default catalog.
+func specFromCatalog(key string) IngredientDefinition {
 	inst, ok := DefaultIngredientCatalog().InstanceByKey(key)
 	if !ok {
-		if displayName == "" {
-			displayName = key
+		name := FriendlyIngredientName(key)
+		profile := ConstituentProfile{
+			ID:         NewIngredientID(name),
+			Name:       name,
+			Components: EnsureWater(ComponentFractions{}),
 		}
-		spec := IngredientDefinition{
-			ID:   NewIngredientID(displayName),
-			Name: displayName,
-			Key:  NewIngredientKey(key),
-			Profile: ConstituentProfile{
-				ID:   NewIngredientID(displayName),
-				Name: displayName,
-				Components: EnsureWater(ComponentFractions{
-					OtherSolids: Point(0),
-				}),
-			},
-		}
-		return normalizeSpec(spec)
+		return SpecFromProfile(profile)
 	}
 	def := inst.Definition
 	if def == nil {
-		if displayName == "" {
-			displayName = key
+		name := FriendlyIngredientName(key)
+		profile := ConstituentProfile{
+			ID:         NewIngredientID(name),
+			Name:       name,
+			Components: EnsureWater(ComponentFractions{}),
 		}
-		spec := IngredientDefinition{
-			ID:   NewIngredientID(displayName),
-			Name: displayName,
-			Key:  NewIngredientKey(key),
-			Profile: ConstituentProfile{
-				ID:   NewIngredientID(displayName),
-				Name: displayName,
-				Components: EnsureWater(ComponentFractions{
-					OtherSolids: Point(0),
-				}),
-			},
-		}
-		return normalizeSpec(spec)
+		return SpecFromProfile(profile)
 	}
-	spec := *def
-	if displayName != "" {
-		spec = renameSpec(spec, displayName)
-	}
-	return spec
-}
-
-func renameSpec(spec IngredientDefinition, name string) IngredientDefinition {
-	key := spec.Key
-	spec.Name = name
-	spec.ID = NewIngredientID(name)
-	spec.Profile.Name = name
-	spec.Profile.ID = spec.ID
-	spec = normalizeSpec(spec)
-	if key != "" {
-		spec.Key = key
-	}
-	return spec
+	return *def
 }
 
 // Standard ingredient specifications with typical compositions.
 var (
-	HeavyCream = specFromCatalog("heavy_cream", "Heavy Cream")
-	LightCream = specFromCatalog("light_cream", "Light Cream")
-	WholeMilk  = specFromCatalog("whole_milk", "Whole Milk")
-	SkimMilk   = specFromCatalog("skim_milk", "Skim Milk")
+	HeavyCream = specFromCatalog("heavy_cream")
+	LightCream = specFromCatalog("light_cream")
+	WholeMilk  = specFromCatalog("whole_milk")
+	SkimMilk   = specFromCatalog("skim_milk")
 
-	NonfatDryMilk          = specFromCatalog("skim_milk_powder", "Nonfat Dry Milk")
-	SweetenedCondensedMilk = specFromCatalog("sweetened_condensed_milk", "Sweetened Condensed Milk")
-	Butter                 = specFromCatalog("butter", "Butter")
-	EggYolks               = specFromCatalog("egg_yolk", "Egg Yolks")
-	Sugar                  = specFromCatalog("sucrose", "Sugar")
-	CornSyrup              = specFromCatalog("corn_syrup_42", "Corn Syrup")
-	LiquidSugar            = specFromCatalog("liquid_sugar", "Liquid Sugar")
-	CocoaPowder            = specFromCatalog("cocoa_powder", "Cocoa Powder")
-	VanillaExtract         = specFromCatalog("vanilla_extract", "Vanilla Extract")
-	Stabilizer             = specFromCatalog("stabilizer", "Stabilizer")
-	TapiocaSyrup           = specFromCatalog("tapioca_syrup", "Tapioca Syrup")
+	NonfatDryMilk          = specFromCatalog("skim_milk_powder")
+	SweetenedCondensedMilk = specFromCatalog("sweetened_condensed_milk")
+	Butter                 = specFromCatalog("butter")
+	EggYolks               = specFromCatalog("egg_yolk")
+	Sugar                  = specFromCatalog("sucrose")
+	CornSyrup              = specFromCatalog("corn_syrup_42")
+	LiquidSugar            = specFromCatalog("liquid_sugar")
+	CocoaPowder            = specFromCatalog("cocoa_powder")
+	VanillaExtract         = specFromCatalog("vanilla_extract")
+	Stabilizer             = specFromCatalog("stabilizer")
+	TapiocaSyrup           = specFromCatalog("tapioca_syrup")
 
 	NonfatMilkVariable = buildNonfatMilkVariable()
 )
@@ -104,19 +68,12 @@ func buildNonfatMilkVariable() IngredientDefinition {
 func StandardSpecs() []IngredientDefinition {
 	catalog := DefaultIngredientCatalog()
 	specs := make([]IngredientDefinition, 0, len(standardSpecKeys)+1)
-	for _, entry := range standardSpecKeys {
-		inst, ok := catalog.InstanceByKey(entry.key)
-		if !ok {
+	for _, key := range standardSpecKeys {
+		inst, ok := catalog.InstanceByKey(key)
+		if !ok || inst.Definition == nil {
 			continue
 		}
-		if inst.Definition == nil {
-			continue
-		}
-		spec := *inst.Definition
-		if entry.display != "" {
-			spec = renameSpec(spec, entry.display)
-		}
-		specs = append(specs, spec)
+		specs = append(specs, *inst.Definition)
 	}
 	specs = append(specs, NonfatMilkVariable)
 	return specs
@@ -132,23 +89,20 @@ func StandardSpecMap() map[IngredientID]IngredientDefinition {
 	return lib
 }
 
-var standardSpecKeys = []struct {
-	key     string
-	display string
-}{
-	{"heavy_cream", "Heavy Cream"},
-	{"light_cream", "Light Cream"},
-	{"whole_milk", "Whole Milk"},
-	{"skim_milk", "Skim Milk"},
-	{"skim_milk_powder", "Nonfat Dry Milk"},
-	{"sweetened_condensed_milk", "Sweetened Condensed Milk"},
-	{"butter", "Butter"},
-	{"egg_yolk", "Egg Yolks"},
-	{"sucrose", "Sugar"},
-	{"corn_syrup_42", "Corn Syrup"},
-	{"liquid_sugar", "Liquid Sugar"},
-	{"cocoa_powder", "Cocoa Powder"},
-	{"vanilla_extract", "Vanilla Extract"},
-	{"stabilizer", "Stabilizer"},
-	{"tapioca_syrup", "Tapioca Syrup"},
+var standardSpecKeys = []string{
+	"heavy_cream",
+	"light_cream",
+	"whole_milk",
+	"skim_milk",
+	"skim_milk_powder",
+	"sweetened_condensed_milk",
+	"butter",
+	"egg_yolk",
+	"sucrose",
+	"corn_syrup_42",
+	"liquid_sugar",
+	"cocoa_powder",
+	"vanilla_extract",
+	"stabilizer",
+	"tapioca_syrup",
 }

@@ -29,11 +29,10 @@ func TestStandardSpecsIncludeHeavyCream(t *testing.T) {
 }
 
 func TestCustomCatalogRegistersKeys(t *testing.T) {
-	spec := makeSpecFromFractions("My Sugar", ComponentFractions{
+	spec := makeSpecFromFractions("Fancy Sugar", ComponentFractions{
 		Sucrose: Point(1),
 	})
 	spec.Key = NewIngredientKey("custom_sugar")
-	spec = renameSpec(spec, "Fancy Sugar")
 
 	catalog := NewIngredientCatalog([]IngredientDefinition{spec})
 	inst, ok := catalog.InstanceByKey("custom_sugar")

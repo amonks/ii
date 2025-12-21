@@ -192,7 +192,7 @@ func TestWithTighterConstraints(t *testing.T) {
 	fmt.Println(bounds1)
 
 	// User decides: "I want at least 35% cream for richness"
-	if err := problem.SetMinWeightByName("Heavy Cream", 0.35); err != nil {
+	if err := problem.SetMinWeightByName(creamery.HeavyCream.Name, 0.35); err != nil {
 		t.Fatalf("failed to set min weight: %v", err)
 	}
 
@@ -203,7 +203,7 @@ func TestWithTighterConstraints(t *testing.T) {
 	fmt.Println(bounds2)
 
 	// "And I want to minimize milk powder"
-	if err := problem.SetMaxWeightByName("Nonfat Dry Milk", 0.05); err != nil {
+	if err := problem.SetMaxWeightByName(creamery.NonfatDryMilk.Name, 0.05); err != nil {
 		t.Fatalf("failed to set max weight: %v", err)
 	}
 

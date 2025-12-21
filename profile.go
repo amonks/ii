@@ -138,12 +138,19 @@ func clampInterval(i Interval, min float64) Interval {
 	return i
 }
 
-// ToProfile converts a ingredientBatch into a ConstituentProfile retaining
-// all fractional and functional metadata.
-func (d ingredientBatch) ToProfile() ConstituentProfile {
+// ToProfile converts an ingredientBatch into a ConstituentProfile retaining
+// all fractional and functional metadata. The fallbackName is typically the
+// catalog key, used to derive a human-readable display name when the batch
+// omits one.
+func (d ingredientBatch) ToProfile(fallbackName string) ConstituentProfile {
+	sourceName := d.Name
+	if sourceName == "" {
+		sourceName = fallbackName
+	}
+	name := FriendlyIngredientName(sourceName)
 	id := d.ID
 	if id == "" {
-		id = NewIngredientID(d.Name)
+		id = NewIngredientID(name)
 	}
 	lactoseLo := d.LactoseMin
 	if lactoseLo == 0 {
@@ -160,7 +167,7 @@ func (d ingredientBatch) ToProfile() ConstituentProfile {
 	}
 	profile := ConstituentProfile{
 		ID:   id,
-		Name: d.Name,
+		Name: name,
 		Components: ConstituentComponents{
 			Water:        pointInterval(d.Water),
 			Fat:          pointInterval(d.Fat),
