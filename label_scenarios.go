@@ -31,6 +31,7 @@ type scenarioIngredients struct {
 	catalog  IngredientCatalog
 	batches  map[IngredientID]IngredientLot
 	specs    []IngredientSpec
+	lots     []IngredientLot
 	nameToID map[string]IngredientID
 }
 
@@ -39,6 +40,7 @@ func newScenarioIngredients() *scenarioIngredients {
 		catalog:  DefaultIngredientCatalog(),
 		batches:  make(map[IngredientID]IngredientLot),
 		specs:    make([]IngredientSpec, 0),
+		lots:     make([]IngredientLot, 0),
 		nameToID: make(map[string]IngredientID),
 	}
 }
@@ -67,10 +69,17 @@ func (s *scenarioIngredients) addDetail(inst IngredientLot) {
 	inst.Profile = profile
 	s.batches[profile.ID] = inst
 	s.specs = append(s.specs, inst.Ingredient)
+	s.lots = append(s.lots, inst)
 }
 
 func (s *scenarioIngredients) Specs() []IngredientSpec {
 	return s.specs
+}
+
+func (s *scenarioIngredients) Lots() []IngredientLot {
+	result := make([]IngredientLot, len(s.lots))
+	copy(result, s.lots)
+	return result
 }
 
 func (s *scenarioIngredients) Batches() map[IngredientID]IngredientLot {
@@ -387,7 +396,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	goals := GoalsFromLabel(facts, pintMass, defaultServeTempC, defaultDrawTempC, defaultShearRate)
 	target := scenarioTargetFromFacts(facts)
 
-	problem := NewFormulationProblem(builder.Specs(), target)
+	problem := NewFormulationProblem(builder.Lots(), target)
 	problem.OverrideLots(builder.Batches())
 
 	if err := setPresenceFloor(problem, presence); err != nil {

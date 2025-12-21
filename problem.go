@@ -18,46 +18,48 @@ type Problem struct {
 
 	specIndex map[IngredientID]int
 	profiles  []ConstituentProfile
-	lots      map[IngredientID]IngredientLot
+	lots      []IngredientLot
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
 func NewProblem(specs []IngredientSpec, target Composition) *Problem {
-	return NewFormulationProblem(specs, FormulationFromComposition(target))
+	lots := make([]IngredientLot, len(specs))
+	for i, spec := range specs {
+		lots[i] = NewIngredientLot(spec)
+	}
+	return NewFormulationProblem(lots, FormulationFromComposition(target))
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
-func NewFormulationProblem(specs []IngredientSpec, target FormulationTarget) *Problem {
-	canonical := make([]IngredientSpec, len(specs))
-	specIndex := make(map[IngredientID]int, len(specs))
-	profiles := make([]ConstituentProfile, len(specs))
-	lots := make(map[IngredientID]IngredientLot, len(specs))
-	for i, spec := range specs {
+func NewFormulationProblem(lots []IngredientLot, target FormulationTarget) *Problem {
+	canonicalLots := make([]IngredientLot, len(lots))
+	canonicalSpecs := make([]IngredientSpec, len(lots))
+	specIndex := make(map[IngredientID]int, len(lots))
+	profiles := make([]ConstituentProfile, len(lots))
+	for i, lot := range lots {
+		spec := lot.Ingredient
 		if spec.ID == "" {
 			spec.ID = NewIngredientID(spec.Name)
 		}
 		if spec.Name == "" {
 			spec.Name = spec.ID.String()
 		}
-		if spec.Profile.ID == "" {
-			spec.Profile.ID = spec.ID
-		}
-		if spec.Profile.Name == "" {
-			spec.Profile.Name = spec.Name
-		}
-		canonical[i] = spec
+		lot.Ingredient = spec
+		profile := lot.EffectiveProfile()
+		lot.Profile = profile
+		canonicalLots[i] = lot
+		canonicalSpecs[i] = spec
 		specIndex[spec.ID] = i
-		profiles[i] = spec.Profile
-		lots[spec.ID] = NewIngredientLot(spec)
+		profiles[i] = profile
 	}
 	return &Problem{
-		Specs:        canonical,
+		Specs:        canonicalSpecs,
 		Target:       target,
 		WeightBounds: make(map[IngredientID]Interval),
 		Constraints:  make([]LinearConstraint, 0),
 		specIndex:    specIndex,
 		profiles:     profiles,
-		lots:         lots,
+		lots:         canonicalLots,
 	}
 }
 
@@ -103,14 +105,10 @@ func (p *Problem) specByID(id IngredientID) (IngredientSpec, bool) {
 	return p.Specs[idx], true
 }
 
-// LotByID returns the registered ingredient lot for the given ID, falling back
-// to the canonical spec when no override exists.
+// LotByID returns the registered ingredient lot for the given ID.
 func (p *Problem) LotByID(id IngredientID) (IngredientLot, bool) {
-	if lot, ok := p.lots[id]; ok {
-		return lot, true
-	}
-	if spec, ok := p.specByID(id); ok {
-		return NewIngredientLot(spec), true
+	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.lots) {
+		return p.lots[idx], true
 	}
 	return IngredientLot{}, false
 }
@@ -118,21 +116,30 @@ func (p *Problem) LotByID(id IngredientID) (IngredientLot, bool) {
 // OverrideLots replaces default lots with the provided ones when the spec is present.
 func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 	for id, lot := range lots {
-		if _, ok := p.specIndex[id]; !ok {
+		idx, ok := p.specIndex[id]
+		if !ok {
 			continue
 		}
+		spec := p.Specs[idx]
 		if lot.Ingredient.ID == "" {
-			lot.Ingredient.ID = id
+			lot.Ingredient.ID = spec.ID
 		}
-		p.lots[id] = lot
+		if lot.Ingredient.Name == "" {
+			lot.Ingredient.Name = spec.Name
+		}
+		profile := lot.EffectiveProfile()
+		lot.Profile = profile
+		p.lots[idx] = lot
+		p.profiles[idx] = profile
+		p.Specs[idx] = lot.Ingredient
 	}
 }
 
 // Lots returns a copy of the problem's ingredient lots.
 func (p *Problem) Lots() map[IngredientID]IngredientLot {
 	copy := make(map[IngredientID]IngredientLot, len(p.lots))
-	for id, lot := range p.lots {
-		copy[id] = lot
+	for _, lot := range p.lots {
+		copy[lot.Ingredient.ID] = lot
 	}
 	return copy
 }
