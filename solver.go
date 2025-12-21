@@ -188,13 +188,13 @@ func newComponentPairs(n int) map[componentKey]*coeffPair {
 	return pairs
 }
 
-func componentPairsFromEntries(entries []ingredientEntry) map[componentKey]*coeffPair {
-	pairs := newComponentPairs(len(entries))
-	for i, entry := range entries {
-		if entry.definition == nil {
+func componentPairsFromSlots(slots []ingredientSlot) map[componentKey]*coeffPair {
+	pairs := newComponentPairs(len(slots))
+	for i, slot := range slots {
+		if slot.definition == nil {
 			continue
 		}
-		profile := entry.lot.EffectiveProfile()
+		profile := slot.lot.EffectiveProfile()
 		for _, key := range componentKeyOrder {
 			extractor := componentExtractor(key)
 			if extractor == nil {
@@ -307,7 +307,7 @@ type lpComponentConstraint struct {
 // buildLP creates the LP formulation using midpoints of ingredient composition intervals.
 func (s *Solver) buildLP() *lpProblem {
 	p := s.Problem
-	n := len(p.entries)
+	n := len(p.slots)
 	ids := p.IngredientIDs()
 	names := p.IngredientNames()
 	idIndex := make(map[IngredientID]int, n)
@@ -317,7 +317,7 @@ func (s *Solver) buildLP() *lpProblem {
 
 	lpp := &lpProblem{
 		n:                n,
-		componentValues:  componentPairsFromEntries(p.entries),
+		componentValues:  componentPairsFromSlots(p.slots),
 		target:           p.Target,
 		targetPOD:        p.Target.POD,
 		targetPAC:        p.Target.PAC,
@@ -335,13 +335,13 @@ func (s *Solver) buildLP() *lpProblem {
 	}
 	lpp.componentConstraints = buildComponentConstraints(lpp.componentValues, p.Target)
 
-	for i, entry := range p.entries {
-		if entry.definition == nil {
+	for i, slot := range p.slots {
+		if slot.definition == nil {
 			lpp.lower[i] = 0
 			lpp.upper[i] = 1
 			continue
 		}
-		profile := entry.lot.EffectiveProfile()
+		profile := slot.lot.EffectiveProfile()
 
 		pod := profile.PODInterval()
 		pac := profile.PACInterval()
@@ -350,13 +350,12 @@ func (s *Solver) buildLP() *lpProblem {
 		lpp.pacLo[i] = pac.Lo
 		lpp.pacHi[i] = pac.Hi
 
-		if bound, ok := p.WeightBounds[entry.definition.ID]; ok {
-			lpp.lower[i] = bound.Lo
-			lpp.upper[i] = bound.Hi
-		} else {
-			lpp.lower[i] = 0
-			lpp.upper[i] = 1
+		bounds := slot.bounds
+		if bounds.Lo == 0 && bounds.Hi == 0 {
+			bounds = Range(0, 1)
 		}
+		lpp.lower[i] = bounds.Lo
+		lpp.upper[i] = bounds.Hi
 	}
 
 	return lpp
@@ -366,7 +365,7 @@ func (s *Solver) buildLP() *lpProblem {
 
 func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	p := s.Problem
-	n := len(p.entries)
+	n := len(p.slots)
 	ids := s.Problem.IngredientIDs()
 	names := s.Problem.IngredientNames()
 	idIndex := make(map[IngredientID]int, n)
@@ -394,7 +393,7 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	}
 	lpp.componentConstraints = buildComponentConstraints(lpp.componentValues, p.Target)
 
-	for i, entry := range p.entries {
+	for i, slot := range p.slots {
 		pod := coeffs.pod[i]
 		pac := coeffs.pac[i]
 
@@ -403,15 +402,12 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 		lpp.pacLo[i] = pac
 		lpp.pacHi[i] = pac
 
-		if entry.definition != nil {
-			if bound, ok := p.WeightBounds[entry.definition.ID]; ok {
-				lpp.lower[i] = bound.Lo
-				lpp.upper[i] = bound.Hi
-				continue
-			}
+		bounds := slot.bounds
+		if bounds.Lo == 0 && bounds.Hi == 0 {
+			bounds = Range(0, 1)
 		}
-		lpp.lower[i] = 0
-		lpp.upper[i] = 1
+		lpp.lower[i] = bounds.Lo
+		lpp.upper[i] = bounds.Hi
 	}
 
 	return lpp
@@ -673,19 +669,22 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 	}
 	sol.Blend = Blend{Components: blend}
 
-	components := sumComponents(weights, s.Problem.entries)
+	components := sumComponents(weights, s.Problem.slots)
 	sol.Components = components
 	sol.Achieved = components
 	return sol
 }
 
-func sumComponents(weights []float64, entries []ingredientEntry) ConstituentComponents {
+func sumComponents(weights []float64, slots []ingredientSlot) ConstituentComponents {
 	var agg ConstituentComponents
 	for i, w := range weights {
 		if w <= 0 {
 			continue
 		}
-		accumulateProfile(&agg, entries[i].lot.EffectiveProfile(), w)
+		if i >= len(slots) {
+			continue
+		}
+		accumulateProfile(&agg, slots[i].lot.EffectiveProfile(), w)
 	}
 	return agg
 }

@@ -6,9 +6,10 @@ import (
 	"strings"
 )
 
-type ingredientEntry struct {
+type ingredientSlot struct {
 	definition *IngredientDefinition
 	lot        LotDescriptor
+	bounds     Interval
 }
 
 func canonicalLot(lot LotDescriptor, cache map[IngredientID]*IngredientDefinition) (LotDescriptor, *IngredientDefinition) {
@@ -50,11 +51,10 @@ func canonicalLot(lot LotDescriptor, cache map[IngredientID]*IngredientDefinitio
 type Problem struct {
 	Target FormulationTarget
 
-	WeightBounds     map[IngredientID]Interval
 	OrderConstraints bool
 	Constraints      []LinearConstraint
 
-	entries   []ingredientEntry
+	slots     []ingredientSlot
 	specIndex map[IngredientID]int
 }
 
@@ -69,7 +69,7 @@ func NewProblem(specs []IngredientDefinition, target FormulationTarget) *Problem
 
 // NewFormulationProblem creates a problem using the richer formulation target.
 func NewFormulationProblem(lots []LotDescriptor, target FormulationTarget) *Problem {
-	entries := make([]ingredientEntry, len(lots))
+	slots := make([]ingredientSlot, len(lots))
 	specIndex := make(map[IngredientID]int, len(lots))
 	defCache := make(map[IngredientID]*IngredientDefinition, len(lots))
 	for i, lot := range lots {
@@ -77,27 +77,27 @@ func NewFormulationProblem(lots []LotDescriptor, target FormulationTarget) *Prob
 		if def == nil {
 			continue
 		}
-		entries[i] = ingredientEntry{
+		slots[i] = ingredientSlot{
 			definition: def,
 			lot:        normalizedLot,
+			bounds:     Range(0, 1),
 		}
 		specIndex[def.ID] = i
 	}
 	return &Problem{
-		Target:       target,
-		WeightBounds: make(map[IngredientID]Interval),
-		Constraints:  make([]LinearConstraint, 0),
-		entries:      entries,
-		specIndex:    specIndex,
+		Target:      target,
+		Constraints: make([]LinearConstraint, 0),
+		slots:       slots,
+		specIndex:   specIndex,
 	}
 }
 
 // Specs returns a copy of the ingredient specs in order.
 func (p *Problem) Specs() []IngredientDefinition {
-	specs := make([]IngredientDefinition, len(p.entries))
-	for i, entry := range p.entries {
-		if entry.definition != nil {
-			specs[i] = *entry.definition
+	specs := make([]IngredientDefinition, len(p.slots))
+	for i, slot := range p.slots {
+		if slot.definition != nil {
+			specs[i] = *slot.definition
 		}
 	}
 	return specs
@@ -113,10 +113,10 @@ type LinearConstraint struct {
 
 // IngredientIDs returns the spec IDs in order.
 func (p *Problem) IngredientIDs() []IngredientID {
-	ids := make([]IngredientID, len(p.entries))
-	for i, entry := range p.entries {
-		if entry.definition != nil {
-			ids[i] = entry.definition.ID
+	ids := make([]IngredientID, len(p.slots))
+	for i, slot := range p.slots {
+		if slot.definition != nil {
+			ids[i] = slot.definition.ID
 		}
 	}
 	return ids
@@ -124,17 +124,17 @@ func (p *Problem) IngredientIDs() []IngredientID {
 
 // IngredientNames returns the spec names in order (for display only).
 func (p *Problem) IngredientNames() []string {
-	names := make([]string, len(p.entries))
-	for i, entry := range p.entries {
-		if entry.definition != nil {
-			names[i] = entry.definition.Name
+	names := make([]string, len(p.slots))
+	for i, slot := range p.slots {
+		if slot.definition != nil {
+			names[i] = slot.definition.Name
 		}
 	}
 	return names
 }
 
 func (p *Problem) profileForIndex(i int) ConstituentProfile {
-	return p.entries[i].lot.EffectiveProfile()
+	return p.slots[i].lot.EffectiveProfile()
 }
 
 func (p *Problem) specByID(id IngredientID) (IngredientDefinition, bool) {
@@ -142,16 +142,16 @@ func (p *Problem) specByID(id IngredientID) (IngredientDefinition, bool) {
 	if !ok {
 		return IngredientDefinition{}, false
 	}
-	if p.entries[idx].definition == nil {
+	if p.slots[idx].definition == nil {
 		return IngredientDefinition{}, false
 	}
-	return *p.entries[idx].definition, true
+	return *p.slots[idx].definition, true
 }
 
 // LotByID returns the registered ingredient lot for the given ID.
 func (p *Problem) LotByID(id IngredientID) (LotDescriptor, bool) {
-	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.entries) {
-		return p.entries[idx].lot, true
+	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.slots) {
+		return p.slots[idx].lot, true
 	}
 	return LotDescriptor{}, false
 }
@@ -163,29 +163,26 @@ func (p *Problem) OverrideLots(lots map[IngredientID]LotDescriptor) {
 		if !ok {
 			continue
 		}
-		entry := p.entries[idx]
+		slot := p.slots[idx]
 		normalizedLot, _ := canonicalLot(lot, nil)
-		if entry.definition != nil {
-			normalizedLot.Definition = entry.definition
+		if slot.definition != nil {
+			normalizedLot.Definition = slot.definition
 			if normalizedLot.Label == "" {
-				normalizedLot.Label = entry.definition.Name
+				normalizedLot.Label = slot.definition.Name
 			}
 		}
-		p.entries[idx] = ingredientEntry{
-			definition: entry.definition,
-			lot:        normalizedLot,
-		}
+		p.slots[idx].lot = normalizedLot
 	}
 }
 
 // Lots returns a copy of the problem's ingredient lots.
 func (p *Problem) Lots() map[IngredientID]LotDescriptor {
-	copy := make(map[IngredientID]LotDescriptor, len(p.entries))
-	for _, entry := range p.entries {
-		if entry.definition == nil {
+	copy := make(map[IngredientID]LotDescriptor, len(p.slots))
+	for _, slot := range p.slots {
+		if slot.definition == nil {
 			continue
 		}
-		copy[entry.definition.ID] = entry.lot
+		copy[slot.definition.ID] = slot.lot
 	}
 	return copy
 }
@@ -199,36 +196,47 @@ func (p *Problem) nameForID(id IngredientID) string {
 
 // SetWeightBound constrains an ingredient's weight to [lo, hi].
 func (p *Problem) SetWeightBound(id IngredientID, lo, hi float64) error {
-	if _, ok := p.specIndex[id]; !ok {
+	idx, ok := p.specIndex[id]
+	if !ok {
 		return fmt.Errorf("unknown ingredient: %s", id)
 	}
-	p.WeightBounds[id] = Range(lo, hi)
+	p.slots[idx].bounds = Range(lo, hi)
 	return nil
 }
 
 // SetMinWeight sets a minimum weight for an ingredient.
 func (p *Problem) SetMinWeight(id IngredientID, min float64) error {
-	bound, ok := p.WeightBounds[id]
+	idx, ok := p.specIndex[id]
 	if !ok {
-		bound = Range(0, 1)
+		return fmt.Errorf("unknown ingredient: %s", id)
 	}
-	return p.SetWeightBound(id, min, bound.Hi)
+	current := p.slots[idx].bounds
+	if current.Lo == 0 && current.Hi == 0 {
+		current = Range(0, 1)
+	}
+	p.slots[idx].bounds = Range(min, current.Hi)
+	return nil
 }
 
 // SetMaxWeight sets a maximum weight for an ingredient.
 func (p *Problem) SetMaxWeight(id IngredientID, max float64) error {
-	bound, ok := p.WeightBounds[id]
+	idx, ok := p.specIndex[id]
 	if !ok {
-		bound = Range(0, 1)
+		return fmt.Errorf("unknown ingredient: %s", id)
 	}
-	return p.SetWeightBound(id, bound.Lo, max)
+	current := p.slots[idx].bounds
+	if current.Lo == 0 && current.Hi == 0 {
+		current = Range(0, 1)
+	}
+	p.slots[idx].bounds = Range(current.Lo, max)
+	return nil
 }
 
 // IDByName returns the ingredient ID for a human-readable name.
 func (p *Problem) IDByName(name string) (IngredientID, bool) {
-	for _, entry := range p.entries {
-		if entry.definition != nil && entry.definition.Name == name {
-			return entry.definition.ID, true
+	for _, slot := range p.slots {
+		if slot.definition != nil && slot.definition.Name == name {
+			return slot.definition.ID, true
 		}
 	}
 	return "", false
@@ -254,7 +262,7 @@ func (p *Problem) SetMaxWeightByName(name string, max float64) error {
 
 // Validate checks that the problem is well-formed.
 func (p *Problem) Validate() error {
-	if len(p.entries) == 0 {
+	if len(p.slots) == 0 {
 		return fmt.Errorf("no ingredients specified")
 	}
 
@@ -263,27 +271,21 @@ func (p *Problem) Validate() error {
 	}
 
 	seen := make(map[IngredientID]bool)
-	for i, entry := range p.entries {
-		if entry.definition == nil {
+	for i, slot := range p.slots {
+		if slot.definition == nil {
 			return fmt.Errorf("ingredient %d missing definition", i)
 		}
-		id := entry.definition.ID
+		id := slot.definition.ID
 		if id == "" {
 			return fmt.Errorf("ingredient %d missing ID", i)
 		}
 		if seen[id] {
-			return fmt.Errorf("duplicate ingredient: %s", entry.definition.Name)
+			return fmt.Errorf("duplicate ingredient: %s", slot.definition.Name)
 		}
 		seen[id] = true
 
-		if err := entry.lot.EffectiveProfile().Components.Validate(); err != nil {
-			return fmt.Errorf("invalid ingredient %s: %w", entry.definition.Name, err)
-		}
-	}
-
-	for id := range p.WeightBounds {
-		if !seen[id] {
-			return fmt.Errorf("weight bound for unknown ingredient: %s", id)
+		if err := slot.lot.EffectiveProfile().Components.Validate(); err != nil {
+			return fmt.Errorf("invalid ingredient %s: %w", slot.definition.Name, err)
 		}
 	}
 

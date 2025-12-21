@@ -22,7 +22,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 
 		if varyCoeffs {
 			coeffs := newCoefficientSet(n)
-			for j := range s.Problem.entries {
+			for j := range s.Problem.slots {
 				profile := s.Problem.profileForIndex(j)
 				point := sampleProfilePoint(profile, rng)
 				coeffs.set(componentFat, j, point.fat)
@@ -165,7 +165,7 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 	}
 	sol.Blend = Blend{Components: blend}
 
-	components := sumComponents(weights, s.Problem.entries)
+	components := sumComponents(weights, s.Problem.slots)
 	sol.Components = components
 
 	achieved := ComponentFractions{}
