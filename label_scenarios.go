@@ -21,15 +21,15 @@ type LabelScenarioResult struct {
 	Solution         *Solution
 	Recipe           *Recipe
 	ServingSizeGrams float64
-	Metrics          map[string]float64
+	Metrics          BatchSnapshot
 	PintMassGrams    float64
 	Specs            []Ingredient
-	BatchDetails     map[IngredientID]IngredientBatch
+	BatchDetails     map[IngredientID]IngredientInstance
 }
 
 type scenarioIngredients struct {
 	table    map[string]IngredientBatch
-	batches  map[IngredientID]IngredientBatch
+	batches  map[IngredientID]IngredientInstance
 	specs    []Ingredient
 	nameToID map[string]IngredientID
 }
@@ -37,7 +37,7 @@ type scenarioIngredients struct {
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
 		table:    IngredientBatchTable(),
-		batches:  make(map[IngredientID]IngredientBatch),
+		batches:  make(map[IngredientID]IngredientInstance),
 		specs:    make([]Ingredient, 0),
 		nameToID: make(map[string]IngredientID),
 	}
@@ -63,7 +63,11 @@ func (s *scenarioIngredients) addDetail(detail IngredientBatch) {
 		detail.ID = NewIngredientID(detail.Name)
 	}
 	s.nameToID[detail.Name] = detail.ID
-	s.batches[detail.ID] = detail
+	inst := detail.ToInstance()
+	if detail.Name != "" {
+		inst.Name = detail.Name
+	}
+	s.batches[detail.ID] = inst
 	s.specs = append(s.specs, ingredientSpecFromBatch(detail))
 }
 
@@ -71,8 +75,8 @@ func (s *scenarioIngredients) Specs() []Ingredient {
 	return s.specs
 }
 
-func (s *scenarioIngredients) Batches() map[IngredientID]IngredientBatch {
-	copy := make(map[IngredientID]IngredientBatch, len(s.batches))
+func (s *scenarioIngredients) Batches() map[IngredientID]IngredientInstance {
+	copy := make(map[IngredientID]IngredientInstance, len(s.batches))
 	for id, batch := range s.batches {
 		copy[id] = batch
 	}

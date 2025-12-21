@@ -2,14 +2,11 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[IngredientID]IngredientBatch, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, map[string]float64, error) {
+func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[IngredientID]IngredientInstance, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
 	if sol == nil {
-		return nil, NutritionFacts{}, 0, nil, fmt.Errorf("nil solution")
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
 	}
 
-	keys := make([]string, 0, len(specs))
-	weights := make([]float64, 0, len(specs))
-	table := make(map[string]IngredientBatch, len(specs))
 	components := make([]RecipeComponent, 0, len(specs))
 
 	for _, spec := range specs {
@@ -19,22 +16,18 @@ func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[Ingredien
 		}
 		detail, ok := batches[spec.ID]
 		if !ok {
-			return nil, NutritionFacts{}, 0, nil, fmt.Errorf("missing detailed composition for %s (%s)", spec.Name, spec.ID)
+			return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("missing detailed composition for %s (%s)", spec.Name, spec.ID)
 		}
 		mass := w * goals.BatchMassKG
-		entry := detail
-		keys = append(keys, spec.Name)
-		weights = append(weights, mass)
-		table[spec.Name] = entry
 		components = append(components, RecipeComponent{
-			Ingredient: &entry,
+			Ingredient: detail,
 			MassKg:     mass,
 		})
 	}
 
 	recipe, err := NewRecipe(components, goals.Overrun)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, nil, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
 	}
 
 	opts := MixOptions{
@@ -47,10 +40,13 @@ func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[Ingredien
 		opts.LimitOverrun = true
 	}
 
-	metrics := BuildProperties(keys, weights, table, opts)
+	snapshotMetrics, err := BuildProperties(components, opts)
+	if err != nil {
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+	}
 
-	if val, ok := metrics["overrun_estimate"]; ok {
-		if updated, err := recipe.WithOverrun(val); err == nil {
+	if snapshotMetrics.OverrunEstimate > 0 {
+		if updated, err := recipe.WithOverrun(snapshotMetrics.OverrunEstimate); err == nil {
 			recipe = &updated
 		}
 	}
@@ -59,20 +55,20 @@ func recipeFromSolution(sol *Solution, specs []Ingredient, batches map[Ingredien
 		ServeTempC: opts.ServeTempC,
 		DrawTempC:  opts.DrawTempC,
 		ShearRate:  opts.ShearRate,
-		Metrics:    metrics,
+		Snapshot:   snapshotMetrics,
 	}
 	snapRecipe := recipe.WithMixSnapshot(&snapshot)
 	recipe = &snapRecipe
 
 	servingSize, err := recipe.ServingSizeForVolume(servingPortionLiters, opts)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, nil, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
 	}
 
 	facts, err := recipe.NutritionFacts(servingSize, sodiumMg)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, nil, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
 	}
 
-	return recipe, facts, servingSize, metrics, nil
+	return recipe, facts, servingSize, snapshotMetrics, nil
 }

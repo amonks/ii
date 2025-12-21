@@ -44,8 +44,10 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Overrun:     0,
 	}
 
-	batches := map[IngredientID]IngredientBatch{
-		IngredientID("sucrose"): batch,
+	inst := batch.ToInstance()
+	inst.Name = batch.Name
+	batches := map[IngredientID]IngredientInstance{
+		IngredientID("sucrose"): inst,
 	}
 
 	recipe, _, _, _, err := recipeFromSolution(sol, []Ingredient{spec}, batches, goals, 0)

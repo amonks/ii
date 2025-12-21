@@ -10,31 +10,67 @@ type Ingredient struct {
 // IngredientInstance represents a particular lot of an ingredient, optionally
 // overriding metadata such as the display name or constituent profile.
 type IngredientInstance struct {
-	Base       Ingredient
-	LotCode    string
-	Name       string
+	Ingredient Ingredient
 	Profile    ConstituentProfile
-	CostPerKg  Interval
-	LastUpdate string
+	Name       string
+	LotCode    string
+}
+
+// NewIngredientInstance constructs an instance from a base ingredient.
+func NewIngredientInstance(ing Ingredient) IngredientInstance {
+	profile := ing.Profile
+	if profile.ID == "" {
+		profile.ID = ing.ID
+	}
+	if profile.Name == "" {
+		profile.Name = ing.Name
+	}
+	return IngredientInstance{
+		Ingredient: ing,
+		Profile:    profile,
+		Name:       profile.Name,
+	}
 }
 
 // EffectiveProfile returns the profile for the instance, falling back to the
 // base ingredient when no override is provided.
 func (inst IngredientInstance) EffectiveProfile() ConstituentProfile {
-	if inst.Profile.ID == "" && inst.Profile.Name == "" {
-		return inst.Base.Profile
-	}
 	profile := inst.Profile
 	if profile.ID == "" {
-		profile.ID = inst.Base.Profile.ID
+		profile.ID = inst.Ingredient.ID
 	}
 	if profile.Name == "" {
-		profile.Name = inst.Name
-		if profile.Name == "" {
-			profile.Name = inst.Base.Profile.Name
+		if inst.Name != "" {
+			profile.Name = inst.Name
+		} else {
+			profile.Name = inst.Ingredient.Name
 		}
 	}
+	if profile.ID == "" {
+		profile.ID = NewIngredientID(profile.Name)
+	}
 	return profile
+}
+
+// DisplayName returns the preferred name for the instance.
+func (inst IngredientInstance) DisplayName() string {
+	if inst.Name != "" {
+		return inst.Name
+	}
+	if inst.Ingredient.Name != "" {
+		return inst.Ingredient.Name
+	}
+	return inst.Ingredient.ID.String()
+}
+
+// CostPerKg returns the midpoint cost for the instance.
+func (inst IngredientInstance) CostPerKg() float64 {
+	profile := inst.EffectiveProfile()
+	cost := profile.Economics.Cost
+	if cost.Lo == 0 && cost.Hi == 0 {
+		return 0
+	}
+	return cost.Mid()
 }
 
 // IngredientCatalog holds reusable ingredients accessible by ID.

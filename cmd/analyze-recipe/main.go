@@ -38,9 +38,6 @@ func main() {
 
 	const batchMass = 100.0
 
-	keys := make([]string, 0, len(components))
-	weights := make([]float64, 0, len(components))
-	table := make(map[string]creamery.IngredientBatch, len(components))
 	recipeComponents := make([]creamery.RecipeComponent, 0, len(components))
 
 	for _, comp := range components {
@@ -50,11 +47,12 @@ func main() {
 		}
 		mass := comp.Fraction * batchMass
 		entry := ing
-		keys = append(keys, comp.Key)
-		weights = append(weights, mass)
-		table[comp.Key] = entry
+		if comp.Label != "" {
+			entry.Name = comp.Label
+		}
+		inst := entry.ToInstance()
 		recipeComponents = append(recipeComponents, creamery.RecipeComponent{
-			Ingredient: &entry,
+			Ingredient: inst,
 			MassKg:     mass,
 		})
 	}
@@ -70,8 +68,11 @@ func main() {
 		ShearRate:  creamery.DefaultShearRate(),
 	}
 
-	metrics := creamery.BuildProperties(keys, weights, table, opts)
-	if overrun, ok := metrics["overrun_estimate"]; ok {
+	snapshotMetrics, err := creamery.BuildProperties(recipeComponents, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if overrun := snapshotMetrics.OverrunEstimate; overrun > 0 {
 		if updated, err := recipe.WithOverrun(overrun); err == nil {
 			recipe = &updated
 		}
@@ -81,7 +82,7 @@ func main() {
 		ServeTempC: opts.ServeTempC,
 		DrawTempC:  opts.DrawTempC,
 		ShearRate:  opts.ShearRate,
-		Metrics:    metrics,
+		Snapshot:   snapshotMetrics,
 	}
 	withSnapshot := recipe.WithMixSnapshot(&snapshot)
 	recipe = &withSnapshot
@@ -134,21 +135,7 @@ func main() {
 		fmt.Printf("  - %-20s%6.2f%%\n", p.name, p.val*100)
 	}
 
-	fmt.Println("\n=== Raw Mix Metrics ===")
-	keysSorted := make([]pair, 0, len(metrics))
-	for k, v := range metrics {
-		keysSorted = append(keysSorted, pair{k, v})
-	}
-	for i := 0; i < len(keysSorted); i++ {
-		for j := i + 1; j < len(keysSorted); j++ {
-			if keysSorted[j].name < keysSorted[i].name {
-				keysSorted[i], keysSorted[j] = keysSorted[j], keysSorted[i]
-			}
-		}
-	}
-	for _, p := range keysSorted {
-		fmt.Printf("  %-24s: %s\n", p.name, formatValue(p.val))
-	}
+	printMixMetrics(snapshotMetrics)
 }
 
 func printComponents(comps []component, batchMass float64) {
@@ -183,6 +170,25 @@ func formatValue(v float64) string {
 	default:
 		return fmt.Sprintf("%.8f", v)
 	}
+}
+
+func printMixMetrics(snapshot creamery.BatchSnapshot) {
+	fmt.Println("\n=== Raw Mix Metrics ===")
+	fmt.Printf("  total mass (kg)        : %.2f\n", snapshot.TotalMassKg)
+	fmt.Printf("  water pct              : %.2f%%\n", snapshot.WaterPct*100)
+	fmt.Printf("  solids pct             : %.2f%%\n", snapshot.SolidsPct*100)
+	fmt.Printf("  fat pct                : %.2f%%\n", snapshot.FatPct*100)
+	fmt.Printf("  protein pct            : %.2f%%\n", snapshot.ProteinPct*100)
+	fmt.Printf("  total sugars pct       : %.2f%%\n", snapshot.TotalSugarsPct*100)
+	fmt.Printf("  added sugars pct       : %.2f%%\n", snapshot.AddedSugarsPct*100)
+	fmt.Printf("  freezing point (°C)    : %.3f\n", snapshot.FreezingPointC)
+	fmt.Printf("  viscosity at serve     : %.4f\n", snapshot.ViscosityAtServe)
+	fmt.Printf("  overrun estimate       : %.2f%%\n", snapshot.OverrunEstimate*100)
+	fmt.Printf("  hardness index         : %.3f\n", snapshot.HardnessIndex)
+	fmt.Printf("  meltdown index         : %.3f\n", snapshot.MeltdownIndex)
+	fmt.Printf("  lactose supersat.      : %.3f\n", snapshot.LactoseSupersaturation)
+	fmt.Printf("  cost per kg            : %.4f\n", snapshot.CostPerKg)
+	fmt.Printf("  cost per pint (with air): %.4f\n", snapshot.CostPerPint)
 }
 
 func printRecipe(r *creamery.Recipe) {
