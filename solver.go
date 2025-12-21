@@ -301,7 +301,7 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	n := lpp.n
 
-	targetComp := lpp.target.Composition
+	targetComp := lpp.target.canonicalComposition()
 	type componentConstraint struct {
 		lo     []float64
 		hi     []float64

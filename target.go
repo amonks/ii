@@ -15,7 +15,7 @@ type FormulationTarget struct {
 
 // CompositionTarget returns the legacy composition portion of the goal.
 func (t FormulationTarget) CompositionTarget() Composition {
-	return t.Composition
+	return t.canonicalComposition()
 }
 
 // HasPOD reports whether a usable POD range is present.
@@ -30,7 +30,7 @@ func (t FormulationTarget) HasPAC() bool {
 
 // String returns the composition representation for convenience.
 func (t FormulationTarget) String() string {
-	return t.Composition.String()
+	return t.canonicalComposition().String()
 }
 
 // ProteinInterval exposes the target protein interval.
@@ -55,12 +55,18 @@ func (t FormulationTarget) TotalSugarsInterval() Interval {
 
 // WaterInterval returns the explicit water interval constraint.
 func (t FormulationTarget) WaterInterval() Interval {
-	return t.Water
+	if intervalHasValue(t.Water) {
+		return t.Water
+	}
+	if intervalHasValue(t.Components.Water) {
+		return t.Components.Water
+	}
+	return Interval{}
 }
 
 // Validate ensures the target intervals are well-formed.
 func (t FormulationTarget) Validate() error {
-	if err := t.Composition.Valid(); err != nil {
+	if err := t.canonicalComposition().Valid(); err != nil {
 		return err
 	}
 	if err := t.Components.Validate(); err != nil {
@@ -84,4 +90,39 @@ func FormulationFromComposition(comp Composition) FormulationTarget {
 		Components:  components,
 		Water:       components.Water,
 	}
+}
+
+func intervalHasValue(iv Interval) bool {
+	return iv.Lo != 0 || iv.Hi != 0
+}
+
+func (t FormulationTarget) canonicalComposition() Composition {
+	comp := t.Composition
+	comps := t.Components
+
+	if intervalHasValue(comps.Fat) {
+		comp.Fat = comps.Fat
+	}
+
+	if intervalHasValue(comps.MSNF) || intervalHasValue(comps.Protein) || intervalHasValue(comps.Lactose) || intervalHasValue(comps.Ash) {
+		comp.MSNF = comps.EffectiveMSNF()
+	}
+
+	if intervalHasValue(comps.Sucrose) ||
+		intervalHasValue(comps.Glucose) ||
+		intervalHasValue(comps.Fructose) ||
+		intervalHasValue(comps.Maltodextrin) ||
+		intervalHasValue(comps.Polyols) {
+		comp.Sugar = comps.Sucrose.
+			Add(comps.Glucose).
+			Add(comps.Fructose).
+			Add(comps.Maltodextrin).
+			Add(comps.Polyols)
+	}
+
+	if intervalHasValue(comps.OtherSolids) {
+		comp.Other = comps.OtherSolids
+	}
+
+	return comp
 }
