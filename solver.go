@@ -565,12 +565,16 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 	sol := &Solution{
 		Weights: make(map[IngredientID]float64),
 		Names:   make(map[IngredientID]string, len(ids)),
+		Lots:    make(map[IngredientID]IngredientLot, len(ids)),
 	}
 
 	for i, w := range weights {
 		id := ids[i]
 		sol.Weights[id] = w
 		sol.Names[id] = names[i]
+		if lot, ok := s.Problem.LotByID(id); ok {
+			sol.Lots[id] = lot
+		}
 	}
 
 	// Compute achieved composition using ingredient midpoints

@@ -388,6 +388,7 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 	target := scenarioTargetFromFacts(facts)
 
 	problem := NewFormulationProblem(builder.Specs(), target)
+	problem.OverrideLots(builder.Batches())
 
 	if err := setPresenceFloor(problem, presence); err != nil {
 		return nil, err

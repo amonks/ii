@@ -18,6 +18,7 @@ type Problem struct {
 
 	specIndex map[IngredientID]int
 	profiles  []ConstituentProfile
+	lots      map[IngredientID]IngredientLot
 }
 
 // NewProblem creates a problem with the given specs and legacy composition target.
@@ -30,6 +31,7 @@ func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Proble
 	canonical := make([]Ingredient, len(specs))
 	specIndex := make(map[IngredientID]int, len(specs))
 	profiles := make([]ConstituentProfile, len(specs))
+	lots := make(map[IngredientID]IngredientLot, len(specs))
 	for i, spec := range specs {
 		if spec.ID == "" {
 			spec.ID = NewIngredientID(spec.Name)
@@ -46,6 +48,7 @@ func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Proble
 		canonical[i] = spec
 		specIndex[spec.ID] = i
 		profiles[i] = spec.Profile
+		lots[spec.ID] = NewIngredientLot(spec)
 	}
 	return &Problem{
 		Specs:        canonical,
@@ -54,6 +57,7 @@ func NewFormulationProblem(specs []Ingredient, target FormulationTarget) *Proble
 		Constraints:  make([]LinearConstraint, 0),
 		specIndex:    specIndex,
 		profiles:     profiles,
+		lots:         lots,
 	}
 }
 
@@ -97,6 +101,40 @@ func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
 		return Ingredient{}, false
 	}
 	return p.Specs[idx], true
+}
+
+// LotByID returns the registered ingredient lot for the given ID, falling back
+// to the canonical spec when no override exists.
+func (p *Problem) LotByID(id IngredientID) (IngredientLot, bool) {
+	if lot, ok := p.lots[id]; ok {
+		return lot, true
+	}
+	if spec, ok := p.specByID(id); ok {
+		return NewIngredientLot(spec), true
+	}
+	return IngredientLot{}, false
+}
+
+// OverrideLots replaces default lots with the provided ones when the spec is present.
+func (p *Problem) OverrideLots(lots map[IngredientID]IngredientInstance) {
+	for id, lot := range lots {
+		if _, ok := p.specIndex[id]; !ok {
+			continue
+		}
+		if lot.Ingredient.ID == "" {
+			lot.Ingredient.ID = id
+		}
+		p.lots[id] = lot
+	}
+}
+
+// Lots returns a copy of the problem's ingredient lots.
+func (p *Problem) Lots() map[IngredientID]IngredientLot {
+	copy := make(map[IngredientID]IngredientLot, len(p.lots))
+	for id, lot := range p.lots {
+		copy[id] = lot
+	}
+	return copy
 }
 
 func (p *Problem) nameForID(id IngredientID) string {
@@ -225,6 +263,7 @@ func (p *Problem) AddConstraint(coeffs map[IngredientID]float64, lower, upper fl
 type Solution struct {
 	Weights  map[IngredientID]float64
 	Names    map[IngredientID]string
+	Lots     map[IngredientID]IngredientLot
 	Achieved Composition
 }
 
