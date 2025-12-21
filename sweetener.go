@@ -265,6 +265,9 @@ func AnalyzeSweeteners(sol *Solution, specs []IngredientDefinition) SweetenerAna
 	if sol == nil {
 		return SweetenerAnalysis{}
 	}
+	if len(sol.Blend.Components) > 0 {
+		return SweetenersFromBatch(NewBatch(sol.Blend, 1))
+	}
 	components, err := componentsFromSolution(sol, specs, 1)
 	if err != nil {
 		return SweetenerAnalysis{}
@@ -277,7 +280,7 @@ func SweetenersFromRecipe(recipe *Recipe) SweetenerAnalysis {
 	if recipe == nil {
 		return SweetenerAnalysis{}
 	}
-	return SweetenersFromComponents(recipe.MassComponents())
+	return SweetenersFromBatch(recipe.batch())
 }
 
 // SweetenersFromComponents aggregates POD/PAC for arbitrary recipe components.
@@ -292,6 +295,11 @@ func SweetenersFromComponents(components []RecipeComponent) SweetenerAnalysis {
 	}
 	finalizeSweetenerTotals(&analysis)
 	return analysis
+}
+
+// SweetenersFromBatch aggregates POD/PAC directly from a batch abstraction.
+func SweetenersFromBatch(batch Batch) SweetenerAnalysis {
+	return SweetenersFromComponents(batch.Components())
 }
 
 // EquivalentSucrose returns the amount of sucrose that would give the same sweetness.

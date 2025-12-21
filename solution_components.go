@@ -16,18 +16,8 @@ func componentsFromSolution(sol *Solution, specs []IngredientDefinition, batchMa
 
 	components := make([]RecipeComponent, 0, len(specs))
 	if len(sol.Blend.Components) > 0 {
-		blend := sol.Blend.AsFractions()
-		masses := PortionsToMasses(blend.Components, batchMass)
-		for _, mass := range masses {
-			if mass.MassKg <= 1e-6 {
-				continue
-			}
-			components = append(components, RecipeComponent{
-				Ingredient: mass.Lot,
-				MassKg:     mass.MassKg,
-			})
-		}
-		return components, nil
+		batch := NewBatch(sol.Blend, batchMass)
+		return batch.Components(), nil
 	}
 
 	if len(specs) == 0 && len(sol.Lots) > 0 {

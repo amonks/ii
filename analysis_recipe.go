@@ -157,19 +157,15 @@ func (r *Recipe) BatchMassKg() float64 {
 
 // Fractions returns ingredient mass fractions keyed by name.
 func (r *Recipe) Fractions() map[string]float64 {
-	fractions := make(map[string]float64, len(r.Portions))
-	for _, portion := range r.Portions {
-		if portion.Fraction <= 0 {
-			continue
-		}
-		name := portion.Lot.DisplayName()
-		fractions[name] += portion.Fraction
-	}
-	return fractions
+	return BatchFromPortions(r.Portions, r.BatchMassKg()).FractionsByName()
+}
+
+func (r *Recipe) batch() Batch {
+	return BatchFromPortions(r.Portions, r.BatchMassKg())
 }
 
 func (r *Recipe) aggregateTotals() (BatchSnapshot, error) {
-	return NewBatchSnapshot(r.massComponents())
+	return r.batch().Snapshot()
 }
 
 func (r *Recipe) mixSnapshot(opts MixOptions) (BatchSnapshot, error) {
@@ -208,18 +204,7 @@ func (r *Recipe) mixSnapshotWithOptions(opts MixOptions) (BatchSnapshot, error) 
 }
 
 func (r *Recipe) massComponents() []RecipeComponent {
-	masses := PortionsToMasses(r.Portions, r.BatchMassKg())
-	components := make([]RecipeComponent, 0, len(masses))
-	for _, mass := range masses {
-		if mass.MassKg <= 0 {
-			continue
-		}
-		components = append(components, RecipeComponent{
-			Ingredient: mass.Lot,
-			MassKg:     mass.MassKg,
-		})
-	}
-	return components
+	return r.batch().Components()
 }
 
 // MassComponents exposes the current recipe as absolute masses (kg).
