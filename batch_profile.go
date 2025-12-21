@@ -33,12 +33,12 @@ func BuildBatchProfile(weights map[IngredientID]float64, specs []IngredientDefin
 func BuildBatchProfileFromBlend(blend Blend) BatchProfile {
 	var profile BatchProfile
 	for _, comp := range blend.Components {
-		if comp.Weight <= 0 {
+		if comp.Fraction <= 0 {
 			continue
 		}
 		sourceProfile := comp.Lot.EffectiveProfile()
-		accumulateProfile(&profile.Components, sourceProfile, comp.Weight)
-		addSweetenerContribution(&profile.Sweeteners, sourceProfile, comp.Weight)
+		accumulateProfile(&profile.Components, sourceProfile, comp.Fraction)
+		addSweetenerContribution(&profile.Sweeteners, sourceProfile, comp.Fraction)
 	}
 	finalizeSweetenerTotals(&profile.Sweeteners)
 	return profile

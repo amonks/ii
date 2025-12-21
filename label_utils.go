@@ -16,10 +16,10 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 	if len(sol.Blend.Components) > 0 {
 		blend := sol.Blend.AsFractions()
 		for _, comp := range blend.Components {
-			if comp.Weight <= 1e-6 {
+			if comp.Fraction <= 1e-6 {
 				continue
 			}
-			mass := comp.Weight * batchMass
+			mass := comp.Fraction * batchMass
 			components = append(components, RecipeComponent{
 				Ingredient: comp.Lot,
 				MassKg:     mass,

@@ -48,21 +48,22 @@ type ProductionSettings struct {
 	Snapshot   BatchSnapshot
 }
 
-// RecipeComponent couples an ingredient lot with a batch weight (kg).
+// Recipe contains fractional ingredient contributions and optional metadata.
+type Recipe struct {
+	Portions    []Portion
+	Overrun     float64
+	Notes       []string
+	MixSnapshot *ProductionSettings
+	batchMassKg float64
+}
+
+// RecipeComponent couples an ingredient lot with a batch weight (kg) for IO.
 type RecipeComponent struct {
 	Ingredient LotDescriptor
 	MassKg     float64
 }
 
-// Recipe contains concrete ingredient weights and optional metadata.
-type Recipe struct {
-	Components  []RecipeComponent
-	Overrun     float64
-	Notes       []string
-	MixSnapshot *ProductionSettings
-}
-
-// NewRecipe validates and constructs a recipe from components.
+// NewRecipe validates masses, converts them to fractions, and stores them.
 func NewRecipe(components []RecipeComponent, overrun float64) (*Recipe, error) {
 	if overrun < 0 {
 		return nil, errors.New("overrun cannot be negative")
@@ -87,9 +88,21 @@ func NewRecipe(components []RecipeComponent, overrun float64) (*Recipe, error) {
 	if len(clean) == 0 {
 		return nil, errors.New("recipe has zero total mass")
 	}
+	masses := make([]PortionMass, len(clean))
+	for i, comp := range clean {
+		masses[i] = PortionMass{
+			Lot:    comp.Ingredient,
+			MassKg: comp.MassKg,
+		}
+	}
+	portions, total := PortionsFromMasses(masses)
+	if len(portions) == 0 || total <= 0 {
+		return nil, errors.New("recipe has zero total mass")
+	}
 	return &Recipe{
-		Components: clean,
-		Overrun:    overrun,
+		Portions:    portions,
+		Overrun:     overrun,
+		batchMassKg: total,
 	}, nil
 }
 
@@ -136,36 +149,31 @@ func (r Recipe) WithMixSnapshot(snapshot *ProductionSettings) Recipe {
 
 // BatchMassKg returns the total batch mass.
 func (r *Recipe) BatchMassKg() float64 {
-	total := 0.0
-	for _, comp := range r.Components {
-		total += comp.MassKg
+	if r.batchMassKg <= 0 {
+		return 1
 	}
-	return total
+	return r.batchMassKg
 }
 
 // Fractions returns ingredient mass fractions keyed by name.
 func (r *Recipe) Fractions() map[string]float64 {
-	total := r.BatchMassKg()
-	if total <= 0 {
-		return map[string]float64{}
-	}
-	fractions := make(map[string]float64, len(r.Components))
-	for _, comp := range r.Components {
-		if comp.MassKg <= 0 {
+	fractions := make(map[string]float64, len(r.Portions))
+	for _, portion := range r.Portions {
+		if portion.Fraction <= 0 {
 			continue
 		}
-		name := comp.Ingredient.DisplayName()
-		fractions[name] += comp.MassKg / total
+		name := portion.Lot.DisplayName()
+		fractions[name] += portion.Fraction
 	}
 	return fractions
 }
 
 func (r *Recipe) aggregateTotals() (BatchSnapshot, error) {
-	return NewBatchSnapshot(r.Components)
+	return NewBatchSnapshot(r.massComponents())
 }
 
 func (r *Recipe) mixSnapshot(opts MixOptions) (BatchSnapshot, error) {
-	return BuildProperties(r.Components, opts)
+	return BuildProperties(r.massComponents(), opts)
 }
 
 // Formulation summarizes composition into the Formulation struct.
@@ -196,7 +204,27 @@ func (r *Recipe) CostPerKg() float64 {
 }
 
 func (r *Recipe) mixSnapshotWithOptions(opts MixOptions) (BatchSnapshot, error) {
-	return BuildProperties(r.Components, opts)
+	return BuildProperties(r.massComponents(), opts)
+}
+
+func (r *Recipe) massComponents() []RecipeComponent {
+	masses := PortionsToMasses(r.Portions, r.BatchMassKg())
+	components := make([]RecipeComponent, 0, len(masses))
+	for _, mass := range masses {
+		if mass.MassKg <= 0 {
+			continue
+		}
+		components = append(components, RecipeComponent{
+			Ingredient: mass.Lot,
+			MassKg:     mass.MassKg,
+		})
+	}
+	return components
+}
+
+// MassComponents exposes the current recipe as absolute masses (kg).
+func (r *Recipe) MassComponents() []RecipeComponent {
+	return r.massComponents()
 }
 
 // FreezingPoint calculates the freezing point (°C).

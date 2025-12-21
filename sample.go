@@ -130,7 +130,7 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 		Lots:    make(map[IngredientID]LotDescriptor, len(ids)),
 	}
 
-	blend := make([]BlendComponent, 0, len(weights))
+	blend := make([]Portion, 0, len(weights))
 	for i, w := range weights {
 		id := ids[i]
 		sol.Weights[id] = w
@@ -138,9 +138,9 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 		if lot, ok := s.Problem.LotByID(id); ok {
 			sol.Lots[id] = lot
 			if w > 0 {
-				blend = append(blend, BlendComponent{
-					Lot:    lot,
-					Weight: w,
+				blend = append(blend, Portion{
+					Lot:      lot,
+					Fraction: w,
 				})
 			}
 		}

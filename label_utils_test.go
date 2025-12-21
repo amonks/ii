@@ -48,13 +48,14 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}
 
-	if len(recipe.Components) != 1 {
-		t.Fatalf("expected 1 component, got %d", len(recipe.Components))
+	masses := recipe.MassComponents()
+	if len(masses) != 1 {
+		t.Fatalf("expected 1 component, got %d", len(masses))
 	}
-	if recipe.Components[0].Ingredient.DisplayName() != inst.DisplayName() {
-		t.Fatalf("expected ingredient %s, got %s", inst.DisplayName(), recipe.Components[0].Ingredient.DisplayName())
+	if masses[0].Ingredient.DisplayName() != inst.DisplayName() {
+		t.Fatalf("expected ingredient %s, got %s", inst.DisplayName(), masses[0].Ingredient.DisplayName())
 	}
-	if recipe.Components[0].MassKg != 50 {
-		t.Fatalf("expected mass 50kg, got %f", recipe.Components[0].MassKg)
+	if masses[0].MassKg != 50 {
+		t.Fatalf("expected mass 50kg, got %f", masses[0].MassKg)
 	}
 }
