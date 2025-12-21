@@ -13,56 +13,75 @@ type IngredientSpec struct {
 // overriding metadata such as the display name or constituent profile.
 type IngredientLot struct {
 	Ingredient IngredientSpec
-	Profile    ConstituentProfile
 	Name       string
 	LotCode    string
+
+	profileOverride *ConstituentProfile
 }
 
 // NewIngredientLot constructs an instance from a base ingredient.
 func NewIngredientLot(ing IngredientSpec) IngredientLot {
-	profile := ing.Profile
-	if profile.ID == "" {
-		profile.ID = ing.ID
-	}
-	if profile.Name == "" {
-		profile.Name = ing.Name
-	}
+	ing = normalizeSpec(ing)
 	return IngredientLot{
 		Ingredient: ing,
-		Profile:    profile,
-		Name:       profile.Name,
+		Name:       ing.Name,
 	}
 }
 
 // EffectiveProfile returns the profile for the lot, falling back to the base
 // ingredient when no override is provided.
 func (inst IngredientLot) EffectiveProfile() ConstituentProfile {
-	profile := inst.Profile
-	if profile.ID == "" {
-		profile.ID = inst.Ingredient.ID
-	}
-	if profile.Name == "" {
-		if inst.Name != "" {
-			profile.Name = inst.Name
-		} else {
-			profile.Name = inst.Ingredient.Name
-		}
-	}
-	if profile.ID == "" {
-		profile.ID = NewIngredientID(profile.Name)
+	spec := normalizeSpec(inst.Ingredient)
+	profile := spec.Profile
+	if inst.profileOverride != nil {
+		profile = normalizeProfile(*inst.profileOverride, spec.ID, inst.displayName())
+	} else if profile.Name == "" && inst.Name != "" {
+		profile.Name = inst.Name
 	}
 	return profile
 }
 
 // DisplayName returns the preferred name for the lot.
 func (inst IngredientLot) DisplayName() string {
+	return inst.displayName()
+}
+
+func (inst IngredientLot) displayName() string {
 	if inst.Name != "" {
 		return inst.Name
 	}
 	if inst.Ingredient.Name != "" {
 		return inst.Ingredient.Name
 	}
-	return inst.Ingredient.ID.String()
+	if inst.Ingredient.ID != "" {
+		return inst.Ingredient.ID.String()
+	}
+	return ""
+}
+
+// SetProfileOverride replaces the lot's constituent profile while keeping spec metadata.
+func (inst *IngredientLot) SetProfileOverride(profile ConstituentProfile) {
+	if inst == nil {
+		return
+	}
+	normalized := normalizeProfile(profile, inst.Ingredient.ID, inst.displayName())
+	inst.profileOverride = &normalized
+}
+
+// WithProfileOverride returns a copy of the lot with an updated constituent profile.
+func (inst IngredientLot) WithProfileOverride(profile ConstituentProfile) IngredientLot {
+	inst.SetProfileOverride(profile)
+	return inst
+}
+
+// WithSpec returns a copy of the lot using the provided normalized spec.
+func (inst IngredientLot) WithSpec(spec IngredientSpec) IngredientLot {
+	inst.Ingredient = normalizeSpec(spec)
+	if inst.Name == "" || inst.Name == inst.Ingredient.Name {
+		inst.Name = inst.Ingredient.Name
+	}
+	inst.profileOverride = nil
+	return inst
 }
 
 // CostPerKg returns the midpoint cost for the lot.
@@ -101,9 +120,7 @@ func NewIngredientCatalog(ingredients []IngredientSpec) IngredientCatalog {
 	specs := make(map[IngredientID]IngredientSpec, len(ingredients))
 	lots := make(map[IngredientID]IngredientLot, len(ingredients))
 	for _, ing := range ingredients {
-		if ing.ID == "" {
-			ing.ID = NewIngredientID(ing.Name)
-		}
+		ing = normalizeSpec(ing)
 		if existing, ok := specs[ing.ID]; ok && existing.Name != ing.Name {
 			if len(ing.Name) > len(existing.Name) {
 				specs[ing.ID] = ing
@@ -163,7 +180,7 @@ func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatal
 	for key, profile := range profiles {
 		spec := SpecFromProfile(profile)
 		inst := NewIngredientLot(spec)
-		inst.Profile = profile
+		inst.SetProfileOverride(profile)
 		specs[inst.Ingredient.ID] = inst.Ingredient
 		lots[inst.Ingredient.ID] = inst
 		keyed[key] = inst
@@ -177,11 +194,48 @@ func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatal
 
 // SpecFromProfile builds an IngredientSpec from an existing constituent profile.
 func SpecFromProfile(profile ConstituentProfile) IngredientSpec {
-	return IngredientSpec{
+	return normalizeSpec(IngredientSpec{
 		ID:      profile.ID,
 		Name:    profile.Name,
 		Profile: profile,
+	})
+}
+
+func normalizeSpec(spec IngredientSpec) IngredientSpec {
+	if spec.ID == "" {
+		spec.ID = NewIngredientID(spec.Name)
 	}
+	if spec.Name == "" && spec.ID != "" {
+		spec.Name = spec.ID.String()
+	}
+	if spec.Name == "" {
+		spec.Name = "ingredient"
+	}
+	spec.Profile = normalizeProfile(spec.Profile, spec.ID, spec.Name)
+	return spec
+}
+
+func normalizeProfile(profile ConstituentProfile, fallbackID IngredientID, fallbackName string) ConstituentProfile {
+	copy := profile
+	if copy.ID == "" {
+		copy.ID = fallbackID
+	}
+	if copy.Name == "" {
+		copy.Name = fallbackName
+	}
+	if copy.ID == "" && copy.Name != "" {
+		copy.ID = NewIngredientID(copy.Name)
+	}
+	if copy.Name == "" && copy.ID != "" {
+		copy.Name = copy.ID.String()
+	}
+	if copy.ID == "" {
+		copy.ID = IngredientID("ingredient")
+	}
+	if copy.Name == "" {
+		copy.Name = copy.ID.String()
+	}
+	return copy
 }
 
 // SpecFromComposition constructs a spec from a higher-level composition.

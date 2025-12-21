@@ -18,12 +18,11 @@ func specFromCatalog(key, displayName string) IngredientSpec {
 }
 
 func renameSpec(spec IngredientSpec, name string) IngredientSpec {
-	copy := spec
-	copy.Name = name
-	copy.ID = NewIngredientID(name)
-	copy.Profile.Name = name
-	copy.Profile.ID = copy.ID
-	return copy
+	spec.Name = name
+	spec.ID = NewIngredientID(name)
+	spec.Profile.Name = name
+	spec.Profile.ID = spec.ID
+	return normalizeSpec(spec)
 }
 
 // Standard ingredient specifications with typical compositions.

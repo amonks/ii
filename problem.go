@@ -46,7 +46,6 @@ func NewFormulationProblem(lots []IngredientLot, target FormulationTarget) *Prob
 		}
 		lot.Ingredient = spec
 		profile := lot.EffectiveProfile()
-		lot.Profile = profile
 		canonicalLots[i] = lot
 		canonicalSpecs[i] = spec
 		specIndex[spec.ID] = i
@@ -128,7 +127,6 @@ func (p *Problem) OverrideLots(lots map[IngredientID]IngredientLot) {
 			lot.Ingredient.Name = spec.Name
 		}
 		profile := lot.EffectiveProfile()
-		lot.Profile = profile
 		p.lots[idx] = lot
 		p.profiles[idx] = profile
 		p.Specs[idx] = lot.Ingredient

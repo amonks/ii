@@ -63,10 +63,12 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*Ingredie
 func (s *scenarioIngredients) addDetail(inst IngredientLot) {
 	profile := inst.EffectiveProfile()
 	s.nameToID[profile.Name] = profile.ID
-	inst.Ingredient.Profile = profile
-	inst.Ingredient.ID = profile.ID
-	inst.Ingredient.Name = profile.Name
-	inst.Profile = profile
+	spec := inst.Ingredient
+	spec.Profile = profile
+	spec.ID = profile.ID
+	spec.Name = profile.Name
+	inst = inst.WithSpec(spec)
+	inst.Name = profile.Name
 	s.batches[profile.ID] = inst
 	s.specs = append(s.specs, inst.Ingredient)
 	s.lots = append(s.lots, inst)
@@ -91,9 +93,9 @@ func (s *scenarioIngredients) Batches() map[IngredientID]IngredientLot {
 }
 
 func renameInstance(inst IngredientLot, name string) IngredientLot {
+	spec := renameSpec(inst.Ingredient, name)
+	inst = inst.WithSpec(spec)
 	inst.Name = name
-	inst.Ingredient = renameSpec(inst.Ingredient, name)
-	inst.Profile = inst.Ingredient.Profile
 	return inst
 }
 
@@ -351,9 +353,10 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 	builder.addClone("locust_bean_gum", "carob_bean_gum", nil)
 	builder.addClone("guar_gum", "guar_gum", nil)
 	builder.addClone("vanilla_extract", "natural_flavor", func(inst *IngredientLot) {
-		inst.Profile.Components.Water = Point(0.60)
-		inst.Profile.Components.OtherSolids = Point(0.40)
-		inst.Ingredient.Profile = inst.Profile
+		profile := inst.Ingredient.Profile
+		profile.Components.Water = Point(0.60)
+		profile.Components.OtherSolids = Point(0.40)
+		inst.Ingredient.Profile = profile
 	})
 	builder.addClone("lemon_peel", "lemon_peel", nil)
 

@@ -224,8 +224,7 @@ func instanceWithName(inst creamery.IngredientLot, name string) creamery.Ingredi
 	spec.ID = creamery.NewIngredientID(name)
 	spec.Profile.Name = name
 	spec.Profile.ID = spec.ID
-	inst.Ingredient = spec
-	inst.Profile = spec.Profile
+	inst = inst.WithSpec(spec)
 	inst.Name = name
 	return inst
 }
