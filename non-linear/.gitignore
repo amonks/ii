@@ -1,6 +1,0 @@
-creamery.egg-info
-__pycache__
-creamery/__pycache__
-.venv
-.pytest_cache
-
