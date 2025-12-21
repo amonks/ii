@@ -58,12 +58,23 @@ type lpProblem struct {
 
 	// Order constraints
 	orderConstraints bool
+
+	// Optional linear constraints
+	constraints []LinearConstraint
+
+	names       []string
+	nameToIndex map[string]int
 }
 
 // buildLP creates the LP formulation using midpoints of ingredient composition intervals.
 func (s *Solver) buildLP() *lpProblem {
 	p := s.Problem
 	n := len(p.Ingredients)
+	names := p.IngredientNames()
+	nameIndex := make(map[string]int, n)
+	for i, name := range names {
+		nameIndex[name] = i
+	}
 
 	lpp := &lpProblem{
 		n:                n,
@@ -79,6 +90,9 @@ func (s *Solver) buildLP() *lpProblem {
 		targetPOD:        p.TargetPOD,
 		targetPAC:        p.TargetPAC,
 		orderConstraints: p.OrderConstraints,
+		constraints:      p.Constraints,
+		names:            names,
+		nameToIndex:      nameIndex,
 	}
 
 	for i, ing := range p.Ingredients {
@@ -114,6 +128,11 @@ func (s *Solver) buildLP() *lpProblem {
 func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoeffs []float64) *lpProblem {
 	p := s.Problem
 	n := len(p.Ingredients)
+	names := p.IngredientNames()
+	nameIndex := make(map[string]int, n)
+	for i, name := range names {
+		nameIndex[name] = i
+	}
 
 	lpp := &lpProblem{
 		n:                n,
@@ -129,6 +148,9 @@ func (s *Solver) buildLPWithCoeffs(fatCoeffs, msnfCoeffs, sugarCoeffs, otherCoef
 		targetPOD:        p.TargetPOD,
 		targetPAC:        p.TargetPAC,
 		orderConstraints: p.OrderConstraints,
+		constraints:      p.Constraints,
+		names:            names,
+		nameToIndex:      nameIndex,
 	}
 
 	for i, ing := range p.Ingredients {
@@ -173,6 +195,14 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	}
 	if lpp.orderConstraints {
 		numIneq += n - 1
+	}
+	for _, constraint := range lpp.constraints {
+		if constraint.Upper < math.Inf(1) {
+			numIneq++
+		}
+		if constraint.Lower > math.Inf(-1) {
+			numIneq++
+		}
 	}
 
 	// Build inequality matrix G and vector h: Gx <= h
@@ -284,6 +314,28 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 			G.Set(row, i, -1)
 			G.Set(row, i+1, 1)
 			h[row] = 0
+			row++
+		}
+	}
+
+	// Additional linear constraints
+	for _, constraint := range lpp.constraints {
+		if constraint.Upper < math.Inf(1) {
+			for name, coeff := range constraint.Coeffs {
+				if idx, ok := lpp.nameToIndex[name]; ok {
+					G.Set(row, idx, coeff)
+				}
+			}
+			h[row] = constraint.Upper
+			row++
+		}
+		if constraint.Lower > math.Inf(-1) {
+			for name, coeff := range constraint.Coeffs {
+				if idx, ok := lpp.nameToIndex[name]; ok {
+					G.Set(row, idx, -coeff)
+				}
+			}
+			h[row] = -constraint.Lower
 			row++
 		}
 	}

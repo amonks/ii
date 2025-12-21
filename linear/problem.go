@@ -29,6 +29,9 @@ type Problem struct {
 	// weight order as listed. This reflects FDA labeling requirements.
 	// If true, Ingredients[0] >= Ingredients[1] >= ... by weight.
 	OrderConstraints bool
+
+	// Additional linear constraints of the form lower <= sum(coeff_i * w_i) <= upper.
+	Constraints []LinearConstraint
 }
 
 // NewProblem creates a problem with the given ingredients and target.
@@ -38,6 +41,14 @@ func NewProblem(ingredients []Ingredient, target Composition) *Problem {
 		Target:       target,
 		WeightBounds: make(map[string]Interval),
 	}
+}
+
+// LinearConstraint represents a linear expression over ingredient weights.
+type LinearConstraint struct {
+	Coeffs map[string]float64
+	Lower  float64
+	Upper  float64
+	Note   string
 }
 
 // SetWeightBound constrains an ingredient's weight to [lo, hi].
@@ -102,6 +113,17 @@ func (p *Problem) Validate() error {
 		}
 	}
 
+	for i, constraint := range p.Constraints {
+		for name := range constraint.Coeffs {
+			if !names[name] {
+				return fmt.Errorf("constraint %d references unknown ingredient %s", i, name)
+			}
+		}
+		if constraint.Lower > constraint.Upper {
+			return fmt.Errorf("constraint %d has lower > upper", i)
+		}
+	}
+
 	return nil
 }
 
@@ -112,6 +134,20 @@ func (p *Problem) IngredientNames() []string {
 		names[i] = ing.Name
 	}
 	return names
+}
+
+// AddConstraint appends a linear constraint of the form lower <= sum(coeff_i * w_i) <= upper.
+func (p *Problem) AddConstraint(coeffs map[string]float64, lower, upper float64, note string) {
+	copied := make(map[string]float64, len(coeffs))
+	for k, v := range coeffs {
+		copied[k] = v
+	}
+	p.Constraints = append(p.Constraints, LinearConstraint{
+		Coeffs: copied,
+		Lower:  lower,
+		Upper:  upper,
+		Note:   note,
+	})
 }
 
 // Solution represents a feasible (or partial) solution to a Problem.
