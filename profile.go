@@ -239,11 +239,7 @@ func (d IngredientBatch) ToSpec() Ingredient {
 // ToInstance converts a concrete ingredient batch into an ingredient instance.
 func (d IngredientBatch) ToInstance() IngredientInstance {
 	spec := d.ToSpec()
-	return IngredientInstance{
-		Ingredient: spec,
-		Profile:    spec.Profile,
-		Name:       spec.Name,
-	}
+	return NewIngredientLot(spec)
 }
 
 // AddedSugarsInterval returns the summed interval for non-lactose sugars.

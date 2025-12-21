@@ -86,11 +86,11 @@ func (inst IngredientLot) CostPerKg() float64 {
 	return cost.Mid()
 }
 
-// IngredientCatalog exposes canonical ingredient specs and default instances.
+// IngredientCatalog exposes canonical ingredient specs and their default lots.
 type IngredientCatalog struct {
-	specs     map[IngredientID]Ingredient
-	instances map[IngredientID]IngredientInstance
-	keyed     map[string]IngredientInstance
+	specs map[IngredientID]IngredientSpec
+	lots  map[IngredientID]IngredientLot
+	keyed map[string]IngredientLot
 }
 
 var (
@@ -106,9 +106,11 @@ func DefaultIngredientCatalog() IngredientCatalog {
 	return defaultCatalog
 }
 
-// NewIngredientCatalog builds a catalog from a slice of ingredients.
+// NewIngredientCatalog builds a catalog from a slice of ingredient specs. The
+// catalog automatically provisions default lots that mirror each spec.
 func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
 	specs := make(map[IngredientID]Ingredient, len(ingredients))
+	lots := make(map[IngredientID]IngredientLot, len(ingredients))
 	for _, ing := range ingredients {
 		if ing.ID == "" {
 			ing.ID = NewIngredientID(ing.Name)
@@ -120,11 +122,12 @@ func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
 			continue
 		}
 		specs[ing.ID] = ing
+		lots[ing.ID] = NewIngredientLot(ing)
 	}
 	return IngredientCatalog{
-		specs:     specs,
-		instances: make(map[IngredientID]IngredientInstance),
-		keyed:     make(map[string]IngredientInstance),
+		specs: specs,
+		lots:  lots,
+		keyed: make(map[string]IngredientLot),
 	}
 }
 
@@ -145,7 +148,7 @@ func (c IngredientCatalog) Get(id IngredientID) (Ingredient, bool) {
 
 // Instance returns the default instance for an ingredient ID.
 func (c IngredientCatalog) Instance(id IngredientID) (IngredientInstance, bool) {
-	inst, ok := c.instances[id]
+	inst, ok := c.lots[id]
 	return inst, ok
 }
 
@@ -157,8 +160,8 @@ func (c IngredientCatalog) InstanceByKey(key string) (IngredientInstance, bool) 
 
 // Instances returns a copy of the default instances keyed by ingredient ID.
 func (c IngredientCatalog) Instances() map[IngredientID]IngredientInstance {
-	copy := make(map[IngredientID]IngredientInstance, len(c.instances))
-	for id, inst := range c.instances {
+	copy := make(map[IngredientID]IngredientInstance, len(c.lots))
+	for id, inst := range c.lots {
 		copy[id] = inst
 	}
 	return copy
@@ -166,18 +169,18 @@ func (c IngredientCatalog) Instances() map[IngredientID]IngredientInstance {
 
 func catalogFromBatches(batches map[string]IngredientBatch) IngredientCatalog {
 	specs := make(map[IngredientID]Ingredient, len(batches))
-	instances := make(map[IngredientID]IngredientInstance, len(batches))
+	lots := make(map[IngredientID]IngredientInstance, len(batches))
 	keyed := make(map[string]IngredientInstance, len(batches))
 	for key, batch := range batches {
 		inst := batch.ToInstance()
 		specs[inst.Ingredient.ID] = inst.Ingredient
-		instances[inst.Ingredient.ID] = inst
+		lots[inst.Ingredient.ID] = inst
 		keyed[key] = inst
 	}
 	return IngredientCatalog{
-		specs:     specs,
-		instances: instances,
-		keyed:     keyed,
+		specs: specs,
+		lots:  lots,
+		keyed: keyed,
 	}
 }
 

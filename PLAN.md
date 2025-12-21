@@ -28,7 +28,7 @@ Refactor the creamery domain model to distinguish canonical specs, measured lots
 
 ## Action items
 [x] 1. Introduce new IngredientSpec/IngredientLot structs, migrate constructors/catalog loading, and adapt constants/importers.
-[ ] 2. Rebuild IngredientCatalog with explicit spec/lot registries and update consumers (StandardSpecs, SpecFromComposition, etc.).
+[x] 2. Rebuild IngredientCatalog with explicit spec/lot registries and update consumers (StandardSpecs, SpecFromComposition, etc.).
 [ ] 3. Update Problem/Solver/Solution to operate on the new spec references and carry lot metadata through to downstream builders.
 [ ] 4. Refactor RecipeComponent, BatchSnapshot aggregation, and analysis helpers to consume IngredientLot data directly.
 [ ] 5. Add canonical conversion helpers on ConstituentProfile/BatchSnapshot (to Composition, NutritionFacts, etc.) and replace ad-hoc math.
