@@ -69,7 +69,7 @@ func (c ConstituentComponents) Validate() error {
 		}
 	}
 
-	totalSolids := CompositionFromComponents(c).TotalSolids()
+	totalSolids := TotalSolidsInterval(c)
 	if totalSolids.Hi > 1+solidsTolerance {
 		return fmt.Errorf("constituent solids exceed 100%% (hi %.4f)", totalSolids.Hi)
 	}

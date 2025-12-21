@@ -158,7 +158,13 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 		sugar += w * lpp.sugarLo[i]
 		other += w * lpp.otherLo[i]
 	}
-	sol.Achieved = PointComposition(fat, msnf, sugar, other)
+	achieved := ComponentFractions{
+		Fat:         Point(fat),
+		MSNF:        Point(msnf),
+		Sucrose:     Point(sugar),
+		OtherSolids: Point(other),
+	}
+	sol.Achieved = EnsureWater(achieved)
 	return sol
 }
 

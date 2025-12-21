@@ -39,14 +39,14 @@ func TestFullWorkflow(t *testing.T) {
 	target := label.ToTarget()
 	target.POD = creamery.Interval{}
 	target.PAC = creamery.Interval{}
-	compTarget := target.CompositionTarget()
+	targetFractions := target.Components
 
 	fmt.Println()
 	fmt.Println("Derived formulation targets (with FDA rounding uncertainty):")
-	fmt.Printf("  Fat:   %s\n", compTarget.Fat)
-	fmt.Printf("  MSNF:  %s\n", compTarget.MSNF)
-	fmt.Printf("  Sugar: %s\n", compTarget.Sugar)
-	fmt.Printf("  Water: %s (derived)\n", compTarget.Water())
+	fmt.Printf("  Fat:   %s\n", target.FatInterval())
+	fmt.Printf("  MSNF:  %s\n", target.MSNFInterval())
+	fmt.Printf("  Added sugar: %s\n", target.AddedSugarsInterval())
+	fmt.Printf("  Water: %s (derived)\n", target.WaterInterval())
 
 	fmt.Println()
 	fmt.Println("### Interpreting the ingredient list")
@@ -60,7 +60,7 @@ func TestFullWorkflow(t *testing.T) {
 		creamery.TapiocaSyrup,
 	}
 
-	labelProblem := creamery.NewProblem(labelSpecs, compTarget)
+	labelProblem := creamery.NewProblem(labelSpecs, target)
 	labelProblem.OrderConstraints = true
 
 	labelSolver, err := creamery.NewSolver(labelProblem)
@@ -85,7 +85,7 @@ func TestFullWorkflow(t *testing.T) {
 					fmt.Printf("      %-18s %5.1f%%\n", spec.Name+":", w*100)
 				}
 			}
-			if impliedMSNF, ok := s.ImpliedMSNF(labelSpecs, compTarget, creamery.NonfatMilkVariable.ID); ok {
+			if impliedMSNF, ok := s.ImpliedMSNF(labelSpecs, target.MSNFInterval(), creamery.NonfatMilkVariable.ID); ok {
 				desc := creamery.DescribeNonfatMilk(impliedMSNF)
 				fmt.Printf("      └─ Nonfat milk form: %s\n", desc)
 			}
@@ -101,9 +101,23 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println()
 
 	// Define our specific ingredients with KNOWN compositions (point values)
-	myCream := creamery.SpecFromComposition("Cream (36%)", creamery.PointComposition(0.36, 0.055, 0, 0))
-	myMilk := creamery.SpecFromComposition("Whole Milk (3.25%)", creamery.PointComposition(0.0325, 0.0875, 0, 0))
-	myNFDM := creamery.SpecFromComposition("Skim Milk Powder", creamery.PointComposition(0.01, 0.96, 0, 0))
+	myCream := creamery.HeavyCream
+	myCream.Name = "Cream (36%)"
+	myCream.ID = creamery.NewIngredientID(myCream.Name)
+	myCream.Profile.Name = myCream.Name
+	myCream.Profile.ID = myCream.ID
+
+	myMilk := creamery.WholeMilk
+	myMilk.Name = "Whole Milk (3.25%)"
+	myMilk.ID = creamery.NewIngredientID(myMilk.Name)
+	myMilk.Profile.Name = myMilk.Name
+	myMilk.Profile.ID = myMilk.ID
+
+	myNFDM := creamery.NonfatDryMilk
+	myNFDM.Name = "Skim Milk Powder"
+	myNFDM.ID = creamery.NewIngredientID(myNFDM.Name)
+	myNFDM.Profile.Name = myNFDM.Name
+	myNFDM.Profile.ID = myNFDM.ID
 
 	catalog := creamery.DefaultIngredientCatalog()
 	var mySucrose creamery.IngredientDefinition
@@ -127,20 +141,17 @@ func TestFullWorkflow(t *testing.T) {
 	}
 
 	fmt.Println("Ingredients on hand:")
-	myCreamComp := creamery.CompositionFromProfile(myCream.Profile)
-	myMilkComp := creamery.CompositionFromProfile(myMilk.Profile)
-	myNFDMComp := creamery.CompositionFromProfile(myNFDM.Profile)
-	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.1f%%\n", myCream.Name, myCreamComp.Fat.Mid()*100, myCreamComp.MSNF.Mid()*100)
-	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilkComp.Fat.Mid()*100, myMilkComp.MSNF.Mid()*100)
-	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDMComp.Fat.Mid()*100, myNFDMComp.MSNF.Mid()*100)
+	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.1f%%\n", myCream.Name, myCream.Profile.Components.Fat.Mid()*100, myCream.Profile.MSNFInterval().Mid()*100)
+	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilk.Profile.Components.Fat.Mid()*100, myMilk.Profile.MSNFInterval().Mid()*100)
+	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDM.Profile.Components.Fat.Mid()*100, myNFDM.Profile.MSNFInterval().Mid()*100)
 	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f\n",
 		mySucrose.Name,
-		creamery.CompositionFromProfile(mySucrose.Profile).Sugar.Mid()*100,
+		mySucrose.Profile.AddedSugarsInterval().Mid()*100,
 		mySucrose.Profile.PODInterval().Mid(),
 		mySucrose.Profile.PACInterval().Mid())
 	fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f (less sweet, more softening)\n",
 		myDextrose.Name,
-		creamery.CompositionFromProfile(myDextrose.Profile).Sugar.Mid()*100,
+		myDextrose.Profile.AddedSugarsInterval().Mid()*100,
 		myDextrose.Profile.PODInterval().Mid(),
 		myDextrose.Profile.PACInterval().Mid())
 
@@ -152,7 +163,7 @@ func TestFullWorkflow(t *testing.T) {
 		myDextrose,
 	}
 
-	problem := creamery.NewProblem(specs, compTarget)
+	problem := creamery.NewProblem(specs, target)
 
 	solver, err := creamery.NewSolver(problem)
 	if err != nil {
@@ -200,11 +211,11 @@ func TestFullWorkflow(t *testing.T) {
 		// Print achieved composition
 		fmt.Println()
 		fmt.Println("Achieved composition:")
-		fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", s.Achieved.Fat.Mid()*100, compTarget.Fat)
-		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, compTarget.MSNF)
-		fmt.Printf("  Sugar: %.2f%%  (target: %s)\n", s.Achieved.Sugar.Mid()*100, compTarget.Sugar)
-		fmt.Printf("  Water: %.2f%%\n", s.Achieved.Water().Mid()*100)
-		assertCompositionWithinTarget(t, compTarget, s.Achieved, fmt.Sprintf("Recipe %d", i+1))
+		fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", s.Achieved.Fat.Mid()*100, target.FatInterval())
+		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, target.MSNFInterval())
+		fmt.Printf("  Added sugar: %.2f%%  (target: %s)\n", s.Achieved.AddedSugarsInterval().Mid()*100, target.AddedSugarsInterval())
+		fmt.Printf("  Water: %.2f%%\n", s.Achieved.Water.Mid()*100)
+		assertFractionsWithinTarget(t, targetFractions, s.Achieved, fmt.Sprintf("Recipe %d", i+1))
 
 		// POD/PAC analysis
 		sweetener := creamery.AnalyzeSweeteners(s, specs)
@@ -240,7 +251,7 @@ func TestFullWorkflow(t *testing.T) {
 	fmt.Println()
 
 	// Create a new problem with PAC target
-	problem2 := creamery.NewProblem(specs, compTarget)
+	problem2 := creamery.NewProblem(specs, target)
 	problem2.Target.PAC = creamery.Range(28, 32) // target "firm" texture
 
 	solver2, _ := creamery.NewSolver(problem2)

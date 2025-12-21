@@ -170,6 +170,8 @@ func normalizeProfile(profile ConstituentProfile, fallbackID IngredientID, fallb
 	if copy.Name == "" {
 		copy.Name = copy.ID.String()
 	}
+	copy.Components = populateMSNFComponents(copy.Components)
+	copy.Components = EnsureWater(copy.Components)
 	return copy
 }
 
@@ -181,10 +183,4 @@ func canonicalIngredientKey(key IngredientKey, fallback IngredientID) Ingredient
 		return IngredientKey(fallback)
 	}
 	return ""
-}
-
-// SpecFromComposition constructs a spec from a higher-level composition.
-func SpecFromComposition(name string, comp Composition) IngredientDefinition {
-	profile := ProfileFromComposition(NewIngredientID(name), name, comp)
-	return SpecFromProfile(profile)
 }

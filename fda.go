@@ -168,56 +168,41 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 	addedSugarFrac = widenInterval(addedSugarFrac, labelPercentEPS)
 	totalSugarFrac = widenInterval(totalSugarFrac, labelPercentEPS)
 
-	comp := Composition{
-		Fat:   fatFrac,
-		MSNF:  msnfFrac,
-		Sugar: addedSugarFrac,
-		Other: otherFrac,
-	}
-
-	waterFrac := widenInterval(comp.Water(), 0.2)
-	addedPOD := addedSugarFrac.Scale(SucrosePOD)
-	lactosePOD := lactoseFrac.Scale(LactosePOD)
-	addedPAC := addedSugarFrac.Scale(SucrosePAC)
-	lactosePAC := lactoseFrac.Scale(LactosePAC)
-
-	components := ConstituentComponents{
+	fractions := ComponentFractions{
 		Fat:         fatFrac,
 		MSNF:        msnfFrac,
 		Protein:     proteinFrac,
 		Lactose:     lactoseFrac,
 		Sucrose:     addedSugarFrac,
 		OtherSolids: otherFrac,
-		Water:       waterFrac,
 	}
 
+	waterFrac := widenInterval(DerivedWaterInterval(fractions), 0.2)
+	fractions.Water = waterFrac
+	addedPOD := addedSugarFrac.Scale(SucrosePOD)
+	lactosePOD := lactoseFrac.Scale(LactosePOD)
+	addedPAC := addedSugarFrac.Scale(SucrosePAC)
+	lactosePAC := lactoseFrac.Scale(LactosePAC)
+
 	return FormulationTarget{
-		Composition: comp,
-		Components:  components,
-		Water:       waterFrac,
-		POD:         addedPOD.Add(lactosePOD),
-		PAC:         addedPAC.Add(lactosePAC),
+		Components: fractions,
+		POD:        addedPOD.Add(lactosePOD),
+		PAC:        addedPAC.Add(lactosePAC),
 	}
 }
 
-// CaloriesFromComposition estimates calories from a composition.
+// CaloriesFromFractions estimates calories from detailed component fractions.
 // Fat: 9 cal/g, Protein: 4 cal/g, Carbs: 4 cal/g
-func CaloriesFromComposition(c Composition, servingGrams float64) Interval {
+func CaloriesFromFractions(c ComponentFractions, servingGrams float64) Interval {
 	// Fat contributes 9 cal/g
 	fatCal := c.Fat.Scale(servingGrams * 9)
 
-	// MSNF is about 38% protein, 54% lactose (carb), 8% minerals
-	// So MSNF contributes: 0.38*4 + 0.54*4 ≈ 3.7 cal/g
-	msnfCal := c.MSNF.Scale(servingGrams * 3.7)
+	proteinCal := c.Protein.Scale(servingGrams * 4)
+	lactoseCal := c.Lactose.Scale(servingGrams * 4)
+	addedSugars := c.AddedSugarsInterval().Scale(servingGrams * 4)
+	otherCal := c.OtherSolids.Scale(servingGrams * 2)
 
-	// Sugar contributes 4 cal/g
-	sugarCal := c.Sugar.Scale(servingGrams * 4)
-
-	// Other varies (cocoa ~2 cal/g, stabilizers ~0)
-	// Use 2 cal/g as rough estimate
-	otherCal := c.Other.Scale(servingGrams * 2)
-
-	return fatCal.Add(msnfCal).Add(sugarCal).Add(otherCal)
+	return fatCal.Add(proteinCal).Add(lactoseCal).Add(addedSugars).Add(otherCal)
 }
 
 func widenInterval(iv Interval, slack float64) Interval {

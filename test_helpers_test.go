@@ -19,15 +19,15 @@ func assertIntervalContains(t *testing.T, interval creamery.Interval, value floa
 	}
 }
 
-func assertCompositionWithinTarget(t *testing.T, target creamery.Composition, achieved creamery.Composition, context string) {
+func assertFractionsWithinTarget(t *testing.T, target creamery.ComponentFractions, achieved creamery.ComponentFractions, context string) {
 	t.Helper()
 	check := func(name string, interval creamery.Interval, got float64) {
 		assertIntervalContains(t, interval, got, fmt.Sprintf("%s %s", context, name))
 	}
 	check("fat", target.Fat, achieved.Fat.Mid())
-	check("msnf", target.MSNF, achieved.MSNF.Mid())
-	check("sugar", target.Sugar, achieved.Sugar.Mid())
-	check("other", target.Other, achieved.Other.Mid())
+	check("msnf", target.EffectiveMSNF(), achieved.EffectiveMSNF().Mid())
+	check("added sugar", target.AddedSugarsInterval(), achieved.AddedSugarsInterval().Mid())
+	check("other solids", target.OtherSolids, achieved.OtherSolids.Mid())
 }
 
 func assertSweetenersMatchTarget(t *testing.T, target creamery.FormulationTarget, sweet creamery.SweetenerAnalysis, context string) {
@@ -38,4 +38,19 @@ func assertSweetenersMatchTarget(t *testing.T, target creamery.FormulationTarget
 	if target.HasPAC() {
 		assertIntervalContains(t, target.PAC, sweet.TotalPAC, context+" PAC")
 	}
+}
+
+func newSpec(t *testing.T, name string, build func(*creamery.ComponentFractions)) creamery.IngredientDefinition {
+	t.Helper()
+	comps := creamery.ComponentFractions{}
+	if build != nil {
+		build(&comps)
+	}
+	comps = creamery.EnsureWater(comps)
+	profile := creamery.ConstituentProfile{
+		ID:         creamery.NewIngredientID(name),
+		Name:       name,
+		Components: comps,
+	}
+	return creamery.SpecFromProfile(profile)
 }

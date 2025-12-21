@@ -389,21 +389,21 @@ func ingredientBatchTable() map[string]ingredientBatch {
 	additional := []struct {
 		key       string
 		display   string
-		comp      Composition
+		fractions ComponentFractions
 		configure func(*ingredientBatch)
 	}{
 		{
 			key:     "liquid_sugar",
 			display: "Liquid Sugar",
-			comp: Composition{
-				Sugar: Point(0.67),
+			fractions: ComponentFractions{
+				Sucrose: Point(0.67),
 			},
 		},
 		{
 			key:     "stabilizer",
 			display: "Stabilizer",
-			comp: Composition{
-				Other: Point(1.0),
+			fractions: ComponentFractions{
+				OtherSolids: Point(1.0),
 			},
 			configure: func(b *ingredientBatch) {
 				b.Hydrocolloid = true
@@ -412,10 +412,10 @@ func ingredientBatchTable() map[string]ingredientBatch {
 		{
 			key:     "sweetened_condensed_milk",
 			display: "Sweetened Condensed Milk",
-			comp: Composition{
-				Fat:   Point(0.085),
-				MSNF:  Point(0.20),
-				Sugar: Point(0.445),
+			fractions: ComponentFractions{
+				Fat:     Point(0.085),
+				MSNF:    Point(0.20),
+				Sucrose: Point(0.445),
 			},
 			configure: func(b *ingredientBatch) {
 				b.AddedSugars = b.Sucrose
@@ -429,7 +429,7 @@ func ingredientBatchTable() map[string]ingredientBatch {
 		if _, exists := table[entry.key]; exists {
 			continue
 		}
-		batch := batchFromComposition(entry.key, entry.display, entry.comp)
+		batch := batchFromFractions(entry.key, entry.display, entry.fractions)
 		if entry.configure != nil {
 			entry.configure(&batch)
 		}
@@ -590,11 +590,10 @@ func ingredientBatchTable() map[string]ingredientBatch {
 	return table
 }
 
-func batchFromComposition(key, display string, comp Composition) ingredientBatch {
-	profile := ProfileFromComposition(NewIngredientID(display), display, comp)
-	comps := profile.Components
+func batchFromFractions(key, display string, fractions ComponentFractions) ingredientBatch {
+	comps := EnsureWater(fractions)
 	return ingredientBatch{
-		ID:              profile.ID,
+		ID:              NewIngredientID(display),
 		Name:            key,
 		Water:           comps.Water.Mid(),
 		Fat:             comps.Fat.Mid(),

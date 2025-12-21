@@ -65,13 +65,13 @@ type Problem struct {
 	specIndex map[IngredientID]int
 }
 
-// NewProblem creates a problem with the given specs and legacy composition target.
-func NewProblem(specs []IngredientDefinition, target Composition) *Problem {
+// NewProblem creates a problem with the given specs and canonical target.
+func NewProblem(specs []IngredientDefinition, target FormulationTarget) *Problem {
 	lots := make([]LotDescriptor, len(specs))
 	for i, spec := range specs {
 		lots[i] = spec.DefaultLot()
 	}
-	return NewFormulationProblem(lots, FormulationFromComposition(target))
+	return NewFormulationProblem(lots, target)
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
@@ -138,10 +138,6 @@ func (p *Problem) IngredientNames() []string {
 		}
 	}
 	return names
-}
-
-func (p *Problem) compositionForIndex(i int) Composition {
-	return p.entries[i].lot.EffectiveProfile().Composition()
 }
 
 func (p *Problem) profileForIndex(i int) ConstituentProfile {
@@ -332,7 +328,7 @@ type Solution struct {
 	Weights    map[IngredientID]float64
 	Names      map[IngredientID]string
 	Lots       map[IngredientID]LotDescriptor
-	Achieved   Composition
+	Achieved   ComponentFractions
 	Components ConstituentComponents
 }
 
@@ -368,13 +364,13 @@ func (s Solution) String() string {
 			result += fmt.Sprintf("  %s: %.2f%%\n", e.name, e.weight*100)
 		}
 	}
-	result += fmt.Sprintf("Achieved: %s", s.Achieved)
+	result += fmt.Sprintf("Achieved: %s", ComponentSummary(s.Achieved))
 	return result
 }
 
-// ImpliedMSNF calculates what composition a variable ingredient must have
-// to achieve the target, given the weights of all other ingredients.
-func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Composition, id IngredientID) (Interval, bool) {
+// ImpliedMSNF calculates what MSNF interval a variable ingredient must have
+// to achieve the target bounds, given the weights of all other ingredients.
+func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Interval, id IngredientID) (Interval, bool) {
 	varSpecIndex := -1
 	for i, spec := range specs {
 		if spec.ID == id {
@@ -392,7 +388,7 @@ func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Composition, 
 	}
 
 	varSpec := specs[varSpecIndex]
-	varComp := CompositionFromProfile(varSpec.Profile)
+	varMSNF := varSpec.Profile.MSNFInterval()
 
 	var otherMSNF float64
 	for _, spec := range specs {
@@ -400,15 +396,14 @@ func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Composition, 
 			continue
 		}
 		w := s.Weights[spec.ID]
-		comp := CompositionFromProfile(spec.Profile)
-		otherMSNF += w * comp.MSNF.Mid()
+		otherMSNF += w * spec.Profile.MSNFInterval().Mid()
 	}
 
-	requiredLo := (target.MSNF.Lo - otherMSNF) / varWeight
-	requiredHi := (target.MSNF.Hi - otherMSNF) / varWeight
+	requiredLo := (target.Lo - otherMSNF) / varWeight
+	requiredHi := (target.Hi - otherMSNF) / varWeight
 
-	possibleLo := varComp.MSNF.Lo
-	possibleHi := varComp.MSNF.Hi
+	possibleLo := varMSNF.Lo
+	possibleHi := varMSNF.Hi
 
 	impliedLo := max(requiredLo, possibleLo)
 	impliedHi := min(requiredHi, possibleHi)

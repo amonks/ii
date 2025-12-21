@@ -3,9 +3,21 @@ package creamery
 import "testing"
 
 func TestBuildBatchProfileMatchesSweetenerAnalysis(t *testing.T) {
-	cream := SpecFromComposition("Cream", PointComposition(0.36, 0.06, 0.05, 0.03))
-	milk := SpecFromComposition("Milk", PointComposition(0.032, 0.09, 0.05, 0.01))
-	sugar := SpecFromComposition("Sugar", PointComposition(0, 0, 1, 0))
+	cream := makeSpecFromFractions("Cream", ComponentFractions{
+		Fat:         Point(0.36),
+		MSNF:        Point(0.06),
+		Sucrose:     Point(0.05),
+		OtherSolids: Point(0.03),
+	})
+	milk := makeSpecFromFractions("Milk", ComponentFractions{
+		Fat:         Point(0.032),
+		MSNF:        Point(0.09),
+		Sucrose:     Point(0.05),
+		OtherSolids: Point(0.01),
+	})
+	sugar := makeSpecFromFractions("Sugar", ComponentFractions{
+		Sucrose: Point(1),
+	})
 
 	specs := []IngredientDefinition{cream, milk, sugar}
 	weights := map[IngredientID]float64{

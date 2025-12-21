@@ -161,14 +161,16 @@ func printStandardSpecs() {
 	fmt.Println("Standard ingredient specs:")
 	for _, id := range ids {
 		spec := specs[id]
-		comp := creamery.CompositionFromProfile(spec.Profile)
-		fmt.Printf("  %-16s %-24s fat=%5.1f%% msnf=%5.1f%% sugar=%5.1f%% other=%5.1f%%\n",
+		comps := spec.Profile.Components
+		added := comps.AddedSugarsInterval()
+		fmt.Printf("  %-16s %-24s fat=%5.1f%% protein=%5.1f%% lactose=%5.1f%% added=%5.1f%% water=%5.1f%%\n",
 			spec.ID,
 			spec.Name,
-			comp.Fat.Mid()*100,
-			comp.MSNF.Mid()*100,
-			comp.Sugar.Mid()*100,
-			comp.Other.Mid()*100,
+			comps.Fat.Mid()*100,
+			comps.Protein.Mid()*100,
+			comps.Lactose.Mid()*100,
+			added.Mid()*100,
+			comps.Water.Mid()*100,
 		)
 	}
 }

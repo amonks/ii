@@ -29,7 +29,9 @@ func TestStandardSpecsIncludeHeavyCream(t *testing.T) {
 }
 
 func TestCustomCatalogRegistersKeys(t *testing.T) {
-	spec := SpecFromComposition("My Sugar", PointComposition(0, 0, 1, 0))
+	spec := makeSpecFromFractions("My Sugar", ComponentFractions{
+		Sucrose: Point(1),
+	})
 	spec.Key = NewIngredientKey("custom_sugar")
 	spec = renameSpec(spec, "Fancy Sugar")
 

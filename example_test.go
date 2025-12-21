@@ -11,12 +11,12 @@ import (
 func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	// Target: a classic vanilla ice cream
 	// ~16% fat, ~10% MSNF, ~14% sugar, ~0.3% stabilizer
-	target := creamery.Composition{
-		Fat:   creamery.Range(0.15, 0.17),
-		MSNF:  creamery.Range(0.09, 0.11),
-		Sugar: creamery.Range(0.13, 0.15),
-		Other: creamery.Range(0, 0.01),
-	}
+	target := creamery.FormulationFromFractions(creamery.ComponentFractions{
+		Fat:         creamery.Range(0.15, 0.17),
+		MSNF:        creamery.Range(0.09, 0.11),
+		Sucrose:     creamery.Range(0.13, 0.15),
+		OtherSolids: creamery.Range(0, 0.01),
+	})
 
 	// Available ingredients
 	specs := []creamery.IngredientDefinition{
@@ -50,7 +50,7 @@ func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 
 	fmt.Println("=== Workflow 2: Formulation -> Recipe ===")
 	fmt.Printf("Target: Fat %s, MSNF %s, Sugar %s, Other %s\n",
-		target.Fat, target.MSNF, target.Sugar, target.Other)
+		target.FatInterval(), target.MSNFInterval(), target.AddedSugarsInterval(), target.OtherSolidsInterval())
 	fmt.Println()
 	fmt.Println(bounds)
 
@@ -103,7 +103,6 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	}
 
 	target := label.ToTarget()
-	compTarget := target.CompositionTarget()
 
 	fmt.Println("=== Workflow 1: Label -> Formulation ===")
 	fmt.Printf("Label: %dg serving, %d cal, %dg fat, %dg protein, %dg carbs, %dg sugar\n",
@@ -119,7 +118,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 		creamery.EggYolks,
 	}
 
-	problem := creamery.NewProblem(specs, compTarget)
+	problem := creamery.NewProblem(specs, target)
 	problem.OrderConstraints = true // enforce label ordering
 
 	solver, err := creamery.NewSolver(problem)
@@ -168,12 +167,12 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 
 // TestWithTighterConstraints shows iterative refinement.
 func TestWithTighterConstraints(t *testing.T) {
-	target := creamery.Composition{
-		Fat:   creamery.Range(0.15, 0.17),
-		MSNF:  creamery.Range(0.09, 0.11),
-		Sugar: creamery.Range(0.13, 0.15),
-		Other: creamery.Range(0, 0.01),
-	}
+	target := creamery.FormulationFromFractions(creamery.ComponentFractions{
+		Fat:         creamery.Range(0.15, 0.17),
+		MSNF:        creamery.Range(0.09, 0.11),
+		Sucrose:     creamery.Range(0.13, 0.15),
+		OtherSolids: creamery.Range(0, 0.01),
+	})
 
 	specs2 := []creamery.IngredientDefinition{
 		creamery.HeavyCream,

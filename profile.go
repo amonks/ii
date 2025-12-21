@@ -198,40 +198,6 @@ func (d ingredientBatch) ToProfile() ConstituentProfile {
 	return profile
 }
 
-// ProfileFromComposition approximates a constituent profile using the higher-
-// level Composition intervals, distributing MSNF into protein/lactose/minerals.
-func ProfileFromComposition(id IngredientID, name string, comp Composition) ConstituentProfile {
-	if id == "" {
-		id = NewIngredientID(name)
-	}
-	components := comp.ToComponents()
-	nutrition := ConstituentNutrition{
-		TransFat:           Point(0),
-		SaturatedFat:       Point(0),
-		CholesterolMgPerKg: Point(0),
-		AddedSugars:        comp.Sugar,
-	}
-	functionals := ConstituentFunctionals{
-		WaterBinding:    Point(0),
-		EmulsifierPower: Point(0),
-		Hydrocolloid:    false,
-		OsmoticCoeff:    1,
-		VHFactor:        1,
-		EffectiveMW:     0,
-		MaltodextrinDP:  0,
-		PolyolMW:        0,
-	}
-	economics := ConstituentEconomics{Cost: Point(0)}
-	return ConstituentProfile{
-		ID:          id,
-		Name:        name,
-		Components:  components,
-		Nutrition:   nutrition,
-		Functionals: functionals,
-		Economics:   economics,
-	}
-}
-
 // AddedSugarsInterval returns the summed interval for non-lactose sugars.
 func (c ConstituentComponents) AddedSugarsInterval() Interval {
 	return c.Sucrose.
@@ -282,9 +248,4 @@ func (p ConstituentProfile) OtherSolidsInterval() Interval {
 // TotalSugarInterval returns added sugars plus lactose.
 func (p ConstituentProfile) TotalSugarInterval() Interval {
 	return p.AddedSugarsInterval().Add(p.LactoseInterval())
-}
-
-// Composition returns the aggregated four-component composition for the profile.
-func (p ConstituentProfile) Composition() Composition {
-	return CompositionFromProfile(p)
 }

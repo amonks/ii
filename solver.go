@@ -305,17 +305,20 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	n := lpp.n
 
-	targetComp := lpp.target.canonicalComposition()
 	type componentConstraint struct {
 		lo     []float64
 		hi     []float64
 		target Interval
 	}
-	componentConstraints := []componentConstraint{
-		{lpp.fatLo, lpp.fatHi, targetComp.Fat},
-		{lpp.msnfLo, lpp.msnfHi, targetComp.MSNF},
-		{lpp.sugarLo, lpp.sugarHi, targetComp.Sugar},
-		{lpp.otherLo, lpp.otherHi, targetComp.Other},
+	componentConstraints := make([]componentConstraint, 0, 8)
+	if fatTarget := lpp.target.FatInterval(); intervalSpecified(fatTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.fatLo, lpp.fatHi, fatTarget})
+	}
+	if msnfTarget := lpp.target.MSNFInterval(); intervalSpecified(msnfTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.msnfLo, lpp.msnfHi, msnfTarget})
+	}
+	if otherTarget := lpp.target.OtherSolidsInterval(); intervalSpecified(otherTarget) {
+		componentConstraints = append(componentConstraints, componentConstraint{lpp.otherLo, lpp.otherHi, otherTarget})
 	}
 
 	if proteinTarget := lpp.target.ProteinInterval(); intervalSpecified(proteinTarget) {
@@ -478,10 +481,6 @@ func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
 	return opt, x, nil
 }
 
-func intervalSpecified(iv Interval) bool {
-	return iv.Lo != 0 || iv.Hi != 0
-}
-
 // Feasible checks if the problem has any feasible solution.
 func (s *Solver) Feasible() (bool, error) {
 	lpp := s.buildLP()
@@ -591,7 +590,7 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 
 	components := sumComponents(weights, s.Problem.entries)
 	sol.Components = components
-	sol.Achieved = CompositionFromComponents(components)
+	sol.Achieved = components
 	return sol
 }
 

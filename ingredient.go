@@ -8,14 +8,37 @@ func specFromCatalog(key, displayName string) IngredientDefinition {
 		if displayName == "" {
 			displayName = key
 		}
-		spec := SpecFromComposition(displayName, Composition{})
-		spec.Key = NewIngredientKey(key)
+		spec := IngredientDefinition{
+			ID:   NewIngredientID(displayName),
+			Name: displayName,
+			Key:  NewIngredientKey(key),
+			Profile: ConstituentProfile{
+				ID:   NewIngredientID(displayName),
+				Name: displayName,
+				Components: EnsureWater(ComponentFractions{
+					OtherSolids: Point(0),
+				}),
+			},
+		}
 		return normalizeSpec(spec)
 	}
 	def := inst.Definition
 	if def == nil {
-		spec := SpecFromComposition(displayName, Composition{})
-		spec.Key = NewIngredientKey(key)
+		if displayName == "" {
+			displayName = key
+		}
+		spec := IngredientDefinition{
+			ID:   NewIngredientID(displayName),
+			Name: displayName,
+			Key:  NewIngredientKey(key),
+			Profile: ConstituentProfile{
+				ID:   NewIngredientID(displayName),
+				Name: displayName,
+				Components: EnsureWater(ComponentFractions{
+					OtherSolids: Point(0),
+				}),
+			},
+		}
 		return normalizeSpec(spec)
 	}
 	spec := *def
@@ -57,13 +80,25 @@ var (
 	Stabilizer             = specFromCatalog("stabilizer", "Stabilizer")
 	TapiocaSyrup           = specFromCatalog("tapioca_syrup", "Tapioca Syrup")
 
-	NonfatMilkVariable = SpecFromComposition("Nonfat Milk", Composition{
-		Fat:   Range(0, 0.005),
-		MSNF:  Range(0.09, 0.97),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
+	NonfatMilkVariable = buildNonfatMilkVariable()
 )
+
+func buildNonfatMilkVariable() IngredientDefinition {
+	name := "Nonfat Milk"
+	components := ComponentFractions{
+		Fat:         Range(0, 0.005),
+		MSNF:        Range(0.09, 0.97),
+		Sucrose:     Point(0),
+		OtherSolids: Point(0),
+	}
+	components = EnsureWater(components)
+	profile := ConstituentProfile{
+		ID:         NewIngredientID(name),
+		Name:       name,
+		Components: components,
+	}
+	return SpecFromProfile(profile)
+}
 
 // StandardSpecs returns a slice of commonly used ingredient specs.
 func StandardSpecs() []IngredientDefinition {

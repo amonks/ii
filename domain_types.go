@@ -33,12 +33,6 @@ func NewIngredientDefinition(profile ConstituentProfile, key IngredientKey) *Ing
 	return &normalized
 }
 
-// DefinitionFromComposition builds a definition from a higher-level composition.
-func DefinitionFromComposition(name string, comp Composition) *IngredientDefinition {
-	profile := ProfileFromComposition(NewIngredientID(name), name, comp)
-	return NewIngredientDefinition(profile, "")
-}
-
 // NewLot creates a lot descriptor for the provided definition.
 func NewLot(def *IngredientDefinition) LotDescriptor {
 	if def == nil {
