@@ -1,109 +1,49 @@
 package creamery
 
-// specFromBatch builds an Ingredient from a detailed batch entry, overriding
+// specFromCatalog builds an Ingredient from the default catalog, overriding
 // the display name when provided.
-func specFromBatch(key, displayName string) Ingredient {
-	batch, ok := IngredientBatchTable()[key]
+func specFromCatalog(key, displayName string) Ingredient {
+	inst, ok := DefaultIngredientCatalog().InstanceByKey(key)
 	if !ok {
+		if displayName == "" {
+			displayName = key
+		}
 		return SpecFromComposition(displayName, Composition{})
 	}
+	spec := inst.Ingredient
 	if displayName != "" {
-		batch.Name = displayName
+		spec = renameSpec(spec, displayName)
 	}
-	return batch.ToSpec()
+	return spec
+}
+
+func renameSpec(spec Ingredient, name string) Ingredient {
+	copy := spec
+	copy.Name = name
+	copy.ID = NewIngredientID(name)
+	copy.Profile.Name = name
+	copy.Profile.ID = copy.ID
+	return copy
 }
 
 // Standard ingredient specifications with typical compositions.
 var (
-	HeavyCream = SpecFromComposition("Heavy Cream", Composition{
-		Fat:   Range(0.36, 0.40),
-		MSNF:  Range(0.05, 0.06),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
+	HeavyCream = specFromCatalog("heavy_cream", "Heavy Cream")
+	LightCream = specFromCatalog("light_cream", "Light Cream")
+	WholeMilk  = specFromCatalog("whole_milk", "Whole Milk")
+	SkimMilk   = specFromCatalog("skim_milk", "Skim Milk")
 
-	LightCream = SpecFromComposition("Light Cream", Composition{
-		Fat:   Range(0.18, 0.30),
-		MSNF:  Range(0.06, 0.08),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
-
-	WholeMilk = SpecFromComposition("Whole Milk", Composition{
-		Fat:   Range(0.032, 0.035),
-		MSNF:  Range(0.085, 0.09),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
-
-	SkimMilk = SpecFromComposition("Skim Milk", Composition{
-		Fat:   Range(0, 0.005),
-		MSNF:  Range(0.09, 0.095),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
-
-	NonfatDryMilk = SpecFromComposition("Nonfat Dry Milk", Composition{
-		Fat:   Range(0.005, 0.015),
-		MSNF:  Range(0.95, 0.97),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
-
-	SweetenedCondensedMilk = SpecFromComposition("Sweetened Condensed Milk", Composition{
-		Fat:   Range(0.08, 0.09),
-		MSNF:  Range(0.19, 0.21),
-		Sugar: Range(0.43, 0.47),
-		Other: Point(0),
-	})
-
-	Butter = SpecFromComposition("Butter", Composition{
-		Fat:   Range(0.80, 0.82),
-		MSNF:  Range(0.01, 0.02),
-		Sugar: Point(0),
-		Other: Point(0),
-	})
-
-	EggYolks = SpecFromComposition("Egg Yolks", Composition{
-		Fat:   Range(0.30, 0.33),
-		MSNF:  Point(0),
-		Sugar: Point(0),
-		Other: Range(0.16, 0.18),
-	})
-
-	Sugar = SpecFromComposition("Sugar", Composition{
-		Fat:   Point(0),
-		MSNF:  Point(0),
-		Sugar: Point(1.0),
-		Other: Point(0),
-	})
-
-	CornSyrup   = specFromBatch("corn_syrup_42", "Corn Syrup")
-	LiquidSugar = SpecFromComposition("Liquid Sugar", Composition{
-		Fat:   Point(0),
-		MSNF:  Point(0),
-		Sugar: Range(0.65, 0.68),
-		Other: Point(0),
-	})
-	CocoaPowder = SpecFromComposition("Cocoa Powder", Composition{
-		Fat:   Range(0.10, 0.24),
-		MSNF:  Point(0),
-		Sugar: Point(0),
-		Other: Range(0.70, 0.85),
-	})
-	VanillaExtract = SpecFromComposition("Vanilla Extract", Composition{
-		Fat:   Point(0),
-		MSNF:  Point(0),
-		Sugar: Point(0),
-		Other: Range(0, 0.02),
-	})
-	Stabilizer = SpecFromComposition("Stabilizer", Composition{
-		Fat:   Point(0),
-		MSNF:  Point(0),
-		Sugar: Point(0),
-		Other: Point(1.0),
-	})
-	TapiocaSyrup = specFromBatch("tapioca_syrup", "Tapioca Syrup")
+	NonfatDryMilk          = specFromCatalog("skim_milk_powder", "Nonfat Dry Milk")
+	SweetenedCondensedMilk = specFromCatalog("sweetened_condensed_milk", "Sweetened Condensed Milk")
+	Butter                 = specFromCatalog("butter", "Butter")
+	EggYolks               = specFromCatalog("egg_yolk", "Egg Yolks")
+	Sugar                  = specFromCatalog("sucrose", "Sugar")
+	CornSyrup              = specFromCatalog("corn_syrup_42", "Corn Syrup")
+	LiquidSugar            = specFromCatalog("liquid_sugar", "Liquid Sugar")
+	CocoaPowder            = specFromCatalog("cocoa_powder", "Cocoa Powder")
+	VanillaExtract         = specFromCatalog("vanilla_extract", "Vanilla Extract")
+	Stabilizer             = specFromCatalog("stabilizer", "Stabilizer")
+	TapiocaSyrup           = specFromCatalog("tapioca_syrup", "Tapioca Syrup")
 
 	NonfatMilkVariable = SpecFromComposition("Nonfat Milk", Composition{
 		Fat:   Range(0, 0.005),
@@ -115,24 +55,21 @@ var (
 
 // StandardSpecs returns a slice of commonly used ingredient specs.
 func StandardSpecs() []Ingredient {
-	return []Ingredient{
-		HeavyCream,
-		LightCream,
-		WholeMilk,
-		SkimMilk,
-		NonfatDryMilk,
-		SweetenedCondensedMilk,
-		Butter,
-		EggYolks,
-		Sugar,
-		CornSyrup,
-		LiquidSugar,
-		CocoaPowder,
-		VanillaExtract,
-		Stabilizer,
-		TapiocaSyrup,
-		NonfatMilkVariable,
+	catalog := DefaultIngredientCatalog()
+	specs := make([]Ingredient, 0, len(standardSpecKeys)+1)
+	for _, entry := range standardSpecKeys {
+		inst, ok := catalog.InstanceByKey(entry.key)
+		if !ok {
+			continue
+		}
+		spec := inst.Ingredient
+		if entry.display != "" {
+			spec = renameSpec(spec, entry.display)
+		}
+		specs = append(specs, spec)
 	}
+	specs = append(specs, NonfatMilkVariable)
+	return specs
 }
 
 // StandardSpecMap provides the same specs keyed by their IngredientID.
@@ -143,4 +80,25 @@ func StandardSpecMap() map[IngredientID]Ingredient {
 		lib[spec.ID] = spec
 	}
 	return lib
+}
+
+var standardSpecKeys = []struct {
+	key     string
+	display string
+}{
+	{"heavy_cream", "Heavy Cream"},
+	{"light_cream", "Light Cream"},
+	{"whole_milk", "Whole Milk"},
+	{"skim_milk", "Skim Milk"},
+	{"skim_milk_powder", "Nonfat Dry Milk"},
+	{"sweetened_condensed_milk", "Sweetened Condensed Milk"},
+	{"butter", "Butter"},
+	{"egg_yolk", "Egg Yolks"},
+	{"sucrose", "Sugar"},
+	{"corn_syrup_42", "Corn Syrup"},
+	{"liquid_sugar", "Liquid Sugar"},
+	{"cocoa_powder", "Cocoa Powder"},
+	{"vanilla_extract", "Vanilla Extract"},
+	{"stabilizer", "Stabilizer"},
+	{"tapioca_syrup", "Tapioca Syrup"},
 }

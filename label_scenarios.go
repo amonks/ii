@@ -28,7 +28,7 @@ type LabelScenarioResult struct {
 }
 
 type scenarioIngredients struct {
-	table    map[string]IngredientBatch
+	catalog  IngredientCatalog
 	batches  map[IngredientID]IngredientInstance
 	specs    []Ingredient
 	nameToID map[string]IngredientID
@@ -36,39 +36,37 @@ type scenarioIngredients struct {
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
-		table:    IngredientBatchTable(),
+		catalog:  DefaultIngredientCatalog(),
 		batches:  make(map[IngredientID]IngredientInstance),
 		specs:    make([]Ingredient, 0),
 		nameToID: make(map[string]IngredientID),
 	}
 }
 
-func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientBatch)) {
-	base := s.table[key]
-	detail := cloneBatch(base, func(d *IngredientBatch) {
-		d.Name = name
-		if override != nil {
-			override(d)
-		}
-	})
-	s.addDetail(detail)
+func (s *scenarioIngredients) addClone(key, name string, override func(*IngredientInstance)) {
+	base, ok := s.catalog.InstanceByKey(key)
+	if !ok {
+		return
+	}
+	inst := base
+	if name != "" {
+		inst = renameInstance(inst, name)
+	}
+	if override != nil {
+		override(&inst)
+	}
+	s.addDetail(inst)
 }
 
-func (s *scenarioIngredients) addCustom(detail IngredientBatch) {
-	s.addDetail(detail)
-}
-
-func (s *scenarioIngredients) addDetail(detail IngredientBatch) {
-	if detail.ID == "" {
-		detail.ID = NewIngredientID(detail.Name)
-	}
-	s.nameToID[detail.Name] = detail.ID
-	inst := detail.ToInstance()
-	if detail.Name != "" {
-		inst.Name = detail.Name
-	}
-	s.batches[detail.ID] = inst
-	s.specs = append(s.specs, ingredientSpecFromBatch(detail))
+func (s *scenarioIngredients) addDetail(inst IngredientInstance) {
+	profile := inst.EffectiveProfile()
+	s.nameToID[profile.Name] = profile.ID
+	inst.Ingredient.Profile = profile
+	inst.Ingredient.ID = profile.ID
+	inst.Ingredient.Name = profile.Name
+	inst.Profile = profile
+	s.batches[profile.ID] = inst
+	s.specs = append(s.specs, inst.Ingredient)
 }
 
 func (s *scenarioIngredients) Specs() []Ingredient {
@@ -81,6 +79,13 @@ func (s *scenarioIngredients) Batches() map[IngredientID]IngredientInstance {
 		copy[id] = batch
 	}
 	return copy
+}
+
+func renameInstance(inst IngredientInstance, name string) IngredientInstance {
+	inst.Name = name
+	inst.Ingredient = renameSpec(inst.Ingredient, name)
+	inst.Profile = inst.Ingredient.Profile
+	return inst
 }
 
 func (s *scenarioIngredients) id(name string) IngredientID {
@@ -336,9 +341,10 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 	builder.addClone("lecithin", "sunflower_lecithin", nil)
 	builder.addClone("locust_bean_gum", "carob_bean_gum", nil)
 	builder.addClone("guar_gum", "guar_gum", nil)
-	builder.addClone("vanilla_extract", "natural_flavor", func(d *IngredientBatch) {
-		d.Water = 0.60
-		d.OtherSolids = 0.40
+	builder.addClone("vanilla_extract", "natural_flavor", func(inst *IngredientInstance) {
+		inst.Profile.Components.Water = Point(0.60)
+		inst.Profile.Components.OtherSolids = Point(0.40)
+		inst.Ingredient.Profile = inst.Profile
 	})
 	builder.addClone("lemon_peel", "lemon_peel", nil)
 
@@ -424,10 +430,6 @@ func solveLabelScenario(name string, facts NutritionFacts, pintMass float64, bui
 		Specs:            builder.Specs(),
 		BatchDetails:     builder.Batches(),
 	}, nil
-}
-
-func ingredientSpecFromBatch(detail IngredientBatch) Ingredient {
-	return SpecFromProfile(detail.ToProfile())
 }
 
 func scenarioTargetFromFacts(facts NutritionFacts) FormulationTarget {

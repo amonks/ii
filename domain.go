@@ -1,5 +1,7 @@
 package creamery
 
+import "sync"
+
 // Ingredient represents an ingredient definition with uncertainty ranges.
 type Ingredient struct {
 	ID      IngredientID
@@ -73,34 +75,52 @@ func (inst IngredientInstance) CostPerKg() float64 {
 	return cost.Mid()
 }
 
-// IngredientCatalog holds reusable ingredients accessible by ID.
+// IngredientCatalog exposes canonical ingredient specs and default instances.
 type IngredientCatalog struct {
-	items map[IngredientID]Ingredient
+	specs     map[IngredientID]Ingredient
+	instances map[IngredientID]IngredientInstance
+	keyed     map[string]IngredientInstance
+}
+
+var (
+	defaultCatalog     IngredientCatalog
+	defaultCatalogOnce sync.Once
+)
+
+// DefaultIngredientCatalog returns the lazily constructed catalog for built-in ingredients.
+func DefaultIngredientCatalog() IngredientCatalog {
+	defaultCatalogOnce.Do(func() {
+		defaultCatalog = catalogFromBatches(IngredientBatchTable())
+	})
+	return defaultCatalog
 }
 
 // NewIngredientCatalog builds a catalog from a slice of ingredients.
 func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
-	items := make(map[IngredientID]Ingredient, len(ingredients))
+	specs := make(map[IngredientID]Ingredient, len(ingredients))
 	for _, ing := range ingredients {
 		if ing.ID == "" {
 			ing.ID = NewIngredientID(ing.Name)
 		}
-		if existing, ok := items[ing.ID]; ok && existing.Name != ing.Name {
-			// Prefer the more descriptive name if duplicate IDs occur.
+		if existing, ok := specs[ing.ID]; ok && existing.Name != ing.Name {
 			if len(ing.Name) > len(existing.Name) {
-				items[ing.ID] = ing
+				specs[ing.ID] = ing
 			}
 			continue
 		}
-		items[ing.ID] = ing
+		specs[ing.ID] = ing
 	}
-	return IngredientCatalog{items: items}
+	return IngredientCatalog{
+		specs:     specs,
+		instances: make(map[IngredientID]IngredientInstance),
+		keyed:     make(map[string]IngredientInstance),
+	}
 }
 
 // All returns every ingredient in the catalog.
 func (c IngredientCatalog) All() []Ingredient {
-	all := make([]Ingredient, 0, len(c.items))
-	for _, ing := range c.items {
+	all := make([]Ingredient, 0, len(c.specs))
+	for _, ing := range c.specs {
 		all = append(all, ing)
 	}
 	return all
@@ -108,8 +128,46 @@ func (c IngredientCatalog) All() []Ingredient {
 
 // Get looks up an ingredient by ID.
 func (c IngredientCatalog) Get(id IngredientID) (Ingredient, bool) {
-	ing, ok := c.items[id]
+	ing, ok := c.specs[id]
 	return ing, ok
+}
+
+// Instance returns the default instance for an ingredient ID.
+func (c IngredientCatalog) Instance(id IngredientID) (IngredientInstance, bool) {
+	inst, ok := c.instances[id]
+	return inst, ok
+}
+
+// InstanceByKey looks up an instance by its catalog key (e.g., "sucrose").
+func (c IngredientCatalog) InstanceByKey(key string) (IngredientInstance, bool) {
+	inst, ok := c.keyed[key]
+	return inst, ok
+}
+
+// Instances returns a copy of the default instances keyed by ingredient ID.
+func (c IngredientCatalog) Instances() map[IngredientID]IngredientInstance {
+	copy := make(map[IngredientID]IngredientInstance, len(c.instances))
+	for id, inst := range c.instances {
+		copy[id] = inst
+	}
+	return copy
+}
+
+func catalogFromBatches(batches map[string]IngredientBatch) IngredientCatalog {
+	specs := make(map[IngredientID]Ingredient, len(batches))
+	instances := make(map[IngredientID]IngredientInstance, len(batches))
+	keyed := make(map[string]IngredientInstance, len(batches))
+	for key, batch := range batches {
+		inst := batch.ToInstance()
+		specs[inst.Ingredient.ID] = inst.Ingredient
+		instances[inst.Ingredient.ID] = inst
+		keyed[key] = inst
+	}
+	return IngredientCatalog{
+		specs:     specs,
+		instances: instances,
+		keyed:     keyed,
+	}
 }
 
 // SpecFromProfile builds an Ingredient from an existing constituent profile.

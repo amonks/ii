@@ -23,6 +23,8 @@ var (
 func main() {
 	flag.Parse()
 
+	catalog := creamery.DefaultIngredientCatalog()
+
 	components := []component{
 		{"cream36", 0.432, "Cream (36%)"},
 		{"whole_milk", 0.267, "Whole milk (3.25%)"},
@@ -30,9 +32,8 @@ func main() {
 		{"sucrose", 0.190, "Sucrose"},
 	}
 
-	pantry := creamery.IngredientBatchTable()
 	if *listPantry {
-		printPantry(pantry)
+		printPantry(catalog)
 		return
 	}
 
@@ -41,19 +42,16 @@ func main() {
 	recipeComponents := make([]creamery.RecipeComponent, 0, len(components))
 
 	for _, comp := range components {
-		ing, ok := pantry[comp.Key]
+		inst, ok := catalog.InstanceByKey(comp.Key)
 		if !ok {
-			log.Fatalf("ingredient %s missing from detailed table", comp.Key)
+			log.Fatalf("ingredient %s missing from catalog", comp.Key)
 		}
-		mass := comp.Fraction * batchMass
-		entry := ing
 		if comp.Label != "" {
-			entry.Name = comp.Label
+			inst = instanceWithName(inst, comp.Label)
 		}
-		inst := entry.ToInstance()
 		recipeComponents = append(recipeComponents, creamery.RecipeComponent{
 			Ingredient: inst,
-			MassKg:     mass,
+			MassKg:     comp.Fraction * batchMass,
 		})
 	}
 
@@ -217,25 +215,37 @@ func printRecipe(r *creamery.Recipe) {
 	}
 }
 
-func printPantry(pantry map[string]creamery.IngredientBatch) {
-	keys := make([]string, 0, len(pantry))
-	for key := range pantry {
-		keys = append(keys, key)
+func instanceWithName(inst creamery.IngredientInstance, name string) creamery.IngredientInstance {
+	if name == "" {
+		return inst
 	}
-	sort.Strings(keys)
-	fmt.Println("Available pantry ingredients:")
-	for _, key := range keys {
-		batch := pantry[key]
-		profile := batch.ToProfile()
-		comp := creamery.CompositionFromProfile(profile)
-		fmt.Printf("  - %-20s ID=%-16s label=%-20s fat=%5.1f%% msnf=%5.1f%% sugar=%5.1f%%\n",
-			key,
-			profile.ID,
-			batch.Name,
-			comp.Fat.Mid()*100,
-			comp.MSNF.Mid()*100,
-			comp.Sugar.Mid()*100,
-		)
+	spec := inst.Ingredient
+	spec.Name = name
+	spec.ID = creamery.NewIngredientID(name)
+	spec.Profile.Name = name
+	spec.Profile.ID = spec.ID
+	inst.Ingredient = spec
+	inst.Profile = spec.Profile
+	inst.Name = name
+	return inst
+}
+
+func printPantry(catalog creamery.IngredientCatalog) {
+	instances := catalog.Instances()
+	type entry struct {
+		id   creamery.IngredientID
+		name string
+	}
+	rows := make([]entry, 0, len(instances))
+	for id, inst := range instances {
+		rows = append(rows, entry{id: id, name: inst.DisplayName()})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].name < rows[j].name
+	})
+	fmt.Println("Available catalog ingredients:")
+	for _, row := range rows {
+		fmt.Printf("  - %-24s (%s)\n", row.name, row.id)
 	}
 }
 

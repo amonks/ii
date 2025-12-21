@@ -378,6 +378,56 @@ func IngredientBatchTable() map[string]IngredientBatch {
 		},
 	}
 
+	additional := []struct {
+		key       string
+		display   string
+		comp      Composition
+		configure func(*IngredientBatch)
+	}{
+		{
+			key:     "liquid_sugar",
+			display: "Liquid Sugar",
+			comp: Composition{
+				Sugar: Point(0.67),
+			},
+		},
+		{
+			key:     "stabilizer",
+			display: "Stabilizer",
+			comp: Composition{
+				Other: Point(1.0),
+			},
+			configure: func(b *IngredientBatch) {
+				b.Hydrocolloid = true
+			},
+		},
+		{
+			key:     "sweetened_condensed_milk",
+			display: "Sweetened Condensed Milk",
+			comp: Composition{
+				Fat:   Point(0.085),
+				MSNF:  Point(0.20),
+				Sugar: Point(0.445),
+			},
+			configure: func(b *IngredientBatch) {
+				b.AddedSugars = b.Sucrose
+				b.AddedSugarsMin = b.Sucrose * (1 - labelPercentEPS)
+				b.AddedSugarsMax = b.Sucrose * (1 + labelPercentEPS)
+			},
+		},
+	}
+
+	for _, entry := range additional {
+		if _, exists := table[entry.key]; exists {
+			continue
+		}
+		batch := batchFromComposition(entry.key, entry.display, entry.comp)
+		if entry.configure != nil {
+			entry.configure(&batch)
+		}
+		table[entry.key] = batch
+	}
+
 	expandSaturated := func(keys []string, lo, hi float64) {
 		loAdj, hiAdj := expandFractionBounds(lo, hi)
 		mid := 0.5 * (loAdj + hiAdj)
@@ -530,6 +580,29 @@ func IngredientBatchTable() map[string]IngredientBatch {
 	}
 
 	return table
+}
+
+func batchFromComposition(key, display string, comp Composition) IngredientBatch {
+	profile := ProfileFromComposition(NewIngredientID(display), display, comp)
+	comps := profile.Components
+	return IngredientBatch{
+		ID:              profile.ID,
+		Name:            key,
+		Water:           comps.Water.Mid(),
+		Fat:             comps.Fat.Mid(),
+		Protein:         comps.Protein.Mid(),
+		Lactose:         comps.Lactose.Mid(),
+		Sucrose:         comps.Sucrose.Mid(),
+		Glucose:         comps.Glucose.Mid(),
+		Fructose:        comps.Fructose.Mid(),
+		Maltodextrin:    comps.Maltodextrin.Mid(),
+		Polyols:         comps.Polyols.Mid(),
+		Ash:             comps.Ash.Mid(),
+		OtherSolids:     comps.OtherSolids.Mid(),
+		SaturatedFat:    comps.Fat.Mid(),
+		SaturatedFatMin: comps.Fat.Lo,
+		SaturatedFatMax: comps.Fat.Hi,
+	}
 }
 
 func expandFractionBounds(lo, hi float64) (float64, float64) {

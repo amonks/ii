@@ -105,13 +105,26 @@ func TestFullWorkflow(t *testing.T) {
 	myMilk := creamery.SpecFromComposition("Whole Milk (3.25%)", creamery.PointComposition(0.0325, 0.0875, 0, 0))
 	myNFDM := creamery.SpecFromComposition("Skim Milk Powder", creamery.PointComposition(0.01, 0.96, 0, 0))
 
-	mySucroseBatch := creamery.IngredientBatchTable()["sucrose"]
-	mySucroseBatch.Name = "Sucrose"
-	mySucrose := mySucroseBatch.ToSpec()
-
-	myDextroseBatch := creamery.IngredientBatchTable()["dextrose"]
-	myDextroseBatch.Name = "Dextrose"
-	myDextrose := myDextroseBatch.ToSpec()
+	catalog := creamery.DefaultIngredientCatalog()
+	var mySucrose creamery.Ingredient
+	if inst, ok := catalog.InstanceByKey("sucrose"); ok {
+		mySucrose = inst.Ingredient
+		mySucrose.Name = "Sucrose"
+		mySucrose.ID = creamery.NewIngredientID(mySucrose.Name)
+		mySucrose.Profile.Name = mySucrose.Name
+		mySucrose.Profile.ID = mySucrose.ID
+	}
+	var myDextrose creamery.Ingredient
+	if inst, ok := catalog.InstanceByKey("dextrose"); ok {
+		myDextrose = inst.Ingredient
+		myDextrose.Name = "Dextrose"
+		myDextrose.ID = creamery.NewIngredientID(myDextrose.Name)
+		myDextrose.Profile.Name = myDextrose.Name
+		myDextrose.Profile.ID = myDextrose.ID
+	}
+	if mySucrose.ID == "" || myDextrose.ID == "" {
+		t.Fatalf("catalog missing required sugar entries")
+	}
 
 	fmt.Println("Ingredients on hand:")
 	myCreamComp := creamery.CompositionFromProfile(myCream.Profile)
