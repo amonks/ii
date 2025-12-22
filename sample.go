@@ -1,8 +1,12 @@
 package creamery
 
 import (
+	"errors"
 	"math"
 	"math/rand"
+	"sort"
+
+	"github.com/go-nlopt/nlopt"
 )
 
 // Sample generates random feasible solutions by varying both the objective
@@ -257,31 +261,163 @@ func solutionsEqual(a, b *Solution, tolerance float64) bool {
 	return true
 }
 
+type solutionPreferenceScore struct {
+	solution  *Solution
+	score     float64
+	viscosity float64
+}
+
+func reorderSolutionsByPreference(solutions []*Solution, pref RecipePreference, opts MixOptions) []*Solution {
+	if len(solutions) == 0 {
+		return solutions
+	}
+	pref = normalizeRecipePreference(pref)
+
+	scored := make([]solutionPreferenceScore, 0, len(solutions))
+	fallback := make([]*Solution, 0)
+
+	for _, sol := range solutions {
+		score, err := sol.Score(pref, opts)
+		if err != nil {
+			fallback = append(fallback, sol)
+			continue
+		}
+		visc := 0.0
+		if snapshot, snapErr := sol.Snapshot(opts); snapErr == nil {
+			visc = snapshot.ViscosityAtServe
+		}
+		scored = append(scored, solutionPreferenceScore{
+			solution:  sol,
+			score:     score,
+			viscosity: visc,
+		})
+	}
+
+	sort.SliceStable(scored, func(i, j int) bool {
+		if scored[i].score == scored[j].score {
+			return scored[i].viscosity < scored[j].viscosity
+		}
+		return scored[i].score > scored[j].score
+	})
+
+	reordered := make([]*Solution, 0, len(solutions))
+	for _, entry := range scored {
+		reordered = append(reordered, entry.solution)
+	}
+	reordered = append(reordered, fallback...)
+	return reordered
+}
+
+// CompareSolutions returns 1 if a scores higher than b, -1 if lower, and 0 if
+// the scores are effectively equal under the supplied preference curves.
+func CompareSolutions(a, b *Solution, pref RecipePreference, opts MixOptions) (int, error) {
+	if a == nil || b == nil {
+		return 0, errors.New("solutions must be non-nil")
+	}
+	scoreA, err := a.Score(pref, opts)
+	if err != nil {
+		return 0, err
+	}
+	scoreB, err := b.Score(pref, opts)
+	if err != nil {
+		return 0, err
+	}
+	diff := scoreA - scoreB
+	const epsilon = 1e-9
+	if diff > epsilon {
+		return 1, nil
+	}
+	if diff < -epsilon {
+		return -1, nil
+	}
+	return 0, nil
+}
+
 // DiverseSamples generates a set of diverse feasible solutions by
 // combining extreme points with random samples.
 func (s *Solver) DiverseSamples(count int, rng *rand.Rand) ([]*Solution, error) {
+	if count <= 0 {
+		count = 1
+	}
 	// Start with extreme points
 	extremes, err := s.ExtremePoints()
 	if err != nil {
 		return nil, err
 	}
 
-	if len(extremes) >= count {
-		return extremes[:count], nil
+	// Always include at least some randomized samples so we can rank the
+	// candidates by texture (viscosity) instead of returning an arbitrary
+	// extreme point.
+	randomCount := count - len(extremes)
+	if randomCount < count {
+		randomCount = count
 	}
-
-	// Add random samples to fill out
-	remaining := count - len(extremes)
-	randoms, err := s.Sample(remaining*2, true, rng) // oversample, will dedupe
+	if randomCount <= 0 {
+		randomCount = count
+	}
+	randoms, err := s.Sample(randomCount*2, true, rng) // oversample, will dedupe
 	if err != nil {
 		return nil, err
 	}
 
 	all := append(extremes, randoms...)
 	unique := deduplicateSolutions(all, 0.01)
+	if len(unique) == 0 {
+		return unique, nil
+	}
+
+	unique = reorderSolutionsByPreference(unique, DefaultRecipePreference(), MixOptions{})
 
 	if len(unique) > count {
 		return unique[:count], nil
 	}
 	return unique, nil
+}
+
+// Optimize returns the highest-scoring recipe according to the default
+// preference curves (viscosity, sweetness, ice fraction). Sampling fallback
+// has been removed so failures are surfaced to the caller.
+func (s *Solver) Optimize(rng *rand.Rand) (*Solution, error) {
+	_ = rng
+	return s.OptimizeWithPreference(DefaultRecipePreference())
+}
+
+func (s *Solver) OptimizeWithPreference(pref RecipePreference) (*Solution, error) {
+	lpp := s.buildLP()
+	ids := s.Problem.IngredientIDs()
+	names := s.Problem.IngredientNames()
+	pref = normalizeRecipePreference(pref)
+
+	mixOpts := MixOptions{}
+	var snapshotErr error
+
+	opts := s.opts
+	opts.NLoptAlgorithm = nlopt.LN_COBYLA
+
+	_, weights, err := lpp.solveWithObjective(opts, func(x, grad []float64) float64 {
+		if grad != nil {
+			for i := range grad {
+				grad[i] = 0
+			}
+		}
+		snapshot, snapErr := s.snapshotFromWeights(x, mixOpts)
+		if snapErr != nil {
+			if snapshotErr == nil {
+				snapshotErr = snapErr
+			}
+			return 1
+		}
+		score := pref.Score(snapshot)
+		return 1 - score
+	})
+	if err != nil {
+		if snapshotErr != nil {
+			return nil, snapshotErr
+		}
+		return nil, err
+	}
+	if len(weights) == 0 {
+		return nil, errors.New("optimizer returned no weights")
+	}
+	return s.weightsToSolution(weights, ids, names), nil
 }

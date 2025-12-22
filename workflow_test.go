@@ -189,52 +189,60 @@ func TestFullWorkflow(t *testing.T) {
 		fmt.Printf("  %-20s %5.1f%% - %5.1f%%\n", spec.Name, r.Lo*100, r.Hi*100)
 	}
 
-	// Get diverse sample recipes
-	samples, _ := solver.DiverseSamples(3, nil)
+	bestSample, err := solver.Optimize(nil)
+	if err != nil {
+		t.Fatalf("failed to retrieve best sample: %v", err)
+	}
+	viscPref := creamery.DefaultViscosityPreference()
 
 	fmt.Println()
-	fmt.Println("## STEP 3: Sample recipes")
+	fmt.Println("## STEP 3: Best recipe (by viscosity preference)")
+	fmt.Println()
 
-	for i, s := range samples {
-		fmt.Printf("\n### Recipe %d\n", i+1)
-		fmt.Println()
-
-		// Print recipe
-		fmt.Println("Ingredients:")
-		for _, spec := range specs {
-			w := s.Weights[spec.ID]
-			if w > 0.001 {
-				fmt.Printf("  %-20s %5.1f%%\n", spec.Name, w*100)
-			}
+	// Print recipe
+	fmt.Println("Ingredients:")
+	for _, spec := range specs {
+		w := bestSample.Weights[spec.ID]
+		if w > 0.001 {
+			fmt.Printf("  %-20s %5.1f%%\n", spec.Name, w*100)
 		}
+	}
 
-		// Print achieved composition
-		fmt.Println()
-		fmt.Println("Achieved composition:")
-		fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", s.Achieved.Fat.Mid()*100, target.FatInterval())
-		fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", s.Achieved.MSNF.Mid()*100, target.MSNFInterval())
-		fmt.Printf("  Added sugar: %.2f%%  (target: %s)\n", s.Achieved.AddedSugarsInterval().Mid()*100, target.AddedSugarsInterval())
-		fmt.Printf("  Water: %.2f%%\n", s.Achieved.Water.Mid()*100)
-		assertFractionsWithinTarget(t, targetFractions, s.Achieved, fmt.Sprintf("Recipe %d", i+1))
+	// Print achieved composition
+	fmt.Println()
+	fmt.Println("Achieved composition:")
+	fmt.Printf("  Fat:   %.2f%%  (target: %s)\n", bestSample.Achieved.Fat.Mid()*100, target.FatInterval())
+	fmt.Printf("  MSNF:  %.2f%%  (target: %s)\n", bestSample.Achieved.MSNF.Mid()*100, target.MSNFInterval())
+	fmt.Printf("  Added sugar: %.2f%%  (target: %s)\n", bestSample.Achieved.AddedSugarsInterval().Mid()*100, target.AddedSugarsInterval())
+	fmt.Printf("  Water: %.2f%%\n", bestSample.Achieved.Water.Mid()*100)
+	assertFractionsWithinTarget(t, targetFractions, bestSample.Achieved, "Best recipe")
 
-		// POD/PAC analysis
-		sweetener := creamery.AnalyzeSweeteners(s, specs)
-		fmt.Println()
-		fmt.Println("Sweetener analysis:")
-		fmt.Printf("  POD: %.1f (equivalent to %.1f%% sucrose)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
-		fmt.Printf("  PAC: %.1f → %s\n", sweetener.TotalPAC, sweetener.RelativeSoftness())
-		assertSweetenersMatchTarget(t, target, sweetener, fmt.Sprintf("Recipe %d", i+1))
+	// POD/PAC analysis
+	sweetener := creamery.AnalyzeSweeteners(bestSample, specs)
+	fmt.Println()
+	fmt.Println("Sweetener analysis:")
+	fmt.Printf("  POD: %.1f (equivalent to %.1f%% sucrose)\n", sweetener.TotalPOD, sweetener.EquivalentSucrose()*100)
+	fmt.Printf("  PAC: %.1f → %s\n", sweetener.TotalPAC, sweetener.RelativeSoftness())
+	assertSweetenersMatchTarget(t, target, sweetener, "Best recipe")
 
-		// Scale to a practical batch size
-		batchGrams := 1000.0
+	if snapshot, snapErr := bestSample.Snapshot(creamery.MixOptions{}); snapErr == nil {
+		pref := viscPref.Score(snapshot.ViscosityAtServe)
 		fmt.Println()
-		fmt.Printf("For a %.0fg batch:\n", batchGrams)
-		for _, spec := range specs {
-			w := s.Weights[spec.ID]
-			if w > 0.001 {
-				grams := w * batchGrams
-				fmt.Printf("  %-20s %6.1fg\n", spec.Name, grams)
-			}
+		fmt.Println("Texture preview:")
+		fmt.Printf("  Viscosity @ serve: %.4f Pa·s (preference %.2f)\n", snapshot.ViscosityAtServe, pref)
+		fmt.Printf("  Overrun estimate : %.1f%%\n", snapshot.OverrunEstimate*100)
+		fmt.Printf("  Hardness index   : %.2f\n", snapshot.HardnessIndex)
+	}
+
+	// Scale to a practical batch size
+	batchGrams := 1000.0
+	fmt.Println()
+	fmt.Printf("For a %.0fg batch:\n", batchGrams)
+	for _, spec := range specs {
+		w := bestSample.Weights[spec.ID]
+		if w > 0.001 {
+			grams := w * batchGrams
+			fmt.Printf("  %-20s %6.1fg\n", spec.Name, grams)
 		}
 	}
 

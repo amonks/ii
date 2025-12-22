@@ -8,35 +8,65 @@ import (
 
 func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float64, []float64, error) {
 	n := lpp.n
-	if len(objective) != n {
-		vec := make([]float64, n)
-		copy(vec, objective)
-		objective = vec
+	objVec := make([]float64, n)
+	copy(objVec, objective)
+	return lpp.solveWithObjective(opts, func(x, grad []float64) float64 {
+		if grad != nil {
+			copy(grad, objVec)
+		}
+		return dot(objVec, x)
+	})
+}
+
+func (lpp *lpProblem) solveWithObjective(opts SolverOptions, objective func(x, grad []float64) float64) (float64, []float64, error) {
+	opt, initial, err := lpp.configureOptimizer(opts)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer opt.Destroy()
+
+	if err := opt.SetMinObjective(objective); err != nil {
+		return 0, nil, err
 	}
 
+	solution, value, err := opt.Optimize(initial)
+	if err != nil {
+		return 0, nil, err
+	}
+	return value, solution, nil
+}
+
+func (lpp *lpProblem) configureOptimizer(opts SolverOptions) (*nlopt.NLopt, []float64, error) {
+	n := lpp.n
 	alg := opts.NLoptAlgorithm
 	if alg == 0 {
 		alg = defaultNLoptAlgorithm
 	}
 	opt, err := nlopt.NewNLopt(alg, uint(n))
 	if err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
-	defer opt.Destroy()
+
+	success := false
+	defer func() {
+		if !success {
+			opt.Destroy()
+		}
+	}()
 
 	if err := opt.SetLowerBounds(append([]float64(nil), lpp.lower...)); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	if err := opt.SetUpperBounds(append([]float64(nil), lpp.upper...)); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	if opts.MaxEval > 0 {
 		if err := opt.SetMaxEval(opts.MaxEval); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 	}
 	if err := opt.SetXtolRel(opts.ConstraintTolerance); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 
 	tol := opts.ConstraintTolerance
@@ -46,32 +76,32 @@ func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float
 		sumOnes[i] = 1
 	}
 	if err := addLinearEqualityConstraint(opt, sumOnes, -1, tol); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 
 	for _, comp := range lpp.componentConstraints {
 		if err := addLinearConstraint(opt, negateSlice(comp.coeffs.lo), comp.target.Lo, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 		if err := addLinearConstraint(opt, append([]float64(nil), comp.coeffs.hi...), -comp.target.Hi, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 	}
 
 	if intervalSpecified(lpp.targetPOD) {
 		if err := addLinearConstraint(opt, negateSlice(lpp.podLo), lpp.targetPOD.Lo, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 		if err := addLinearConstraint(opt, append([]float64(nil), lpp.podHi...), -lpp.targetPOD.Hi, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 	}
 	if intervalSpecified(lpp.targetPAC) {
 		if err := addLinearConstraint(opt, negateSlice(lpp.pacLo), lpp.targetPAC.Lo, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 		if err := addLinearConstraint(opt, append([]float64(nil), lpp.pacHi...), -lpp.targetPAC.Hi, tol); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -81,7 +111,7 @@ func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float
 			coeff[i] = -1
 			coeff[i+1] = 1
 			if err := addLinearConstraint(opt, coeff, 0, tol); err != nil {
-				return 0, nil, err
+				return nil, nil, err
 			}
 		}
 	}
@@ -95,7 +125,7 @@ func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float
 				}
 			}
 			if err := addLinearConstraint(opt, coeff, -constraint.Upper, tol); err != nil {
-				return 0, nil, err
+				return nil, nil, err
 			}
 		}
 		if constraint.Lower > math.Inf(-1) {
@@ -106,27 +136,14 @@ func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float
 				}
 			}
 			if err := addLinearConstraint(opt, coeff, constraint.Lower, tol); err != nil {
-				return 0, nil, err
+				return nil, nil, err
 			}
 		}
 	}
 
-	objVec := append([]float64(nil), objective...)
-	if err := opt.SetMinObjective(func(x, grad []float64) float64 {
-		if grad != nil {
-			copy(grad, objVec)
-		}
-		return dot(objVec, x)
-	}); err != nil {
-		return 0, nil, err
-	}
-
 	initial := lpp.initialGuess()
-	solution, value, err := opt.Optimize(initial)
-	if err != nil {
-		return 0, nil, err
-	}
-	return value, solution, nil
+	success = true
+	return opt, initial, nil
 }
 
 func addLinearConstraint(opt *nlopt.NLopt, coeff []float64, offset, tol float64) error {
@@ -194,10 +211,6 @@ func (lpp *lpProblem) initialGuess() []float64 {
 	scale := 1 / sum
 	for i := 0; i < n; i++ {
 		guess[i] = clampFloat(guess[i]*scale, lpp.lower[i], lpp.upper[i])
-	}
-	zero := make([]float64, n)
-	if _, feasible, err := lpp.solveSimplex(zero); err == nil && len(feasible) == n {
-		return feasible
 	}
 	return guess
 }

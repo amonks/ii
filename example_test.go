@@ -62,22 +62,19 @@ func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	fmt.Println("Example solution:")
 	fmt.Println(solution)
 
-	// Get diverse samples
-	fmt.Println("\nDiverse samples:")
-	samples, err := solver.DiverseSamples(5, nil)
+	// Show just the best sample from the distribution.
+	bestSample, err := solver.Optimize(nil)
 	if err != nil {
-		t.Fatalf("failed to get samples: %v", err)
+		t.Fatalf("failed to get best sample: %v", err)
 	}
-	for i, s := range samples {
-		fmt.Printf("Sample %d:\n", i+1)
-		for id, w := range s.Weights {
-			if w > 0.01 {
-				name := s.Names[id]
-				if name == "" {
-					name = id.String()
-				}
-				fmt.Printf("  %s: %.1f%%\n", name, w*100)
+	fmt.Println("\nBest sample (viscosity preference):")
+	for id, w := range bestSample.Weights {
+		if w > 0.01 {
+			name := bestSample.Names[id]
+			if name == "" {
+				name = id.String()
 			}
+			fmt.Printf("  %s: %.1f%%\n", name, w*100)
 		}
 	}
 }
@@ -144,25 +141,22 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	}
 	fmt.Println(bounds)
 
-	samples, err := solver.DiverseSamples(3, nil)
+	bestFormulation, err := solver.Optimize(nil)
 	if err != nil {
 		t.Fatalf("failed to sample: %v", err)
 	}
 
-	fmt.Println("Possible formulations:")
-	for i, s := range samples {
-		fmt.Printf("\nFormulation %d:\n", i+1)
-		for id, w := range s.Weights {
-			if w > 0.01 {
-				name := s.Names[id]
-				if name == "" {
-					name = id.String()
-				}
-				fmt.Printf("  %s: %.1f%%\n", name, w*100)
+	fmt.Println("Best formulation (viscosity preference):")
+	for id, w := range bestFormulation.Weights {
+		if w > 0.01 {
+			name := bestFormulation.Names[id]
+			if name == "" {
+				name = id.String()
 			}
+			fmt.Printf("  %s: %.1f%%\n", name, w*100)
 		}
-		fmt.Printf("  Achieved: %s\n", s.Achieved)
 	}
+	fmt.Printf("  Achieved: %s\n", bestFormulation.Achieved)
 }
 
 // TestWithTighterConstraints shows iterative refinement.

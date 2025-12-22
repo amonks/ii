@@ -363,6 +363,56 @@ func (s Solution) String() string {
 	return result
 }
 
+// RecipeComponents converts the solution weights to recipe components scaled
+// to the provided total mass (defaults to 1 kg).
+func (s Solution) RecipeComponents(totalMass float64) ([]RecipeComponent, error) {
+	if totalMass <= 0 {
+		totalMass = 1
+	}
+	if len(s.Weights) == 0 {
+		return nil, fmt.Errorf("solution has no ingredient weights")
+	}
+
+	components := make([]RecipeComponent, 0, len(s.Weights))
+	for id, weight := range s.Weights {
+		if weight <= 0 {
+			continue
+		}
+		lot, ok := s.Lots[id]
+		if !ok || lot.Definition == nil {
+			return nil, fmt.Errorf("solution missing lot definition for ingredient %s", id)
+		}
+		components = append(components, RecipeComponent{
+			Ingredient: lot,
+			MassKg:     weight * totalMass,
+		})
+	}
+	if len(components) == 0 {
+		return nil, fmt.Errorf("solution has no positive ingredient weights")
+	}
+	return components, nil
+}
+
+// Snapshot aggregates the solution into a BatchSnapshot using the provided
+// mixing options (defaults applied internally).
+func (s Solution) Snapshot(opts MixOptions) (BatchSnapshot, error) {
+	components, err := s.RecipeComponents(1.0)
+	if err != nil {
+		return BatchSnapshot{}, err
+	}
+	return BuildProperties(components, opts)
+}
+
+// Score evaluates the solution against the provided preference curves.
+func (s Solution) Score(pref RecipePreference, opts MixOptions) (float64, error) {
+	pref = normalizeRecipePreference(pref)
+	snapshot, err := s.Snapshot(opts)
+	if err != nil {
+		return 0, err
+	}
+	return pref.Score(snapshot), nil
+}
+
 // ImpliedMSNF calculates what MSNF interval a variable ingredient must have
 // to achieve the target bounds, given the weights of all other ingredients.
 func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Interval, id IngredientID) (Interval, bool) {

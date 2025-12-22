@@ -1,14 +1,12 @@
 package creamery
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
 	"github.com/go-nlopt/nlopt"
-	"gonum.org/v1/gonum/mat"
 )
-
-const tolerance = 1e-9
 
 // SolverOptions configure solver behavior for the NLopt backend.
 type SolverOptions struct {
@@ -454,155 +452,6 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	return lpp
 }
 
-// solveSimplex runs the legacy LP simplex solver with a given objective.
-// objective: coefficients for minimization
-// Returns (objective value, solution weights, error)
-func (lpp *lpProblem) solveSimplex(objective []float64) (float64, []float64, error) {
-	n := lpp.n
-
-	componentRows := len(lpp.componentConstraints) * 2
-	numIneq := componentRows + 2*n
-	hasPOD := lpp.targetPOD.Hi > 0
-	hasPAC := lpp.targetPAC.Hi > 0
-	if hasPOD {
-		numIneq += 2
-	}
-	if hasPAC {
-		numIneq += 2
-	}
-	if lpp.orderConstraints {
-		numIneq += n - 1
-	}
-	for _, constraint := range lpp.constraints {
-		if constraint.Upper < math.Inf(1) {
-			numIneq++
-		}
-		if constraint.Lower > math.Inf(-1) {
-			numIneq++
-		}
-	}
-
-	// Build inequality matrix G and vector h: Gx <= h
-	G := mat.NewDense(numIneq, n, nil)
-	h := make([]float64, numIneq)
-
-	row := 0
-
-	for _, comp := range lpp.componentConstraints {
-		for i := 0; i < n; i++ {
-			G.Set(row, i, -comp.coeffs.lo[i])
-		}
-		h[row] = -comp.target.Lo
-		row++
-
-		for i := 0; i < n; i++ {
-			G.Set(row, i, comp.coeffs.hi[i])
-		}
-		h[row] = comp.target.Hi
-		row++
-	}
-
-	// POD constraints (if set)
-	if hasPOD {
-		for i := 0; i < n; i++ {
-			G.Set(row, i, -lpp.podLo[i])
-		}
-		h[row] = -lpp.targetPOD.Lo
-		row++
-
-		for i := 0; i < n; i++ {
-			G.Set(row, i, lpp.podHi[i])
-		}
-		h[row] = lpp.targetPOD.Hi
-		row++
-	}
-
-	// PAC constraints (if set)
-	if hasPAC {
-		for i := 0; i < n; i++ {
-			G.Set(row, i, -lpp.pacLo[i])
-		}
-		h[row] = -lpp.targetPAC.Lo
-		row++
-
-		for i := 0; i < n; i++ {
-			G.Set(row, i, lpp.pacHi[i])
-		}
-		h[row] = lpp.targetPAC.Hi
-		row++
-	}
-
-	// Variable bounds: lower_i <= w_i <= upper_i
-	// Rewrite as: -w_i <= -lower_i and w_i <= upper_i
-	for i := 0; i < n; i++ {
-		G.Set(row, i, -1)
-		h[row] = -lpp.lower[i]
-		row++
-	}
-
-	for i := 0; i < n; i++ {
-		G.Set(row, i, 1)
-		h[row] = lpp.upper[i]
-		row++
-	}
-
-	// Ordering constraints: w_i >= w_{i+1} => w_{i+1} - w_i <= 0
-	if lpp.orderConstraints {
-		for i := 0; i < n-1; i++ {
-			G.Set(row, i, -1)
-			G.Set(row, i+1, 1)
-			h[row] = 0
-			row++
-		}
-	}
-
-	// Additional linear constraints
-	for _, constraint := range lpp.constraints {
-		if constraint.Upper < math.Inf(1) {
-			for id, coeff := range constraint.Coeffs {
-				if idx, ok := lpp.idToIndex[id]; ok {
-					G.Set(row, idx, coeff)
-				}
-			}
-			h[row] = constraint.Upper
-			row++
-		}
-		if constraint.Lower > math.Inf(-1) {
-			for id, coeff := range constraint.Coeffs {
-				if idx, ok := lpp.idToIndex[id]; ok {
-					G.Set(row, idx, -coeff)
-				}
-			}
-			h[row] = -constraint.Lower
-			row++
-		}
-	}
-
-	// Equality constraint: sum(w_i) = 1
-	A := mat.NewDense(1, n, nil)
-	for i := 0; i < n; i++ {
-		A.Set(0, i, 1)
-	}
-	b := []float64{1.0}
-
-	// Convert general LP to standard form
-	// General form: min c'x, s.t. Gx <= h, Ax = b
-	// Standard form: min c'x, s.t. Ax = b, x >= 0
-	cNew, aNew, bNew := lp.Convert(objective, G, h, A, b)
-
-	// Solve in standard form
-	opt, xNew, err := lp.Simplex(cNew, aNew, bNew, tolerance, nil)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	// Extract original variables (first n elements, before slack variables)
-	x := make([]float64, n)
-	copy(x, xNew[:n])
-
-	return opt, x, nil
-}
-
 // Feasible checks if the problem has any feasible solution.
 func (s *Solver) Feasible() (bool, error) {
 	lpp := s.buildLP()
@@ -728,4 +577,27 @@ func sumComponents(weights []float64, slots []ingredientSlot) ConstituentCompone
 		accumulateProfile(&agg, slots[i].lot.EffectiveProfile(), w)
 	}
 	return agg
+}
+
+func (s *Solver) snapshotFromWeights(weights []float64, opts MixOptions) (BatchSnapshot, error) {
+	if len(s.Problem.slots) == 0 {
+		return BatchSnapshot{}, errors.New("problem has no ingredients")
+	}
+	components := make([]RecipeComponent, 0, len(weights))
+	for i, w := range weights {
+		if w <= 0 {
+			continue
+		}
+		if i >= len(s.Problem.slots) {
+			continue
+		}
+		components = append(components, RecipeComponent{
+			Ingredient: s.Problem.slots[i].lot,
+			MassKg:     w,
+		})
+	}
+	if len(components) == 0 {
+		return BatchSnapshot{}, errors.New("solution has no positive ingredient weights")
+	}
+	return BuildProperties(components, opts)
 }
