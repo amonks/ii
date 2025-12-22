@@ -187,6 +187,28 @@
       <div class="entry-meta">
         {{if .Entry.Recipe}}<strong>{{.Entry.Recipe}}</strong>{{end}}
       </div>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>Weight</th>
+            <th>Precision</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Entry.Ingredients}}
+          <tr>
+            <td>{{.Key}}</td>
+            <td>{{.RawMass}}</td>
+            <td>{{if .PrecisionDisplay}}±{{.PrecisionDisplay}}{{else}}—{{end}}</td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="3">No ingredients recorded.</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
       {{if .Snapshot}}
       <div class="metrics-grid">
         <div class="metric-card">

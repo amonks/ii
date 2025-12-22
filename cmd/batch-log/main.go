@@ -121,6 +121,16 @@ func printEntryDetails(w io.Writer, analytics creamery.BatchLogAnalytics) {
 			fmt.Fprintf(w, " • %s", entry.Recipe)
 		}
 		fmt.Fprintln(w)
+		if len(entry.Ingredients) > 0 {
+			fmt.Fprintln(w, "    ingredients:")
+			for _, ing := range entry.Ingredients {
+				fmt.Fprintf(w, "      • %s: %s", ing.Key, ing.RawMass)
+				if ing.PrecisionDisplay != "" {
+					fmt.Fprintf(w, " (±%s)", ing.PrecisionDisplay)
+				}
+				fmt.Fprintln(w)
+			}
+		}
 		if view.Snapshot != nil {
 			s := view.Snapshot
 			fmt.Fprintf(w, "    mass %.2f kg | water %.2f%% | solids %.2f%% | fat %.2f%% | protein %.2f%%\n",

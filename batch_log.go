@@ -19,10 +19,12 @@ type BatchLogEntry struct {
 
 // BatchLogIngredient couples an ingredient catalog key with a realized mass.
 type BatchLogIngredient struct {
-	Key     IngredientKey
-	MassKg  float64
-	RawMass string
-	Line    int
+	Key              IngredientKey
+	MassKg           float64
+	RawMass          string
+	PrecisionKg      float64
+	PrecisionDisplay string
+	Line             int
 }
 
 // Components converts the entry's ingredient weights into recipe components using the provided catalog.

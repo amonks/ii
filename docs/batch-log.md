@@ -20,7 +20,16 @@ Batch logs live in the `batchlog` file (feel free to split by location/project i
 | `process_notes` | Indented block representing one multi-line string. Blank lines inside the block become paragraph breaks. |
 | `tasting_notes` | Same as `process_notes`, but for sensory feedback.                                                        |
 
-Any other keys are preserved under `BatchLogEntry.Metadata` so future tools can consume them.
+### Precision
+
+Ingredient precision is inferred from the significant figures you write. Examples:
+
+- `432g` ⇒ ±1 g
+- `432.0g` ⇒ ±0.1 g
+- `0.200 g` ⇒ ±0.001 g
+- `12.5 mg` ⇒ ±0.1 mg
+
+These tolerances surface throughout the CLI and dashboard so it’s obvious which ingredients were measured on coarse vs. fine scales.
 
 ### Example entry
 

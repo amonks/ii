@@ -54,6 +54,12 @@ process_notes:
 	if totalMass < 8.49 || totalMass > 8.51 {
 		t.Fatalf("expected total mass 8.5 kg, got %.3f", totalMass)
 	}
+	if got := first.Ingredients[0].PrecisionDisplay; got != "0.1 kg" {
+		t.Fatalf("expected kg precision 0.1 kg, got %q", got)
+	}
+	if got := first.Ingredients[2].PrecisionDisplay; got != "1 g" {
+		t.Fatalf("expected g precision 1 g, got %q", got)
+	}
 
 	second := entries[1]
 	lines := strings.Split(first.ProcessNotes[0], "\n")
