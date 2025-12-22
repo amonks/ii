@@ -1,0 +1,11 @@
+[[task]]
+  id = "test"
+  type = "short"
+  cmd = "go test ./..."
+
+[[task]]
+  id = "dev"
+  type = "long"
+  watch = ["**/*.go", "batchlog"]
+  cmd = "go run ./cmd/batch-log -serve=:8080"
+
