@@ -4,11 +4,37 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/go-nlopt/nlopt"
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/optimize/convex/lp"
 )
 
 const tolerance = 1e-9
+
+// SolverOptions configure solver behavior for the NLopt backend.
+type SolverOptions struct {
+	NLoptAlgorithm      int
+	ConstraintTolerance float64
+	MaxEval             int
+}
+
+var (
+	defaultNLoptAlgorithm = nlopt.LD_SLSQP
+	defaultConstraintTol  = 1e-7
+	defaultMaxEval        = 2000
+)
+
+func applySolverOptionDefaults(opts SolverOptions) SolverOptions {
+	if opts.ConstraintTolerance <= 0 {
+		opts.ConstraintTolerance = defaultConstraintTol
+	}
+	if opts.MaxEval <= 0 {
+		opts.MaxEval = defaultMaxEval
+	}
+	if opts.NLoptAlgorithm == 0 {
+		opts.NLoptAlgorithm = defaultNLoptAlgorithm
+	}
+	return opts
+}
 
 type componentKey string
 
@@ -245,14 +271,29 @@ func buildComponentConstraints(values map[componentKey]*coeffPair, target Formul
 // Solver solves ice cream formulation problems.
 type Solver struct {
 	Problem *Problem
+
+	opts SolverOptions
 }
 
-// NewSolver creates a solver for the given problem.
+// NewSolver creates a solver for the given problem using default options.
 func NewSolver(p *Problem) (*Solver, error) {
+	return NewSolverWithOptions(p, SolverOptions{})
+}
+
+// NewSolverWithOptions creates a solver using the provided options.
+func NewSolverWithOptions(p *Problem, opts SolverOptions) (*Solver, error) {
 	if err := p.Validate(); err != nil {
 		return nil, err
 	}
-	return &Solver{Problem: p}, nil
+	opts = applySolverOptionDefaults(opts)
+	return &Solver{
+		Problem: p,
+		opts:    opts,
+	}, nil
+}
+
+func (s *Solver) solve(lpp *lpProblem, objective []float64) (float64, []float64, error) {
+	return lpp.solveNLopt(objective, s.opts)
 }
 
 // lpProblem represents the linear programming formulation.
@@ -413,10 +454,10 @@ func (s *Solver) buildLPWithCoeffs(coeffs coefficientSet) *lpProblem {
 	return lpp
 }
 
-// solve runs the LP with a given objective, returns optimal value and solution.
+// solveSimplex runs the legacy LP simplex solver with a given objective.
 // objective: coefficients for minimization
 // Returns (objective value, solution weights, error)
-func (lpp *lpProblem) solve(objective []float64) (float64, []float64, error) {
+func (lpp *lpProblem) solveSimplex(objective []float64) (float64, []float64, error) {
 	n := lpp.n
 
 	componentRows := len(lpp.componentConstraints) * 2
@@ -569,7 +610,7 @@ func (s *Solver) Feasible() (bool, error) {
 	// Use zero objective (any feasible point)
 	objective := make([]float64, lpp.n)
 
-	_, _, err := lpp.solve(objective)
+	_, _, err := s.solve(lpp, objective)
 	if err != nil {
 		// Check if error is infeasibility vs numerical issues
 		return false, nil
@@ -595,7 +636,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 
 	// First check feasibility
 	objective := make([]float64, n)
-	_, _, err := lpp.solve(objective)
+	_, _, err := s.solve(lpp, objective)
 	if err != nil {
 		return bounds, nil // infeasible
 	}
@@ -606,7 +647,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 		// Minimize w_i
 		minObj := make([]float64, n)
 		minObj[i] = 1
-		minVal, _, err := lpp.solve(minObj)
+		minVal, _, err := s.solve(lpp, minObj)
 		if err != nil {
 			return nil, fmt.Errorf("error finding min for %s: %w", names[i], err)
 		}
@@ -614,7 +655,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 		// Maximize w_i (minimize -w_i)
 		maxObj := make([]float64, n)
 		maxObj[i] = -1
-		maxVal, _, err := lpp.solve(maxObj)
+		maxVal, _, err := s.solve(lpp, maxObj)
 		if err != nil {
 			return nil, fmt.Errorf("error finding max for %s: %w", names[i], err)
 		}
@@ -636,7 +677,7 @@ func (s *Solver) FindSolution() (*Solution, error) {
 
 	// Use zero objective to find any feasible point
 	objective := make([]float64, lpp.n)
-	_, x, err := lpp.solve(objective)
+	_, x, err := s.solve(lpp, objective)
 	if err != nil {
 		return nil, fmt.Errorf("no feasible solution: %w", err)
 	}

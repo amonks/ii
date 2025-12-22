@@ -54,7 +54,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 			objective[j] = rng.Float64()*2 - 1 // uniform in [-1, 1]
 		}
 
-		_, weights, err := lpp.solve(objective)
+		_, weights, err := s.solve(lpp, objective)
 		if err != nil {
 			continue // skip infeasible samples
 		}
@@ -195,7 +195,7 @@ func (s *Solver) ExtremePoints() ([]*Solution, error) {
 		// Minimize w_i
 		minObj := make([]float64, n)
 		minObj[i] = 1
-		_, weights, err := lpp.solve(minObj)
+		_, weights, err := s.solve(lpp, minObj)
 		if err == nil {
 			solutions = append(solutions, s.weightsToSolution(weights, ids, names))
 		}
@@ -203,7 +203,7 @@ func (s *Solver) ExtremePoints() ([]*Solution, error) {
 		// Maximize w_i
 		maxObj := make([]float64, n)
 		maxObj[i] = -1
-		_, weights, err = lpp.solve(maxObj)
+		_, weights, err = s.solve(lpp, maxObj)
 		if err == nil {
 			solutions = append(solutions, s.weightsToSolution(weights, ids, names))
 		}
