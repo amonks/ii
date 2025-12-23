@@ -51,7 +51,7 @@
 
 ### 2004
 - Driving truck home in the dark, then hits a deer; cops find an item on the car
-- The item is a short story, very short book, titled SREDNI BASHTAR by Saki
+- The item is a short story, very short book, titled SREDNI VASHTAR by Saki
 
 ### 2005
 - Shoots himself in the backyard in 2005

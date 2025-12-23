@@ -49,7 +49,7 @@ From Session 3:
 >   - LOTTIE: at grocery store a few years later, follows a blood trail into th eback room where there's a dying bat on top of an item
 >   - ERASTUS: driving truck home in the dark, then hits a deer; cops find an item on the car
 >   - SEAMUS: waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-> in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
+> in all three cases, the item is a short story, very short book, titled SREDNI VASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
 
 ## HOUGHTON's Apartment (2016)
 
@@ -83,3 +83,6 @@ From Session 4:
 ## Session 8 – LICKITUNG
 
 > Outside FLORIDA SOUTHWESTERN STATE UNIVERSITY, the LICKITUNG freezes the team inside their SUV, licks LOTTIE's face with a giant red tongue, and leaves her drenched in the overpowering ROTTING FLESH stench.
+
+## Session 9 – Quiet House Entrance
+> _nobody outside. we knock, nobody answers. windows all boarded up. we smell some rotting meat (ROTTING FLESH)._

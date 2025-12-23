@@ -17,3 +17,9 @@ One of the three perpetrators who murdered HOUGHTON in 2016. Rail-thin, white, f
 > - Tommy's room (THOMAS PEREZ CUNNINGHAM): weirdly not decorated; spartan; notebook full of DOODLES -- the same drawings, not just similar content
 > - in pictures where everyone else is smiling, Tommy (THOMAS PEREZ CUNNINGHAM) is not smiling
 > - in drawer: extensive paperwork from various psychologists all about Tommy (THOMAS PEREZ CUNNINGHAM); he's seen many therapists because he is still nonverbal (QUIET CHILDREN?)
+
+## Session 9 – ST LAWRENCE CHURCH Lore
+> MAURICIO: ANIMALS! yes. The thing with the rats. The rats would run in circles, patterns, around the QUIET CHILDREN. You're gonna say I'm crazy, but I went out back one time and I saw Tommy (THOMAS PEREZ CUNNINGHAM). The alley was carpeted with rats, and every step he took, they just parted before him. Like Moses and the red sea.
+
+## Session 9 – Basement Whispers
+> "Elle (ELLE GABLE) and sammy think you feed god. thinks you ate up. Tommy thinks you ate up and eat. same time like us like bite the tongue" (SAMUEL BALL)

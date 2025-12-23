@@ -81,5 +81,11 @@ No direct dialog recorded.
 > - ELLE GABLE starts laughing
 > - LOTTIE holds the molar out to ELLE GABLE, who does not react
 > - MO: "good journey" and covers ELLE GABLE's eyes and slits her throat
+
+### Session 9 – ST LAWRENCE CHURCH Gossip
+> MAURICIO: PHILLY PHIL, but I dunno if he's around anymore. He was with that gang around 2011, ELLE GABLE, SAMUEL BALL, Tommy (THOMAS PEREZ CUNNINGHAM), JENNIFER. Elle (ELLE GABLE) stabbed someone and we had to kick them all out.
+
+### Session 9 – Basement Whispers
+> "Elle (ELLE GABLE) and sammy think you feed god. thinks you ate up. Tommy thinks you ate up and eat. same time like us like bite the tongue" (SAMUEL BALL)
 ## Notes
 - Age 4 in 2001 when the CORNUCOPIA HOUSE operation occurred

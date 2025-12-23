@@ -152,6 +152,13 @@ Evidence transport:
 > - Reminds LOTTIE, "I know we weren't gonna talk about this at work," and worries she's already falling off the wagon on day one of the Florida op.
 - Gets dragged to JO MAMAS SWAMP SHACK where she fumes as LOTTIE flirts with biker boys for intel.
 
+### Session 9 – FT MYERS Morning
+> VELASQUEZ: what'd you do last night?
+> 
+> VELASQUEZ: that's pretty hard on your body! You're not getting any younger
+> 
+> VELASQUEZ: that's why i love you babe
+
 ## Events and Notes
 
 ### 2001 Investigation

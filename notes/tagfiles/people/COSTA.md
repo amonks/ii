@@ -58,7 +58,7 @@ The OWEN incident:
 ### Session 6 – DENNYS Ultimatum
 > COSTA arrives in disguise, demands to be called "Nightlord," and immediately threatens to expose LOTTIE's identity: "You sent that boy to the prison! ... dammit, I know you don't want me telling everyone you're Charlotte Watkins."
 
-> He lays out his deal: "I want you to make me sherrif. Also, kill my wife." He names SARAH COSTA and her boyfriend PABLO RUIZ, insists they be killed within 48 hours, and orders LOTTIE to frame PABLO RUIZ, saying the player is at the CHESAPEAKE BAYSOX STADIUM.
+> He lays out his deal: "I want you to make me sheriff. Also, kill my wife." He names SARAH COSTA and her boyfriend PABLO RUIZ, insists they be killed within 48 hours, and orders LOTTIE to frame PABLO RUIZ, saying the player is at the CHESAPEAKE BAYSOX STADIUM.
 
 > LOTTIE attempts to stall with flirtation and shared breakfast orders, but COSTA reiterates, "I'm threatening you. You're gonna kill my wife," and calls her "deertick" before storming out—only to be abducted by SHELF and SEAMUS in the parking lot moments later.
 

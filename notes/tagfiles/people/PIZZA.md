@@ -100,3 +100,6 @@ On phone with SEAMUS:
 - Calls SEAMUS at the airport to reiterate that the ECKSTEIN situation must stay contained.
 - Flags SKOPTSI research and inquiries into C CELL as indicators that ECKSTEIN's online sleuthing is getting too close to Program history.
 - Tells the agents about the buried barrel containing an m249, cocaine, and a sawed-off shotgun near ECKSTEIN's parents' house in case they need leverage or extra firepower.
+
+### Session 9 – Dossier Drop
+- PIZZA sends us the mandarin translated journal, plus several Program files covering the SKOPTSI purge, CERISE AND CLYDE's deaths, and FYODOR BEREZHKOV's testimony.

@@ -128,7 +128,7 @@ To PIZZA:
 ### 2004
 
 - Waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-- The item is a short story, very short book, titled SREDNI BASHTAR by Saki
+- The item is a short story, very short book, titled SREDNI VASHTAR by Saki
 
 ### 2005-2016
 

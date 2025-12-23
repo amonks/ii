@@ -93,7 +93,7 @@ From Session 3:
 >   - LOTTIE: at grocery store a few years later, follows a blood trail into th eback room where there's a dying bat on top of an item
 >   - ERASTUS: driving truck home in the dark, then hits a deer; cops find an item on the car
 >   - SEAMUS: waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-> in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
+> in all three cases, the item is a short story, very short book, titled SREDNI VASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
 
 ## cat at HOUGHTON's Apartment (2016)
 
@@ -128,3 +128,6 @@ From Session 4:
 ## Session 7 – Rat in the Federal Basement
 
 > A rat (ANIMALS) bites SHELF in the ankle.
+
+## Session 9 – QUIET CHILDREN Rat Control
+> MAURICIO: ANIMALS! yes. The thing with the rats. The rats would run in circles, patterns, around the QUIET CHILDREN. You're gonna say I'm crazy, but I went out back one time and I saw Tommy (THOMAS PEREZ CUNNINGHAM). The alley was carpeted with rats, and every step he took, they just parted before him. Like Moses and the red sea.

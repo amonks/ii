@@ -78,7 +78,7 @@ From Session 4:
 > 12:09AM 8/18, early morning: 3 figures come up the stairs, matching the perps from the other video. All are ~20yo.
 > two men walk up one staircase, woman walks up the other.
 
-## Three Recipients of SREDNI BASHTAR (2004)
+## Three Recipients of SREDNI VASHTAR (2004)
 
 From Session 3:
 
@@ -86,7 +86,7 @@ From Session 3:
 >   - LOTTIE: at grocery store a few years later, follows a blood trail into th eback room where there's a dying bat on top of an item
 >   - ERASTUS: driving truck home in the dark, then hits a deer; cops find an item on the car
 >   - SEAMUS: waiting for daughter at sleepover; daughter gets home holding an item which she says was given by a crow
-> in all three cases, the item is a short story, very short book, titled SREDNI BASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
+> in all three cases, the item is a short story, very short book, titled SREDNI VASHTAR by Saki, pseudonym of Hector Hugh Monroe, published 1911
 
 ## Three Cars (2001)
 
@@ -106,6 +106,6 @@ From Session 3:
 - big spooky tree had a carving with three figures, each with a deeper cut matching the location of each agent's animal bite
 - HOUGHTON was nailed to the WAREHOUSE door with three puncture wounds: two in the hands and one in the collarbone
 - Three perpetrators (KILLERS) murdered HOUGHTON in 2016
-- All three agents received SREDNI BASHTAR delivered by animals on the same day in 2004
+- All three agents received SREDNI VASHTAR delivered by animals on the same day in 2004
 - Three cars were parked in the driveway at CORNUCOPIA HOUSE in 2001
 - KILLIAN was found murdered with a bloody piece of paper containing the three agents' names

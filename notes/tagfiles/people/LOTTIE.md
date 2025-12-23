@@ -239,7 +239,7 @@ At HOUGHTON's apartment:
 ### 2004
 
 - At grocery store a few years later, follows a blood trail into the back room where there's a dying bat on top of an item
-- The item is a short story, very short book, titled SREDNI BASHTAR by Saki
+- The item is a short story, very short book, titled SREDNI VASHTAR by Saki
 
 ### 2005-2016
 

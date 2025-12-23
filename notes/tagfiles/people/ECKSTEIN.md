@@ -46,3 +46,8 @@ No direct dialog recorded.
 ### Session 8 – Containment Order
 - PIZZA orders the team to keep the "ECKSTEIN thing" contained because Casey's online searches now include SKOPTSI lore and references to C CELL.
 - Reveals that the Program planted a barrel with an m249, cocaine, and a sawed-off shotgun in ECKSTEIN's parents' backyard so the agents can seize or stage evidence as needed.
+
+## Session 9 – Interview at His Apartment
+> ECKSTEIN: finally, you're here. those morons down at the station, my gosh. I'm glad they sent the big guns. I'm gonna run for sheriff. They said this was cats? clearly a homicide!
+> 
+> ECKSTEIN: Must have been the deep state. Crooked Hillary. There's this FBI guy Gary Hall (CLYDE), he died in like 2000 or something... It was trained animals that killed her. There's this russian cult or something? People like that don't just die, they're killed.

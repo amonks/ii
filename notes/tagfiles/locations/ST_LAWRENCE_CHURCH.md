@@ -10,3 +10,8 @@
 
 ## Session 6 – SAMUEL BALL's Return
 > BECKY MARSHALL tracks SAMUEL BALL to ST LAWRENCE CHURCH in MIAMI ("some shelter" as she remembers it) and finds him among a silent group of teens who only smile. SAMUEL BALL recognizes her, smiles for the first time, and stabs her eight times with an icepick before fleeing, reinforcing the church's role as a hub for CORNUCOPIA HOUSE survivors.
+
+## Session 9 – Father MAURICIO's Briefing
+> not a nice part of MIAMI... Across the street from the church is a traphouse. A lot of homeless people around. This is where homeless ppl receive services, including a lot of children.
+> 
+> MAURICIO: I'm guessing you're not here for a bed tonight. I'm father MAURICIO Probledo... "the QUIET CHILDREN are summoning THE SPEAKER", "the HUNGRY MOTHER has the Red Minded Men", "the QUIET CHILDREN have the SILENT SLAVES" (MYTHOLOGY)
