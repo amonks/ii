@@ -20,6 +20,8 @@ SANITY: 18
 FEAR: 42 = 22 + 20
 BODY: 32 = 22 + 10
 
+ALCOHOLISM: 1
+
 WEAPON:
 medium pistol; 1d10 close range; 6 rounds of shooting
 
@@ -28,8 +30,8 @@ If I panic, everyone else has to make a panic check.
 PERSONAL BRIEFING: the other agents are a liability; their loyalty to the
 program is not assured. Any signs to be reported to handler.
 
-HEALTH: 12 / 12
-STRESS: 4 (min 2) / 20
+HEALTH: 9 / 12
+STRESS: 6 (min 2) / 20
 
 WOUNDS: 0 / 3
 
