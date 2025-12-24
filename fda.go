@@ -114,16 +114,11 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 		Hi: math.Min(1, proteinGrams.Hi/serving),
 	}
 
-	// For MSNF: estimate from protein
-	// Protein is roughly 36-40% of MSNF (casein + whey), varies by source
-	// Use a wide range to be conservative and avoid overconstraining:
-	//   Low MSNF: assume protein is high fraction of MSNF (40%)
-	//   High MSNF: assume protein is low fraction of MSNF (34%)
-	// This gives room for measurement/compositional uncertainty
-	msnfFrac := Interval{
-		Lo: math.Max(0, (proteinGrams.Lo/0.40)/serving),
-		Hi: math.Min(1, (proteinGrams.Hi/0.34)/serving),
-	}
+	// MSNF is not declared on consumer labels and correlates poorly with
+	// protein for modern ingredient systems, so avoid deriving it from protein
+	// outright. Start with the widest range and trim only when other measured
+	// values (e.g. carbs) demand it.
+	msnfFrac := Range(0, 1)
 
 	// Cap MSNF by available carbs once added sugars are accounted for.
 	// Lactose (from MSNF) + fiber/starch must fit in (carbs - added sugar).

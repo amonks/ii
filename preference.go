@@ -9,6 +9,8 @@ type RecipePreference struct {
 	Viscosity   ViscosityPreference
 	Sweetness   SweetnessPreference
 	IceFraction IceFractionPreference
+	PAC         PACPreference
+	POD         PODPreference
 }
 
 // DefaultRecipePreference combines viscosity, sweetness, and ice fraction
@@ -18,6 +20,8 @@ func DefaultRecipePreference() RecipePreference {
 		Viscosity:   DefaultViscosityPreference(),
 		Sweetness:   DefaultSweetnessPreference(),
 		IceFraction: DefaultIceFractionPreference(),
+		PAC:         DefaultPACPreference(),
+		POD:         DefaultPODPreference(),
 	}
 }
 
@@ -30,6 +34,8 @@ func (rp RecipePreference) Score(snapshot BatchSnapshot) float64 {
 	sweetnessPct := snapshot.SweetnessEq / mass
 	score *= rp.Sweetness.Score(sweetnessPct)
 	score *= rp.IceFraction.Score(snapshot.IceFractionAtServe)
+	score *= rp.PAC.Score(snapshot.Sweeteners.TotalPAC)
+	score *= rp.POD.Score(snapshot.Sweeteners.TotalPOD)
 
 	if score < 0 {
 		return 0
@@ -58,9 +64,9 @@ type ViscosityPreference struct {
 // assigning a non-zero weight outside that window.
 func DefaultViscosityPreference() ViscosityPreference {
 	return ViscosityPreference{
-		Lower:      0.0032,
-		Upper:      0.0041,
-		Transition: 0.0004,
+		Lower:      0.0039,
+		Upper:      0.0047,
+		Transition: 0.00035,
 		Floor:      0.05,
 	}
 }
@@ -126,6 +132,58 @@ func (ip IceFractionPreference) Score(iceFraction float64) float64 {
 	return sigmoidScore(iceFraction, ip.Lower, ip.Upper, ip.Transition, ip.Floor)
 }
 
+// PACPreference biases toward desirable freezing point depression.
+type PACPreference struct {
+	Lower      float64
+	Upper      float64
+	Transition float64
+	Floor      float64
+}
+
+// DefaultPACPreference favors 24-32 PAC, a band that stays scoopable without
+// veering into soupy territory.
+func DefaultPACPreference() PACPreference {
+	return PACPreference{
+		Lower:      24,
+		Upper:      32,
+		Transition: 3,
+		Floor:      0.25,
+	}
+}
+
+func (pp PACPreference) Score(pac float64) float64 {
+	if pac <= 0 {
+		return clampFloat(pp.Floor, 0, 0.95)
+	}
+	return sigmoidScore(pac, pp.Lower, pp.Upper, pp.Transition, pp.Floor)
+}
+
+// PODPreference tracks sucrose-equivalent intensity (TotalPOD).
+type PODPreference struct {
+	Lower      float64
+	Upper      float64
+	Transition float64
+	Floor      float64
+}
+
+// DefaultPODPreference nudges recipes toward ~15-17 relative POD, matching
+// premium vanilla targets pulled from label analyses.
+func DefaultPODPreference() PODPreference {
+	return PODPreference{
+		Lower:      15,
+		Upper:      17,
+		Transition: 1,
+		Floor:      0.3,
+	}
+}
+
+func (pp PODPreference) Score(pod float64) float64 {
+	if pod <= 0 {
+		return clampFloat(pp.Floor, 0, 0.99)
+	}
+	return sigmoidScore(pod, pp.Lower, pp.Upper, pp.Transition, pp.Floor)
+}
+
 func sigmoidScore(value, lower, upper, transition, floor float64) float64 {
 	if upper <= lower {
 		upper = lower + math.Max(transition, 1e-4)
@@ -152,6 +210,49 @@ func sigmoidScore(value, lower, upper, transition, floor float64) float64 {
 	return score
 }
 
+// WithPACWindow returns a copy of the preference with the PAC curve retargeted
+// to the requested window.
+func (rp RecipePreference) WithPACWindow(lower, upper float64) RecipePreference {
+	pref := rp
+	if pref.PAC == (PACPreference{}) {
+		pref.PAC = DefaultPACPreference()
+	}
+	pref.PAC.Lower = lower
+	pref.PAC.Upper = upper
+	if pref.PAC.Transition <= 0 {
+		pref.PAC.Transition = defaultPreferenceTransition(lower, upper)
+	}
+	if pref.PAC.Floor <= 0 {
+		pref.PAC.Floor = DefaultPACPreference().Floor
+	}
+	return pref
+}
+
+// WithPODWindow returns a copy of the preference with the POD curve retargeted.
+func (rp RecipePreference) WithPODWindow(lower, upper float64) RecipePreference {
+	pref := rp
+	if pref.POD == (PODPreference{}) {
+		pref.POD = DefaultPODPreference()
+	}
+	pref.POD.Lower = lower
+	pref.POD.Upper = upper
+	if pref.POD.Transition <= 0 {
+		pref.POD.Transition = defaultPreferenceTransition(lower, upper)
+	}
+	if pref.POD.Floor <= 0 {
+		pref.POD.Floor = DefaultPODPreference().Floor
+	}
+	return pref
+}
+
+func defaultPreferenceTransition(lower, upper float64) float64 {
+	width := upper - lower
+	if width <= 0 {
+		return 1
+	}
+	return math.Max(width/4, 1e-4)
+}
+
 func normalizeRecipePreference(pref RecipePreference) RecipePreference {
 	if pref.Viscosity == (ViscosityPreference{}) {
 		pref.Viscosity = DefaultViscosityPreference()
@@ -161,6 +262,12 @@ func normalizeRecipePreference(pref RecipePreference) RecipePreference {
 	}
 	if pref.IceFraction == (IceFractionPreference{}) {
 		pref.IceFraction = DefaultIceFractionPreference()
+	}
+	if pref.PAC == (PACPreference{}) {
+		pref.PAC = DefaultPACPreference()
+	}
+	if pref.POD == (PODPreference{}) {
+		pref.POD = DefaultPODPreference()
 	}
 	return pref
 }

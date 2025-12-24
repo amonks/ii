@@ -1,11 +1,9 @@
-package main
+package creamery
 
 import (
-	"flag"
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -13,66 +11,72 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/creamery"
 	batchlogtemplates "github.com/amonks/creamery/internal/templates/batchlog"
 )
 
-var (
-	logPath   = flag.String("log", "batchlog", "Path to the batch log file")
-	serveAddr = flag.String("serve", "", "HTTP address to serve the HTML dashboard (example :8080)")
-)
+const batchLogTemplateName = "index.html.tmpl"
 
-const dashboardTemplate = "index.html.tmpl"
-
-func main() {
-	flag.Parse()
-	log.SetFlags(0)
-
-	entries, err := loadEntries(*logPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	catalog := creamery.DefaultIngredientCatalog()
-	analytics := creamery.AnalyzeBatchLog(entries, catalog)
-
-	printSummary(os.Stdout, *logPath, analytics)
-	if analytics.Summary.TotalBatches > 0 {
-		printEntryDetails(os.Stdout, analytics)
-	}
-
-	if *serveAddr == "" {
-		return
-	}
-	tmpl := template.Must(loadDashboardTemplate())
-	server := &dashboardServer{
-		logPath: *logPath,
-		tmpl:    tmpl,
-		catalog: catalog,
-	}
-	addr := *serveAddr
-	if !strings.Contains(addr, ":") {
-		addr = ":" + addr
-	}
-	log.Printf("Serving batch log dashboard for %s at %s\n", *logPath, serveURL(addr))
-	if err := http.ListenAndServe(addr, server); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func loadEntries(path string) ([]creamery.BatchLogEntry, error) {
+// LoadBatchLogEntries parses the canonical batch log file.
+func LoadBatchLogEntries(path string) ([]BatchLogEntry, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("open log: %w", err)
 	}
 	defer f.Close()
-	entries, err := creamery.ParseBatchLog(f)
+	return ParseBatchLog(f)
+}
+
+// LoadBatchLogTemplate prepares the shared HTML dashboard template.
+func LoadBatchLogTemplate() (*template.Template, error) {
+	return template.New(batchLogTemplateName).
+		Funcs(batchLogTemplateFuncs()).
+		ParseFS(batchlogtemplates.Files, batchLogTemplateName)
+}
+
+// NewBatchLogDashboard wires the HTTP handler used by CLI and server modes.
+func NewBatchLogDashboard(logPath string, catalog IngredientCatalog) (*BatchLogDashboard, error) {
+	tmpl, err := LoadBatchLogTemplate()
 	if err != nil {
 		return nil, err
 	}
-	return entries, nil
+	return &BatchLogDashboard{
+		logPath: logPath,
+		catalog: catalog,
+		tmpl:    tmpl,
+	}, nil
 }
 
-func printSummary(w io.Writer, path string, analytics creamery.BatchLogAnalytics) {
+// BatchLogDashboard renders the batch-log analytics as HTML.
+type BatchLogDashboard struct {
+	logPath string
+	catalog IngredientCatalog
+	tmpl    *template.Template
+}
+
+// ServeHTTP implements http.Handler.
+func (d *BatchLogDashboard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	entries, err := LoadBatchLogEntries(d.logPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	analytics := AnalyzeBatchLog(entries, d.catalog)
+	data := struct {
+		GeneratedAt time.Time
+		SourcePath  string
+		Analytics   BatchLogAnalytics
+	}{
+		GeneratedAt: time.Now(),
+		SourcePath:  filepath.Clean(d.logPath),
+		Analytics:   analytics,
+	}
+	if err := d.tmpl.ExecuteTemplate(w, batchLogTemplateName, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// PrintBatchLogSummary mirrors the previous CLI summary printer.
+func PrintBatchLogSummary(w io.Writer, path string, analytics BatchLogAnalytics) {
 	fmt.Fprintf(w, "Batch log: %s\n", path)
 	if analytics.Summary.TotalBatches == 0 {
 		fmt.Fprintln(w, "  (no batches logged yet)")
@@ -107,7 +111,8 @@ func printSummary(w io.Writer, path string, analytics creamery.BatchLogAnalytics
 	}
 }
 
-func printEntryDetails(w io.Writer, analytics creamery.BatchLogAnalytics) {
+// PrintBatchLogEntries dumps per-entry diagnostics similar to the old CLI.
+func PrintBatchLogEntries(w io.Writer, analytics BatchLogAnalytics) {
 	fmt.Fprintln(w, "\nEntries and chemistry:")
 	if len(analytics.Entries) == 0 {
 		fmt.Fprintln(w, "  (no entries available)")
@@ -161,51 +166,16 @@ func printEntryDetails(w io.Writer, analytics creamery.BatchLogAnalytics) {
 	}
 }
 
-type dashboardServer struct {
-	logPath string
-	tmpl    *template.Template
-	catalog creamery.IngredientCatalog
-}
-
-func (s *dashboardServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	entries, err := loadEntries(s.logPath)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	analytics := creamery.AnalyzeBatchLog(entries, s.catalog)
-	data := pageData{
-		GeneratedAt: time.Now(),
-		SourcePath:  filepath.Clean(s.logPath),
-		Analytics:   analytics,
-	}
-	if err := s.tmpl.ExecuteTemplate(w, dashboardTemplate, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-type pageData struct {
-	GeneratedAt time.Time
-	SourcePath  string
-	Analytics   creamery.BatchLogAnalytics
-}
-
-func templateFuncs() template.FuncMap {
+func batchLogTemplateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"formatDate":          formatDate,
 		"formatDateTime":      formatDateTime,
-		"formatPercent":       formatPercent,
+		"formatPercent":       renderPercent,
 		"formatCurrencyPerKg": formatCurrencyPerKg,
 		"join": func(values []string, sep string) string {
 			return strings.Join(values, sep)
 		},
 	}
-}
-
-func loadDashboardTemplate() (*template.Template, error) {
-	return template.New(dashboardTemplate).
-		Funcs(templateFuncs()).
-		ParseFS(batchlogtemplates.Files, dashboardTemplate)
 }
 
 func formatDate(t time.Time) string {
@@ -222,7 +192,7 @@ func formatDateTime(t time.Time) string {
 	return t.Format("Mon Jan 2 15:04:05 MST 2006")
 }
 
-func formatPercent(v float64) string {
+func renderPercent(v float64) string {
 	if v <= 0 {
 		return "0%"
 	}
@@ -247,7 +217,8 @@ func indentMultiline(text, indent string) string {
 	return strings.Join(lines, "\n")
 }
 
-func serveURL(addr string) string {
+// ServeURL renders a friendly URL for the bound address.
+func ServeURL(addr string) string {
 	if addr == "" {
 		return "http://localhost"
 	}

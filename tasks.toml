@@ -6,7 +6,6 @@
 [[task]]
   id = "dev"
   type = "long"
-  watch = ["**/*.go", "batchlog"]
-  env = { "DYLD_LIBRARY_PATH" = "/usr/local/lib", "PKG_CONFIG_PATH" = "/usr/local/lib/pkgconfig" }
-  cmd = "go run ./cmd/batch-log -serve=:8080"
+  watch = ["**/*.go", "**/*.templ", "batchlog"]
+  cmd = "go run ./cmd serve"
 

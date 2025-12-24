@@ -2,6 +2,7 @@ package creamery_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/amonks/creamery"
@@ -12,15 +13,11 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 	// Ingredients: Milk, Cream, Cane Sugar, Nonfat Milk, Tapioca Syrup
 	// Per 124g (2/3 cup): 290 Cal, 20g fat, 28g carb, 23g sugar, 6g protein
 
-	label := creamery.NutritionLabel{
-		ServingSize: 124,
-		Calories:    290,
-		TotalFat:    20,
-		Protein:     6,
-		TotalCarbs:  28,
-		Sugars:      23,
-		AddedSugars: 16,
+	labelDef, ok := creamery.LabelDefinitionByKey(creamery.LabelJenisSweetCream)
+	if !ok {
+		t.Fatalf("label %q missing from catalog", creamery.LabelJenisSweetCream)
 	}
+	label := labelDef.Label
 
 	target := label.ToTarget()
 	target.POD = creamery.Interval{}
@@ -28,7 +25,9 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 
 	fmt.Println("=== Jeni's Sweet Cream Reverse Engineering ===")
 	fmt.Println()
-	fmt.Println("Label: Milk, Cream, Cane Sugar, Nonfat Milk, Tapioca Syrup")
+	if len(labelDef.DisplayNames) > 0 {
+		fmt.Printf("Label: %s\n", strings.Join(labelDef.DisplayNames, ", "))
+	}
 	fmt.Printf("Per %.0fg: %.0f cal, %.0fg fat, %.0fg protein, %.0fg sugar\n",
 		label.ServingSize, label.Calories, label.TotalFat, label.Protein, label.Sugars)
 	fmt.Println()
@@ -39,13 +38,7 @@ func TestJenisSweetCreamFinal(t *testing.T) {
 
 	// "Nonfat Milk" - could be any concentration from liquid to powder
 	// Tapioca syrup - used as stabilizer (starch), not primarily for sugar
-	specs := []creamery.IngredientDefinition{
-		creamery.WholeMilk,
-		creamery.HeavyCream,
-		creamery.Sugar,
-		creamery.NonfatMilkVariable, // variable concentration - solver will determine
-		creamery.TapiocaSyrup,
-	}
+	specs := append([]creamery.IngredientDefinition(nil), labelDef.IngredientSpecs...)
 
 	problem := creamery.NewProblem(specs, target)
 	problem.OrderConstraints = true

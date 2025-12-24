@@ -1,5 +1,7 @@
 package creamery
 
+import "math"
+
 // Sweetener properties for ice cream formulation.
 //
 // POD (Potere Dolcificante / Sweetening Power): relative sweetness vs sucrose = 100
@@ -242,6 +244,22 @@ func finalizeSweetenerTotals(analysis *SweetenerAnalysis) {
 	analysis.TotalPAC = analysis.AddedSugarPAC + analysis.LactosePAC
 }
 
+func normalizeSweetenerTotals(analysis *SweetenerAnalysis, totalMass float64) {
+	if analysis == nil {
+		return
+	}
+	if totalMass <= 0 {
+		return
+	}
+	inv := 1 / totalMass
+	analysis.TotalPOD *= inv
+	analysis.TotalPAC *= inv
+	analysis.AddedSugarPOD *= inv
+	analysis.AddedSugarPAC *= inv
+	analysis.LactosePOD *= inv
+	analysis.LactosePAC *= inv
+}
+
 // SweetenerAnalysis calculates POD and PAC for a solution.
 // This accounts for:
 // - Added sugars (using each ingredient's sweetener properties)
@@ -286,14 +304,17 @@ func SweetenersFromRecipe(recipe *Recipe) SweetenerAnalysis {
 // SweetenersFromComponents aggregates POD/PAC for arbitrary recipe components.
 func SweetenersFromComponents(components []RecipeComponent) SweetenerAnalysis {
 	var analysis SweetenerAnalysis
+	totalMass := 0.0
 	for _, comp := range components {
 		if comp.MassKg <= 0 {
 			continue
 		}
+		totalMass += comp.MassKg
 		profile := comp.Ingredient.EffectiveProfile()
 		addSweetenerContribution(&analysis, profile, comp.MassKg)
 	}
 	finalizeSweetenerTotals(&analysis)
+	normalizeSweetenerTotals(&analysis, totalMass)
 	return analysis
 }
 
@@ -312,6 +333,9 @@ func (a SweetenerAnalysis) EquivalentSucrose() float64 {
 // Typical range: 20-35 for scoopable ice cream.
 func (a SweetenerAnalysis) RelativeSoftness() string {
 	pac := a.TotalPAC
+	if math.IsNaN(pac) || math.IsInf(pac, 0) {
+		return "softness unavailable"
+	}
 	switch {
 	case pac < 20:
 		return "very hard"

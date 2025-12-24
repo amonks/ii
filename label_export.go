@@ -137,6 +137,7 @@ type fractionEntry struct {
 }
 
 func sortedFractions(fractions map[string]float64) []fractionEntry {
+	fractions = CombineFractionDisplayAliases(fractions)
 	entries := make([]fractionEntry, 0, len(fractions))
 	for name, value := range fractions {
 		if value < 1e-4 {

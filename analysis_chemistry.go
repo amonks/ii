@@ -398,6 +398,7 @@ func accumulateComponents(components []RecipeComponent) batchTotals {
 		totals.polyols*0.60
 
 	finalizeSweetenerTotals(&totals.sweeteners)
+	normalizeSweetenerTotals(&totals.sweeteners, totals.total)
 	return totals
 }
 
