@@ -92,23 +92,20 @@ func (s *UnifiedServer) renderLabels(w http.ResponseWriter, r *http.Request) {
 			Name:     entry.Entry.Name,
 			Duration: entry.Duration,
 		}
-		def, _ := LabelScenarioByKey(entry.Entry.ID)
-		facts := def.Facts
+		label, _ := FDALabelByKey(entry.Entry.ID)
+		var facts NutritionFacts
 		if entry.Result != nil {
 			facts = entry.Result.LabelFacts
+		} else {
+			facts = labelFactsFromFDA(label.Facts)
 		}
-		nameLookup := ingredientNameLookup(def.IngredientSpecs)
 		var fractionByID map[IngredientID]float64
 		if entry.Result != nil && entry.Result.Recipe != nil {
 			fractionByID = entry.Result.Recipe.batch().FractionsByID()
 		}
-		if len(def.DisplayNames) > 0 {
-			card.IngredientOrder = def.DisplayNames
-		} else if entry.Result != nil && len(entry.Result.LabelIngredients) > 0 {
-			card.IngredientOrder = entry.Result.LabelIngredients
-		}
-		card.Presence = presenceNames(def.Presence, nameLookup, fractionByID)
-		card.Groups = labelGroupsView(def.Groups, nameLookup, fractionByID)
+		card.IngredientOrder = ingredientNamesFromLabel(label)
+		card.Presence = presenceNamesFromLabel(label, fractionByID)
+		card.Groups = labelGroupsFromFDA(label.Groups, fractionByID)
 		card.LabelFacts = labelFactRows(facts)
 		card.FactComparisons = labelFactComparisons(facts, entry.Result)
 
@@ -366,6 +363,100 @@ func labelFactRows(facts NutritionFacts) []statRow {
 		rows = append(rows, statRow{"Cholesterol", measurement(facts.CholesterolMg, "mg", 0)})
 	}
 	return rows
+}
+
+// Helper functions for FDA Label type
+func labelFactsFromFDA(facts LabelFacts) NutritionFacts {
+	return NutritionFacts{
+		ServingSizeGrams:  facts.ServingSizeGrams,
+		Calories:          facts.Calories,
+		TotalFatGrams:     facts.TotalFatGrams,
+		SaturatedFatGrams: facts.SaturatedFatGrams,
+		TransFatGrams:     facts.TransFatGrams,
+		CholesterolMg:     facts.CholesterolMg,
+		TotalCarbGrams:    facts.TotalCarbGrams,
+		TotalSugarsGrams:  facts.TotalSugarsGrams,
+		AddedSugarsGrams:  facts.AddedSugarsGrams,
+		ProteinGrams:      facts.ProteinGrams,
+		SodiumMg:          facts.SodiumMg,
+	}
+}
+
+func ingredientNamesFromLabel(label Label) []string {
+	if len(label.Ingredients) == 0 {
+		return nil
+	}
+	names := make([]string, len(label.Ingredients))
+	for i, ing := range label.Ingredients {
+		names[i] = ing.ID
+	}
+	return names
+}
+
+func presenceNamesFromLabel(label Label, fractions map[IngredientID]float64) []string {
+	if len(label.Ingredients) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(label.Ingredients))
+	insertedCream := false
+	for _, ing := range label.Ingredients {
+		id := NewIngredientID(ing.ID)
+		if isCreamComponent(id) {
+			if insertedCream {
+				continue
+			}
+			result = append(result, creamAliasLabel(fractions))
+			insertedCream = true
+			continue
+		}
+		result = append(result, ing.ID)
+	}
+	return result
+}
+
+func labelGroupsFromFDA(groups []FDAGroup, fractions map[IngredientID]float64) []labelGroupView {
+	result := make([]labelGroupView, 0, len(groups))
+	for _, group := range groups {
+		if len(group.Members) == 0 {
+			continue
+		}
+		view := labelGroupView{
+			Name:         group.Name,
+			Members:      groupMemberNamesFromFDA(group.Members, fractions),
+			EnforceOrder: group.EnforceOrder,
+		}
+		if len(group.FractionBounds) > 0 {
+			notes := make([]string, 0, len(group.FractionBounds))
+			for key, bounds := range group.FractionBounds {
+				notes = append(notes, describeBounds(key, Interval{Lo: bounds.Lo, Hi: bounds.Hi}))
+			}
+			sort.Strings(notes)
+			view.Notes = notes
+		}
+		result = append(result, view)
+	}
+	return result
+}
+
+func groupMemberNamesFromFDA(members []string, fractions map[IngredientID]float64) []string {
+	if len(members) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(members))
+	insertedCream := false
+	for _, member := range members {
+		id := NewIngredientID(member)
+		if isCreamComponent(id) {
+			if insertedCream {
+				continue
+			}
+			result = append(result, creamAliasLabel(fractions))
+			insertedCream = true
+			continue
+		}
+		result = append(result, member)
+	}
+	return result
 }
 
 func presenceNames(ids []IngredientID, names map[IngredientID]string, fractions map[IngredientID]float64) []string {

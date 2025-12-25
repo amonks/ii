@@ -17,20 +17,35 @@ func Notebook() error {
 	fmt.Println("\n## STEP 1: Analyze the label")
 	fmt.Println()
 
-	labelDef, ok := LabelDefinitionByKey(LabelHaagenDazsVanilla)
+	fdaLabel, ok := FDALabelByKey(LabelHaagenDazsVanilla)
 	if !ok {
 		return fmt.Errorf("label %q missing from catalog", LabelHaagenDazsVanilla)
 	}
-	label := labelDef.Label
 
-	fmt.Printf("%s label:\n", labelDef.Name)
-	if len(labelDef.DisplayNames) > 0 {
-		fmt.Printf("  Ingredients: %s\n", strings.Join(labelDef.DisplayNames, ", "))
+	// Convert FDA label facts to NutritionLabel for target calculation
+	nutritionLabel := nutritionLabelFromFacts(NutritionFacts{
+		ServingSizeGrams:  fdaLabel.Facts.ServingSizeGrams,
+		Calories:          fdaLabel.Facts.Calories,
+		TotalFatGrams:     fdaLabel.Facts.TotalFatGrams,
+		TotalCarbGrams:    fdaLabel.Facts.TotalCarbGrams,
+		TotalSugarsGrams:  fdaLabel.Facts.TotalSugarsGrams,
+		AddedSugarsGrams:  fdaLabel.Facts.AddedSugarsGrams,
+		ProteinGrams:      fdaLabel.Facts.ProteinGrams,
+		SodiumMg:          fdaLabel.Facts.SodiumMg,
+	})
+
+	fmt.Printf("%s label:\n", fdaLabel.Name)
+	if len(fdaLabel.Ingredients) > 0 {
+		names := make([]string, len(fdaLabel.Ingredients))
+		for i, ing := range fdaLabel.Ingredients {
+			names[i] = ing.ID
+		}
+		fmt.Printf("  Ingredients: %s\n", strings.Join(names, ", "))
 	}
 	fmt.Printf("  Per %.0fg: %.0fg fat, %.0fg protein, %.0fg sugar\n",
-		label.ServingSize, label.TotalFat, label.Protein, label.Sugars)
+		nutritionLabel.ServingSize, nutritionLabel.TotalFat, nutritionLabel.Protein, nutritionLabel.Sugars)
 
-	target := label.ToTarget()
+	target := nutritionLabel.ToTarget()
 	target.POD = Interval{}
 	target.PAC = Interval{}
 	targetFractions := target.Components
@@ -46,7 +61,9 @@ func Notebook() error {
 	fmt.Println("### Interpreting the ingredient list")
 	fmt.Println("Using the label's ingredient order to constrain possible formulations:")
 
-	labelSpecs := labelDef.IngredientSpecs
+	// Build ingredient specs from the FDA label
+	catalog := DefaultIngredientCatalog()
+	labelSpecs := buildSpecsFromLabel(fdaLabel, catalog)
 	labelProblem := NewProblem(labelSpecs, target)
 	labelProblem.OrderConstraints = true
 
@@ -103,7 +120,6 @@ func Notebook() error {
 	myEggYolks.Profile.Name = myEggYolks.Name
 	myEggYolks.Profile.ID = myEggYolks.ID
 
-	catalog := DefaultIngredientCatalog()
 	mySucrose, err := catalogSpec(catalog, "sucrose", "Sucrose")
 	if err != nil {
 		return err
@@ -347,4 +363,45 @@ func minInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func buildSpecsFromLabel(label Label, catalog IngredientCatalog) []IngredientDefinition {
+	specs := make([]IngredientDefinition, 0, len(label.Ingredients))
+	for _, ing := range label.Ingredients {
+		inst, ok := catalog.InstanceByKey(ing.ID)
+		if !ok || inst.Definition == nil {
+			continue
+		}
+		spec := *inst.Definition
+		spec.Name = ing.ID
+		spec.ID = NewIngredientID(ing.ID)
+		spec.Profile.Name = ing.ID
+		spec.Profile.ID = spec.ID
+
+		// Apply component overrides
+		if len(ing.Components) > 0 {
+			for key, value := range ing.Components {
+				switch key {
+				case "water":
+					spec.Profile.Components.Water = Point(value)
+				case "fat":
+					spec.Profile.Components.Fat = Point(value)
+				case "protein":
+					spec.Profile.Components.Protein = Point(value)
+				case "lactose":
+					spec.Profile.Components.Lactose = Point(value)
+				case "sucrose":
+					spec.Profile.Components.Sucrose = Point(value)
+				case "glucose":
+					spec.Profile.Components.Glucose = Point(value)
+				case "fructose":
+					spec.Profile.Components.Fructose = Point(value)
+				case "other_solids":
+					spec.Profile.Components.OtherSolids = Point(value)
+				}
+			}
+		}
+		specs = append(specs, spec)
+	}
+	return specs
 }

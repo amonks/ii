@@ -46,9 +46,9 @@ func runLabels(args []string) {
 	report := creamery.AnalyzeLabelCatalog(catalog)
 	fmt.Printf("Label analysis (%s)\n", report.GeneratedAt.Format(time.RFC3339))
 	for _, entry := range report.Entries {
-		def, _ := creamery.LabelScenarioByKey(entry.Entry.ID)
+		label, _ := creamery.FDALabelByKey(entry.Entry.ID)
 		fmt.Printf("\n=== %s (%s) ===\n", entry.Entry.Name, entry.Entry.ID)
-		printLabelDefinitionSummary(def)
+		printLabelSummary(label)
 		if entry.Err != nil {
 			fmt.Printf("Status: FAILED — %v\n", entry.Err)
 			continue
@@ -117,33 +117,26 @@ Commands:
   serve [--addr --log --recipes]  Start the unified web console`)
 }
 
-func printLabelDefinitionSummary(def creamery.LabelScenarioDefinition) {
-	if def.Name == "" {
+func printLabelSummary(label creamery.Label) {
+	if label.Name == "" {
 		fmt.Println("Label definition unavailable.")
 		return
 	}
-	facts := def.Facts
+	facts := label.Facts
 	fmt.Printf("Label facts: serve %.1fg | %g kcal | fat %.1fg | carbs %.1fg | sugars %.1fg | protein %.1fg\n",
 		facts.ServingSizeGrams, facts.Calories, facts.TotalFatGrams, facts.TotalCarbGrams, facts.TotalSugarsGrams, facts.ProteinGrams)
-	if len(def.DisplayNames) > 0 {
-		fmt.Printf("Ingredients (label order): %s\n", strings.Join(def.DisplayNames, ", "))
+	if len(label.Ingredients) > 0 {
+		names := make([]string, len(label.Ingredients))
+		for i, ing := range label.Ingredients {
+			names[i] = ing.ID
+		}
+		fmt.Printf("Ingredients (label order): %s\n", strings.Join(names, ", "))
 	}
-	if len(def.Groups) > 0 {
+	if len(label.Groups) > 0 {
 		fmt.Println("Group constraints:")
-		for _, group := range def.Groups {
-			names := make([]string, 0, len(group.Keys))
-			for _, id := range group.Keys {
-				names = append(names, id.String())
-			}
-			fmt.Printf("  - %s: [%s]\n", group.Name, strings.Join(names, ", "))
+		for _, group := range label.Groups {
+			fmt.Printf("  - %s: [%s]\n", group.Name, strings.Join(group.Members, ", "))
 		}
-	}
-	if len(def.Presence) > 0 {
-		ids := make([]string, 0, len(def.Presence))
-		for _, id := range def.Presence {
-			ids = append(ids, id.String())
-		}
-		fmt.Printf("Presence floor applied to: %s\n", strings.Join(ids, ", "))
 	}
 }
 
