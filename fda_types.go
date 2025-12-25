@@ -7,6 +7,22 @@ type Label struct {
 	ID            string
 	Name          string
 	PintMassGrams float64
+	Facts         LabelFacts
+}
+
+// LabelFacts contains nutrition facts from an FDA label.
+type LabelFacts struct {
+	ServingSizeGrams  float64
+	Calories          float64
+	TotalFatGrams     float64
+	SaturatedFatGrams float64
+	TransFatGrams     float64
+	CholesterolMg     float64
+	TotalCarbGrams    float64
+	TotalSugarsGrams  float64
+	AddedSugarsGrams  float64
+	ProteinGrams      float64
+	SodiumMg          float64
 }
 
 func (p *fdaParser) parseFloat(s string) float64 {
