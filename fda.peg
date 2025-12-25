@@ -1,0 +1,15 @@
+package creamery
+
+type fdaParser Peg {
+    label Label
+}
+
+File <- LabelLine !.
+
+LabelLine <- 'Label:' Spacing Identifier Newline { p.label.ID = text }
+
+Identifier <- < [a-z_][a-z0-9_]* >
+
+Spacing <- ' '*
+Newline <- '\n' / EOF
+EOF <- !.
