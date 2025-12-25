@@ -1,27 +1,38 @@
 package creamery
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestAnalyzeBatchLog(t *testing.T) {
-	data := `
-date: 2025-02-01
-ingredients:
-  - 4 kg heavy_cream
-  - 1 kg sucrose
-  - 0.5 kg corn_syrup_42
+	// Create temp directory with batch files
+	dir := t.TempDir()
 
-%%
-date: 2025-02-02
-ingredients:
-  - 3 kg heavy_cream
-  - 2 kg whole_milk
-  - 1.2 kg sucrose
+	batch1 := `Date: 2025-02-01
+
+Ingredients:
+  4kg heavy_cream
+  1kg sucrose
+  0.5kg corn_syrup_42
+`
+	batch2 := `Date: 2025-02-02
+
+Ingredients:
+  3kg heavy_cream
+  2kg whole_milk
+  1.2kg sucrose
 `
 
-	entries, err := ParseBatchLog(strings.NewReader(data))
+	if err := os.WriteFile(filepath.Join(dir, "2025-02-01.batch"), []byte(batch1), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "2025-02-02.batch"), []byte(batch2), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := LoadBatchesFromDir(dir)
 	if err != nil {
 		t.Fatalf("parse error: %v", err)
 	}

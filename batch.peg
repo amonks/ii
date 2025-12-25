@@ -1,0 +1,44 @@
+package creamery
+
+type batchParser Peg {
+    batch ParsedBatch
+    currentMass string
+}
+
+File <- HeaderSection BlankLine IngredientsSection NotesSection* !.
+
+HeaderSection <- (DateLine / RecipeLine)+
+
+DateLine <- 'Date:' Spacing ISODate Newline { p.setDate(text) }
+
+RecipeLine <- 'Recipe:' Spacing RecipeName Newline { p.setRecipe(text) }
+
+RecipeName <- < [^\n]+ >
+
+BlankLine <- Spacing Newline
+
+IngredientsSection <- 'Ingredients:' Newline IngredientLine+
+
+IngredientLine <- '  ' IngredientMass IngredientKey Newline { p.finishIngredient() }
+
+IngredientMass <- < [0-9]+ ('.' [0-9]+)? [a-zA-Z]+ > Spacing { p.currentMass = text }
+
+IngredientKey <- < [a-z_][a-z0-9_]* > { p.addIngredient(text) }
+
+NotesSection <- BlankLine? NotesHeader NoteLine+
+
+NotesHeader <- ProcessNotesHeader / TastingNotesHeader
+
+ProcessNotesHeader <- 'Process Notes:' Newline { p.startProcessNotes() }
+
+TastingNotesHeader <- 'Tasting Notes:' Newline { p.startTastingNotes() }
+
+NoteLine <- '  ' NoteText Newline { p.addNoteLine(text) }
+
+NoteText <- < (!Newline .)+ >
+
+ISODate <- < [0-9][0-9][0-9][0-9] '-' [0-9][0-9] '-' [0-9][0-9] >
+
+Spacing <- ' '*
+Newline <- '\n' / EOF
+EOF <- !.

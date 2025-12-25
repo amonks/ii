@@ -2,7 +2,6 @@ package creamery
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -68,20 +67,14 @@ func LoadRecipeCatalogFromFiles(paths []string, catalog IngredientCatalog) (Reci
 }
 
 func loadBatchEntries(path string) ([]BatchLogEntry, error) {
-	file, err := os.Open(path)
+	entries, err := LoadBatchesFromDir(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("open %s: %w", path, err)
+		return nil, err
 	}
-	defer file.Close()
-
-	logEntries, err := ParseBatchLog(file)
-	if err != nil {
-		return nil, fmt.Errorf("parse %s: %w", path, err)
-	}
-	return logEntries, nil
+	return entries, nil
 }
 
 func buildRecipeCatalog(entries []BatchLogEntry, sources []string, catalog IngredientCatalog) (RecipeCatalog, error) {

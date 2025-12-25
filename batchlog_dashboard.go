@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,14 +15,9 @@ import (
 
 const batchLogTemplateName = "index.html.tmpl"
 
-// LoadBatchLogEntries parses the canonical batch log file.
+// LoadBatchLogEntries parses batch entries from a directory of .batch files.
 func LoadBatchLogEntries(path string) ([]BatchLogEntry, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open log: %w", err)
-	}
-	defer f.Close()
-	return ParseBatchLog(f)
+	return LoadBatchesFromDir(path)
 }
 
 // LoadBatchLogTemplate prepares the shared HTML dashboard template.
