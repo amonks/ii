@@ -4,15 +4,19 @@ type fdaParser Peg {
     label Label
 }
 
-File <- LabelLine NameLine !.
+File <- LabelLine NameLine PintMassLine !.
 
 LabelLine <- 'Label:' Spacing Identifier Newline { p.label.ID = text }
 
 NameLine <- 'Name:' Spacing TextValue Newline { p.label.Name = text }
 
+PintMassLine <- 'Pint Mass:' Spacing Number 'g' Newline { p.label.PintMassGrams = p.parseFloat(text) }
+
 Identifier <- < [a-z_][a-z0-9_]* >
 
 TextValue <- < [^\n]+ >
+
+Number <- < [0-9]+ ('.' [0-9]+)? >
 
 Spacing <- ' '*
 Newline <- '\n' / EOF

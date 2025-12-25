@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestParseLabel_LabelAndName(t *testing.T) {
-	content, err := os.ReadFile("testdata/label_v2.fda")
+func TestParseLabel_WithPintMass(t *testing.T) {
+	content, err := os.ReadFile("testdata/label_v3.fda")
 	if err != nil {
 		t.Fatalf("read test file: %v", err)
 	}
@@ -21,5 +21,8 @@ func TestParseLabel_LabelAndName(t *testing.T) {
 	}
 	if label.Name != "Test Product" {
 		t.Errorf("got Name %q, want %q", label.Name, "Test Product")
+	}
+	if label.PintMassGrams != 387 {
+		t.Errorf("got PintMassGrams %v, want %v", label.PintMassGrams, 387)
 	}
 }
