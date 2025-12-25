@@ -97,7 +97,7 @@ func runServe(args []string) {
 	_ = fs.Parse(args)
 
 	catalog := creamery.DefaultIngredientCatalog()
-	server, err := creamery.NewUnifiedServer(*logPath, *recipesPath, catalog, creamery.DefaultLabelCatalog())
+	server, err := creamery.NewUnifiedServer(*logPath, *recipesPath, catalog)
 	if err != nil {
 		log.Fatal(err)
 	}

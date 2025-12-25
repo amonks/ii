@@ -6,6 +6,15 @@
 [[task]]
   id = "dev"
   type = "long"
-  watch = ["**/*.go", "**/*.templ", "batchlog"]
+  watch = ["*.go", "cmd/*.go", "*.tmpl"]
+  dependencies = ["compile-pegs"]
   cmd = "go run ./cmd serve"
 
+[[task]]
+  id = "compile-pegs"
+  type = "short"
+  watch = ["*.peg"]
+  cmd = """
+    go tool peg batch.peg || exit 1
+    go tool peg fda.peg || exit 1
+  """

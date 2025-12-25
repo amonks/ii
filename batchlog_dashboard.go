@@ -9,11 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	batchlogtemplates "github.com/amonks/creamery/internal/templates/batchlog"
 )
 
-const batchLogTemplateName = "index.html.tmpl"
+const batchLogTemplateName = "batchlog_index.html.tmpl"
 
 // LoadBatchLogEntries parses batch entries from a directory of .batch files.
 func LoadBatchLogEntries(path string) ([]BatchLogEntry, error) {
@@ -24,7 +22,7 @@ func LoadBatchLogEntries(path string) ([]BatchLogEntry, error) {
 func LoadBatchLogTemplate() (*template.Template, error) {
 	return template.New(batchLogTemplateName).
 		Funcs(batchLogTemplateFuncs()).
-		ParseFS(batchlogtemplates.Files, batchLogTemplateName)
+		ParseFS(templateFiles, batchLogTemplateName)
 }
 
 // NewBatchLogDashboard wires the HTTP handler used by CLI and server modes.

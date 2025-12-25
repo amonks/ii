@@ -13,7 +13,6 @@ import (
 // UnifiedServer renders labels, recipes, and batch-log analytics from one host.
 type UnifiedServer struct {
 	catalog        IngredientCatalog
-	labelCatalog   []LabelCatalogEntry
 	batchLogPath   string
 	recipeLogPath  string
 	batchDashboard *BatchLogDashboard
@@ -24,7 +23,7 @@ type UnifiedServer struct {
 }
 
 // NewUnifiedServer wires the HTTP handlers needed by the consolidated CLI.
-func NewUnifiedServer(batchLogPath, recipeLogPath string, catalog IngredientCatalog, labelCatalog []LabelCatalogEntry) (*UnifiedServer, error) {
+func NewUnifiedServer(batchLogPath, recipeLogPath string, catalog IngredientCatalog) (*UnifiedServer, error) {
 	dashboard, err := NewBatchLogDashboard(batchLogPath, catalog)
 	if err != nil {
 		return nil, err
@@ -37,13 +36,18 @@ func NewUnifiedServer(batchLogPath, recipeLogPath string, catalog IngredientCata
 		"formatDateTime": formatDateTime,
 	}
 
-	home := template.Must(template.New("home").Funcs(funcs).Parse(homePageTemplate))
-	labels := template.Must(template.New("labels").Funcs(funcs).Parse(labelsPageTemplate))
-	recipes := template.Must(template.New("recipes").Funcs(funcs).Parse(recipesPageTemplate))
+	home := template.Must(template.New("home").
+		Funcs(funcs).
+		ParseFS(templateFiles, "base_styles.tmpl", "home.html.tmpl"))
+	labels := template.Must(template.New("labels").
+		Funcs(funcs).
+		ParseFS(templateFiles, "base_styles.tmpl", "labels.html.tmpl"))
+	recipes := template.Must(template.New("recipes").
+		Funcs(funcs).
+		ParseFS(templateFiles, "base_styles.tmpl", "recipes.html.tmpl"))
 
 	return &UnifiedServer{
 		catalog:        catalog,
-		labelCatalog:   labelCatalog,
 		batchLogPath:   batchLogPath,
 		recipeLogPath:  recipeLogPath,
 		batchDashboard: dashboard,
@@ -74,13 +78,15 @@ func (s *UnifiedServer) renderHome(w http.ResponseWriter, r *http.Request) {
 	data := homePageData{
 		GeneratedAt: time.Now(),
 		BatchLog:    s.batchLogPath,
-		LabelCount:  len(s.labelCatalog),
+		LabelCount:  len(DefaultLabelCatalog()),
 	}
-	_ = s.homeTmpl.Execute(w, data)
+	if err := s.homeTmpl.ExecuteTemplate(w, "home", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *UnifiedServer) renderLabels(w http.ResponseWriter, r *http.Request) {
-	report := AnalyzeLabelCatalog(s.labelCatalog)
+	report := AnalyzeLabelCatalog(DefaultLabelCatalog())
 	data := labelPageData{
 		GeneratedAt: report.GeneratedAt,
 		CatalogSize: len(report.Entries),
@@ -131,7 +137,7 @@ func (s *UnifiedServer) renderLabels(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Entries = append(data.Entries, card)
 	}
-	if err := s.labelsTmpl.Execute(w, data); err != nil {
+	if err := s.labelsTmpl.ExecuteTemplate(w, "labels", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -168,7 +174,7 @@ func (s *UnifiedServer) renderRecipes(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Entries = append(data.Entries, card)
 	}
-	if err := s.recipesTmpl.Execute(w, data); err != nil {
+	if err := s.recipesTmpl.ExecuteTemplate(w, "recipes", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -501,12 +507,12 @@ func sweetenerRows(analysis SweetenerAnalysis) []statRow {
 		return nil
 	}
 	return []statRow{
-		{"Total POD", formatDecimal(analysis.TotalPOD, 1)},
-		{"Total PAC", formatDecimal(analysis.TotalPAC, 1)},
-		{"Added sugar POD", formatDecimal(analysis.AddedSugarPOD, 1)},
-		{"Lactose POD", formatDecimal(analysis.LactosePOD, 1)},
-		{"Added sugar PAC", formatDecimal(analysis.AddedSugarPAC, 1)},
-		{"Lactose PAC", formatDecimal(analysis.LactosePAC, 1)},
+		{"Total POD", formatDecimal(analysis.TotalPOD, 1) + "%"},
+		{"Total PAC", formatDecimal(analysis.TotalPAC, 1) + "%"},
+		{"Added sugar POD", formatDecimal(analysis.AddedSugarPOD, 1) + "%"},
+		{"Lactose POD", formatDecimal(analysis.LactosePOD, 1) + "%"},
+		{"Added sugar PAC", formatDecimal(analysis.AddedSugarPAC, 1) + "%"},
+		{"Lactose PAC", formatDecimal(analysis.LactosePAC, 1) + "%"},
 		{"Sucrose equivalent", percentString(analysis.EquivalentSucrose(), 2)},
 		{"Softness", analysis.RelativeSoftness()},
 	}
@@ -610,540 +616,3 @@ func currencyString(value float64) string {
 	}
 	return fmt.Sprintf("$%.2f", value)
 }
-
-const baseStyles = `
-:root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1f2933;
-  background: #f7fafc;
-}
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  background: #f7fafc;
-  color: #1f2933;
-  line-height: 1.5;
-}
-a {
-  color: #0369a1;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-.site-header {
-  position: sticky;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 12px 24px -18px rgba(15,23,42,0.45);
-  z-index: 10;
-}
-.logo {
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #0f172a;
-}
-.site-nav a {
-  margin-left: 0.75rem;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  color: #475569;
-  font-weight: 500;
-}
-.site-nav a.active {
-  background: #e0f2fe;
-  color: #035388;
-}
-main.page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-.card {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 12px 30px -20px rgba(15,23,42,0.45);
-}
-.card.issue {
-  border-color: #fecaca;
-  box-shadow: 0 14px 32px -20px rgba(190,18,60,0.35);
-}
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.summary-card {
-  background: #ffffff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 8px 20px -16px rgba(15,23,42,0.35);
-}
-.summary-label {
-  color: #64748b;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.summary-value {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin-top: 0.2rem;
-}
-.grid {
-  display: grid;
-  gap: 1rem;
-}
-.grid.multi {
-  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
-}
-.panel {
-  background: #f8fafc;
-  border-radius: 0.6rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-}
-.panel h3 {
-  margin-top: 0;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  color: #475569;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-}
-table td {
-  padding: 0.4rem 0;
-  border-top: 1px solid #e5e7eb;
-  vertical-align: top;
-}
-table tr:first-child td {
-  border-top: none;
-}
-.status {
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-}
-.status-ok {
-  background: #dcfce7;
-  color: #166534;
-}
-.status-failed {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-.status-idle {
-  background: #fef3c7;
-  color: #92400e;
-}
-.alert {
-  background: #fff1f2;
-  border: 1px solid #fecdd3;
-  border-radius: 0.6rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-}
-.meta {
-  color: #64748b;
-  font-size: 0.9rem;
-}
-.badge-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.25rem 0 1rem;
-}
-.badge {
-  background: #e0f2fe;
-  color: #0369a1;
-  border-radius: 999px;
-  padding: 0.2rem 0.7rem;
-  font-size: 0.8rem;
-}
-.fractions-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.fractions-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-.fractions-list li:last-child {
-  border-bottom: none;
-}
-.muted {
-  color: #64748b;
-}
-.notes-list {
-  margin: 0.4rem 0 0;
-  padding-left: 1.2rem;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.ingredients-table td:first-child {
-  font-weight: 600;
-  padding-right: 0.5rem;
-}
-`
-
-const homePageTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Creamery Console</title>
-  <style>` + baseStyles + `
-  .hero {
-    text-align: center;
-    padding: 2rem 0 1rem;
-  }
-  .hero h1 {
-    margin-bottom: 0.5rem;
-  }
-  .hero p {
-    color: #64748b;
-  }
-  .link-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
-    gap: 1rem;
-    margin-top: 1.5rem;
-  }
-  .link-card {
-    background: var(--card-bg);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 30px rgba(15,23,42,0.08);
-  }
-  .link-card h2 {
-    margin-top: 0;
-  }
-  .link-card a {
-    font-weight: 600;
-  }
-  </style>
-</head>
-<body>
-  <header class="site-header">
-    <div class="logo">Creamery Console</div>
-    <nav class="site-nav">
-      <a href="/" class="active">Overview</a>
-      <a href="/labels">Labels</a>
-      <a href="/recipes">Recipes</a>
-      <a href="/batchlog">Batch Log</a>
-    </nav>
-  </header>
-  <main class="page">
-    <section class="hero">
-      <h1>Operational notebook</h1>
-      <p>Last refreshed {{formatDateTime .GeneratedAt}} • Label scenarios tracked: {{.LabelCount}}</p>
-      <p>Batch log source: <code>{{.BatchLog}}</code></p>
-    </section>
-    <section class="link-grid">
-      <div class="link-card">
-        <h2>Label Reconstructions</h2>
-        <p>Reverse-engineered ingredient weights, solver diagnostics, and sweetener metrics for every reference label.</p>
-        <a href="/labels">Open labels →</a>
-      </div>
-      <div class="link-card">
-        <h2>Recipe Catalog</h2>
-        <p>Every logged batch with composition, cost, and tasting notes so you can compare runs quickly.</p>
-        <a href="/recipes">Open recipes →</a>
-      </div>
-      <div class="link-card">
-        <h2>Batch Log Dashboard</h2>
-        <p>Time-series analytics, ingredient usage, and issue tracking straight from the production log.</p>
-        <a href="/batchlog">Open batch log →</a>
-      </div>
-    </section>
-  </main>
-</body>
-</html>`
-
-const labelsPageTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Label Reconstructions · Creamery Console</title>
-  <style>` + baseStyles + `
-  .groups-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .groups-list li {
-    margin-bottom: 0.6rem;
-  }
-  .compare table td:nth-child(1) {
-    width: 35%;
-    color: #64748b;
-  }
-  .compare table td:nth-child(3) {
-    text-align: right;
-    color: #64748b;
-  }
-  </style>
-</head>
-<body>
-  <header class="site-header">
-    <div class="logo">Creamery Console</div>
-    <nav class="site-nav">
-      <a href="/">Overview</a>
-      <a href="/labels" class="active">Labels</a>
-      <a href="/recipes">Recipes</a>
-      <a href="/batchlog">Batch Log</a>
-    </nav>
-  </header>
-  <main class="page">
-    <section class="summary-grid">
-      <div class="summary-card">
-        <p class="summary-label">Scenarios</p>
-        <p class="summary-value">{{.CatalogSize}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Solved</p>
-        <p class="summary-value">{{.SolvedCount}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Failed</p>
-        <p class="summary-value">{{.FailedCount}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Generated</p>
-        <p class="summary-value">{{formatDateTime .GeneratedAt}}</p>
-      </div>
-    </section>
-    {{range .Entries}}
-    <article class="card {{if .IsError}}issue{{end}}">
-      <div class="card-header">
-        <div>
-          <h2>{{.Name}}</h2>
-          <p class="meta">Scenario {{.ID}} • solve {{formatDuration .Duration}}</p>
-        </div>
-        <span class="status {{.StatusClass}}">{{.Status}}</span>
-      </div>
-      {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
-      <div class="badge-strip">
-        {{if .SolverServing}}<span class="badge">Serving used {{.SolverServing}}</span>{{end}}
-        {{if .PintMass}}<span class="badge">Pint mass {{.PintMass}}</span>{{end}}
-      </div>
-      <div class="grid multi">
-        <div class="panel">
-          <h3>Label Ingredients</h3>
-          {{if .IngredientOrder}}
-          <ol>
-            {{range .IngredientOrder}}<li>{{.}}</li>{{end}}
-          </ol>
-          {{else}}<p class="muted">No label order recorded.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Presence Floors</h3>
-          {{if .Presence}}
-          <ul>
-            {{range .Presence}}<li>{{.}}</li>{{end}}
-          </ul>
-          {{else}}<p class="muted">No minimum ingredients enforced.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Group Constraints</h3>
-          {{if .Groups}}
-          <ul class="groups-list">
-            {{range .Groups}}
-            <li>
-              <strong>{{.Name}}</strong><br>
-              <span class="muted">{{range $i, $m := .Members}}{{if $i}}, {{end}}{{$m}}{{end}}</span>
-              {{if .Notes}}
-              <ul class="notes-list">{{range .Notes}}<li>{{.}}</li>{{end}}</ul>
-              {{end}}
-              {{if .EnforceOrder}}<p class="muted">Members locked to label order.</p>{{end}}
-            </li>
-            {{end}}
-          </ul>
-          {{else}}<p class="muted">No additional grouping.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Label Facts</h3>
-          {{if .LabelFacts}}
-          <table>
-            {{range .LabelFacts}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}
-          </table>
-          {{else}}<p class="muted">No label facts recorded.</p>{{end}}
-        </div>
-        <div class="panel compare">
-          <h3>Predicted vs Label</h3>
-          {{if .FactComparisons}}
-          <table>
-            {{range .FactComparisons}}
-            <tr>
-              <td>{{.Name}}</td>
-              <td>{{.Label}} → {{.Pred}}</td>
-              <td>{{.Delta}}</td>
-            </tr>
-            {{end}}
-          </table>
-          {{else}}<p class="muted">No feasible solution yet.</p>{{end}}
-        </div>
-      </div>
-      <div class="grid multi">
-        <div class="panel">
-          <h3>Solution Fractions</h3>
-          {{if .Fractions}}
-          <ul class="fractions-list">
-            {{range .Fractions}}<li><span>{{.Name}}</span><span>{{formatPercent .Value}}</span></li>{{end}}
-          </ul>
-          {{else}}<p class="muted">Solver did not produce a recipe.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Sweetener Analysis</h3>
-          {{if .Sweetener}}
-          <table>{{range .Sweetener}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">Unavailable.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Process Metrics</h3>
-          {{if .Metrics}}
-          <table>{{range .Metrics}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">No process snapshot.</p>{{end}}
-        </div>
-      </div>
-    </article>
-    {{end}}
-  </main>
-</body>
-</html>`
-
-const recipesPageTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Recipe Catalog · Creamery Console</title>
-  <style>` + baseStyles + `
-  .card.recipe h2 {
-    margin-bottom: 0.2rem;
-  }
-  .issues-list {
-    margin: 0.4rem 0 0;
-    padding-left: 1rem;
-  }
-  </style>
-</head>
-<body>
-  <header class="site-header">
-    <div class="logo">Creamery Console</div>
-    <nav class="site-nav">
-      <a href="/">Overview</a>
-      <a href="/labels">Labels</a>
-      <a href="/recipes" class="active">Recipes</a>
-      <a href="/batchlog">Batch Log</a>
-    </nav>
-  </header>
-  <main class="page">
-    <section class="summary-grid">
-      <div class="summary-card">
-        <p class="summary-label">Total batches</p>
-        <p class="summary-value">{{.Summary.TotalBatches}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Valid snapshots</p>
-        <p class="summary-value">{{.Summary.ValidSnapshots}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Entries with issues</p>
-        <p class="summary-value">{{.Summary.EntriesWithIssues}}</p>
-      </div>
-      <div class="summary-card">
-        <p class="summary-label">Timeline</p>
-        <p class="summary-value">{{formatDate .Summary.EarliestDate}} – {{formatDate .Summary.LatestDate}}</p>
-      </div>
-    </section>
-    {{range .Entries}}
-    <article class="card recipe {{if .HasIssues}}issue{{end}}">
-      <div class="card-header">
-        <div>
-          <h2>{{.Label}}</h2>
-          <p class="meta">{{if .Date}}Batched {{.Date}}{{else}}Date unavailable{{end}}</p>
-        </div>
-      </div>
-      {{if .HasIssues}}
-      <div class="alert">
-        <strong>Issues:</strong>
-        <ul class="issues-list">{{range .Issues}}<li>{{.}}</li>{{end}}</ul>
-      </div>
-      {{end}}
-      <div class="grid multi">
-        <div class="panel">
-          <h3>Ingredients</h3>
-          {{if .Ingredients}}
-          <table class="ingredients-table">
-            {{range .Ingredients}}<tr><td>{{.Name}}</td><td>{{.Mass}}</td><td>{{.Percent}}</td></tr>{{end}}
-          </table>
-          {{else}}<p class="muted">No ingredient weights recorded.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Process Notes</h3>
-          {{if .ProcessNotes}}
-          <ul class="notes-list">{{range .ProcessNotes}}<li>{{.}}</li>{{end}}</ul>
-          {{else}}<p class="muted">None logged.</p>{{end}}
-          <h3>Tasting</h3>
-          {{if .TastingNotes}}
-          <ul class="notes-list">{{range .TastingNotes}}<li>{{.}}</li>{{end}}</ul>
-          {{else}}<p class="muted">No tasting notes recorded.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Chemistry Snapshot</h3>
-          {{if .SnapshotStats}}
-          <table>{{range .SnapshotStats}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">Snapshot unavailable.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Sweetener</h3>
-          {{if .Sweetener}}
-          <table>{{range .Sweetener}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">Not computed.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Recipe Fractions</h3>
-          {{if .Fractions}}
-          <ul class="fractions-list">
-            {{range .Fractions}}<li><span>{{.Name}}</span><span>{{formatPercent .Value}}</span></li>{{end}}
-          </ul>
-          {{else}}<p class="muted">Recipe build missing.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Batch Metrics</h3>
-          {{if .Meta}}
-          <table>{{range .Meta}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">No batch-level metrics.</p>{{end}}
-        </div>
-      </div>
-    </article>
-    {{end}}
-  </main>
-</body>
-</html>`
