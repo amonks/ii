@@ -2,7 +2,9 @@ package creamery
 
 type fdaParser Peg {
     label Label
-    currentIngredient string
+    currentGroup *FDAGroup
+    boundKey string
+    boundLo float64
 }
 
 File <- LabelLine NameLine PintMassLine BlankLine NutritionSection BlankLine IngredientsSection !.
@@ -43,9 +45,27 @@ AddedSugarsLine <- 'Added Sugars:' Spacing Number 'g' Newline { p.label.Facts.Ad
 ProteinLine <- 'Protein:' Spacing Number 'g' Newline { p.label.Facts.ProteinGrams = p.parseFloat(text) }
 SodiumLine <- 'Sodium:' Spacing Number 'mg' Newline { p.label.Facts.SodiumMg = p.parseFloat(text) }
 
-IngredientsSection <- 'Ingredients:' Newline IngredientLine+
+IngredientsSection <- 'Ingredients:' Newline IngredientItem+
 
-IngredientLine <- '  ' Identifier Newline { p.addIngredient(text) }
+IngredientItem <- CompoundIngredient / SimpleIngredient
+
+SimpleIngredient <- '  ' Identifier Newline { p.addIngredient(text) }
+
+CompoundIngredient <- '  ' GroupName Spacing '[' GroupAnnotation ']' ':' Newline SubIngredient+ { p.finishGroup() }
+
+GroupName <- < [A-Za-z][A-Za-z0-9_ ]* > { p.startGroup(text) }
+
+GroupAnnotation <- FractionBound / OrderAnnotation
+
+FractionBound <- BoundKey '=' BoundLo '..' BoundHi
+
+BoundKey <- Identifier { p.boundKey = text }
+BoundLo <- Number { p.boundLo = p.parseFloat(text) }
+BoundHi <- Number { p.setFractionBound(p.parseFloat(text)) }
+
+OrderAnnotation <- 'order' { p.setGroupOrder() }
+
+SubIngredient <- '    ' Identifier Newline { p.addSubIngredient(text) }
 
 Identifier <- < [a-z_][a-z0-9_]* >
 

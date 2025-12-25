@@ -1,6 +1,9 @@
 package creamery
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Label represents an FDA nutrition label parsed from .fda format.
 type Label struct {
@@ -9,11 +12,26 @@ type Label struct {
 	PintMassGrams float64
 	Facts         LabelFacts
 	Ingredients   []LabelIngredient
+	Groups        []FDAGroup
 }
 
 // LabelIngredient represents an ingredient in an FDA label.
 type LabelIngredient struct {
 	ID string
+}
+
+// FDAGroup represents a group of ingredients (like "Cream" containing cream_fat and cream_serum).
+type FDAGroup struct {
+	Name           string
+	Members        []string
+	FractionBounds map[string]FDAFractionBound
+	EnforceOrder   bool
+}
+
+// FDAFractionBound represents a fraction constraint on an ingredient within a group.
+type FDAFractionBound struct {
+	Lo float64
+	Hi float64
 }
 
 // LabelFacts contains nutrition facts from an FDA label.
@@ -38,6 +56,31 @@ func (p *fdaParser) parseFloat(s string) float64 {
 
 func (p *fdaParser) addIngredient(id string) {
 	p.label.Ingredients = append(p.label.Ingredients, LabelIngredient{ID: id})
+}
+
+func (p *fdaParser) startGroup(name string) {
+	p.currentGroup = &FDAGroup{Name: strings.TrimSpace(name)}
+}
+
+func (p *fdaParser) setFractionBound(hi float64) {
+	if p.currentGroup.FractionBounds == nil {
+		p.currentGroup.FractionBounds = make(map[string]FDAFractionBound)
+	}
+	p.currentGroup.FractionBounds[p.boundKey] = FDAFractionBound{Lo: p.boundLo, Hi: hi}
+}
+
+func (p *fdaParser) setGroupOrder() {
+	p.currentGroup.EnforceOrder = true
+}
+
+func (p *fdaParser) addSubIngredient(id string) {
+	p.currentGroup.Members = append(p.currentGroup.Members, id)
+	p.label.Ingredients = append(p.label.Ingredients, LabelIngredient{ID: id})
+}
+
+func (p *fdaParser) finishGroup() {
+	p.label.Groups = append(p.label.Groups, *p.currentGroup)
+	p.currentGroup = nil
 }
 
 // ParseLabel parses an FDA label from the given content string.
