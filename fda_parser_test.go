@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestParseLabel_LabelOnly(t *testing.T) {
-	content, err := os.ReadFile("testdata/label_v1.fda")
+func TestParseLabel_LabelAndName(t *testing.T) {
+	content, err := os.ReadFile("testdata/label_v2.fda")
 	if err != nil {
 		t.Fatalf("read test file: %v", err)
 	}
@@ -18,5 +18,8 @@ func TestParseLabel_LabelOnly(t *testing.T) {
 
 	if label.ID != "test" {
 		t.Errorf("got ID %q, want %q", label.ID, "test")
+	}
+	if label.Name != "Test Product" {
+		t.Errorf("got Name %q, want %q", label.Name, "Test Product")
 	}
 }

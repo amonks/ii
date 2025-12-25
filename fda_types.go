@@ -2,7 +2,8 @@ package creamery
 
 // Label represents an FDA nutrition label parsed from .fda format.
 type Label struct {
-	ID string
+	ID   string
+	Name string
 }
 
 // ParseLabel parses an FDA label from the given content string.
