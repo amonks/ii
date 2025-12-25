@@ -257,64 +257,6 @@ type ingredientRow struct {
 	Percent string
 }
 
-func ingredientNameLookup(specs []IngredientDefinition) map[IngredientID]string {
-	names := make(map[IngredientID]string, len(specs))
-	for _, spec := range specs {
-		name := spec.Name
-		if name == "" && spec.Profile.Name != "" {
-			name = spec.Profile.Name
-		}
-		if name == "" && spec.ID != "" {
-			name = spec.ID.String()
-		}
-		names[spec.ID] = name
-	}
-	return names
-}
-
-func namesFromIDs(ids []IngredientID, lookup map[IngredientID]string) []string {
-	if len(ids) == 0 {
-		return nil
-	}
-	out := make([]string, 0, len(ids))
-	for _, id := range ids {
-		if name, ok := lookup[id]; ok && name != "" {
-			out = append(out, name)
-		} else {
-			out = append(out, id.String())
-		}
-	}
-	return out
-}
-
-func labelGroupsView(groups []LabelGroup, names map[IngredientID]string, fractions map[IngredientID]float64) []labelGroupView {
-	result := make([]labelGroupView, 0, len(groups))
-	for _, group := range groups {
-		if len(group.Keys) == 0 {
-			continue
-		}
-		view := labelGroupView{
-			Name:         group.Name,
-			Members:      groupMemberNames(group.Keys, names, fractions),
-			EnforceOrder: group.EnforceInternalOrder,
-		}
-		if len(group.FractionBounds) > 0 {
-			notes := make([]string, 0, len(group.FractionBounds))
-			for id, bounds := range group.FractionBounds {
-				label := names[id]
-				if label == "" {
-					label = id.String()
-				}
-				notes = append(notes, describeBounds(label, bounds))
-			}
-			sort.Strings(notes)
-			view.Notes = notes
-		}
-		result = append(result, view)
-	}
-	return result
-}
-
 func describeBounds(name string, bounds Interval) string {
 	lo := bounds.Lo
 	hi := bounds.Hi
@@ -457,53 +399,6 @@ func groupMemberNamesFromFDA(members []string, fractions map[IngredientID]float6
 		result = append(result, member)
 	}
 	return result
-}
-
-func presenceNames(ids []IngredientID, names map[IngredientID]string, fractions map[IngredientID]float64) []string {
-	if len(ids) == 0 {
-		return nil
-	}
-	result := make([]string, 0, len(ids))
-	insertedCream := false
-	for _, id := range ids {
-		if isCreamComponent(id) {
-			if insertedCream {
-				continue
-			}
-			result = append(result, creamAliasLabel(fractions))
-			insertedCream = true
-			continue
-		}
-		result = append(result, ingredientDisplayNameForID(id, names))
-	}
-	return result
-}
-
-func groupMemberNames(ids []IngredientID, names map[IngredientID]string, fractions map[IngredientID]float64) []string {
-	if len(ids) == 0 {
-		return nil
-	}
-	result := make([]string, 0, len(ids))
-	insertedCream := false
-	for _, id := range ids {
-		if isCreamComponent(id) {
-			if insertedCream {
-				continue
-			}
-			result = append(result, creamAliasLabel(fractions))
-			insertedCream = true
-			continue
-		}
-		result = append(result, ingredientDisplayNameForID(id, names))
-	}
-	return result
-}
-
-func ingredientDisplayNameForID(id IngredientID, names map[IngredientID]string) string {
-	if name, ok := names[id]; ok && name != "" {
-		return name
-	}
-	return id.String()
 }
 
 func creamAliasLabel(fractions map[IngredientID]float64) string {
