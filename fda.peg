@@ -2,9 +2,10 @@ package creamery
 
 type fdaParser Peg {
     label Label
+    currentIngredient string
 }
 
-File <- LabelLine NameLine PintMassLine BlankLine NutritionSection !.
+File <- LabelLine NameLine PintMassLine BlankLine NutritionSection BlankLine IngredientsSection !.
 
 LabelLine <- 'Label:' Spacing Identifier Newline { p.label.ID = text }
 
@@ -41,6 +42,10 @@ TotalSugarsLine <- 'Total Sugars:' Spacing Number 'g' Newline { p.label.Facts.To
 AddedSugarsLine <- 'Added Sugars:' Spacing Number 'g' Newline { p.label.Facts.AddedSugarsGrams = p.parseFloat(text) }
 ProteinLine <- 'Protein:' Spacing Number 'g' Newline { p.label.Facts.ProteinGrams = p.parseFloat(text) }
 SodiumLine <- 'Sodium:' Spacing Number 'mg' Newline { p.label.Facts.SodiumMg = p.parseFloat(text) }
+
+IngredientsSection <- 'Ingredients:' Newline IngredientLine+
+
+IngredientLine <- '  ' Identifier Newline { p.addIngredient(text) }
 
 Identifier <- < [a-z_][a-z0-9_]* >
 

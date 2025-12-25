@@ -1,0 +1,15 @@
+Label: test
+Name: Test Product
+Pint Mass: 387g
+
+Nutrition Facts:
+  Serving Size: 129g
+  Calories: 320
+  Total Fat: 21g
+  Protein: 6g
+  Sodium: 75mg
+
+Ingredients:
+  skim_milk
+  cane_sugar
+  egg_yolk

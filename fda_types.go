@@ -8,6 +8,12 @@ type Label struct {
 	Name          string
 	PintMassGrams float64
 	Facts         LabelFacts
+	Ingredients   []LabelIngredient
+}
+
+// LabelIngredient represents an ingredient in an FDA label.
+type LabelIngredient struct {
+	ID string
 }
 
 // LabelFacts contains nutrition facts from an FDA label.
@@ -28,6 +34,10 @@ type LabelFacts struct {
 func (p *fdaParser) parseFloat(s string) float64 {
 	f, _ := strconv.ParseFloat(s, 64)
 	return f
+}
+
+func (p *fdaParser) addIngredient(id string) {
+	p.label.Ingredients = append(p.label.Ingredients, LabelIngredient{ID: id})
 }
 
 // ParseLabel parses an FDA label from the given content string.
