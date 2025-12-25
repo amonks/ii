@@ -146,11 +146,192 @@ func SolveTalentiVanilla() (*LabelScenarioResult, error) {
 }
 
 func SolveLabelScenarioByKey(key string) (*LabelScenarioResult, error) {
-	def, ok := LabelScenarioByKey(key)
+	label, ok := FDALabelByKey(key)
 	if !ok {
 		return nil, fmt.Errorf("unknown label scenario %q", key)
 	}
-	return solveLabelScenario(def)
+	return SolveFDALabel(label, DefaultIngredientCatalog())
+}
+
+// SolveFDALabel solves a label reconstruction problem directly from an FDA Label.
+func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult, error) {
+	// Build ingredient lots from the label
+	builder := newScenarioIngredients()
+	builder.catalog = catalog
+
+	for _, ing := range label.Ingredients {
+		builder.addClone(ing.ID, ing.ID, func(inst *LotDescriptor) {
+			if len(ing.Components) > 0 && inst.Definition != nil {
+				def := *inst.Definition
+				for key, value := range ing.Components {
+					switch key {
+					case "water":
+						def.Profile.Components.Water = Point(value)
+					case "fat":
+						def.Profile.Components.Fat = Point(value)
+					case "protein":
+						def.Profile.Components.Protein = Point(value)
+					case "lactose":
+						def.Profile.Components.Lactose = Point(value)
+					case "sucrose":
+						def.Profile.Components.Sucrose = Point(value)
+					case "glucose":
+						def.Profile.Components.Glucose = Point(value)
+					case "fructose":
+						def.Profile.Components.Fructose = Point(value)
+					case "other_solids":
+						def.Profile.Components.OtherSolids = Point(value)
+					}
+				}
+				*inst = inst.WithSpec(def)
+			}
+		})
+	}
+
+	lots := builder.Lots()
+	if len(lots) == 0 {
+		return nil, fmt.Errorf("label %s has no ingredients", label.Name)
+	}
+
+	// Convert LabelFacts to NutritionFacts
+	facts := NutritionFacts{
+		ServingSizeGrams:  label.Facts.ServingSizeGrams,
+		Calories:          label.Facts.Calories,
+		TotalFatGrams:     label.Facts.TotalFatGrams,
+		SaturatedFatGrams: label.Facts.SaturatedFatGrams,
+		TransFatGrams:     label.Facts.TransFatGrams,
+		CholesterolMg:     label.Facts.CholesterolMg,
+		TotalCarbGrams:    label.Facts.TotalCarbGrams,
+		TotalSugarsGrams:  label.Facts.TotalSugarsGrams,
+		AddedSugarsGrams:  label.Facts.AddedSugarsGrams,
+		ProteinGrams:      label.Facts.ProteinGrams,
+		SodiumMg:          label.Facts.SodiumMg,
+	}
+
+	nutritionLabel := nutritionLabelFromFacts(facts)
+	target := nutritionLabel.ToTarget()
+	target.POD = Interval{}
+	target.PAC = Interval{}
+
+	problem := NewFormulationProblem(lots, target)
+	problem.OverrideLots(builder.Batches())
+
+	// Set presence floor for all ingredients
+	presence := make([]IngredientID, len(label.Ingredients))
+	for i, ing := range label.Ingredients {
+		presence[i] = NewIngredientID(ing.ID)
+	}
+	if err := setPresenceFloor(problem, presence); err != nil {
+		return nil, err
+	}
+
+	// Convert FDA groups to LabelGroups and apply constraints
+	groups := convertFDAGroups(label, builder)
+	if len(groups) > 0 {
+		ApplyGroupBounds(problem, groups)
+		ApplyLabelOrder(problem, groups, labelOrderEps())
+	} else {
+		problem.OrderConstraints = true
+	}
+
+	if err := problem.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid label problem for %s: %w", label.Name, err)
+	}
+
+	pintMass := label.PintMassGrams
+	if pintMass == 0 {
+		pintMass = facts.ServingSizeGrams * 3
+	}
+
+	goals := GoalsFromLabel(facts, pintMass, defaultServeTempC, defaultDrawTempC, defaultShearRate)
+
+	solver, err := NewSolver(problem)
+	if err != nil {
+		return nil, err
+	}
+	solution, err := solver.FindSolution()
+	if err != nil {
+		return nil, fmt.Errorf("%s LP infeasible: %w", label.Name, err)
+	}
+
+	specs := builder.Specs()
+	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, specs, goals, facts.SodiumMg)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build recipe for %s: %w", label.Name, err)
+	}
+
+	batchDetails := make(map[IngredientID]LotDescriptor, len(solution.Lots))
+	for id, lot := range solution.Lots {
+		batchDetails[id] = lot
+	}
+
+	return &LabelScenarioResult{
+		Name:             label.Name,
+		LabelIngredients: ingredientNames(label.Ingredients),
+		LabelFacts:       facts,
+		PredictedFacts:   predicted,
+		Goals:            goals,
+		Problem:          problem,
+		Solution:         solution,
+		Recipe:           recipe,
+		ServingSizeGrams: serving,
+		Metrics:          metrics,
+		PintMassGrams:    pintMass,
+		Specs:            specs,
+		BatchDetails:     batchDetails,
+	}, nil
+}
+
+func convertFDAGroups(label Label, builder *scenarioIngredients) []LabelGroup {
+	groups := make([]LabelGroup, 0, len(label.Groups)+len(label.Ingredients))
+
+	// Track which ingredients are in explicit groups
+	inGroup := make(map[string]bool)
+	for _, g := range label.Groups {
+		for _, member := range g.Members {
+			inGroup[member] = true
+		}
+	}
+
+	// Convert explicit groups
+	for _, g := range label.Groups {
+		keys := make([]IngredientID, len(g.Members))
+		for i, member := range g.Members {
+			keys[i] = builder.id(member)
+		}
+		group := LabelGroup{
+			Name:                 g.Name,
+			Keys:                 keys,
+			EnforceInternalOrder: g.EnforceOrder,
+		}
+		if len(g.FractionBounds) > 0 {
+			group.FractionBounds = make(map[IngredientID]Interval)
+			for key, bound := range g.FractionBounds {
+				group.FractionBounds[builder.id(key)] = RangeWithEps(bound.Lo, bound.Hi)
+			}
+		}
+		groups = append(groups, group)
+	}
+
+	// Create singleton groups for ingredients not in explicit groups
+	for _, ing := range label.Ingredients {
+		if !inGroup[ing.ID] {
+			groups = append(groups, LabelGroup{
+				Name: ing.ID,
+				Keys: []IngredientID{builder.id(ing.ID)},
+			})
+		}
+	}
+
+	return groups
+}
+
+func ingredientNames(ingredients []LabelIngredient) []string {
+	names := make([]string, len(ingredients))
+	for i, ing := range ingredients {
+		names[i] = ing.ID
+	}
+	return names
 }
 
 func solveLabelScenario(def LabelScenarioDefinition) (*LabelScenarioResult, error) {
