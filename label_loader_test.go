@@ -26,20 +26,21 @@ func TestFDALabelLoader(t *testing.T) {
 	}
 }
 
-func TestLabelScenarioFromFDA(t *testing.T) {
+func TestSolveFDALabel(t *testing.T) {
 	t.Parallel()
 
-	def, ok := LabelScenarioByKey(LabelHaagenDazsVanilla)
+	label, ok := FDALabelByKey(LabelHaagenDazsVanilla)
 	if !ok {
-		t.Fatalf("label %q missing from scenario definitions", LabelHaagenDazsVanilla)
+		t.Fatalf("label %q missing", LabelHaagenDazsVanilla)
 	}
-	if def.Name != "Haagen-Dazs Vanilla" {
-		t.Errorf("name = %q, want %q", def.Name, "Haagen-Dazs Vanilla")
+	result, err := SolveFDALabel(label, DefaultIngredientCatalog())
+	if err != nil {
+		t.Fatalf("solve failed: %v", err)
 	}
-	if len(def.Lots) == 0 {
-		t.Error("expected non-empty Lots")
+	if result.Name != "Haagen-Dazs Vanilla" {
+		t.Errorf("name = %q, want %q", result.Name, "Haagen-Dazs Vanilla")
 	}
-	if len(def.Groups) == 0 {
-		t.Error("expected non-empty Groups")
+	if result.Recipe == nil {
+		t.Error("expected non-nil Recipe")
 	}
 }

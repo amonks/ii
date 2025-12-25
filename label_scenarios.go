@@ -153,6 +153,19 @@ func SolveLabelScenarioByKey(key string) (*LabelScenarioResult, error) {
 	return SolveFDALabel(label, DefaultIngredientCatalog())
 }
 
+// ingredientAliases maps DSL ingredient names to catalog keys.
+var ingredientAliases = map[string]string{
+	"cane_sugar": "sucrose",
+	"sugar":      "sucrose",
+}
+
+func catalogKeyForIngredient(id string) string {
+	if alias, ok := ingredientAliases[id]; ok {
+		return alias
+	}
+	return id
+}
+
 // SolveFDALabel solves a label reconstruction problem directly from an FDA Label.
 func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult, error) {
 	// Build ingredient lots from the label
@@ -160,7 +173,8 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 	builder.catalog = catalog
 
 	for _, ing := range label.Ingredients {
-		builder.addClone(ing.ID, ing.ID, func(inst *LotDescriptor) {
+		catalogKey := catalogKeyForIngredient(ing.ID)
+		builder.addClone(catalogKey, ing.ID, func(inst *LotDescriptor) {
 			if len(ing.Components) > 0 && inst.Definition != nil {
 				def := *inst.Definition
 				for key, value := range ing.Components {
@@ -332,125 +346,6 @@ func ingredientNames(ingredients []LabelIngredient) []string {
 		names[i] = ing.ID
 	}
 	return names
-}
-
-func solveLabelScenario(def LabelScenarioDefinition) (*LabelScenarioResult, error) {
-	label := def.Label
-	if label.ServingSize <= 0 && def.Facts.ServingSizeGrams > 0 {
-		label = nutritionLabelFromFacts(def.Facts)
-	}
-
-	target := label.ToTarget()
-	target.POD = Interval{}
-	target.PAC = Interval{}
-	target.POD = Interval{}
-	target.PAC = Interval{}
-
-	lots := def.Lots
-	if len(lots) == 0 {
-		return nil, fmt.Errorf("label %s missing ingredient lots", def.Name)
-	}
-
-	problem := NewFormulationProblem(lots, target)
-	if len(def.Batches) > 0 {
-		problem.OverrideLots(def.Batches)
-	}
-
-	if len(def.Presence) > 0 {
-		if err := setPresenceFloor(problem, def.Presence); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(def.Groups) > 0 {
-		ApplyGroupBounds(problem, def.Groups)
-		ApplyLabelOrder(problem, def.Groups, labelOrderEps())
-	} else {
-		problem.OrderConstraints = true
-	}
-
-	if err := problem.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid label problem for %s: %w", def.Name, err)
-	}
-
-	pintMass := def.PintMassGrams
-	if pintMass == 0 {
-		if label.ServingSize > 0 {
-			pintMass = label.ServingSize * 3
-		} else if def.Facts.ServingSizeGrams > 0 {
-			pintMass = def.Facts.ServingSizeGrams * 3
-		} else {
-			pintMass = 1000
-		}
-	}
-
-	serveTemp := def.ServeTempC
-	if serveTemp == 0 {
-		serveTemp = defaultServeTempC
-	}
-	drawTemp := def.DrawTempC
-	if drawTemp == 0 {
-		drawTemp = defaultDrawTempC
-	}
-	shearRate := def.ShearRate
-	if shearRate == 0 {
-		shearRate = defaultShearRate
-	}
-
-	goals := GoalsFromLabel(def.Facts, pintMass, serveTemp, drawTemp, shearRate)
-	if def.OverrunCap != nil {
-		goals.OverrunCap = def.OverrunCap
-	}
-
-	solver, err := NewSolver(problem)
-	if err != nil {
-		return nil, err
-	}
-	solution, err := solver.FindSolution()
-	if err != nil {
-		return nil, fmt.Errorf("%s LP infeasible: %w", def.Name, err)
-	}
-
-	specs := def.ScenarioSpecs
-	if len(specs) == 0 {
-		specs = def.IngredientSpecs
-	}
-	if len(specs) == 0 {
-		specs = problem.Specs()
-	}
-
-	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, specs, goals, def.Facts.SodiumMg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to build recipe for %s: %w", def.Name, err)
-	}
-
-	batchDetails := make(map[IngredientID]LotDescriptor, len(solution.Lots))
-	for id, lot := range solution.Lots {
-		batchDetails[id] = lot
-	}
-
-	labelIngredients := def.DisplayNames
-	if len(labelIngredients) == 0 {
-		for _, spec := range specs {
-			labelIngredients = append(labelIngredients, spec.Name)
-		}
-	}
-
-	return &LabelScenarioResult{
-		Name:             def.Name,
-		LabelIngredients: labelIngredients,
-		LabelFacts:       def.Facts,
-		PredictedFacts:   predicted,
-		Goals:            goals,
-		Problem:          problem,
-		Solution:         solution,
-		Recipe:           recipe,
-		ServingSizeGrams: serving,
-		Metrics:          metrics,
-		PintMassGrams:    pintMass,
-		Specs:            specs,
-		BatchDetails:     batchDetails,
-	}, nil
 }
 
 func setPresenceFloor(p *Problem, ids []IngredientID) error {
