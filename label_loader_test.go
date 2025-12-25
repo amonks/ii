@@ -2,39 +2,44 @@ package creamery
 
 import "testing"
 
-func TestLabelLoaderSpecOverrides(t *testing.T) {
+func TestFDALabelLoader(t *testing.T) {
 	t.Parallel()
 
-	defs, err := loadLabelDefinitionsFromFile("labels.json")
-	if err != nil {
-		t.Fatalf("loadLabelDefinitionsFromFile error: %v", err)
+	labels := AllFDALabels()
+	if len(labels) == 0 {
+		t.Fatal("no labels loaded from labels/ directory")
 	}
-	def, ok := defs[LabelJenisSweetCream]
+
+	// Check that haagen label is loaded
+	label, ok := labels[LabelHaagenDazsVanilla]
 	if !ok {
-		t.Fatalf("label %q missing from loaded definitions", LabelJenisSweetCream)
+		t.Fatalf("label %q missing from loaded definitions", LabelHaagenDazsVanilla)
 	}
-	if len(def.IngredientSpecs) == 0 {
-		t.Fatalf("label %q missing IngredientSpecs overrides", LabelJenisSweetCream)
+	if label.Name != "Haagen-Dazs Vanilla" {
+		t.Errorf("name = %q, want %q", label.Name, "Haagen-Dazs Vanilla")
 	}
-	found := false
-	for _, spec := range def.IngredientSpecs {
-		if spec.Name == "Nonfat Milk" {
-			found = true
-			if spec.ID != NonfatMilkVariable.ID {
-				t.Fatalf("Nonfat milk spec ID = %s, want %s", spec.ID, NonfatMilkVariable.ID)
-			}
-			got := spec.Profile.Components.MSNF
-			want := NonfatMilkVariable.Profile.Components.MSNF
-			if got.Lo != want.Lo || got.Hi != want.Hi {
-				t.Fatalf("nonfat milk MSNF range = %v, want %v", got, want)
-			}
-			break
-		}
+	if label.PintMassGrams != 387 {
+		t.Errorf("PintMassGrams = %v, want %v", label.PintMassGrams, 387)
 	}
-	if !found {
-		t.Fatalf("nonfat milk spec override missing for %q", LabelJenisSweetCream)
+	if label.Facts.Calories != 320 {
+		t.Errorf("Calories = %v, want %v", label.Facts.Calories, 320)
 	}
-	if len(def.ScenarioSpecs) == 0 {
-		t.Fatalf("label %q missing ScenarioSpecs", LabelJenisSweetCream)
+}
+
+func TestLabelScenarioFromFDA(t *testing.T) {
+	t.Parallel()
+
+	def, ok := LabelScenarioByKey(LabelHaagenDazsVanilla)
+	if !ok {
+		t.Fatalf("label %q missing from scenario definitions", LabelHaagenDazsVanilla)
+	}
+	if def.Name != "Haagen-Dazs Vanilla" {
+		t.Errorf("name = %q, want %q", def.Name, "Haagen-Dazs Vanilla")
+	}
+	if len(def.Lots) == 0 {
+		t.Error("expected non-empty Lots")
+	}
+	if len(def.Groups) == 0 {
+		t.Error("expected non-empty Groups")
 	}
 }
