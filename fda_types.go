@@ -17,7 +17,8 @@ type Label struct {
 
 // LabelIngredient represents an ingredient in an FDA label.
 type LabelIngredient struct {
-	ID string
+	ID         string
+	Components map[string]float64
 }
 
 // FDAGroup represents a group of ingredients (like "Cream" containing cream_fat and cream_serum).
@@ -81,6 +82,22 @@ func (p *fdaParser) addSubIngredient(id string) {
 func (p *fdaParser) finishGroup() {
 	p.label.Groups = append(p.label.Groups, *p.currentGroup)
 	p.currentGroup = nil
+}
+
+func (p *fdaParser) startIngredient(id string) {
+	p.currentIngredient = &LabelIngredient{ID: id}
+}
+
+func (p *fdaParser) setComponent(value float64) {
+	if p.currentIngredient.Components == nil {
+		p.currentIngredient.Components = make(map[string]float64)
+	}
+	p.currentIngredient.Components[p.componentKey] = value
+}
+
+func (p *fdaParser) finishIngredient() {
+	p.label.Ingredients = append(p.label.Ingredients, *p.currentIngredient)
+	p.currentIngredient = nil
 }
 
 // ParseLabel parses an FDA label from the given content string.

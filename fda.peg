@@ -5,6 +5,8 @@ type fdaParser Peg {
     currentGroup *FDAGroup
     boundKey string
     boundLo float64
+    currentIngredient *LabelIngredient
+    componentKey string
 }
 
 File <- LabelLine NameLine PintMassLine BlankLine NutritionSection BlankLine IngredientsSection !.
@@ -47,9 +49,21 @@ SodiumLine <- 'Sodium:' Spacing Number 'mg' Newline { p.label.Facts.SodiumMg = p
 
 IngredientsSection <- 'Ingredients:' Newline IngredientItem+
 
-IngredientItem <- CompoundIngredient / SimpleIngredient
+IngredientItem <- CompoundIngredient / SimpleIngredientWithOverride / SimpleIngredient
 
 SimpleIngredient <- '  ' Identifier Newline { p.addIngredient(text) }
+
+SimpleIngredientWithOverride <- '  ' IngredientID Spacing ComponentOverrides Newline { p.finishIngredient() }
+
+IngredientID <- Identifier { p.startIngredient(text) }
+
+ComponentOverrides <- '{' ComponentOverride (',' Spacing ComponentOverride)* '}'
+
+ComponentOverride <- ComponentKey ':' ComponentValue
+
+ComponentKey <- Identifier { p.componentKey = text }
+
+ComponentValue <- Number { p.setComponent(p.parseFloat(text)) }
 
 CompoundIngredient <- '  ' GroupName Spacing '[' GroupAnnotation ']' ':' Newline SubIngredient+ { p.finishGroup() }
 

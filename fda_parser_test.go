@@ -99,3 +99,67 @@ func TestParseLabel_WithCompoundIngredients(t *testing.T) {
 		t.Error("group 1: expected EnforceOrder to be true")
 	}
 }
+
+func TestParseLabel_WithComponentOverrides(t *testing.T) {
+	content, err := os.ReadFile("testdata/label_v7.fda")
+	if err != nil {
+		t.Fatalf("read test file: %v", err)
+	}
+
+	label, err := ParseLabel(string(content))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	// Find natural_flavor ingredient
+	var naturalFlavor *LabelIngredient
+	for i, ing := range label.Ingredients {
+		if ing.ID == "natural_flavor" {
+			naturalFlavor = &label.Ingredients[i]
+			break
+		}
+	}
+	if naturalFlavor == nil {
+		t.Fatal("natural_flavor ingredient not found")
+	}
+	if naturalFlavor.Components == nil {
+		t.Fatal("natural_flavor has no components")
+	}
+	if naturalFlavor.Components["water"] != 0.6 {
+		t.Errorf("water component: got %v, want 0.6", naturalFlavor.Components["water"])
+	}
+	if naturalFlavor.Components["other_solids"] != 0.4 {
+		t.Errorf("other_solids component: got %v, want 0.4", naturalFlavor.Components["other_solids"])
+	}
+}
+
+func TestParseLabel_HaagenDazs(t *testing.T) {
+	content, err := os.ReadFile("labels/haagen.fda")
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+
+	label, err := ParseLabel(string(content))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	if label.ID != "haagen" {
+		t.Errorf("ID: got %q, want %q", label.ID, "haagen")
+	}
+	if label.Name != "Haagen-Dazs Vanilla" {
+		t.Errorf("Name: got %q, want %q", label.Name, "Haagen-Dazs Vanilla")
+	}
+	if label.PintMassGrams != 387 {
+		t.Errorf("PintMassGrams: got %v, want %v", label.PintMassGrams, 387)
+	}
+	if label.Facts.Calories != 320 {
+		t.Errorf("Calories: got %v, want %v", label.Facts.Calories, 320)
+	}
+	if len(label.Ingredients) != 6 {
+		t.Errorf("len(Ingredients): got %v, want %v", len(label.Ingredients), 6)
+	}
+	if len(label.Groups) != 1 {
+		t.Errorf("len(Groups): got %v, want %v", len(label.Groups), 1)
+	}
+}
