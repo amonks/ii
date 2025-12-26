@@ -24,16 +24,7 @@ func Notebook() error {
 	}
 
 	// Convert FDA label facts to NutritionLabel for target calculation
-	nutritionLabel := nutritionLabelFromFacts(NutritionFacts{
-		ServingSizeGrams:  fdaLabel.Facts.ServingSizeGrams,
-		Calories:          fdaLabel.Facts.Calories,
-		TotalFatGrams:     fdaLabel.Facts.TotalFatGrams,
-		TotalCarbGrams:    fdaLabel.Facts.TotalCarbGrams,
-		TotalSugarsGrams:  fdaLabel.Facts.TotalSugarsGrams,
-		AddedSugarsGrams:  fdaLabel.Facts.AddedSugarsGrams,
-		ProteinGrams:      fdaLabel.Facts.ProteinGrams,
-		SodiumMg:          fdaLabel.Facts.SodiumMg,
-	})
+	nutritionLabel := nutritionLabelFromFacts(NutritionFacts{LabelFacts: fdaLabel.Facts})
 
 	fmt.Printf("%s label:\n", fdaLabel.Name)
 	if len(fdaLabel.Ingredients) > 0 {

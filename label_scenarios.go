@@ -209,20 +209,8 @@ func SolveFDALabel(label fdaparser.Label, catalog IngredientCatalog) (*LabelScen
 		return nil, fmt.Errorf("label %s has no ingredients", label.Name)
 	}
 
-	// Convert LabelFacts to NutritionFacts
-	facts := NutritionFacts{
-		ServingSizeGrams:  label.Facts.ServingSizeGrams,
-		Calories:          label.Facts.Calories,
-		TotalFatGrams:     label.Facts.TotalFatGrams,
-		SaturatedFatGrams: label.Facts.SaturatedFatGrams,
-		TransFatGrams:     label.Facts.TransFatGrams,
-		CholesterolMg:     label.Facts.CholesterolMg,
-		TotalCarbGrams:    label.Facts.TotalCarbGrams,
-		TotalSugarsGrams:  label.Facts.TotalSugarsGrams,
-		AddedSugarsGrams:  label.Facts.AddedSugarsGrams,
-		ProteinGrams:      label.Facts.ProteinGrams,
-		SodiumMg:          label.Facts.SodiumMg,
-	}
+	// Convert LabelFacts to NutritionFacts by embedding
+	facts := NutritionFacts{LabelFacts: label.Facts}
 
 	nutritionLabel := nutritionLabelFromFacts(facts)
 	target := nutritionLabel.ToTarget()

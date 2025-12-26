@@ -3,6 +3,8 @@ package creamery
 import (
 	"errors"
 	"math"
+
+	"github.com/amonks/creamery/fdaparser"
 )
 
 // MixOptions configures the physics calculations.
@@ -229,24 +231,26 @@ func (b BatchSnapshot) NutritionFactsSummary(servingSizeGrams float64, sodiumMg 
 	calories := 9*fatG + 4*carbsG + 4*proteinG
 
 	return NutritionFacts{
-		ServingSizeGrams:   servingSizeGrams,
-		Calories:           calories,
-		TotalFatGrams:      fatG,
-		TotalCarbGrams:     carbsG,
-		TotalSugarsGrams:   sugarsG,
-		ProteinGrams:       proteinG,
-		SodiumMg:           sodiumMg,
-		SaturatedFatGrams:  satFatG,
+		LabelFacts: fdaparser.LabelFacts{
+			ServingSizeGrams:  servingSizeGrams,
+			Calories:          calories,
+			TotalFatGrams:     fatG,
+			SaturatedFatGrams: satFatG,
+			TransFatGrams:     transFatG,
+			CholesterolMg:     cholMg,
+			TotalCarbGrams:    carbsG,
+			TotalSugarsGrams:  sugarsG,
+			AddedSugarsGrams:  addedSugarsG,
+			ProteinGrams:      proteinG,
+			SodiumMg:          sodiumMg,
+		},
 		SaturatedFatPct:    saturatedFatPct,
-		TransFatGrams:      transFatG,
 		TransFatPct:        transFatPct,
-		AddedSugarsGrams:   addedSugarsG,
 		AddedSugarsPct:     addedSugarsPct,
 		FatPct:             fatPct,
 		CarbsPct:           carbsPct,
 		SugarsPct:          sugarsPct,
 		ProteinPct:         proteinPct,
-		CholesterolMg:      cholMg,
 		CholesterolMgPerKg: cholMgPerKg,
 	}, nil
 }

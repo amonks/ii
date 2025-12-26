@@ -318,19 +318,7 @@ func labelFactRows(facts NutritionFacts) []statRow {
 
 // Helper functions for FDA Label type
 func labelFactsFromFDA(facts fdaparser.LabelFacts) NutritionFacts {
-	return NutritionFacts{
-		ServingSizeGrams:  facts.ServingSizeGrams,
-		Calories:          facts.Calories,
-		TotalFatGrams:     facts.TotalFatGrams,
-		SaturatedFatGrams: facts.SaturatedFatGrams,
-		TransFatGrams:     facts.TransFatGrams,
-		CholesterolMg:     facts.CholesterolMg,
-		TotalCarbGrams:    facts.TotalCarbGrams,
-		TotalSugarsGrams:  facts.TotalSugarsGrams,
-		AddedSugarsGrams:  facts.AddedSugarsGrams,
-		ProteinGrams:      facts.ProteinGrams,
-		SodiumMg:          facts.SodiumMg,
-	}
+	return NutritionFacts{LabelFacts: facts}
 }
 
 func ingredientNamesFromLabel(label fdaparser.Label) []string {

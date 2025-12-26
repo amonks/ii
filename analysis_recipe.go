@@ -3,27 +3,20 @@ package creamery
 import (
 	"errors"
 	"fmt"
+
+	"github.com/amonks/creamery/fdaparser"
 )
 
+// NutritionFacts extends LabelFacts with computed percentage values.
 type NutritionFacts struct {
-	ServingSizeGrams   float64
-	Calories           float64
-	TotalFatGrams      float64
-	TotalCarbGrams     float64
-	TotalSugarsGrams   float64
-	ProteinGrams       float64
-	SodiumMg           float64
-	SaturatedFatGrams  float64
+	fdaparser.LabelFacts
 	SaturatedFatPct    float64
-	TransFatGrams      float64
 	TransFatPct        float64
-	AddedSugarsGrams   float64
 	AddedSugarsPct     float64
 	FatPct             float64
 	CarbsPct           float64
 	SugarsPct          float64
 	ProteinPct         float64
-	CholesterolMg      float64
 	CholesterolMgPerKg float64
 }
 
