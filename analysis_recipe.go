@@ -41,11 +41,8 @@ type Formulation struct {
 
 // ProductionSettings captures process conditions and derived metrics.
 type ProductionSettings struct {
-	ServeTempC float64
-	DrawTempC  float64
-	ShearRate  float64
-	OverrunCap *float64
-	Snapshot   BatchSnapshot
+	MixOptions
+	Snapshot BatchSnapshot
 }
 
 // Recipe contains fractional ingredient contributions and optional metadata.

@@ -44,9 +44,7 @@ func recipeFromSolution(sol *Solution, specs []Ingredient, goals LabelGoals, sod
 	}
 
 	snapshot := ProductionSettings{
-		ServeTempC: opts.ServeTempC,
-		DrawTempC:  opts.DrawTempC,
-		ShearRate:  opts.ShearRate,
+		MixOptions: opts,
 		Snapshot:   snapshotMetrics,
 	}
 	snapRecipe := recipe.WithMixSnapshot(&snapshot)
