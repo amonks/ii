@@ -68,24 +68,33 @@ type BatchSnapshot struct {
 	Sweeteners             SweetenerAnalysis
 	CostTotal              float64
 	MixVolumeL             float64
-	WaterPct               float64
-	SolidsPct              float64
-	FatPct                 float64
-	ProteinPct             float64
-	LactosePct             float64
-	LactoseMinPct          float64
-	LactoseMaxPct          float64
-	TotalSugarsPct         float64
-	AddedSugarsPct         float64
-	AddedSugarsMinPct      float64
-	AddedSugarsMaxPct      float64
-	TransFatPct            float64
-	SaturatedFatPct        float64
-	SaturatedFatMinPct     float64
-	SaturatedFatMaxPct     float64
-	CholesterolMgPerKg     float64
-	PolymerSolidsPct       float64
-	CostPerKg              float64
+}
+
+func (b BatchSnapshot) safeTotal() float64 {
+	return math.Max(1e-9, b.TotalMassKg)
+}
+
+func (b BatchSnapshot) WaterPct() float64        { return b.WaterMassKg / b.safeTotal() }
+func (b BatchSnapshot) SolidsPct() float64       { return (b.TotalMassKg - b.WaterMassKg) / b.safeTotal() }
+func (b BatchSnapshot) FatPct() float64          { return b.FatMassKg / b.safeTotal() }
+func (b BatchSnapshot) ProteinPct() float64      { return b.ProteinMassKg / b.safeTotal() }
+func (b BatchSnapshot) LactosePct() float64      { return b.Lactose.Mid / b.safeTotal() }
+func (b BatchSnapshot) LactoseMinPct() float64   { return b.Lactose.Lo / b.safeTotal() }
+func (b BatchSnapshot) LactoseMaxPct() float64   { return b.Lactose.Hi / b.safeTotal() }
+func (b BatchSnapshot) TransFatPct() float64     { return b.TransFatMassKg / b.safeTotal() }
+func (b BatchSnapshot) SaturatedFatPct() float64 { return b.SaturatedFat.Mid / b.safeTotal() }
+func (b BatchSnapshot) SaturatedFatMinPct() float64 { return b.SaturatedFat.Lo / b.safeTotal() }
+func (b BatchSnapshot) SaturatedFatMaxPct() float64 { return b.SaturatedFat.Hi / b.safeTotal() }
+func (b BatchSnapshot) AddedSugarsPct() float64  { return b.AddedSugars.Mid / b.safeTotal() }
+func (b BatchSnapshot) AddedSugarsMinPct() float64 { return b.AddedSugars.Lo / b.safeTotal() }
+func (b BatchSnapshot) AddedSugarsMaxPct() float64 { return b.AddedSugars.Hi / b.safeTotal() }
+func (b BatchSnapshot) CholesterolMgPerKg() float64 { return b.CholesterolMgTotal / b.safeTotal() }
+func (b BatchSnapshot) PolymerSolidsPct() float64 { return b.PolymerSolidsKg / b.safeTotal() }
+func (b BatchSnapshot) CostPerKg() float64       { return b.CostTotal / b.safeTotal() }
+
+func (b BatchSnapshot) TotalSugarsPct() float64 {
+	totalSugars := b.SucroseMassKg + b.GlucoseMassKg + b.FructoseMassKg + b.Lactose.Mid
+	return totalSugars / b.safeTotal()
 }
 
 // ProcessProperties captures physics calculations derived from BatchSnapshot.
@@ -140,27 +149,6 @@ func NewBatchSnapshot(components []RecipeComponent) (BatchSnapshot, error) {
 		MixVolumeL:         totals.total / mixDensityKgPerL,
 	}
 
-	safeTotal := math.Max(1e-9, snapshot.TotalMassKg)
-	snapshot.WaterPct = snapshot.WaterMassKg / safeTotal
-	snapshot.SolidsPct = (snapshot.TotalMassKg - snapshot.WaterMassKg) / safeTotal
-	snapshot.FatPct = snapshot.FatMassKg / safeTotal
-	snapshot.ProteinPct = snapshot.ProteinMassKg / safeTotal
-	snapshot.LactosePct = snapshot.Lactose.Mid / safeTotal
-	snapshot.LactoseMinPct = snapshot.Lactose.Lo / safeTotal
-	snapshot.LactoseMaxPct = snapshot.Lactose.Hi / safeTotal
-	totalSugars := snapshot.SucroseMassKg + snapshot.GlucoseMassKg + snapshot.FructoseMassKg + snapshot.Lactose.Mid
-	snapshot.TotalSugarsPct = totalSugars / safeTotal
-	snapshot.AddedSugarsPct = snapshot.AddedSugars.Mid / safeTotal
-	snapshot.AddedSugarsMinPct = snapshot.AddedSugars.Lo / safeTotal
-	snapshot.AddedSugarsMaxPct = snapshot.AddedSugars.Hi / safeTotal
-	snapshot.TransFatPct = snapshot.TransFatMassKg / safeTotal
-	snapshot.SaturatedFatPct = snapshot.SaturatedFat.Mid / safeTotal
-	snapshot.SaturatedFatMinPct = snapshot.SaturatedFat.Lo / safeTotal
-	snapshot.SaturatedFatMaxPct = snapshot.SaturatedFat.Hi / safeTotal
-	snapshot.CholesterolMgPerKg = snapshot.CholesterolMgTotal / safeTotal
-	snapshot.PolymerSolidsPct = snapshot.PolymerSolidsKg / safeTotal
-	snapshot.CostPerKg = snapshot.CostTotal / safeTotal
-
 	return snapshot, nil
 }
 
@@ -183,8 +171,8 @@ func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
 	}
 
 	components := CompositionRange{
-		Water:        Point(b.WaterPct),
-		Fat:          Point(b.FatPct),
+		Water:        Point(b.WaterPct()),
+		Fat:          Point(b.FatPct()),
 		Protein:      Point(b.ProteinMassKg * invBatch),
 		Lactose:      Point(b.Lactose.Mid * invBatch),
 		Sucrose:      Point(b.SucroseMassKg * invBatch),
@@ -202,13 +190,13 @@ func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
 	emulsifier := b.EmulsifierMassKg / batch
 
 	return Formulation{
-		MilkfatPct:    b.FatPct,
+		MilkfatPct:    b.FatPct(),
 		SNFPct:        snf,
-		WaterPct:      b.WaterPct,
+		WaterPct:      b.WaterPct(),
 		SugarsPct:     sugars,
 		StabilizerPct: stabilizer,
 		EmulsifierPct: emulsifier,
-		ProteinPct:    b.ProteinPct,
+		ProteinPct:    b.ProteinPct(),
 		Components:    components,
 	}, nil
 }
@@ -220,14 +208,14 @@ func (b BatchSnapshot) NutritionFactsSummary(servingSizeGrams float64, sodiumMg 
 		return NutritionFacts{}, errors.New("snapshot has zero total mass")
 	}
 
-	fatPct := b.FatPct
-	sugarsPct := b.TotalSugarsPct
-	proteinPct := b.ProteinPct
+	fatPct := b.FatPct()
+	sugarsPct := b.TotalSugarsPct()
+	proteinPct := b.ProteinPct()
 	snfPct := (b.ProteinMassKg + b.Lactose.Mid + b.AshMassKg) / batch
 	carbsPct := sugarsPct + snfPct - proteinPct
-	transFatPct := b.TransFatPct
-	saturatedFatPct := b.SaturatedFatPct
-	addedSugarsPct := b.AddedSugarsPct
+	transFatPct := b.TransFatPct()
+	saturatedFatPct := b.SaturatedFatPct()
+	addedSugarsPct := b.AddedSugarsPct()
 
 	fatG := fatPct * servingSizeGrams
 	carbsG := carbsPct * servingSizeGrams
@@ -236,7 +224,7 @@ func (b BatchSnapshot) NutritionFactsSummary(servingSizeGrams float64, sodiumMg 
 	transFatG := transFatPct * servingSizeGrams
 	satFatG := saturatedFatPct * servingSizeGrams
 	addedSugarsG := addedSugarsPct * servingSizeGrams
-	cholMgPerKg := b.CholesterolMgPerKg
+	cholMgPerKg := b.CholesterolMgPerKg()
 	cholMg := cholMgPerKg * (servingSizeGrams / 1000.0)
 	calories := 9*fatG + 4*carbsG + 4*proteinG
 
@@ -292,14 +280,14 @@ func ComputeProcess(b BatchSnapshot, opts MixOptions) ProcessProperties {
 	p.IceFractionAtServe = math.Max(0.0, (waterAvailable-targetFreeWater)/math.Max(1e-6, b.WaterMassKg))
 
 	polymerPct := math.Max(0, b.PolymerSolidsKg/safeTotal)
-	muSerum := 0.0016 * math.Exp(0.045*(b.SolidsPct*100-36.0))
+	muSerum := 0.0016 * math.Exp(0.045*(b.SolidsPct()*100-36.0))
 	polymerFactor := math.Exp(12.0 * polymerPct)
 	tempFactor := math.Exp(0.025 * (5.0 - opts.ServeTempC))
 	n := math.Max(0.55, 1.0-0.6*polymerPct*100)
 	p.ViscosityAtServe = muSerum * polymerFactor * tempFactor * math.Pow(math.Max(1e-6, opts.ShearRate)/50.0, n-1.0)
 
 	emulsifier := math.Max(0, b.EmulsifierPower/safeTotal)
-	destab := (b.FatPct * 100.0) * (0.4 + emulsifier) / (4.0 + b.ProteinPct*100.0)
+	destab := (b.FatPct() * 100.0) * (0.4 + emulsifier) / (4.0 + b.ProteinPct()*100.0)
 	viscTerm := 1.0 / (1.0 + math.Exp(6.5*(p.ViscosityAtServe-0.45)))
 	fatTerm := 1.0 / (1.0 + math.Exp(-3.0*(destab-1.2)))
 	overrun := math.Max(0.02, math.Min(1.1, 0.20+0.45*fatTerm+0.35*viscTerm))
@@ -309,15 +297,15 @@ func ComputeProcess(b BatchSnapshot, opts MixOptions) ProcessProperties {
 	p.OverrunEstimate = overrun
 
 	polyolsPct := b.PolyolsMassKg / safeTotal
-	p.HardnessIndex = 30.0*p.IceFractionAtServe + 8.0*b.SolidsPct + 3.0*polyolsPct
-	p.MeltdownIndex = math.Max(0.0, 1.2*b.SolidsPct+0.8*p.IceFractionAtServe+0.3*overrun-0.1*polyolsPct)
+	p.HardnessIndex = 30.0*p.IceFractionAtServe + 8.0*b.SolidsPct() + 3.0*polyolsPct
+	p.MeltdownIndex = math.Max(0.0, 1.2*b.SolidsPct()+0.8*p.IceFractionAtServe+0.3*overrun-0.1*polyolsPct)
 
 	solubility := 0.18 * math.Exp(0.012*opts.ServeTempC+1.2)
 	availableWater := math.Max(1e-6, b.WaterMassKg-b.BoundWaterKg)
 	lactoseConc := b.Lactose.Mid / math.Max(1e-6, availableWater)
 	p.LactoseSupersaturation = lactoseConc / math.Max(1e-6, solubility)
 
-	cp := 3.4 - 1.2*b.FatPct
+	cp := 3.4 - 1.2*b.FatPct()
 	deltaT := 4.0 - opts.DrawTempC
 	latent := 333.0 * p.IceFractionAtServe * b.WaterMassKg
 	p.FreezerLoadKJ = cp*b.TotalMassKg*deltaT + latent

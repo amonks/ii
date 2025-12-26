@@ -196,7 +196,7 @@ func (r *Recipe) CostPerKg() float64 {
 	if err != nil || snapshot.TotalMassKg <= 0 {
 		return 0
 	}
-	return snapshot.CostPerKg
+	return snapshot.CostPerKg()
 }
 
 func (r *Recipe) mixSnapshotWithOptions(opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
