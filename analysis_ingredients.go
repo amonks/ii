@@ -144,6 +144,16 @@ func ingredientBatchTable() map[string]ingredientBatch {
 			Ash:                0.01,
 			CholesterolMgPerKg: mgPerKgFrom100g(60.0),
 		},
+		"half_and_half": {
+			Name:               "half_and_half",
+			Water:              0.805,
+			Fat:                0.115,
+			TransFat:           0.115 * dairyTransFatShare,
+			Protein:            0.03,
+			Lactose:            0.042,
+			Ash:                0.007,
+			CholesterolMgPerKg: mgPerKgFrom100g(37.0),
+		},
 		"cream36": {
 			Name:               "cream36",
 			Water:              0.60,
@@ -384,6 +394,31 @@ func ingredientBatchTable() map[string]ingredientBatch {
 			Glucose:  0.02,
 			Sucrose:  0.02,
 		},
+		"lemon_juice": {
+			Name:        "lemon_juice",
+			Water:       0.92,
+			Fructose:    0.01,
+			Glucose:     0.01,
+			Sucrose:     0.005,
+			OtherSolids: 0.055, // citric acid, pectin, etc.
+			EffectiveMW: 192.0, // citric acid MW
+		},
+		"orange_juice": {
+			Name:        "orange_juice",
+			Water:       0.88,
+			Fructose:    0.025,
+			Glucose:     0.025,
+			Sucrose:     0.04,
+			OtherSolids: 0.03, // citric acid, pectin, etc.
+			EffectiveMW: 192.0,
+		},
+		"orange_peel": {
+			Name:        "orange_peel",
+			Water:       0.20,
+			OtherSolids: 0.70,
+			Ash:         0.10,
+			EffectiveMW: 800.0,
+		},
 	}
 
 	additional := []struct {
@@ -515,6 +550,7 @@ func ingredientBatchTable() map[string]ingredientBatch {
 		"heavy_cream",
 		"whipping_cream",
 		"light_cream",
+		"half_and_half",
 		"cream36",
 		"anhydrous_milk_fat",
 		"butter",

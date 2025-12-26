@@ -22,7 +22,7 @@ func LoadBatchLogEntries(path string) ([]BatchLogEntry, error) {
 func LoadBatchLogTemplate() (*template.Template, error) {
 	return template.New(batchLogTemplateName).
 		Funcs(batchLogTemplateFuncs()).
-		ParseFS(templateFiles, batchLogTemplateName)
+		ParseFS(templateFiles, "base_styles.tmpl", batchLogTemplateName)
 }
 
 // NewBatchLogDashboard wires the HTTP handler used by CLI and server modes.

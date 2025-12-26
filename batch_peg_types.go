@@ -89,14 +89,19 @@ func LoadBatchesFromDir(dir string) ([]BatchLogEntry, error) {
 		batches = append(batches, batch)
 	}
 
-	// Sort by date
+	// Sort by date (oldest first) to assign sequence numbers
 	sort.Slice(batches, func(i, j int) bool {
 		return batches[i].Date.Before(batches[j].Date)
 	})
 
-	// Assign sequence numbers
+	// Assign sequence numbers (1 = first-ever batch)
 	for i := range batches {
 		batches[i].Sequence = i + 1
+	}
+
+	// Reverse for display (newest first)
+	for i, j := 0, len(batches)-1; i < j; i, j = i+1, j-1 {
+		batches[i], batches[j] = batches[j], batches[i]
 	}
 
 	return batches, nil
