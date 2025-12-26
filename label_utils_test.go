@@ -34,7 +34,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Names: map[IngredientID]string{
 			IngredientID("sucrose"): "Fancy Sugar",
 		},
-		Lots: make(map[IngredientID]LotDescriptor),
+		Lots: make(map[IngredientID]Lot),
 	}
 
 	goals := LabelGoals{
@@ -94,7 +94,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 			sucrose.ID: 0.6,
 			cream.ID:   0.4,
 		},
-		Lots: map[IngredientID]LotDescriptor{
+		Lots: map[IngredientID]Lot{
 			sucrose.ID: sucrose.DefaultLot(),
 			cream.ID:   cream.DefaultLot(),
 		},

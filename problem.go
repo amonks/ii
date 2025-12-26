@@ -8,16 +8,16 @@ import (
 
 type ingredientSlot struct {
 	definition *Ingredient
-	lot        LotDescriptor
+	lot        Lot
 	bounds     Interval
 }
 
-func canonicalLot(lot LotDescriptor, cache map[IngredientID]*Ingredient) (LotDescriptor, *Ingredient) {
+func canonicalLot(lot Lot, cache map[IngredientID]*Ingredient) (Lot, *Ingredient) {
 	if cache == nil {
 		cache = make(map[IngredientID]*Ingredient)
 	}
 
-	assignDefinition := func(def Ingredient) (LotDescriptor, *Ingredient) {
+	assignDefinition := func(def Ingredient) (Lot, *Ingredient) {
 		definition := normalizeDefinition(def)
 		if cached, ok := cache[definition.ID]; ok {
 			lot.Definition = cached
@@ -60,7 +60,7 @@ type Problem struct {
 
 // NewProblem creates a problem with the given specs and canonical target.
 func NewProblem(specs []Ingredient, target FormulationTarget) *Problem {
-	lots := make([]LotDescriptor, len(specs))
+	lots := make([]Lot, len(specs))
 	for i, spec := range specs {
 		lots[i] = spec.DefaultLot()
 	}
@@ -68,7 +68,7 @@ func NewProblem(specs []Ingredient, target FormulationTarget) *Problem {
 }
 
 // NewFormulationProblem creates a problem using the richer formulation target.
-func NewFormulationProblem(lots []LotDescriptor, target FormulationTarget) *Problem {
+func NewFormulationProblem(lots []Lot, target FormulationTarget) *Problem {
 	slots := make([]ingredientSlot, len(lots))
 	specIndex := make(map[IngredientID]int, len(lots))
 	defCache := make(map[IngredientID]*Ingredient, len(lots))
@@ -149,15 +149,15 @@ func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
 }
 
 // LotByID returns the registered ingredient lot for the given ID.
-func (p *Problem) LotByID(id IngredientID) (LotDescriptor, bool) {
+func (p *Problem) LotByID(id IngredientID) (Lot, bool) {
 	if idx, ok := p.specIndex[id]; ok && idx >= 0 && idx < len(p.slots) {
 		return p.slots[idx].lot, true
 	}
-	return LotDescriptor{}, false
+	return Lot{}, false
 }
 
 // OverrideLots replaces default lots with the provided ones when the spec is present.
-func (p *Problem) OverrideLots(lots map[IngredientID]LotDescriptor) {
+func (p *Problem) OverrideLots(lots map[IngredientID]Lot) {
 	for id, lot := range lots {
 		idx, ok := p.specIndex[id]
 		if !ok {
@@ -176,8 +176,8 @@ func (p *Problem) OverrideLots(lots map[IngredientID]LotDescriptor) {
 }
 
 // Lots returns a copy of the problem's ingredient lots.
-func (p *Problem) Lots() map[IngredientID]LotDescriptor {
-	copy := make(map[IngredientID]LotDescriptor, len(p.slots))
+func (p *Problem) Lots() map[IngredientID]Lot {
+	copy := make(map[IngredientID]Lot, len(p.slots))
 	for _, slot := range p.slots {
 		if slot.definition == nil {
 			continue
@@ -322,7 +322,7 @@ type Solution struct {
 	Blend      Blend
 	Weights    map[IngredientID]float64
 	Names      map[IngredientID]string
-	Lots       map[IngredientID]LotDescriptor
+	Lots       map[IngredientID]Lot
 	Achieved   ComponentFractions
 	Components ConstituentComponents
 }

@@ -28,7 +28,7 @@ func TestNewIngredientNormalizes(t *testing.T) {
 	}
 }
 
-func TestLotDescriptorEffectiveProfileOverride(t *testing.T) {
+func TestLotEffectiveProfileOverride(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:   IngredientID("cream"),
 		Name: "Cream",
@@ -54,14 +54,14 @@ func TestLotDescriptorEffectiveProfileOverride(t *testing.T) {
 	}
 }
 
-func TestLotDescriptorDisplayNameFallback(t *testing.T) {
+func TestLotDisplayNameFallback(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:         IngredientID("test"),
 		Name:       "",
 		Components: ConstituentComponents{},
 	}
 	def := NewIngredient(profile, "")
-	lot := LotDescriptor{Definition: &def}
+	lot := Lot{Definition: &def}
 	if got := lot.DisplayName(); got == "" {
 		t.Fatalf("expected fallback display name, got empty")
 	}

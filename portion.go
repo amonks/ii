@@ -2,13 +2,13 @@ package creamery
 
 // Portion represents the fractional contribution of a lot to a mix (0-1).
 type Portion struct {
-	Lot      LotDescriptor
+	Lot      Lot
 	Fraction float64
 }
 
 // PortionMass couples a lot with an absolute mass (kg) used at IO boundaries.
 type PortionMass struct {
-	Lot    LotDescriptor
+	Lot    Lot
 	MassKg float64
 }
 

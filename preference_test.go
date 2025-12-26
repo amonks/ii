@@ -28,7 +28,7 @@ func TestSolutionSnapshot(t *testing.T) {
 			Sugar.ID:         0.15,
 			NonfatDryMilk.ID: 0.05,
 		},
-		Lots: map[IngredientID]LotDescriptor{
+		Lots: map[IngredientID]Lot{
 			HeavyCream.ID:    HeavyCream.DefaultLot(),
 			WholeMilk.ID:     WholeMilk.DefaultLot(),
 			Sugar.ID:         Sugar.DefaultLot(),

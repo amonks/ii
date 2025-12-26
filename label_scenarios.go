@@ -25,28 +25,28 @@ type LabelScenarioResult struct {
 	Process          ProcessProperties
 	PintMassGrams    float64
 	Specs            []Ingredient
-	BatchDetails     map[IngredientID]LotDescriptor
+	BatchDetails     map[IngredientID]Lot
 }
 
 type scenarioIngredients struct {
 	catalog  IngredientCatalog
-	batches  map[IngredientID]LotDescriptor
+	batches  map[IngredientID]Lot
 	specs    []Ingredient
-	lots     []LotDescriptor
+	lots     []Lot
 	nameToID map[string]IngredientID
 }
 
 func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
 		catalog:  DefaultIngredientCatalog(),
-		batches:  make(map[IngredientID]LotDescriptor),
+		batches:  make(map[IngredientID]Lot),
 		specs:    make([]Ingredient, 0),
-		lots:     make([]LotDescriptor, 0),
+		lots:     make([]Lot, 0),
 		nameToID: make(map[string]IngredientID),
 	}
 }
 
-func (s *scenarioIngredients) addClone(key, name string, override func(*LotDescriptor)) {
+func (s *scenarioIngredients) addClone(key, name string, override func(*Lot)) {
 	base, ok := s.catalog.InstanceByKey(key)
 	if !ok {
 		return
@@ -61,7 +61,7 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*LotDescr
 	s.addDetail(inst)
 }
 
-func (s *scenarioIngredients) addDetail(inst LotDescriptor) {
+func (s *scenarioIngredients) addDetail(inst Lot) {
 	profile := inst.EffectiveProfile()
 	s.nameToID[profile.Name] = profile.ID
 	spec := Ingredient{}
@@ -82,21 +82,21 @@ func (s *scenarioIngredients) Specs() []Ingredient {
 	return s.specs
 }
 
-func (s *scenarioIngredients) Lots() []LotDescriptor {
-	result := make([]LotDescriptor, len(s.lots))
+func (s *scenarioIngredients) Lots() []Lot {
+	result := make([]Lot, len(s.lots))
 	copy(result, s.lots)
 	return result
 }
 
-func (s *scenarioIngredients) Batches() map[IngredientID]LotDescriptor {
-	copy := make(map[IngredientID]LotDescriptor, len(s.batches))
+func (s *scenarioIngredients) Batches() map[IngredientID]Lot {
+	copy := make(map[IngredientID]Lot, len(s.batches))
 	for id, batch := range s.batches {
 		copy[id] = batch
 	}
 	return copy
 }
 
-func renameInstance(inst LotDescriptor, name string) LotDescriptor {
+func renameInstance(inst Lot, name string) Lot {
 	profile := inst.EffectiveProfile()
 	profile.Name = name
 	profile.ID = NewIngredientID(name)
@@ -175,7 +175,7 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 
 	for _, ing := range label.Ingredients {
 		catalogKey := catalogKeyForIngredient(ing.ID)
-		builder.addClone(catalogKey, ing.ID, func(inst *LotDescriptor) {
+		builder.addClone(catalogKey, ing.ID, func(inst *Lot) {
 			if len(ing.Components) > 0 && inst.Definition != nil {
 				def := *inst.Definition
 				for key, value := range ing.Components {
@@ -275,7 +275,7 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", label.Name, err)
 	}
 
-	batchDetails := make(map[IngredientID]LotDescriptor, len(solution.Lots))
+	batchDetails := make(map[IngredientID]Lot, len(solution.Lots))
 	for id, lot := range solution.Lots {
 		batchDetails[id] = lot
 	}

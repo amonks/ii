@@ -149,7 +149,7 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 	sol := &Solution{
 		Weights: make(map[IngredientID]float64),
 		Names:   make(map[IngredientID]string, len(ids)),
-		Lots:    make(map[IngredientID]LotDescriptor, len(ids)),
+		Lots:    make(map[IngredientID]Lot, len(ids)),
 	}
 
 	blend := make([]Portion, 0, len(weights))

@@ -5,7 +5,7 @@ import "sync"
 // IngredientCatalog exposes canonical ingredient defs and their default lots.
 type IngredientCatalog struct {
 	defs  map[IngredientID]*Ingredient
-	lots  map[IngredientID]LotDescriptor
+	lots  map[IngredientID]Lot
 	keyed map[IngredientKey]IngredientID
 }
 
@@ -26,7 +26,7 @@ func DefaultIngredientCatalog() IngredientCatalog {
 // catalog automatically provisions default lots that mirror each spec.
 func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
 	defs := make(map[IngredientID]*Ingredient, len(ingredients))
-	lots := make(map[IngredientID]LotDescriptor, len(ingredients))
+	lots := make(map[IngredientID]Lot, len(ingredients))
 	keyed := make(map[IngredientKey]IngredientID)
 
 	for _, ing := range ingredients {
@@ -71,31 +71,31 @@ func (c IngredientCatalog) Get(id IngredientID) (*Ingredient, bool) {
 }
 
 // Instance returns the default lot for an ingredient ID.
-func (c IngredientCatalog) Instance(id IngredientID) (LotDescriptor, bool) {
+func (c IngredientCatalog) Instance(id IngredientID) (Lot, bool) {
 	lot, ok := c.lots[id]
 	return lot, ok
 }
 
 // InstanceByKey looks up an instance by its catalog key (e.g., "sucrose").
-func (c IngredientCatalog) InstanceByKey(key string) (LotDescriptor, bool) {
+func (c IngredientCatalog) InstanceByKey(key string) (Lot, bool) {
 	if key == "" {
-		return LotDescriptor{}, false
+		return Lot{}, false
 	}
 	normalized := NewIngredientKey(key)
 	if normalized == "" {
-		return LotDescriptor{}, false
+		return Lot{}, false
 	}
 	id, ok := c.keyed[normalized]
 	if !ok {
-		return LotDescriptor{}, false
+		return Lot{}, false
 	}
 	lot, ok := c.lots[id]
 	return lot, ok
 }
 
 // Instances returns a copy of the default instances keyed by ingredient ID.
-func (c IngredientCatalog) Instances() map[IngredientID]LotDescriptor {
-	copy := make(map[IngredientID]LotDescriptor, len(c.lots))
+func (c IngredientCatalog) Instances() map[IngredientID]Lot {
+	copy := make(map[IngredientID]Lot, len(c.lots))
 	for id, inst := range c.lots {
 		copy[id] = inst
 	}

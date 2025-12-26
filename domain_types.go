@@ -158,7 +158,3 @@ func (def Ingredient) DefaultLot() Lot {
 func normalizeDefinition(def Ingredient) Ingredient {
 	return normalizeIngredient(def)
 }
-
-// Backwards compatibility alias while the rest of the codebase migrates to
-// the Lot type.
-type LotDescriptor = Lot
