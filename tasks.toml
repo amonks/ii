@@ -13,22 +13,8 @@
 [[task]]
   id = "compile-pegs"
   type = "short"
-  watch = ["*.peg"]
+  watch = ["batchparser/*.peg", "fdaparser/*.peg"]
   cmd = """
-    go tool peg -inline batch.peg || exit 1
-    go tool peg -inline fda.peg || exit 1
-    sed -i '' \
-      -e 's/endSymbol/fdaEndSymbol/g' \
-      -e 's/pegRule/fdaPegRule/g' \
-      -e 's/rul3s/fdaRul3s/g' \
-      -e 's/rule\\([A-Z]\\)/fdaRule\\1/g' \
-      -e 's/token32/fdaToken32/g' \
-      -e 's/node32/fdaNode32/g' \
-      -e 's/tokens32/fdaTokens32/g' \
-      -e 's/textPosition/fdaTextPosition/g' \
-      -e 's/translatePositions/fdaTranslatePositions/g' \
-      -e 's/parseError/fdaParseError/g' \
-      -e 's/func Pretty/func fdaPretty/g' \
-      -e 's/func Size/func fdaSize/g' \
-      fda.peg.go
+    go tool peg -inline batchparser/batch.peg || exit 1
+    go tool peg -inline fdaparser/fda.peg || exit 1
   """

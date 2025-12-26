@@ -1,4 +1,4 @@
-package creamery
+package fdaparser
 
 type fdaParser Peg {
     label Label

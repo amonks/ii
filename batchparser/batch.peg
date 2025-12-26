@@ -1,4 +1,4 @@
-package creamery
+package batchparser
 
 type batchParser Peg {
     batch ParsedBatch
