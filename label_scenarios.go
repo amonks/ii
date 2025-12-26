@@ -22,6 +22,7 @@ type LabelScenarioResult struct {
 	Recipe           *Recipe
 	ServingSizeGrams float64
 	Metrics          BatchSnapshot
+	Process          ProcessProperties
 	PintMassGrams    float64
 	Specs            []IngredientDefinition
 	BatchDetails     map[IngredientID]LotDescriptor
@@ -269,7 +270,7 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 	}
 
 	specs := builder.Specs()
-	recipe, predicted, serving, metrics, err := recipeFromSolution(solution, specs, goals, facts.SodiumMg)
+	recipe, predicted, serving, metrics, process, err := recipeFromSolution(solution, specs, goals, facts.SodiumMg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build recipe for %s: %w", label.Name, err)
 	}
@@ -290,6 +291,7 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 		Recipe:           recipe,
 		ServingSizeGrams: serving,
 		Metrics:          metrics,
+		Process:          process,
 		PintMassGrams:    pintMass,
 		Specs:            specs,
 		BatchDetails:     batchDetails,

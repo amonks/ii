@@ -130,7 +130,7 @@ func (s *UnifiedServer) renderLabels(w http.ResponseWriter, r *http.Request) {
 			card.StatusClass = "status-ok"
 			card.Fractions = recipeFractions(entry.Result.Recipe)
 			card.Sweetener = sweetenerRows(entry.Result.Metrics.Sweeteners)
-			card.Metrics = processMetricRows(entry.Result.Metrics)
+			card.Metrics = processMetricRows(entry.Result.Process)
 			card.SolverServing = measurement(entry.Result.ServingSizeGrams, "g", 1)
 			card.PintMass = measurement(entry.Result.PintMassGrams, "g", 1)
 			data.SolvedCount++
@@ -162,15 +162,17 @@ func (s *UnifiedServer) renderRecipes(w http.ResponseWriter, r *http.Request) {
 			ProcessNotes: entry.Raw.ProcessNotes,
 			TastingNotes: entry.Raw.TastingNotes,
 			Ingredients:  ingredientRows(entry.Raw.Ingredients, s.catalog),
-			Fractions:    recipeFractions(entry.Recipe),
 		}
 		if !entry.Raw.Date.IsZero() {
 			card.Date = formatDate(entry.Raw.Date)
 		}
 		if entry.Snapshot != nil {
-			card.SnapshotStats = recipeSnapshotRows(entry.Snapshot)
+			card.Composition = recipeCompositionRows(entry.Snapshot)
+			card.NutritionFacts = recipeNutritionRows(entry.Snapshot, entry.Process)
 			card.Sweetener = sweetenerRows(entry.Snapshot.Sweeteners)
-			card.Meta = recipeMetaRows(entry.Snapshot)
+		}
+		if entry.Process != nil {
+			card.Physics = recipePhysicsRows(entry.Process)
 		}
 		data.Entries = append(data.Entries, card)
 	}
@@ -220,17 +222,17 @@ type recipePageData struct {
 }
 
 type recipeCardData struct {
-	Label         string
-	Date          string
-	Issues        []string
-	HasIssues     bool
-	ProcessNotes  []string
-	TastingNotes  []string
-	Ingredients   []ingredientRow
-	Fractions     []fractionView
-	SnapshotStats []statRow
-	Sweetener     []statRow
-	Meta          []statRow
+	Label          string
+	Date           string
+	Issues         []string
+	HasIssues      bool
+	ProcessNotes   []string
+	TastingNotes   []string
+	Ingredients    []ingredientRow
+	Composition    []statRow
+	Physics        []statRow
+	NutritionFacts []statRow
+	Sweetener      []statRow
 }
 
 type statRow struct {
@@ -518,16 +520,13 @@ func sweetenerRows(analysis SweetenerAnalysis) []statRow {
 	}
 }
 
-func processMetricRows(snapshot BatchSnapshot) []statRow {
-	if snapshot.TotalMassKg == 0 {
-		return nil
-	}
+func processMetricRows(process ProcessProperties) []statRow {
 	return []statRow{
-		{"Freezing point", fmt.Sprintf("%s °C", formatDecimal(snapshot.FreezingPointC, 2))},
-		{"Overrun estimate", percentString(snapshot.OverrunEstimate, 1)},
-		{"Ice fraction @ serve", percentString(snapshot.IceFractionAtServe, 1)},
-		{"Viscosity @ serve", fmt.Sprintf("%s Pa·s", formatDecimal(snapshot.ViscosityAtServe, 3))},
-		{"Hardness index", formatDecimal(snapshot.HardnessIndex, 2)},
+		{"Freezing point", fmt.Sprintf("%s °C", formatDecimal(process.FreezingPointC, 2))},
+		{"Overrun estimate", percentString(process.OverrunEstimate, 1)},
+		{"Ice fraction @ serve", percentString(process.IceFractionAtServe, 1)},
+		{"Viscosity @ serve", fmt.Sprintf("%s Pa·s", formatDecimal(process.ViscosityAtServe, 3))},
+		{"Hardness index", formatDecimal(process.HardnessIndex, 2)},
 	}
 }
 
@@ -571,34 +570,79 @@ func ingredientDisplayName(key IngredientKey, catalog IngredientCatalog) string 
 	return "ingredient"
 }
 
-func recipeSnapshotRows(snapshot *BatchSnapshot) []statRow {
+// recipeCompositionRows returns composition data from ingredient aggregation.
+func recipeCompositionRows(snapshot *BatchSnapshot) []statRow {
 	if snapshot == nil || snapshot.TotalMassKg == 0 {
 		return nil
 	}
-	return []statRow{
-		{"Water", percentString(snapshot.WaterPct, 1)},
-		{"Total solids", percentString(snapshot.SolidsPct, 1)},
-		{"Fat", percentString(snapshot.FatPct, 1)},
-		{"Protein", percentString(snapshot.ProteinPct, 1)},
-		{"Total sugars", percentString(snapshot.TotalSugarsPct, 1)},
-		{"Added sugars", percentString(snapshot.AddedSugarsPct, 1)},
-		{"PAC", formatDecimal(snapshot.Sweeteners.TotalPAC, 1)},
-		{"POD", formatDecimal(snapshot.Sweeteners.TotalPOD, 1)},
-		{"Freezing point", fmt.Sprintf("%s °C", formatDecimal(snapshot.FreezingPointC, 2))},
-		{"Overrun", percentString(snapshot.OverrunEstimate, 0)},
-	}
-}
+	msnfPct := (snapshot.ProteinMassKg + snapshot.Lactose.Mid + snapshot.AshMassKg) / snapshot.TotalMassKg
+	emulsifierPct := snapshot.EmulsifierMassKg / snapshot.TotalMassKg
 
-func recipeMetaRows(snapshot *BatchSnapshot) []statRow {
-	if snapshot == nil || snapshot.TotalMassKg == 0 {
-		return nil
-	}
 	return []statRow{
 		{"Batch mass", measurement(snapshot.TotalMassKg*1000, "g", 0)},
 		{"Mix volume", fmt.Sprintf("%s L", formatDecimal(snapshot.MixVolumeL, 2))},
-		{"Pints yield", formatDecimal(snapshot.PintsYield, 1)},
 		{"Cost per kg", formatCurrencyPerKg(snapshot.CostPerKg)},
-		{"Cost per pint", currencyString(snapshot.CostPerPint)},
+		{"Water", percentString(snapshot.WaterPct, 1)},
+		{"Total solids", percentString(snapshot.SolidsPct, 1)},
+		{"Fat", percentString(snapshot.FatPct, 1)},
+		{"Saturated fat", percentString(snapshot.SaturatedFatPct, 1)},
+		{"Trans fat", percentString(snapshot.TransFatPct, 2)},
+		{"MSNF", percentString(msnfPct, 1)},
+		{"Protein", percentString(snapshot.ProteinPct, 1)},
+		{"Lactose", percentString(snapshot.LactosePct, 1)},
+		{"Total sugars", percentString(snapshot.TotalSugarsPct, 1)},
+		{"Added sugars", percentString(snapshot.AddedSugarsPct, 1)},
+		{"Stabilizer", percentString(snapshot.PolymerSolidsPct, 2)},
+		{"Emulsifier", percentString(emulsifierPct, 2)},
+		{"Cholesterol", fmt.Sprintf("%s mg/kg", formatDecimal(snapshot.CholesterolMgPerKg, 0))},
+	}
+}
+
+// recipePhysicsRows returns process-dependent calculations.
+func recipePhysicsRows(process *ProcessProperties) []statRow {
+	if process == nil {
+		return nil
+	}
+	return []statRow{
+		{"Freezing point", fmt.Sprintf("%s °C", formatDecimal(process.FreezingPointC, 2))},
+		{"Ice @ serve", percentString(process.IceFractionAtServe, 1)},
+		{"Viscosity @ serve", fmt.Sprintf("%s Pa·s", formatDecimal(process.ViscosityAtServe, 3))},
+		{"Overrun", percentString(process.OverrunEstimate, 0)},
+		{"Hardness index", formatDecimal(process.HardnessIndex, 2)},
+		{"Meltdown index", formatDecimal(process.MeltdownIndex, 2)},
+		{"Lactose supersaturation", formatDecimal(process.LactoseSupersaturation, 2)},
+		{"Freezer load", fmt.Sprintf("%s kJ", formatDecimal(process.FreezerLoadKJ, 1))},
+		{"Pints yield", formatDecimal(process.PintsYield, 1)},
+		{"Cost per pint", currencyString(process.CostPerPint)},
+	}
+}
+
+// recipeNutritionRows derives FDA-style nutrition facts from snapshot data.
+// Computes serving mass for 2/3 cup using actual density and overrun.
+func recipeNutritionRows(snapshot *BatchSnapshot, process *ProcessProperties) []statRow {
+	if snapshot == nil || snapshot.TotalMassKg == 0 || snapshot.MixVolumeL <= 0 {
+		return nil
+	}
+	overrun := 0.0
+	if process != nil {
+		overrun = process.OverrunEstimate
+	}
+	const servingVolumeL = 2.0 / 3.0 * 0.236588 // 2/3 cup in liters
+	density := snapshot.TotalMassKg / (snapshot.MixVolumeL * (1.0 + overrun))
+	servingGrams := density * servingVolumeL * 1000.0
+	facts, err := snapshot.NutritionFactsSummary(servingGrams, 0)
+	if err != nil {
+		return nil
+	}
+	return []statRow{
+		{"Serving size", measurement(facts.ServingSizeGrams, "g", 0)},
+		{"Calories", measurement(facts.Calories, "kcal", 0)},
+		{"Total fat", measurement(facts.TotalFatGrams, "g", 0)},
+		{"Saturated fat", measurement(facts.SaturatedFatGrams, "g", 0)},
+		{"Total carbs", measurement(facts.TotalCarbGrams, "g", 0)},
+		{"Total sugars", measurement(facts.TotalSugarsGrams, "g", 0)},
+		{"Added sugars", measurement(facts.AddedSugarsGrams, "g", 0)},
+		{"Protein", measurement(facts.ProteinGrams, "g", 0)},
 	}
 }
 

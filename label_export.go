@@ -89,10 +89,10 @@ td { padding:0.2rem 0; }
 
 		if res.Metrics.TotalMassKg > 0 {
 			b.WriteString(`<div class="card"><h3>Process Metrics</h3><table>`)
-			b.WriteString(fmt.Sprintf(`<tr><td>Freezing point</td><td>%s</td></tr>`, formatNumber(res.Metrics.FreezingPointC, 2, "°C")))
-			b.WriteString(fmt.Sprintf(`<tr><td>Overrun estimate</td><td>%s</td></tr>`, formatPercent(res.Metrics.OverrunEstimate, 1)))
-			b.WriteString(fmt.Sprintf(`<tr><td>Viscosity @ serve</td><td>%s</td></tr>`, formatNumber(res.Metrics.ViscosityAtServe, 4, "Pa·s")))
-			b.WriteString(fmt.Sprintf(`<tr><td>Hardness index</td><td>%s</td></tr>`, formatNumber(res.Metrics.HardnessIndex, 2, "")))
+			b.WriteString(fmt.Sprintf(`<tr><td>Freezing point</td><td>%s</td></tr>`, formatNumber(res.Process.FreezingPointC, 2, "°C")))
+			b.WriteString(fmt.Sprintf(`<tr><td>Overrun estimate</td><td>%s</td></tr>`, formatPercent(res.Process.OverrunEstimate, 1)))
+			b.WriteString(fmt.Sprintf(`<tr><td>Viscosity @ serve</td><td>%s</td></tr>`, formatNumber(res.Process.ViscosityAtServe, 4, "Pa·s")))
+			b.WriteString(fmt.Sprintf(`<tr><td>Hardness index</td><td>%s</td></tr>`, formatNumber(res.Process.HardnessIndex, 2, "")))
 			b.WriteString(`</table></div>`)
 		}
 

@@ -12,6 +12,7 @@ type RecipeCatalogEntry struct {
 	Label    string
 	Recipe   *Recipe
 	Snapshot *BatchSnapshot
+	Process  *ProcessProperties
 	Issues   []string
 	Raw      BatchLogEntry
 }
@@ -100,12 +101,12 @@ func buildRecipeCatalog(entries []BatchLogEntry, sources []string, catalog Ingre
 			catalogResult.Entries = append(catalogResult.Entries, item)
 			continue
 		}
-		snapshot, snapErr := BuildProperties(components, MixOptions{})
+		snapshot, process, snapErr := BuildProperties(components, MixOptions{})
 		if snapErr != nil {
 			item.Issues = append(item.Issues, snapErr.Error())
 		} else {
-			itemSnapshot := snapshot
-			item.Snapshot = &itemSnapshot
+			item.Snapshot = &snapshot
+			item.Process = &process
 		}
 		recipe, recipeErr := NewRecipe(components, 0)
 		if recipeErr != nil {

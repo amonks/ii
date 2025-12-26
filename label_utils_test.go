@@ -46,7 +46,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	inst.Label = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 
-	recipe, _, _, _, err := recipeFromSolution(sol, []IngredientDefinition{spec}, goals, 0)
+	recipe, _, _, _, _, err := recipeFromSolution(sol, []IngredientDefinition{spec}, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 		Overrun:     0,
 	}
 
-	recipe, _, _, _, err := recipeFromSolution(sol, specs, goals, 0)
+	recipe, _, _, _, _, err := recipeFromSolution(sol, specs, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}

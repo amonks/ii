@@ -128,14 +128,15 @@ func PrintBatchLogEntries(w io.Writer, analytics BatchLogAnalytics) {
 				fmt.Fprintln(w)
 			}
 		}
-		if view.Snapshot != nil {
+		if view.Snapshot != nil && view.Process != nil {
 			s := view.Snapshot
+			p := view.Process
 			fmt.Fprintf(w, "    mass %.2f kg | water %.2f%% | solids %.2f%% | fat %.2f%% | protein %.2f%%\n",
 				s.TotalMassKg, s.WaterPct*100, s.SolidsPct*100, s.FatPct*100, s.ProteinPct*100)
 			fmt.Fprintf(w, "    sugars %.2f%% (added %.2f%%) | lactose %.2f%% | cost %s\n",
 				s.TotalSugarsPct*100, s.AddedSugarsPct*100, s.LactosePct*100, formatCurrencyPerKg(s.CostPerKg))
 			fmt.Fprintf(w, "    freezing %.2f°C | ice %.1f%% | viscosity %.4f Pa·s | overrun %.1f%% | hardness %.1f | meltdown %.1f\n",
-				s.FreezingPointC, s.IceFractionAtServe*100, s.ViscosityAtServe, s.OverrunEstimate*100, s.HardnessIndex, s.MeltdownIndex)
+				p.FreezingPointC, p.IceFractionAtServe*100, p.ViscosityAtServe, p.OverrunEstimate*100, p.HardnessIndex, p.MeltdownIndex)
 		} else if len(view.Issues) > 0 {
 			fmt.Fprintf(w, "    issues: %s\n", strings.Join(view.Issues, "; "))
 		}

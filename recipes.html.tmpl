@@ -79,30 +79,28 @@
           {{else}}<p class="muted">No tasting notes recorded.</p>{{end}}
         </div>
         <div class="panel">
-          <h3>Chemistry Snapshot</h3>
-          {{if .SnapshotStats}}
-          <table>{{range .SnapshotStats}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          <h3>Composition</h3>
+          {{if .Composition}}
+          <table>{{range .Composition}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
           {{else}}<p class="muted">Snapshot unavailable.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Physics</h3>
+          {{if .Physics}}
+          <table>{{range .Physics}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Not computed.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Nutrition Facts (⅔ cup)</h3>
+          {{if .NutritionFacts}}
+          <table>{{range .NutritionFacts}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Not computed.</p>{{end}}
         </div>
         <div class="panel">
           <h3>Sweetener</h3>
           {{if .Sweetener}}
           <table>{{range .Sweetener}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
           {{else}}<p class="muted">Not computed.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Recipe Fractions</h3>
-          {{if .Fractions}}
-          <ul class="fractions-list">
-            {{range .Fractions}}<li><span>{{.Name}}</span><span>{{formatPercent .Value}}</span></li>{{end}}
-          </ul>
-          {{else}}<p class="muted">Recipe build missing.</p>{{end}}
-        </div>
-        <div class="panel">
-          <h3>Batch Metrics</h3>
-          {{if .Meta}}
-          <table>{{range .Meta}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
-          {{else}}<p class="muted">No batch-level metrics.</p>{{end}}
         </div>
       </div>
     </article>

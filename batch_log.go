@@ -67,10 +67,10 @@ func (e BatchLogEntry) Batch(catalog IngredientCatalog) (Batch, error) {
 }
 
 // Snapshot aggregates the batch entry into the stock BatchSnapshot structure and applies process calculations.
-func (e BatchLogEntry) Snapshot(catalog IngredientCatalog) (BatchSnapshot, error) {
+func (e BatchLogEntry) Snapshot(catalog IngredientCatalog) (BatchSnapshot, ProcessProperties, error) {
 	components, err := e.Components(catalog)
 	if err != nil {
-		return BatchSnapshot{}, err
+		return BatchSnapshot{}, ProcessProperties{}, err
 	}
 	return BuildProperties(components, MixOptions{})
 }
@@ -108,6 +108,7 @@ type BatchLogAnalytics struct {
 type BatchLogEntryView struct {
 	Entry      BatchLogEntry
 	Snapshot   *BatchSnapshot
+	Process    *ProcessProperties
 	Components []RecipeComponent
 	Issues     []string
 }
@@ -162,12 +163,13 @@ func AnalyzeBatchLog(entries []BatchLogEntry, catalog IngredientCatalog) BatchLo
 		}
 		view.Components = comps
 
-		snapshot, err := BuildProperties(comps, MixOptions{})
+		snapshot, process, err := BuildProperties(comps, MixOptions{})
 		if err != nil {
 			view.Issues = append(view.Issues, err.Error())
 			issuesCount++
 		} else {
 			view.Snapshot = &snapshot
+			view.Process = &process
 			snapshotCount++
 		}
 

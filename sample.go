@@ -283,8 +283,8 @@ func reorderSolutionsByPreference(solutions []*Solution, pref RecipePreference, 
 			continue
 		}
 		visc := 0.0
-		if snapshot, snapErr := sol.Snapshot(opts); snapErr == nil {
-			visc = snapshot.ViscosityAtServe
+		if _, process, snapErr := sol.Snapshot(opts); snapErr == nil {
+			visc = process.ViscosityAtServe
 		}
 		scored = append(scored, solutionPreferenceScore{
 			solution:  sol,
@@ -400,14 +400,14 @@ func (s *Solver) OptimizeWithPreference(pref RecipePreference) (*Solution, error
 				grad[i] = 0
 			}
 		}
-		snapshot, snapErr := s.snapshotFromWeights(x, mixOpts)
+		snapshot, process, snapErr := s.snapshotFromWeights(x, mixOpts)
 		if snapErr != nil {
 			if snapshotErr == nil {
 				snapshotErr = snapErr
 			}
 			return 1
 		}
-		score := pref.Score(snapshot)
+		score := pref.Score(snapshot, process)
 		return 1 - score
 	})
 	if err != nil {

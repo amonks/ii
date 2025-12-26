@@ -579,9 +579,9 @@ func sumComponents(weights []float64, slots []ingredientSlot) ConstituentCompone
 	return agg
 }
 
-func (s *Solver) snapshotFromWeights(weights []float64, opts MixOptions) (BatchSnapshot, error) {
+func (s *Solver) snapshotFromWeights(weights []float64, opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
 	if len(s.Problem.slots) == 0 {
-		return BatchSnapshot{}, errors.New("problem has no ingredients")
+		return BatchSnapshot{}, ProcessProperties{}, errors.New("problem has no ingredients")
 	}
 	components := make([]RecipeComponent, 0, len(weights))
 	for i, w := range weights {
@@ -597,7 +597,7 @@ func (s *Solver) snapshotFromWeights(weights []float64, opts MixOptions) (BatchS
 		})
 	}
 	if len(components) == 0 {
-		return BatchSnapshot{}, errors.New("solution has no positive ingredient weights")
+		return BatchSnapshot{}, ProcessProperties{}, errors.New("solution has no positive ingredient weights")
 	}
 	return BuildProperties(components, opts)
 }

@@ -40,7 +40,7 @@ func (m *IntervalMass) add(iv Interval, mass float64) {
 	m.Mid += mass * iv.Mid()
 }
 
-// BatchSnapshot captures aggregated component totals and derived process metrics for a recipe mix.
+// BatchSnapshot captures aggregated component totals from ingredient composition.
 type BatchSnapshot struct {
 	TotalMassKg float64
 
@@ -86,8 +86,10 @@ type BatchSnapshot struct {
 	CholesterolMgPerKg     float64
 	PolymerSolidsPct       float64
 	CostPerKg              float64
-	PintsYield             float64
-	CostPerPint            float64
+}
+
+// ProcessProperties captures physics calculations derived from BatchSnapshot.
+type ProcessProperties struct {
 	FreezingPointC         float64
 	IceFractionAtServe     float64
 	ViscosityAtServe       float64
@@ -96,6 +98,8 @@ type BatchSnapshot struct {
 	MeltdownIndex          float64
 	LactoseSupersaturation float64
 	FreezerLoadKJ          float64
+	PintsYield             float64
+	CostPerPint            float64
 }
 
 // NewBatchSnapshot aggregates ingredient components without applying process options.
@@ -260,65 +264,70 @@ func (b BatchSnapshot) NutritionFactsSummary(servingSizeGrams float64, sodiumMg 
 }
 
 // BuildProperties aggregates components and applies process calculations.
-func BuildProperties(components []RecipeComponent, opts MixOptions) (BatchSnapshot, error) {
+func BuildProperties(components []RecipeComponent, opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
 	snapshot, err := NewBatchSnapshot(components)
 	if err != nil {
-		return BatchSnapshot{}, err
+		return BatchSnapshot{}, ProcessProperties{}, err
 	}
-	snapshot.applyProcess(opts)
-	return snapshot, nil
+	props := ComputeProcess(snapshot, opts)
+	return snapshot, props, nil
 }
 
-func (b *BatchSnapshot) applyProcess(opts MixOptions) {
+// ComputeProcess derives physics properties from a batch snapshot.
+func ComputeProcess(b BatchSnapshot, opts MixOptions) ProcessProperties {
 	opts = defaultMixOptions(opts)
 	if b.TotalMassKg <= 0 {
-		return
+		return ProcessProperties{}
 	}
+
+	var p ProcessProperties
 	safeTotal := math.Max(1e-9, b.TotalMassKg)
 	waterAvailable := math.Max(1e-6, b.WaterMassKg-b.BoundWaterKg)
 	mColligative := b.ColligativeMoles / waterAvailable
-	b.FreezingPointC = -kfWater * mColligative
+	p.FreezingPointC = -kfWater * mColligative
 
 	absT := math.Abs(opts.ServeTempC)
 	targetFreeWater := math.Max(1e-6, b.ColligativeMoles*kfWater/math.Max(1e-6, absT))
 	targetFreeWater = math.Min(targetFreeWater, waterAvailable)
-	b.IceFractionAtServe = math.Max(0.0, (waterAvailable-targetFreeWater)/math.Max(1e-6, b.WaterMassKg))
+	p.IceFractionAtServe = math.Max(0.0, (waterAvailable-targetFreeWater)/math.Max(1e-6, b.WaterMassKg))
 
 	polymerPct := math.Max(0, b.PolymerSolidsKg/safeTotal)
 	muSerum := 0.0016 * math.Exp(0.045*(b.SolidsPct*100-36.0))
 	polymerFactor := math.Exp(12.0 * polymerPct)
 	tempFactor := math.Exp(0.025 * (5.0 - opts.ServeTempC))
 	n := math.Max(0.55, 1.0-0.6*polymerPct*100)
-	b.ViscosityAtServe = muSerum * polymerFactor * tempFactor * math.Pow(math.Max(1e-6, opts.ShearRate)/50.0, n-1.0)
+	p.ViscosityAtServe = muSerum * polymerFactor * tempFactor * math.Pow(math.Max(1e-6, opts.ShearRate)/50.0, n-1.0)
 
 	emulsifier := math.Max(0, b.EmulsifierPower/safeTotal)
 	destab := (b.FatPct * 100.0) * (0.4 + emulsifier) / (4.0 + b.ProteinPct*100.0)
-	viscTerm := 1.0 / (1.0 + math.Exp(6.5*(b.ViscosityAtServe-0.45)))
+	viscTerm := 1.0 / (1.0 + math.Exp(6.5*(p.ViscosityAtServe-0.45)))
 	fatTerm := 1.0 / (1.0 + math.Exp(-3.0*(destab-1.2)))
 	overrun := math.Max(0.02, math.Min(1.1, 0.20+0.45*fatTerm+0.35*viscTerm))
 	if opts.LimitOverrun {
 		overrun = math.Min(overrun, opts.OverrunCap)
 	}
-	b.OverrunEstimate = overrun
+	p.OverrunEstimate = overrun
 
 	polyolsPct := b.PolyolsMassKg / safeTotal
-	b.HardnessIndex = 30.0*b.IceFractionAtServe + 8.0*b.SolidsPct + 3.0*polyolsPct
-	b.MeltdownIndex = math.Max(0.0, 1.2*b.SolidsPct+0.8*b.IceFractionAtServe+0.3*overrun-0.1*polyolsPct)
+	p.HardnessIndex = 30.0*p.IceFractionAtServe + 8.0*b.SolidsPct + 3.0*polyolsPct
+	p.MeltdownIndex = math.Max(0.0, 1.2*b.SolidsPct+0.8*p.IceFractionAtServe+0.3*overrun-0.1*polyolsPct)
 
 	solubility := 0.18 * math.Exp(0.012*opts.ServeTempC+1.2)
 	availableWater := math.Max(1e-6, b.WaterMassKg-b.BoundWaterKg)
 	lactoseConc := b.Lactose.Mid / math.Max(1e-6, availableWater)
-	b.LactoseSupersaturation = lactoseConc / math.Max(1e-6, solubility)
+	p.LactoseSupersaturation = lactoseConc / math.Max(1e-6, solubility)
 
 	cp := 3.4 - 1.2*b.FatPct
 	deltaT := 4.0 - opts.DrawTempC
-	latent := 333.0 * b.IceFractionAtServe * b.WaterMassKg
-	b.FreezerLoadKJ = cp*b.TotalMassKg*deltaT + latent
+	latent := 333.0 * p.IceFractionAtServe * b.WaterMassKg
+	p.FreezerLoadKJ = cp*b.TotalMassKg*deltaT + latent
 
-	b.PintsYield = b.MixVolumeL * (1 + overrun) / pintLiters
-	if b.PintsYield > 0 {
-		b.CostPerPint = b.CostTotal / b.PintsYield
+	p.PintsYield = b.MixVolumeL * (1 + overrun) / pintLiters
+	if p.PintsYield > 0 {
+		p.CostPerPint = b.CostTotal / p.PintsYield
 	}
+
+	return p
 }
 
 type batchTotals struct {

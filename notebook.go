@@ -216,20 +216,20 @@ func Notebook() error {
 		return err
 	}
 
-	if snapshot, snapErr := bestRecipe.Snapshot(MixOptions{}); snapErr == nil {
-		totalPref := recipePref.Score(snapshot)
-		viscScore := recipePref.Viscosity.Score(snapshot.ViscosityAtServe)
+	if snapshot, process, snapErr := bestRecipe.Snapshot(MixOptions{}); snapErr == nil {
+		totalPref := recipePref.Score(snapshot, process)
+		viscScore := recipePref.Viscosity.Score(process.ViscosityAtServe)
 		sweetPct := snapshot.SweetnessEq / snapshot.TotalMassKg
 		sweetScore := recipePref.Sweetness.Score(sweetPct)
-		iceScore := recipePref.IceFraction.Score(snapshot.IceFractionAtServe)
+		iceScore := recipePref.IceFraction.Score(process.IceFractionAtServe)
 		fmt.Println()
 		fmt.Println("Texture preview:")
-		fmt.Printf("  Viscosity @ serve: %.4f Pa·s (score %.2f)\n", snapshot.ViscosityAtServe, viscScore)
+		fmt.Printf("  Viscosity @ serve: %.4f Pa·s (score %.2f)\n", process.ViscosityAtServe, viscScore)
 		fmt.Printf("  Sweetness (sucrose eq): %.2f%% (score %.2f)\n", sweetPct*100, sweetScore)
-		fmt.Printf("  Ice fraction @ serve : %.1f%% (score %.2f)\n", snapshot.IceFractionAtServe*100, iceScore)
+		fmt.Printf("  Ice fraction @ serve : %.1f%% (score %.2f)\n", process.IceFractionAtServe*100, iceScore)
 		fmt.Printf("  Overall preference   : %.3f\n", totalPref)
-		fmt.Printf("  Overrun estimate : %.1f%%\n", snapshot.OverrunEstimate*100)
-		fmt.Printf("  Hardness index   : %.2f\n", snapshot.HardnessIndex)
+		fmt.Printf("  Overrun estimate : %.1f%%\n", process.OverrunEstimate*100)
+		fmt.Printf("  Hardness index   : %.2f\n", process.HardnessIndex)
 	}
 
 	batchGrams := 1000.0

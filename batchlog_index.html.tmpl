@@ -237,7 +237,7 @@
         </div>
         <div class="metric-card">
           <div class="stat-label">Ice Fraction</div>
-          <div class="stat-value">{{formatPercent .Snapshot.IceFractionAtServe}}</div>
+          <div class="stat-value">{{if .Process}}{{formatPercent .Process.IceFractionAtServe}}{{else}}—{{end}}</div>
         </div>
         <div class="metric-card">
           <div class="stat-label">Cost</div>
@@ -260,6 +260,7 @@
           <tr><td>Added sugars</td><td>{{formatPercent .Snapshot.AddedSugarsPct}}</td></tr>
         </tbody>
       </table>
+      {{if .Process}}
       <table class="metrics-table">
         <thead>
           <tr>
@@ -267,15 +268,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Freezing point</td><td>{{printf "%.2f °C" .Snapshot.FreezingPointC}}</td></tr>
-          <tr><td>Viscosity @ serve</td><td>{{printf "%.4f Pa·s" .Snapshot.ViscosityAtServe}}</td></tr>
-          <tr><td>Estimated overrun</td><td>{{formatPercent .Snapshot.OverrunEstimate}}</td></tr>
-          <tr><td>Hardness index</td><td>{{printf "%.2f" .Snapshot.HardnessIndex}}</td></tr>
-          <tr><td>Meltdown index</td><td>{{printf "%.2f" .Snapshot.MeltdownIndex}}</td></tr>
-          <tr><td>Lactose supersat.</td><td>{{printf "%.2f×" .Snapshot.LactoseSupersaturation}}</td></tr>
-          <tr><td>Freezer load</td><td>{{printf "%.1f kJ" .Snapshot.FreezerLoadKJ}}</td></tr>
+          <tr><td>Freezing point</td><td>{{printf "%.2f °C" .Process.FreezingPointC}}</td></tr>
+          <tr><td>Viscosity @ serve</td><td>{{printf "%.4f Pa·s" .Process.ViscosityAtServe}}</td></tr>
+          <tr><td>Estimated overrun</td><td>{{formatPercent .Process.OverrunEstimate}}</td></tr>
+          <tr><td>Hardness index</td><td>{{printf "%.2f" .Process.HardnessIndex}}</td></tr>
+          <tr><td>Meltdown index</td><td>{{printf "%.2f" .Process.MeltdownIndex}}</td></tr>
+          <tr><td>Lactose supersat.</td><td>{{printf "%.2f×" .Process.LactoseSupersaturation}}</td></tr>
+          <tr><td>Freezer load</td><td>{{printf "%.1f kJ" .Process.FreezerLoadKJ}}</td></tr>
         </tbody>
       </table>
+      {{end}}
       {{end}}
       {{if .Issues}}
       <div class="issues">

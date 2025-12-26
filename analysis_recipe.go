@@ -168,7 +168,7 @@ func (r *Recipe) aggregateTotals() (BatchSnapshot, error) {
 	return r.batch().Snapshot()
 }
 
-func (r *Recipe) mixSnapshot(opts MixOptions) (BatchSnapshot, error) {
+func (r *Recipe) mixSnapshot(opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
 	return BuildProperties(r.massComponents(), opts)
 }
 
@@ -199,7 +199,7 @@ func (r *Recipe) CostPerKg() float64 {
 	return snapshot.CostPerKg
 }
 
-func (r *Recipe) mixSnapshotWithOptions(opts MixOptions) (BatchSnapshot, error) {
+func (r *Recipe) mixSnapshotWithOptions(opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
 	return BuildProperties(r.massComponents(), opts)
 }
 
@@ -214,25 +214,25 @@ func (r *Recipe) MassComponents() []RecipeComponent {
 
 // FreezingPoint calculates the freezing point (°C).
 func (r *Recipe) FreezingPoint(opts MixOptions) (float64, error) {
-	snapshot, err := r.mixSnapshotWithOptions(opts)
+	_, props, err := r.mixSnapshotWithOptions(opts)
 	if err != nil {
 		return 0, err
 	}
-	return snapshot.FreezingPointC, nil
+	return props.FreezingPointC, nil
 }
 
 // OverrunCeiling returns the predicted overrun limit.
 func (r *Recipe) OverrunCeiling(opts MixOptions) (float64, error) {
-	snapshot, err := r.mixSnapshotWithOptions(opts)
+	_, props, err := r.mixSnapshotWithOptions(opts)
 	if err != nil {
 		return 0, err
 	}
-	return snapshot.OverrunEstimate, nil
+	return props.OverrunEstimate, nil
 }
 
 // MixVolumeL returns pre-overrun batch volume in liters.
 func (r *Recipe) MixVolumeL(opts MixOptions) (float64, error) {
-	snapshot, err := r.mixSnapshotWithOptions(opts)
+	snapshot, _, err := r.mixSnapshotWithOptions(opts)
 	if err != nil {
 		return 0, err
 	}
@@ -241,7 +241,7 @@ func (r *Recipe) MixVolumeL(opts MixOptions) (float64, error) {
 
 // ServingSizeForVolume converts a draw volume to serving grams.
 func (r *Recipe) ServingSizeForVolume(portionL float64, opts MixOptions) (float64, error) {
-	snapshot, err := r.mixSnapshotWithOptions(opts)
+	snapshot, _, err := r.mixSnapshotWithOptions(opts)
 	if err != nil {
 		return 0, err
 	}

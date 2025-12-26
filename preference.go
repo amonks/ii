@@ -26,14 +26,14 @@ func DefaultRecipePreference() RecipePreference {
 }
 
 // Score multiplies the component scores to keep the response smooth for NLopt.
-func (rp RecipePreference) Score(snapshot BatchSnapshot) float64 {
+func (rp RecipePreference) Score(snapshot BatchSnapshot, process ProcessProperties) float64 {
 	score := 1.0
 	mass := math.Max(1e-9, snapshot.TotalMassKg)
 
-	score *= rp.Viscosity.Score(snapshot.ViscosityAtServe)
+	score *= rp.Viscosity.Score(process.ViscosityAtServe)
 	sweetnessPct := snapshot.SweetnessEq / mass
 	score *= rp.Sweetness.Score(sweetnessPct)
-	score *= rp.IceFraction.Score(snapshot.IceFractionAtServe)
+	score *= rp.IceFraction.Score(process.IceFractionAtServe)
 	score *= rp.PAC.Score(snapshot.Sweeteners.TotalPAC)
 	score *= rp.POD.Score(snapshot.Sweeteners.TotalPOD)
 

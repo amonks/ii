@@ -2,9 +2,9 @@ package creamery
 
 import "fmt"
 
-func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, error) {
+func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals LabelGoals, sodiumMg float64) (*Recipe, NutritionFacts, float64, BatchSnapshot, ProcessProperties, error) {
 	if sol == nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, fmt.Errorf("nil solution")
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, fmt.Errorf("nil solution")
 	}
 
 	batchMass := goals.BatchMassKG
@@ -14,12 +14,12 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 
 	components, err := componentsFromSolution(sol, specs, batchMass)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, err
 	}
 
 	recipe, err := NewRecipe(components, goals.Overrun)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, err
 	}
 
 	opts := MixOptions{
@@ -32,13 +32,13 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 		opts.LimitOverrun = true
 	}
 
-	snapshotMetrics, err := BuildProperties(components, opts)
+	snapshotMetrics, processProps, err := BuildProperties(components, opts)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, err
 	}
 
-	if snapshotMetrics.OverrunEstimate > 0 {
-		if updated, err := recipe.WithOverrun(snapshotMetrics.OverrunEstimate); err == nil {
+	if processProps.OverrunEstimate > 0 {
+		if updated, err := recipe.WithOverrun(processProps.OverrunEstimate); err == nil {
 			recipe = &updated
 		}
 	}
@@ -54,13 +54,13 @@ func recipeFromSolution(sol *Solution, specs []IngredientDefinition, goals Label
 
 	servingSize, err := recipe.ServingSizeForVolume(servingPortionLiters, opts)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, err
 	}
 
 	facts, err := recipe.NutritionFacts(servingSize, sodiumMg)
 	if err != nil {
-		return nil, NutritionFacts{}, 0, BatchSnapshot{}, err
+		return nil, NutritionFacts{}, 0, BatchSnapshot{}, ProcessProperties{}, err
 	}
 
-	return recipe, facts, servingSize, snapshotMetrics, nil
+	return recipe, facts, servingSize, snapshotMetrics, processProps, nil
 }

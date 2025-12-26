@@ -395,10 +395,10 @@ func (s Solution) RecipeComponents(totalMass float64) ([]RecipeComponent, error)
 
 // Snapshot aggregates the solution into a BatchSnapshot using the provided
 // mixing options (defaults applied internally).
-func (s Solution) Snapshot(opts MixOptions) (BatchSnapshot, error) {
+func (s Solution) Snapshot(opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
 	components, err := s.RecipeComponents(1.0)
 	if err != nil {
-		return BatchSnapshot{}, err
+		return BatchSnapshot{}, ProcessProperties{}, err
 	}
 	return BuildProperties(components, opts)
 }
@@ -406,11 +406,11 @@ func (s Solution) Snapshot(opts MixOptions) (BatchSnapshot, error) {
 // Score evaluates the solution against the provided preference curves.
 func (s Solution) Score(pref RecipePreference, opts MixOptions) (float64, error) {
 	pref = normalizeRecipePreference(pref)
-	snapshot, err := s.Snapshot(opts)
+	snapshot, process, err := s.Snapshot(opts)
 	if err != nil {
 		return 0, err
 	}
-	return pref.Score(snapshot), nil
+	return pref.Score(snapshot, process), nil
 }
 
 // ImpliedMSNF calculates what MSNF interval a variable ingredient must have

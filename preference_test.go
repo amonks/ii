@@ -36,14 +36,14 @@ func TestSolutionSnapshot(t *testing.T) {
 		},
 	}
 
-	snapshot, err := solution.Snapshot(MixOptions{})
+	snapshot, process, err := solution.Snapshot(MixOptions{})
 	if err != nil {
 		t.Fatalf("snapshot failed: %v", err)
 	}
 	if snapshot.TotalMassKg <= 0 {
 		t.Fatalf("expected positive mass, got %.4f", snapshot.TotalMassKg)
 	}
-	if snapshot.ViscosityAtServe <= 0 {
-		t.Fatalf("expected positive viscosity, got %.6f", snapshot.ViscosityAtServe)
+	if process.ViscosityAtServe <= 0 {
+		t.Fatalf("expected positive viscosity, got %.6f", process.ViscosityAtServe)
 	}
 }
