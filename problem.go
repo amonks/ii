@@ -7,17 +7,17 @@ import (
 )
 
 type ingredientSlot struct {
-	definition *IngredientDefinition
+	definition *Ingredient
 	lot        LotDescriptor
 	bounds     Interval
 }
 
-func canonicalLot(lot LotDescriptor, cache map[IngredientID]*IngredientDefinition) (LotDescriptor, *IngredientDefinition) {
+func canonicalLot(lot LotDescriptor, cache map[IngredientID]*Ingredient) (LotDescriptor, *Ingredient) {
 	if cache == nil {
-		cache = make(map[IngredientID]*IngredientDefinition)
+		cache = make(map[IngredientID]*Ingredient)
 	}
 
-	assignDefinition := func(def IngredientDefinition) (LotDescriptor, *IngredientDefinition) {
+	assignDefinition := func(def Ingredient) (LotDescriptor, *Ingredient) {
 		definition := normalizeDefinition(def)
 		if cached, ok := cache[definition.ID]; ok {
 			lot.Definition = cached
@@ -39,7 +39,7 @@ func canonicalLot(lot LotDescriptor, cache map[IngredientID]*IngredientDefinitio
 	}
 
 	profile := lot.EffectiveProfile()
-	def := IngredientDefinition{
+	def := Ingredient{
 		ID:      profile.ID,
 		Name:    lot.Label,
 		Profile: profile,
@@ -59,7 +59,7 @@ type Problem struct {
 }
 
 // NewProblem creates a problem with the given specs and canonical target.
-func NewProblem(specs []IngredientDefinition, target FormulationTarget) *Problem {
+func NewProblem(specs []Ingredient, target FormulationTarget) *Problem {
 	lots := make([]LotDescriptor, len(specs))
 	for i, spec := range specs {
 		lots[i] = spec.DefaultLot()
@@ -71,7 +71,7 @@ func NewProblem(specs []IngredientDefinition, target FormulationTarget) *Problem
 func NewFormulationProblem(lots []LotDescriptor, target FormulationTarget) *Problem {
 	slots := make([]ingredientSlot, len(lots))
 	specIndex := make(map[IngredientID]int, len(lots))
-	defCache := make(map[IngredientID]*IngredientDefinition, len(lots))
+	defCache := make(map[IngredientID]*Ingredient, len(lots))
 	for i, lot := range lots {
 		normalizedLot, def := canonicalLot(lot, defCache)
 		if def == nil {
@@ -93,8 +93,8 @@ func NewFormulationProblem(lots []LotDescriptor, target FormulationTarget) *Prob
 }
 
 // Specs returns a copy of the ingredient specs in order.
-func (p *Problem) Specs() []IngredientDefinition {
-	specs := make([]IngredientDefinition, len(p.slots))
+func (p *Problem) Specs() []Ingredient {
+	specs := make([]Ingredient, len(p.slots))
 	for i, slot := range p.slots {
 		if slot.definition != nil {
 			specs[i] = *slot.definition
@@ -137,13 +137,13 @@ func (p *Problem) profileForIndex(i int) ConstituentProfile {
 	return p.slots[i].lot.EffectiveProfile()
 }
 
-func (p *Problem) specByID(id IngredientID) (IngredientDefinition, bool) {
+func (p *Problem) specByID(id IngredientID) (Ingredient, bool) {
 	idx, ok := p.specIndex[id]
 	if !ok {
-		return IngredientDefinition{}, false
+		return Ingredient{}, false
 	}
 	if p.slots[idx].definition == nil {
-		return IngredientDefinition{}, false
+		return Ingredient{}, false
 	}
 	return *p.slots[idx].definition, true
 }
@@ -415,7 +415,7 @@ func (s Solution) Score(pref RecipePreference, opts MixOptions) (float64, error)
 
 // ImpliedMSNF calculates what MSNF interval a variable ingredient must have
 // to achieve the target bounds, given the weights of all other ingredients.
-func (s Solution) ImpliedMSNF(specs []IngredientDefinition, target Interval, id IngredientID) (Interval, bool) {
+func (s Solution) ImpliedMSNF(specs []Ingredient, target Interval, id IngredientID) (Interval, bool) {
 	varSpecIndex := -1
 	for i, spec := range specs {
 		if spec.ID == id {

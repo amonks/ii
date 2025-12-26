@@ -6,7 +6,7 @@ import "fmt"
 // components scaled to the requested batch mass (kg). When the solution
 // already provides a normalized blend, that takes precedence; otherwise
 // the function falls back to the explicit weight map.
-func componentsFromSolution(sol *Solution, specs []IngredientDefinition, batchMass float64) ([]RecipeComponent, error) {
+func componentsFromSolution(sol *Solution, specs []Ingredient, batchMass float64) ([]RecipeComponent, error) {
 	if sol == nil {
 		return nil, fmt.Errorf("nil solution")
 	}

@@ -24,14 +24,14 @@ type LabelScenarioResult struct {
 	Metrics          BatchSnapshot
 	Process          ProcessProperties
 	PintMassGrams    float64
-	Specs            []IngredientDefinition
+	Specs            []Ingredient
 	BatchDetails     map[IngredientID]LotDescriptor
 }
 
 type scenarioIngredients struct {
 	catalog  IngredientCatalog
 	batches  map[IngredientID]LotDescriptor
-	specs    []IngredientDefinition
+	specs    []Ingredient
 	lots     []LotDescriptor
 	nameToID map[string]IngredientID
 }
@@ -40,7 +40,7 @@ func newScenarioIngredients() *scenarioIngredients {
 	return &scenarioIngredients{
 		catalog:  DefaultIngredientCatalog(),
 		batches:  make(map[IngredientID]LotDescriptor),
-		specs:    make([]IngredientDefinition, 0),
+		specs:    make([]Ingredient, 0),
 		lots:     make([]LotDescriptor, 0),
 		nameToID: make(map[string]IngredientID),
 	}
@@ -64,7 +64,7 @@ func (s *scenarioIngredients) addClone(key, name string, override func(*LotDescr
 func (s *scenarioIngredients) addDetail(inst LotDescriptor) {
 	profile := inst.EffectiveProfile()
 	s.nameToID[profile.Name] = profile.ID
-	spec := IngredientDefinition{}
+	spec := Ingredient{}
 	if inst.Definition != nil {
 		spec = *inst.Definition
 	}
@@ -78,7 +78,7 @@ func (s *scenarioIngredients) addDetail(inst LotDescriptor) {
 	s.lots = append(s.lots, inst)
 }
 
-func (s *scenarioIngredients) Specs() []IngredientDefinition {
+func (s *scenarioIngredients) Specs() []Ingredient {
 	return s.specs
 }
 

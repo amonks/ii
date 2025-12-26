@@ -1,6 +1,6 @@
 package creamery
 
-func makeSpecFromFractions(name string, fractions ComponentFractions) IngredientDefinition {
+func makeSpecFromFractions(name string, fractions ComponentFractions) Ingredient {
 	comps := EnsureWater(fractions)
 	profile := ConstituentProfile{
 		ID:         NewIngredientID(name),

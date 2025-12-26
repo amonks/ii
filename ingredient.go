@@ -4,15 +4,15 @@ import "fmt"
 
 // specFromCatalog resolves a catalog key to its canonical spec, returning an
 // error when the key is unknown or lacks definition metadata.
-func specFromCatalog(key string) (IngredientDefinition, error) {
+func specFromCatalog(key string) (Ingredient, error) {
 	inst, ok := DefaultIngredientCatalog().InstanceByKey(key)
 	if !ok || inst.Definition == nil {
-		return IngredientDefinition{}, fmt.Errorf("ingredient %q not found in catalog", key)
+		return Ingredient{}, fmt.Errorf("ingredient %q not found in catalog", key)
 	}
 	return *inst.Definition, nil
 }
 
-func mustSpecFromCatalog(key string) IngredientDefinition {
+func mustSpecFromCatalog(key string) Ingredient {
 	spec, err := specFromCatalog(key)
 	if err != nil {
 		panic(err)
@@ -42,7 +42,7 @@ var (
 	NonfatMilkVariable = buildNonfatMilkVariable()
 )
 
-func buildNonfatMilkVariable() IngredientDefinition {
+func buildNonfatMilkVariable() Ingredient {
 	name := "Nonfat Milk"
 	components := ComponentFractions{
 		Fat:         Range(0, 0.005),
@@ -60,9 +60,9 @@ func buildNonfatMilkVariable() IngredientDefinition {
 }
 
 // StandardSpecs returns a slice of commonly used ingredient specs.
-func StandardSpecs() []IngredientDefinition {
+func StandardSpecs() []Ingredient {
 	catalog := DefaultIngredientCatalog()
-	specs := make([]IngredientDefinition, 0, len(standardSpecKeys)+1)
+	specs := make([]Ingredient, 0, len(standardSpecKeys)+1)
 	for _, key := range standardSpecKeys {
 		inst, ok := catalog.InstanceByKey(key)
 		if !ok || inst.Definition == nil {
@@ -75,9 +75,9 @@ func StandardSpecs() []IngredientDefinition {
 }
 
 // StandardSpecMap provides the same specs keyed by their IngredientID.
-func StandardSpecMap() map[IngredientID]IngredientDefinition {
+func StandardSpecMap() map[IngredientID]Ingredient {
 	specs := StandardSpecs()
-	lib := make(map[IngredientID]IngredientDefinition, len(specs))
+	lib := make(map[IngredientID]Ingredient, len(specs))
 	for _, spec := range specs {
 		lib[spec.ID] = spec
 	}

@@ -19,7 +19,7 @@ func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	})
 
 	// Available ingredients
-	specs := []creamery.IngredientDefinition{
+	specs := []creamery.Ingredient{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,
@@ -108,7 +108,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 	fmt.Printf("Derived target: %s\n\n", target)
 
 	// Ingredients in label order (descending by weight)
-	specs := []creamery.IngredientDefinition{
+	specs := []creamery.Ingredient{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,
@@ -168,7 +168,7 @@ func TestWithTighterConstraints(t *testing.T) {
 		OtherSolids: creamery.Range(0, 0.01),
 	})
 
-	specs2 := []creamery.IngredientDefinition{
+	specs2 := []creamery.Ingredient{
 		creamery.HeavyCream,
 		creamery.WholeMilk,
 		creamery.Sugar,

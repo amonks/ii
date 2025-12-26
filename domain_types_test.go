@@ -2,7 +2,7 @@ package creamery
 
 import "testing"
 
-func TestNewIngredientDefinitionNormalizes(t *testing.T) {
+func TestNewIngredientNormalizes(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:   "",
 		Name: " Heavy Cream ",
@@ -13,7 +13,7 @@ func TestNewIngredientDefinitionNormalizes(t *testing.T) {
 			Sucrose: Point(0.12),
 		},
 	}
-	def := NewIngredientDefinition(profile, IngredientKey("HEAVY CREAM"))
+	def := NewIngredient(profile, IngredientKey("HEAVY CREAM"))
 	if def.ID == "" {
 		t.Fatalf("expected normalized ID, got empty")
 	}
@@ -39,8 +39,8 @@ func TestLotDescriptorEffectiveProfileOverride(t *testing.T) {
 			Sucrose: Point(0.12),
 		},
 	}
-	def := NewIngredientDefinition(profile, "")
-	lot := NewLot(def)
+	def := NewIngredient(profile, "")
+	lot := NewLot(&def)
 
 	override := profile
 	override.Components.Fat = Point(0.35)
@@ -60,8 +60,8 @@ func TestLotDescriptorDisplayNameFallback(t *testing.T) {
 		Name:       "",
 		Components: ConstituentComponents{},
 	}
-	def := NewIngredientDefinition(profile, "")
-	lot := LotDescriptor{Definition: def}
+	def := NewIngredient(profile, "")
+	lot := LotDescriptor{Definition: &def}
 	if got := lot.DisplayName(); got == "" {
 		t.Fatalf("expected fallback display name, got empty")
 	}

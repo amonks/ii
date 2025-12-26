@@ -24,7 +24,7 @@ func DefaultIngredientCatalog() IngredientCatalog {
 
 // NewIngredientCatalog builds a catalog from a slice of ingredient specs. The
 // catalog automatically provisions default lots that mirror each spec.
-func NewIngredientCatalog(ingredients []IngredientDefinition) IngredientCatalog {
+func NewIngredientCatalog(ingredients []Ingredient) IngredientCatalog {
 	defs := make(map[IngredientID]*Ingredient, len(ingredients))
 	lots := make(map[IngredientID]LotDescriptor, len(ingredients))
 	keyed := make(map[IngredientKey]IngredientID)
@@ -56,8 +56,8 @@ func NewIngredientCatalog(ingredients []IngredientDefinition) IngredientCatalog 
 }
 
 // All returns every ingredient definition in the catalog.
-func (c IngredientCatalog) All() []*IngredientDefinition {
-	all := make([]*IngredientDefinition, 0, len(c.defs))
+func (c IngredientCatalog) All() []*Ingredient {
+	all := make([]*Ingredient, 0, len(c.defs))
 	for _, def := range c.defs {
 		all = append(all, def)
 	}
@@ -65,7 +65,7 @@ func (c IngredientCatalog) All() []*IngredientDefinition {
 }
 
 // Get looks up an ingredient definition by ID.
-func (c IngredientCatalog) Get(id IngredientID) (*IngredientDefinition, bool) {
+func (c IngredientCatalog) Get(id IngredientID) (*Ingredient, bool) {
 	def, ok := c.defs[id]
 	return def, ok
 }
@@ -103,7 +103,7 @@ func (c IngredientCatalog) Instances() map[IngredientID]LotDescriptor {
 }
 
 func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatalog {
-	specs := make([]IngredientDefinition, 0, len(profiles))
+	specs := make([]Ingredient, 0, len(profiles))
 	overrides := make(map[IngredientID]ConstituentProfile, len(profiles))
 	for key, profile := range profiles {
 		spec := SpecFromProfile(profile)
@@ -126,16 +126,16 @@ func catalogFromProfiles(profiles map[string]ConstituentProfile) IngredientCatal
 	return catalog
 }
 
-// SpecFromProfile builds an IngredientDefinition from an existing constituent profile.
-func SpecFromProfile(profile ConstituentProfile) IngredientDefinition {
-	return normalizeSpec(IngredientDefinition{
+// SpecFromProfile builds an Ingredient from an existing constituent profile.
+func SpecFromProfile(profile ConstituentProfile) Ingredient {
+	return normalizeSpec(Ingredient{
 		ID:      profile.ID,
 		Name:    profile.Name,
 		Profile: profile,
 	})
 }
 
-func normalizeSpec(spec IngredientDefinition) IngredientDefinition {
+func normalizeSpec(spec Ingredient) Ingredient {
 	if spec.ID == "" {
 		spec.ID = NewIngredientID(spec.Name)
 	}

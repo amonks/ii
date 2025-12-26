@@ -11,7 +11,7 @@ func TestBestSamplePrefersHighestViscosityScore(t *testing.T) {
 	})
 	target := FormulationTarget{Components: targetFractions}
 
-	solver, err := NewSolver(NewProblem([]IngredientDefinition{gel, diluent}, target))
+	solver, err := NewSolver(NewProblem([]Ingredient{gel, diluent}, target))
 	if err != nil {
 		t.Fatalf("solver creation failed: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestBestSamplePrefersHighestViscosityScore(t *testing.T) {
 	}
 }
 
-func makeHydrocolloidSpec(name string, otherSolids float64, hydro bool) IngredientDefinition {
+func makeHydrocolloidSpec(name string, otherSolids float64, hydro bool) Ingredient {
 	fractions := EnsureWater(ComponentFractions{
 		Water:       Point(1 - otherSolids),
 		OtherSolids: Point(otherSolids),

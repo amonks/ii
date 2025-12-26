@@ -40,7 +40,7 @@ func assertSweetenersMatchTarget(t *testing.T, target creamery.FormulationTarget
 	}
 }
 
-func newSpec(t *testing.T, name string, build func(*creamery.ComponentFractions)) creamery.IngredientDefinition {
+func newSpec(t *testing.T, name string, build func(*creamery.ComponentFractions)) creamery.Ingredient {
 	t.Helper()
 	comps := creamery.ComponentFractions{}
 	if build != nil {

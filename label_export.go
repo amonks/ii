@@ -114,7 +114,7 @@ td { padding:0.2rem 0; }
 				b.WriteString(fmt.Sprintf(`<tr><td>Lactose PAC</td><td>%.1f</td></tr>`, sweetener.LactosePAC))
 				b.WriteString(`</table></div>`)
 
-				b.WriteString(`<div class="card"><h3>IngredientDefinition IDs</h3><p>`)
+				b.WriteString(`<div class="card"><h3>Ingredient IDs</h3><p>`)
 				for _, spec := range res.Specs {
 					b.WriteString(fmt.Sprintf(`<span class="tag">%s</span>`, html.EscapeString(spec.ID.String())))
 				}

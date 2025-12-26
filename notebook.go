@@ -134,7 +134,7 @@ func Notebook() error {
 	fmt.Printf("  %-20s Fat: %.2f%%, MSNF: %.2f%%\n", myMilk.Name, myMilk.Profile.Components.Fat.Mid()*100, myMilk.Profile.MSNFInterval().Mid()*100)
 	fmt.Printf("  %-20s Fat: %.1f%%, MSNF: %.0f%%\n", myNFDM.Name, myNFDM.Profile.Components.Fat.Mid()*100, myNFDM.Profile.MSNFInterval().Mid()*100)
 	fmt.Printf("  %-20s Fat: %.1f%%, Protein: %.1f%%\n", myEggYolks.Name, myEggYolks.Profile.Components.Fat.Mid()*100, myEggYolks.Profile.Components.Protein.Mid()*100)
-	printSugar := func(spec IngredientDefinition, suffix string) {
+	printSugar := func(spec Ingredient, suffix string) {
 		fmt.Printf("  %-20s Sugar: %.0f%%, POD: %.0f, PAC: %.0f%s\n",
 			spec.Name,
 			spec.Profile.AddedSugarsInterval().Mid()*100,
@@ -146,7 +146,7 @@ func Notebook() error {
 	printSugar(mySucrose, "")
 	printSugar(myDextrose, " (less sweet, more softening)")
 
-	specs := []IngredientDefinition{
+	specs := []Ingredient{
 		myCream,
 		myMilk,
 		myNFDM,
@@ -345,10 +345,10 @@ func ensureIntervalContains(interval Interval, value float64, label string) erro
 	return nil
 }
 
-func catalogSpec(catalog IngredientCatalog, key, name string) (IngredientDefinition, error) {
+func catalogSpec(catalog IngredientCatalog, key, name string) (Ingredient, error) {
 	inst, ok := catalog.InstanceByKey(key)
 	if !ok || inst.Definition == nil {
-		return IngredientDefinition{}, fmt.Errorf("catalog missing %s entry", key)
+		return Ingredient{}, fmt.Errorf("catalog missing %s entry", key)
 	}
 	spec := *inst.Definition
 	spec.Name = name
@@ -365,8 +365,8 @@ func minInt(a, b int) int {
 	return b
 }
 
-func buildSpecsFromLabel(label Label, catalog IngredientCatalog) []IngredientDefinition {
-	specs := make([]IngredientDefinition, 0, len(label.Ingredients))
+func buildSpecsFromLabel(label Label, catalog IngredientCatalog) []Ingredient {
+	specs := make([]Ingredient, 0, len(label.Ingredients))
 	for _, ing := range label.Ingredients {
 		inst, ok := catalog.InstanceByKey(ing.ID)
 		if !ok || inst.Definition == nil {

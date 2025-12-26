@@ -6,7 +6,7 @@ import (
 )
 
 func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
-	spec := IngredientDefinition{
+	spec := Ingredient{
 		ID:   IngredientID("sucrose"),
 		Name: "Fancy Sugar",
 		Profile: ConstituentProfile{
@@ -46,7 +46,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 	inst.Label = "stock_sucrose"
 	sol.Lots[IngredientID("sucrose")] = inst
 
-	recipe, _, _, _, _, err := recipeFromSolution(sol, []IngredientDefinition{spec}, goals, 0)
+	recipe, _, _, _, _, err := recipeFromSolution(sol, []Ingredient{spec}, goals, 0)
 	if err != nil {
 		t.Fatalf("recipeFromSolution returned error: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 }
 
 func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
-	sucrose := IngredientDefinition{
+	sucrose := Ingredient{
 		ID:   IngredientID("sucrose"),
 		Name: "Sucrose",
 		Profile: ConstituentProfile{
@@ -75,7 +75,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 			},
 		},
 	}
-	cream := IngredientDefinition{
+	cream := Ingredient{
 		ID:   IngredientID("cream"),
 		Name: "Cream",
 		Profile: ConstituentProfile{
@@ -88,7 +88,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 		},
 	}
 
-	specs := []IngredientDefinition{sucrose, cream}
+	specs := []Ingredient{sucrose, cream}
 	sol := &Solution{
 		Weights: map[IngredientID]float64{
 			sucrose.ID: 0.6,

@@ -33,12 +33,6 @@ func NewIngredient(profile ConstituentProfile, key IngredientKey) Ingredient {
 	return normalizeIngredient(ingredient)
 }
 
-// NewIngredientDefinition preserves the legacy constructor signature while the
-// codebase transitions to the new Ingredient type.
-func NewIngredientDefinition(profile ConstituentProfile, key IngredientKey) *Ingredient {
-	normalized := NewIngredient(profile, key)
-	return &normalized
-}
 
 // NewLot creates a lot descriptor for the provided definition.
 func NewLot(def *Ingredient) Lot {
@@ -161,11 +155,10 @@ func (def Ingredient) DefaultLot() Lot {
 
 // Legacy helper retained for compatibility while call sites migrate to the new
 // normalizeIngredient name.
-func normalizeDefinition(def IngredientDefinition) IngredientDefinition {
+func normalizeDefinition(def Ingredient) Ingredient {
 	return normalizeIngredient(def)
 }
 
-// Backwards compatibility aliases while the rest of the codebase migrates to
-// the new Ingredient and Lot types.
-type IngredientDefinition = Ingredient
+// Backwards compatibility alias while the rest of the codebase migrates to
+// the Lot type.
 type LotDescriptor = Lot
