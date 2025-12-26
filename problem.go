@@ -18,7 +18,7 @@ func canonicalLot(lot Lot, cache map[IngredientID]*Ingredient) (Lot, *Ingredient
 	}
 
 	assignDefinition := func(def Ingredient) (Lot, *Ingredient) {
-		definition := normalizeDefinition(def)
+		definition := normalizeIngredient(def)
 		if cached, ok := cache[definition.ID]; ok {
 			lot.Definition = cached
 			if lot.Label == "" {

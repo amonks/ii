@@ -152,9 +152,3 @@ func (def Ingredient) DefaultLot() Lot {
 	copy := normalized
 	return NewLot(&copy)
 }
-
-// Legacy helper retained for compatibility while call sites migrate to the new
-// normalizeIngredient name.
-func normalizeDefinition(def Ingredient) Ingredient {
-	return normalizeIngredient(def)
-}
