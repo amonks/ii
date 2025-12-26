@@ -3,6 +3,7 @@ package creamery
 import (
 	"fmt"
 	"strings"
+	"github.com/amonks/creamery/fdaparser"
 )
 
 const notebookIntervalEpsilon = 1e-4
@@ -365,7 +366,7 @@ func minInt(a, b int) int {
 	return b
 }
 
-func buildSpecsFromLabel(label Label, catalog IngredientCatalog) []Ingredient {
+func buildSpecsFromLabel(label fdaparser.Label, catalog IngredientCatalog) []Ingredient {
 	specs := make([]Ingredient, 0, len(label.Ingredients))
 	for _, ing := range label.Ingredients {
 		inst, ok := catalog.InstanceByKey(ing.ID)

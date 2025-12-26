@@ -3,6 +3,7 @@ package creamery
 import (
 	"fmt"
 	"math"
+	"github.com/amonks/creamery/fdaparser"
 )
 
 const (
@@ -168,7 +169,7 @@ func catalogKeyForIngredient(id string) string {
 }
 
 // SolveFDALabel solves a label reconstruction problem directly from an FDA Label.
-func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult, error) {
+func SolveFDALabel(label fdaparser.Label, catalog IngredientCatalog) (*LabelScenarioResult, error) {
 	// Build ingredient lots from the label
 	builder := newScenarioIngredients()
 	builder.catalog = catalog
@@ -298,7 +299,7 @@ func SolveFDALabel(label Label, catalog IngredientCatalog) (*LabelScenarioResult
 	}, nil
 }
 
-func convertFDAGroups(label Label, builder *scenarioIngredients) []LabelGroup {
+func convertFDAGroups(label fdaparser.Label, builder *scenarioIngredients) []LabelGroup {
 	groups := make([]LabelGroup, 0, len(label.Groups)+len(label.Ingredients))
 
 	// Track which ingredients are in explicit groups
@@ -342,7 +343,7 @@ func convertFDAGroups(label Label, builder *scenarioIngredients) []LabelGroup {
 	return groups
 }
 
-func ingredientNames(ingredients []LabelIngredient) []string {
+func ingredientNames(ingredients []fdaparser.LabelIngredient) []string {
 	names := make([]string, len(ingredients))
 	for i, ing := range ingredients {
 		names[i] = ing.ID

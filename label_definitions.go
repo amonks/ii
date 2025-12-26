@@ -1,6 +1,10 @@
 package creamery
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/amonks/creamery/fdaparser"
+)
 
 const (
 	LabelBenAndJerryVanilla = "ben"
@@ -15,20 +19,20 @@ const labelDataDir = "labels"
 
 var (
 	labelDefsOnce sync.Once
-	fdaLabels     map[string]Label
+	fdaLabels     map[string]fdaparser.Label
 )
 
 // FDALabelByKey returns the parsed FDA label for the given key.
-func FDALabelByKey(key string) (Label, bool) {
+func FDALabelByKey(key string) (fdaparser.Label, bool) {
 	labelDefsOnce.Do(loadLabelDefinitions)
 	label, ok := fdaLabels[key]
 	return label, ok
 }
 
 // AllFDALabels returns all parsed FDA labels.
-func AllFDALabels() map[string]Label {
+func AllFDALabels() map[string]fdaparser.Label {
 	labelDefsOnce.Do(loadLabelDefinitions)
-	result := make(map[string]Label, len(fdaLabels))
+	result := make(map[string]fdaparser.Label, len(fdaLabels))
 	for k, v := range fdaLabels {
 		result[k] = v
 	}
@@ -41,7 +45,7 @@ func loadLabelDefinitions() {
 		fdaLabels = labels
 		return
 	}
-	fdaLabels = make(map[string]Label)
+	fdaLabels = make(map[string]fdaparser.Label)
 }
 
 func nutritionLabelFromFacts(facts NutritionFacts) NutritionLabel {

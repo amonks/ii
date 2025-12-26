@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"github.com/amonks/creamery/fdaparser"
 )
 
 // UnifiedServer renders labels, recipes, and batch-log analytics from one host.
@@ -316,7 +317,7 @@ func labelFactRows(facts NutritionFacts) []statRow {
 }
 
 // Helper functions for FDA Label type
-func labelFactsFromFDA(facts LabelFacts) NutritionFacts {
+func labelFactsFromFDA(facts fdaparser.LabelFacts) NutritionFacts {
 	return NutritionFacts{
 		ServingSizeGrams:  facts.ServingSizeGrams,
 		Calories:          facts.Calories,
@@ -332,7 +333,7 @@ func labelFactsFromFDA(facts LabelFacts) NutritionFacts {
 	}
 }
 
-func ingredientNamesFromLabel(label Label) []string {
+func ingredientNamesFromLabel(label fdaparser.Label) []string {
 	if len(label.Ingredients) == 0 {
 		return nil
 	}
@@ -343,7 +344,7 @@ func ingredientNamesFromLabel(label Label) []string {
 	return names
 }
 
-func presenceNamesFromLabel(label Label, fractions map[IngredientID]float64) []string {
+func presenceNamesFromLabel(label fdaparser.Label, fractions map[IngredientID]float64) []string {
 	if len(label.Ingredients) == 0 {
 		return nil
 	}
@@ -364,7 +365,7 @@ func presenceNamesFromLabel(label Label, fractions map[IngredientID]float64) []s
 	return result
 }
 
-func labelGroupsFromFDA(groups []FDAGroup, fractions map[IngredientID]float64) []labelGroupView {
+func labelGroupsFromFDA(groups []fdaparser.FDAGroup, fractions map[IngredientID]float64) []labelGroupView {
 	result := make([]labelGroupView, 0, len(groups))
 	for _, group := range groups {
 		if len(group.Members) == 0 {

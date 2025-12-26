@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/amonks/creamery"
+	"github.com/amonks/creamery/fdaparser"
 )
 
 func main() {
@@ -117,7 +118,7 @@ Commands:
   serve [--addr --log --recipes]  Start the unified web console`)
 }
 
-func printLabelSummary(label creamery.Label) {
+func printLabelSummary(label fdaparser.Label) {
 	if label.Name == "" {
 		fmt.Println("Label definition unavailable.")
 		return

@@ -3,6 +3,8 @@ package creamery
 import (
 	"os"
 	"testing"
+
+	"github.com/amonks/creamery/fdaparser"
 )
 
 func TestParseLabel_WithSimpleIngredients(t *testing.T) {
@@ -112,7 +114,7 @@ func TestParseLabel_WithComponentOverrides(t *testing.T) {
 	}
 
 	// Find natural_flavor ingredient
-	var naturalFlavor *LabelIngredient
+	var naturalFlavor *fdaparser.LabelIngredient
 	for i, ing := range label.Ingredients {
 		if ing.ID == "natural_flavor" {
 			naturalFlavor = &label.Ingredients[i]
