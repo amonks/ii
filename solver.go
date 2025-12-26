@@ -169,7 +169,7 @@ func targetIntervalForKey(target FormulationTarget, key componentKey) Interval {
 	}
 }
 
-func applyComponentValue(f *ComponentFractions, key componentKey, value float64) {
+func applyComponentValue(f *CompositionRange, key componentKey, value float64) {
 	if f == nil {
 		return
 	}
@@ -565,8 +565,8 @@ func (s *Solver) weightsToSolution(weights []float64, ids []IngredientID, names 
 	return sol
 }
 
-func sumComponents(weights []float64, slots []ingredientSlot) ConstituentComponents {
-	var agg ConstituentComponents
+func sumComponents(weights []float64, slots []ingredientSlot) CompositionRange {
+	var agg CompositionRange
 	for i, w := range weights {
 		if w <= 0 {
 			continue

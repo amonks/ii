@@ -6,7 +6,7 @@ func TestNewIngredientNormalizes(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:   "",
 		Name: " Heavy Cream ",
-		Components: ConstituentComponents{
+		Components: CompositionRange{
 			Fat:     Point(0.3),
 			MSNF:    Point(0.08),
 			Water:   Point(0.5),
@@ -32,7 +32,7 @@ func TestLotEffectiveProfileOverride(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:   IngredientID("cream"),
 		Name: "Cream",
-		Components: ConstituentComponents{
+		Components: CompositionRange{
 			Fat:     Point(0.3),
 			MSNF:    Point(0.08),
 			Water:   Point(0.5),
@@ -58,7 +58,7 @@ func TestLotDisplayNameFallback(t *testing.T) {
 	profile := ConstituentProfile{
 		ID:         IngredientID("test"),
 		Name:       "",
-		Components: ConstituentComponents{},
+		Components: CompositionRange{},
 	}
 	def := NewIngredient(profile, "")
 	lot := Lot{Definition: &def}

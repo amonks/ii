@@ -163,7 +163,7 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 	addedSugarFrac = widenInterval(addedSugarFrac, labelPercentEPS)
 	totalSugarFrac = widenInterval(totalSugarFrac, labelPercentEPS)
 
-	fractions := ComponentFractions{
+	fractions := CompositionRange{
 		Fat:         fatFrac,
 		MSNF:        msnfFrac,
 		Protein:     proteinFrac,
@@ -188,7 +188,7 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 
 // CaloriesFromFractions estimates calories from detailed component fractions.
 // Fat: 9 cal/g, Protein: 4 cal/g, Carbs: 4 cal/g
-func CaloriesFromFractions(c ComponentFractions, servingGrams float64) Interval {
+func CaloriesFromFractions(c CompositionRange, servingGrams float64) Interval {
 	// Fat contributes 9 cal/g
 	fatCal := c.Fat.Scale(servingGrams * 9)
 

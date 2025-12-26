@@ -42,7 +42,7 @@ func (c ConstituentSet) TotalSolids() float64 {
 const solidsTolerance = 1e-2
 
 // Validate ensures all constituent intervals fall within physical ranges.
-func (c ConstituentComponents) Validate() error {
+func (c CompositionRange) Validate() error {
 	checks := []struct {
 		name string
 		iv   Interval

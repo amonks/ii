@@ -5,7 +5,7 @@ import "testing"
 func TestBestSamplePrefersHighestViscosityScore(t *testing.T) {
 	gel := makeHydrocolloidSpec("Hydro Base", 0.12, true)
 	diluent := makeHydrocolloidSpec("Diluent", 0.02, false)
-	targetFractions := EnsureWater(ComponentFractions{
+	targetFractions := EnsureWater(CompositionRange{
 		Water:       Range(0.85, 0.99),
 		OtherSolids: Range(0.01, 0.15),
 	})
@@ -60,7 +60,7 @@ func TestBestSamplePrefersHighestViscosityScore(t *testing.T) {
 }
 
 func makeHydrocolloidSpec(name string, otherSolids float64, hydro bool) Ingredient {
-	fractions := EnsureWater(ComponentFractions{
+	fractions := EnsureWater(CompositionRange{
 		Water:       Point(1 - otherSolids),
 		OtherSolids: Point(otherSolids),
 	})

@@ -19,7 +19,7 @@ func assertIntervalContains(t *testing.T, interval creamery.Interval, value floa
 	}
 }
 
-func assertFractionsWithinTarget(t *testing.T, target creamery.ComponentFractions, achieved creamery.ComponentFractions, context string) {
+func assertFractionsWithinTarget(t *testing.T, target creamery.CompositionRange, achieved creamery.CompositionRange, context string) {
 	t.Helper()
 	check := func(name string, interval creamery.Interval, got float64) {
 		assertIntervalContains(t, interval, got, fmt.Sprintf("%s %s", context, name))
@@ -40,9 +40,9 @@ func assertSweetenersMatchTarget(t *testing.T, target creamery.FormulationTarget
 	}
 }
 
-func newSpec(t *testing.T, name string, build func(*creamery.ComponentFractions)) creamery.Ingredient {
+func newSpec(t *testing.T, name string, build func(*creamery.CompositionRange)) creamery.Ingredient {
 	t.Helper()
-	comps := creamery.ComponentFractions{}
+	comps := creamery.CompositionRange{}
 	if build != nil {
 		build(&comps)
 	}

@@ -302,7 +302,7 @@ func Notebook() error {
 	return nil
 }
 
-func ensureFractionsWithinTarget(target ComponentFractions, achieved ComponentFractions, context string) error {
+func ensureFractionsWithinTarget(target CompositionRange, achieved CompositionRange, context string) error {
 	check := func(name string, interval Interval, got float64) error {
 		return ensureIntervalContains(interval, got, fmt.Sprintf("%s %s", context, name))
 	}

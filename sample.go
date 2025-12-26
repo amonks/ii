@@ -172,7 +172,7 @@ func (s *Solver) weightsToSolutionWithCoeffs(weights []float64, ids []Ingredient
 	components := sumComponents(weights, s.Problem.slots)
 	sol.Components = components
 
-	achieved := ComponentFractions{}
+	achieved := CompositionRange{}
 	for key, pair := range lpp.componentValues {
 		value := 0.0
 		for i, w := range weights {

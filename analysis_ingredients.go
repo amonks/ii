@@ -389,20 +389,20 @@ func ingredientBatchTable() map[string]ingredientBatch {
 	additional := []struct {
 		key       string
 		display   string
-		fractions ComponentFractions
+		fractions CompositionRange
 		configure func(*ingredientBatch)
 	}{
 		{
 			key:     "liquid_sugar",
 			display: "Liquid Sugar",
-			fractions: ComponentFractions{
+			fractions: CompositionRange{
 				Sucrose: Point(0.67),
 			},
 		},
 		{
 			key:     "stabilizer",
 			display: "Stabilizer",
-			fractions: ComponentFractions{
+			fractions: CompositionRange{
 				OtherSolids: Point(1.0),
 			},
 			configure: func(b *ingredientBatch) {
@@ -412,7 +412,7 @@ func ingredientBatchTable() map[string]ingredientBatch {
 		{
 			key:     "avacream",
 			display: "Avacream",
-			fractions: ComponentFractions{
+			fractions: CompositionRange{
 				Water:       Point(0.02),
 				Fat:         Point(0.08),
 				OtherSolids: Point(0.90),
@@ -426,7 +426,7 @@ func ingredientBatchTable() map[string]ingredientBatch {
 		{
 			key:     "sweetened_condensed_milk",
 			display: "Sweetened Condensed Milk",
-			fractions: ComponentFractions{
+			fractions: CompositionRange{
 				Fat:     Point(0.085),
 				MSNF:    Point(0.20),
 				Sucrose: Point(0.445),
@@ -604,7 +604,7 @@ func ingredientBatchTable() map[string]ingredientBatch {
 	return table
 }
 
-func batchFromFractions(key, display string, fractions ComponentFractions) ingredientBatch {
+func batchFromFractions(key, display string, fractions CompositionRange) ingredientBatch {
 	comps := EnsureWater(fractions)
 	return ingredientBatch{
 		ID:              NewIngredientID(display),

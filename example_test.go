@@ -11,7 +11,7 @@ import (
 func TestWorkflow2_FormulationToRecipe(t *testing.T) {
 	// Target: a classic vanilla ice cream
 	// ~16% fat, ~10% MSNF, ~14% sugar, ~0.3% stabilizer
-	target := creamery.FormulationFromFractions(creamery.ComponentFractions{
+	target := creamery.FormulationFromFractions(creamery.CompositionRange{
 		Fat:         creamery.Range(0.15, 0.17),
 		MSNF:        creamery.Range(0.09, 0.11),
 		Sucrose:     creamery.Range(0.13, 0.15),
@@ -161,7 +161,7 @@ func TestWorkflow1_LabelToFormulation(t *testing.T) {
 
 // TestWithTighterConstraints shows iterative refinement.
 func TestWithTighterConstraints(t *testing.T) {
-	target := creamery.FormulationFromFractions(creamery.ComponentFractions{
+	target := creamery.FormulationFromFractions(creamery.CompositionRange{
 		Fat:         creamery.Range(0.15, 0.17),
 		MSNF:        creamery.Range(0.09, 0.11),
 		Sucrose:     creamery.Range(0.13, 0.15),

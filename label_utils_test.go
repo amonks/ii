@@ -12,7 +12,7 @@ func TestRecipeFromSolutionUsesIngredientIDs(t *testing.T) {
 		Profile: ConstituentProfile{
 			ID:   IngredientID("sucrose"),
 			Name: "Fancy Sugar",
-			Components: ConstituentComponents{
+			Components: CompositionRange{
 				Sucrose:      Point(1.0),
 				Water:        Point(0),
 				Fat:          Point(0),
@@ -70,7 +70,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 		Profile: ConstituentProfile{
 			ID:   IngredientID("sucrose"),
 			Name: "Sucrose",
-			Components: ConstituentComponents{
+			Components: CompositionRange{
 				Sucrose: Point(1.0),
 			},
 		},
@@ -81,7 +81,7 @@ func TestRecipeFromSolutionPreservesFractions(t *testing.T) {
 		Profile: ConstituentProfile{
 			ID:   IngredientID("cream"),
 			Name: "Cream",
-			Components: ConstituentComponents{
+			Components: CompositionRange{
 				Fat:   Point(0.36),
 				Water: Point(0.64),
 			},

@@ -6,14 +6,14 @@ import "fmt"
 // or other specification sources. All constraints are expressed as fractions
 // (0-1) of total mix mass.
 type FormulationTarget struct {
-	Components ComponentFractions
+	Components CompositionRange
 	POD        Interval
 	PAC        Interval
 }
 
 // FormulationFromFractions builds a target using the provided component
 // fractions, deriving the water interval when omitted.
-func FormulationFromFractions(f ComponentFractions) FormulationTarget {
+func FormulationFromFractions(f CompositionRange) FormulationTarget {
 	withMSNF := populateMSNFComponents(f)
 	return FormulationTarget{Components: EnsureWater(withMSNF)}
 }

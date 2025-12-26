@@ -6,11 +6,11 @@ import (
 )
 
 func TestBatchSnapshotTotals(t *testing.T) {
-	cream := makeSpecFromFractions("Test Cream", ComponentFractions{
+	cream := makeSpecFromFractions("Test Cream", CompositionRange{
 		Fat:  Point(0.36),
 		MSNF: Point(0.08),
 	})
-	sugar := makeSpecFromFractions("Test Sugar", ComponentFractions{
+	sugar := makeSpecFromFractions("Test Sugar", CompositionRange{
 		Sucrose: Point(1.0),
 	})
 
@@ -38,11 +38,11 @@ func TestBatchSnapshotTotals(t *testing.T) {
 
 func TestBatchSnapshotFormulationBreakdownMatchesRecipe(t *testing.T) {
 	components := []RecipeComponent{
-		{Ingredient: makeSpecFromFractions("Cream", ComponentFractions{
+		{Ingredient: makeSpecFromFractions("Cream", CompositionRange{
 			Fat:  Point(0.36),
 			MSNF: Point(0.08),
 		}).DefaultLot(), MassKg: 60},
-		{Ingredient: makeSpecFromFractions("Sugar", ComponentFractions{
+		{Ingredient: makeSpecFromFractions("Sugar", CompositionRange{
 			Sucrose: Point(1),
 		}).DefaultLot(), MassKg: 40},
 	}
@@ -74,11 +74,11 @@ func TestBatchSnapshotFormulationBreakdownMatchesRecipe(t *testing.T) {
 
 func TestBatchSnapshotNutritionFactsSummaryMatchesRecipe(t *testing.T) {
 	components := []RecipeComponent{
-		{Ingredient: makeSpecFromFractions("Cream", ComponentFractions{
+		{Ingredient: makeSpecFromFractions("Cream", CompositionRange{
 			Fat:  Point(0.36),
 			MSNF: Point(0.08),
 		}).DefaultLot(), MassKg: 60},
-		{Ingredient: makeSpecFromFractions("Sugar", ComponentFractions{
+		{Ingredient: makeSpecFromFractions("Sugar", CompositionRange{
 			Sucrose: Point(1),
 		}).DefaultLot(), MassKg: 40},
 	}

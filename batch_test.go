@@ -3,8 +3,8 @@ package creamery
 import "testing"
 
 func TestBatchComponentsAndFractions(t *testing.T) {
-	cream := makeSpecFromFractions("cream", ComponentFractions{Fat: Point(0.36)})
-	milk := makeSpecFromFractions("milk", ComponentFractions{Fat: Point(0.03)})
+	cream := makeSpecFromFractions("cream", CompositionRange{Fat: Point(0.36)})
+	milk := makeSpecFromFractions("milk", CompositionRange{Fat: Point(0.03)})
 
 	blend := Blend{Components: []Portion{
 		{Lot: cream.DefaultLot(), Fraction: 0.4},

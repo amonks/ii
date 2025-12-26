@@ -2,8 +2,8 @@ package creamery
 
 import "testing"
 
-func TestConstituentComponentsValidateRejectsOverfull(t *testing.T) {
-	comps := ConstituentComponents{
+func TestCompositionRangeValidateRejectsOverfull(t *testing.T) {
+	comps := CompositionRange{
 		Water:   Point(0.1),
 		Fat:     Point(0.6),
 		Sucrose: Point(0.4),
@@ -13,8 +13,8 @@ func TestConstituentComponentsValidateRejectsOverfull(t *testing.T) {
 	}
 }
 
-func TestConstituentComponentsValidateAllowsFeasibleMix(t *testing.T) {
-	comps := ConstituentComponents{
+func TestCompositionRangeValidateAllowsFeasibleMix(t *testing.T) {
+	comps := CompositionRange{
 		Water:   Point(0.6),
 		Fat:     Point(0.3),
 		Protein: Point(0.04),

@@ -323,8 +323,8 @@ type Solution struct {
 	Weights    map[IngredientID]float64
 	Names      map[IngredientID]string
 	Lots       map[IngredientID]Lot
-	Achieved   ComponentFractions
-	Components ConstituentComponents
+	Achieved   CompositionRange
+	Components CompositionRange
 }
 
 // String returns a human-readable representation.

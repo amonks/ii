@@ -44,7 +44,7 @@ var (
 
 func buildNonfatMilkVariable() Ingredient {
 	name := "Nonfat Milk"
-	components := ComponentFractions{
+	components := CompositionRange{
 		Fat:         Range(0, 0.005),
 		MSNF:        Range(0.09, 0.97),
 		Sucrose:     Point(0),

@@ -182,7 +182,7 @@ func (b BatchSnapshot) FormulationBreakdown() (Formulation, error) {
 		"maltodextrin": b.MaltodextrinMassKg * invBatch,
 	}
 
-	components := ConstituentComponents{
+	components := CompositionRange{
 		Water:        Point(b.WaterPct),
 		Fat:          Point(b.FatPct),
 		Protein:      Point(b.ProteinMassKg * invBatch),

@@ -2,13 +2,8 @@ package creamery
 
 import "fmt"
 
-// ComponentFractions is the canonical percentage-based representation for
-// ingredients, targets, and solutions. It aliases ConstituentComponents for
-// clarity.
-type ComponentFractions = ConstituentComponents
-
 // TotalSolidsInterval returns the sum of all non-water component intervals.
-func TotalSolidsInterval(f ComponentFractions) Interval {
+func TotalSolidsInterval(f CompositionRange) Interval {
 	total := Interval{}
 	total = total.Add(f.Fat)
 	total = total.Add(f.EffectiveMSNF())
@@ -19,7 +14,7 @@ func TotalSolidsInterval(f ComponentFractions) Interval {
 
 // DerivedWaterInterval computes the implied water interval assuming the listed
 // components sum to at most 100% of the mix.
-func DerivedWaterInterval(f ComponentFractions) Interval {
+func DerivedWaterInterval(f CompositionRange) Interval {
 	solids := TotalSolidsInterval(f)
 	lo := clamp01(1 - solids.Hi)
 	hi := clamp01(1 - solids.Lo)
@@ -41,7 +36,7 @@ func clamp01(v float64) float64 {
 
 // EnsureWater populates the water interval if it is unset by deriving the
 // remainder fraction.
-func EnsureWater(f ComponentFractions) ComponentFractions {
+func EnsureWater(f CompositionRange) CompositionRange {
 	copy := f
 	if copy.Water.Lo == 0 && copy.Water.Hi == 0 {
 		copy.Water = DerivedWaterInterval(copy)
@@ -53,7 +48,7 @@ func intervalSpecified(iv Interval) bool {
 	return iv.Lo != 0 || iv.Hi != 0
 }
 
-func populateMSNFComponents(f ComponentFractions) ComponentFractions {
+func populateMSNFComponents(f CompositionRange) CompositionRange {
 	copy := f
 	if intervalSpecified(copy.MSNF) {
 		if !intervalSpecified(copy.Protein) {
@@ -71,7 +66,7 @@ func populateMSNFComponents(f ComponentFractions) ComponentFractions {
 
 // ComponentSummary renders a lightweight human-readable description of key
 // fractions for logging/debugging.
-func ComponentSummary(f ComponentFractions) string {
+func ComponentSummary(f CompositionRange) string {
 	return fmt.Sprintf(
 		"fat=%s protein=%s lactose=%s added=%s water=%s",
 		f.Fat.String(),

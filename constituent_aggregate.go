@@ -2,7 +2,7 @@ package creamery
 
 // accumulateProfile applies a mass weight to a constituent profile and adds
 // the contribution into the running component totals.
-func accumulateProfile(total *ConstituentComponents, profile ConstituentProfile, weight float64) {
+func accumulateProfile(total *CompositionRange, profile ConstituentProfile, weight float64) {
 	if total == nil || weight <= 0 {
 		return
 	}

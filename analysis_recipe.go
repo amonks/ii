@@ -36,7 +36,7 @@ type Formulation struct {
 	StabilizerPct float64
 	EmulsifierPct float64
 	ProteinPct    float64
-	Components    ConstituentComponents
+	Components    CompositionRange
 }
 
 // ProductionSettings captures process conditions and derived metrics.

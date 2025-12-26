@@ -70,10 +70,6 @@ type CompositionRange struct {
 	OtherSolids  Interval
 }
 
-// ConstituentComponents is retained as an alias for CompositionRange while the
-// rest of the codebase migrates to the new name.
-type ConstituentComponents = CompositionRange
-
 // CompositionPoint captures a single realized composition, typically after all
 // solver weights have been applied to a blend.
 type CompositionPoint struct {
