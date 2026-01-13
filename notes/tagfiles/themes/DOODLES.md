@@ -19,4 +19,12 @@
 > When the agents revisit Crystal KILLIAN's singlewide at MEYERS POINT TRAILER PARK, they spot the black-head-with-red-brain DOODLES motif painted over her doorframe, matching the earlier pamphlet art.
 
 ## Session 9 – Traphouse Walls
-> The walls are covered in graffiti and paintings (DOODLES): - two alligators above a car - bullhorns and the sun - the moon one - a campfire... - three stick figures laying down with red splotches in their head... - notably: not the airplane one.
+
+> The walls are covered in graffiti and paintings (DOODLES):
+
+- two alligators above a car
+- bullhorns and the sun
+- the moon one
+- a campfire...
+- three stick figures laying down with red splotches in their head...
+- notably: not the airplane one.
