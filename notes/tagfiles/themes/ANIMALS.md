@@ -131,3 +131,13 @@ From Session 4:
 
 ## Session 9 – QUIET CHILDREN Rat Control
 > MAURICIO: ANIMALS! yes. The thing with the rats. The rats would run in circles, patterns, around the QUIET CHILDREN. You're gonna say I'm crazy, but I went out back one time and I saw Tommy (THOMAS PEREZ CUNNINGHAM). The alley was carpeted with rats, and every step he took, they just parted before him. Like Moses and the red sea.
+
+## Session 10 – The Swamp and the PUDDING
+
+> The tree is lightning'd and dead. Says "k+j" in a heart. Has a sparrow nest (ANIMALS).
+>
+> Trail of smoke 300 yards away. We put on our waders and make our way over. Eyes out for gators (ANIMALS).
+
+_When SHELF dips a bird into the PUDDING pit:_
+
+> Walking the perimeter, we see no entrances that would correspond to the tunnels. SHELF catches a bird (ANIMALS) and dangles it into the PUDDING, pulling it back out. The parts that dipped are now human fingers and the other parts are covered in tumors.

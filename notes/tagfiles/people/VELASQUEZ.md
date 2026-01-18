@@ -159,6 +159,12 @@ Evidence transport:
 > 
 > VELASQUEZ: that's why i love you babe
 
+### Session 10 – The Breakup
+
+> We wake up in LITTLE HAVANA, cold sweats. VELASQUEZ is off, presumably getting coffee, and hasn't spoken a word to LOTTIE.
+
+_In a long aside at the steakhouse, LOTTIE breaks up with VELASQUEZ._
+
 ## Events and Notes
 
 ### 2001 Investigation

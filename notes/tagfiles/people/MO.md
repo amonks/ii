@@ -149,3 +149,24 @@ With neighbor CINDY:
 ### Session 5 - CUNNINGHAM FARM
 > - MO checks mailbox; full of mail; bills etc, going back two weeks
 > - MO checks bodies medically
+
+### Session 10 – The Dogpound and the Pit
+
+_At the casino:_
+
+> MO: "You know anything about those alligators out there? Do people like those?"
+> 
+> MO: "Let me take a look."
+> MO: _scrolls past some bookmarks_ "You like those ladyboys, sir?"
+> 
+> _MO finds the footage, in which some kids go into the bathroom. One is the latino lookin fella who killed his family, THOMAS PEREZ CUNNINGHAM. They keep going up I-75 in our direction of travel._
+
+_After capturing THOMAS PEREZ CUNNINGHAM:_
+
+> _MO gags THOMAS PEREZ CUNNINGHAM._
+
+_Testing the ritual bowls:_
+
+> MO puts ELLE GABLE's blood and also poodle blood in a bowl. No effect. MO cuts his finger and bloods the bowl, which lights up for a sec.
+> 
+> SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid.

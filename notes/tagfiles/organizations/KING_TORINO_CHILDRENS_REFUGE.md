@@ -1,6 +1,6 @@
 # KING TORINO CHILDRENS REFUGE
 
-in CHARLOTTE NC, multiple QUIET CHILDREN ended up there
+in Charlotte, NC, multiple QUIET CHILDREN ended up there
 
 ## Childhood Records (Session 4)
 

@@ -23,3 +23,17 @@ One of the three perpetrators who murdered HOUGHTON in 2016. Rail-thin, white, f
 
 ## Session 9 – Basement Whispers
 > "Elle (ELLE GABLE) and sammy think you feed god. thinks you ate up. Tommy thinks you ate up and eat. same time like us like bite the tongue" (SAMUEL BALL)
+
+## Session 10 – Casino Footage and Capture
+
+_MO finds casino footage at the Dogpound showing THOMAS PEREZ CUNNINGHAM among a group of 6 kids heading up I-75._
+
+> _MO finds the footage, in which some kids go into the bathroom. One is the latino lookin fella who killed his family, THOMAS PEREZ CUNNINGHAM. They keep going up I-75 in our direction of travel._
+
+_Later, the team finds Tommy's car abandoned by a gnarly tree and tracks him to a clearing:_
+
+> Splitting up, we approach a clearing from two directions. In the clearing is THOMAS PEREZ CUNNINGHAM in front of fire. Behind the clearing is a house that we also saw in 2001 in the woods -- the same house!
+>
+> Very coordinated, LOTTIE captures THOMAS PEREZ CUNNINGHAM and SHELF puts out the fire with a wet (swamp-soaked) jacket. THOMAS PEREZ CUNNINGHAM goes down and smiles at us. LOTTIE cuffs him. He makes weird mouth movements, and then opens and closes his hand. LOTTIE clicks her clicker, to no effect. Cuffs his legs.
+>
+> _MO gags THOMAS PEREZ CUNNINGHAM._

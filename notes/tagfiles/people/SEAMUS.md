@@ -166,3 +166,17 @@ To PIZZA:
 > - in the car on the way to CUNNINGHAM FARM
 > - SEAMUS speculates that THOMAS PEREZ CUNNINGHAM might be dead; maybe corresponds with the black-hole-faced mom doodle (DOODLES)
 > - SEAMUS does a lap around the house
+
+### Session 10 – The Pit and the Children
+
+_Investigating the PUDDING pit:_
+
+> SEAMUS finds a long stick outside and dunks it in; it turns into flesh but reveals that the PUDDING is 6ft deep (below 30ft of pit).
+
+_SEAMUS sees a disturbing vision:_
+
+> The pit is full of sludge. It's like the entrance to a cave -- much wider down below than at this entrance. Where we are, if we dropped down, we'd be in PUDDING. There's a shore around the outside. Moving piles of small writhing childrens' bodies on one shore. They're emerging out of the sludge, merging back into it. SEAMUS sees his daughter in the pile.
+
+_In the tunnels:_
+
+> We walk down the west tunnel (there are two, east and west). 4 five-year-old children, whose torsos are part of the walls, are kind of flopping out of the walls. The children are us. Sanity check.

@@ -124,3 +124,30 @@ To KIM Seon-hu:
 > SHELF glares at him. He looks nervous.
 > 
 > SHELF: I was gonna show you some proof, but maybe you believe me now?
+
+### Session 10 – Florida Pursuit and the Pit
+
+> SHELF: "Alright let's check out this casino."
+
+_At the Dogpound:_
+
+> SHELF: "Did they all go in the same bathroom or divide along gender lines?"
+> Slots Guy: "They followed the normal societal protocol on that, not that it's any of my business."
+> 
+> SHELF: "Here's my card. If those kids come back gimme a call."
+
+_Pursuing THOMAS PEREZ CUNNINGHAM:_
+
+> We park next to the car, whose doors are all wide open. SHELF fetches his long gun from the trunk before checking it out.
+> 
+> Very coordinated, LOTTIE captures THOMAS PEREZ CUNNINGHAM and SHELF puts out the fire with a wet (swamp-soaked) jacket.
+
+_Testing the PUDDING:_
+
+> SHELF catches a bird (ANIMALS) and dangles it into the PUDDING, pulling it back out. The parts that dipped are now human fingers and the other parts are covered in tumors.
+
+_SHELF's extreme sacrifice to open the ritual door:_
+
+> SHELF listens at the door, hears nothing.
+> 
+> SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid. The bowl lights up real good, then fades back out. The children wail. SHELF notices that the bowls are the same size as the childrens' faces. SHELF shoots his child and drips blood into the bowl. Not enough. Decapitates and puts the head in the bowl. Sustained glow!

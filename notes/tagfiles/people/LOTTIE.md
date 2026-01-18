@@ -292,3 +292,24 @@ At HOUGHTON's apartment:
 > - SHELF: "wasn't that your cover phone?"
 > - LOTTIE: "yes, I gave him the number"
 > - SHELF: "I don't like that"
+
+### Session 10 – The Dogpound and the Capture
+
+> LOTTIE: "Who's the weirdest person you've seen recently?"
+> 
+> LOTTIE: "Is your manager around? I'd like to speak to your manager."
+> Teenager: "You _do_ look like you wanna speak to the manager."
+> 
+> LOTTIE: _sidles up to slots guy_ "Aloha, big boy. You here often?"
+
+_LOTTIE breaks up with VELASQUEZ at the steakhouse._
+
+_At the gnarly tree clearing:_
+
+> Very coordinated, LOTTIE captures THOMAS PEREZ CUNNINGHAM and SHELF puts out the fire with a wet (swamp-soaked) jacket. THOMAS PEREZ CUNNINGHAM goes down and smiles at us. LOTTIE cuffs him. He makes weird mouth movements, and then opens and closes his hand. LOTTIE clicks her clicker, to no effect. Cuffs his legs.
+> 
+> LOTTIE: "That hand gesture, maybe he was summoning an alligator? Or a critter to bite us? MO, you're the only one of us that's unbitten."
+
+_In the tunnels beneath the pit:_
+
+> LOTTIE inspects a bowl. It's soup sized. LOTTIE puts her rabbit tooth in a bowl.

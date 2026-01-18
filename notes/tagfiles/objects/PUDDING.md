@@ -43,3 +43,21 @@ From Session 4:
 
 ## Session 7 – CDC Cover Story
 > MO: Anyway, with this goo, we've been calling it PUDDING. CDC checked it out. It's just roofing tar.
+
+## Session 10 – The Pit in Florida
+
+_The team discovers a massive pit full of PUDDING in the Florida house (the same cottage from 2001):_
+
+> The house is empty of people, not all gross like last time, but there's a huge pit in the kitchen floor.
+>
+> The pit is full of sludge. It's like the entrance to a cave -- much wider down below than at this entrance. Where we are, if we dropped down, we'd be in PUDDING. There's a shore around the outside. Moving piles of small writhing childrens' bodies on one shore. They're emerging out of the sludge, merging back into it. SEAMUS sees his daughter in the pile.
+
+_Testing the PUDDING's properties:_
+
+> SHELF catches a bird (ANIMALS) and dangles it into the PUDDING, pulling it back out. The parts that dipped are now human fingers and the other parts are covered in tumors. SEAMUS finds a long stick outside and dunks it in; it turns into flesh but reveals that the PUDDING is 6ft deep (below 30ft of pit).
+
+_The team descends into the tunnels below the PUDDING, finding child-shaped figures in the walls and a ritual door with bowls:_
+
+> We walk down the west tunnel (there are two, east and west). 4 five-year-old children, whose torsos are part of the walls, are kind of flopping out of the walls. The children are us. Sanity check.
+>
+> There's a huge steel door with a bar on our side. There's a huge stone table with four empty bowls.

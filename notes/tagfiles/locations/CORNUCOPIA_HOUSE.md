@@ -262,3 +262,25 @@
 - Surveying implements
 - Vibe is scorched; people openly weeping; dead stares; cigarettes
 - WAREHOUSE surrounded by plastic bubble tent
+
+## Session 10 – The House Reappears in Florida
+
+_The cottage/house from 2001 has somehow reappeared in the Florida swamps:_
+
+> Splitting up, we approach a clearing from two directions. In the clearing is THOMAS PEREZ CUNNINGHAM in front of fire. Behind the clearing is a house that we also saw in 2001 in the woods -- the same house!
+
+_Inside the house:_
+
+> The house is empty of people, not all gross like last time, but there's a huge pit in the kitchen floor.
+>
+> The pit is full of sludge. It's like the entrance to a cave -- much wider down below than at this entrance. Where we are, if we dropped down, we'd be in PUDDING. There's a shore around the outside. Moving piles of small writhing childrens' bodies on one shore. They're emerging out of the sludge, merging back into it. SEAMUS sees his daughter in the pile.
+
+_Beneath the pit, the team discovers tunnels with wall-children and a ritual door:_
+
+> We walk down the west tunnel (there are two, east and west). 4 five-year-old children, whose torsos are part of the walls, are kind of flopping out of the walls. The children are us. Sanity check.
+>
+> There's a huge steel door with a bar on our side. There's a huge stone table with four empty bowls.
+
+_SHELF's sacrifice to open the door:_
+
+> SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid. The bowl lights up real good, then fades back out. The children wail. SHELF notices that the bowls are the same size as the childrens' faces. SHELF shoots his child and drips blood into the bowl. Not enough. Decapitates and puts the head in the bowl. Sustained glow!

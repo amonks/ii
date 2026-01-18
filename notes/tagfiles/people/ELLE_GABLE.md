@@ -87,5 +87,10 @@ No direct dialog recorded.
 
 ### Session 9 – Basement Whispers
 > "Elle (ELLE GABLE) and sammy think you feed god. thinks you ate up. Tommy thinks you ate up and eat. same time like us like bite the tongue" (SAMUEL BALL)
+
+### Session 10 – Blood Used in Ritual
+
+> MO puts ELLE GABLE's blood and also poodle blood in a bowl. No effect.
+
 ## Notes
 - Age 4 in 2001 when the CORNUCOPIA HOUSE operation occurred

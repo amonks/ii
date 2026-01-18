@@ -86,3 +86,9 @@ From Session 4:
 
 ## Session 9 – Quiet House Entrance
 > _nobody outside. we knock, nobody answers. windows all boarded up. we smell some rotting meat (ROTTING FLESH)._
+
+## Session 10 – Capturing THOMAS PEREZ CUNNINGHAM
+
+> LOTTIE: "That hand gesture, maybe he was summoning an alligator? Or a critter to bite us? MO, you're the only one of us that's unbitten."
+>
+> _SEAMUS and LOTTIE and SHELF feel aroused; they smell the kill, the sweet meat (ROTTING FLESH)._

@@ -28,3 +28,11 @@
 - a campfire...
 - three stick figures laying down with red splotches in their head...
 - notably: not the airplane one.
+
+## Session 10 – Following the Graffiti Trail
+
+> We get on I-75, looking for the alligator and bullhorn landmarks to investigate (DOODLES). SHELF is driving. It's Wednesday September 14, 2016.
+>
+> We reach the alligators... Two giant alligators, like titans of old, are fighting each-other, arched above the interstate. They're set into a concrete foundation.
+
+_The team follows the graffiti trail from the alligator statue to Tony's Juicy Steaks (the bullhorn/longhorn) and eventually to a gnarly tree, tracking THOMAS PEREZ CUNNINGHAM._
