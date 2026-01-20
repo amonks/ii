@@ -23,15 +23,16 @@ BODY: 32 = 22 + 10
 ALCOHOLISM: 1
 CUSTOM CONDITION: when i see a writhing childlike version of myself, i must do a fear save with disadvantage or gain 1d5 stress
 
-HEALTH: 9 / 12
-STRESS: 11 (min 2) / 20
+HEALTH: 7 / 7
+STRESS: 16 (min 2) / 20
 
-WOUNDS: 0 / 3
+WOUNDS: 2 / 3
+
+- right arm fractured
 
 SKILLS
 trained (+10) / expert (+15) / master (+20)
 
-- T: MILITARY TRAINING
 - T: ATHLETICS
 - T: FIREARMS
 - T: HAND-TO-HAND
