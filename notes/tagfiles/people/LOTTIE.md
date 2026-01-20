@@ -313,3 +313,52 @@ _At the gnarly tree clearing:_
 _In the tunnels beneath the pit:_
 
 > LOTTIE inspects a bowl. It's soup sized. LOTTIE puts her rabbit tooth in a bowl.
+
+### Session 11 – The Pit and PIZZA's Revelation
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+> SHELF: "Let's regroup: last time we left culty animal kids to live, it was bad. I propose we don't do that again."
+> LOTTIE: "Yeah, that sounds good. But let me try to talk to them first. I don't think it'll work."
+
+_LOTTIE tries to communicate with the kids, they don't reply. Try to command the dogs (ANIMALS), no success._
+
+_LOTTIE removes her tooth from the bowl and dangles it in front of a kid, who seems... understanding. Like, yeah, totally. She tosses it to the one with the most vigorous dog. The young boy takes up the tooth, looks at it, and offers it back to LOTTIE, who takes it back with a caressing hand._
+
+_LOTTIE opens the door at the other end of the hallway, revealing a huge alligator monster (ANIMALS)._
+
+_During the confrontation with VELASQUEZ:_
+
+> LOTTIE: "Those kids are demons, don't let them escape!"
+> LOTTIE: "VELASQUEZ! Stop shooting us! Capture the kids!"
+> LOTTIE: "Do you have cuffs to restrain those two children?"
+> LOTTIE: "I need your help down here."
+> LOTTIE: "Call PIZZA and ask for reinforcements."
+> VELASQUEZ: "I'm gonna go do that. I love you."
+> LOTTIE: "You too."
+
+_In the circular chamber with PIZZA:_
+
+> LOTTIE: "Who is she?"
+> PIZZA: "She has many names, SREDNI VASHTAR, Bast, she's everything. We did physics experiments. Particles that behave against the law of nature. She is entropy. The human race is just a farm for her to feast upon. You are her teeth." (MYTHOLOGY)
+> LOTTIE: "What do the kids have to do with it?"
+> PIZZA: "The kids bring you here. Your sense of morality and justice, they bring you here to be destroyed. Then they create the next round of teeth. You need to kill me and let these children go so they can keep the cycle going. This is an order. This is your job."
+> LOTTIE: "What if I kill you and don't release the children?"
+> PIZZA: "I did that. I'm not gonna be as crude as sexual torture and child pornography, but there's a substance of incredible pain going through their veins right now."
+> LOTTIE: "Were you part of the thing in 2001?"
+> PIZZA: "No, that's when we found out about it. The children turned you into teeth. When we put more agents on the case, they too were turned into teeth."
+
+_LOTTIE shoots PIZZA._
+
+_Later, when VELASQUEZ returns:_
+
+> VELASQUEZ: "What the fuck is going on here? Who shot PIZZA?"
+> LOTTIE: "I did!"
+> VELASQUEZ: "Why?"
+> LOTTIE: "He asked me to!"
+
+> LOTTIE: "He went to fight the alligator. I gotta go help him."
+
+**Fighting the Alligator Monster:**
+
+_They open the door to the monster, which, again, is racked with clawmarks. SEAMUS panics. LOTTIE shoots. VELASQUEZ shoots. Both miss. Gator (ANIMALS) mauls VELASQUEZ, eviscerating her. LOTTIE shoots again, missing again. Gator mauls SEAMUS, slicing off two of his fingers. LOTTIE and SEAMUS turn to run. LOTTIE and the gator both trip, but SEAMUS reaches the door. Looking back, he sees LOTTIE on the ground, and returns to help her. He does. The gator gashes his leg. Both escape, leaving the gator trapped below._

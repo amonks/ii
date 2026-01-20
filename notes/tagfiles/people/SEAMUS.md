@@ -180,3 +180,57 @@ _SEAMUS sees a disturbing vision:_
 _In the tunnels:_
 
 > We walk down the west tunnel (there are two, east and west). 4 five-year-old children, whose torsos are part of the walls, are kind of flopping out of the walls. The children are us. Sanity check.
+
+### Session 11 – The Pit, GRENADINE, and the Monster
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+> SEAMUS: "Any of y'all speak English?"
+
+_SEAMUS opens a cage, the child doesn't come out. No response._
+
+_After the chaos with VELASQUEZ:_
+
+> SEAMUS: "I'm tired of this. This fucking mission. Frankly, this group. These kids. All of it. I want to clear this and go home to my smokin-hot wife."
+
+_In the circular chamber, SEAMUS sees his daughter:_
+
+> SEAMUS: "PIZZA, what the fuck is going on?"
+> _SEAMUS pumps shotgun_
+> PIZZA: "Agents! Please take a seat. My command is for you to kill me. What you need to do for Delta Green is kill me and free these children."
+
+_SEAMUS notices that one of the children is GRENADINE._
+
+> PIZZA: "She's here because she always had to be here, SEAMUS. I worship you, you know that? You are her."
+
+_SEAMUS panics at the sight of GRENADINE._
+
+_SEAMUS shoots PIZZA._
+
+_SEAMUS goes straight for GRENADINE, removing the pain-drip syringe._
+
+_SEAMUS ascends the stairs carrying GRENADINE and calls VELASQUEZ:_
+
+> SEAMUS: "Come here now. Bring a big car. Bring explosives."
+
+> SEAMUS: "Stay with GRENADINE, MO. I'll be back soon."
+
+**Fighting the Alligator Monster:**
+
+_They open the door to the monster, which, again, is racked with clawmarks. SEAMUS panics. LOTTIE shoots. VELASQUEZ shoots. Both miss. Gator (ANIMALS) mauls VELASQUEZ, eviscerating her. LOTTIE shoots again, missing again. Gator mauls SEAMUS, slicing off two of his fingers. LOTTIE and SEAMUS turn to run. LOTTIE and the gator both trip, but SEAMUS reaches the door. Looking back, he sees LOTTIE on the ground, and returns to help her. He does. The gator gashes his leg. Both escape, leaving the gator trapped below._
+
+### Epilogue: GRENADINE's Fate
+
+_Several months later, SEAMUS's phone rings._
+
+> School: "Mr. McGillicutty? Hi, this is North Central High School. We're gonna need you to come in. It's about GRENADINE. We need to talk. The police are gonna be here, so you should get over here pretty quick. Your wife is on her way."
+
+_SEAMUS and GWEN arrive at the same time and enter the principal's office. GRENADINE has dried blood on her hands._
+
+> GRENADINE: "I can't hear her anymore."
+> Principal: "Mr. and Mrs. McGillicutty, I'm gonna make this clear. I've spoken to the other parent, and they will be pressing charges. Your daughter stabbed another girl in her class with a pair of scissors."
+> GRENADINE: "I just wanted to hear her again..."
+> SEAMUS: "Is the other girl ok?"
+> Principal: "She'll live, but the cosmetic surgery is gonna be pretty expensive."
+
+_GRENADINE is arrested and expelled. She goes to one of those schools in the woods where you meet a bunch of crime kids and get into bad shit. She becomes reclusive. One day she disappears. They look for her, but there's no leads. SEAMUS devotes his life to the search. 10 years later, he's on this child abuse case, and a bunch of FBI agents went in and had to kill a bunch of people running a child exploitation ring. SEAMUS recognizes GRENADINE as one of the dead perpetrators._

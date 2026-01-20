@@ -61,3 +61,11 @@ _The team descends into the tunnels below the PUDDING, finding child-shaped figu
 > We walk down the west tunnel (there are two, east and west). 4 five-year-old children, whose torsos are part of the walls, are kind of flopping out of the walls. The children are us. Sanity check.
 >
 > There's a huge steel door with a bar on our side. There's a huge stone table with four empty bowls.
+
+## Session 11 – The PUDDING Room
+
+_After the door opens, the team enters the hallway. Two children escape back to the PUDDING room:_
+
+> Two children make it past SHELF to the pools and PUDDING room. MO's blood on the floor spells out "feeeeeeeed".
+
+_SHELF regains his composure, and heads back to the PUDDING room for the last two kids._

@@ -170,3 +170,31 @@ _Testing the ritual bowls:_
 > MO puts ELLE GABLE's blood and also poodle blood in a bowl. No effect. MO cuts his finger and bloods the bowl, which lights up for a sec.
 > 
 > SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid.
+
+### Session 11 – The Pit and Survival
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+_One of the cats (ANIMALS) is sniffing around MO's legs; he tries to jump back, but it bites his heel._
+
+_SHELF shoots MO critically, he's bleeding profusely, but patches himself up with SEAMUS's assistance._
+
+_During the confrontation with VELASQUEZ:_
+
+> MO: "VELASQUEZ, don't let those kids escape! They're trying to kill us!"
+
+_MO tries to shake the kids off the ladder. VELASQUEZ shoots MO, who goes down, unresponsive, bleeding on the ground._
+
+_LOTTIE checks MO's vitals, and MO is comatose and will not wake up without medical intervention._
+
+_SEAMUS administers medical aid to MO, whose left leg is fractured._
+
+**Confronting the Alligator Monster:**
+
+_MO and SHELF head for the gator door, managing to push it open a bit. The gator (ANIMALS) reaches a claw out and wrenches the door open towards itself. MO panics and runs away. SHELF tries to shoot but sprays the ceiling. The alligator monster tears him to pieces. MO escapes into the circle room, closing the door behind him, cutting off SHELF's screams._
+
+_MO barrels past LOTTIE and SEAMUS on the stairs, collapses and vomits._
+
+> MO: "They got him."
+
+> SEAMUS: "Stay with GRENADINE, MO. I'll be back soon."

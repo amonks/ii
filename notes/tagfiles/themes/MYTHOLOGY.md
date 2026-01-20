@@ -23,3 +23,17 @@
 > "I ask Phil (PHILLY PHIL), Phil taught me the milk trick. it sell its body to the red minded men. do you want to see the milk trick? come down and see it" (MYTHOLOGY)
 >
 > LOTTIE: I heard that Phil (PHILLY PHIL) sold his body to the red minded men (MYTHOLOGY)
+
+## Session 11 – PIZZA's Final Revelation
+
+_In the circular chamber beneath CORNUCOPIA HOUSE, PIZZA reveals the true nature of the cycle:_
+
+> PIZZA: "If you don't eat me, I don't know what she'll do. But the program needs to keep this contained. We need to let these kids do what they're gonna do. We don't know what she'll do if she can't feed."
+> LOTTIE: "Who is she?"
+> PIZZA: "She has many names, SREDNI VASHTAR, Bast, she's everything. We did physics experiments. Particles that behave against the law of nature. She is entropy. The human race is just a farm for her to feast upon. You are her teeth." (MYTHOLOGY)
+> LOTTIE: "What do the kids have to do with it?"
+> PIZZA: "The kids bring you here. Your sense of morality and justice, they bring you here to be destroyed. Then they create the next round of teeth. You need to kill me and let these children go so they can keep the cycle going. This is an order. This is your job."
+> LOTTIE: "What if I kill you and don't release the children?"
+> PIZZA: "I did that. I'm not gonna be as crude as sexual torture and child pornography, but there's a substance of incredible pain going through their veins right now."
+> LOTTIE: "Were you part of the thing in 2001?"
+> PIZZA: "No, that's when we found out about it. The children turned you into teeth. When we put more agents on the case, they too were turned into teeth."

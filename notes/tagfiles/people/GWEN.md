@@ -46,3 +46,11 @@ After tucking in GRENADINE:
 - Relationship is built on trust and their wonderful sex life
 - SEAMUS asks her to be big spoon
 - SEAMUS asks if he smells like rotting meat (she doesn't confirm or deny)
+
+### Session 11 – GRENADINE's Incident
+
+_Several months after the pit, SEAMUS and GWEN are called to North Central High School:_
+
+> School: "Mr. McGillicutty? Hi, this is North Central High School. We're gonna need you to come in. It's about GRENADINE. We need to talk. The police are gonna be here, so you should get over here pretty quick. Your wife is on her way."
+
+_SEAMUS and GWEN arrive at the same time and enter the principal's office._

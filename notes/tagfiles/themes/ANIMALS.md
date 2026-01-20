@@ -141,3 +141,23 @@ From Session 4:
 _When SHELF dips a bird into the PUDDING pit:_
 
 > Walking the perimeter, we see no entrances that would correspond to the tunnels. SHELF catches a bird (ANIMALS) and dangles it into the PUDDING, pulling it back out. The parts that dipped are now human fingers and the other parts are covered in tumors.
+
+## Session 11 – The Pit Animals and the Alligator Monster
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+> There's a door at the other end of the hallway, and another about halfway down on the right. Clean steel doors; shiny. Each kid has an animal (ANIMALS). They don't look great. One child per cell.
+
+_LOTTIE tries to communicate with the kids, they don't reply. Try to command the dogs (ANIMALS), no success._
+
+_One of the cats (ANIMALS) is sniffing around MO's legs; he tries to jump back, but it bites his heel._
+
+_LOTTIE opens the door at the other end of the hallway, revealing a huge alligator monster (ANIMALS)._
+
+**The Alligator Monster Kills:**
+
+_MO and SHELF head for the gator door, managing to push it open a bit. The gator (ANIMALS) reaches a claw out and wrenches the door open towards itself. MO panics and runs away. SHELF tries to shoot but sprays the ceiling. The alligator monster tears him to pieces._
+
+_Later, LOTTIE, SEAMUS, and VELASQUEZ attempt to fight the monster:_
+
+_They open the door to the monster, which, again, is racked with clawmarks. SEAMUS panics. LOTTIE shoots. VELASQUEZ shoots. Both miss. Gator (ANIMALS) mauls VELASQUEZ, eviscerating her. LOTTIE shoots again, missing again. Gator mauls SEAMUS, slicing off two of his fingers. LOTTIE and SEAMUS turn to run. LOTTIE and the gator both trip, but SEAMUS reaches the door. Looking back, he sees LOTTIE on the ground, and returns to help her. He does. The gator gashes his leg. Both escape, leaving the gator trapped below._

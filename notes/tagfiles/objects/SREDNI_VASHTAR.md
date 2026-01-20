@@ -42,3 +42,10 @@ And then of a sudden he stopped his chanting and drew closer to the window-pane.
 
 ## Session 9 – QUIET CHILDREN Prophecy
 > MAURICIO: troubling. they say THE SPEAKER is coming to kill. It sounds like the second coming of christ. It'll bring the end times. They call it SREDNI VASHTAR. SREDNI VASHTAR will come, he's sleeping right now because he's locked in the HUNGRY MOTHER's cellar, and he will come, and in his savagery, he will avenge the suffering.
+
+## Session 11 – PIZZA's Revelation
+
+_In the circular chamber beneath CORNUCOPIA HOUSE, PIZZA reveals the entity's true nature:_
+
+> LOTTIE: "Who is she?"
+> PIZZA: "She has many names, SREDNI VASHTAR, Bast, she's everything. We did physics experiments. Particles that behave against the law of nature. She is entropy. The human race is just a farm for her to feast upon. You are her teeth." (MYTHOLOGY)

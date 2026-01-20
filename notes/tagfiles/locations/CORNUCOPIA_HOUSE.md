@@ -284,3 +284,31 @@ _Beneath the pit, the team discovers tunnels with wall-children and a ritual doo
 _SHELF's sacrifice to open the door:_
 
 > SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid. The bowl lights up real good, then fades back out. The children wail. SHELF notices that the bowls are the same size as the childrens' faces. SHELF shoots his child and drips blood into the bowl. Not enough. Decapitates and puts the head in the bowl. Sustained glow!
+
+## Session 11 – The Hallway, the Chamber, and the Monster
+
+_The heads settle into their basins, wide-eyed and dripping, and the door latch lurches open._
+
+_Hallway, linoleum floor, cells full of children on either side; flickering fluorescent lights. There's a door at the other end of the hallway, and another about halfway down on the right. Clean steel doors; shiny. Each kid has an animal (ANIMALS). They don't look great. One child per cell._
+
+_LOTTIE tries to communicate with the kids, they don't reply. Try to command the dogs (ANIMALS), no success. We all smell rotting meat (ROTTING FLESH)._
+
+_SHELF opens the first cell, shoots a kid. He panics. The children run for the exits. Two children make it past SHELF to the pools and PUDDING room._
+
+_LOTTIE opens the door at the other end of the hallway, revealing a huge alligator monster (ANIMALS)._
+
+**The Circular Chamber:**
+
+_He opens the middle door, revealing a huge circular room with a domed ceiling. There is a narrow walkway from the door to a central circular platform, then continues to a door on the opposite wall. Radiating out from the platform are other pathways that connect to pillars, each of which has a steel Frankenstein bed with a child on it. The children are gagged and full of needles. 8 total. Metal table in the center with a pistol on it. 4 chairs on one side, 1 on the other. PIZZA's in the chair._
+
+_PIZZA reveals the nature of the entity:_
+
+> PIZZA: "She has many names, SREDNI VASHTAR, Bast, she's everything. We did physics experiments. Particles that behave against the law of nature. She is entropy. The human race is just a farm for her to feast upon. You are her teeth."
+
+**Deaths in the Pit:**
+
+_The alligator monster tears SHELF to pieces._
+
+_The gator mauls VELASQUEZ, eviscerating her._
+
+_SEAMUS loses two fingers. LOTTIE and SEAMUS escape, leaving the gator trapped below._

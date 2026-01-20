@@ -149,5 +149,31 @@ _Testing the PUDDING:_
 _SHELF's extreme sacrifice to open the ritual door:_
 
 > SHELF listens at the door, hears nothing.
-> 
+>
 > SHELF cuts off his pinkie at the knuckle and drops it in. MO administers first aid. The bowl lights up real good, then fades back out. The children wail. SHELF notices that the bowls are the same size as the childrens' faces. SHELF shoots his child and drips blood into the bowl. Not enough. Decapitates and puts the head in the bowl. Sustained glow!
+
+### Session 11 – The Pit and Death
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+> SHELF: "Let's regroup: last time we left culty animal kids to live, it was bad. I propose we don't do that again."
+> LOTTIE: "Yeah, that sounds good. But let me try to talk to them first. I don't think it'll work."
+> SHELF: "Fine."
+
+_SHELF, begrudgingly, opens the first cell, crosses himself, shakes his head, and shoots a kid. He panics. Everyone else panics. He curses the mission. He loses his composure. His anger. He gets erratic. The children run for the exits. SHELF starts muttering to himself, shooting erratically at the kids as they run for the exit behind him. He shoots MO critically._
+
+_SHELF regains his composure, and heads back to the PUDDING room for the last two kids. He shoots one and his pistol jams. VELASQUEZ shoots him, critically wounding his arm._
+
+_SHELF shoots at VELASQUEZ with his long rifle and left hand, but it goes wide._
+
+_VELASQUEZ and SHELF shoot at each-other. SHELF misses. VELASQUEZ does not. Headshot. SHELF is unconscious. Wakes up in 15 minutes._
+
+_After waking:_
+
+> SHELF: "Let's try the middle door."
+
+> SHELF: "Best case, it eats us. Worst case, we kill it, go up the stairs, and continue our lives as agents of an evil god."
+
+**Death:**
+
+_MO and SHELF head for the gator door, managing to push it open a bit. The gator (ANIMALS) reaches a claw out and wrenches the door open towards itself. MO panics and runs away. SHELF tries to shoot but sprays the ceiling. The alligator monster tears him to pieces. MO escapes into the circle room, closing the door behind him, cutting off SHELF's screams._

@@ -165,6 +165,51 @@ Evidence transport:
 
 _In a long aside at the steakhouse, LOTTIE breaks up with VELASQUEZ._
 
+### Session 11 – The Pit and Death
+
+_In the PUDDING room beneath CORNUCOPIA HOUSE:_
+
+> VELASQUEZ: "Put down the gun."
+
+_VELASQUEZ shoots SHELF, critically wounding his arm._
+
+> MO: "VELASQUEZ, don't let those kids escape! They're trying to kill us!"
+> LOTTIE: "Those kids are demons, don't let them escape!"
+> VELASQUEZ: "Put down those guns and we can talk."
+
+_VELASQUEZ shoots MO, who goes down, unresponsive, bleeding on the ground._
+
+> LOTTIE: "VELASQUEZ! Stop shooting us! Capture the kids!"
+> VELASQUEZ: "Tell Joe (SHELF) to put the weapon down."
+
+_VELASQUEZ and SHELF shoot at each-other. SHELF misses. VELASQUEZ does not. Headshot. SHELF is unconscious._
+
+> LOTTIE: "Do you have cuffs to restrain those two children?"
+> VELASQUEZ: "You're gonna have to explain this."
+
+_VELASQUEZ panics. LOTTIE and VELASQUEZ argue._
+
+> LOTTIE: "I need your help down here."
+> VELASQUEZ: "I don't wanna."
+
+> LOTTIE: "Call PIZZA and ask for reinforcements."
+> VELASQUEZ: "I'm gonna go do that. I love you."
+> LOTTIE: "You too."
+
+_Later, VELASQUEZ returns:_
+
+> VELASQUEZ: "I've got the kids in the back. Can I take their zipties off?"
+> VELASQUEZ: "I'll come with you."
+
+> VELASQUEZ: "What the fuck is going on here? Who shot PIZZA?"
+> LOTTIE: "I did!"
+> VELASQUEZ: "Why?"
+> LOTTIE: "He asked me to!"
+
+**Death:**
+
+_They open the door to the monster, which, again, is racked with clawmarks. SEAMUS panics. LOTTIE shoots. VELASQUEZ shoots. Both miss. Gator (ANIMALS) mauls VELASQUEZ, eviscerating her._
+
 ## Events and Notes
 
 ### 2001 Investigation

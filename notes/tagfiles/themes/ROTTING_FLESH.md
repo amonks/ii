@@ -92,3 +92,9 @@ From Session 4:
 > LOTTIE: "That hand gesture, maybe he was summoning an alligator? Or a critter to bite us? MO, you're the only one of us that's unbitten."
 >
 > _SEAMUS and LOTTIE and SHELF feel aroused; they smell the kill, the sweet meat (ROTTING FLESH)._
+
+## Session 11 – The Hallway in the Pit
+
+_In the hallway beneath CORNUCOPIA HOUSE:_
+
+> _LOTTIE tries to communicate with the kids, they don't reply. Try to command the dogs (ANIMALS), no success. We all smell rotting meat (ROTTING FLESH)._
