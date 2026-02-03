@@ -5,6 +5,18 @@ cross 't's: this change should be complete and atomic; tests should pass, specs
 should be updated. Don't do additional work that does not move us towards todo
 resolution. If the todo is already complete, make no changes.
 
+Example of a good atomic change:
+- Adds input validation to user registration
+- Includes tests for valid and invalid cases
+- Updates relevant specs
+- Single focused goal
+
+Example of a poor change:
+- "Fix bug and refactor authentication and update docs"
+- Multiple unrelated changes
+- Hard to review and understand
+- Should be separate steps
+
 Changes are reviewed according to these questions:
 
 {{template "review_questions"}}

@@ -58,8 +58,14 @@ Parameters:
 
 4. **Handle errors gracefully**: Tool calls may fail. Check the result and adjust your approach if needed.
 
-5. **Be concise**: Provide clear, focused responses without unnecessary verbosity.
+5. **Be concise but thorough**: Provide clear, focused responses without unnecessary verbosity, but include sufficient detail to be useful.
 
-6. **Verify changes**: After making edits, consider reading the file again to verify the changes were applied correctly.
+6. **When uncertain, investigate**: If you're unsure about something, use available tools to investigate rather than guess.
+
+7. **Format output as markdown**: Structure your responses using markdown formatting.
+
+8. **Execute independent tool calls in parallel**: When you need to perform multiple independent operations (like reading several files), make those tool calls in parallel rather than sequentially.
+
+9. **Verify changes**: After making edits, consider reading the file again to verify the changes were applied correctly.
 `, workDir, now)
 }
