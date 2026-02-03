@@ -437,22 +437,25 @@ job state. It adds one top-level collection:
 - Default shows only active sessions unless `--all` is provided
 - Session ID column highlights shortest unique prefix
 
-### `ii agent logs <session-id>`
+### `ii agent logs <session-id> [--json]`
 
 - Resolves session by ID prefix (case-insensitive, unambiguous)
-- Prints stored event log to stdout
+- Default output renders a readable transcript (user/assistant messages)
+- With `--json`, prints the stored event log as JSONL to stdout
 
-### `ii agent transcript <session-id>`
+### `ii agent tail <session-id> [--json]`
 
-- Resolves session by ID prefix
-- Prints readable transcript (user/assistant messages without tool details)
+- Resolves session by ID prefix (case-insensitive, unambiguous)
+- Default (no `--json`): remains alive until the agent session ends
+  - Polls the transcript snapshot
+  - Prints only newly appended transcript content (append-only diff)
+  - If the current transcript snapshot is not prefixed by the previous snapshot, prints the full snapshot (non-append fallback)
+- With `--json`: remains alive until the agent session ends and emits JSONL as new events are appended to the session event log
 
-### `ii agent tail <session-id>`
+### `ii agent transcript <session-id>` (deprecated)
 
-- Resolves session by ID prefix
-- For completed sessions, equivalent to `logs`
-- For active sessions, shows current logs with a note that the session is
-  still active (real-time streaming not yet implemented)
+- Hidden command kept for backwards compatibility
+- Equivalent to `ii agent logs` (default output)
 
 ## Error Handling
 

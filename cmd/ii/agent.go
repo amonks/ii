@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -25,24 +24,29 @@ var agentListCmd = &cobra.Command{
 
 var agentLogsCmd = &cobra.Command{
 	Use:   "logs <session-id>",
-	Short: "Show agent session logs",
+	Short: "Show agent session logs snapshot",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runAgentLogs,
 }
 
-var agentTranscriptCmd = &cobra.Command{
-	Use:   "transcript <session-id>",
-	Short: "Show readable transcript of agent session",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runAgentTranscript,
-}
-
 var agentTailCmd = &cobra.Command{
 	Use:   "tail <session-id>",
-	Short: "Stream events from agent session (or show logs for completed sessions)",
+	Short: "Stream transcript from agent session until it ends",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runAgentTail,
 }
+
+// agentTranscriptCmd remains as an alias for logs (readable view) for now; it is hidden.
+var agentTranscriptCmd = &cobra.Command{
+	Use:    "transcript <session-id>",
+	Short:  "Show readable transcript of agent session (deprecated; use 'ii agent logs')",
+	Args:   cobra.ExactArgs(1),
+	Hidden: true,
+	RunE:   runAgentTranscript,
+}
+
+var agentLogsJSON bool
+var agentTailJSON bool
 
 var agentListJSON bool
 var agentListAll bool
@@ -53,6 +57,9 @@ func init() {
 
 	agentListCmd.Flags().BoolVar(&agentListJSON, "json", false, "Output as JSON")
 	listflags.AddAllFlag(agentListCmd, &agentListAll)
+
+	agentLogsCmd.Flags().BoolVar(&agentLogsJSON, "json", false, "Output as JSONL")
+	agentTailCmd.Flags().BoolVar(&agentTailJSON, "json", false, "Output as JSONL")
 }
 
 func runAgentList(cmd *cobra.Command, args []string) error {
@@ -89,12 +96,21 @@ func runAgentLogs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logs, err := store.Logs(repoPath, args[0])
+	if agentLogsJSON {
+		logContent, err := store.Logs(repoPath, args[0])
+		if err != nil {
+			return err
+		}
+		fmt.Print(logContent)
+		return nil
+	}
+
+	transcript, err := store.Transcript(repoPath, args[0])
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(logs)
+	fmt.Print(transcript)
 	return nil
 }
 
@@ -119,33 +135,38 @@ func runAgentTail(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Find the session to check its status
-	session, err := store.FindSession(repoPath, args[0])
-	if err != nil {
-		return err
-	}
-
-	// For completed sessions, just show logs
-	if session.Status != agent.SessionActive {
-		logs, err := store.Logs(repoPath, session.ID)
+	if agentTailJSON {
+		// Snapshot JSONL output for now; real tailing of JSONL will come with event log streaming.
+		logContent, err := store.Logs(repoPath, args[0])
 		if err != nil {
 			return err
 		}
-		fmt.Print(logs)
+		fmt.Print(logContent)
 		return nil
 	}
 
-	// For active sessions, we would ideally stream events in real-time.
-	// However, this requires additional infrastructure (watching the event log file).
-	// For now, we print the current logs with a note that the session is still active.
-	logs, err := store.Logs(repoPath, session.ID)
-	if err != nil {
-		return err
-	}
+	// Tail currently polls until the session ends and prints only newly appended
+	// transcript content each poll (placeholder until true event streaming lands).
+	var last string
+	for {
+		session, err := store.FindSession(repoPath, args[0])
+		if err != nil {
+			return err
+		}
 
-	fmt.Print(logs)
-	fmt.Fprintln(os.Stderr, "\n[Session is still active - showing current logs]")
-	return nil
+		transcript, err := store.Transcript(repoPath, session.ID)
+		if err != nil {
+			return err
+		}
+
+		fmt.Print(agent.TranscriptTailDiff(last, transcript))
+		last = transcript
+
+		if session.Status != agent.SessionActive {
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
 func filterAgentSessionsForList(sessions []agent.Session, includeAll bool) []agent.Session {
