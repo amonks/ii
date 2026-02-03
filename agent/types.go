@@ -86,7 +86,7 @@ func (s SessionStatus) IsValid() bool {
 
 // Session represents an agent session stored in state.
 type Session struct {
-	// ID is the unique session identifier (e.g., "agt_...").
+	// ID is the unique session identifier.
 	ID string `json:"id"`
 
 	// Repo is the repository slug this session belongs to.

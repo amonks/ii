@@ -396,8 +396,8 @@ func TestListSessions_WithSessions(t *testing.T) {
 	stateStore := state.NewStore(stateDir)
 	err := stateStore.Update(func(st *state.State) error {
 		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/agt_12345678"] = state.AgentSession{
-			ID:        "agt_12345678",
+		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
+			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
 			Model:     "claude-sonnet-4-20250514",
@@ -405,8 +405,8 @@ func TestListSessions_WithSessions(t *testing.T) {
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		st.AgentSessions["test-repo/agt_87654321"] = state.AgentSession{
-			ID:          "agt_87654321",
+		st.AgentSessions["test-repo/87654321"] = state.AgentSession{
+			ID:        "87654321",
 			Repo:        "test-repo",
 			Status:      state.AgentSessionCompleted,
 			Model:       "claude-sonnet-4-20250514",
@@ -451,8 +451,8 @@ func TestFindSession_ExactMatch(t *testing.T) {
 	stateStore := state.NewStore(stateDir)
 	err := stateStore.Update(func(st *state.State) error {
 		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/agt_12345678"] = state.AgentSession{
-			ID:        "agt_12345678",
+		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
+			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
 			Model:     "claude-sonnet-4-20250514",
@@ -473,13 +473,13 @@ func TestFindSession_ExactMatch(t *testing.T) {
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	session, err := store.FindSession("/path/to/repo", "agt_12345678")
+	session, err := store.FindSession("/path/to/repo", "12345678")
 	if err != nil {
 		t.Fatalf("FindSession failed: %v", err)
 	}
 
-	if session.ID != "agt_12345678" {
-		t.Errorf("expected ID 'agt_12345678', got %q", session.ID)
+	if session.ID != "12345678" {
+		t.Errorf("expected ID '12345678', got %q", session.ID)
 	}
 }
 
@@ -491,8 +491,8 @@ func TestFindSession_PrefixMatch(t *testing.T) {
 	stateStore := state.NewStore(stateDir)
 	err := stateStore.Update(func(st *state.State) error {
 		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/agt_12345678"] = state.AgentSession{
-			ID:        "agt_12345678",
+		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
+			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
 			Model:     "claude-sonnet-4-20250514",
@@ -514,13 +514,13 @@ func TestFindSession_PrefixMatch(t *testing.T) {
 	}
 
 	// Should find session by prefix
-	session, err := store.FindSession("/path/to/repo", "agt_123")
+	session, err := store.FindSession("/path/to/repo", "123")
 	if err != nil {
 		t.Fatalf("FindSession failed: %v", err)
 	}
 
-	if session.ID != "agt_12345678" {
-		t.Errorf("expected ID 'agt_12345678', got %q", session.ID)
+	if session.ID != "12345678" {
+		t.Errorf("expected ID '12345678', got %q", session.ID)
 	}
 }
 
@@ -545,7 +545,7 @@ func TestFindSession_NotFound(t *testing.T) {
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	_, err = store.FindSession("/path/to/repo", "agt_nonexistent")
+	_, err = store.FindSession("/path/to/repo", "nonexistent")
 	if err == nil {
 		t.Error("expected error for non-existent session")
 	}
@@ -559,8 +559,8 @@ func TestFindSession_Ambiguous(t *testing.T) {
 	stateStore := state.NewStore(stateDir)
 	err := stateStore.Update(func(st *state.State) error {
 		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/agt_12345678"] = state.AgentSession{
-			ID:        "agt_12345678",
+		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
+			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
 			Model:     "claude-sonnet-4-20250514",
@@ -568,8 +568,8 @@ func TestFindSession_Ambiguous(t *testing.T) {
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		st.AgentSessions["test-repo/agt_12367890"] = state.AgentSession{
-			ID:        "agt_12367890",
+		st.AgentSessions["test-repo/12367890"] = state.AgentSession{
+			ID:        "12367890",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
 			Model:     "claude-sonnet-4-20250514",
@@ -591,7 +591,7 @@ func TestFindSession_Ambiguous(t *testing.T) {
 	}
 
 	// Should fail with ambiguous prefix
-	_, err = store.FindSession("/path/to/repo", "agt_123")
+	_, err = store.FindSession("/path/to/repo", "123")
 	if err == nil {
 		t.Error("expected error for ambiguous session ID")
 	}
@@ -628,7 +628,7 @@ func TestTranscriptSnapshot(t *testing.T) {
 	}
 
 	// Write a sample event log
-	sessionID := "agt_test12345"
+	sessionID := "test12345"
 	eventLog := `{"ID":"0","Name":"agent.start","Data":"{}"}
 {"ID":"1","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Hello from the assistant!\"}]}}"}
 {"ID":"2","Name":"agent.end","Data":"{}"}
@@ -673,7 +673,7 @@ func TestTranscriptSnapshot_NotFound(t *testing.T) {
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	_, err = store.TranscriptSnapshot("agt_nonexistent")
+	_, err = store.TranscriptSnapshot("nonexistent")
 	if err == nil {
 		t.Error("expected error for non-existent session")
 	}
@@ -689,7 +689,7 @@ func TestTranscriptSnapshot_IncludesToolOutput(t *testing.T) {
 	}
 
 	// Write event log with tool output
-	sessionID := "agt_tooltest"
+	sessionID := "tooltest"
 	eventLog := `{"ID":"0","Name":"agent.start","Data":"{}"}
 {"ID":"1","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Running a command...\"}]}}"}
 {"ID":"2","Name":"tool.end","Data":"{\"Result\":{\"Content\":[{\"Type\":\"text\",\"Text\":\"command output here\"}]}}"}
@@ -730,7 +730,7 @@ func TestTranscript_ExcludesToolOutput(t *testing.T) {
 	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 	repoPath := "/path/to/test-repo"
-	sessionID := "agt_toolexclude"
+	sessionID := "toolexclude"
 
 	// Create events directory
 	if err := os.MkdirAll(eventsDir, 0o755); err != nil {

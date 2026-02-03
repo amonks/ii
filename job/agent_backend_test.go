@@ -75,7 +75,7 @@ func TestRunLLMWithEvents_Success(t *testing.T) {
 				t.Errorf("unexpected model: %q", runOpts.Model)
 			}
 			return AgentRunResult{
-				SessionID: "agt_test123",
+				SessionID: "test123",
 				ExitCode:  0,
 			}, nil
 		},
@@ -93,7 +93,7 @@ func TestRunLLMWithEvents_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runLLMWithEvents error: %v", err)
 	}
-	if result.SessionID != "agt_test123" {
+	if result.SessionID != "test123" {
 		t.Errorf("unexpected session ID: %q", result.SessionID)
 	}
 	if result.ExitCode != 0 {
@@ -185,7 +185,7 @@ func TestRunLLMWithEvents_CallsRunLLM(t *testing.T) {
 				t.Errorf("unexpected model: %q", runOpts.Model)
 			}
 			return AgentRunResult{
-				SessionID: "agt_dispatch123",
+				SessionID: "dispatch123",
 				ExitCode:  0,
 			}, nil
 		},
@@ -206,7 +206,7 @@ func TestRunLLMWithEvents_CallsRunLLM(t *testing.T) {
 	if !llmCalled {
 		t.Error("expected RunLLM to be called")
 	}
-	if result.SessionID != "agt_dispatch123" {
+	if result.SessionID != "dispatch123" {
 		t.Errorf("unexpected session ID: %q", result.SessionID)
 	}
 	if result.ExitCode != 0 {
@@ -217,7 +217,7 @@ func TestRunLLMWithEvents_CallsRunLLM(t *testing.T) {
 func TestLoadTranscript(t *testing.T) {
 	t.Run("returns empty string when Transcripts is nil", func(t *testing.T) {
 		opts := RunOptions{}
-		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "agt_123"})
+		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "123"})
 		if result != "" {
 			t.Errorf("expected empty string, got %q", result)
 		}
@@ -238,13 +238,13 @@ func TestLoadTranscript(t *testing.T) {
 	t.Run("returns transcript from Transcripts function", func(t *testing.T) {
 		opts := RunOptions{
 			Transcripts: func(_ string, sessions []AgentSession) ([]AgentTranscript, error) {
-				if len(sessions) != 1 || sessions[0].ID != "agt_123" {
+				if len(sessions) != 1 || sessions[0].ID != "123" {
 					t.Errorf("unexpected sessions: %v", sessions)
 				}
 				return []AgentTranscript{{Purpose: "implement", Transcript: "test transcript"}}, nil
 			},
 		}
-		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "agt_123"})
+		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "123"})
 		if result != "test transcript" {
 			t.Errorf("expected 'test transcript', got %q", result)
 		}
@@ -256,7 +256,7 @@ func TestLoadTranscript(t *testing.T) {
 				return nil, errors.New("fetch error")
 			},
 		}
-		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "agt_123"})
+		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "123"})
 		if result != "" {
 			t.Errorf("expected empty string on error, got %q", result)
 		}
@@ -268,7 +268,7 @@ func TestLoadTranscript(t *testing.T) {
 				return []AgentTranscript{}, nil
 			},
 		}
-		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "agt_123"})
+		result := loadTranscript(opts, AgentSession{Purpose: "implement", ID: "123"})
 		if result != "" {
 			t.Errorf("expected empty string for empty result, got %q", result)
 		}

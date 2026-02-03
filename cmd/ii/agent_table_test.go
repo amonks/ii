@@ -16,14 +16,14 @@ func TestFormatAgentTablePreservesAlignmentWithANSI(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:        "agt_sess1",
+			ID:        "sess1",
 			Status:    agent.SessionActive,
 			Model:     "claude-sonnet-4",
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		},
 		{
-			ID:          "agt_sess2",
+			ID:          "sess2",
 			Status:      agent.SessionCompleted,
 			Model:       "claude-sonnet-4",
 			CreatedAt:   createdAt.Add(-time.Minute),
@@ -54,7 +54,7 @@ func TestFormatAgentTableIncludesSessionID(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:        "agt_sess-123",
+			ID:        "sess-123",
 			Status:    agent.SessionActive,
 			Model:     "claude-sonnet-4",
 			CreatedAt: now.Add(-time.Minute),
@@ -76,7 +76,7 @@ func TestFormatAgentTableIncludesSessionID(t *testing.T) {
 	}
 
 	row := lines[1]
-	if !strings.Contains(row, "agt_sess-123") {
+	if !strings.Contains(row, "sess-123") {
 		t.Fatalf("expected session id in row, got: %q", row)
 	}
 }
@@ -87,7 +87,7 @@ func TestFormatAgentTableUsesCompactAge(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:        "agt_sess-001",
+			ID:        "sess-001",
 			Status:    agent.SessionActive,
 			Model:     "claude-sonnet-4",
 			CreatedAt: createdAt,
@@ -112,7 +112,7 @@ func TestFormatAgentTableShowsMissingAgeAsDash(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:     "agt_sess-1",
+			ID:     "sess-1",
 			Status: agent.SessionActive,
 			Model:  "claude-sonnet-4",
 		},
@@ -145,7 +145,7 @@ func TestFormatAgentTableShowsAgeForCompletedSession(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:        "agt_sess-complete",
+			ID:        "sess-complete",
 			Status:    agent.SessionCompleted,
 			Model:     "claude-sonnet-4",
 			CreatedAt: now.Add(-5 * time.Minute),
@@ -170,7 +170,7 @@ func TestFormatAgentTableShowsDuration(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:          "agt_sess-duration",
+			ID:          "sess-duration",
 			Status:      agent.SessionCompleted,
 			Model:       "claude-sonnet-4",
 			CreatedAt:   createdAt,
@@ -197,14 +197,14 @@ func TestFormatAgentTableUsesSessionPrefixLengths(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:        "agt_abc123",
+			ID:        "abc123",
 			Status:    agent.SessionActive,
 			Model:     "claude-sonnet-4",
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		},
 		{
-			ID:          "agt_abd999",
+			ID:          "abd999",
 			Status:      agent.SessionCompleted,
 			Model:       "claude-sonnet-4",
 			CreatedAt:   createdAt,
@@ -217,12 +217,12 @@ func TestFormatAgentTableUsesSessionPrefixLengths(t *testing.T) {
 		return id + ":" + strconv.Itoa(prefix)
 	}, now, nil)
 
-	// Both IDs share "agt_ab" prefix, so need 7 chars to distinguish (agt_abc vs agt_abd)
-	if !strings.Contains(output, "agt_abc123:7") {
-		t.Fatalf("expected session prefix length 7, got: %q", output)
+	// Both IDs share "ab" prefix, so need 3 chars to distinguish (abc vs abd)
+	if !strings.Contains(output, "abc123:3") {
+		t.Fatalf("expected session prefix length 3, got: %q", output)
 	}
-	if !strings.Contains(output, "agt_abd999:7") {
-		t.Fatalf("expected session prefix length 7, got: %q", output)
+	if !strings.Contains(output, "abd999:3") {
+		t.Fatalf("expected session prefix length 3, got: %q", output)
 	}
 }
 
@@ -232,7 +232,7 @@ func TestFormatAgentTableShowsTokensAndCost(t *testing.T) {
 
 	sessions := []agent.Session{
 		{
-			ID:          "agt_sess-usage",
+			ID:          "sess-usage",
 			Status:      agent.SessionCompleted,
 			Model:       "claude-sonnet-4",
 			CreatedAt:   createdAt,
@@ -259,23 +259,23 @@ func TestFormatAgentTableShowsTokensAndCost(t *testing.T) {
 
 func TestAgentSessionPrefixLengths(t *testing.T) {
 	sessions := []agent.Session{
-		{ID: "agt_abc123"},
-		{ID: "agt_abd456"},
-		{ID: "agt_xyz789"},
+		{ID: "abc123"},
+		{ID: "abd456"},
+		{ID: "xyz789"},
 	}
 
 	lengths := agentSessionPrefixLengths(sessions)
 
-	// abc and abd share "agt_ab", so need 7 chars to distinguish
-	if lengths["agt_abc123"] != 7 {
-		t.Fatalf("expected prefix length 7 for agt_abc123, got %d", lengths["agt_abc123"])
+	// abc and abd share "ab", so need 3 chars to distinguish
+	if lengths["abc123"] != 3 {
+		t.Fatalf("expected prefix length 3 for abc123, got %d", lengths["abc123"])
 	}
-	if lengths["agt_abd456"] != 7 {
-		t.Fatalf("expected prefix length 7 for agt_abd456, got %d", lengths["agt_abd456"])
+	if lengths["abd456"] != 3 {
+		t.Fatalf("expected prefix length 3 for abd456, got %d", lengths["abd456"])
 	}
-	// xyz is unique from position 5 (after "agt_")
-	if lengths["agt_xyz789"] != 5 {
-		t.Fatalf("expected prefix length 5 for agt_xyz789, got %d", lengths["agt_xyz789"])
+	// xyz is unique from position 1
+	if lengths["xyz789"] != 1 {
+		t.Fatalf("expected prefix length 1 for xyz789, got %d", lengths["xyz789"])
 	}
 }
 
@@ -371,10 +371,10 @@ func TestFormatAgentDuration(t *testing.T) {
 
 func TestFilterAgentSessionsForList(t *testing.T) {
 	sessions := []agent.Session{
-		{ID: "agt_1", Status: agent.SessionActive},
-		{ID: "agt_2", Status: agent.SessionCompleted},
-		{ID: "agt_3", Status: agent.SessionActive},
-		{ID: "agt_4", Status: agent.SessionFailed},
+		{ID: "1", Status: agent.SessionActive},
+		{ID: "2", Status: agent.SessionCompleted},
+		{ID: "3", Status: agent.SessionActive},
+		{ID: "4", Status: agent.SessionFailed},
 	}
 
 	t.Run("include all returns all sessions", func(t *testing.T) {

@@ -391,7 +391,7 @@ job state. It adds one top-level collection:
 
 ### Session Fields (JSON keys)
 
-- `id`: session id (e.g., `agt_...`)
+- `id`: session id (e.g., `<generated>`)
 - `repo`: repo slug
 - `status`: `active`, `completed`, or `failed`
 - `model`: model ID used
