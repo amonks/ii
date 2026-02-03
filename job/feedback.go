@@ -9,7 +9,7 @@ import (
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 )
 
-// ReviewFeedback is parsed feedback from the opencode review stage.
+// ReviewFeedback is parsed feedback from the review stage.
 type ReviewFeedback struct {
 	Outcome ReviewOutcome
 	Details string

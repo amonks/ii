@@ -91,10 +91,10 @@ func (m *Manager) Create(todoID string, startedAt time.Time, opts CreateOptions)
 // UpdateOptions configures job updates.
 // Nil fields mean "do not update".
 type UpdateOptions struct {
-	Stage                 *Stage
-	Status                *Status
-	Feedback              *string
-	AppendOpencodeSession *OpencodeSession
+	Stage              *Stage
+	Status             *Status
+	Feedback           *string
+	AppendAgentSession *AgentSession
 }
 
 // Update updates an existing job by id or prefix.
@@ -146,8 +146,11 @@ func (m *Manager) Update(jobID string, opts UpdateOptions, updatedAt time.Time) 
 		if opts.Feedback != nil {
 			job.Feedback = *opts.Feedback
 		}
-		if opts.AppendOpencodeSession != nil {
-			job.OpencodeSessions = append(job.OpencodeSessions, *opts.AppendOpencodeSession)
+		if opts.AppendAgentSession != nil {
+			job.AgentSessions = append(job.AgentSessions, statestore.JobAgentSession{
+				Purpose: opts.AppendAgentSession.Purpose,
+				ID:      opts.AppendAgentSession.ID,
+			})
 		}
 		job.UpdatedAt = updatedAt
 		st.Jobs[key] = job

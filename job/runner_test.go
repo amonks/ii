@@ -135,12 +135,12 @@ func TestRunImplementingStageReadsCommitMessage(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: step"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-789", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-789", ExitCode: 0}, nil
 		},
 	}
 
@@ -212,8 +212,8 @@ func TestRunImplementingStageNoChangesSkipsTesting(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, fmt.Errorf("change empty check should not be called")
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
-			return OpencodeRunResult{SessionID: "oc-790", ExitCode: 0}, nil
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{SessionID: "oc-790", ExitCode: 0}, nil
 		},
 	}
 
@@ -284,9 +284,9 @@ func TestRunImplementingStageIncludesCommitMessageInstructionWithFeedback(t *tes
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, fmt.Errorf("change empty check should not be called")
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt
-			return OpencodeRunResult{SessionID: "oc-111", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-111", ExitCode: 0}, nil
 		},
 	}
 
@@ -353,9 +353,9 @@ func TestRunImplementingStageIncludesCommitLog(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, fmt.Errorf("change empty check should not be called")
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt
-			return OpencodeRunResult{SessionID: "oc-212", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-212", ExitCode: 0}, nil
 		},
 	}
 
@@ -406,12 +406,12 @@ func TestRunReviewingStagePassesCommitMessage(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-456", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-456", ExitCode: 0}, nil
 		},
 	}
 
@@ -472,20 +472,12 @@ func TestRunReviewingStageReadsCommitMessageFile(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt
-			value, ok := envValue(runOpts.Env, opencodeConfigEnvVar)
-			if !ok {
-				return OpencodeRunResult{}, fmt.Errorf("expected %s to be set", opencodeConfigEnvVar)
-			}
-			expected := opencodeConfigJSON()
-			if value != expected {
-				return OpencodeRunResult{}, fmt.Errorf("expected %s to be %q, got %q", opencodeConfigEnvVar, expected, value)
-			}
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-789", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-789", ExitCode: 0}, nil
 		},
 	}
 
@@ -526,7 +518,7 @@ func TestRunReviewingStageMissingCommitMessageExplainsContext(t *testing.T) {
 		Priority:    todo.PriorityMedium,
 	}
 
-	calledOpencode := false
+	calledLLM := false
 	opts := RunOptions{
 		Now: func() time.Time {
 			return startedAt
@@ -534,9 +526,9 @@ func TestRunReviewingStageMissingCommitMessageExplainsContext(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			calledOpencode = true
-			return OpencodeRunResult{SessionID: "oc-123", ExitCode: 0}, nil
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			calledLLM = true
+			return AgentRunResult{SessionID: "oc-123", ExitCode: 0}, nil
 		},
 	}
 
@@ -547,13 +539,13 @@ func TestRunReviewingStageMissingCommitMessageExplainsContext(t *testing.T) {
 	if !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("expected missing file error, got %v", err)
 	}
-	if calledOpencode {
-		t.Fatalf("expected review to stop before opencode")
+	if calledLLM {
+		t.Fatalf("expected review to stop before LLM")
 	}
-	if !strings.Contains(err.Error(), "commit message missing before opencode review") {
+	if !strings.Contains(err.Error(), "commit message missing before LLM review") {
 		t.Fatalf("expected context in error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "opencode implementation") {
+	if !strings.Contains(err.Error(), "LLM implementation") {
 		t.Fatalf("expected author context, got %v", err)
 	}
 	if !strings.Contains(err.Error(), commitMessageFilename) {
@@ -614,12 +606,12 @@ func TestRunReviewingStageInjectsCommitMessageWhenTemplateMissing(t *testing.T) 
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-654", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-654", ExitCode: 0}, nil
 		},
 	}
 
@@ -651,10 +643,10 @@ func TestRunCommittingStageFormatsCommitMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create job: %v", err)
 	}
-	append := OpencodeSession{Purpose: "implement", ID: "ses-333"}
-	current, err = manager.Update(current.ID, UpdateOptions{AppendOpencodeSession: &append}, startedAt)
+	appendSession := AgentSession{Purpose: "implement", ID: "ses-333"}
+	current, err = manager.Update(current.ID, UpdateOptions{AppendAgentSession: &appendSession}, startedAt)
 	if err != nil {
-		t.Fatalf("append opencode session: %v", err)
+		t.Fatalf("append agent session: %v", err)
 	}
 
 	item := todo.Todo{
@@ -677,8 +669,8 @@ func TestRunCommittingStageFormatsCommitMessage(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		OpencodeTranscripts: func(repoPath string, sessions []OpencodeSession) ([]OpencodeTranscript, error) {
-			return []OpencodeTranscript{{Purpose: "implement", ID: "ses-333", Transcript: "Planning\n"}}, nil
+		Transcripts: func(repoPath string, sessions []AgentSession) ([]AgentTranscript, error) {
+			return []AgentTranscript{{Purpose: "implement", Transcript: "Planning\n"}}, nil
 		},
 		CommitIDAt: func(string, string) (string, error) {
 			return "commit-333", nil
@@ -916,7 +908,7 @@ func TestRunCommittingStageOmitsCommitLog(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		OpencodeTranscripts: func(string, []OpencodeSession) ([]OpencodeTranscript, error) {
+		Transcripts: func(string, []AgentSession) ([]AgentTranscript, error) {
 			return nil, nil
 		},
 		CommitIDAt: func(string, string) (string, error) {
@@ -985,7 +977,7 @@ func TestRunCommittingStageOmitsEmptyCommitLog(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		OpencodeTranscripts: func(string, []OpencodeSession) ([]OpencodeTranscript, error) {
+		Transcripts: func(string, []AgentSession) ([]AgentTranscript, error) {
 			return nil, nil
 		},
 		CommitIDAt: func(string, string) (string, error) {
@@ -1100,7 +1092,7 @@ func TestRunCommittingStageAppendsCommitLog(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		OpencodeTranscripts: func(string, []OpencodeSession) ([]OpencodeTranscript, error) {
+		Transcripts: func(string, []AgentSession) ([]AgentTranscript, error) {
 			return nil, nil
 		},
 		CommitIDAt: func(string, string) (string, error) {
@@ -1192,12 +1184,12 @@ func TestRunImplementingStageCreatesJobChange(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: track changes"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-change-track", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-change-track", ExitCode: 0}, nil
 		},
 	}
 
@@ -1226,8 +1218,8 @@ func TestRunImplementingStageCreatesJobChange(t *testing.T) {
 	if commit.DraftMessage != "feat: track changes" {
 		t.Fatalf("expected draft message %q, got %q", "feat: track changes", commit.DraftMessage)
 	}
-	if commit.OpencodeSessionID != "oc-change-track" {
-		t.Fatalf("expected opencode session id %q, got %q", "oc-change-track", commit.OpencodeSessionID)
+	if commit.AgentSessionID != "oc-change-track" {
+		t.Fatalf("expected opencode session id %q, got %q", "oc-change-track", commit.AgentSessionID)
 	}
 }
 
@@ -1253,9 +1245,9 @@ func TestRunTestingStageUpdatesCommitTestsPassed(t *testing.T) {
 		t.Fatalf("append change: %v", err)
 	}
 	created, err = manager.AppendCommitToCurrentChange(created.ID, JobCommit{
-		CommitID:          "commit-test",
-		DraftMessage:      "feat: test",
-		OpencodeSessionID: "ses-test",
+		CommitID:       "commit-test",
+		DraftMessage:   "feat: test",
+		AgentSessionID: "ses-test",
 	}, startedAt)
 	if err != nil {
 		t.Fatalf("append commit: %v", err)
@@ -1317,9 +1309,9 @@ func TestRunTestingStageUpdatesCommitTestsFailed(t *testing.T) {
 		t.Fatalf("append change: %v", err)
 	}
 	created, err = manager.AppendCommitToCurrentChange(created.ID, JobCommit{
-		CommitID:          "commit-fail",
-		DraftMessage:      "feat: test fail",
-		OpencodeSessionID: "ses-fail",
+		CommitID:       "commit-fail",
+		DraftMessage:   "feat: test fail",
+		AgentSessionID: "ses-fail",
 	}, startedAt)
 	if err != nil {
 		t.Fatalf("append commit: %v", err)
@@ -1381,9 +1373,9 @@ func TestRunReviewingStageUpdatesCommitReview(t *testing.T) {
 		t.Fatalf("append change: %v", err)
 	}
 	created, err = manager.AppendCommitToCurrentChange(created.ID, JobCommit{
-		CommitID:          "commit-review",
-		DraftMessage:      "feat: review",
-		OpencodeSessionID: "ses-review-impl",
+		CommitID:       "commit-review",
+		DraftMessage:   "feat: review",
+		AgentSessionID: "ses-review-impl",
 	}, startedAt)
 	if err != nil {
 		t.Fatalf("append commit: %v", err)
@@ -1405,11 +1397,11 @@ func TestRunReviewingStageUpdatesCommitReview(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n\nlooks good"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-review", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-review", ExitCode: 0}, nil
 		},
 	}
 
@@ -1433,8 +1425,8 @@ func TestRunReviewingStageUpdatesCommitReview(t *testing.T) {
 	if commit.Review.Comments != "looks good" {
 		t.Fatalf("expected review comments %q, got %q", "looks good", commit.Review.Comments)
 	}
-	if commit.Review.OpencodeSessionID != "oc-review" {
-		t.Fatalf("expected review session id %q, got %q", "oc-review", commit.Review.OpencodeSessionID)
+	if commit.Review.AgentSessionID != "oc-review" {
+		t.Fatalf("expected review session id %q, got %q", "oc-review", commit.Review.AgentSessionID)
 	}
 }
 
@@ -1470,11 +1462,11 @@ func TestRunReviewingStageProjectSetsProjectReview(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n\nproject complete"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-project-review", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-project-review", ExitCode: 0}, nil
 		},
 	}
 
@@ -1493,7 +1485,7 @@ func TestRunReviewingStageProjectSetsProjectReview(t *testing.T) {
 	if result.Job.ProjectReview.Comments != "project complete" {
 		t.Fatalf("expected project review comments %q, got %q", "project complete", result.Job.ProjectReview.Comments)
 	}
-	if result.Job.ProjectReview.OpencodeSessionID != "oc-project-review" {
-		t.Fatalf("expected project review session id %q, got %q", "oc-project-review", result.Job.ProjectReview.OpencodeSessionID)
+	if result.Job.ProjectReview.AgentSessionID != "oc-project-review" {
+		t.Fatalf("expected project review session id %q, got %q", "oc-project-review", result.Job.ProjectReview.AgentSessionID)
 	}
 }

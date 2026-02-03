@@ -35,10 +35,10 @@ func TestRunInterruptMarksJobFailed(t *testing.T) {
 	go func() {
 		result, runErr = Run(repoPath, created.ID, RunOptions{
 			Now: func() time.Time { return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC) },
-			RunOpencode: func(opts opencodeRunOptions) (OpencodeRunResult, error) {
+			RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 				close(started)
 				<-block
-				return OpencodeRunResult{SessionID: "opencode-1", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "opencode-1", ExitCode: 0}, nil
 			},
 		})
 		close(done)

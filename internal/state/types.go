@@ -1,7 +1,7 @@
 // Package state manages the shared incrementum state file.
 //
 // The state file (~/.local/state/incrementum/state.json) stores persistent
-// state for workspaces, opencode sessions, and jobs. All access is
+// state for workspaces, agent sessions, and jobs. All access is
 // serialized through file locking to allow safe concurrent access from
 // multiple processes.
 package state
@@ -14,10 +14,10 @@ import (
 
 // State represents the persisted state file.
 type State struct {
-	Repos            map[string]RepoInfo        `json:"repos"`
-	Workspaces       map[string]WorkspaceInfo   `json:"workspaces"`
-	OpencodeSessions map[string]OpencodeSession `json:"opencode_sessions"`
-	Jobs             map[string]Job             `json:"jobs"`
+	Repos         map[string]RepoInfo      `json:"repos"`
+	Workspaces    map[string]WorkspaceInfo `json:"workspaces"`
+	AgentSessions map[string]AgentSession  `json:"agent_sessions"`
+	Jobs          map[string]Job           `json:"jobs"`
 }
 
 // RepoInfo stores information about a tracked repository.
@@ -60,43 +60,43 @@ type WorkspaceInfo struct {
 	Provisioned   bool            `json:"provisioned"`
 }
 
-// OpencodeSessionStatus represents the state of an opencode session.
-type OpencodeSessionStatus string
+// AgentSessionStatus represents the state of an agent session.
+type AgentSessionStatus string
 
 const (
-	// OpencodeSessionActive indicates the session is active.
-	OpencodeSessionActive OpencodeSessionStatus = "active"
-	// OpencodeSessionCompleted indicates the session completed successfully.
-	OpencodeSessionCompleted OpencodeSessionStatus = "completed"
-	// OpencodeSessionFailed indicates the session failed.
-	OpencodeSessionFailed OpencodeSessionStatus = "failed"
-	// OpencodeSessionKilled indicates the session was terminated.
-	OpencodeSessionKilled OpencodeSessionStatus = "killed"
+	// AgentSessionActive indicates the session is active.
+	AgentSessionActive AgentSessionStatus = "active"
+	// AgentSessionCompleted indicates the session completed successfully.
+	AgentSessionCompleted AgentSessionStatus = "completed"
+	// AgentSessionFailed indicates the session failed.
+	AgentSessionFailed AgentSessionStatus = "failed"
 )
 
-// OpencodeSession stores session state for a repo.
-type OpencodeSession struct {
-	ID              string                `json:"id"`
-	Repo            string                `json:"repo"`
-	Status          OpencodeSessionStatus `json:"status"`
-	CreatedAt       time.Time             `json:"created_at,omitempty"`
-	StartedAt       time.Time             `json:"started_at"`
-	UpdatedAt       time.Time             `json:"updated_at"`
-	CompletedAt     time.Time             `json:"completed_at,omitempty"`
-	ExitCode        *int                  `json:"exit_code,omitempty"`
-	DurationSeconds int                   `json:"duration_seconds,omitempty"`
-	LogPath         string                `json:"log_path,omitempty"`
+// AgentSession stores agent session state for a repo.
+type AgentSession struct {
+	ID              string             `json:"id"`
+	Repo            string             `json:"repo"`
+	Status          AgentSessionStatus `json:"status"`
+	Model           string             `json:"model"`
+	CreatedAt       time.Time          `json:"created_at,omitempty"`
+	StartedAt       time.Time          `json:"started_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+	CompletedAt     time.Time          `json:"completed_at,omitempty"`
+	ExitCode        *int               `json:"exit_code,omitempty"`
+	DurationSeconds int                `json:"duration_seconds,omitempty"`
+	TokensUsed      int                `json:"tokens_used,omitempty"`
+	Cost            float64            `json:"cost,omitempty"`
 }
 
 // JobStage represents the current workflow stage for a job.
 type JobStage string
 
 const (
-	// JobStageImplementing indicates the opencode implementation stage.
+	// JobStageImplementing indicates the LLM implementation stage.
 	JobStageImplementing JobStage = "implementing"
 	// JobStageTesting indicates the test execution stage.
 	JobStageTesting JobStage = "testing"
-	// JobStageReviewing indicates the opencode review stage.
+	// JobStageReviewing indicates the LLM review stage.
 	JobStageReviewing JobStage = "reviewing"
 	// JobStageCommitting indicates the commit message generation stage.
 	JobStageCommitting JobStage = "committing"
@@ -157,20 +157,20 @@ func (o ReviewOutcome) IsValid() bool {
 
 // JobReview captures a review decision for a commit or the project.
 type JobReview struct {
-	Outcome           ReviewOutcome `json:"outcome"`
-	Comments          string        `json:"comments,omitempty"`
-	OpencodeSessionID string        `json:"opencode_session_id"`
-	ReviewedAt        time.Time     `json:"reviewed_at"`
+	Outcome        ReviewOutcome `json:"outcome"`
+	Comments       string        `json:"comments,omitempty"`
+	AgentSessionID string        `json:"agent_session_id"`
+	ReviewedAt     time.Time     `json:"reviewed_at"`
 }
 
 // JobCommit represents one commit within a change.
 type JobCommit struct {
-	CommitID          string     `json:"commit_id"`
-	DraftMessage      string     `json:"draft_message"`
-	TestsPassed       *bool      `json:"tests_passed,omitempty"`
-	Review            *JobReview `json:"review,omitempty"`
-	OpencodeSessionID string     `json:"opencode_session_id"`
-	CreatedAt         time.Time  `json:"created_at"`
+	CommitID       string     `json:"commit_id"`
+	DraftMessage   string     `json:"draft_message"`
+	TestsPassed    *bool      `json:"tests_passed,omitempty"`
+	Review         *JobReview `json:"review,omitempty"`
+	AgentSessionID string     `json:"agent_session_id"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
 // JobChange represents a change being built up during a job.
@@ -189,24 +189,24 @@ func (c JobChange) IsComplete() bool {
 	return last.Review != nil && last.Review.Outcome == ReviewOutcomeAccept
 }
 
-// JobOpencodeSession tracks an opencode session started by a job.
-type JobOpencodeSession struct {
+// JobAgentSession tracks an LLM session started by a job.
+type JobAgentSession struct {
 	Purpose string `json:"purpose"`
 	ID      string `json:"id"`
 }
 
 // Job stores job state for a repo.
 type Job struct {
-	ID                  string               `json:"id"`
-	Repo                string               `json:"repo"`
-	TodoID              string               `json:"todo_id"`
-	Agent               string               `json:"agent"`
-	ImplementationModel string               `json:"implementation_model,omitempty"`
-	CodeReviewModel     string               `json:"code_review_model,omitempty"`
-	ProjectReviewModel  string               `json:"project_review_model,omitempty"`
-	Stage               JobStage             `json:"stage"`
-	Feedback            string               `json:"feedback,omitempty"`
-	OpencodeSessions    []JobOpencodeSession `json:"opencode_sessions,omitempty"`
+	ID                  string            `json:"id"`
+	Repo                string            `json:"repo"`
+	TodoID              string            `json:"todo_id"`
+	Agent               string            `json:"agent"`
+	ImplementationModel string            `json:"implementation_model,omitempty"`
+	CodeReviewModel     string            `json:"code_review_model,omitempty"`
+	ProjectReviewModel  string            `json:"project_review_model,omitempty"`
+	Stage               JobStage          `json:"stage"`
+	Feedback            string            `json:"feedback,omitempty"`
+	AgentSessions       []JobAgentSession `json:"agent_sessions,omitempty"`
 	// Changes created by this job, in order of creation.
 	Changes []JobChange `json:"changes,omitempty"`
 	// ProjectReview captures the final project review (after all changes complete).

@@ -2,7 +2,6 @@ package job
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,8 +49,8 @@ func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) 
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			return OpencodeRunResult{SessionID: "ses-123", ExitCode: 0}, nil
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{SessionID: "ses-123", ExitCode: 0}, nil
 		},
 	}
 
@@ -62,10 +61,10 @@ func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) 
 	if !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("expected missing file error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "commit message missing after opencode implementation") {
+	if !strings.Contains(err.Error(), "commit message missing after LLM implementation") {
 		t.Fatalf("expected context in error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "opencode session ses-123") {
+	if !strings.Contains(err.Error(), "session ses-123") {
 		t.Fatalf("expected session context, got %v", err)
 	}
 	if !strings.Contains(err.Error(), "before") || !strings.Contains(err.Error(), "after") {
@@ -121,21 +120,17 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 		CurrentChangeID: func(string) (string, error) {
 			return "change-restore", nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			runCalls++
 			if runCalls == 1 {
-				return OpencodeRunResult{
-					SessionID:    "ses-789",
-					ExitCode:     -1,
-					RunCommand:   "opencode run --attach=http://127.0.0.1:1234 --agent=gpt-5.2-codex",
-					ServeCommand: "opencode serve --port=1234 --hostname=127.0.0.1",
+				return AgentRunResult{
+					SessionID: "ses-789",
+					ExitCode:  -1,
 				}, nil
 			}
-			return OpencodeRunResult{
-				SessionID:    "ses-790",
-				ExitCode:     -1,
-				RunCommand:   "opencode run --attach=http://127.0.0.1:1234 --agent=gpt-5.2-codex",
-				ServeCommand: "opencode serve --port=1234 --hostname=127.0.0.1",
+			return AgentRunResult{
+				SessionID: "ses-790",
+				ExitCode:  -1,
 			}, nil
 		},
 		RestoreWorkspace: func(_ string, commitID string) error {
@@ -143,7 +138,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 			restoreCommit = commitID
 			return nil
 		},
-		OpencodeAgent: "gpt-5.2-codex",
+		Model: "gpt-5.2-codex",
 	}
 
 	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
@@ -157,24 +152,19 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 		t.Fatalf("expected restore commit to be before, got %q", restoreCommit)
 	}
 	message := err.Error()
-	if !strings.Contains(message, "opencode implement failed with exit code -1") {
+	if !strings.Contains(message, "agent implement failed with exit code -1") {
 		t.Fatalf("expected exit code context, got %v", message)
 	}
 	if !strings.Contains(message, "session ses-790") {
 		t.Fatalf("expected session context, got %v", message)
 	}
-	if !strings.Contains(message, "agent \"gpt-5.2-codex\"") {
-		t.Fatalf("expected agent context, got %v", message)
+	if !strings.Contains(message, "model \"gpt-5.2-codex\"") {
+		t.Fatalf("expected model context, got %v", message)
 	}
 	if !strings.Contains(message, "prompt prompt-implementation.tmpl") {
 		t.Fatalf("expected prompt context, got %v", message)
 	}
-	if !strings.Contains(message, "run opencode run --attach=http://127.0.0.1:1234 --agent=gpt-5.2-codex") {
-		t.Fatalf("expected run command context, got %v", message)
-	}
-	if !strings.Contains(message, "serve opencode serve --port=1234 --hostname=127.0.0.1") {
-		t.Fatalf("expected serve command context, got %v", message)
-	}
+	// Note: run and serve commands are no longer included in the unified error message
 	if !strings.Contains(message, "before before") || !strings.Contains(message, "after after-second") {
 		t.Fatalf("expected commit context, got %v", message)
 	}
@@ -183,74 +173,6 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 	}
 	if !strings.Contains(message, "retry 1") {
 		t.Fatalf("expected retry context, got %v", message)
-	}
-}
-
-func TestRunImplementingStageSetsOpencodeConfigEnv(t *testing.T) {
-	repoPath := t.TempDir()
-	stateDir := t.TempDir()
-	workspacePath := t.TempDir()
-
-	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
-
-	now := time.Date(2026, time.January, 8, 9, 10, 11, 0, time.UTC)
-	current, err := manager.Create("todo-env", now, CreateOptions{})
-	if err != nil {
-		t.Fatalf("create job: %v", err)
-	}
-
-	item := todo.Todo{
-		ID:       "todo-env",
-		Title:    "Env config",
-		Type:     todo.TypeTask,
-		Priority: todo.PriorityMedium,
-	}
-
-	commitIDs := []string{"before", "after"}
-	commitIndex := 0
-
-	opts := RunOptions{
-		Now: func() time.Time { return now },
-		CurrentCommitID: func(string) (string, error) {
-			if commitIndex >= len(commitIDs) {
-				return "", errors.New("commit id lookup exhausted")
-			}
-			id := commitIDs[commitIndex]
-			commitIndex++
-			return id, nil
-		},
-		CurrentChangeID: func(string) (string, error) {
-			return "change-env", nil
-		},
-		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, nil
-		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
-			value, ok := envValue(runOpts.Env, opencodeConfigEnvVar)
-			if !ok {
-				return OpencodeRunResult{}, fmt.Errorf("expected %s to be set", opencodeConfigEnvVar)
-			}
-			expected := opencodeConfigJSON()
-			if value != expected {
-				return OpencodeRunResult{}, fmt.Errorf("expected %s to be %q, got %q", opencodeConfigEnvVar, expected, value)
-			}
-			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
-			if err := os.WriteFile(messagePath, []byte("feat: env"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
-			}
-			return OpencodeRunResult{SessionID: "ses-env", ExitCode: 0}, nil
-		},
-	}
-
-	result, err := runImplementingStage(manager, current, item, repoPath, workspacePath, opts, nil, "")
-	if err != nil {
-		t.Fatalf("run implementing stage: %v", err)
-	}
-	if !result.Changed {
-		t.Fatalf("expected change detected")
 	}
 }
 
@@ -295,12 +217,12 @@ func TestRunImplementingStageRetriesOpencodeAfterRestore(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-retry", nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			runCalls++
 			if runCalls == 1 {
-				return OpencodeRunResult{SessionID: "ses-1", ExitCode: -1}, nil
+				return AgentRunResult{SessionID: "ses-1", ExitCode: -1}, nil
 			}
-			return OpencodeRunResult{SessionID: "ses-2", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "ses-2", ExitCode: 0}, nil
 		},
 		RestoreWorkspace: func(string, string) error {
 			restoreCalls++
@@ -369,8 +291,8 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChange(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			return OpencodeRunResult{SessionID: "ses-456", ExitCode: 0}, nil
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{SessionID: "ses-456", ExitCode: 0}, nil
 		},
 	}
 
@@ -429,8 +351,8 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			return OpencodeRunResult{SessionID: "ses-789", ExitCode: 0}, nil
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{SessionID: "ses-789", ExitCode: 0}, nil
 		},
 	}
 
@@ -443,69 +365,5 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 	}
 	if _, err := os.Stat(messagePath); !os.IsNotExist(err) {
 		t.Fatalf("expected commit message to be deleted")
-	}
-}
-
-func TestRunImplementingStageFailedOpencodeIncludesStderrInMessage(t *testing.T) {
-	repoPath := t.TempDir()
-	stateDir := t.TempDir()
-
-	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
-
-	now := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
-	current, err := manager.Create("todo-stderr", now, CreateOptions{})
-	if err != nil {
-		t.Fatalf("create job: %v", err)
-	}
-
-	item := todo.Todo{
-		ID:          "todo-stderr",
-		Title:       "Test stderr capture",
-		Description: "Testing that stderr is captured in error messages",
-	}
-
-	opts := RunOptions{
-		Now: func() time.Time { return now },
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			return OpencodeRunResult{
-				SessionID: "ses-stderr",
-				ExitCode:  1,
-				Stderr:    "Something went terribly wrong\nWith multiple lines",
-			}, nil
-		},
-		CurrentCommitID: func(string) (string, error) {
-			return "before-commit", nil
-		},
-		CurrentChangeID: func(string) (string, error) {
-			return "change-stderr", nil
-		},
-		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, nil
-		},
-		UpdateStale: func(string) error {
-			return nil
-		},
-		Snapshot: func(string) error {
-			return nil
-		},
-	}
-
-	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
-	if err == nil {
-		t.Fatalf("expected error, got nil")
-	}
-
-	errStr := err.Error()
-	if !strings.Contains(errStr, "stderr:") {
-		t.Fatalf("expected error message to contain 'stderr:', got: %s", errStr)
-	}
-	if !strings.Contains(errStr, "Something went terribly wrong") {
-		t.Fatalf("expected error message to contain stderr content, got: %s", errStr)
-	}
-	if !strings.Contains(errStr, "With multiple lines") {
-		t.Fatalf("expected error message to contain stderr content, got: %s", errStr)
 	}
 }

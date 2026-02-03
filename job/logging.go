@@ -95,7 +95,7 @@ func (logger *ConsoleLogger) Prompt(entry PromptLog) {
 	}
 	if !internalstrings.IsBlank(entry.Transcript) {
 		lines = append(lines,
-			formatLogLabel(logger.headerStyle.Render("Opencode transcript:"), documentIndent),
+			formatLogLabel(logger.headerStyle.Render("LLM transcript:"), documentIndent),
 			formatTranscriptBody(entry.Transcript, subdocumentIndent),
 		)
 	}

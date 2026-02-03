@@ -4,7 +4,6 @@ changes to resolve.
 
 {{.FeedbackBlock}}
 {{if .Message}}
-
 Commit message from the previous version:
 {{.CommitMessageBlock}}
 {{end}}
@@ -13,8 +12,10 @@ Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, write a multi-line commit message for this diff to
-./.incrementum-commit-message
+When you make changes, write a detailed commit message, describing the entire
+working-tree change (not just this particular round of review), to
+./.incrementum-commit-message. Describe the what _and_ the why. Keep changes
+focused on the current step.
 
 {{if .CommitLog}}Here are the previous changes we've made as part of this todo:
 {{range .CommitLog}}- ID: {{.ID}}

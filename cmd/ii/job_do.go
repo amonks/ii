@@ -1,18 +1,19 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/habit"
-	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/internal/editor"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	jobpkg "github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/opencode"
 	"github.com/amonks/incrementum/todo"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/spf13/cobra"
@@ -30,7 +31,7 @@ var jobRun = jobpkg.Run
 // jobDoTodo is the function called to run a single todo. It can be overridden for testing.
 var jobDoTodo = runJobDoTodo
 
-// runInteractiveSession is the function called to run an interactive opencode session.
+// runInteractiveSession is the function called to run an interactive agent session.
 // It can be overridden for testing.
 var runInteractiveSession = defaultRunInteractiveSession
 
@@ -57,13 +58,13 @@ func init() {
 	jobDoCmd.Flags().StringVarP(&jobDoType, "type", "t", "task", "Todo type (task, bug, feature, design)")
 	jobDoCmd.Flags().IntVarP(&jobDoPriority, "priority", "p", todo.PriorityMedium, "Priority (0=critical, 1=high, 2=medium, 3=low, 4=backlog)")
 	jobDoCmd.Flags().StringVarP(&jobDoDescription, "description", "d", "", "Description (use '-' to read from stdin)")
-	jobDoCmd.Flags().StringVar(&jobDoImplementationModel, "implementation-model", "", "Opencode model for implementation")
-	jobDoCmd.Flags().StringVar(&jobDoCodeReviewModel, "code-review-model", "", "Opencode model for commit review")
-	jobDoCmd.Flags().StringVar(&jobDoProjectReviewModel, "project-review-model", "", "Opencode model for project review")
+	jobDoCmd.Flags().StringVar(&jobDoImplementationModel, "implementation-model", "", "LLM model for implementation")
+	jobDoCmd.Flags().StringVar(&jobDoCodeReviewModel, "code-review-model", "", "LLM model for commit review")
+	jobDoCmd.Flags().StringVar(&jobDoProjectReviewModel, "project-review-model", "", "LLM model for project review")
 	jobDoCmd.Flags().StringArrayVar(&jobDoDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	jobDoCmd.Flags().BoolVarP(&jobDoEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	jobDoCmd.Flags().BoolVar(&jobDoNoEdit, "no-edit", false, "Do not open $EDITOR")
-	jobDoCmd.Flags().StringVar(&jobDoAgent, "agent", "", "Opencode agent")
+	jobDoCmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent binary path")
 	jobDoCmd.Flags().StringVar(&jobDoHabit, "habit", "", "Run a habit instead of a todo (use habit name or empty for first)")
 	// Allow --habit without a value to run the first habit alphabetically
 	jobDoCmd.Flags().Lookup("habit").NoOptDefVal = " "
@@ -141,7 +142,14 @@ func runHabitJob(cmd *cobra.Command) error {
 		}
 	}
 
-	opencodeAgent := resolveOpencodeAgentOverride(cmd, jobDoAgent)
+	model := jobDoAgent // --agent flag value is used as model
+
+	// Set up LLM runner
+	runLLM, err := makeRunLLMFunc(repoPath)
+	if err != nil {
+		return err
+	}
+	transcripts := makeTranscriptsFunc()
 
 	logger := jobpkg.NewConsoleLogger(os.Stdout)
 	reporter := newJobStageReporter(logger)
@@ -182,7 +190,9 @@ func runHabitJob(cmd *cobra.Command) error {
 		OnStageChange: onStageChange,
 		Logger:        logger,
 		EventStream:   eventStream,
-		OpencodeAgent: opencodeAgent,
+		Model:         model,
+		RunLLM:        runLLM,
+		Transcripts:   transcripts,
 	})
 	close(eventDone)
 	streamErr := <-eventErrs
@@ -263,7 +273,7 @@ func runJobDoTodo(cmd *cobra.Command, todoID string) error {
 type interactiveSessionOptions struct {
 	repoPath string
 	prompt   string
-	agent    string
+	model    string
 }
 
 // interactiveSessionResult contains the result of an interactive session.
@@ -271,29 +281,42 @@ type interactiveSessionResult struct {
 	exitCode int
 }
 
-// defaultRunInteractiveSession runs an interactive opencode session using the real opencode store.
+// defaultRunInteractiveSession runs an interactive agent session.
 func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSessionResult, error) {
-	opencodeStore, err := opencode.Open()
-	if err != nil {
-		return interactiveSessionResult{}, err
-	}
-
-	handle, err := opencodeStore.Run(opencode.RunOptions{
-		RepoPath:  opts.repoPath,
-		WorkDir:   opts.repoPath,
-		Prompt:    opts.prompt,
-		Agent:     opts.agent,
-		StartedAt: time.Now(),
-		Stdout:    os.Stdout,
-		Stderr:    os.Stderr,
+	store, err := agent.OpenWithOptions(agent.Options{
+		RepoPath: opts.repoPath,
 	})
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
 
-	drainDone := opencode.DrainEvents(handle.Events)
+	// Set up signal handling for graceful cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	defer signal.Stop(sigCh)
+	go func() {
+		<-sigCh
+		cancel()
+	}()
+
+	handle, err := store.Run(ctx, agent.RunOptions{
+		RepoPath:  opts.repoPath,
+		WorkDir:   opts.repoPath,
+		Prompt:    opts.prompt,
+		Model:     opts.model,
+		StartedAt: time.Now(),
+	})
+	if err != nil {
+		return interactiveSessionResult{}, err
+	}
+
+	// Stream events to stderr (same as agent run command)
+	streamAgentEventsToStderr(handle.Events)
+
 	result, err := handle.Wait()
-	<-drainDone
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
@@ -301,13 +324,8 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 	return interactiveSessionResult{exitCode: result.ExitCode}, nil
 }
 
-// runDesignTodo runs an interactive opencode session for design todos.
+// runDesignTodo runs an interactive agent session for design todos.
 func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
-	cfg, err := config.Load(repoPath)
-	if err != nil {
-		return err
-	}
-
 	// Mark the todo as started
 	store, err := todo.Open(repoPath, todo.OpenOptions{
 		CreateIfMissing: false,
@@ -335,10 +353,13 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	// Build a prompt for the design session
 	prompt := fmt.Sprintf("You are working on a design todo.\n\n%s", formatDesignTodoBlock(item))
 
+	// For design todos, use the todo's implementation model if set,
+	// otherwise the agent store will resolve the model via priority chain
+	// (INCREMENTUM_AGENT_MODEL env var -> config implementation-model)
 	result, err := runInteractiveSession(interactiveSessionOptions{
 		repoPath: repoPath,
 		prompt:   prompt,
-		agent:    resolveOpencodeAgent(cmd, jobDoAgent, cfg.Job.Agent),
+		model:    item.ImplementationModel,
 	})
 	if err != nil {
 		return err
@@ -388,7 +409,14 @@ func formatDesignTodoBlock(item todo.Todo) string {
 }
 
 func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
-	opencodeAgent := resolveOpencodeAgentOverride(cmd, jobDoAgent)
+	model := jobDoAgent // --agent flag value is used as model
+
+	// Set up LLM runner
+	runLLM, err := makeRunLLMFunc(repoPath)
+	if err != nil {
+		return err
+	}
+	transcripts := makeTranscriptsFunc()
 
 	logger := jobpkg.NewConsoleLogger(os.Stdout)
 	reporter := newJobStageReporter(logger)
@@ -429,7 +457,9 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		OnStageChange: onStageChange,
 		Logger:        logger,
 		EventStream:   eventStream,
-		OpencodeAgent: opencodeAgent,
+		Model:         model,
+		RunLLM:        runLLM,
+		Transcripts:   transcripts,
 	})
 	close(eventDone)
 	streamErr := <-eventErrs

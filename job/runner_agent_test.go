@@ -7,18 +7,18 @@ import (
 	"github.com/amonks/incrementum/todo"
 )
 
-func TestResolveOpencodeAgentForPurposePrefersOverride(t *testing.T) {
+func TestResolveModelForPurposePrefersOverride(t *testing.T) {
 	cfg := &config.Config{Job: config.Job{Agent: "default", ImplementationModel: "impl"}}
 	item := todo.Todo{ImplementationModel: "todo-impl"}
 
-	got := resolveOpencodeAgentForPurpose(cfg, "override", "implement", item)
+	got := resolveModelForPurpose(cfg, "override", "implement", item)
 
 	if got != "override" {
 		t.Fatalf("expected override, got %q", got)
 	}
 }
 
-func TestResolveOpencodeAgentForPurposeUsesTodoModels(t *testing.T) {
+func TestResolveModelForPurposeUsesTodoModels(t *testing.T) {
 	cfg := &config.Config{Job: config.Job{
 		Agent:               "default",
 		ImplementationModel: "impl",
@@ -42,17 +42,17 @@ func TestResolveOpencodeAgentForPurposeUsesTodoModels(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		if got := resolveOpencodeAgentForPurpose(cfg, "", tc.purpose, item); got != tc.want {
+		if got := resolveModelForPurpose(cfg, "", tc.purpose, item); got != tc.want {
 			t.Fatalf("%s: expected %q, got %q", tc.name, tc.want, got)
 		}
 	}
 }
 
-func TestResolveOpencodeAgentForPurposeFallsBackToAgent(t *testing.T) {
+func TestResolveModelForPurposeFallsBackToAgent(t *testing.T) {
 	cfg := &config.Config{Job: config.Job{Agent: "default"}}
 	item := todo.Todo{}
 
-	got := resolveOpencodeAgentForPurpose(cfg, "", "review", item)
+	got := resolveModelForPurpose(cfg, "", "review", item)
 
 	if got != "default" {
 		t.Fatalf("expected default, got %q", got)

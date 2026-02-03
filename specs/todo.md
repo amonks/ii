@@ -41,9 +41,9 @@ Fields (JSON keys):
 - `status`: `open`, `proposed`, `in_progress`, `closed`, `done`, `waiting`, or `tombstone`.
 - `priority`: integer 0..4 (0 = critical, 4 = backlog).
 - `type`: `task`, `bug`, or `feature`.
-- `implementation_model`: optional opencode model override for implementation.
-- `code_review_model`: optional opencode model override for commit review.
-- `project_review_model`: optional opencode model override for project review.
+- `implementation_model`: optional model override for implementation.
+- `code_review_model`: optional model override for commit review.
+- `project_review_model`: optional model override for project review.
 - `created_at`, `updated_at`: timestamps.
 - `closed_at`: timestamp if closed or done.
 - `started_at`: timestamp when entering `in_progress`.
@@ -195,7 +195,7 @@ The CLI mirrors the store API:
 - `todo close` -> `Store.Close`
 - `todo finish` (`todo done`) -> `Store.Finish`
 - `todo reopen` -> `Store.Reopen`
-- `todo delete` -> `Store.Delete`
+- `todo delete` (`todo destroy`) -> `Store.Delete`
 - `todo show` -> `Store.Show`
 - `todo list` -> `Store.List`
 - `todo ready` -> `Store.Ready`

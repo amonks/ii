@@ -1,18 +1,17 @@
-You are implementing the next step of a todo.
+You are implementing the next step towards completing a todo.
 
 Do the highest-priority remaining step toward resolution of the todo. Dot 'i's,
 cross 't's: this change should be complete and atomic; tests should pass, specs
-should be updated, and the commit message should describe how it advances us
-towards the todo. Don't do additional work that does not move us towards todo
+should be updated. Don't do additional work that does not move us towards todo
 resolution. If the todo is already complete, make no changes.
 
 Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, write a detailed commit message to
-./.incrementum-commit-message -- describe the what _and_ the why. Keep changes
-focused on the current step.
+When you make changes, write a detailed commit message, describing the entire
+working-tree change, to ./.incrementum-commit-message -- describe the what _and_
+the why. Keep changes focused on the current step.
 
 {{if .CommitLog}}We've already made these changes towards completing this todo:
 {{range .CommitLog}}- ID: {{.ID}}

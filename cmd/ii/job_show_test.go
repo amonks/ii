@@ -16,7 +16,7 @@ func TestPrintJobDetailIncludesFeedbackAndSessions(t *testing.T) {
 		Stage:    jobpkg.StageImplementing,
 		Status:   jobpkg.StatusActive,
 		Feedback: "Please address lint failures.",
-		OpencodeSessions: []jobpkg.OpencodeSession{
+		AgentSessions: []jobpkg.AgentSession{
 			{Purpose: "implement", ID: "open-1"},
 			{Purpose: "review", ID: "open-2"},
 		},

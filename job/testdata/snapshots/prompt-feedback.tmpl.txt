@@ -11,7 +11,6 @@ Previous feedback
     
     Please double-check that empty lines are preserved between sections.
 
-
 Commit message from the previous version:
 Commit message
 
@@ -31,12 +30,15 @@ Changes are reviewed according to these questions:
 - Are things in the right place?
 - Does it include proper test coverage?
 - Does it keep the relevant specs up to date?
+- Does the commit message describe the _entire_ change?
 - Does it conform to the norms of the code areas it modifies?
 - Does it work?
 
 
-When you make changes, write a multi-line commit message for this diff to
-./.incrementum-commit-message
+When you make changes, write a detailed commit message, describing the entire
+working-tree change (not just this particular round of review), to
+./.incrementum-commit-message. Describe the what _and_ the why. Keep changes
+focused on the current step.
 
 Here are the previous changes we've made as part of this todo:
 - ID: abc1234

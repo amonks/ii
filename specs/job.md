@@ -2,15 +2,15 @@
 
 ## Overview
 
-The job package and subcommand automate todo completion via opencode. A job
-runs from the current working directory and executes a work loop: opencode is
+The job package and subcommand automate todo completion via LLM-driven agents. A job
+runs from the current working directory and executes a work loop: the agent is
 asked to complete the next highest-priority step and write a commit message,
-tests run, opencode reviews the change, and the result is committed. The loop
-continues until opencode makes no changes, then the job skips tests and moves
+tests run, the agent reviews the change, and the result is committed. The loop
+continues until the agent makes no changes, then the job skips tests and moves
 directly to the final project review before completing. Jobs retry on test
-failure or review rejection until opencode decides to abandon.
+failure or review rejection until the agent decides to abandon.
 
-Jobs emit a merged stream of opencode and job events to the JSONL event log and
+Jobs emit a merged stream of agent and job events to the JSONL event log and
 optionally to a caller-provided Go channel via `RunOptions.EventStream`, which
 is closed when the run completes.
 
@@ -27,7 +27,6 @@ subcommand stays a thin wrapper that wires flags and delegates to the package.
 Follow our usual testing practice:
 
 - Prefer lots of focused unit tests in `job/`.
-- Add a handful of end-to-end testscript tests in `cmd/ii`.
 
 ## Storage
 
@@ -35,13 +34,12 @@ Follow our usual testing practice:
   state.
 - Jobs are scoped per repo using the same repo slug as other state.
 - Jobs do not create sessions or workspaces.
-- Job records track opencode sessions created during the job.
+- Job records track LLM sessions created during the job.
 - Job event logs are stored as JSONL at
   `~/.local/share/incrementum/jobs/events/<job-id>.jsonl`.
-- Job event entries use opencode's event shape (`id`, `name`, `data`) and include
-  both opencode events and job-specific events (stage changes, prompts, opencode
-  transcripts, test results, review feedback, commit messages, opencode session
-  boundaries, opencode errors).
+- Job event entries use a unified event shape (`id`, `name`, `data`) and include
+  both agent events and job-specific events (stage changes, prompts, transcripts,
+  test results, review feedback, commit messages, session boundaries, errors).
 
 ## Job Model
 
@@ -50,12 +48,13 @@ Fields (JSON keys):
 - `id`: 8-character job id (hash of todo_id + timestamp).
 - `repo`: repo slug.
 - `todo_id`: full resolved todo id.
-- `agent`: opencode agent name (empty string when unset).
+- `agent`: model name (empty string when unset).
 - `stage`: `implementing`, `testing`, `reviewing`, `committing`.
 - `feedback`: feedback from last failed stage (test results list or review
   feedback).
 - `opencode_sessions`: list of `{"purpose": string, "id": string}` tracking
-  opencode sessions created during this job.
+  LLM sessions created during this job. (Note: field name is a legacy artifact
+  from before the agent migration; kept for backward compatibility.)
 - `changes`: list of changes created during this job (see
   [job-changes.md](./job-changes.md)).
 - `project_review`: final project review outcome (see
@@ -66,16 +65,16 @@ Fields (JSON keys):
 - `updated_at`: timestamp.
 - `completed_at`: timestamp.
 
-## Agent Selection
+## Model Selection
 
-- The opencode agent is resolved in this order: CLI override -> todo-level model
-  for the stage -> config stage model -> config default agent.
+- The model is resolved in this order: CLI override (`--agent` flag) -> todo-level
+  model for the stage -> config stage model -> config default model.
 - Todo-level fields map to stages: `implementation_model` for implementing,
   `code_review_model` for step review, `project_review_model` for project review.
 
 ## Feedback File
 
-Opencode communicates review outcomes by writing to `.incrementum-feedback` in the
+The agent communicates review outcomes by writing to `.incrementum-feedback` in the
 job workspace root (`WorkspacePath`).
 
 Format:
@@ -99,7 +98,7 @@ If the file doesn't exist after review, treat as `ACCEPT` with no comments.
 
 ## Commit Message File
 
-Opencode writes the generated commit message to `.incrementum-commit-message` in the
+The agent writes the generated commit message to `.incrementum-commit-message` in the
 job workspace root (`WorkspacePath`) during the implementing stage. The commit
 message should describe the entire working tree diff created in that stage.
 
@@ -120,43 +119,40 @@ any stage -> failed (unrecoverable error)
 
 ### implementing
 
-1. Best-effort `jj workspace update-stale` in the repo working directory.
-2. Delete `.incrementum-feedback` from the workspace root if it exists.
-3. Record the current working copy commit id.
-4. Run opencode with `prompt-implementation.tmpl` when no feedback is present,
+1. Re-read the todo from the store. This allows edits made from another process
+   to be picked up between implementation runs. The re-read todo is used for
+   the remainder of the implement→test→review→commit cycle.
+2. Best-effort `jj workspace update-stale` in the repo working directory.
+3. Delete `.incrementum-feedback` from the workspace root if it exists.
+4. Record the current working copy commit id.
+5. Run the agent with `prompt-implementation.tmpl` when no feedback is present,
    or `prompt-feedback.tmpl` when responding to feedback (PWD set to the
-   workspace root). Set `OPENCODE_CONFIG_CONTENT` to a JSON config that:
-   - Denies question prompts (`permission.question = "deny"`)
-   - Allows all bash commands by default (`permission.bash["*"] = "allow"`)
-   - Denies most jj commands (`permission.bash["jj *"] = "deny"`)
-   - Allows read-only jj commands: `jj diff`, `jj file`, `jj log`, `jj show`
-     and their variants with arguments
-5. Template receives: `Todo`, `Feedback`, and `Message` (previous commit message
+   workspace root).
+6. Template receives: `Todo`, `Feedback`, and `Message` (previous commit message
    when responding to feedback).
-6. Best-effort `jj debug snapshot` in the repo working directory immediately
-   before opencode runs.
-7. Run opencode to completion.
-8. Record opencode session in `opencode_sessions` with purpose `implement`.
-9. If opencode returns an error before completion, record a `job.opencode.error`
-   event with the purpose and error message, then mark the job `failed`.
-10. If opencode fails (nonzero exit): mark job `failed` with an error that
-    includes purpose, session id, agent, prompt template, opencode run/serve
-    command lines, repo/workspace paths, before/after commit ids, and stderr
-    output when available. If the exit code is negative and the working copy commit changed,
-    best-effort restore the workspace to the pre-opencode commit and retry
-    opencode once. If the retry still fails, best-effort restore before failing
-    and include the retry attempt in the error details.
-11. Record the current working copy commit id again.
-12. If the commit id changed, run `jj log -r @ -T empty --no-graph` and treat a
+7. Best-effort `jj debug snapshot` in the repo working directory immediately
+   before the agent runs.
+8. Run agent to completion.
+9. Record session in job record with purpose `implement`.
+10. If agent returns an error before completion, record a `job.agent.error`
+    event with the purpose and error message, then mark the job `failed`.
+11. If agent fails (nonzero exit): mark job `failed` with an error that
+    includes purpose, session id, model, prompt template, repo/workspace paths,
+    and before/after commit ids. If the exit code is negative and the working
+    copy commit changed, best-effort restore the workspace to the pre-agent
+    commit and retry once. If the retry still fails, best-effort restore before
+    failing and include the retry attempt in the error details.
+12. Record the current working copy commit id again.
+13. If the commit id changed, run `jj log -r @ -T empty --no-graph` and treat a
     `true` result as no change (empty working copy) and `false` as changed.
-13. If the commit id did not change (or the change is empty):
+14. If the commit id did not change (or the change is empty):
     - Delete `.incrementum-commit-message` from the workspace root if it exists.
     - Flag the next review cycle as the final project review.
-14. If the commit id changed and the change is not empty:
+15. If the commit id changed and the change is not empty:
     - Read `.incrementum-commit-message` from the workspace root, trimming trailing
       newlines, trailing whitespace on each line, and any leading blank lines.
     - Store the message for the committing stage.
-15. Transition to `testing` when changes were detected, otherwise transition to
+16. Transition to `testing` when changes were detected, otherwise transition to
     `reviewing`.
 
 ### testing
@@ -178,9 +174,8 @@ any stage -> failed (unrecoverable error)
 1. Best-effort `jj workspace update-stale` in the repo working directory.
 2. Delete `.incrementum-feedback` from the workspace root if it exists.
 3. Best-effort `jj debug snapshot` in the repo working directory immediately
-   before opencode runs.
-4. Run opencode with `OPENCODE_CONFIG_CONTENT` set as in the implementing
-   stage (denies questions, allows bash except most jj commands) and:
+   before the agent runs.
+4. Run the agent with:
    - `prompt-commit-review.tmpl` during the work loop, or
    - `prompt-project-review.tmpl` during the final project review.
 5. Template receives: `Todo`, `Message` (commit message from the implementing stage).
@@ -188,19 +183,16 @@ any stage -> failed (unrecoverable error)
    the job appends a `Commit message` block with heading-and-indent formatting
    before rendering.
    - If the commit message is required for the step review and missing, fail with
-     a descriptive error that calls out the opencode implementation prompt and
-     expected `.incrementum-commit-message` location.
-6. Template instructs opencode to inspect changes (or the commit sequence for
+     a descriptive error that calls out the implementation prompt and expected
+     `.incrementum-commit-message` location.
+6. Template instructs the agent to inspect changes (or the commit sequence for
    project review) and write outcome to `.incrementum-feedback`.
-7. Run opencode to completion.
-8. Record opencode session in `opencode_sessions` with purpose `review` or
-   `project-review`.
-9. If opencode returns an error before completion, record a `job.opencode.error`
+7. Run agent to completion.
+8. Record session in job record with purpose `review` or `project-review`.
+9. If agent returns an error before completion, record a `job.agent.error`
    event with the purpose and error message, then mark the job `failed`.
-10. If opencode fails (nonzero exit): mark job `failed` with an error that
-    includes purpose, session id, agent, prompt template, opencode run/serve
-    command lines, repo/workspace paths, before/after commit ids, and stderr
-    output when available.
+10. If agent fails (nonzero exit): mark job `failed` with an error that
+    includes purpose, session id, model, prompt template, and repo/workspace paths.
 11. Read `.incrementum-feedback` from the workspace root:
    - Delete `.incrementum-feedback` after reading.
    - Missing or first line is `ACCEPT`:
@@ -220,7 +212,7 @@ any stage -> failed (unrecoverable error)
    no changes and move to project review). An output with no file stat lines or
    non-zero summary counts as empty.
 3. Format final message with a fixed commit message layout (not templated). The
-   format uses the opencode-generated summary/body plus a todo block, reflowed via
+   format uses the agent-generated summary/body plus a todo block, reflowed via
    the markdown renderer to 80/76/72 columns with 0/4/8-space indentation. Todo
    descriptions are rendered via the markdown renderer to preserve lists and code
    blocks.
@@ -261,7 +253,7 @@ with their ACCEPT verdict.
 ## Failure Handling
 
 - `failed`: unrecoverable error (commit fails, invalid feedback format).
-- `abandoned`: opencode decided the task is impossible.
+- `abandoned`: agent decided the task is impossible.
 
 Both reopen the todo.
 
@@ -284,10 +276,10 @@ without proper cleanup.
 
 ```toml
 [job]
-agent = "gpt-5.2-codex"
-implementation-model = "gpt-5.2-impl"
-code-review-model = "gpt-5.2-review"
-project-review-model = "gpt-5.2-project"
+agent = "claude-sonnet-4-20250514"
+implementation-model = "claude-sonnet-4-20250514"
+code-review-model = "claude-sonnet-4-20250514"
+project-review-model = "claude-sonnet-4-20250514"
 test-commands = [
   "go test ./...",
   "golangci-lint run",
@@ -303,12 +295,10 @@ Config is loaded from `incrementum.toml` or `.incrementum/config.toml` and
 Callers can supply a preloaded config via `RunOptions.Config` to avoid
 filesystem reads; when set, the job runner does not call `LoadConfig`.
 
-`agent` is an optional default for opencode runs; it is overridden by the
-`--agent` flag and `INCREMENTUM_OPENCODE_AGENT`.
+`agent` is an optional default model; it is overridden by the `--agent` flag.
 
 `implementation-model`, `code-review-model`, and `project-review-model` override
-`agent` for their respective stages unless `--agent` or
-`INCREMENTUM_OPENCODE_AGENT` are set.
+`agent` for their respective stages unless `--agent` is set.
 
 ## Templates
 
@@ -336,9 +326,8 @@ All prompt templates receive the same data:
 - `Message` (`string`)
 - `CommitLog` (`[]CommitLogEntry`): list of commits recorded so far with fields `ID`
   and `Message`. The `Message` field contains only the draft commit message (summary
-  and body) as written by opencode, not the fully formatted message with todo context
+  and body) as written by the agent, not the fully formatted message with todo context
   and review comments.
-- `OpencodeTranscripts` (`[]OpencodeTranscript`)
 - `WorkspacePath` (`string`): absolute path to the job's workspace root.
 - `ReviewInstructions` (`string`): standard review output instructions block.
 - `TodoBlock` (`string`): formatted heading-and-indent block that includes ID, title,
@@ -369,8 +358,7 @@ Create and run a job to completion (blocking).
 - If creation flags provided: create todo first (same flags as `ii todo create`:
   `--title`, `--type`, `--priority`, `--description/--desc`, `--deps`,
   `--edit/--no-edit`).
-- `--agent` selects the opencode agent and overrides `INCREMENTUM_OPENCODE_AGENT`
-  and `job.agent`.
+- `--agent` selects the model for the job.
 - `--habit <name>` runs the named habit from `.incrementum/habits/<name>.md`.
   Accepts habit name or unique prefix.
 - `--habit` (no name) runs the alphabetically first habit.
@@ -387,13 +375,11 @@ Behavior:
 5. Output job context: workdir and full todo details.
 6. Create job record with status `active`, stage `implementing`.
 7. Run state machine to completion.
-8. Output progress: stage transitions and formatted logs (opencode event stream
+8. Output progress: stage transitions and formatted logs (agent event stream
    entries labeled and indented, tool start/end entries surfaced separately,
-   prompts and commit messages rendered via the markdown renderer, opencode
-   transcripts printed as preformatted logs with tool output preserved, test
+   prompts and commit messages rendered via the markdown renderer, test
    results, review feedback) with 80-column wrapping where formatting applies
-   and 0/4/8-space indentation for document hierarchy. Opencode stdout/stderr is
-   suppressed; use the formatted event logs instead.
+   and 0/4/8-space indentation for document hierarchy.
 9. On success: mark todo done and print final commit info with 80-column
    wrapping and 0/4/8-space indentation (todo descriptions are
    markdown-rendered).
@@ -450,8 +436,8 @@ List jobs for current repo.
 
 Columns: `JOB`, `TODO`, `STAGE`, `STATUS`, `IMPL`, `REVIEW`, `PROJECT`, `AGE`, `DURATION`, `TITLE`.
 
-`IMPL`, `REVIEW`, and `PROJECT` show the opencode models used for
-implementation, commit review, and project review.
+`IMPL`, `REVIEW`, and `PROJECT` show the models used for implementation,
+commit review, and project review.
 
 `AGE` uses `now - created_at`.
 
@@ -475,7 +461,7 @@ Output includes:
 - Job ID, status, stage.
 - Todo ID and title.
 - Feedback (if any).
-- Opencode sessions with purposes.
+- LLM sessions with purposes.
 
 ### `ii job logs <job-id>`
 
@@ -484,5 +470,63 @@ Show the combined job event stream.
 Reads the job's JSONL event log and prints entries in the order they were
 recorded, formatting stage transitions and logs with the same 80-column reflow
 and 0/4/8-space indentation used during `ii job do` output.
-Opencode events are rendered as `Opencode event (<name>):` blocks with their
-data indented beneath the label.
+Agent events are rendered with tool summaries (e.g., `Tool start: read file 'path'`)
+and message content (thinking/response).
+
+## Agent Event Rendering
+
+The job event log renderer supports agent events (from the `agent` package).
+Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
+`tool.` prefixes) and rendered with:
+
+- Tool summaries showing tool name and key arguments (bash command, file path)
+- Message content showing thinking blocks and assistant responses
+- Agent start/end showing model and token usage
+
+## LLM Integration
+
+The job runner uses the `agent` package to run LLM sessions. The key types are:
+
+### Types
+
+```go
+type AgentRunOptions struct {
+    RepoPath      string
+    WorkspacePath string
+    Prompt        string
+    Model         string
+    StartedAt     time.Time
+    EventLog      *EventLog
+    Env           []string
+}
+
+type AgentRunResult struct {
+    SessionID string
+    ExitCode  int
+}
+
+type AgentSession struct {
+    Purpose string // "implement", "review", or "project-review"
+    ID      string // Agent session ID
+}
+
+type AgentTranscript struct {
+    Purpose    string
+    Transcript string
+}
+```
+
+### RunOptions Fields
+
+- `RunLLM`: Callback to run an LLM session. Defaults to using the agent package.
+- `Transcripts`: Retrieves transcripts for sessions. Defaults to using
+  `agent.Store.TranscriptSnapshot`.
+- `Model`: Overrides model selection for all stages when set.
+
+### Job Events
+
+The job runner emits these job-level events:
+
+- `job.agent.start`: Records the purpose and model when an agent run starts.
+- `job.agent.end`: Records the purpose, session ID, and exit code when complete.
+- `job.agent.error`: Records the purpose and error message when an agent run fails.

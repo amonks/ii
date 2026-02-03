@@ -24,13 +24,13 @@ type CreateOptions struct {
 	// Description provides additional context.
 	Description string
 
-	// ImplementationModel selects the opencode model for implementing.
+	// ImplementationModel selects the model for implementing.
 	ImplementationModel string
 
-	// CodeReviewModel selects the opencode model for commit review.
+	// CodeReviewModel selects the model for commit review.
 	CodeReviewModel string
 
-	// ProjectReviewModel selects the opencode model for project review.
+	// ProjectReviewModel selects the model for project review.
 	ProjectReviewModel string
 
 	// Dependencies is a list of dependency IDs.

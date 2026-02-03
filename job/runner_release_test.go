@@ -28,7 +28,7 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 
 	expectedPurpose := fmt.Sprintf("todo store (job run %s)", created.ID)
 	var workspaceErr error
-	opencodeCount := 0
+	llmCount := 0
 
 	_, err = Run(repoPath, created.ID, RunOptions{
 		LoadConfig: func(string) (*config.Config, error) {
@@ -38,15 +38,15 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 			return nil, nil
 		},
 		UpdateStale: func(string) error { return nil },
-		RunOpencode: func(opts opencodeRunOptions) (OpencodeRunResult, error) {
-			opencodeCount++
-			if opencodeCount == 3 {
+		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
+			llmCount++
+			if llmCount == 3 {
 				messagePath := filepath.Join(opts.WorkspacePath, commitMessageFilename)
 				if err := os.WriteFile(messagePath, []byte("feat: release store"), 0o644); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
 			}
-			return OpencodeRunResult{SessionID: fmt.Sprintf("opencode-%d", opencodeCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
 		},
 		Now: func() time.Time { return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC) },
 		OnStart: func(StartInfo) {

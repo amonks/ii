@@ -24,10 +24,10 @@ type Store struct {
 
 func newState() *State {
 	return &State{
-		Repos:            make(map[string]RepoInfo),
-		Workspaces:       make(map[string]WorkspaceInfo),
-		OpencodeSessions: make(map[string]OpencodeSession),
-		Jobs:             make(map[string]Job),
+		Repos:         make(map[string]RepoInfo),
+		Workspaces:    make(map[string]WorkspaceInfo),
+		AgentSessions: make(map[string]AgentSession),
+		Jobs:          make(map[string]Job),
 	}
 }
 
@@ -38,34 +38,12 @@ func ensureStateMaps(st *State) {
 	if st.Workspaces == nil {
 		st.Workspaces = make(map[string]WorkspaceInfo)
 	}
-	if st.OpencodeSessions == nil {
-		st.OpencodeSessions = make(map[string]OpencodeSession)
+	if st.AgentSessions == nil {
+		st.AgentSessions = make(map[string]AgentSession)
 	}
 	if st.Jobs == nil {
 		st.Jobs = make(map[string]Job)
 	}
-}
-
-// containsLegacyPromptFields checks if the raw JSON state data contains any
-// opencode_sessions with the deprecated "prompt" field.
-// This migration check can be removed after sufficient time has passed.
-func containsLegacyPromptFields(data []byte) bool {
-	var raw struct {
-		OpencodeSessions map[string]json.RawMessage `json:"opencode_sessions"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return false
-	}
-	for _, sessionData := range raw.OpencodeSessions {
-		var session map[string]json.RawMessage
-		if err := json.Unmarshal(sessionData, &session); err != nil {
-			continue
-		}
-		if _, hasPrompt := session["prompt"]; hasPrompt {
-			return true
-		}
-	}
-	return false
 }
 
 // NewStore creates a new state store using the given directory.
@@ -106,16 +84,6 @@ func (s *Store) Load() (*State, error) {
 	}
 
 	ensureStateMaps(&st)
-
-	// Migration: strip legacy prompt fields from opencode_sessions.
-	// The Prompt field was removed from OpencodeSession to reduce state file
-	// size. This migration check can be removed after sufficient time has
-	// passed for all users to have upgraded.
-	if containsLegacyPromptFields(data) {
-		if err := s.Save(&st); err != nil {
-			return nil, fmt.Errorf("migrate state (strip prompts): %w", err)
-		}
-	}
 
 	return &st, nil
 }
@@ -203,9 +171,10 @@ func (s *Store) RepoPathForWorkspace(wsPath string) (string, bool, error) {
 		return "", false, err
 	}
 
-	wsPath = filepath.Clean(wsPath)
+	// Normalize the input path for comparison to handle macOS /private symlinks
+	wsPath = paths.NormalizePath(filepath.Clean(wsPath))
 	for _, ws := range st.Workspaces {
-		if filepath.Clean(ws.Path) != wsPath {
+		if paths.NormalizePath(filepath.Clean(ws.Path)) != wsPath {
 			continue
 		}
 		repo, ok := st.Repos[ws.Repo]
@@ -220,7 +189,11 @@ func (s *Store) RepoPathForWorkspace(wsPath string) (string, bool, error) {
 
 // GetOrCreateRepoName returns the repo name for the given source path,
 // creating a new entry if needed. Handles collisions by appending suffixes.
+// The source path is normalized (symlinks resolved) for consistent matching.
 func (s *Store) GetOrCreateRepoName(sourcePath string) (string, error) {
+	// Normalize path to handle symlinks (e.g., /var -> /private/var on macOS)
+	sourcePath = normalizePath(sourcePath)
+
 	var result string
 
 	err := s.Update(func(st *State) error {
@@ -288,4 +261,19 @@ func SanitizeRepoName(path string) string {
 	path = strings.Trim(path, "-")
 
 	return path
+}
+
+// normalizePath resolves symlinks and returns a clean absolute path.
+// This ensures consistent path matching regardless of how the path was accessed.
+func normalizePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	if abs, err := filepath.Abs(path); err == nil {
+		path = abs
+	}
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		path = resolved
+	}
+	return filepath.Clean(path)
 }

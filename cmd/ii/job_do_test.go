@@ -137,7 +137,7 @@ func newTestJobDoCommand() *cobra.Command {
 	cmd.Flags().StringArrayVar(&jobDoDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	cmd.Flags().BoolVarP(&jobDoEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	cmd.Flags().BoolVar(&jobDoNoEdit, "no-edit", false, "Do not open $EDITOR")
-	cmd.Flags().StringVar(&jobDoAgent, "agent", "", "Opencode agent")
+	cmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent binary path")
 	return cmd
 }
 

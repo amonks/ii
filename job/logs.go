@@ -29,6 +29,7 @@ type logSnapshotWriter struct {
 	skipSpacing  bool
 	lastCategory string
 	opencode     *opencodeEventInterpreter
+	agent        *agentEventInterpreter
 	repoPath     string
 }
 
@@ -67,7 +68,7 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 			}
 			writer.skipSpacing = true
 			writer.writeBlock(
-				formatLogLabel("Opencode transcript:", documentIndent),
+				formatLogLabel("LLM transcript:", documentIndent),
 				formatTranscriptBody(data.Transcript, subdocumentIndent),
 			)
 		case jobEventReview:
@@ -91,10 +92,21 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 				return err
 			}
 			writer.writeBlock(
-				formatLogLabel(opencodeErrorLabel(data.Purpose), documentIndent),
+				formatLogLabel(legacyErrorLabel(data.Purpose), documentIndent),
+				formatLogBody(data.Error, subdocumentIndent, false),
+			)
+		case jobEventAgentError:
+			data, err := decodeEventData[agentErrorEventData](event.Data)
+			if err != nil {
+				return err
+			}
+			writer.writeBlock(
+				formatLogLabel(agentErrorLabel(data.Purpose), documentIndent),
 				formatLogBody(data.Error, subdocumentIndent, false),
 			)
 		case jobEventOpencodeStart, jobEventOpencodeEnd:
+			return nil
+		case jobEventAgentStart, jobEventAgentEnd:
 			return nil
 		default:
 			return nil
@@ -107,24 +119,38 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 		return nil
 	}
 
+	// Check if this is an agent event
+	if IsAgentEvent(event) {
+		return writer.appendAgentEvent(event)
+	}
+
 	return writer.appendOpencodeEvent(event)
 }
 
-func opencodeEventLabel(name string) string {
+func legacyEventLabel(name string) string {
 	trimmed, ok := trimmedLabelValue(name)
 	if !ok {
-		return "Opencode event:"
+		return "LLM event:"
 	}
-	return fmt.Sprintf("Opencode event (%s):", trimmed)
+	return fmt.Sprintf("LLM event (%s):", trimmed)
 }
 
-func opencodeErrorLabel(purpose string) string {
+func legacyErrorLabel(purpose string) string {
 	trimmed, ok := trimmedLabelValue(purpose)
 	if !ok {
-		return "Opencode error:"
+		return "LLM error:"
 	}
 	label := strings.ReplaceAll(trimmed, "-", " ")
-	return fmt.Sprintf("Opencode %s error:", label)
+	return fmt.Sprintf("LLM %s error:", label)
+}
+
+func agentErrorLabel(purpose string) string {
+	trimmed, ok := trimmedLabelValue(purpose)
+	if !ok {
+		return "Agent error:"
+	}
+	label := strings.ReplaceAll(trimmed, "-", " ")
+	return fmt.Sprintf("Agent %s error:", label)
 }
 
 func trimmedLabelValue(value string) (string, bool) {
@@ -181,6 +207,28 @@ func (writer *logSnapshotWriter) appendOpencodeEvent(event Event) error {
 		}
 		writer.writeBlock(lines...)
 		writer.lastCategory = "opencode"
+	}
+	return nil
+}
+
+func (writer *logSnapshotWriter) appendAgentEvent(event Event) error {
+	if writer.agent == nil {
+		writer.agent = newAgentEventInterpreter(writer.repoPath)
+	}
+	outputs, err := writer.agent.Handle(event)
+	if err != nil {
+		return err
+	}
+	for _, output := range outputs {
+		lines := formatAgentText(output)
+		if len(lines) == 0 {
+			continue
+		}
+		if writer.lastCategory == "agent" {
+			writer.skipSpacing = true
+		}
+		writer.writeBlock(lines...)
+		writer.lastCategory = "agent"
 	}
 	return nil
 }

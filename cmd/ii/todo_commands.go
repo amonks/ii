@@ -112,8 +112,11 @@ var todoReopenCmd = &cobra.Command{
 var todoDeleteCmd = &cobra.Command{
 	Use:   "delete <id>...",
 	Short: "Delete one or more todos",
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runTodoDelete,
+	Aliases: []string{
+		"destroy",
+	},
+	Args: cobra.MinimumNArgs(1),
+	RunE: runTodoDelete,
 }
 
 var todoDeleteReason string
@@ -193,9 +196,9 @@ func init() {
 	todoCreateCmd.Flags().StringVarP(&todoCreateType, "type", "t", "task", "Todo type (task, bug, feature, design)")
 	todoCreateCmd.Flags().IntVarP(&todoCreatePriority, "priority", "p", todo.PriorityMedium, "Priority (0=critical, 1=high, 2=medium, 3=low, 4=backlog)")
 	todoCreateCmd.Flags().StringVarP(&todoCreateDescription, "description", "d", "", "Description (use '-' to read from stdin)")
-	todoCreateCmd.Flags().StringVar(&todoCreateImplementationModel, "implementation-model", "", "Opencode model for implementation")
-	todoCreateCmd.Flags().StringVar(&todoCreateCodeReviewModel, "code-review-model", "", "Opencode model for commit review")
-	todoCreateCmd.Flags().StringVar(&todoCreateProjectReviewModel, "project-review-model", "", "Opencode model for project review")
+	todoCreateCmd.Flags().StringVar(&todoCreateImplementationModel, "implementation-model", "", "LLM model for implementation")
+	todoCreateCmd.Flags().StringVar(&todoCreateCodeReviewModel, "code-review-model", "", "LLM model for commit review")
+	todoCreateCmd.Flags().StringVar(&todoCreateProjectReviewModel, "project-review-model", "", "LLM model for project review")
 	todoCreateCmd.Flags().StringArrayVar(&todoCreateDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	todoCreateCmd.Flags().BoolVarP(&todoCreateEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	todoCreateCmd.Flags().BoolVar(&todoCreateNoEdit, "no-edit", false, "Do not open $EDITOR")
@@ -206,9 +209,9 @@ func init() {
 	todoUpdateCmd.Flags().StringVar(&todoUpdateStatus, "status", "", "New status (open, proposed, in_progress, closed, done, tombstone)")
 	todoUpdateCmd.Flags().IntVar(&todoUpdatePriority, "priority", 0, "New priority (0-4)")
 	todoUpdateCmd.Flags().StringVar(&todoUpdateType, "type", "", "New type (task, bug, feature, design)")
-	todoUpdateCmd.Flags().StringVar(&todoUpdateImplementationModel, "implementation-model", "", "Opencode model for implementation")
-	todoUpdateCmd.Flags().StringVar(&todoUpdateCodeReviewModel, "code-review-model", "", "Opencode model for commit review")
-	todoUpdateCmd.Flags().StringVar(&todoUpdateProjectReviewModel, "project-review-model", "", "Opencode model for project review")
+	todoUpdateCmd.Flags().StringVar(&todoUpdateImplementationModel, "implementation-model", "", "LLM model for implementation")
+	todoUpdateCmd.Flags().StringVar(&todoUpdateCodeReviewModel, "code-review-model", "", "LLM model for commit review")
+	todoUpdateCmd.Flags().StringVar(&todoUpdateProjectReviewModel, "project-review-model", "", "LLM model for project review")
 	todoUpdateCmd.Flags().BoolVarP(&todoUpdateEdit, "edit", "e", false, "Open $EDITOR (default if interactive)")
 	todoUpdateCmd.Flags().BoolVar(&todoUpdateNoEdit, "no-edit", false, "Do not open $EDITOR")
 

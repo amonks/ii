@@ -57,7 +57,7 @@ func TestConsoleLoggerFormatsEntries(t *testing.T) {
 	checks := []string{
 		"Implementation prompt:",
 		"Implement the change",
-		"Opencode transcript:",
+		"LLM transcript:",
 		"Plan the work.",
 		"Draft commit message:",
 		"feat: draft commit",
@@ -261,12 +261,12 @@ func TestRunImplementingStageLogsPromptAndCommitMessage(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: log message"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-log", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-log", ExitCode: 0}, nil
 		},
 		Logger: logger,
 	}
@@ -348,12 +348,12 @@ func TestRunImplementingStageUsesFeedbackPrompt(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: respond"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-feedback", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-feedback", ExitCode: 0}, nil
 		},
 		Logger: logger,
 	}
@@ -430,12 +430,12 @@ func TestRunImplementingStageRecordsEventLog(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: event log"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-event", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-event", ExitCode: 0}, nil
 		},
 		EventLog: eventLog,
 	}
@@ -453,11 +453,11 @@ func TestRunImplementingStageRecordsEventLog(t *testing.T) {
 	if events[0].Name != jobEventPrompt {
 		t.Fatalf("expected prompt event, got %#v", events[0])
 	}
-	if events[1].Name != jobEventOpencodeStart {
-		t.Fatalf("expected opencode start event, got %#v", events[1])
+	if events[1].Name != jobEventAgentStart {
+		t.Fatalf("expected agent start event, got %#v", events[1])
 	}
-	if events[2].Name != jobEventOpencodeEnd {
-		t.Fatalf("expected opencode end event, got %#v", events[2])
+	if events[2].Name != jobEventAgentEnd {
+		t.Fatalf("expected agent end event, got %#v", events[2])
 	}
 	if events[3].Name != jobEventCommitMessage {
 		t.Fatalf("expected commit message event, got %#v", events[3])
@@ -518,14 +518,14 @@ func TestRunReviewingStageLogsFeedback(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			if err := os.WriteFile(feedbackPath, []byte("REQUEST_CHANGES\n\nAdd tests."), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-review", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-review", ExitCode: 0}, nil
 		},
-		OpencodeTranscripts: func(string, []OpencodeSession) ([]OpencodeTranscript, error) {
-			return []OpencodeTranscript{{Purpose: "review", ID: "oc-review", Transcript: "Review transcript line."}}, nil
+		Transcripts: func(string, []AgentSession) ([]AgentTranscript, error) {
+			return []AgentTranscript{{Purpose: "review", Transcript: "Review transcript line."}}, nil
 		},
 		Logger: logger,
 	}
@@ -635,7 +635,7 @@ func TestRunCommittingStageLogsFinalMessage(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		OpencodeTranscripts: func(string, []OpencodeSession) ([]OpencodeTranscript, error) {
+		Transcripts: func(string, []AgentSession) ([]AgentTranscript, error) {
 			return nil, nil
 		},
 		CommitIDAt: func(string, string) (string, error) {

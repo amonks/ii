@@ -26,7 +26,7 @@ Design todos follow the same lifecycle as regular todos:
 
 When `ii job do` runs a todo with `type: design`:
 
-1. Launch an interactive opencode session instead of headless
+1. Launch an interactive agent session instead of headless
 2. The user collaborates with the agent to produce the design
 3. On completion, the todo is marked `done`
 

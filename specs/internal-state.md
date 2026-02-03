@@ -1,13 +1,13 @@
 # Internal State
 
 ## Overview
-The state package manages the shared incrementum state file (`~/.local/state/incrementum/state.json`). It provides persistence and locking for workspaces, opencode sessions, and jobs.
+The state package manages the shared incrementum state file (`~/.local/state/incrementum/state.json`). It provides persistence and locking for workspaces, agent sessions, and jobs.
 
 ## State File Structure
 The state file contains:
 - `repos`: maps repo names to source paths
 - `workspaces`: maps workspace keys to workspace info
-- `opencode_sessions`: maps session keys to opencode session records
+- `agent_sessions`: maps session keys to agent session records
 - `jobs`: maps job ids to job records
 
 ## Types
@@ -16,13 +16,13 @@ The state file contains:
 - `name`, `repo`, `path`, `purpose`, `status`, `created_at`, `updated_at`, `acquired_by_pid`, `acquired_at`, `provisioned`
 - Status: `available` or `acquired`
 
-### OpencodeSession
-- `id`, `repo`, `status`, `created_at`, `started_at`, `updated_at`, `completed_at`, `exit_code`, `duration_seconds`
-- Status: `active`, `completed`, `failed`, or `killed`
+### AgentSession
+- `id`, `repo`, `status`, `model`, `created_at`, `started_at`, `updated_at`, `completed_at`, `exit_code`, `duration_seconds`, `tokens_used`, `cost`
+- Status: `active`, `completed`, or `failed`
 - Note: Prompts are not stored to keep the state file small; they can be reconstructed from job/todo context
 
 ### Job
-- `id`, `repo`, `todo_id`, `stage`, `feedback`, `agent`, `opencode_sessions`, `status`, `created_at`, `started_at`, `updated_at`, `completed_at`
+- `id`, `repo`, `todo_id`, `stage`, `feedback`, `agent`, `opencode_sessions` (legacy field name), `status`, `created_at`, `started_at`, `updated_at`, `completed_at`
 - `changes`: list of `JobChange` tracking changes created during the job
 - `project_review`: final project review outcome (`JobReview`)
 - Stage: `implementing`, `testing`, `reviewing`, or `committing`
@@ -38,6 +38,6 @@ All state updates use advisory file locking via `state.lock` to serialize concur
 - `Load()`: read current state
 - `Save(state)`: write state atomically, skipping disk writes when no changes
 - `Update(fn)`: read-modify-write with locking
-- `GetOrCreateRepoName(path)`: get or create repo name for path
+- `GetOrCreateRepoName(path)`: get or create repo name for path; normalizes paths (resolves symlinks) for consistent matching across platforms
 - `RepoPathForWorkspace(wsPath)`: resolve workspace path to source repo
 - `SanitizeRepoName(path)`: convert path to safe repo name

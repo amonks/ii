@@ -22,13 +22,13 @@ type Todo struct {
 	// Type categorizes the todo (task, bug, feature, design).
 	Type TodoType `json:"type"`
 
-	// ImplementationModel selects the opencode model for implementing this todo.
+	// ImplementationModel selects the model for implementing this todo.
 	ImplementationModel string `json:"implementation_model,omitempty"`
 
-	// CodeReviewModel selects the opencode model for commit review on this todo.
+	// CodeReviewModel selects the model for commit review on this todo.
 	CodeReviewModel string `json:"code_review_model,omitempty"`
 
-	// ProjectReviewModel selects the opencode model for final project review on this todo.
+	// ProjectReviewModel selects the model for final project review on this todo.
 	ProjectReviewModel string `json:"project_review_model,omitempty"`
 
 	// CreatedAt is when the todo was created.

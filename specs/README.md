@@ -34,12 +34,10 @@
 - Each package wrapped into the CLI has both regular tests and an end-to-end test that builds and executes the CLI binary.
 - CLI e2e testscript suites live under `cmd/ii/testdata` and are executed from `cmd/ii/*_test.go`.
 - CLI wrapper unit tests live under `cmd/ii`; go package APIs are tested in their respective module directories.
-- Opencode integration tests copy the user's real config into a temp `XDG_CONFIG_HOME`, skipping when no config exists.
 
 ### No-Mock Test Audit
 
-- 2026-01-24: Audited all `*_test.go` files under `cmd/ii`, `job`, `opencode`, `todo`, `workspace`, and `internal`; tests rely on real integrations or local helpers with no mock binaries.
-- Opencode integration tests assert stdin prompt handling and confirm attach/event stream logs are recorded.
+- 2026-01-24: Audited all `*_test.go` files under `cmd/ii`, `job`, `todo`, `workspace`, and `internal`; tests rely on real integrations or local helpers with no mock binaries.
 
 ## Public Packages
 
@@ -49,23 +47,25 @@
 | [todo.md](./todo.md)               | [todo/](../todo/)           | Task tracking: command-line JIRA with TODOs stored in a special branch                                       |
 | [habit.md](./habit.md)             | [habit/](../habit/)         | Habit management: ongoing improvement practices stored as version-controlled instruction documents           |
 | [cli.md](./cli.md)                 | [cmd/ii/](../cmd/ii/)       | CLI conventions and behavior notes                                                                             |
-| [opencode.md](./opencode.md)       | [opencode/](../opencode/)   | Opencode integration: run opencode sessions and monitor their status                                         |
-| [job.md](./job.md)                 | [job/](../job/)             | Jobs system: workflow management for using opencode to complete todos (in sessions), with acceptance testing |
+| [llm.md](./llm.md)                 | [llm/](../llm/)             | LLM abstraction: unified API for Anthropic, OpenAI completions, and OpenAI responses                         |
+| [agent.md](./agent.md)             | [agent/](../agent/)         | Agent loop: autonomous task execution with built-in tools (bash, read, write, edit)                          |
+| [job.md](./job.md)                 | [job/](../job/)             | Jobs system: workflow management for LLM-based todo completion, with acceptance testing                      |
 | [job-changes.md](./job-changes.md) | [job/](../job/)             | Job change tracking: persistent state for changes, commits, and reviews within a job                         |
-| [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for opencode + jobs                                                              |
+| [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |
 
 ## Internal Packages
 
 | Spec                                                   | Code                                                | Purpose                                              |
 | ------------------------------------------------------ | --------------------------------------------------- | ---------------------------------------------------- |
+| [internal-agent.md](./internal-agent.md)               | [internal/agent/](../internal/agent/)               | Core agent loop without persistence                  |
 | [internal-age.md](./internal-age.md)                   | [internal/age/](../internal/age/)                   | Timing helpers for computed ages and durations       |
 | [internal-config.md](./internal-config.md)             | [internal/config/](../internal/config/)             | Load project/global configuration and run hook scripts      |
 | [internal-editor.md](./internal-editor.md)             | [internal/editor/](../internal/editor/)             | `$EDITOR` integration and todo TOML editing flow     |
 | [internal-ids.md](./internal-ids.md)                   | [internal/ids/](../internal/ids/)                   | Unique prefix length calculation for IDs             |
 | [internal-jj.md](./internal-jj.md)                     | [internal/jj/](../internal/jj/)                     | Go wrapper around jj CLI commands                    |
 | [internal-listflags.md](./internal-listflags.md)       | [internal/listflags/](../internal/listflags/)       | Shared Cobra list flags                              |
+| [internal-llm.md](./internal-llm.md)                   | [internal/llm/](../internal/llm/)                   | Core LLM abstraction without persistence             |
 | [internal-markdown.md](./internal-markdown.md)         | [internal/markdown/](../internal/markdown/)         | Markdown rendering helpers for terminal output       |
-| [internal-opencode.md](./internal-opencode.md)         | [internal/opencode/](../internal/opencode/)         | Read opencode session storage files                  |
 | [internal-paths.md](./internal-paths.md)               | [internal/paths/](../internal/paths/)               | Default state and workspace paths                    |
 | [internal-state.md](./internal-state.md)               | [internal/state/](../internal/state/)               | Shared state file management                         |
 | [internal-strings.md](./internal-strings.md)           | [internal/strings/](../internal/strings/)           | Shared whitespace normalization helpers              |

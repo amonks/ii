@@ -29,11 +29,11 @@ type TodoData struct {
 	Status string
 	// Description is the todo description.
 	Description string
-	// ImplementationModel selects the opencode model for implementation.
+	// ImplementationModel selects the model for implementation.
 	ImplementationModel string
-	// CodeReviewModel selects the opencode model for commit review.
+	// CodeReviewModel selects the model for commit review.
 	CodeReviewModel string
-	// ProjectReviewModel selects the opencode model for project review.
+	// ProjectReviewModel selects the model for project review.
 	ProjectReviewModel string
 }
 

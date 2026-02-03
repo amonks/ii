@@ -113,7 +113,7 @@ func (i *opencodeEventInterpreter) Handle(event Event) ([]opencodeRenderedEvent,
 	}
 	payload, err := parseOpencodeEventPayload(event.Data)
 	if err != nil || internalstrings.IsBlank(payload.Type) {
-		return rawOpencodeEvent(opencodeEventLabel(event.Name), event.Data), nil
+		return rawOpencodeEvent(legacyEventLabel(event.Name), event.Data), nil
 	}
 
 	switch payload.Type {
@@ -127,13 +127,13 @@ func (i *opencodeEventInterpreter) Handle(event Event) ([]opencodeRenderedEvent,
 		if !i.enabled(payload.Type) {
 			return nil, nil
 		}
-		return rawOpencodeEvent(opencodeEventLabel(payload.Type), event.Data), nil
+		return rawOpencodeEvent(legacyEventLabel(payload.Type), event.Data), nil
 	}
 }
 
 func handleOpencodePayload(payloadType, data string, outputs []opencodeRenderedEvent, err error) ([]opencodeRenderedEvent, error) {
 	if err != nil {
-		return rawOpencodeEvent(opencodeEventLabel(payloadType), data), nil
+		return rawOpencodeEvent(legacyEventLabel(payloadType), data), nil
 	}
 	return outputs, nil
 }
@@ -286,15 +286,15 @@ func renderToolEnd(summary, status string) opencodeRenderedEvent {
 }
 
 func renderPrompt(text string) opencodeRenderedEvent {
-	return opencodeRenderedEvent{Kind: "prompt", Label: "Opencode prompt:", Body: text}
+	return opencodeRenderedEvent{Kind: "prompt", Label: "LLM prompt:", Body: text}
 }
 
 func renderResponse(text string) opencodeRenderedEvent {
-	return opencodeRenderedEvent{Kind: "response", Label: "Opencode response:", Body: text}
+	return opencodeRenderedEvent{Kind: "response", Label: "LLM response:", Body: text}
 }
 
 func renderThinking(text string) opencodeRenderedEvent {
-	return opencodeRenderedEvent{Kind: "thinking", Label: "Opencode thinking:", Body: text}
+	return opencodeRenderedEvent{Kind: "thinking", Label: "LLM thinking:", Body: text}
 }
 
 func isToolTerminalStatus(status string) bool {

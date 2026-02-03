@@ -1,51 +1,27 @@
 package job
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/internal/jj"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/opencode"
 	"github.com/amonks/incrementum/todo"
 )
 
 const (
 	feedbackFilename      = ".incrementum-feedback"
 	commitMessageFilename = ".incrementum-commit-message"
-	opencodeConfigEnvVar  = "OPENCODE_CONFIG_CONTENT"
 )
-
-// opencodeConfig defines the configuration passed to opencode via OPENCODE_CONFIG_CONTENT.
-// This structure is marshaled to JSON and controls permission grants for opencode tools.
-var opencodeConfig = map[string]any{
-	"permission": map[string]any{
-		"question": "deny",
-		"bash": map[string]string{
-			"*":         "allow",
-			"jj *":      "deny",
-			"jj diff":   "allow",
-			"jj diff *": "allow",
-			"jj file":   "allow",
-			"jj file *": "allow",
-			"jj log":    "allow",
-			"jj log *":  "allow",
-			"jj show":   "allow",
-			"jj show *": "allow",
-		},
-	},
-}
 
 var promptMessagePattern = regexp.MustCompile(`\{\{[^}]*\.(Message|CommitMessageBlock)[^}]*\}\}`)
 
@@ -66,24 +42,26 @@ type RunOptions struct {
 	LoadConfig func(string) (*config.Config, error)
 	// Config provides loaded configuration for the job run.
 	// When nil, LoadConfig is used.
-	Config      *config.Config
-	RunTests    func(string, []string) ([]TestCommandResult, error)
-	RunOpencode func(opencodeRunOptions) (OpencodeRunResult, error)
-	// OpencodeAgent overrides agent selection for all stages when set.
-	OpencodeAgent       string
-	CurrentCommitID     func(string) (string, error)
-	CurrentChangeID     func(string) (string, error)
-	CurrentChangeEmpty  func(string) (bool, error)
-	DiffStat            func(string, string, string) (string, error)
-	CommitIDAt          func(string, string) (string, error)
-	Commit              func(string, string) error
-	RestoreWorkspace    func(string, string) error
-	UpdateStale         func(string) error
-	Snapshot            func(string) error
-	OpencodeTranscripts func(string, []OpencodeSession) ([]OpencodeTranscript, error)
-	EventLog            *EventLog
-	EventLogOptions     EventLogOptions
-	Logger              Logger
+	Config   *config.Config
+	RunTests func(string, []string) ([]TestCommandResult, error)
+	// RunLLM runs an LLM session using the agent package.
+	RunLLM func(AgentRunOptions) (AgentRunResult, error)
+	// Model overrides model selection for all stages when set.
+	Model              string
+	CurrentCommitID    func(string) (string, error)
+	CurrentChangeID    func(string) (string, error)
+	CurrentChangeEmpty func(string) (bool, error)
+	DiffStat           func(string, string, string) (string, error)
+	CommitIDAt         func(string, string) (string, error)
+	Commit             func(string, string) error
+	RestoreWorkspace   func(string, string) error
+	UpdateStale        func(string) error
+	Snapshot           func(string) error
+	// Transcripts retrieves transcripts for LLM sessions.
+	Transcripts     func(string, []AgentSession) ([]AgentTranscript, error)
+	EventLog        *EventLog
+	EventLogOptions EventLogOptions
+	Logger          Logger
 }
 
 // RunResult captures the output of running a job.
@@ -91,15 +69,6 @@ type RunResult struct {
 	Job           Job
 	CommitMessage string
 	CommitLog     []CommitLogEntry
-}
-
-// OpencodeRunResult captures output from running opencode.
-type OpencodeRunResult struct {
-	SessionID    string
-	ExitCode     int
-	ServeCommand string
-	RunCommand   string
-	Stderr       string
 }
 
 type reviewScope int
@@ -118,16 +87,6 @@ type ImplementingStageResult struct {
 type ReviewingStageResult struct {
 	Job            Job
 	ReviewComments string
-}
-
-type opencodeRunOptions struct {
-	RepoPath      string
-	WorkspacePath string
-	Prompt        string
-	Agent         string
-	StartedAt     time.Time
-	EventLog      *EventLog
-	Env           []string
 }
 
 // Run creates and executes a job for the given todo.
@@ -200,9 +159,9 @@ func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 		return result, errors.Join(err, reopenErr)
 	}
 
-	implementModel := resolveOpencodeAgentForPurpose(opts.Config, opts.OpencodeAgent, "implement", item)
-	codeReviewModel := resolveOpencodeAgentForPurpose(opts.Config, opts.OpencodeAgent, "review", item)
-	projectReviewModel := resolveOpencodeAgentForPurpose(opts.Config, opts.OpencodeAgent, "project-review", item)
+	implementModel := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
+	codeReviewModel := resolveModelForPurpose(opts.Config, opts.Model, "review", item)
+	projectReviewModel := resolveModelForPurpose(opts.Config, opts.Model, "project-review", item)
 	created, err := manager.Create(item.ID, startedAt, CreateOptions{
 		Agent:               implementModel,
 		ImplementationModel: implementModel,
@@ -426,6 +385,14 @@ func (ctx *runContext) handleStageOutcome(current, next Job, stageErr error) (Jo
 
 func (ctx *runContext) runImplementingStage(current Job) func() (Job, error) {
 	return func() (Job, error) {
+		// Re-read the todo at the start of each implementation run so that
+		// edits made from another process are picked up.
+		item, err := reloadTodo(ctx.repoPath, ctx.item.ID)
+		if err != nil {
+			return Job{}, fmt.Errorf("reload todo: %w", err)
+		}
+		ctx.item = item
+
 		result, err := runImplementingStage(ctx.manager, current, ctx.item, ctx.repoPath, ctx.workspacePath, ctx.opts, ctx.result.CommitLog, ctx.commitMessage)
 		if err != nil {
 			return Job{}, err
@@ -479,14 +446,8 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.RunTests == nil {
 		opts.RunTests = RunTestCommands
 	}
-	if opts.RunOpencode == nil {
-		opts.RunOpencode = func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
-			store, err := opencode.Open()
-			if err != nil {
-				return OpencodeRunResult{}, err
-			}
-			return runOpencodeSession(store, runOpts)
-		}
+	if opts.RunLLM == nil {
+		opts.RunLLM = defaultRunLLM
 	}
 	var jjClient *jj.Client
 	getJJ := func() *jj.Client {
@@ -522,14 +483,14 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.Snapshot == nil {
 		opts.Snapshot = getJJ().Snapshot
 	}
-	if opts.OpencodeTranscripts == nil {
-		opts.OpencodeTranscripts = opencodeTranscripts
+	if opts.Transcripts == nil {
+		opts.Transcripts = defaultTranscripts
 	}
 	opts.Logger = resolveLogger(opts.Logger)
 	return opts
 }
 
-func resolveOpencodeAgentForPurpose(cfg *config.Config, override, purpose string, item todo.Todo) string {
+func resolveModelForPurpose(cfg *config.Config, override, purpose string, item todo.Todo) string {
 	if !internalstrings.IsBlank(override) {
 		return internalstrings.TrimSpace(override)
 	}
@@ -609,45 +570,45 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		return ImplementingStageResult{}, err
 	}
 
-	agent := resolveOpencodeAgentForPurpose(opts.Config, opts.OpencodeAgent, "implement", item)
+	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
 	var lastSessionID string
-	runAttempt := func() (OpencodeRunResult, error) {
-		result, err := runOpencodeWithEvents(opts, opencodeRunOptions{
-			RepoPath:      repoPath,
-			WorkspacePath: workspacePath,
-			Prompt:        prompt,
-			Agent:         agent,
-			StartedAt:     opts.Now(),
-			EventLog:      opts.EventLog,
-			Env:           applyOpencodeConfigEnv(nil),
-		}, "implement")
+	runOpts := AgentRunOptions{
+		RepoPath:      repoPath,
+		WorkspacePath: workspacePath,
+		Prompt:        prompt,
+		Model:         model,
+		StartedAt:     opts.Now(),
+		EventLog:      opts.EventLog,
+	}
+	runAttempt := func() (AgentRunResult, error) {
+		result, err := runLLMWithEvents(opts, runOpts, "implement")
 		if err != nil {
-			return OpencodeRunResult{}, err
+			return AgentRunResult{}, err
 		}
 
 		lastSessionID = result.SessionID
-		append := OpencodeSession{Purpose: "implement", ID: result.SessionID}
-		updated, err = manager.Update(updated.ID, UpdateOptions{AppendOpencodeSession: &append}, opts.Now())
+		session := AgentSession{Purpose: "implement", ID: result.SessionID}
+		updated, err = manager.Update(updated.ID, UpdateOptions{AppendAgentSession: &session}, opts.Now())
 		if err != nil {
-			return OpencodeRunResult{}, err
+			return AgentRunResult{}, err
 		}
-		transcript := loadOpencodeTranscript(opts.OpencodeTranscripts, repoPath, append)
+		transcript := loadTranscript(opts, session)
 		if !internalstrings.IsBlank(transcript) {
 			if err := appendJobEvent(opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: transcript}); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
 		}
 		logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt, Transcript: transcript})
 		return result, nil
 	}
 
-	opencodeResult, err := runAttempt()
+	llmResult, err := runAttempt()
 	if err != nil {
 		return ImplementingStageResult{}, err
 	}
 
 	retryCount := 0
-	for opencodeResult.ExitCode != 0 {
+	for llmResult.ExitCode != 0 {
 		afterCommitID := ""
 		var afterCommitErr error
 		if opts.CurrentCommitID != nil && !internalstrings.IsBlank(workspacePath) {
@@ -655,7 +616,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		}
 		restored := false
 		var restoreErr error
-		if opencodeResult.ExitCode < 0 && afterCommitErr == nil && afterCommitID != "" && beforeCommitID != "" && afterCommitID != beforeCommitID {
+		if llmResult.ExitCode < 0 && afterCommitErr == nil && afterCommitID != "" && beforeCommitID != "" && afterCommitID != beforeCommitID {
 			if opts.RestoreWorkspace != nil {
 				restoreErr = opts.RestoreWorkspace(workspacePath, beforeCommitID)
 				if restoreErr == nil {
@@ -665,18 +626,13 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		}
 		if restored && retryCount == 0 {
 			retryCount++
-			opencodeResult, err = runAttempt()
+			llmResult, err = runAttempt()
 			if err != nil {
 				return ImplementingStageResult{}, err
 			}
 			continue
 		}
-		return ImplementingStageResult{}, errors.New(buildOpencodeFailureMessage("implement", promptName, opencodeResult, opencodeRunOptions{
-			RepoPath:      repoPath,
-			WorkspacePath: workspacePath,
-			Prompt:        prompt,
-			Agent:         agent,
-		}, beforeCommitID, afterCommitID, afterCommitErr, restored, restoreErr, retryCount))
+		return ImplementingStageResult{}, errors.New(buildLLMFailureMessage("implement", promptName, llmResult, runOpts, beforeCommitID, afterCommitID, afterCommitErr, restored, restoreErr, retryCount))
 	}
 
 	afterCommitID, err := opts.CurrentCommitID(workspacePath)
@@ -704,8 +660,8 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				return ImplementingStageResult{}, fmt.Errorf(
-					"commit message missing after opencode implementation; opencode session %s was instructed to write %s because the workspace changed from %s to %s: %w",
-					opencodeResult.SessionID,
+					"commit message missing after LLM implementation; session %s was instructed to write %s because the workspace changed from %s to %s: %w",
+					llmResult.SessionID,
 					messagePath,
 					beforeCommitID,
 					afterCommitID,
@@ -721,9 +677,9 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 
 		// Record the commit in the current change.
 		commit := JobCommit{
-			CommitID:          afterCommitID,
-			DraftMessage:      message,
-			OpencodeSessionID: lastSessionID,
+			CommitID:       afterCommitID,
+			DraftMessage:   message,
+			AgentSessionID: lastSessionID,
 		}
 		updated, err = manager.AppendCommitToCurrentChange(updated.ID, commit, opts.Now())
 		if err != nil {
@@ -815,7 +771,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		promptName = "prompt-project-review.tmpl"
 		purpose = "project-review"
 	}
-	agent := resolveOpencodeAgentForPurpose(opts.Config, opts.OpencodeAgent, purpose, item)
+	model := resolveModelForPurpose(opts.Config, opts.Model, purpose, item)
 
 	promptTemplate, err := LoadPrompt(workspacePath, promptName)
 	if err != nil {
@@ -830,25 +786,24 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 
-	opencodeResult, err := runOpencodeWithEvents(opts, opencodeRunOptions{
+	llmResult, err := runLLMWithEvents(opts, AgentRunOptions{
 		RepoPath:      repoPath,
 		WorkspacePath: workspacePath,
 		Prompt:        prompt,
-		Agent:         agent,
+		Model:         model,
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
-		Env:           applyOpencodeConfigEnv(nil),
 	}, purpose)
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
 
-	append := OpencodeSession{Purpose: purpose, ID: opencodeResult.SessionID}
-	updated, err := manager.Update(current.ID, UpdateOptions{AppendOpencodeSession: &append}, opts.Now())
+	session := AgentSession{Purpose: purpose, ID: llmResult.SessionID}
+	updated, err := manager.Update(current.ID, UpdateOptions{AppendAgentSession: &session}, opts.Now())
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
-	transcript := loadOpencodeTranscript(opts.OpencodeTranscripts, repoPath, append)
+	transcript := loadTranscript(opts, session)
 	if !internalstrings.IsBlank(transcript) {
 		if err := appendJobEvent(opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: purpose, Transcript: transcript}); err != nil {
 			return ReviewingStageResult{}, err
@@ -856,8 +811,8 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	}
 	logger.Prompt(PromptLog{Purpose: purpose, Template: promptName, Prompt: prompt, Transcript: transcript})
 
-	if opencodeResult.ExitCode != 0 {
-		return ReviewingStageResult{}, fmt.Errorf("opencode review failed with exit code %d", opencodeResult.ExitCode)
+	if llmResult.ExitCode != 0 {
+		return ReviewingStageResult{}, fmt.Errorf("LLM review failed with exit code %d", llmResult.ExitCode)
 	}
 
 	feedback, err := ReadReviewFeedback(feedbackPath)
@@ -871,9 +826,9 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 
 	// Record the review in the appropriate place.
 	review := JobReview{
-		Outcome:           feedback.Outcome,
-		Comments:          feedback.Details,
-		OpencodeSessionID: opencodeResult.SessionID,
+		Outcome:        feedback.Outcome,
+		Comments:       feedback.Details,
+		AgentSessionID: llmResult.SessionID,
 	}
 	if scope == reviewScopeProject {
 		updated, err = manager.SetProjectReview(updated.ID, review, opts.Now())
@@ -985,60 +940,30 @@ func runCommittingStage(opts CommittingStageOptions) (Job, error) {
 	return updated, nil
 }
 
-type opencodeTranscriptEntry struct {
-	Purpose    string
-	Session    opencode.OpencodeSession
-	Transcript string
-}
-
-func loadOpencodeTranscript(fetch func(string, []OpencodeSession) ([]OpencodeTranscript, error), repoPath string, session OpencodeSession) string {
-	if fetch == nil {
-		return ""
-	}
-	transcripts, err := fetch(repoPath, []OpencodeSession{session})
-	if err != nil || len(transcripts) == 0 {
-		return ""
-	}
-	return transcripts[0].Transcript
-}
-
-func opencodeTranscripts(repoPath string, sessions []OpencodeSession) ([]OpencodeTranscript, error) {
+// defaultTranscripts loads transcripts for LLM sessions.
+// The repoPath argument is ignored since agent session IDs are globally unique.
+func defaultTranscripts(_ string, sessions []AgentSession) ([]AgentTranscript, error) {
 	if len(sessions) == 0 {
 		return nil, nil
 	}
 
-	store, err := opencode.Open()
+	store, err := agent.Open()
 	if err != nil {
 		return nil, err
 	}
 
-	entries := make([]opencodeTranscriptEntry, 0, len(sessions))
+	transcripts := make([]AgentTranscript, 0, len(sessions))
 	for _, session := range sessions {
-		opencodeSession, err := store.FindSession(repoPath, session.ID)
+		transcript, err := store.TranscriptSnapshot(session.ID)
 		if err != nil {
-			return nil, err
+			// If we can't get a transcript, just use an empty one
+			transcript = "-"
 		}
-		transcript, err := store.TranscriptSnapshot(opencodeSession.ID)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, opencodeTranscriptEntry{Purpose: session.Purpose, Session: opencodeSession, Transcript: transcript})
-	}
-
-	sort.Slice(entries, func(i, j int) bool {
-		if entries[i].Session.StartedAt.Equal(entries[j].Session.StartedAt) {
-			return entries[i].Session.ID < entries[j].Session.ID
-		}
-		return entries[i].Session.StartedAt.Before(entries[j].Session.StartedAt)
-	})
-
-	transcripts := make([]OpencodeTranscript, 0, len(entries))
-	for _, entry := range entries {
-		text := internalstrings.TrimTrailingNewlines(entry.Transcript)
+		text := internalstrings.TrimTrailingNewlines(transcript)
 		if text == "" {
 			text = "-"
 		}
-		transcripts = append(transcripts, OpencodeTranscript{Purpose: entry.Purpose, ID: entry.Session.ID, Transcript: text})
+		transcripts = append(transcripts, AgentTranscript{Purpose: session.Purpose, Transcript: text})
 	}
 	return transcripts, nil
 }
@@ -1090,7 +1015,7 @@ func diffStatHasChanges(diffStat string) bool {
 	return seenChangeLine
 }
 
-func renderPromptTemplate(item todo.Todo, feedback, message string, commitLog []CommitLogEntry, transcripts []OpencodeTranscript, name, workspacePath string) (string, error) {
+func renderPromptTemplate(item todo.Todo, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
 		return "", err
@@ -1098,41 +1023,16 @@ func renderPromptTemplate(item todo.Todo, feedback, message string, commitLog []
 	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, commitLog, transcripts, workspacePath))
 }
 
-func runOpencodeWithEvents(opts RunOptions, runOpts opencodeRunOptions, purpose string) (OpencodeRunResult, error) {
-	snapshotWorkspace(opts.Snapshot, runOpts.WorkspacePath)
-	if err := appendJobEvent(opts.EventLog, jobEventOpencodeStart, opencodeStartEventData{Purpose: purpose}); err != nil {
-		return OpencodeRunResult{}, err
-	}
-	result, err := opts.RunOpencode(runOpts)
-	if err != nil {
-		logErr := appendJobEvent(opts.EventLog, jobEventOpencodeError, opencodeErrorEventData{Purpose: purpose, Error: err.Error()})
-		if logErr != nil {
-			return OpencodeRunResult{}, errors.Join(err, logErr)
-		}
-		return OpencodeRunResult{}, err
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventOpencodeEnd, opencodeEndEventData{Purpose: purpose, SessionID: result.SessionID, ExitCode: result.ExitCode}); err != nil {
-		return OpencodeRunResult{}, err
-	}
-	return result, nil
-}
-
-func buildOpencodeFailureMessage(purpose, promptName string, result OpencodeRunResult, runOpts opencodeRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {
+func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {
 	parts := []string{}
 	if !internalstrings.IsBlank(result.SessionID) {
 		parts = append(parts, fmt.Sprintf("session %s", result.SessionID))
 	}
-	if !internalstrings.IsBlank(runOpts.Agent) {
-		parts = append(parts, fmt.Sprintf("agent %q", runOpts.Agent))
+	if !internalstrings.IsBlank(runOpts.Model) {
+		parts = append(parts, fmt.Sprintf("model %q", runOpts.Model))
 	}
 	if !internalstrings.IsBlank(promptName) {
 		parts = append(parts, fmt.Sprintf("prompt %s", promptName))
-	}
-	if !internalstrings.IsBlank(result.RunCommand) {
-		parts = append(parts, fmt.Sprintf("run %s", result.RunCommand))
-	}
-	if !internalstrings.IsBlank(result.ServeCommand) {
-		parts = append(parts, fmt.Sprintf("serve %s", result.ServeCommand))
 	}
 	if !internalstrings.IsBlank(runOpts.RepoPath) {
 		parts = append(parts, fmt.Sprintf("repo %s", runOpts.RepoPath))
@@ -1158,10 +1058,7 @@ func buildOpencodeFailureMessage(purpose, promptName string, result OpencodeRunR
 	if retryCount > 0 {
 		parts = append(parts, fmt.Sprintf("retry %d", retryCount))
 	}
-	if !internalstrings.IsBlank(result.Stderr) {
-		parts = append(parts, fmt.Sprintf("stderr: %s", internalstrings.TrimSpace(result.Stderr)))
-	}
-	message := fmt.Sprintf("opencode %s failed with exit code %d", purpose, result.ExitCode)
+	message := fmt.Sprintf("agent %s failed with exit code %d", purpose, result.ExitCode)
 	if result.ExitCode < 0 {
 		message += " (process did not exit cleanly)"
 	}
@@ -1232,7 +1129,7 @@ func resolveReviewCommitMessage(commitMessage, workspacePath string, requireMess
 				return "", nil
 			}
 			return "", fmt.Errorf(
-				"commit message missing before opencode review; opencode implementation was instructed to write %s: %w",
+				"commit message missing before LLM review; LLM implementation was instructed to write %s: %w",
 				messagePath,
 				err,
 			)
@@ -1266,91 +1163,6 @@ func snapshotWorkspace(snapshot func(string) error, workspacePath string) {
 	_ = snapshot(workspacePath)
 }
 
-func applyOpencodeConfigEnv(env []string) []string {
-	if env == nil {
-		env = os.Environ()
-	}
-	return replaceEnvVar(env, opencodeConfigEnvVar, opencodeConfigJSON())
-}
-
-// opencodeConfigJSON returns the JSON encoding of the opencode configuration.
-// This is used internally and exported for test assertions.
-func opencodeConfigJSON() string {
-	configJSON, err := json.Marshal(opencodeConfig)
-	if err != nil {
-		// This should never happen since opencodeConfig is a static map.
-		// Fall back to minimal config if marshaling fails.
-		return `{"permission":{"question":"deny"}}`
-	}
-	return string(configJSON)
-}
-
-func replaceEnvVar(env []string, key, value string) []string {
-	prefix := key + "="
-	updated := make([]string, 0, len(env)+1)
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			continue
-		}
-		updated = append(updated, entry)
-	}
-	updated = append(updated, prefix+value)
-	return updated
-}
-
-func runOpencodeSession(store *opencode.Store, opts opencodeRunOptions) (OpencodeRunResult, error) {
-	var stderrBuf strings.Builder
-	handle, err := store.Run(opencode.RunOptions{
-		RepoPath:  opts.RepoPath,
-		WorkDir:   opts.WorkspacePath,
-		Prompt:    opts.Prompt,
-		Agent:     opts.Agent,
-		StartedAt: opts.StartedAt,
-		Stdout:    io.Discard,
-		Stderr:    &stderrBuf,
-		Env:       applyOpencodeConfigEnv(opts.Env),
-	})
-	if err != nil {
-		return OpencodeRunResult{}, err
-	}
-
-	eventErrCh := recordOpencodeEvents(opts.EventLog, handle.Events)
-	result, err := handle.Wait()
-	eventErr := <-eventErrCh
-	if err != nil {
-		return OpencodeRunResult{}, errors.Join(err, eventErr)
-	}
-	if eventErr != nil {
-		return OpencodeRunResult{}, eventErr
-	}
-	return OpencodeRunResult{
-		SessionID:    result.SessionID,
-		ExitCode:     result.ExitCode,
-		ServeCommand: result.ServeCommand,
-		RunCommand:   result.RunCommand,
-		Stderr:       stderrBuf.String(),
-	}, nil
-}
-
-func recordOpencodeEvents(log *EventLog, events <-chan opencode.Event) <-chan error {
-	done := make(chan error, 1)
-	if events == nil {
-		done <- nil
-		return done
-	}
-	go func() {
-		var recordErr error
-		for event := range events {
-			if log == nil || recordErr != nil {
-				continue
-			}
-			recordErr = log.Append(Event{ID: event.ID, Name: event.Name, Data: event.Data})
-		}
-		done <- recordErr
-	}()
-	return done
-}
-
 func finalizeTodo(repoPath, todoID string, status Status) error {
 	switch status {
 	case StatusCompleted:
@@ -1360,6 +1172,31 @@ func finalizeTodo(repoPath, todoID string, status Status) error {
 	default:
 		return nil
 	}
+}
+
+// reloadTodo re-reads a todo from the store. This allows the job runner to
+// pick up edits made to a todo from another process between implementation runs.
+func reloadTodo(repoPath, todoID string) (todo.Todo, error) {
+	store, err := todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         fmt.Sprintf("reload todo %s", todoID),
+	})
+	if err != nil {
+		return todo.Todo{}, err
+	}
+	items, err := store.Show([]string{todoID})
+	releaseErr := store.Release()
+	if err != nil {
+		return todo.Todo{}, errors.Join(err, releaseErr)
+	}
+	if releaseErr != nil {
+		return todo.Todo{}, releaseErr
+	}
+	if len(items) == 0 {
+		return todo.Todo{}, fmt.Errorf("todo not found: %s", todoID)
+	}
+	return items[0], nil
 }
 
 func updateTodoStatus(repoPath, todoID string, update func(*todo.Store, string) ([]todo.Todo, error)) error {

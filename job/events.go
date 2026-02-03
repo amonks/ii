@@ -21,6 +21,11 @@ const (
 	jobEventCommitMessage = "job.commit_message"
 	jobEventReview        = "job.review"
 	jobEventTests         = "job.tests"
+	jobEventAgentStart    = "job.agent.start"
+	jobEventAgentEnd      = "job.agent.end"
+	jobEventAgentError    = "job.agent.error"
+
+	// Legacy event constants (for backward compatibility parsing old logs)
 	jobEventOpencodeStart = "job.opencode.start"
 	jobEventOpencodeEnd   = "job.opencode.end"
 	jobEventOpencodeError = "job.opencode.error"
@@ -245,16 +250,7 @@ type testsEventData struct {
 	Results []testResultEventData `json:"results"`
 }
 
-type opencodeStartEventData struct {
-	Purpose string `json:"purpose"`
-}
-
-type opencodeEndEventData struct {
-	Purpose   string `json:"purpose"`
-	SessionID string `json:"session_id"`
-	ExitCode  int    `json:"exit_code"`
-}
-
+// Legacy event data types (for backward compatibility parsing old logs)
 type opencodeErrorEventData struct {
 	Purpose string `json:"purpose"`
 	Error   string `json:"error"`

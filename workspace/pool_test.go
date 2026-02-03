@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/amonks/incrementum/internal/jj"
+	"github.com/amonks/incrementum/internal/paths"
 	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/workspace"
@@ -323,6 +324,63 @@ func TestPool_Acquire_ImmutableRevisionCreatesNewChange(t *testing.T) {
 	}
 }
 
+func TestPool_Acquire_RevAtResolvesInSourceRepo(t *testing.T) {
+	// Test that --rev=@ resolves the @ symbol in the source repo, not the workspace.
+	// This is important because workspaces start with their own @ at root, but when
+	// the user requests @ they mean the source repo's current revision.
+	repoPath := setupTestRepo(t)
+	workspacesDir := t.TempDir()
+	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
+	stateDir := t.TempDir()
+
+	client := jj.New()
+
+	// Create a commit in the source repo so @ is distinct from root
+	if _, err := client.NewChange(repoPath, "root()"); err != nil {
+		t.Fatalf("failed to create new change in repo: %v", err)
+	}
+	if err := client.Describe(repoPath, "test commit in source repo"); err != nil {
+		t.Fatalf("failed to describe change: %v", err)
+	}
+
+	// Get the source repo's @ change ID before acquiring
+	sourceAtChangeID, err := client.CurrentChangeID(repoPath)
+	if err != nil {
+		t.Fatalf("get source @ change id: %v", err)
+	}
+
+	pool, err := workspace.OpenWithOptions(workspace.Options{
+		StateDir:      stateDir,
+		WorkspacesDir: workspacesDir,
+	})
+	if err != nil {
+		t.Fatalf("failed to open pool: %v", err)
+	}
+
+	// Acquire with --rev=@ (the default)
+	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+		Purpose: "test purpose",
+		Rev:     "@",
+	})
+	if err != nil {
+		t.Fatalf("failed to acquire workspace: %v", err)
+	}
+
+	// The workspace's current change should have the source repo's @ as its parent
+	parentChangeID, err := client.ChangeIDAt(wsPath, "@-")
+	if err != nil {
+		t.Fatalf("get parent change id: %v", err)
+	}
+
+	if parentChangeID != sourceAtChangeID {
+		t.Errorf("expected workspace parent to be source repo @ (%s), got %s", sourceAtChangeID, parentChangeID)
+	}
+
+	if err := pool.Release(wsPath); err != nil {
+		t.Fatalf("failed to release workspace: %v", err)
+	}
+}
+
 func TestPool_Acquire_CreatesMultipleWorkspaces(t *testing.T) {
 	repoPath := setupTestRepo(t)
 	workspacesDir := t.TempDir()
@@ -547,8 +605,9 @@ func TestRepoRoot(t *testing.T) {
 		t.Fatalf("failed to get repo root: %v", err)
 	}
 
-	if root != repoPath {
-		t.Errorf("expected %q, got %q", repoPath, root)
+	// RepoRoot returns normalized paths (without macOS /private prefix)
+	if root != paths.NormalizePath(repoPath) {
+		t.Errorf("expected %q, got %q", paths.NormalizePath(repoPath), root)
 	}
 }
 
@@ -602,8 +661,9 @@ func TestRepoRootFromPath_Repo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to resolve repo root: %v", err)
 	}
-	if root != repoPath {
-		t.Fatalf("expected repo path %q, got %q", repoPath, root)
+	// RepoRootFromPath returns normalized paths (without macOS /private prefix)
+	if root != paths.NormalizePath(repoPath) {
+		t.Fatalf("expected repo path %q, got %q", paths.NormalizePath(repoPath), root)
 	}
 }
 

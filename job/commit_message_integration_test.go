@@ -28,7 +28,7 @@ func TestRunCommitMessageShowsSummaryInJjLog(t *testing.T) {
 	}
 	store.Release()
 
-	opencodeCalls := 0
+	llmCalls := 0
 	opts := RunOptions{
 		Now: func() time.Time {
 			return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -36,25 +36,25 @@ func TestRunCommitMessageShowsSummaryInJjLog(t *testing.T) {
 		RunTests: func(string, []string) ([]TestCommandResult, error) {
 			return []TestCommandResult{{Command: "noop", ExitCode: 0}}, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
-			opencodeCalls++
-			if opencodeCalls == 1 {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
+			llmCalls++
+			if llmCalls == 1 {
 				changePath := filepath.Join(runOpts.WorkspacePath, "summary.txt")
 				if err := os.WriteFile(changePath, []byte("log summary\n"), 0o644); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
 				client := jj.New()
 				if err := client.Snapshot(runOpts.WorkspacePath); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
 				messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 				message := "\n\nfeat: commit summary    \n\nBody line\n"
 				if err := os.WriteFile(messagePath, []byte(message), 0o644); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
-				return OpencodeRunResult{SessionID: "oc-commit", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "oc-commit", ExitCode: 0}, nil
 			}
-			return OpencodeRunResult{SessionID: fmt.Sprintf("oc-%d", opencodeCalls), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("oc-%d", llmCalls), ExitCode: 0}, nil
 		},
 	}
 

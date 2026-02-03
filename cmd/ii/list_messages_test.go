@@ -2,17 +2,24 @@ package main
 
 import "testing"
 
-func TestOpencodeEmptyListMessageNoSessions(t *testing.T) {
-	message := opencodeEmptyListMessage(0, false)
-	if message != "No opencode sessions found." {
-		t.Fatalf("expected opencode empty message, got %q", message)
+func TestAgentEmptyListMessageNoSessions(t *testing.T) {
+	message := agentEmptyListMessage(0, false)
+	if message != "No agent sessions found." {
+		t.Fatalf("expected agent empty message, got %q", message)
 	}
 }
 
-func TestOpencodeEmptyListMessageSuggestsAll(t *testing.T) {
-	message := opencodeEmptyListMessage(2, false)
-	if message != "No active opencode sessions found. Use --all to include completed/failed/killed sessions." {
-		t.Fatalf("expected opencode --all hint, got %q", message)
+func TestAgentEmptyListMessageSuggestsAll(t *testing.T) {
+	message := agentEmptyListMessage(2, false)
+	if message != "No active agent sessions found. Use --all to include completed/failed sessions." {
+		t.Fatalf("expected agent --all hint, got %q", message)
+	}
+}
+
+func TestAgentEmptyListMessageWithAll(t *testing.T) {
+	message := agentEmptyListMessage(0, true)
+	if message != "No agent sessions found." {
+		t.Fatalf("expected agent empty message with --all, got %q", message)
 	}
 }
 

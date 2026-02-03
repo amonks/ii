@@ -13,7 +13,7 @@ func TestListCommandsHaveAllFlag(t *testing.T) {
 	}{
 		{name: "todo", cmd: todoListCmd},
 		{name: "workspace", cmd: workspaceListCmd},
-		{name: "opencode", cmd: opencodeListCmd},
+		{name: "agent", cmd: agentListCmd},
 	}
 
 	for _, tc := range cases {

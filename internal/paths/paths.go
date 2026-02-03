@@ -16,23 +16,43 @@ func WorkingDir() (string, error) {
 	return normalizeWorkingDir(cwd), nil
 }
 
+// NormalizePath normalizes a file path by removing macOS-specific prefixes
+// like /private when the trimmed path refers to the same location.
+// This handles the common case where /var -> /private/var on macOS.
+//
+// The function works even if the path doesn't exist yet by checking if the
+// parent directories refer to the same location.
+func NormalizePath(path string) string {
+	trimmed := strings.TrimPrefix(path, "/private")
+	if trimmed == path {
+		return path
+	}
+
+	// Find the longest existing prefix to verify the paths are equivalent
+	original := path
+	for original != "/" && original != "." {
+		originalInfo, err := os.Stat(original)
+		if err != nil {
+			original = filepath.Dir(original)
+			trimmed = filepath.Dir(trimmed)
+			continue
+		}
+		trimmedInfo, err := os.Stat(trimmed)
+		if err != nil {
+			// Trimmed path doesn't exist at this level, can't verify
+			return path
+		}
+		if os.SameFile(originalInfo, trimmedInfo) {
+			// Parent paths are equivalent, so we can safely use trimmed version
+			return strings.TrimPrefix(path, "/private")
+		}
+		return path
+	}
+	return path
+}
+
 func normalizeWorkingDir(cwd string) string {
-	trimmed := strings.TrimPrefix(cwd, "/private")
-	if trimmed == cwd {
-		return cwd
-	}
-	originalInfo, err := os.Stat(cwd)
-	if err != nil {
-		return cwd
-	}
-	trimmedInfo, err := os.Stat(trimmed)
-	if err != nil {
-		return cwd
-	}
-	if os.SameFile(originalInfo, trimmedInfo) {
-		return trimmed
-	}
-	return cwd
+	return NormalizePath(cwd)
 }
 
 // DefaultStateDir returns the default incrementum state directory.
@@ -43,11 +63,6 @@ func DefaultStateDir() (string, error) {
 // DefaultWorkspacesDir returns the default incrementum workspaces directory.
 func DefaultWorkspacesDir() (string, error) {
 	return defaultHomeDirPath(".local", "share", "incrementum", "workspaces")
-}
-
-// DefaultOpencodeEventsDir returns the default directory for opencode events.
-func DefaultOpencodeEventsDir() (string, error) {
-	return defaultHomeDirPath(".local", "share", "incrementum", "opencode", "events")
 }
 
 // DefaultJobEventsDir returns the default directory for job events.

@@ -15,7 +15,7 @@ import (
 
 var jobCmd = &cobra.Command{
 	Use:   "job",
-	Short: "Manage opencode jobs",
+	Short: "Manage jobs",
 }
 
 var jobShowCmd = &cobra.Command{
@@ -314,9 +314,9 @@ func printJobDetail(item jobpkg.Job, todoTitle string, highlightJob func(string)
 	fmt.Printf("Stage:   %s\n", item.Stage)
 	fmt.Printf("Status:  %s\n", item.Status)
 
-	if len(item.OpencodeSessions) > 0 {
-		fmt.Printf("\nOpencode Sessions:\n")
-		for _, session := range item.OpencodeSessions {
+	if len(item.AgentSessions) > 0 {
+		fmt.Printf("\nLLM Sessions:\n")
+		for _, session := range item.AgentSessions {
 			fmt.Printf("- %s: %s\n", session.Purpose, session.ID)
 		}
 	}

@@ -9,7 +9,7 @@ the public Go packages defined in this repo.
 - Workspace: a pooled, isolated working copy managed via Jujutsu.
 - Todo: a task record stored in a dedicated branch for tracking.
 - Session: a unit of work that acquires a workspace to complete one todo.
-- Job: orchestration for running opencode work on todos and sessions.
+- Job: orchestration for running LLM agent work on todos.
 
 ## Repository layout
 

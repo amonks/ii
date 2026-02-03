@@ -479,3 +479,249 @@ test-commands = []
 		t.Fatalf("expected empty test commands, got %d", len(cfg.Job.TestCommands))
 	}
 }
+
+func TestLoad_LLMProviders(t *testing.T) {
+	testsupport.SetupTestHome(t)
+	tmpDir := t.TempDir()
+
+	configContent := `
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://api.anthropic.com"
+api-key-command = "op read op://Private/Anthropic/credential"
+models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+
+[[llm.providers]]
+name = "openai"
+api = "openai-completions"
+base-url = "https://api.openai.com/v1"
+api-key-command = "echo $OPENAI_API_KEY"
+models = ["gpt-4o", "gpt-4o-mini"]
+`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "incrementum.toml"), []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	cfg, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	if len(cfg.LLM.Providers) != 2 {
+		t.Fatalf("expected 2 providers, got %d", len(cfg.LLM.Providers))
+	}
+
+	anthropic := cfg.LLM.Providers[0]
+	if anthropic.Name != "anthropic" {
+		t.Errorf("expected provider name 'anthropic', got %q", anthropic.Name)
+	}
+	if anthropic.API != "anthropic-messages" {
+		t.Errorf("expected API 'anthropic-messages', got %q", anthropic.API)
+	}
+	if anthropic.BaseURL != "https://api.anthropic.com" {
+		t.Errorf("expected base URL 'https://api.anthropic.com', got %q", anthropic.BaseURL)
+	}
+	if anthropic.APIKeyCommand != "op read op://Private/Anthropic/credential" {
+		t.Errorf("expected api-key-command, got %q", anthropic.APIKeyCommand)
+	}
+	if len(anthropic.Models) != 2 {
+		t.Errorf("expected 2 models, got %d", len(anthropic.Models))
+	}
+
+	openai := cfg.LLM.Providers[1]
+	if openai.Name != "openai" {
+		t.Errorf("expected provider name 'openai', got %q", openai.Name)
+	}
+	if len(openai.Models) != 2 {
+		t.Errorf("expected 2 models, got %d", len(openai.Models))
+	}
+}
+
+func TestLoad_LLMProviderNoAPIKey(t *testing.T) {
+	testsupport.SetupTestHome(t)
+	tmpDir := t.TempDir()
+
+	configContent := `
+[[llm.providers]]
+name = "internal-claude"
+api = "anthropic-messages"
+base-url = "https://internal-claude.example.com"
+models = ["claude-sonnet-4-20250514"]
+`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "incrementum.toml"), []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	cfg, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	if len(cfg.LLM.Providers) != 1 {
+		t.Fatalf("expected 1 provider, got %d", len(cfg.LLM.Providers))
+	}
+
+	provider := cfg.LLM.Providers[0]
+	if provider.APIKeyCommand != "" {
+		t.Errorf("expected empty api-key-command, got %q", provider.APIKeyCommand)
+	}
+}
+
+func TestLoad_LLMProvidersGlobalOnly(t *testing.T) {
+	homeDir := testsupport.SetupTestHome(t)
+	configDir := filepath.Join(homeDir, ".config", "incrementum")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+
+	globalContent := `
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://api.anthropic.com"
+api-key-command = "op read op://Private/Anthropic/credential"
+models = ["claude-sonnet-4-20250514"]
+`
+	globalPath := filepath.Join(configDir, "config.toml")
+	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
+		t.Fatalf("failed to write global config: %v", err)
+	}
+
+	repoDir := t.TempDir()
+	cfg, err := config.Load(repoDir)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	if len(cfg.LLM.Providers) != 1 {
+		t.Fatalf("expected 1 provider from global config, got %d", len(cfg.LLM.Providers))
+	}
+
+	if cfg.LLM.Providers[0].Name != "anthropic" {
+		t.Errorf("expected provider 'anthropic', got %q", cfg.LLM.Providers[0].Name)
+	}
+}
+
+func TestLoad_LLMProvidersProjectOverridesGlobal(t *testing.T) {
+	homeDir := testsupport.SetupTestHome(t)
+	configDir := filepath.Join(homeDir, ".config", "incrementum")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+
+	globalContent := `
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://api.anthropic.com"
+api-key-command = "global-key-cmd"
+models = ["global-model"]
+
+[[llm.providers]]
+name = "openai"
+api = "openai-completions"
+base-url = "https://api.openai.com/v1"
+models = ["gpt-4o"]
+`
+	globalPath := filepath.Join(configDir, "config.toml")
+	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
+		t.Fatalf("failed to write global config: %v", err)
+	}
+
+	projectContent := `
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://project.anthropic.com"
+api-key-command = "project-key-cmd"
+models = ["project-model"]
+`
+	repoDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(repoDir, "incrementum.toml"), []byte(projectContent), 0o644); err != nil {
+		t.Fatalf("failed to write project config: %v", err)
+	}
+
+	cfg, err := config.Load(repoDir)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	// Should have 2 providers: project anthropic + global openai
+	if len(cfg.LLM.Providers) != 2 {
+		t.Fatalf("expected 2 providers, got %d", len(cfg.LLM.Providers))
+	}
+
+	// Project provider should come first and override global
+	anthropic := cfg.LLM.Providers[0]
+	if anthropic.Name != "anthropic" {
+		t.Errorf("expected first provider 'anthropic', got %q", anthropic.Name)
+	}
+	if anthropic.BaseURL != "https://project.anthropic.com" {
+		t.Errorf("expected project base URL, got %q", anthropic.BaseURL)
+	}
+	if anthropic.APIKeyCommand != "project-key-cmd" {
+		t.Errorf("expected project api-key-command, got %q", anthropic.APIKeyCommand)
+	}
+	if len(anthropic.Models) != 1 || anthropic.Models[0] != "project-model" {
+		t.Errorf("expected project models, got %v", anthropic.Models)
+	}
+
+	// Global-only provider should still be present
+	openai := cfg.LLM.Providers[1]
+	if openai.Name != "openai" {
+		t.Errorf("expected second provider 'openai', got %q", openai.Name)
+	}
+}
+
+func TestLoadGlobal(t *testing.T) {
+	homeDir := testsupport.SetupTestHome(t)
+	configDir := filepath.Join(homeDir, ".config", "incrementum")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+
+	globalContent := `
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://api.anthropic.com"
+models = ["claude-sonnet-4-20250514"]
+`
+	globalPath := filepath.Join(configDir, "config.toml")
+	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
+		t.Fatalf("failed to write global config: %v", err)
+	}
+
+	cfg, err := config.LoadGlobal()
+	if err != nil {
+		t.Fatalf("failed to load global config: %v", err)
+	}
+
+	if len(cfg.LLM.Providers) != 1 {
+		t.Fatalf("expected 1 provider, got %d", len(cfg.LLM.Providers))
+	}
+
+	if cfg.LLM.Providers[0].Name != "anthropic" {
+		t.Errorf("expected provider 'anthropic', got %q", cfg.LLM.Providers[0].Name)
+	}
+}
+
+func TestLoadGlobal_NotFound(t *testing.T) {
+	testsupport.SetupTestHome(t)
+
+	cfg, err := config.LoadGlobal()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg == nil {
+		t.Fatal("expected non-nil config")
+	}
+
+	if len(cfg.LLM.Providers) != 0 {
+		t.Errorf("expected 0 providers, got %d", len(cfg.LLM.Providers))
+	}
+}

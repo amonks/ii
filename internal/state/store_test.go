@@ -29,8 +29,8 @@ func TestStore_LoadEmpty(t *testing.T) {
 		t.Errorf("expected 0 workspaces, got %d", len(st.Workspaces))
 	}
 
-	if len(st.OpencodeSessions) != 0 {
-		t.Errorf("expected 0 opencode sessions, got %d", len(st.OpencodeSessions))
+	if len(st.AgentSessions) != 0 {
+		t.Errorf("expected 0 agent sessions, got %d", len(st.AgentSessions))
 	}
 
 	if len(st.Jobs) != 0 {
@@ -324,94 +324,5 @@ func TestStore_RepoPathForWorkspace_MissingRepo(t *testing.T) {
 	}
 	if err == nil {
 		t.Fatal("expected error for missing repo path")
-	}
-}
-
-func TestStore_LoadStripsLegacyPromptFields(t *testing.T) {
-	tmpDir := t.TempDir()
-	store := NewStore(tmpDir)
-
-	// Write state file with legacy prompt fields in opencode_sessions
-	stateJSON := `{
-  "repos": {},
-  "workspaces": {},
-  "opencode_sessions": {
-    "repo/sess-001": {
-      "id": "sess-001",
-      "repo": "repo",
-      "status": "completed",
-      "prompt": "This is a large prompt that should be removed to save space",
-      "created_at": "2025-01-01T12:00:00Z",
-      "started_at": "2025-01-01T12:00:00Z",
-      "updated_at": "2025-01-01T12:01:00Z"
-    }
-  },
-  "jobs": {}
-}`
-
-	statePath := filepath.Join(tmpDir, "state.json")
-	if err := os.WriteFile(statePath, []byte(stateJSON), 0644); err != nil {
-		t.Fatalf("failed to write test state: %v", err)
-	}
-
-	// Load the state (should trigger migration)
-	st, err := store.Load()
-	if err != nil {
-		t.Fatalf("failed to load state: %v", err)
-	}
-
-	// Verify session was loaded
-	session, ok := st.OpencodeSessions["repo/sess-001"]
-	if !ok {
-		t.Fatal("expected session to exist")
-	}
-	if session.ID != "sess-001" {
-		t.Errorf("expected session ID sess-001, got %s", session.ID)
-	}
-
-	// Read the file again to verify prompt was stripped
-	data, err := os.ReadFile(statePath)
-	if err != nil {
-		t.Fatalf("failed to read state file: %v", err)
-	}
-
-	if containsLegacyPromptFields(data) {
-		t.Error("expected prompt field to be stripped from state file")
-	}
-}
-
-func TestContainsLegacyPromptFields(t *testing.T) {
-	withPrompt := []byte(`{
-  "opencode_sessions": {
-    "repo/sess-001": {
-      "id": "sess-001",
-      "prompt": "test prompt"
-    }
-  }
-}`)
-
-	withoutPrompt := []byte(`{
-  "opencode_sessions": {
-    "repo/sess-001": {
-      "id": "sess-001",
-      "status": "completed"
-    }
-  }
-}`)
-
-	emptyState := []byte(`{
-  "opencode_sessions": {}
-}`)
-
-	if !containsLegacyPromptFields(withPrompt) {
-		t.Error("expected to detect prompt field")
-	}
-
-	if containsLegacyPromptFields(withoutPrompt) {
-		t.Error("expected no prompt field detected")
-	}
-
-	if containsLegacyPromptFields(emptyState) {
-		t.Error("expected no prompt field in empty sessions")
 	}
 }

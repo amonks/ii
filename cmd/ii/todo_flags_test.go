@@ -79,6 +79,12 @@ func TestTodoUpdateHasEditAlias(t *testing.T) {
 	}
 }
 
+func TestTodoDeleteHasDestroyAlias(t *testing.T) {
+	if !containsAlias(todoDeleteCmd, "destroy") {
+		t.Fatalf("expected todo delete to have destroy alias, got %v", todoDeleteCmd.Aliases)
+	}
+}
+
 func containsAlias(cmd *cobra.Command, alias string) bool {
 	for _, item := range cmd.Aliases {
 		if item == alias {

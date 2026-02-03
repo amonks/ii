@@ -7,14 +7,6 @@ import (
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 )
 
-func opencodeEmptyListMessage(total int, includeAll bool) string {
-	if total > 0 && !includeAll {
-		return "No active opencode sessions found. Use --all to include completed/failed/killed sessions."
-	}
-
-	return "No opencode sessions found."
-}
-
 func jobEmptyListMessage(total int, status string, includeAll bool) string {
 	if total == 0 {
 		return "No jobs found."
@@ -30,6 +22,14 @@ func jobEmptyListMessage(total int, status string, includeAll bool) string {
 	}
 
 	return "No jobs found."
+}
+
+func agentEmptyListMessage(total int, includeAll bool) string {
+	if total > 0 && !includeAll {
+		return "No active agent sessions found. Use --all to include completed/failed sessions."
+	}
+
+	return "No agent sessions found."
 }
 
 func todoEmptyListMessage(total int, status string, includeAll bool, includeTombstones bool, hasDone bool, hasTombstones bool) string {

@@ -65,7 +65,7 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 		"Running implementation prompt:",
 		"    Implementation prompt:",
 		"        First line. Second line.",
-		"    Opencode transcript:",
+		"    LLM transcript:",
 		"        Opencode line.",
 		"    Draft commit message:",
 		"        feat: add logs",
@@ -88,7 +88,7 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 	}
 }
 
-func TestLogSnapshotIncludesOpencodeError(t *testing.T) {
+func TestLogSnapshotIncludesLegacyError(t *testing.T) {
 	eventsDir := t.TempDir()
 	jobID := "job-opencode-error"
 	log, err := OpenEventLog(jobID, EventLogOptions{EventsDir: eventsDir})
@@ -110,8 +110,8 @@ func TestLogSnapshotIncludesOpencodeError(t *testing.T) {
 		t.Fatalf("snapshot: %v", err)
 	}
 
-	if !strings.Contains(snapshot, "Opencode implement error:") {
-		t.Fatalf("expected opencode error label, got %q", snapshot)
+	if !strings.Contains(snapshot, "LLM implement error:") {
+		t.Fatalf("expected LLM error label, got %q", snapshot)
 	}
 	if !strings.Contains(snapshot, "opencode session not found") {
 		t.Fatalf("expected opencode error details, got %q", snapshot)
@@ -262,15 +262,15 @@ func TestEventFormatterAppendsOutput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("append opencode error: %v", err)
 	}
-	if !strings.Contains(chunk, "Opencode implement error:") {
-		t.Fatalf("expected opencode error label, got %q", chunk)
+	if !strings.Contains(chunk, "LLM implement error:") {
+		t.Fatalf("expected LLM error label, got %q", chunk)
 	}
 	if !strings.Contains(chunk, "opencode session not found") {
 		t.Fatalf("expected opencode error details, got %q", chunk)
 	}
 }
 
-func TestEventFormatterRendersOpencodeMessages(t *testing.T) {
+func TestEventFormatterRendersLLMMessages(t *testing.T) {
 	formatter := NewEventFormatter()
 
 	userMessage := `{"type":"message.updated","properties":{"info":{"id":"msg-user","role":"user"}}}`
@@ -282,8 +282,8 @@ func TestEventFormatterRendersOpencodeMessages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("append user prompt event: %v", err)
 	}
-	if !strings.Contains(chunk, "Opencode prompt:") {
-		t.Fatalf("expected opencode prompt label, got %q", chunk)
+	if !strings.Contains(chunk, "LLM prompt:") {
+		t.Fatalf("expected LLM prompt label, got %q", chunk)
 	}
 	if !strings.Contains(chunk, "Prompt line.") {
 		t.Fatalf("expected opencode prompt text, got %q", chunk)
@@ -306,21 +306,21 @@ func TestEventFormatterRendersOpencodeMessages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("append assistant complete event: %v", err)
 	}
-	if !strings.Contains(chunk, "Opencode thinking:") {
-		t.Fatalf("expected opencode thinking label, got %q", chunk)
+	if !strings.Contains(chunk, "LLM thinking:") {
+		t.Fatalf("expected LLM thinking label, got %q", chunk)
 	}
 	if !strings.Contains(chunk, "Thinking line.") {
-		t.Fatalf("expected opencode thinking text, got %q", chunk)
+		t.Fatalf("expected LLM thinking text, got %q", chunk)
 	}
-	if !strings.Contains(chunk, "Opencode response:") {
-		t.Fatalf("expected opencode response label, got %q", chunk)
+	if !strings.Contains(chunk, "LLM response:") {
+		t.Fatalf("expected LLM response label, got %q", chunk)
 	}
 	if !strings.Contains(chunk, "Response line.") {
 		t.Fatalf("expected opencode response text, got %q", chunk)
 	}
 }
 
-func TestEventFormatterRendersOpencodePromptMarkdown(t *testing.T) {
+func TestEventFormatterRendersLLMPromptMarkdown(t *testing.T) {
 	formatter := NewEventFormatter()
 
 	userMessage := `{"type":"message.updated","properties":{"info":{"id":"msg-user","role":"user"}}}`
@@ -345,16 +345,16 @@ func TestEventFormatterRendersOpencodePromptMarkdown(t *testing.T) {
 	}
 }
 
-func TestEventFormatterFallsBackOnMalformedOpencodeMessage(t *testing.T) {
+func TestEventFormatterFallsBackOnMalformedEvent(t *testing.T) {
 	formatter := NewEventFormatter()
 
 	malformed := `{"type":"message.updated","properties":"nope"}`
 	chunk, err := formatter.Append(Event{Data: malformed})
 	if err != nil {
-		t.Fatalf("append malformed opencode event: %v", err)
+		t.Fatalf("append malformed event: %v", err)
 	}
-	if !strings.Contains(chunk, "Opencode event (message.updated):") {
-		t.Fatalf("expected fallback opencode label, got %q", chunk)
+	if !strings.Contains(chunk, "LLM event (message.updated):") {
+		t.Fatalf("expected fallback LLM label, got %q", chunk)
 	}
 	if !strings.Contains(chunk, `"type":"message.updated"`) {
 		t.Fatalf("expected raw opencode payload, got %q", chunk)

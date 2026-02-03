@@ -116,7 +116,14 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		return err
 	}
 
-	opencodeAgent := resolveOpencodeAgentOverride(cmd, jobDoAgent)
+	model := jobDoAgent // --agent flag value is used as model
+
+	// Set up LLM runner
+	runLLM, err := makeRunLLMFunc(repoPath)
+	if err != nil {
+		return err
+	}
+	transcripts := makeTranscriptsFunc()
 
 	logger := jobpkg.NewConsoleLogger(nil)
 	reporter := newJobStageReporter(logger)
@@ -129,7 +136,9 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		OnStart:       onStart,
 		OnStageChange: onStageChange,
 		Logger:        logger,
-		OpencodeAgent: opencodeAgent,
+		Model:         model,
+		RunLLM:        runLLM,
+		Transcripts:   transcripts,
 	})
 	if err != nil {
 		var abandonedErr *jobpkg.AbandonedError

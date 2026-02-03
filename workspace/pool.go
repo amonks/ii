@@ -136,7 +136,7 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 		// Find an available workspace
 		for key, ws := range st.Workspaces {
 			if ws.Repo == repoName && ws.Status == statestore.WorkspaceStatusAvailable {
-				wsPath = ws.Path
+				wsPath = paths.NormalizePath(ws.Path)
 				wsName = ws.Name
 				needsProvision = !ws.Provisioned
 
@@ -148,6 +148,8 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 				ws.AcquiredAt = now
 				ws.CreatedAt = now
 				ws.UpdatedAt = now
+				// Update Path to normalized form for consistency
+				ws.Path = wsPath
 				st.Workspaces[key] = ws
 				return nil
 			}
@@ -155,7 +157,7 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 
 		// No available workspace - create a new one
 		wsName = p.nextWorkspaceName(st, repoName)
-		wsPath = filepath.Join(p.workspacesDir, repoName, wsName)
+		wsPath = paths.NormalizePath(filepath.Join(p.workspacesDir, repoName, wsName))
 		needsCreate = true
 		needsProvision = true
 
@@ -196,6 +198,13 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 		}
 	}
 
+	// Resolve the revision in the source repo first. This is necessary because
+	// symbolic refs like "@" have different meanings in the workspace vs source.
+	resolvedRev, err := p.jj.ChangeIDAt(repoPath, opts.Rev)
+	if err != nil {
+		resolvedRev = opts.Rev // Fall back to original if resolution fails
+	}
+
 	newChange := func(parentRev string) (string, error) {
 		if !internalstrings.IsBlank(opts.NewChangeMessage) {
 			return p.jj.NewChangeWithMessage(wsPath, parentRev, opts.NewChangeMessage)
@@ -203,10 +212,15 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 		return p.jj.NewChange(wsPath, parentRev)
 	}
 
-	actualRev, err := newChange(opts.Rev)
+	actualRev, err := newChange(resolvedRev)
 	if err != nil {
 		if isMissingRevisionError(err) && looksLikeChangeID(opts.Rev) {
-			actualRev, err = newChange("@")
+			// Fall back to @ resolved in the source repo
+			fallbackRev, resolveErr := p.jj.ChangeIDAt(repoPath, "@")
+			if resolveErr != nil {
+				fallbackRev = "@"
+			}
+			actualRev, err = newChange(fallbackRev)
 		}
 		if err != nil {
 			return "", fmt.Errorf("jj new: %w", err)
@@ -426,9 +440,14 @@ func looksLikeChangeID(rev string) bool {
 //
 // This can be used to find the repository root before calling Acquire.
 // Returns an error if the path is not inside a jj repository.
+// The returned path is normalized to handle macOS symlinks like /private/var.
 func RepoRoot(path string) (string, error) {
 	client := jj.New()
-	return client.WorkspaceRoot(path)
+	root, err := client.WorkspaceRoot(path)
+	if err != nil {
+		return "", err
+	}
+	return paths.NormalizePath(root), nil
 }
 
 // RepoRootFromPath returns the source repo root for a workspace or repo path.
@@ -457,7 +476,8 @@ func (p *Pool) WorkspaceNameForPath(path string) (string, error) {
 
 	root = filepath.Clean(root)
 	for _, ws := range st.Workspaces {
-		if filepath.Clean(ws.Path) == root {
+		// Normalize paths for comparison to handle macOS /private symlinks
+		if paths.NormalizePath(filepath.Clean(ws.Path)) == root {
 			return ws.Name, nil
 		}
 	}

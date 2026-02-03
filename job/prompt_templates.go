@@ -61,7 +61,7 @@ func promptTemplateVariables() []PromptTemplateVariable {
 		{Name: "Feedback", Type: "string"},
 		{Name: "Message", Type: "string"},
 		{Name: "CommitLog", Type: "[]CommitLogEntry"},
-		{Name: "OpencodeTranscripts", Type: "[]OpencodeTranscript"},
+		{Name: "AgentTranscripts", Type: "[]AgentTranscript"},
 		{Name: "WorkspacePath", Type: "string"},
 		{Name: "ReviewInstructions", Type: "string"},
 		{Name: "TodoBlock", Type: "string"},

@@ -56,15 +56,15 @@ func TestRunImplementingStageUpdatesStaleWorkspace(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !updateCalled {
-				return OpencodeRunResult{}, fmt.Errorf("expected update-stale before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected update-stale before opencode")
 			}
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: stale"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-123", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-123", ExitCode: 0}, nil
 		},
 	}
 
@@ -133,15 +133,15 @@ func TestRunImplementingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !snapshotCalled {
-				return OpencodeRunResult{}, fmt.Errorf("expected snapshot before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected snapshot before opencode")
 			}
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: snapshot"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-789", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-789", ExitCode: 0}, nil
 		},
 	}
 
@@ -195,14 +195,14 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 			updateCalled = true
 			return errors.New("not stale")
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !updateCalled {
-				return OpencodeRunResult{}, fmt.Errorf("expected update-stale before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected update-stale before opencode")
 			}
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-456", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-456", ExitCode: 0}, nil
 		},
 	}
 
@@ -257,14 +257,14 @@ func TestRunReviewingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 			snapshotCalled = true
 			return nil
 		},
-		RunOpencode: func(runOpts opencodeRunOptions) (OpencodeRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !snapshotCalled {
-				return OpencodeRunResult{}, fmt.Errorf("expected snapshot before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected snapshot before opencode")
 			}
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			return OpencodeRunResult{SessionID: "oc-987", ExitCode: 0}, nil
+			return AgentRunResult{SessionID: "oc-987", ExitCode: 0}, nil
 		},
 	}
 

@@ -31,23 +31,25 @@ type HabitRunOptions struct {
 	LoadConfig func(string) (*config.Config, error)
 	// Config provides loaded configuration for the job run.
 	// When nil, LoadConfig is used.
-	Config      *config.Config
-	RunTests    func(string, []string) ([]TestCommandResult, error)
-	RunOpencode func(opencodeRunOptions) (OpencodeRunResult, error)
-	// OpencodeAgent overrides agent selection for all stages when set.
-	OpencodeAgent       string
-	CurrentCommitID     func(string) (string, error)
-	CurrentChangeEmpty  func(string) (bool, error)
-	DiffStat            func(string, string, string) (string, error)
-	CommitIDAt          func(string, string) (string, error)
-	Commit              func(string, string) error
-	RestoreWorkspace    func(string, string) error
-	UpdateStale         func(string) error
-	Snapshot            func(string) error
-	OpencodeTranscripts func(string, []OpencodeSession) ([]OpencodeTranscript, error)
-	EventLog            *EventLog
-	EventLogOptions     EventLogOptions
-	Logger              Logger
+	Config   *config.Config
+	RunTests func(string, []string) ([]TestCommandResult, error)
+	// RunLLM runs an LLM session using the agent package.
+	RunLLM func(AgentRunOptions) (AgentRunResult, error)
+	// Model overrides model selection for all stages when set.
+	Model              string
+	CurrentCommitID    func(string) (string, error)
+	CurrentChangeEmpty func(string) (bool, error)
+	DiffStat           func(string, string, string) (string, error)
+	CommitIDAt         func(string, string) (string, error)
+	Commit             func(string, string) error
+	RestoreWorkspace   func(string, string) error
+	UpdateStale        func(string) error
+	Snapshot           func(string) error
+	// Transcripts retrieves transcripts for LLM sessions.
+	Transcripts     func(string, []AgentSession) ([]AgentTranscript, error)
+	EventLog        *EventLog
+	EventLogOptions EventLogOptions
+	Logger          Logger
 }
 
 // HabitRunResult captures the output of running a habit.
@@ -114,8 +116,8 @@ func RunHabit(repoPath, habitName string, opts HabitRunOptions) (*HabitRunResult
 		return result, err
 	}
 
-	implModel := resolveHabitModel(opts.Config, opts.OpencodeAgent, h.ImplementationModel, "implement")
-	reviewModel := resolveHabitModel(opts.Config, opts.OpencodeAgent, h.ReviewModel, "review")
+	implModel := resolveHabitModel(opts.Config, opts.Model, h.ImplementationModel, "implement")
+	reviewModel := resolveHabitModel(opts.Config, opts.Model, h.ReviewModel, "review")
 
 	// Create a synthetic job for tracking - we use habitName as the todo ID prefix
 	created, err := manager.Create("habit:"+habitName, startedAt, CreateOptions{
@@ -364,43 +366,43 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		}
 
 		updated := current
-		agent := resolveHabitModel(ctx.opts.Config, ctx.opts.OpencodeAgent, ctx.habit.ImplementationModel, "implement")
-		runAttempt := func() (OpencodeRunResult, error) {
-			result, err := runOpencodeWithEvents(ctx.opts.toRunOptions(), opencodeRunOptions{
-				RepoPath:      ctx.repoPath,
-				WorkspacePath: ctx.workspacePath,
-				Prompt:        prompt,
-				Agent:         agent,
-				StartedAt:     ctx.opts.Now(),
-				EventLog:      ctx.opts.EventLog,
-				Env:           applyOpencodeConfigEnv(nil),
-			}, "implement")
+		model := resolveHabitModel(ctx.opts.Config, ctx.opts.Model, ctx.habit.ImplementationModel, "implement")
+		runOpts := AgentRunOptions{
+			RepoPath:      ctx.repoPath,
+			WorkspacePath: ctx.workspacePath,
+			Prompt:        prompt,
+			Model:         model,
+			StartedAt:     ctx.opts.Now(),
+			EventLog:      ctx.opts.EventLog,
+		}
+		runAttempt := func() (AgentRunResult, error) {
+			result, err := runLLMWithEvents(ctx.opts.toRunOptions(), runOpts, "implement")
 			if err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
 
-			append := OpencodeSession{Purpose: "implement", ID: result.SessionID}
-			updated, err = ctx.manager.Update(updated.ID, UpdateOptions{AppendOpencodeSession: &append}, ctx.opts.Now())
+			session := AgentSession{Purpose: "implement", ID: result.SessionID}
+			updated, err = ctx.manager.Update(updated.ID, UpdateOptions{AppendAgentSession: &session}, ctx.opts.Now())
 			if err != nil {
-				return OpencodeRunResult{}, err
+				return AgentRunResult{}, err
 			}
-			transcript := loadOpencodeTranscript(ctx.opts.OpencodeTranscripts, ctx.repoPath, append)
+			transcript := loadTranscript(ctx.opts.toRunOptions(), session)
 			if !internalstrings.IsBlank(transcript) {
 				if err := appendJobEvent(ctx.opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: transcript}); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
 			}
 			logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt, Transcript: transcript})
 			return result, nil
 		}
 
-		opencodeResult, err := runAttempt()
+		llmResult, err := runAttempt()
 		if err != nil {
 			return Job{}, err
 		}
 
 		retryCount := 0
-		for opencodeResult.ExitCode != 0 {
+		for llmResult.ExitCode != 0 {
 			afterCommitID := ""
 			var afterCommitErr error
 			if ctx.opts.CurrentCommitID != nil && !internalstrings.IsBlank(ctx.workspacePath) {
@@ -408,7 +410,7 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			}
 			restored := false
 			var restoreErr error
-			if opencodeResult.ExitCode < 0 && afterCommitErr == nil && afterCommitID != "" && beforeCommitID != "" && afterCommitID != beforeCommitID {
+			if llmResult.ExitCode < 0 && afterCommitErr == nil && afterCommitID != "" && beforeCommitID != "" && afterCommitID != beforeCommitID {
 				if ctx.opts.RestoreWorkspace != nil {
 					restoreErr = ctx.opts.RestoreWorkspace(ctx.workspacePath, beforeCommitID)
 					if restoreErr == nil {
@@ -418,18 +420,13 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			}
 			if restored && retryCount == 0 {
 				retryCount++
-				opencodeResult, err = runAttempt()
+				llmResult, err = runAttempt()
 				if err != nil {
 					return Job{}, err
 				}
 				continue
 			}
-			return Job{}, errors.New(buildOpencodeFailureMessage("implement", promptName, opencodeResult, opencodeRunOptions{
-				RepoPath:      ctx.repoPath,
-				WorkspacePath: ctx.workspacePath,
-				Prompt:        prompt,
-				Agent:         agent,
-			}, beforeCommitID, afterCommitID, afterCommitErr, restored, restoreErr, retryCount))
+			return Job{}, errors.New(buildLLMFailureMessage("implement", promptName, llmResult, runOpts, beforeCommitID, afterCommitID, afterCommitErr, restored, restoreErr, retryCount))
 		}
 
 		afterCommitID, err := ctx.opts.CurrentCommitID(ctx.workspacePath)
@@ -545,7 +542,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		}
 
 		promptName := "prompt-habit-review.tmpl"
-		agent := resolveHabitModel(ctx.opts.Config, ctx.opts.OpencodeAgent, ctx.habit.ReviewModel, "review")
+		model := resolveHabitModel(ctx.opts.Config, ctx.opts.Model, ctx.habit.ReviewModel, "review")
 
 		promptTemplate, err := LoadPrompt(ctx.workspacePath, promptName)
 		if err != nil {
@@ -561,25 +558,24 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			return Job{}, err
 		}
 
-		opencodeResult, err := runOpencodeWithEvents(ctx.opts.toRunOptions(), opencodeRunOptions{
+		llmResult, err := runLLMWithEvents(ctx.opts.toRunOptions(), AgentRunOptions{
 			RepoPath:      ctx.repoPath,
 			WorkspacePath: ctx.workspacePath,
 			Prompt:        prompt,
-			Agent:         agent,
+			Model:         model,
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
-			Env:           applyOpencodeConfigEnv(nil),
 		}, "review")
 		if err != nil {
 			return Job{}, err
 		}
 
-		append := OpencodeSession{Purpose: "review", ID: opencodeResult.SessionID}
-		updated, err := ctx.manager.Update(current.ID, UpdateOptions{AppendOpencodeSession: &append}, ctx.opts.Now())
+		session := AgentSession{Purpose: "review", ID: llmResult.SessionID}
+		updated, err := ctx.manager.Update(current.ID, UpdateOptions{AppendAgentSession: &session}, ctx.opts.Now())
 		if err != nil {
 			return Job{}, err
 		}
-		transcript := loadOpencodeTranscript(ctx.opts.OpencodeTranscripts, ctx.repoPath, append)
+		transcript := loadTranscript(ctx.opts.toRunOptions(), session)
 		if !internalstrings.IsBlank(transcript) {
 			if err := appendJobEvent(ctx.opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "review", Transcript: transcript}); err != nil {
 				return Job{}, err
@@ -587,8 +583,8 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		}
 		logger.Prompt(PromptLog{Purpose: "review", Template: promptName, Prompt: prompt, Transcript: transcript})
 
-		if opencodeResult.ExitCode != 0 {
-			return Job{}, fmt.Errorf("opencode review failed with exit code %d", opencodeResult.ExitCode)
+		if llmResult.ExitCode != 0 {
+			return Job{}, fmt.Errorf("LLM review failed with exit code %d", llmResult.ExitCode)
 		}
 
 		feedback, err := ReadReviewFeedback(feedbackPath)
@@ -685,51 +681,51 @@ func (ctx *habitRunContext) runHabitCommittingStage(current Job) func() (Job, er
 
 func (opts *HabitRunOptions) toRunOptions() RunOptions {
 	return RunOptions{
-		Now:                 opts.Now,
-		LoadConfig:          opts.LoadConfig,
-		Config:              opts.Config,
-		RunTests:            opts.RunTests,
-		RunOpencode:         opts.RunOpencode,
-		OpencodeAgent:       opts.OpencodeAgent,
-		CurrentCommitID:     opts.CurrentCommitID,
-		CurrentChangeEmpty:  opts.CurrentChangeEmpty,
-		DiffStat:            opts.DiffStat,
-		CommitIDAt:          opts.CommitIDAt,
-		Commit:              opts.Commit,
-		RestoreWorkspace:    opts.RestoreWorkspace,
-		UpdateStale:         opts.UpdateStale,
-		Snapshot:            opts.Snapshot,
-		OpencodeTranscripts: opts.OpencodeTranscripts,
-		EventLog:            opts.EventLog,
-		Logger:              opts.Logger,
+		Now:                opts.Now,
+		LoadConfig:         opts.LoadConfig,
+		Config:             opts.Config,
+		RunTests:           opts.RunTests,
+		RunLLM:             opts.RunLLM,
+		Model:              opts.Model,
+		CurrentCommitID:    opts.CurrentCommitID,
+		CurrentChangeEmpty: opts.CurrentChangeEmpty,
+		DiffStat:           opts.DiffStat,
+		CommitIDAt:         opts.CommitIDAt,
+		Commit:             opts.Commit,
+		RestoreWorkspace:   opts.RestoreWorkspace,
+		UpdateStale:        opts.UpdateStale,
+		Snapshot:           opts.Snapshot,
+		Transcripts:        opts.Transcripts,
+		EventLog:           opts.EventLog,
+		Logger:             opts.Logger,
 	}
 }
 
 func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 	runOpts := normalizeRunOptions(RunOptions{
-		Now:                 opts.Now,
-		LoadConfig:          opts.LoadConfig,
-		Config:              opts.Config,
-		RunTests:            opts.RunTests,
-		RunOpencode:         opts.RunOpencode,
-		OpencodeAgent:       opts.OpencodeAgent,
-		CurrentCommitID:     opts.CurrentCommitID,
-		CurrentChangeEmpty:  opts.CurrentChangeEmpty,
-		DiffStat:            opts.DiffStat,
-		CommitIDAt:          opts.CommitIDAt,
-		Commit:              opts.Commit,
-		RestoreWorkspace:    opts.RestoreWorkspace,
-		UpdateStale:         opts.UpdateStale,
-		Snapshot:            opts.Snapshot,
-		OpencodeTranscripts: opts.OpencodeTranscripts,
-		EventLog:            opts.EventLog,
-		Logger:              opts.Logger,
+		Now:                opts.Now,
+		LoadConfig:         opts.LoadConfig,
+		Config:             opts.Config,
+		RunTests:           opts.RunTests,
+		RunLLM:             opts.RunLLM,
+		Model:              opts.Model,
+		CurrentCommitID:    opts.CurrentCommitID,
+		CurrentChangeEmpty: opts.CurrentChangeEmpty,
+		DiffStat:           opts.DiffStat,
+		CommitIDAt:         opts.CommitIDAt,
+		Commit:             opts.Commit,
+		RestoreWorkspace:   opts.RestoreWorkspace,
+		UpdateStale:        opts.UpdateStale,
+		Snapshot:           opts.Snapshot,
+		Transcripts:        opts.Transcripts,
+		EventLog:           opts.EventLog,
+		Logger:             opts.Logger,
 	})
 
 	opts.Now = runOpts.Now
 	opts.LoadConfig = runOpts.LoadConfig
 	opts.RunTests = runOpts.RunTests
-	opts.RunOpencode = runOpts.RunOpencode
+	opts.RunLLM = runOpts.RunLLM
 	opts.CurrentCommitID = runOpts.CurrentCommitID
 	opts.CurrentChangeEmpty = runOpts.CurrentChangeEmpty
 	opts.DiffStat = runOpts.DiffStat
@@ -738,7 +734,7 @@ func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 	opts.RestoreWorkspace = runOpts.RestoreWorkspace
 	opts.UpdateStale = runOpts.UpdateStale
 	opts.Snapshot = runOpts.Snapshot
-	opts.OpencodeTranscripts = runOpts.OpencodeTranscripts
+	opts.Transcripts = runOpts.Transcripts
 	opts.Logger = runOpts.Logger
 	return opts
 }
@@ -768,7 +764,7 @@ func resolveHabitModel(cfg *config.Config, override, habitModel, purpose string)
 	return internalstrings.TrimSpace(model)
 }
 
-func renderHabitPromptTemplate(h *habit.Habit, feedback, message string, commitLog []CommitLogEntry, transcripts []OpencodeTranscript, name, workspacePath string) (string, error) {
+func renderHabitPromptTemplate(h *habit.Habit, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
 		return "", err

@@ -13,7 +13,7 @@ Running implementation prompt:
         
             export SNAPSHOT_MODE=enabled
             ./bin/ii job run --preview
-    Opencode transcript:
+    LLM transcript:
         Opencode transcript line one.
         Opencode transcript line two.
 

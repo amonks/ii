@@ -17,6 +17,36 @@ import (
 type Config struct {
 	Workspace Workspace `toml:"workspace"`
 	Job       Job       `toml:"job"`
+	LLM       LLM       `toml:"llm"`
+	Agent     Agent     `toml:"agent"`
+}
+
+// LLM contains LLM-related configuration.
+type LLM struct {
+	// Providers defines the LLM providers available for use.
+	Providers []LLMProvider `toml:"providers"`
+	// Model is the default model ID for LLM completions when no other model is specified.
+	Model string `toml:"model"`
+}
+
+// Agent contains agent-related configuration.
+type Agent struct {
+	// Model is the default model ID for agent runs when no task-specific model is set.
+	Model string `toml:"model"`
+}
+
+// LLMProvider configures a single LLM provider.
+type LLMProvider struct {
+	// Name is a unique identifier for this provider configuration.
+	Name string `toml:"name"`
+	// API specifies which API style to use (anthropic-messages, openai-completions, openai-responses).
+	API string `toml:"api"`
+	// BaseURL is the API endpoint.
+	BaseURL string `toml:"base-url"`
+	// APIKeyCommand is a command to run to get the API key. If empty, no auth is used.
+	APIKeyCommand string `toml:"api-key-command"`
+	// Models lists the model IDs available through this provider.
+	Models []string `toml:"models"`
 }
 
 // Workspace contains workspace-related configuration.
@@ -34,13 +64,13 @@ type Workspace struct {
 type Job struct {
 	// TestCommands defines commands to run during job testing.
 	TestCommands []string `toml:"test-commands"`
-	// Agent selects the default opencode agent for job runs.
+	// Agent selects the default agent for job runs.
 	Agent string `toml:"agent"`
-	// ImplementationModel selects the opencode model for implementing.
+	// ImplementationModel selects the model for implementing.
 	ImplementationModel string `toml:"implementation-model"`
-	// CodeReviewModel selects the opencode model for step review.
+	// CodeReviewModel selects the model for step review.
 	CodeReviewModel string `toml:"code-review-model"`
-	// ProjectReviewModel selects the opencode model for final project review.
+	// ProjectReviewModel selects the model for final project review.
 	ProjectReviewModel string `toml:"project-review-model"`
 }
 
@@ -64,6 +94,18 @@ func Load(repoPath string) (*Config, error) {
 
 	merged := mergeConfigs(globalCfg, projectCfg, globalMeta, projectMeta)
 	return merged, nil
+}
+
+// LoadGlobal loads only the global configuration file.
+// Returns an empty config if the file doesn't exist.
+func LoadGlobal() (*Config, error) {
+	globalPath, err := globalConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, _, err := loadConfigFile(globalPath)
+	return cfg, err
 }
 
 func loadProjectConfig(repoPath string) (*Config, toml.MetaData, error) {
@@ -152,7 +194,42 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 		merged.Job.TestCommands = append([]string(nil), globalCfg.Job.TestCommands...)
 	}
 
+	// Merge LLM config
+	merged.LLM.Providers = mergeLLMProviders(globalCfg.LLM.Providers, projectCfg.LLM.Providers)
+	merged.LLM.Model = mergeString(projectMeta.IsDefined("llm", "model"), projectCfg.LLM.Model, globalCfg.LLM.Model)
+
+	// Merge Agent config
+	merged.Agent.Model = mergeString(projectMeta.IsDefined("agent", "model"), projectCfg.Agent.Model, globalCfg.Agent.Model)
+
 	return &merged
+}
+
+// mergeLLMProviders merges global and project LLM providers.
+// Project providers with the same name as global providers override them.
+// Providers are returned in order: project providers first, then remaining global providers.
+func mergeLLMProviders(global, project []LLMProvider) []LLMProvider {
+	if len(project) == 0 && len(global) == 0 {
+		return nil
+	}
+
+	// Build a set of project provider names for quick lookup
+	projectNames := make(map[string]bool, len(project))
+	for _, p := range project {
+		projectNames[p.Name] = true
+	}
+
+	// Start with project providers
+	result := make([]LLMProvider, 0, len(project)+len(global))
+	result = append(result, project...)
+
+	// Add global providers that aren't overridden by project
+	for _, p := range global {
+		if !projectNames[p.Name] {
+			result = append(result, p)
+		}
+	}
+
+	return result
 }
 
 func mergeString(projectDefined bool, projectValue, globalValue string) string {

@@ -32,6 +32,7 @@ Review the changes:
 - Are things in the right place?
 - Does it include proper test coverage?
 - Does it keep the relevant specs up to date?
+- Does the commit message describe the _entire_ change?
 - Does it conform to the norms of the code areas it modifies?
 - Does it work?
 

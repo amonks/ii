@@ -26,7 +26,7 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 	store.Release()
 
 	now := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
-	opencodeCount := 0
+	llmCount := 0
 
 	_, err = Run(repoPath, created.ID, RunOptions{
 		Now: func() time.Time { return now },
@@ -37,15 +37,15 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 			return nil, nil
 		},
 		UpdateStale: func(string) error { return nil },
-		RunOpencode: func(opts opencodeRunOptions) (OpencodeRunResult, error) {
-			opencodeCount++
-			if opencodeCount == 3 {
+		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
+			llmCount++
+			if llmCount == 3 {
 				messagePath := filepath.Join(opts.WorkspacePath, commitMessageFilename)
 				if err := os.WriteFile(messagePath, []byte("feat: add topic"), 0o644); err != nil {
-					return OpencodeRunResult{}, err
+					return AgentRunResult{}, err
 				}
 			}
-			return OpencodeRunResult{SessionID: fmt.Sprintf("opencode-%d", opencodeCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
 		},
 		OnStart: func(StartInfo) {
 			store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
@@ -99,7 +99,7 @@ func TestRunStoresOpencodeAgent(t *testing.T) {
 	store.Release()
 
 	now := time.Date(2026, 1, 3, 4, 5, 6, 0, time.UTC)
-	opencodeCount := 0
+	llmCount := 0
 
 	result, err := Run(repoPath, created.ID, RunOptions{
 		Now: func() time.Time { return now },
@@ -113,11 +113,11 @@ func TestRunStoresOpencodeAgent(t *testing.T) {
 		CurrentCommitID: func(string) (string, error) {
 			return "same", nil
 		},
-		RunOpencode: func(opencodeRunOptions) (OpencodeRunResult, error) {
-			opencodeCount++
-			return OpencodeRunResult{SessionID: fmt.Sprintf("opencode-%d", opencodeCount), ExitCode: 0}, nil
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			llmCount++
+			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
 		},
-		OpencodeAgent: "agent-42",
+		Model: "agent-42",
 	})
 	if err != nil {
 		t.Fatalf("run job: %v", err)
@@ -178,9 +178,9 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 		CurrentCommitID: func(string) (string, error) {
 			return "same", nil
 		},
-		RunOpencode: func(opts opencodeRunOptions) (OpencodeRunResult, error) {
-			agents = append(agents, opts.Agent)
-			return OpencodeRunResult{SessionID: fmt.Sprintf("opencode-%d", len(agents)), ExitCode: 0}, nil
+		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
+			agents = append(agents, opts.Model)
+			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", len(agents)), ExitCode: 0}, nil
 		},
 	})
 	if err != nil {

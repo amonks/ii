@@ -24,8 +24,8 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
   - Reuse the first available workspace for the repo when possible.
   - Otherwise allocate a new `ws-###` name and mark it acquired.
 - If a new workspace is allocated, `jj workspace add` is executed and the workspace directory is created.
-- Once a workspace is selected, a new change is created with `jj new <rev>` to ensure the workspace is always checked out to a fresh change.
-- If the requested revision is missing and looks like a change ID, the pool retries with `@` as the parent.
+- Once a workspace is selected, the requested revision is resolved to a change ID in the **source repository** context. This is necessary because symbolic refs like `@` have different meanings in the workspace vs source repo. Then a new change is created with `jj new <resolved-rev>` to ensure the workspace is always checked out to a fresh change based on the expected parent.
+- If the requested revision is missing and looks like a change ID, the pool retries with `@` (resolved in the source repo) as the parent.
 - When `NewChangeMessage` is provided, it is used as the description for that newly created change.
 - `incrementum.toml` or `.incrementum/config.toml` is loaded from the source repo (merged with global config) and the workspace `on-create` hook runs for every acquire (including reuse).
 - A workspace is marked `Provisioned` once the hooks run successfully.
@@ -46,9 +46,10 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 - Destroy-all removes workspaces for a repo from state, forgets each workspace from jj (best-effort), deletes the workspace directories, and removes the repo workspaces directory if empty.
 
 ## Repo Resolution
-- `RepoRoot(path)` returns the jj root for any path.
+- `RepoRoot(path)` returns the jj root for any path, normalized via `paths.NormalizePath` to handle macOS symlinks like `/private/var` → `/var`.
 - `RepoRootFromPath(path)` resolves a workspace path back to the source repo using state when possible.
 - If the path is inside the workspace pool directory but no repo mapping exists, `ErrRepoPathNotFound` is returned.
+- All paths stored in state and returned by these functions are normalized to ensure consistent comparisons regardless of whether macOS-specific prefixes are present.
 
 ## CLI Commands
 - `ii workspace acquire [--rev <rev>] --purpose <text>`: acquire or create a workspace; prints the workspace path.

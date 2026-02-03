@@ -4,15 +4,36 @@
 The config package loads project and global configuration files and runs hook scripts.
 
 ## Configuration Model
-- `Config` holds workspace and job configuration.
+- `Config` holds workspace, job, and LLM configuration.
 - `Workspace` defines `on-create` and `on-acquire` scripts.
-- `Job` defines `test-commands`, the optional default `agent`, and optional per-task
-  opencode models (`implementation-model`, `code-review-model`, `project-review-model`).
+- `Job` defines `test-commands`, the optional default `agent`, and optional per-stage
+  models (`implementation-model`, `code-review-model`, `project-review-model`).
+- `LLM` defines LLM providers available for use.
+
+### LLM Configuration
+
+```toml
+[[llm.providers]]
+name = "anthropic"
+api = "anthropic-messages"
+base-url = "https://api.anthropic.com"
+api-key-command = "op read op://Private/Anthropic/credential"
+models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+```
+
+Each provider has:
+- `name`: Unique identifier for the provider configuration
+- `api`: API style (`anthropic-messages`, `openai-completions`, `openai-responses`)
+- `base-url`: API endpoint
+- `api-key-command`: Command to run to get API key (optional; if empty, no auth is used)
+- `models`: List of model IDs available through this provider
 
 ## Behavior
 - `Load` reads either `incrementum.toml` or `.incrementum/config.toml` from the repo root and `~/.config/incrementum/config.toml`, then merges them.
+- `LoadGlobal` reads only the global config file (useful when no repo context is available).
 - If both `incrementum.toml` and `.incrementum/config.toml` exist, `Load` returns an error.
 - Project values override global values, including explicitly empty strings or lists; missing configs return an empty config.
+- LLM providers are merged: project providers with the same name override global providers; providers are returned with project providers first, then remaining global providers.
 - TOML decoding errors are surfaced with context.
 - `RunScript` executes hook scripts in a target directory.
 - Scripts honor a shebang line; otherwise `/bin/bash` is used.

@@ -109,8 +109,8 @@ type JobCommit struct {
     // Nil until the reviewing stage completes.
     Review *JobReview `json:"review,omitempty"`
 
-    // OpencodeSessionID references the opencode session that produced this commit.
-    // This is the session ID, which can be looked up in Job.OpencodeSessions.
+    // OpencodeSessionID references the agent session that produced this commit.
+    // (Field name is a legacy artifact; kept for backward compatibility.)
     OpencodeSessionID string `json:"opencode_session_id"`
 
     // CreatedAt is when this commit was created.
@@ -133,7 +133,8 @@ type JobReview struct {
     // Present for all outcomes; may be empty for accept.
     Comments string `json:"comments,omitempty"`
 
-    // OpencodeSessionID references the opencode session that produced this review.
+    // OpencodeSessionID references the agent session that produced this review.
+    // (Field name is a legacy artifact; kept for backward compatibility.)
     OpencodeSessionID string `json:"opencode_session_id"`
 
     // ReviewedAt is when the review was recorded.
@@ -158,7 +159,7 @@ On exiting the implementing stage (with changes detected):
 1. Create a new `JobCommit` with:
    - `CommitID`: current working copy commit ID
    - `DraftMessage`: from `.incrementum-commit-message`
-   - `OpencodeSessionID`: the session that just ran
+   - `OpencodeSessionID` (legacy field name): the agent session that just ran
    - `CreatedAt`: now
 2. Append the commit to the current change's `Commits` slice.
 
@@ -367,7 +368,7 @@ which calls `jj log -r @ -T 'change_id' --no-graph` via the jj client.
 
 The runner handles jobs that were created before this feature:
 
-- If `Changes` is nil/empty but the job has opencode sessions, it's a legacy job.
+- If `Changes` is nil/empty but the job has sessions, it's a legacy job.
 - Legacy jobs can still complete; they just won't have change tracking.
 
 ### Manager API
