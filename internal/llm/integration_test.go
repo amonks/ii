@@ -4,32 +4,24 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	publicllm "github.com/amonks/incrementum/llm"
 	"github.com/amonks/incrementum/internal/llm"
 )
 
 // These tests are integration-style (exercise real LLM calls) but they live under
 // internal/* and are not guaranteed to run from the repo root. To keep them
-// hermetic and aligned with ./incrementum.toml, we copy the repo config into a
-// temp HOME and then resolve models from that config.
+// hermetic and aligned with the repo's incrementum.toml, we set a temp HOME
+// (so global config is empty) and load providers from the repo config.
 
 func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 	t.Helper()
 
 	homeDir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(homeDir, ".config", "incrementum"), 0o755); err != nil {
-		t.Fatalf("create config dir: %v", err)
-	}
-	data, err := os.ReadFile(filepath.Join("..", "incrementum.toml"))
-	if err != nil {
-		t.Fatalf("read ../incrementum.toml: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(homeDir, ".config", "incrementum", "config.toml"), data, 0o644); err != nil {
-		t.Fatalf("write config.toml: %v", err)
-	}
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create state dir: %v", err)
 	}
@@ -39,20 +31,76 @@ func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 
 	t.Setenv("HOME", homeDir)
 
-	store, err := llm.OpenWithOptions(llm.Options{})
+	repoRoot := findRepoRoot(t)
+	publicstore, err := publicllm.OpenWithOptions(publicllm.Options{RepoPath: repoRoot})
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
-	model, err := store.GetModel(modelID)
+	model, err := publicstore.GetModel(modelID)
 	if err != nil {
-		t.Fatalf("test requires model %q to be configured in ../incrementum.toml: %v", modelID, err)
+		t.Fatalf("test requires model %q to be configured in %s/incrementum.toml: %v", modelID, repoRoot, err)
 	}
-	return model
+	return llm.Model(model)
+}
+
+func findRepoRoot(t *testing.T) string {
+	t.Helper()
+
+	_, filePath, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine caller path")
+	}
+	dir := filepath.Dir(filePath)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "incrementum.toml")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("could not find incrementum.toml in any parent directory")
+		}
+		dir = parent
+	}
+}
+
+func requireOpenAIReasoningModelFromRepoConfig(t *testing.T) llm.Model {
+	t.Helper()
+
+	homeDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
+		t.Fatalf("create state dir: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "share", "incrementum"), 0o755); err != nil {
+		t.Fatalf("create share dir: %v", err)
+	}
+	t.Setenv("HOME", homeDir)
+
+	repoRoot := findRepoRoot(t)
+	publicstore, err := publicllm.OpenWithOptions(publicllm.Options{RepoPath: repoRoot})
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	models, err := publicstore.ListModels()
+	if err != nil {
+		t.Fatalf("ListModels failed: %v", err)
+	}
+
+	for _, model := range models {
+		if !model.UseMaxCompletionTokens {
+			continue
+		}
+		if model.API != publicllm.APIOpenAICompletions && model.API != publicllm.APIOpenAIResponses {
+			continue
+		}
+		return llm.Model(model)
+	}
+
+	t.Fatalf("test requires at least one OpenAI reasoning model (UseMaxCompletionTokens=true) to be configured in %s/incrementum.toml", repoRoot)
+	return llm.Model{}
 }
 
 func TestAnthropicStream_Simple(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5")
-	model.ID = "claude-sonnet-4-20250514"
 
 	req := llm.Request{
 		SystemPrompt: "You are a helpful assistant. Be concise.",
@@ -129,7 +177,6 @@ func TestAnthropicStream_Simple(t *testing.T) {
 
 func TestAnthropicStream_WithTool(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5")
-	model.ID = "claude-sonnet-4-20250514"
 
 	type CalculatorParams struct {
 		A         float64 `json:"a" jsonschema:"description=First number"`
@@ -326,8 +373,7 @@ func TestOpenAIStream_WithTool(t *testing.T) {
 // TestOpenAIStream_ReasoningModel tests that o1/o3/o4 reasoning models work correctly.
 // These models require max_completion_tokens instead of max_tokens.
 func TestOpenAIStream_ReasoningModel(t *testing.T) {
-	model := requireModelFromRepoConfig(t, "o4-mini")
-	model.UseMaxCompletionTokens = true // reasoning models use max_completion_tokens
+	model := requireOpenAIReasoningModelFromRepoConfig(t)
 
 	req := llm.Request{
 		// Note: o-series models don't support system prompts in the same way
@@ -390,51 +436,49 @@ func TestOpenAIStream_ReasoningModel(t *testing.T) {
 // - Anthropic latest: claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001, claude-opus-4-5-20251101
 // - OpenAI frontier: gpt-5.2, gpt-5-mini, gpt-5-nano, gpt-5.2-pro, gpt-5, gpt-4.1
 func TestWellKnownModels_Integration(t *testing.T) {
-	// Define all frontier models to test
-	testCases := []struct {
-		id                     string
-		api                    llm.API
-		useMaxCompletionTokens bool
-		reasoning              bool // Reasoning models need more tokens for internal thinking
-	}{
+	// Define all frontier models to test; only configured models are exercised.
+	frontierModels := map[string]struct{}{
 		// Anthropic latest models
-		{"claude-sonnet-4-5-20250929", llm.APIAnthropicMessages, false, true},
-		{"claude-haiku-4-5-20251001", llm.APIAnthropicMessages, false, true},
-		{"claude-opus-4-5-20251101", llm.APIAnthropicMessages, false, true},
-		// OpenAI frontier models (GPT-5 series uses max_completion_tokens)
-		{"gpt-5.2", llm.APIOpenAICompletions, true, true},
-		{"gpt-5-mini", llm.APIOpenAICompletions, true, true},
-		{"gpt-5-nano", llm.APIOpenAICompletions, true, true},
-		{"gpt-5.2-pro", llm.APIOpenAIResponses, false, true}, // Uses Responses API
-		{"gpt-5", llm.APIOpenAICompletions, true, true},
-		{"gpt-4.1", llm.APIOpenAICompletions, false, false}, // non-reasoning, uses max_tokens
+		"claude-sonnet-4-5-20250929": {},
+		"claude-haiku-4-5-20251001":  {},
+		"claude-opus-4-5-20251101":   {},
+		// OpenAI frontier models
+		"gpt-5.2":     {},
+		"gpt-5-mini":  {},
+		"gpt-5-nano":  {},
+		"gpt-5.2-pro": {},
+		"gpt-5":       {},
+		"gpt-4.1":     {},
 	}
 
-	store, err := publicllm.OpenWithOptions(publicllm.Options{RepoPath: "."})
+	repoRoot := findRepoRoot(t)
+	store, err := publicllm.OpenWithOptions(publicllm.Options{RepoPath: repoRoot})
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	anyConfigured := false
-	for _, tc := range testCases {
-		if _, err := store.GetModel(tc.id); err == nil {
-			anyConfigured = true
-			break
-		}
-	}
-	if !anyConfigured {
-		t.Fatalf("TestWellKnownModels_Integration requires at least one of the frontier models to be configured in ./incrementum.toml")
+	models, err := store.ListModels()
+	if err != nil {
+		t.Fatalf("ListModels failed: %v", err)
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.id, func(t *testing.T) {
-			m, err := store.GetModel(tc.id)
+	var configuredFrontier []string
+	for _, model := range models {
+		if _, ok := frontierModels[model.ID]; ok {
+			configuredFrontier = append(configuredFrontier, model.ID)
+		}
+	}
+	if len(configuredFrontier) == 0 {
+		t.Fatalf("TestWellKnownModels_Integration requires at least one configured frontier model in %s/incrementum.toml", repoRoot)
+	}
+
+	for _, modelID := range configuredFrontier {
+		t.Run(modelID, func(t *testing.T) {
+			m, err := store.GetModel(modelID)
 			if err != nil {
-				t.Fatalf("model %q is not configured in ./incrementum.toml: %v", tc.id, err)
+				t.Fatalf("model %q is not configured in %s/incrementum.toml: %v", modelID, repoRoot, err)
 			}
 			model := llm.Model(m)
-			model.API = tc.api
-			model.UseMaxCompletionTokens = tc.useMaxCompletionTokens
 
 			req := llm.Request{
 				SystemPrompt: "You are a helpful assistant. Be extremely concise.",
@@ -450,7 +494,7 @@ func TestWellKnownModels_Integration(t *testing.T) {
 			// Reasoning models need more tokens because they use many tokens for internal thinking
 			// before producing visible output. 50 tokens is not enough for reasoning models.
 			maxTokens := 50
-			if tc.reasoning {
+			if model.Reasoning {
 				maxTokens = 500
 			}
 			opts := llm.StreamOptions{
@@ -462,7 +506,7 @@ func TestWellKnownModels_Integration(t *testing.T) {
 
 			handle, err := llm.Stream(ctx, model, req, opts)
 			if err != nil {
-				t.Fatalf("Stream failed for %s: %v", tc.id, err)
+				t.Fatalf("Stream failed for %s: %v", modelID, err)
 			}
 
 			// Drain events
@@ -471,7 +515,7 @@ func TestWellKnownModels_Integration(t *testing.T) {
 
 			msg, err := handle.Wait()
 			if err != nil {
-				t.Fatalf("Wait failed for %s: %v", tc.id, err)
+				t.Fatalf("Wait failed for %s: %v", modelID, err)
 			}
 
 			// Verify we got a response
@@ -495,7 +539,7 @@ func TestWellKnownModels_Integration(t *testing.T) {
 				t.Errorf("Response does not contain '4': %q", responseText)
 			}
 
-			t.Logf("%s: response=%q, input=%d, output=%d", tc.id, responseText, msg.Usage.Input, msg.Usage.Output)
+			t.Logf("%s: response=%q, input=%d, output=%d", modelID, responseText, msg.Usage.Input, msg.Usage.Output)
 		})
 	}
 }

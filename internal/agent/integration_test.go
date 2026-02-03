@@ -4,33 +4,25 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	publicllm "github.com/amonks/incrementum/llm"
 	"github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/llm"
 )
 
 // These tests are integration-style (exercise real LLM calls) but they live under
 // internal/* and are not guaranteed to run from the repo root. To keep them
-// hermetic and aligned with ./incrementum.toml, we copy the repo config into a
-// temp HOME and then resolve models from that config.
+// hermetic and aligned with the repo's incrementum.toml, we set a temp HOME
+// (so global config is empty) and load providers from the repo config.
 
 func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 	t.Helper()
 
 	homeDir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(homeDir, ".config", "incrementum"), 0o755); err != nil {
-		t.Fatalf("create config dir: %v", err)
-	}
-	data, err := os.ReadFile(filepath.Join("..", "incrementum.toml"))
-	if err != nil {
-		t.Fatalf("read ../incrementum.toml: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(homeDir, ".config", "incrementum", "config.toml"), data, 0o644); err != nil {
-		t.Fatalf("write config.toml: %v", err)
-	}
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create state dir: %v", err)
 	}
@@ -41,20 +33,40 @@ func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 	// Make llm store load the copied config.
 	t.Setenv("HOME", homeDir)
 
-	publicstore, err := publicllm.OpenWithOptions(publicllm.Options{})
+	repoRoot := findRepoRoot(t)
+	publicstore, err := publicllm.OpenWithOptions(publicllm.Options{RepoPath: repoRoot})
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
 	model, err := publicstore.GetModel(modelID)
 	if err != nil {
-		t.Fatalf("test requires model %q to be configured in ../incrementum.toml: %v", modelID, err)
+		t.Fatalf("test requires model %q to be configured in %s/incrementum.toml: %v", modelID, repoRoot, err)
 	}
 	return llm.Model(model)
 }
 
+func findRepoRoot(t *testing.T) string {
+	t.Helper()
+
+	_, filePath, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine caller path")
+	}
+	dir := filepath.Dir(filePath)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "incrementum.toml")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("could not find incrementum.toml in any parent directory")
+		}
+		dir = parent
+	}
+}
+
 func TestAgentRun_SimpleCompletion_Anthropic(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 
 	config := agent.AgentConfig{
 		Model: model,
@@ -180,7 +192,6 @@ func TestAgentRun_SimpleCompletion_OpenAI(t *testing.T) {
 
 func TestAgentRun_ToolCall_Anthropic(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 	tmpDir := t.TempDir()
 
 	config := agent.AgentConfig{
@@ -245,7 +256,6 @@ func TestAgentRun_ToolCall_Anthropic(t *testing.T) {
 
 func TestAgentRun_FileOperations_Anthropic(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 	tmpDir := t.TempDir()
 
 	config := agent.AgentConfig{
@@ -294,7 +304,6 @@ func TestAgentRun_FileOperations_Anthropic(t *testing.T) {
 
 func TestAgentRun_PermissionDenied_Anthropic(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 	tmpDir := t.TempDir()
 
 	config := agent.AgentConfig{
@@ -356,7 +365,6 @@ func TestAgentRun_PermissionDenied_Anthropic(t *testing.T) {
 
 func TestAgentRun_ContextCancellation(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 	tmpDir := t.TempDir()
 
 	config := agent.AgentConfig{
@@ -398,7 +406,6 @@ func TestAgentRun_ContextCancellation(t *testing.T) {
 
 func TestAgentRun_Events_Anthropic(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5-20250929")
-	model.ID = "claude-sonnet-4-20250514"
 	tmpDir := t.TempDir()
 
 	config := agent.AgentConfig{

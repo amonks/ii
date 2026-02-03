@@ -13,6 +13,8 @@ For integration tests that need LLM provider access, tests **must not** reach di
 - **Use `t.Fatal()` instead** when a required dependency is missing
 - This ensures CI reports accurate pass/fail status rather than hiding untested code paths
 
+Note: internal integration tests are not guaranteed to run from the repo root. They should locate the repo root (by walking up to find `incrementum.toml`) and load config via that path while keeping a temp `HOME` so global config does not bleed in. Tests must only exercise models that are configured in the repo's `incrementum.toml`; do not require unconfigured models.
+
 Example - correct pattern (require model via repo config):
 ```go
 func requireModel(t *testing.T, modelID string) {
