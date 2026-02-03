@@ -175,6 +175,14 @@ The system prompt is built via `BuildSystemPrompt(workDir string)` and is not ex
 configurable. The working directory is included to help the model understand the context
 for relative path resolution.
 
+## AGENTS.md (agent prelude)
+
+If an `AGENTS.md` file exists in the agent working directory, its contents are prepended
+to the *first user message* in the session (followed by a blank line). This allows repos
+to provide persistent, local instructions without changing the global system prompt.
+
+If `AGENTS.md` is missing or empty, nothing is added.
+
 ## Event Streaming
 
 ### Typed Events

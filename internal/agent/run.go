@@ -46,11 +46,17 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 	events <- AgentStartEvent{Config: config}
 
 	// Initialize conversation with user message
+	prelude, err := agentsPrelude(workDir)
+	if err != nil {
+		result <- RunResult{Error: err}
+		return
+	}
+
 	messages := []llm.Message{
 		llm.UserMessage{
 			Role: "user",
 			Content: []llm.ContentBlock{
-				llm.TextContent{Type: "text", Text: prompt},
+				llm.TextContent{Type: "text", Text: prelude + prompt},
 			},
 			Timestamp: time.Now(),
 		},
