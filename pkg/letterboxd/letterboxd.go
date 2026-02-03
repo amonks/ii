@@ -7,14 +7,17 @@
 package letterboxd
 
 import (
+	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"monks.co/pkg/aschrome"
+	"github.com/andybalholm/brotli"
 	"monks.co/pkg/hardmemo"
 )
 
@@ -199,9 +202,43 @@ func (s *diaryRow) MovieLetterboxdURL() (string, error) {
 }
 
 func fetch(url string) (*goquery.Document, error) {
-	reader, err := aschrome.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers to mimic Safari browser to avoid detection
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15")
+	req.Header.Set("Sec-Fetch-Site", "none")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+	req.Header.Set("Priority", "u=0, i")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page content from %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("http error %s: %s", resp.Status, string(body))
+	}
+
+	var reader io.Reader = resp.Body
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		reader, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		defer reader.(io.ReadCloser).Close()
+	case "br":
+		reader = brotli.NewReader(resp.Body)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(reader)
