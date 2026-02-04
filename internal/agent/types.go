@@ -24,6 +24,9 @@ type AgentConfig struct {
 	// SessionID is an optional identifier for grouping related API requests
 	// into sessions for observability purposes.
 	SessionID string
+
+	// Version is the version string (commit ID) to include in the User-Agent header.
+	Version string
 }
 
 // BashPermissions controls which bash commands are allowed.

@@ -217,4 +217,5 @@ type StreamOptions struct {
 	CacheRetention CacheRetention
 	ThinkingLevel  ThinkingLevel
 	SessionID      string
+	UserAgent      string
 }

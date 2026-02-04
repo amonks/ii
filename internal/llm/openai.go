@@ -117,6 +117,7 @@ func streamOpenAICompletions(ctx context.Context, model Model, req Request, opts
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("User-Agent", opts.UserAgent)
 	if model.APIKey != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+model.APIKey)
 	}
@@ -559,6 +560,7 @@ func streamOpenAIResponses(ctx context.Context, model Model, req Request, opts S
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("User-Agent", opts.UserAgent)
 	if model.APIKey != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+model.APIKey)
 	}

@@ -96,6 +96,7 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 		// Stream completion from LLM with retry for transient errors
 		streamHandle, err := llm.StreamWithRetry(ctx, config.Model, req, llm.StreamOptions{
 			SessionID: config.SessionID,
+			UserAgent: UserAgent(workDir, config.Version),
 		}, llm.DefaultRetryConfig())
 		if err != nil {
 			result <- RunResult{

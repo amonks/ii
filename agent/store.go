@@ -205,6 +205,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		Permissions: defaultBashPermissions(),
 		WorkDir:     opts.WorkDir,
 		SessionID:   sessionID,
+		Version:     opts.Version,
 	}
 
 	// Start internal agent

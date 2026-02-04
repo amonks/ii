@@ -41,6 +41,7 @@ func makeRunLLMFunc(repoPath string) (func(jobpkg.AgentRunOptions) (jobpkg.Agent
 			Prompt:    opts.Prompt,
 			Model:     opts.Model,
 			StartedAt: opts.StartedAt,
+			Version:   buildCommitID,
 		})
 		if err != nil {
 			return jobpkg.AgentRunResult{}, err

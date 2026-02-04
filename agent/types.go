@@ -140,6 +140,9 @@ type RunOptions struct {
 	// StartedAt is when the run was initiated.
 	StartedAt time.Time
 
+	// Version is the version string (commit ID) to include in the User-Agent header.
+	Version string
+
 	// Env contains additional environment variables.
 	Env []string
 }

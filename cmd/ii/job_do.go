@@ -308,6 +308,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		Prompt:    opts.prompt,
 		Model:     opts.model,
 		StartedAt: time.Now(),
+		Version:   buildCommitID,
 	})
 	if err != nil {
 		return interactiveSessionResult{}, err

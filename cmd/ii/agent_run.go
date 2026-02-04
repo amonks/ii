@@ -66,6 +66,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 		Prompt:    prompt,
 		Model:     agentRunModel,
 		StartedAt: time.Now(),
+		Version:   buildCommitID,
 	})
 	if err != nil {
 		return err

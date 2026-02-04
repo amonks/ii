@@ -187,7 +187,24 @@ API keys are retrieved by executing the command specified in `api-key-command`.
 The command's stdout is trimmed and used as the key. Results are cached for
 the process lifetime.
 
-## Tool Definitions
+### HTTP User-Agent
+
+All LLM HTTP requests MUST set a `User-Agent` header.
+
+- Normal runtime value:
+
+  `incrementum [$version] $dirname`
+
+  where `$version` is the `commit_id` printed by `ii -v` and `$dirname` is the
+  base name of the repository root path.
+
+- During `go test` (`testing.Testing() == true`):
+
+  `incrementum TEST`
+
+This is implemented in `internal/llm.UserAgent(repoPath, version)` and is passed
+via `internal/llm.StreamOptions.UserAgent`.
+
 
 Tools are defined using Go structs with JSON tags. The package uses reflection
 to generate JSON Schema from struct definitions.

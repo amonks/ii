@@ -118,6 +118,7 @@ func streamAnthropic(ctx context.Context, model Model, req Request, opts StreamO
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("User-Agent", opts.UserAgent)
 	httpReq.Header.Set("anthropic-version", anthropicAPIVersion)
 	if model.APIKey != "" {
 		httpReq.Header.Set("x-api-key", model.APIKey)

@@ -109,6 +109,12 @@ func NewStreamHandle(events <-chan StreamEvent, done chan AssistantMessage, errC
 // The returned StreamHandle provides access to events via the Events channel.
 // Call Wait() to block until completion and get the final AssistantMessage.
 func Stream(ctx context.Context, model Model, req Request, opts StreamOptions) (*StreamHandle, error) {
+	// Default User-Agent for direct internal/llm usage.
+	// Wrapper packages (like the public llm/ store) can override this.
+	if opts.UserAgent == "" {
+		opts.UserAgent = "incrementum [unknown] unknown"
+	}
+
 	switch model.API {
 	case APIAnthropicMessages:
 		return streamAnthropic(ctx, model, req, opts)
