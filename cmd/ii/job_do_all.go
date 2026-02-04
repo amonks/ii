@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/amonks/incrementum/habit"
+	"github.com/amonks/incrementum/internal/jj"
+	"github.com/amonks/incrementum/internal/paths"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/validation"
 	jobpkg "github.com/amonks/incrementum/job"
@@ -116,6 +118,19 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		return err
 	}
 
+	// Get the workspace path from the current working directory.
+	// This ensures we run jobs in the workspace we're currently in,
+	// not the source repo root.
+	cwd, err := paths.WorkingDir()
+	if err != nil {
+		return err
+	}
+	client := jj.New()
+	workspacePath, err := client.WorkspaceRoot(cwd)
+	if err != nil {
+		return err
+	}
+
 	agentKind, err := parseJobDoAgentKind(cmd)
 	if err != nil {
 		return err
@@ -146,6 +161,7 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		Logger:        logger,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
+		WorkspacePath: workspacePath,
 	})
 	if err != nil {
 		var abandonedErr *jobpkg.AbandonedError

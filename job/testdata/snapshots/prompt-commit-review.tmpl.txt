@@ -8,7 +8,7 @@ Commit message
     Add snapshot tests for prompts and commit messages, ensuring wrapping for
     long lines and bulleted lists stays consistent.
 
-Review the changes:
+Review the changes. Here are some questions to think about:
 - Does it do what the message says?
 - Does it move us towards the goal in the todo?
 - Is it _necessary_ for moving us towards the goal in the todo?
@@ -21,6 +21,9 @@ Review the changes:
 - Does it conform to the norms of the code areas it modifies?
 - Does it work?
 
+
+Do not ask for needless refactoring: it's important that new things go in the
+right place, but it's also important that our changes stay small and focused.
 
 Publish your review to the file ./.incrementum-feedback
 

@@ -12,6 +12,8 @@ import (
 	"github.com/amonks/incrementum/agents"
 	"github.com/amonks/incrementum/habit"
 	"github.com/amonks/incrementum/internal/editor"
+	"github.com/amonks/incrementum/internal/jj"
+	"github.com/amonks/incrementum/internal/paths"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
 	jobpkg "github.com/amonks/incrementum/job"
@@ -140,6 +142,19 @@ func runHabitJob(cmd *cobra.Command) error {
 		return err
 	}
 
+	// Get the workspace path from the current working directory.
+	// This ensures we run jobs in the workspace we're currently in,
+	// not the source repo root.
+	cwd, err := paths.WorkingDir()
+	if err != nil {
+		return err
+	}
+	client := jj.New()
+	workspacePath, err := client.WorkspaceRoot(cwd)
+	if err != nil {
+		return err
+	}
+
 	var h *habit.Habit
 	habitName := strings.TrimSpace(jobDoHabit)
 	if habitName == "" {
@@ -223,6 +238,7 @@ func runHabitJob(cmd *cobra.Command) error {
 		EventStream:   eventStream,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
+		WorkspacePath: workspacePath,
 	})
 	close(eventDone)
 	streamErr := <-eventErrs
@@ -363,6 +379,19 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 		return err
 	}
 
+	// Get the workspace path from the current working directory.
+	// This ensures we run jobs in the workspace we're currently in,
+	// not the source repo root.
+	cwd, err := paths.WorkingDir()
+	if err != nil {
+		return err
+	}
+	client := jj.New()
+	workspacePath, err := client.WorkspaceRoot(cwd)
+	if err != nil {
+		return err
+	}
+
 	// Mark the todo as started
 	store, err := todo.Open(repoPath, todo.OpenOptions{
 		CreateIfMissing: false,
@@ -395,7 +424,7 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	// (INCREMENTUM_AGENT_MODEL env var -> config implementation-model)
 	result, err := runInteractiveSession(interactiveSessionOptions{
 		repoPath:      repoPath,
-		workspacePath: repoPath,
+		workspacePath: workspacePath,
 		prompt:        prompt,
 		model:         item.ImplementationModel,
 		agentKind:     agentKind,
@@ -453,6 +482,19 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		return err
 	}
 
+	// Get the workspace path from the current working directory.
+	// This ensures we run jobs in the workspace we're currently in,
+	// not the source repo root.
+	cwd, err := paths.WorkingDir()
+	if err != nil {
+		return err
+	}
+	client := jj.New()
+	workspacePath, err := client.WorkspaceRoot(cwd)
+	if err != nil {
+		return err
+	}
+
 	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
 	if err != nil {
 		return err
@@ -506,6 +548,7 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		EventStream:   eventStream,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
+		WorkspacePath: workspacePath,
 	})
 	close(eventDone)
 	streamErr := <-eventErrs
