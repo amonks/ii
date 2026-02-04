@@ -10,8 +10,10 @@ intentionally minimal and only supports the subset needed by `job`.
 
 - **internal**: wraps the `agent` package with persistence, event streaming, and
   configuration-aware model resolution.
-- **claude**: shells out to `claude -p`, passing the prompt on stdin.
-- **codex**: shells out to `codex exec`, passing the prompt on stdin.
+- **claude**: shells out to `claude -p --dangerously-skip-permissions`,
+  passing the prompt on stdin.
+- **codex**: shells out to `codex exec --skip-git-repo-check`, passing the
+  prompt on stdin.
 
 Shell backends do not emit events or provide transcripts; they only return an
 exit code and a synthetic session ID.

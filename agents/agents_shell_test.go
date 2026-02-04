@@ -19,7 +19,7 @@ func writeExecutable(t *testing.T, dir, name, content string) string {
 
 func TestClaudeRunnerExecutesCLI(t *testing.T) {
 	tmpDir := t.TempDir()
-	writeExecutable(t, tmpDir, "claude", "#!/bin/sh\nif [ \"$1\" != \"-p\" ]; then\n  echo \"expected -p\" >&2\n  exit 2\nfi\ncat >/dev/null\nexit 0\n")
+	writeExecutable(t, tmpDir, "claude", "#!/bin/sh\nif [ \"$1\" != \"-p\" ] || [ \"$2\" != \"--dangerously-skip-permissions\" ]; then\n  echo \"expected -p --dangerously-skip-permissions\" >&2\n  exit 2\nfi\ncat >/dev/null\nexit 0\n")
 	t.Setenv("PATH", tmpDir)
 
 	runner := NewClaudeRunner()
@@ -42,7 +42,7 @@ func TestClaudeRunnerExecutesCLI(t *testing.T) {
 
 func TestCodexRunnerExecutesCLI(t *testing.T) {
 	tmpDir := t.TempDir()
-	writeExecutable(t, tmpDir, "codex", "#!/bin/sh\nif [ \"$1\" != \"exec\" ]; then\n  echo \"expected exec\" >&2\n  exit 2\nfi\ncat >/dev/null\nexit 0\n")
+	writeExecutable(t, tmpDir, "codex", "#!/bin/sh\nif [ \"$1\" != \"exec\" ] || [ \"$2\" != \"--skip-git-repo-check\" ]; then\n  echo \"expected exec --skip-git-repo-check\" >&2\n  exit 2\nfi\ncat >/dev/null\nexit 0\n")
 	t.Setenv("PATH", tmpDir)
 
 	runner := NewCodexRunner()

@@ -139,12 +139,12 @@ func (h internalHandle) Wait() (RunResult, error) {
 
 // NewClaudeRunner returns a runner that shells out to the Claude CLI.
 func NewClaudeRunner() Runner {
-	return shellRunner{name: "claude", command: []string{"claude", "-p"}}
+	return shellRunner{name: "claude", command: []string{"claude", "-p", "--dangerously-skip-permissions"}}
 }
 
 // NewCodexRunner returns a runner that shells out to the Codex CLI.
 func NewCodexRunner() Runner {
-	return shellRunner{name: "codex", command: []string{"codex", "exec"}}
+	return shellRunner{name: "codex", command: []string{"codex", "exec", "--skip-git-repo-check"}}
 }
 
 type shellRunner struct {
