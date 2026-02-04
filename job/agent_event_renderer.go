@@ -13,7 +13,6 @@ import (
 // Agent events use a Name field with values like "agent.start", "tool.start", etc.
 type agentEventInterpreter struct {
 	repoPath    string
-	toolStatus  map[string]string // toolCallID -> status
 	currentTurn int
 }
 
@@ -22,8 +21,7 @@ func newAgentEventInterpreter(repoPath string) *agentEventInterpreter {
 		repoPath = filepath.Clean(repoPath)
 	}
 	return &agentEventInterpreter{
-		repoPath:   repoPath,
-		toolStatus: make(map[string]string),
+		repoPath: repoPath,
 	}
 }
 
@@ -224,8 +222,6 @@ func (i *agentEventInterpreter) handleToolStart(data string) ([]agentRenderedEve
 		return nil, nil
 	}
 
-	i.toolStatus[payload.ToolCallID] = "running"
-
 	summary := i.summarizeToolCall(payload.ToolName, payload.Arguments)
 	if summary == "" {
 		return nil, nil // Suppress tools without meaningful summary
@@ -239,9 +235,10 @@ func (i *agentEventInterpreter) handleToolStart(data string) ([]agentRenderedEve
 
 // toolEndData is the JSON structure for tool.end events.
 type toolEndData struct {
-	TurnIndex  int    `json:"TurnIndex"`
-	ToolCallID string `json:"ToolCallID"`
-	ToolName   string `json:"ToolName"`
+	TurnIndex  int            `json:"TurnIndex"`
+	ToolCallID string         `json:"ToolCallID"`
+	ToolName   string         `json:"ToolName"`
+	Arguments  map[string]any `json:"Arguments"`
 	Result     struct {
 		IsError bool `json:"IsError"`
 		Content []struct {
@@ -257,21 +254,17 @@ func (i *agentEventInterpreter) handleToolEnd(data string) ([]agentRenderedEvent
 		return nil, nil
 	}
 
+	summary := i.summarizeToolCall(payload.ToolName, payload.Arguments)
+	if summary == "" {
+		summary = i.summarizeToolName(payload.ToolName)
+	}
+	if summary == "" {
+		return nil, nil
+	}
+
 	status := "completed"
 	if payload.Result.IsError {
 		status = "failed"
-	}
-	i.toolStatus[payload.ToolCallID] = status
-
-	// Re-parse to get tool arguments for summary
-	var startPayload toolStartData
-	if err := json.Unmarshal([]byte(data), &startPayload); err != nil {
-		return nil, nil
-	}
-
-	summary := i.summarizeToolName(payload.ToolName)
-	if summary == "" {
-		return nil, nil
 	}
 
 	statusSuffix := ""

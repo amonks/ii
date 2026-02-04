@@ -72,16 +72,30 @@ func TestAgentEventInterpreterToolStart(t *testing.T) {
 }
 
 func TestAgentEventInterpreterToolEnd(t *testing.T) {
-	interp := newAgentEventInterpreter("")
+	interp := newAgentEventInterpreter("/test/repo")
 
-	// Start then end tool
-	startEvent := Event{
-		Name: "tool.start",
-		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Arguments":{"path":"/tmp/test.txt"}}`,
+	// tool.end should repeat the same identifying summary as tool.start.
+	endEvent := Event{
+		Name: "tool.end",
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Arguments":{"path":"/test/repo/src/main.go"},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"file contents"}]}}`,
 	}
-	if _, err := interp.Handle(startEvent); err != nil {
-		t.Fatalf("Handle tool.start: %v", err)
+	results, err := interp.Handle(endEvent)
+	if err != nil {
+		t.Fatalf("Handle tool.end: %v", err)
 	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Inline, "Tool end: read file 'src/main.go'") {
+		t.Errorf("expected tool end output to repeat summary with repo-relative path, got %q", results[0].Inline)
+	}
+	if strings.Contains(results[0].Inline, "failed") {
+		t.Errorf("expected no failed status, got %q", results[0].Inline)
+	}
+}
+
+func TestAgentEventInterpreterToolEndFallsBackWhenArgumentsMissing(t *testing.T) {
+	interp := newAgentEventInterpreter("/test/repo")
 
 	endEvent := Event{
 		Name: "tool.end",
@@ -95,10 +109,60 @@ func TestAgentEventInterpreterToolEnd(t *testing.T) {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
 	if !strings.Contains(results[0].Inline, "Tool end: read file") {
-		t.Errorf("expected tool end output, got %q", results[0].Inline)
+		t.Errorf("expected tool end output to fall back to tool-name summary, got %q", results[0].Inline)
 	}
-	if strings.Contains(results[0].Inline, "failed") {
-		t.Errorf("expected no failed status, got %q", results[0].Inline)
+}
+
+func TestAgentEventInterpreterToolEndSummarizesEditAndBash(t *testing.T) {
+	interp := newAgentEventInterpreter("/test/repo")
+
+	editEnd := Event{
+		Name: "tool.end",
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"edit","Arguments":{"path":"/test/repo/src/main.go"},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"ok"}]}}`,
+	}
+	results, err := interp.Handle(editEnd)
+	if err != nil {
+		t.Fatalf("Handle edit tool.end: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Inline, "Tool end: edit file 'src/main.go'") {
+		t.Errorf("expected edit path in tool end output, got %q", results[0].Inline)
+	}
+
+	bashEnd := Event{
+		Name: "tool.end",
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-2","ToolName":"bash","Arguments":{"command":"go test ./..."},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"ok"}]}}`,
+	}
+	results, err = interp.Handle(bashEnd)
+	if err != nil {
+		t.Fatalf("Handle bash tool.end: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Inline, "Tool end: bash 'go test ./...'") {
+		t.Errorf("expected bash command in tool end output, got %q", results[0].Inline)
+	}
+}
+
+func TestAgentEventInterpreterToolEndFallsBackForBashWithoutCommand(t *testing.T) {
+	interp := newAgentEventInterpreter("")
+
+	endEvent := Event{
+		Name: "tool.end",
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"bash","Arguments":{},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"ok"}]}}`,
+	}
+	results, err := interp.Handle(endEvent)
+	if err != nil {
+		t.Fatalf("Handle tool.end: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Inline, "Tool end: bash") {
+		t.Errorf("expected tool.end to fall back to name-only summary for bash when command is empty, got %q", results[0].Inline)
 	}
 }
 
@@ -223,13 +287,13 @@ func TestEventFormatterRendersAgentEvents(t *testing.T) {
 	// Tool end
 	toolEnd := Event{
 		Name: "tool.end",
-		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Result":{"IsError":false,"Content":[{"Type":"text","Text":"contents"}]}}`,
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Arguments":{"path":"/tmp/example.txt"},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"contents"}]}}`,
 	}
 	chunk, err = formatter.Append(toolEnd)
 	if err != nil {
 		t.Fatalf("append tool.end: %v", err)
 	}
-	if !strings.Contains(chunk, "Tool end: read file") {
+	if !strings.Contains(chunk, "Tool end: read file '/tmp/example.txt'") {
 		t.Errorf("expected tool end output, got %q", chunk)
 	}
 }
@@ -316,7 +380,7 @@ func TestLogSnapshotFormatsAgentEvents(t *testing.T) {
 
 	agentToolEnd := Event{
 		Name: "tool.end",
-		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Result":{"IsError":false,"Content":[{"Type":"text","Text":"file contents"}]}}`,
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"read","Arguments":{"path":"/tmp/example.txt"},"Result":{"IsError":false,"Content":[{"Type":"text","Text":"file contents"}]}}`,
 	}
 	if err := log.Append(agentToolEnd); err != nil {
 		t.Fatalf("append agent tool end event: %v", err)
@@ -330,7 +394,7 @@ func TestLogSnapshotFormatsAgentEvents(t *testing.T) {
 	checks := []string{
 		"Running implementation prompt:",
 		"Tool start: read file '/tmp/example.txt'",
-		"Tool end: read file",
+		"Tool end: read file '/tmp/example.txt'",
 	}
 	for _, check := range checks {
 		if !strings.Contains(snapshot, check) {
