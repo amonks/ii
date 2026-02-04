@@ -98,7 +98,13 @@ BashPermissions{
         {Pattern: "jj log *", Allow: true},
         {Pattern: "jj show", Allow: true},
         {Pattern: "jj show *", Allow: true},
+        {Pattern: "jj status", Allow: true},
+        {Pattern: "jj status *", Allow: true},
         {Pattern: "jj *", Allow: false},
+        {Pattern: "git *", Allow: false},
+        {Pattern: "ii todo create *", Allow: true},
+        {Pattern: "ii todo show *", Allow: true},
+        {Pattern: "ii *", Allow: false},
         {Pattern: "*", Allow: true},
     },
 }

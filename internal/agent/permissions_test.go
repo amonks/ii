@@ -80,7 +80,7 @@ func TestGlobMatch(t *testing.T) {
 }
 
 func TestBashPermissions_IsAllowed(t *testing.T) {
-	// Example permissions from the spec
+	// Permissions matching the spec example and default rules in agent/store.go
 	perms := BashPermissions{
 		Rules: []BashRule{
 			{Pattern: "jj diff", Allow: true},
@@ -91,7 +91,13 @@ func TestBashPermissions_IsAllowed(t *testing.T) {
 			{Pattern: "jj log *", Allow: true},
 			{Pattern: "jj show", Allow: true},
 			{Pattern: "jj show *", Allow: true},
+			{Pattern: "jj status", Allow: true},
+			{Pattern: "jj status *", Allow: true},
 			{Pattern: "jj *", Allow: false},
+			{Pattern: "git *", Allow: false},
+			{Pattern: "ii todo create *", Allow: true},
+			{Pattern: "ii todo show *", Allow: true},
+			{Pattern: "ii *", Allow: false},
 			{Pattern: "*", Allow: true},
 		},
 	}
@@ -110,6 +116,8 @@ func TestBashPermissions_IsAllowed(t *testing.T) {
 		{"jj log --limit 10", true},
 		{"jj show", true},
 		{"jj show @", true},
+		{"jj status", true},
+		{"jj status --no-pager", true},
 
 		// Denied jj commands
 		{"jj commit", false},
@@ -118,11 +126,31 @@ func TestBashPermissions_IsAllowed(t *testing.T) {
 		{"jj squash", false},
 		{"jj abandon", false},
 
+		// Denied git commands
+		{"git status", false},
+		{"git diff", false},
+		{"git commit -m message", false},
+
+		// Allowed ii commands
+		{"ii todo create --title=foo", true},
+		{"ii todo create --title=foo --description=bar", true},
+		{"ii todo show abc123", true},
+		{"ii todo show abc123 --json", true},
+
+		// Denied ii commands
+		{"ii todo", false},
+		{"ii todo list", false},
+		{"ii todo create", false}, // missing args, no trailing *
+		{"ii todo show", false},   // missing args, no trailing *
+		{"ii agent run", false},
+		{"ii agent list", false},
+		{"ii job run", false},
+		{"ii workspace list", false},
+
 		// Other commands allowed
 		{"ls", true},
 		{"cat foo.txt", true},
 		{"grep pattern file.txt", true},
-		{"git status", true},
 		{"echo hello", true},
 		{"cd /tmp && ls", true},
 	}
@@ -276,3 +304,4 @@ func TestBashPermissions_ComplexPatterns(t *testing.T) {
 		})
 	}
 }
+
