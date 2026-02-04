@@ -192,6 +192,23 @@ func EditTodo(existing *todo.Todo) (*ParsedTodo, error) {
 
 // EditTodoWithData opens the editor with pre-populated data and returns the parsed result.
 func EditTodoWithData(data TodoData) (*ParsedTodo, error) {
+	return EditTodoWithDataRetry(data, nil)
+}
+
+// EditTodoWithDataRetry opens the editor with pre-populated data and returns the parsed result.
+// If prompter is non-nil and parsing fails, the user is prompted to re-edit the file.
+// This allows recovering from validation errors without losing work.
+//
+// When prompter is nil (non-interactive use), validation errors are returned immediately
+// and the temp file is deleted (matching prior EditTodoWithData behavior).
+//
+// When prompter returns an error (e.g., EOF from stdin), the temp file is preserved
+// and its path is printed so the user can recover their work manually.
+//
+// If the editor fails to launch or exits with non-zero status, the temp file is deleted
+// and the error is returned immediately (no retry prompt). This is reasonable because
+// either the user never saw the content, or they explicitly aborted the edit.
+func EditTodoWithDataRetry(data TodoData, prompter todo.Prompter) (*ParsedTodo, error) {
 	content, err := RenderTodoTOML(data)
 	if err != nil {
 		return nil, err
@@ -203,7 +220,15 @@ func EditTodoWithData(data TodoData) (*ParsedTodo, error) {
 		return nil, fmt.Errorf("create temp file: %w", err)
 	}
 	tmpPath := tmpfile.Name()
-	defer os.Remove(tmpPath)
+
+	// Track whether we should preserve the temp file on exit.
+	// We preserve it only when an interactive prompt fails unexpectedly (EOF etc).
+	preserveTempFile := false
+	defer func() {
+		if !preserveTempFile {
+			os.Remove(tmpPath)
+		}
+	}()
 
 	if _, err := tmpfile.WriteString(content); err != nil {
 		tmpfile.Close()
@@ -213,18 +238,43 @@ func EditTodoWithData(data TodoData) (*ParsedTodo, error) {
 		return nil, fmt.Errorf("close temp file: %w", err)
 	}
 
-	// Open editor
-	if err := Edit(tmpPath); err != nil {
-		return nil, err
-	}
+	for {
+		// Open editor
+		if err := Edit(tmpPath); err != nil {
+			return nil, err
+		}
 
-	// Read the edited content
-	edited, err := os.ReadFile(tmpPath)
-	if err != nil {
-		return nil, fmt.Errorf("read edited file: %w", err)
-	}
+		// Read the edited content
+		edited, err := os.ReadFile(tmpPath)
+		if err != nil {
+			return nil, fmt.Errorf("read edited file: %w", err)
+		}
 
-	return ParseTodoTOML(string(edited))
+		parsed, parseErr := ParseTodoTOML(string(edited))
+		if parseErr == nil {
+			return parsed, nil
+		}
+
+		// Parsing failed - offer to retry if we have a prompter
+		if prompter == nil {
+			// Non-interactive: return error immediately, delete temp file
+			return nil, parseErr
+		}
+
+		fmt.Fprintf(os.Stderr, "%v\n", parseErr)
+		retry, confirmErr := prompter.Confirm("Todo is invalid. Re-open editor?")
+		if confirmErr != nil {
+			// If confirmation fails (e.g., EOF), preserve the file so the user can recover
+			preserveTempFile = true
+			fmt.Fprintf(os.Stderr, "Your work has been saved to: %s\n", tmpPath)
+			return nil, fmt.Errorf("prompt: %w", confirmErr)
+		}
+		if !retry {
+			// User explicitly declined to retry - they don't want to continue editing
+			return nil, parseErr
+		}
+		// Loop continues, re-opening editor with the same temp file
+	}
 }
 
 // ToCreateOptions converts a ParsedTodo to todo.CreateOptions.

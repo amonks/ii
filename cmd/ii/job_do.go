@@ -640,7 +640,7 @@ func createTodoFromJobFlags(cmd *cobra.Command, hasCreateFlags bool, openStore f
 			data.ProjectReviewModel = jobDoProjectReviewModel
 		}
 
-		parsed, err := editor.EditTodoWithData(data)
+		parsed, err := editor.EditTodoWithDataRetry(data, todo.StdioPrompter{})
 		if err != nil {
 			return "", err
 		}

@@ -289,7 +289,7 @@ func runTodoCreate(cmd *cobra.Command, args []string) error {
 			data.ProjectReviewModel = todoCreateProjectReviewModel
 		}
 
-		parsed, err := editor.EditTodoWithData(data)
+		parsed, err := editor.EditTodoWithDataRetry(data, todo.StdioPrompter{})
 		if err != nil {
 			return err
 		}
@@ -404,7 +404,7 @@ func runTodoUpdate(cmd *cobra.Command, args []string) error {
 				data.ProjectReviewModel = todoUpdateProjectReviewModel
 			}
 
-			parsed, err := editor.EditTodoWithData(data)
+			parsed, err := editor.EditTodoWithDataRetry(data, todo.StdioPrompter{})
 			if err != nil {
 				return err
 			}

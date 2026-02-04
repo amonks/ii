@@ -28,6 +28,8 @@ across workspaces without polluting the code history.
   for read-only access.
 - Prompting via stdin only happens when stdin is a TTY; non-interactive calls
   skip the prompt and proceed with creation unless a custom prompter is used.
+- `StdioPrompter` writes prompts to stderr for consistency with error messages
+  in interactive error-recovery scenarios, and reads responses from stdin.
 
 ## Data Model
 

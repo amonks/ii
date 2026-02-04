@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -335,5 +337,376 @@ func assertUnindentedFrontmatter(t *testing.T, content string) {
 		if strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t") {
 			t.Fatalf("expected frontmatter line to be unindented, got %q", line)
 		}
+	}
+}
+
+// mockPrompter implements todo.Prompter for testing.
+type mockPrompter struct {
+	confirmResult bool
+	confirmErr    error
+	confirmCalled bool
+	callCount     int
+}
+
+func (m *mockPrompter) Confirm(message string) (bool, error) {
+	m.confirmCalled = true
+	m.callCount++
+	return m.confirmResult, m.confirmErr
+}
+
+// multiResponsePrompter returns different responses on successive calls.
+type multiResponsePrompter struct {
+	responses []bool
+	errors    []error
+	callCount int
+}
+
+func (m *multiResponsePrompter) Confirm(message string) (bool, error) {
+	idx := m.callCount
+	m.callCount++
+	if idx < len(m.responses) {
+		var err error
+		if idx < len(m.errors) {
+			err = m.errors[idx]
+		}
+		return m.responses[idx], err
+	}
+	return false, nil
+}
+
+// TestEditTodoWithDataRetry_NoPrompter_DeletesTempFile verifies that when prompter is nil
+// (non-interactive use), the temp file is deleted even on parse errors.
+// This maintains backward compatibility with EditTodoWithData.
+//
+// Note: This test mutates EDITOR and os.Stderr globals, so it is not parallel-safe.
+func TestEditTodoWithDataRetry_NoPrompter_DeletesTempFile(t *testing.T) {
+	// Create a file to record the temp file path passed to the editor
+	pathRecordFile, err := os.CreateTemp("", "editor-path-record-*.txt")
+	if err != nil {
+		t.Fatalf("create path record file: %v", err)
+	}
+	pathRecordFile.Close()
+	defer os.Remove(pathRecordFile.Name())
+
+	// Create a script that writes invalid TOML to the file and records the path
+	scriptContent := fmt.Sprintf(`#!/bin/sh
+echo "$1" > "%s"
+echo "invalid toml {{{{" > "$1"
+`, pathRecordFile.Name())
+	scriptFile, err := os.CreateTemp("", "test-editor-*.sh")
+	if err != nil {
+		t.Fatalf("create script file: %v", err)
+	}
+	defer os.Remove(scriptFile.Name())
+	if _, err := scriptFile.WriteString(scriptContent); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	if err := scriptFile.Chmod(0755); err != nil {
+		t.Fatalf("chmod script: %v", err)
+	}
+	scriptFile.Close()
+
+	// Set EDITOR to our script
+	oldEditor := os.Getenv("EDITOR")
+	os.Setenv("EDITOR", scriptFile.Name())
+	defer os.Setenv("EDITOR", oldEditor)
+
+	// Capture stderr to verify NO "saved to" message is printed
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	data := DefaultCreateData()
+	_, err = EditTodoWithDataRetry(data, nil)
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf strings.Builder
+	io.Copy(&stderrBuf, r)
+	stderrOutput := stderrBuf.String()
+
+	if err == nil {
+		t.Fatal("expected error when prompter is nil and parsing fails")
+	}
+	// The error should be a parse error (TOML syntax error)
+	if !strings.Contains(err.Error(), "parse") && !strings.Contains(err.Error(), "TOML") {
+		t.Errorf("expected parse/TOML error, got: %v", err)
+	}
+
+	// When prompter is nil (non-interactive), we should NOT print a "saved to" message
+	// and the temp file should be deleted (matching prior EditTodoWithData behavior)
+	if strings.Contains(stderrOutput, "Your work has been saved to:") {
+		t.Errorf("should NOT print 'saved to' message when prompter is nil, got: %q", stderrOutput)
+	}
+
+	// Verify the temp file was actually deleted
+	recordedPath, readErr := os.ReadFile(pathRecordFile.Name())
+	if readErr != nil {
+		t.Fatalf("read path record file: %v", readErr)
+	}
+	tempPath := strings.TrimSpace(string(recordedPath))
+	if tempPath == "" {
+		t.Fatal("editor script did not record the temp file path")
+	}
+	if _, statErr := os.Stat(tempPath); !os.IsNotExist(statErr) {
+		t.Errorf("temp file should have been deleted but still exists: %s", tempPath)
+		os.Remove(tempPath) // Clean up if test fails
+	}
+}
+
+// TestEditTodoWithDataRetry_PrompterReturnsFalse_DeletesTempFile verifies that when the user
+// explicitly declines to retry, the temp file is deleted (respecting their decision to abandon).
+//
+// Note: This test mutates EDITOR and os.Stderr globals, so it is not parallel-safe.
+func TestEditTodoWithDataRetry_PrompterReturnsFalse_DeletesTempFile(t *testing.T) {
+	// Create a file to record the temp file path passed to the editor
+	pathRecordFile, err := os.CreateTemp("", "editor-path-record-*.txt")
+	if err != nil {
+		t.Fatalf("create path record file: %v", err)
+	}
+	pathRecordFile.Close()
+	defer os.Remove(pathRecordFile.Name())
+
+	// Create a script that writes invalid TOML to the file and records the path
+	scriptContent := fmt.Sprintf(`#!/bin/sh
+echo "$1" > "%s"
+echo "title = \"\"" > "$1"
+`, pathRecordFile.Name())
+	scriptFile, err := os.CreateTemp("", "test-editor-*.sh")
+	if err != nil {
+		t.Fatalf("create script file: %v", err)
+	}
+	defer os.Remove(scriptFile.Name())
+	if _, err := scriptFile.WriteString(scriptContent); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	if err := scriptFile.Chmod(0755); err != nil {
+		t.Fatalf("chmod script: %v", err)
+	}
+	scriptFile.Close()
+
+	// Set EDITOR to our script
+	oldEditor := os.Getenv("EDITOR")
+	os.Setenv("EDITOR", scriptFile.Name())
+	defer os.Setenv("EDITOR", oldEditor)
+
+	// Capture stderr to verify NO "saved to" message is printed
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	prompter := &mockPrompter{
+		confirmResult: false,
+		confirmErr:    nil,
+	}
+
+	data := DefaultCreateData()
+	_, err = EditTodoWithDataRetry(data, prompter)
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf strings.Builder
+	io.Copy(&stderrBuf, r)
+	stderrOutput := stderrBuf.String()
+
+	if err == nil {
+		t.Fatal("expected error when prompter returns false")
+	}
+	if !prompter.confirmCalled {
+		t.Error("expected prompter.Confirm to be called")
+	}
+	// The error should be a validation error (empty title)
+	if !strings.Contains(err.Error(), "title") {
+		t.Errorf("expected title validation error, got: %v", err)
+	}
+
+	// When user declines retry, the "saved to" message should NOT be printed
+	// because we respect their decision to abandon the edit
+	if strings.Contains(stderrOutput, "Your work has been saved to:") {
+		t.Errorf("should NOT print 'saved to' message when user declines retry, got: %q", stderrOutput)
+	}
+
+	// Verify the temp file was actually deleted
+	recordedPath, readErr := os.ReadFile(pathRecordFile.Name())
+	if readErr != nil {
+		t.Fatalf("read path record file: %v", readErr)
+	}
+	tempPath := strings.TrimSpace(string(recordedPath))
+	if tempPath == "" {
+		t.Fatal("editor script did not record the temp file path")
+	}
+	if _, statErr := os.Stat(tempPath); !os.IsNotExist(statErr) {
+		t.Errorf("temp file should have been deleted but still exists: %s", tempPath)
+		os.Remove(tempPath) // Clean up if test fails
+	}
+}
+
+// TestEditTodoWithDataRetry_PrompterReturnsError_PreservesTempFile verifies that when the prompter
+// returns an error (e.g., io.EOF from stdin), the temp file is preserved so the user can recover.
+//
+// Note: This test mutates EDITOR and os.Stderr globals, so it is not parallel-safe.
+func TestEditTodoWithDataRetry_PrompterReturnsError_PreservesTempFile(t *testing.T) {
+	// Create a script that writes invalid TOML to the file
+	scriptContent := `#!/bin/sh
+echo "title = \"\"" > "$1"
+`
+	scriptFile, err := os.CreateTemp("", "test-editor-*.sh")
+	if err != nil {
+		t.Fatalf("create script file: %v", err)
+	}
+	defer os.Remove(scriptFile.Name())
+	if _, err := scriptFile.WriteString(scriptContent); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	if err := scriptFile.Chmod(0755); err != nil {
+		t.Fatalf("chmod script: %v", err)
+	}
+	scriptFile.Close()
+
+	// Set EDITOR to our script
+	oldEditor := os.Getenv("EDITOR")
+	os.Setenv("EDITOR", scriptFile.Name())
+	defer os.Setenv("EDITOR", oldEditor)
+
+	// Capture stderr to check for the "saved to" message
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	// Simulate EOF from stdin when reading the confirmation prompt
+	prompter := &mockPrompter{
+		confirmResult: false,
+		confirmErr:    io.EOF,
+	}
+
+	data := DefaultCreateData()
+	_, err = EditTodoWithDataRetry(data, prompter)
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf strings.Builder
+	io.Copy(&stderrBuf, r)
+	stderrOutput := stderrBuf.String()
+
+	if err == nil {
+		t.Fatal("expected error when prompter returns error")
+	}
+	if !prompter.confirmCalled {
+		t.Error("expected prompter.Confirm to be called")
+	}
+	// The error should wrap the prompt error (EOF), not the parse error.
+	// This makes it clear that we aborted because the recovery prompt failed.
+	if !strings.Contains(err.Error(), "prompt") {
+		t.Errorf("expected error to contain 'prompt', got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "EOF") {
+		t.Errorf("expected error to contain 'EOF', got: %v", err)
+	}
+
+	// When prompter returns an error (e.g., EOF), we preserve the file
+	// and print the path so the user can recover their work
+	if !strings.Contains(stderrOutput, "Your work has been saved to:") {
+		t.Errorf("expected 'saved to' message in stderr, got: %q", stderrOutput)
+	}
+
+	// Extract the temp file path from the message and verify it exists
+	prefix := "Your work has been saved to: "
+	idx := strings.Index(stderrOutput, prefix)
+	if idx >= 0 {
+		pathStart := idx + len(prefix)
+		pathEnd := strings.Index(stderrOutput[pathStart:], "\n")
+		if pathEnd == -1 {
+			pathEnd = len(stderrOutput) - pathStart
+		}
+		tempPath := stderrOutput[pathStart : pathStart+pathEnd]
+		if _, statErr := os.Stat(tempPath); os.IsNotExist(statErr) {
+			t.Errorf("temp file should have been preserved but does not exist: %s", tempPath)
+		} else {
+			// Clean up the preserved temp file
+			os.Remove(tempPath)
+		}
+	}
+}
+
+// TestEditTodoWithDataRetry_RetrySuccess verifies that when the user accepts the retry prompt,
+// the editor is re-opened and parsing succeeds on the corrected content.
+//
+// Note: This test mutates EDITOR and os.Stderr globals, so it is not parallel-safe.
+func TestEditTodoWithDataRetry_RetrySuccess(t *testing.T) {
+	// Create a state file that tracks invocation count
+	stateFile, err := os.CreateTemp("", "editor-state-*.txt")
+	if err != nil {
+		t.Fatalf("create state file: %v", err)
+	}
+	stateFile.WriteString("0")
+	stateFile.Close()
+	defer os.Remove(stateFile.Name())
+
+	// Create a script that:
+	// - On first invocation: writes invalid content (empty title)
+	// - On second invocation: writes valid content
+	scriptContent := fmt.Sprintf(`#!/bin/sh
+COUNT=$(cat "%s")
+if [ "$COUNT" = "0" ]; then
+    echo "1" > "%s"
+    # Write invalid content (empty title)
+    cat > "$1" << 'EOF'
+title = ""
+type = "task"
+status = "open"
+priority = 2
+---
+Invalid on first try
+EOF
+else
+    # Write valid content
+    cat > "$1" << 'EOF'
+title = "Valid Todo Title"
+type = "task"
+status = "open"
+priority = 2
+---
+This is a valid todo description.
+EOF
+fi
+`, stateFile.Name(), stateFile.Name())
+
+	scriptFile, err := os.CreateTemp("", "test-editor-*.sh")
+	if err != nil {
+		t.Fatalf("create script file: %v", err)
+	}
+	defer os.Remove(scriptFile.Name())
+	if _, err := scriptFile.WriteString(scriptContent); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	if err := scriptFile.Chmod(0755); err != nil {
+		t.Fatalf("chmod script: %v", err)
+	}
+	scriptFile.Close()
+
+	// Set EDITOR to our script
+	oldEditor := os.Getenv("EDITOR")
+	os.Setenv("EDITOR", scriptFile.Name())
+	defer os.Setenv("EDITOR", oldEditor)
+
+	// Prompter returns true (retry) on first call
+	prompter := &multiResponsePrompter{
+		responses: []bool{true},
+	}
+
+	data := DefaultCreateData()
+	parsed, err := EditTodoWithDataRetry(data, prompter)
+
+	if err != nil {
+		t.Fatalf("expected success after retry, got error: %v", err)
+	}
+	if prompter.callCount != 1 {
+		t.Errorf("expected prompter to be called once, got %d calls", prompter.callCount)
+	}
+	if parsed.Title != "Valid Todo Title" {
+		t.Errorf("expected title 'Valid Todo Title', got %q", parsed.Title)
+	}
+	if parsed.Description != "This is a valid todo description.\n" {
+		t.Errorf("expected description with trailing newline, got %q", parsed.Description)
 	}
 }

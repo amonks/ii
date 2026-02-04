@@ -93,12 +93,14 @@ type Prompter interface {
 	Confirm(message string) (bool, error)
 }
 
-// StdioPrompter implements Prompter using stdin/stdout.
+// StdioPrompter implements Prompter using stdin for input and stderr for output.
 type StdioPrompter struct{}
 
-// Confirm asks the user a yes/no question via stdin/stdout.
+// Confirm asks the user a yes/no question. Writes prompts to stderr for
+// consistency with error messages in interactive error-recovery scenarios;
+// reads responses from stdin via fmt.Scanln.
 func (p StdioPrompter) Confirm(message string) (bool, error) {
-	fmt.Printf("%s [y/n]: ", message)
+	fmt.Fprintf(os.Stderr, "%s [y/n]: ", message)
 	var response string
 	_, err := fmt.Scanln(&response)
 	if err != nil {
