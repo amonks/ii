@@ -464,7 +464,7 @@ Output includes:
 - Feedback (if any).
 - LLM sessions with purposes.
 
-### `ii job logs <job-id>`
+### `ii job logs <job-id>` (alias: `log`)
 
 Show the combined job event stream.
 

@@ -8,6 +8,12 @@ import (
 	jobpkg "github.com/amonks/incrementum/job"
 )
 
+func TestJobLogsHasLogAlias(t *testing.T) {
+	if !containsAlias(jobLogsCmd, "log") {
+		t.Fatalf("expected job logs to have log alias, got %v", jobLogsCmd.Aliases)
+	}
+}
+
 func TestPrintJobDetailIncludesFeedbackAndSessions(t *testing.T) {
 	startedAt := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	job := jobpkg.Job{

@@ -32,10 +32,11 @@ var jobListCmd = &cobra.Command{
 }
 
 var jobLogsCmd = &cobra.Command{
-	Use:   "logs <job-id>",
-	Short: "Show job logs",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runJobLogs,
+	Use:     "logs <job-id>",
+	Aliases: []string{"log"},
+	Short:   "Show job logs",
+	Args:    cobra.ExactArgs(1),
+	RunE:    runJobLogs,
 }
 
 var jobOpen = jobpkg.Open
