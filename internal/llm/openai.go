@@ -120,6 +120,9 @@ func streamOpenAICompletions(ctx context.Context, model Model, req Request, opts
 	if model.APIKey != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+model.APIKey)
 	}
+	if opts.SessionID != "" {
+		httpReq.Header.Set("session_id", opts.SessionID)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(httpReq)
@@ -558,6 +561,9 @@ func streamOpenAIResponses(ctx context.Context, model Model, req Request, opts S
 	httpReq.Header.Set("Content-Type", "application/json")
 	if model.APIKey != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+model.APIKey)
+	}
+	if opts.SessionID != "" {
+		httpReq.Header.Set("session_id", opts.SessionID)
 	}
 
 	client := &http.Client{}

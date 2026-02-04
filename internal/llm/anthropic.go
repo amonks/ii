@@ -122,6 +122,9 @@ func streamAnthropic(ctx context.Context, model Model, req Request, opts StreamO
 	if model.APIKey != "" {
 		httpReq.Header.Set("x-api-key", model.APIKey)
 	}
+	if opts.SessionID != "" {
+		httpReq.Header.Set("session_id", opts.SessionID)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(httpReq)

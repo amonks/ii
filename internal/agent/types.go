@@ -20,6 +20,10 @@ type AgentConfig struct {
 	// WorkDir is the working directory for tools.
 	// If empty, the current working directory is used.
 	WorkDir string
+
+	// SessionID is an optional identifier for grouping related API requests
+	// into sessions for observability purposes.
+	SessionID string
 }
 
 // BashPermissions controls which bash commands are allowed.

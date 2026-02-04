@@ -216,4 +216,5 @@ type StreamOptions struct {
 	MaxTokens      *int
 	CacheRetention CacheRetention
 	ThinkingLevel  ThinkingLevel
+	SessionID      string
 }
