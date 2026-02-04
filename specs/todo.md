@@ -38,7 +38,7 @@ Fields (JSON keys):
 - `id`: 8-character lowercase base32 identifier.
 - `title`: required; must include non-whitespace characters; max length 500 characters.
 - `description`: optional free text.
-- `status`: `open`, `proposed`, `in_progress`, `closed`, `done`, `waiting`, or `tombstone`.
+- `status`: `open`, `proposed`, `in_progress`, `closed`, `done`, `waiting`, `stuck`, or `tombstone`.
 - `priority`: integer 0..4 (0 = critical, 4 = backlog).
 - `type`: `task`, `bug`, or `feature`.
 - `implementation_model`: optional model override for implementation.
@@ -170,7 +170,8 @@ Fields (JSON keys):
 ### Ready
 
 - Returns `open` todos that have no unresolved dependencies.
-- A dependency is unresolved when the depended-on todo is not `closed`, `done`, or `tombstone`.
+- `stuck` todos are not considered ready.
+- A dependency is unresolved when the depended-on todo is not `closed`, `done`, `stuck`, or `tombstone`.
 - Results are ordered by priority (ascending), then type (bug, task, feature),
   then creation time (oldest first); an optional limit truncates the list.
 - When the todo store is missing, CLI `todo ready` does not prompt to create it

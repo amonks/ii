@@ -943,7 +943,7 @@ func TestStore_List_InvalidFilters(t *testing.T) {
 	invalidStatus := Status("maybe")
 	if _, err := store.List(ListFilter{Status: &invalidStatus}); err == nil || !errors.Is(err, ErrInvalidStatus) {
 		t.Fatalf("expected invalid status error, got %v", err)
-	} else if !strings.Contains(err.Error(), "valid: open, proposed, in_progress, closed, done, waiting, tombstone") {
+	} else if !strings.Contains(err.Error(), "valid: open, proposed, in_progress, closed, done, waiting, stuck, tombstone") {
 		t.Fatalf("expected valid status hint, got %v", err)
 	}
 
@@ -1159,6 +1159,83 @@ func TestStore_Ready_IgnoresTombstonedBlockers(t *testing.T) {
 	}
 	if ready[0].ID != blocked.ID {
 		t.Fatalf("expected blocked todo to be ready after delete, got %q", ready[0].Title)
+	}
+}
+
+func TestStore_Ready_IgnoresStuckBlockers(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	blocker, _ := store.Create("Blocker", CreateOptions{})
+	blocked, _ := store.Create("Blocked", CreateOptions{})
+
+	_, err = store.DepAdd(blocked.ID, blocker.ID)
+	if err != nil {
+		t.Fatalf("failed to add dependency: %v", err)
+	}
+
+	ready, err := store.Ready(10)
+	if err != nil {
+		t.Fatalf("failed to get ready: %v", err)
+	}
+	if len(ready) != 1 {
+		t.Fatalf("expected 1 ready todo before stuck, got %d", len(ready))
+	}
+	if ready[0].ID != blocker.ID {
+		t.Fatalf("expected blocker to be ready before stuck, got %q", ready[0].Title)
+	}
+
+	status := StatusStuck
+	_, err = store.Update([]string{blocker.ID}, UpdateOptions{Status: &status})
+	if err != nil {
+		t.Fatalf("failed to mark blocker stuck: %v", err)
+	}
+
+	ready, err = store.Ready(10)
+	if err != nil {
+		t.Fatalf("failed to get ready after stuck: %v", err)
+	}
+	if len(ready) != 1 {
+		t.Fatalf("expected 1 ready todo after stuck, got %d", len(ready))
+	}
+	if ready[0].ID != blocked.ID {
+		t.Fatalf("expected blocked todo to be ready after blocker stuck, got %q", ready[0].Title)
+	}
+}
+
+func TestStore_Ready_ExcludesStuckTodos(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	stuckStatus := StatusStuck
+	stuckTodo, _ := store.Create("Stuck", CreateOptions{Status: stuckStatus})
+	openTodo, _ := store.Create("Open", CreateOptions{})
+
+	ready, err := store.Ready(10)
+	if err != nil {
+		t.Fatalf("failed to get ready: %v", err)
+	}
+
+	for _, item := range ready {
+		if item.ID == stuckTodo.ID {
+			t.Fatalf("expected stuck todo to be excluded from ready")
+		}
+	}
+	foundOpen := false
+	for _, item := range ready {
+		if item.ID == openTodo.ID {
+			foundOpen = true
+			break
+		}
+	}
+	if !foundOpen {
+		t.Fatalf("expected open todo to be included in ready")
 	}
 }
 

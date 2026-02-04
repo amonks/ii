@@ -37,13 +37,18 @@ const (
 	// for waiting lives in the description field.
 	StatusWaiting Status = "waiting"
 
+	// StatusStuck indicates the todo has been marked as stuck.
+	// Stuck todos are not considered ready and indicate that automated work
+	// should not continue without human intervention.
+	StatusStuck Status = "stuck"
+
 	// StatusTombstone indicates the todo has been soft-deleted.
 	StatusTombstone Status = "tombstone"
 )
 
 // ValidStatuses returns all valid status values.
 func ValidStatuses() []Status {
-	return []Status{StatusOpen, StatusProposed, StatusInProgress, StatusClosed, StatusDone, StatusWaiting, StatusTombstone}
+	return []Status{StatusOpen, StatusProposed, StatusInProgress, StatusClosed, StatusDone, StatusWaiting, StatusStuck, StatusTombstone}
 }
 
 // IsValid returns true if the status is a known valid value.
@@ -54,7 +59,7 @@ func (s Status) IsValid() bool {
 // IsResolved returns true when a status is considered resolved for dependencies.
 func (s Status) IsResolved() bool {
 	switch s {
-	case StatusClosed, StatusDone, StatusTombstone:
+	case StatusClosed, StatusDone, StatusStuck, StatusTombstone:
 		return true
 	default:
 		return false
