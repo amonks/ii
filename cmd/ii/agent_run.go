@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/internal/paths"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
 	"github.com/amonks/incrementum/llm"
@@ -33,6 +34,11 @@ func init() {
 
 func runAgentRun(cmd *cobra.Command, args []string) error {
 	repoPath, err := getRepoPath()
+	if err != nil {
+		return err
+	}
+
+	workDir, err := paths.WorkingDir()
 	if err != nil {
 		return err
 	}
@@ -63,7 +69,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 
 	handle, err := store.Run(ctx, agent.RunOptions{
 		RepoPath:  repoPath,
-		WorkDir:   repoPath,
+		WorkDir:   workDir,
 		Prompt:    prompt,
 		Model:     agentRunModel,
 		StartedAt: time.Now(),

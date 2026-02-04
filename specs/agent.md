@@ -306,8 +306,8 @@ type Options struct {
 
 ```go
 type RunOptions struct {
-    RepoPath  string
-    WorkDir   string
+    RepoPath  string    // Source repository path (for config loading and session grouping)
+    WorkDir   string    // Working directory for tool execution (may be a workspace within the repo)
     Prompt    string
     Model     string    // Model ID; resolved via priority chain
     StartedAt time.Time
@@ -315,6 +315,12 @@ type RunOptions struct {
     Env       []string  // Additional environment variables passed to tool executions
 }
 ```
+
+Note: `RepoPath` and `WorkDir` may differ when running in a jj workspace. The `RepoPath`
+identifies the source repository for configuration and session organization, while `WorkDir`
+is the actual directory where the agent operates (e.g., a workspace directory). This allows
+parallel jobs to work in separate workspace directories while sharing the same repository
+configuration.
 
 ### Run Handle
 
