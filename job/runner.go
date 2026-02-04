@@ -561,6 +561,10 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 	promptName := "prompt-implementation.tmpl"
 	if !internalstrings.IsBlank(current.Feedback) {
 		promptName = "prompt-feedback.tmpl"
+		messagePath := filepath.Join(workspacePath, commitMessageFilename)
+		if err := writeCommitMessageSeed(messagePath, previousMessage); err != nil {
+			return ImplementingStageResult{}, err
+		}
 	}
 	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, commitLog, nil, promptName, workspacePath)
 	if err != nil {
@@ -1092,6 +1096,21 @@ func (err commitMessageMissingError) Error() string {
 
 func (err commitMessageMissingError) Unwrap() error {
 	return err.Err
+}
+
+func writeCommitMessageSeed(path, message string) error {
+	if internalstrings.IsBlank(message) {
+		return nil
+	}
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("stat commit message seed: %w", err)
+	}
+	if err := os.WriteFile(path, []byte(message+"\n"), 0o644); err != nil {
+		return fmt.Errorf("write commit message seed: %w", err)
+	}
+	return nil
 }
 
 func readCommitMessage(path string) (string, error) {

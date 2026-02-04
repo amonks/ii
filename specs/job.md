@@ -128,31 +128,33 @@ any stage -> failed (unrecoverable error)
 5. Run the agent with `prompt-implementation.tmpl` when no feedback is present,
    or `prompt-feedback.tmpl` when responding to feedback (PWD set to the
    workspace root).
-6. Template receives: `Todo`, `Feedback`, and `Message` (previous commit message
+6. Before running the agent with feedback, write the previous draft commit
+   message (if any) to `.incrementum-commit-message` in the workspace root.
+7. Template receives: `Todo`, `Feedback`, and `Message` (previous commit message
    when responding to feedback).
-7. Best-effort `jj debug snapshot` in the repo working directory immediately
+8. Best-effort `jj debug snapshot` in the repo working directory immediately
    before the agent runs.
-8. Run agent to completion.
-9. Record session in job record with purpose `implement`.
-10. If agent returns an error before completion, record a `job.agent.error`
+9. Run agent to completion.
+10. Record session in job record with purpose `implement`.
+11. If agent returns an error before completion, record a `job.agent.error`
     event with the purpose and error message, then mark the job `failed`.
-11. If agent fails (nonzero exit): mark job `failed` with an error that
+12. If agent fails (nonzero exit): mark job `failed` with an error that
     includes purpose, session id, model, prompt template, repo/workspace paths,
     and before/after commit ids. If the exit code is negative and the working
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
     failing and include the retry attempt in the error details.
-12. Record the current working copy commit id again.
-13. If the commit id changed, run `jj log -r @ -T empty --no-graph` and treat a
+13. Record the current working copy commit id again.
+14. If the commit id changed, run `jj log -r @ -T empty --no-graph` and treat a
     `true` result as no change (empty working copy) and `false` as changed.
-14. If the commit id did not change (or the change is empty):
+15. If the commit id did not change (or the change is empty):
     - Delete `.incrementum-commit-message` from the workspace root if it exists.
     - Flag the next review cycle as the final project review.
-15. If the commit id changed and the change is not empty:
+16. If the commit id changed and the change is not empty:
     - Read `.incrementum-commit-message` from the workspace root, trimming trailing
       newlines, trailing whitespace on each line, and any leading blank lines.
     - Store the message for the committing stage.
-16. Transition to `testing` when changes were detected, otherwise transition to
+17. Transition to `testing` when changes were detected, otherwise transition to
     `reviewing`.
 
 ### testing

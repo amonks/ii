@@ -12,10 +12,9 @@ Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, write a detailed commit message, describing the entire
-working-tree change (not just this particular round of review), to
-./.incrementum-commit-message. Describe the what _and_ the why. Keep changes
-focused on the current step.
+When you make changes, `./.incrementum-commit-message` is the commit message for this change.
+Update it as-necessary. Describe the what _and_ the why. Keep changes focused on
+this current step.
 
 {{if .CommitLog}}Here are the previous changes we've made as part of this todo:
 {{range .CommitLog}}- ID: {{.ID}}

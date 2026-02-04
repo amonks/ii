@@ -21,9 +21,9 @@ Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, write a detailed commit message, describing the entire
-working-tree change, to ./.incrementum-commit-message -- describe the what _and_
-the why. Keep changes focused on the current step.
+When you make changes, `./.incrementum-commit-message` is the commit message for this change.
+Update it as-necessary. Describe the what _and_ the why. Keep changes focused on
+this current step.
 
 {{if .CommitLog}}We've already made these changes towards completing this todo:
 {{range .CommitLog}}- ID: {{.ID}}
