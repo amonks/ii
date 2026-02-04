@@ -615,7 +615,10 @@ func defaultBashPermissions() BashPermissions {
 			{Pattern: "jj log *", Allow: true},
 			{Pattern: "jj show", Allow: true},
 			{Pattern: "jj show *", Allow: true},
+			{Pattern: "jj status", Allow: true},
+			{Pattern: "jj status *", Allow: true},
 			{Pattern: "jj *", Allow: false},
+			{Pattern: "git *", Allow: false},
 			{Pattern: "*", Allow: true},
 		},
 	}
