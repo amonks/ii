@@ -1,6 +1,6 @@
 [job]
 test-commands = ["go test ./..."]
-implementation-model = "claude-sonnet-4-5"
+implementation-model = "claude-opus-4-5"
 code-review-model = "gpt-5.2"
 project-review-model = "claude-opus-4-5"
 
