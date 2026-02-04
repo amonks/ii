@@ -60,7 +60,7 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -71,13 +71,13 @@ models = ["claude-sonnet-4-20250514"]
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	model, err := store.ResolveModel("claude-sonnet-4-20250514", "")
+	model, err := store.ResolveModel("claude-haiku-4-5-20251001", "")
 	if err != nil {
 		t.Fatalf("ResolveModel failed: %v", err)
 	}
 
-	if model.ID != "claude-sonnet-4-20250514" {
-		t.Errorf("expected ID 'claude-sonnet-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5-20251001" {
+		t.Errorf("expected ID 'claude-haiku-4-5-20251001', got %q", model.ID)
 	}
 }
 
@@ -94,13 +94,13 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
 	}
 
-	t.Setenv("INCREMENTUM_AGENT_MODEL", "claude-haiku-4-20250514")
+	t.Setenv("INCREMENTUM_AGENT_MODEL", "claude-haiku-4-5")
 
 	store, err := agent.Open()
 	if err != nil {
@@ -113,8 +113,8 @@ models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
 		t.Fatalf("ResolveModel failed: %v", err)
 	}
 
-	if model.ID != "claude-haiku-4-20250514" {
-		t.Errorf("expected ID 'claude-haiku-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5" {
+		t.Errorf("expected ID 'claude-haiku-4-5', got %q", model.ID)
 	}
 }
 
@@ -131,7 +131,7 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -143,13 +143,13 @@ models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
 	}
 
 	// With task model specified, should use that
-	model, err := store.ResolveModel("", "claude-haiku-4-20250514")
+	model, err := store.ResolveModel("", "claude-haiku-4-5")
 	if err != nil {
 		t.Fatalf("ResolveModel failed: %v", err)
 	}
 
-	if model.ID != "claude-haiku-4-20250514" {
-		t.Errorf("expected ID 'claude-haiku-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5" {
+		t.Errorf("expected ID 'claude-haiku-4-5', got %q", model.ID)
 	}
 }
 
@@ -166,10 +166,10 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 
 [agent]
-model = "claude-sonnet-4-20250514"
+model = "claude-haiku-4-5-20251001"
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -186,8 +186,8 @@ model = "claude-sonnet-4-20250514"
 		t.Fatalf("ResolveModel failed: %v", err)
 	}
 
-	if model.ID != "claude-sonnet-4-20250514" {
-		t.Errorf("expected ID 'claude-sonnet-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5-20251001" {
+		t.Errorf("expected ID 'claude-haiku-4-5-20251001', got %q", model.ID)
 	}
 }
 
@@ -204,10 +204,10 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 
 [llm]
-model = "claude-sonnet-4-20250514"
+model = "claude-haiku-4-5-20251001"
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -224,8 +224,8 @@ model = "claude-sonnet-4-20250514"
 		t.Fatalf("ResolveModel failed: %v", err)
 	}
 
-	if model.ID != "claude-sonnet-4-20250514" {
-		t.Errorf("expected ID 'claude-sonnet-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5-20251001" {
+		t.Errorf("expected ID 'claude-haiku-4-5-20251001', got %q", model.ID)
 	}
 }
 
@@ -242,13 +242,13 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 
 [job]
-implementation-model = "claude-haiku-4-20250514"
+implementation-model = "claude-haiku-4-5"
 
 [agent]
-model = "claude-sonnet-4-20250514"
+model = "claude-haiku-4-5-20251001"
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -265,8 +265,8 @@ model = "claude-sonnet-4-20250514"
 		t.Fatalf("ResolveImplementationModel failed: %v", err)
 	}
 
-	if model.ID != "claude-haiku-4-20250514" {
-		t.Errorf("expected ID 'claude-haiku-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5" {
+		t.Errorf("expected ID 'claude-haiku-4-5', got %q", model.ID)
 	}
 }
 
@@ -283,13 +283,13 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 
 [job]
-code-review-model = "claude-haiku-4-20250514"
+code-review-model = "claude-haiku-4-5"
 
 [agent]
-model = "claude-sonnet-4-20250514"
+model = "claude-haiku-4-5-20251001"
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -306,8 +306,8 @@ model = "claude-sonnet-4-20250514"
 		t.Fatalf("ResolveCodeReviewModel failed: %v", err)
 	}
 
-	if model.ID != "claude-haiku-4-20250514" {
-		t.Errorf("expected ID 'claude-haiku-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5" {
+		t.Errorf("expected ID 'claude-haiku-4-5', got %q", model.ID)
 	}
 }
 
@@ -324,13 +324,13 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "echo test-key"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 
 [job]
-project-review-model = "claude-haiku-4-20250514"
+project-review-model = "claude-haiku-4-5"
 
 [agent]
-model = "claude-sonnet-4-20250514"
+model = "claude-haiku-4-5-20251001"
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -347,8 +347,8 @@ model = "claude-sonnet-4-20250514"
 		t.Fatalf("ResolveProjectReviewModel failed: %v", err)
 	}
 
-	if model.ID != "claude-haiku-4-20250514" {
-		t.Errorf("expected ID 'claude-haiku-4-20250514', got %q", model.ID)
+	if model.ID != "claude-haiku-4-5" {
+		t.Errorf("expected ID 'claude-haiku-4-5', got %q", model.ID)
 	}
 }
 
@@ -400,7 +400,7 @@ func TestListSessions_WithSessions(t *testing.T) {
 			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -409,7 +409,7 @@ func TestListSessions_WithSessions(t *testing.T) {
 			ID:        "87654321",
 			Repo:        "test-repo",
 			Status:      state.AgentSessionCompleted,
-			Model:       "claude-sonnet-4-20250514",
+			Model:       "claude-haiku-4-5-20251001",
 			CreatedAt:   time.Now().Add(-time.Hour),
 			StartedAt:   time.Now().Add(-time.Hour),
 			UpdatedAt:   time.Now().Add(-time.Hour),
@@ -455,7 +455,7 @@ func TestFindSession_ExactMatch(t *testing.T) {
 			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -495,7 +495,7 @@ func TestFindSession_PrefixMatch(t *testing.T) {
 			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -563,7 +563,7 @@ func TestFindSession_Ambiguous(t *testing.T) {
 			ID:        "12345678",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -572,7 +572,7 @@ func TestFindSession_Ambiguous(t *testing.T) {
 			ID:        "12367890",
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -745,7 +745,7 @@ func TestTranscript_ExcludesToolOutput(t *testing.T) {
 			ID:        sessionID,
 			Repo:      "test-repo",
 			Status:    state.AgentSessionActive,
-			Model:     "claude-sonnet-4-20250514",
+			Model:     "claude-haiku-4-5-20251001",
 			CreatedAt: time.Now(),
 			StartedAt: time.Now(),
 			UpdatedAt: time.Now(),

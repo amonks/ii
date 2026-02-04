@@ -138,7 +138,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 			restoreCommit = commitID
 			return nil
 		},
-		Model: "gpt-5.2-codex",
+		Model: "claude-haiku-4-5",
 	}
 
 	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
@@ -158,7 +158,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 	if !strings.Contains(message, "session ses-790") {
 		t.Fatalf("expected session context, got %v", message)
 	}
-	if !strings.Contains(message, "model \"gpt-5.2-codex\"") {
+	if !strings.Contains(message, "model \"claude-haiku-4-5\"") {
 		t.Fatalf("expected model context, got %v", message)
 	}
 	if !strings.Contains(message, "prompt prompt-implementation.tmpl") {

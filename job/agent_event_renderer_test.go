@@ -233,7 +233,7 @@ func TestAgentEventInterpreterAgentStartEnd(t *testing.T) {
 
 	startEvent := Event{
 		Name: "agent.start",
-		Data: `{"Config":{"Model":{"ID":"claude-sonnet-4"},"WorkDir":"/work"}}`,
+		Data: `{"Config":{"Model":{"ID":"claude-haiku-4-5"},"WorkDir":"/work"}}`,
 	}
 	results, err := interp.Handle(startEvent)
 	if err != nil {
@@ -245,7 +245,7 @@ func TestAgentEventInterpreterAgentStartEnd(t *testing.T) {
 	if !strings.Contains(results[0].Inline, "Agent started") {
 		t.Errorf("expected agent started, got %q", results[0].Inline)
 	}
-	if !strings.Contains(results[0].Inline, "claude-sonnet-4") {
+	if !strings.Contains(results[0].Inline, "claude-haiku-4-5") {
 		t.Errorf("expected model in output, got %q", results[0].Inline)
 	}
 

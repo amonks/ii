@@ -55,8 +55,8 @@ Look for code cleanup opportunities.
 
 		content := `---
 models:
-  implementation: claude-sonnet-4
-  review: claude-haiku
+  implementation: claude-haiku-4-5-20251001
+  review: claude-haiku-4-5
 ---
 
 # Performance
@@ -78,11 +78,11 @@ Look for performance improvements.`
 		if habit.Instructions != expectedInstructions {
 			t.Errorf("Instructions mismatch:\ngot:\n%s\nwant:\n%s", habit.Instructions, expectedInstructions)
 		}
-		if habit.ImplementationModel != "claude-sonnet-4" {
-			t.Errorf("ImplementationModel = %q, want %q", habit.ImplementationModel, "claude-sonnet-4")
+		if habit.ImplementationModel != "claude-haiku-4-5-20251001" {
+			t.Errorf("ImplementationModel = %q, want %q", habit.ImplementationModel, "claude-haiku-4-5-20251001")
 		}
-		if habit.ReviewModel != "claude-haiku" {
-			t.Errorf("ReviewModel = %q, want %q", habit.ReviewModel, "claude-haiku")
+		if habit.ReviewModel != "claude-haiku-4-5" {
+			t.Errorf("ReviewModel = %q, want %q", habit.ReviewModel, "claude-haiku-4-5")
 		}
 	})
 
@@ -95,7 +95,7 @@ Look for performance improvements.`
 
 		content := `---
 models:
-  implementation: claude-opus-4
+  implementation: claude-haiku-4-5
 ---
 
 # Docs
@@ -110,8 +110,8 @@ Update documentation.`
 			t.Fatalf("Load failed: %v", err)
 		}
 
-		if habit.ImplementationModel != "claude-opus-4" {
-			t.Errorf("ImplementationModel = %q, want %q", habit.ImplementationModel, "claude-opus-4")
+		if habit.ImplementationModel != "claude-haiku-4-5" {
+			t.Errorf("ImplementationModel = %q, want %q", habit.ImplementationModel, "claude-haiku-4-5")
 		}
 		if habit.ReviewModel != "" {
 			t.Errorf("ReviewModel = %q, want empty", habit.ReviewModel)
@@ -635,34 +635,34 @@ func TestParseFrontmatter(t *testing.T) {
 		{
 			name: "full models section",
 			data: `models:
-  implementation: claude-sonnet-4
-  review: claude-haiku`,
-			wantImpl:   "claude-sonnet-4",
-			wantReview: "claude-haiku",
+  implementation: claude-haiku-4-5-20251001
+  review: claude-haiku-4-5`,
+			wantImpl:   "claude-haiku-4-5-20251001",
+			wantReview: "claude-haiku-4-5",
 		},
 		{
 			name: "only implementation",
 			data: `models:
-  implementation: opus`,
-			wantImpl:   "opus",
+  implementation: claude-haiku-4-5-20251001`,
+			wantImpl:   "claude-haiku-4-5-20251001",
 			wantReview: "",
 		},
 		{
 			name: "only review",
 			data: `models:
-  review: haiku`,
+  review: claude-haiku-4-5`,
 			wantImpl:   "",
-			wantReview: "haiku",
+			wantReview: "claude-haiku-4-5",
 		},
 		{
 			name: "other fields ignored",
 			data: `title: Test
 models:
-  implementation: sonnet
-  review: haiku
+  implementation: claude-haiku-4-5-20251001
+  review: claude-haiku-4-5
 other: value`,
-			wantImpl:   "sonnet",
-			wantReview: "haiku",
+			wantImpl:   "claude-haiku-4-5-20251001",
+			wantReview: "claude-haiku-4-5",
 		},
 		{
 			name: "no models section",

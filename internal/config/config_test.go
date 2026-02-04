@@ -164,10 +164,10 @@ func TestLoad_JobConfig(t *testing.T) {
 	configContent := `
 [job]
 test-commands = ["go test ./...", "golangci-lint run"]
-agent = "gpt-5.2-codex"
-implementation-model = "gpt-5.2-impl"
-code-review-model = "gpt-5.2-review"
-project-review-model = "gpt-5.2-project"
+agent = "claude-haiku-4-5"
+implementation-model = "claude-haiku-4-5-20251001"
+code-review-model = "claude-haiku-4-5"
+project-review-model = "claude-haiku-4-5-20251001"
 `
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "incrementum.toml"), []byte(configContent), 0644); err != nil {
@@ -187,17 +187,17 @@ project-review-model = "gpt-5.2-project"
 		t.Fatalf("expected first test command %q, got %q", "go test ./...", cfg.Job.TestCommands[0])
 	}
 
-	if cfg.Job.Agent != "gpt-5.2-codex" {
-		t.Fatalf("expected agent %q, got %q", "gpt-5.2-codex", cfg.Job.Agent)
+	if cfg.Job.Agent != "claude-haiku-4-5" {
+		t.Fatalf("expected agent %q, got %q", "claude-haiku-4-5", cfg.Job.Agent)
 	}
-	if cfg.Job.ImplementationModel != "gpt-5.2-impl" {
-		t.Fatalf("expected implementation model %q, got %q", "gpt-5.2-impl", cfg.Job.ImplementationModel)
+	if cfg.Job.ImplementationModel != "claude-haiku-4-5-20251001" {
+		t.Fatalf("expected implementation model %q, got %q", "claude-haiku-4-5-20251001", cfg.Job.ImplementationModel)
 	}
-	if cfg.Job.CodeReviewModel != "gpt-5.2-review" {
-		t.Fatalf("expected code review model %q, got %q", "gpt-5.2-review", cfg.Job.CodeReviewModel)
+	if cfg.Job.CodeReviewModel != "claude-haiku-4-5" {
+		t.Fatalf("expected code review model %q, got %q", "claude-haiku-4-5", cfg.Job.CodeReviewModel)
 	}
-	if cfg.Job.ProjectReviewModel != "gpt-5.2-project" {
-		t.Fatalf("expected project review model %q, got %q", "gpt-5.2-project", cfg.Job.ProjectReviewModel)
+	if cfg.Job.ProjectReviewModel != "claude-haiku-4-5-20251001" {
+		t.Fatalf("expected project review model %q, got %q", "claude-haiku-4-5-20251001", cfg.Job.ProjectReviewModel)
 	}
 }
 
@@ -490,7 +490,7 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "op read op://Private/Anthropic/credential"
-models = ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"]
+models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 
 [[llm.providers]]
 name = "openai"
@@ -548,7 +548,7 @@ func TestLoad_LLMProviderNoAPIKey(t *testing.T) {
 name = "internal-claude"
 api = "anthropic-messages"
 base-url = "https://internal-claude.example.com"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 `
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "incrementum.toml"), []byte(configContent), 0644); err != nil {
@@ -583,7 +583,7 @@ name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
 api-key-command = "op read op://Private/Anthropic/credential"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
@@ -688,7 +688,7 @@ func TestLoadGlobal(t *testing.T) {
 name = "anthropic"
 api = "anthropic-messages"
 base-url = "https://api.anthropic.com"
-models = ["claude-sonnet-4-20250514"]
+models = ["claude-haiku-4-5-20251001"]
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {

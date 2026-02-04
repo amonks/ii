@@ -18,14 +18,14 @@ func TestFormatAgentTablePreservesAlignmentWithANSI(t *testing.T) {
 		{
 			ID:        "sess1",
 			Status:    agent.SessionActive,
-			Model:     "claude-sonnet-4",
+			Model:     "claude-haiku-4-5",
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		},
 		{
 			ID:          "sess2",
 			Status:      agent.SessionCompleted,
-			Model:       "claude-sonnet-4",
+			Model:       "claude-haiku-4-5",
 			CreatedAt:   createdAt.Add(-time.Minute),
 			UpdatedAt:   now,
 			CompletedAt: now,
@@ -56,7 +56,7 @@ func TestFormatAgentTableIncludesSessionID(t *testing.T) {
 		{
 			ID:        "sess-123",
 			Status:    agent.SessionActive,
-			Model:     "claude-sonnet-4",
+			Model:     "claude-haiku-4-5",
 			CreatedAt: now.Add(-time.Minute),
 			UpdatedAt: now.Add(-time.Minute),
 		},
@@ -89,7 +89,7 @@ func TestFormatAgentTableUsesCompactAge(t *testing.T) {
 		{
 			ID:        "sess-001",
 			Status:    agent.SessionActive,
-			Model:     "claude-sonnet-4",
+			Model:     "claude-haiku-4-5",
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		},
@@ -114,7 +114,7 @@ func TestFormatAgentTableShowsMissingAgeAsDash(t *testing.T) {
 		{
 			ID:     "sess-1",
 			Status: agent.SessionActive,
-			Model:  "claude-sonnet-4",
+			Model:  "claude-haiku-4-5",
 		},
 	}
 
@@ -147,7 +147,7 @@ func TestFormatAgentTableShowsAgeForCompletedSession(t *testing.T) {
 		{
 			ID:        "sess-complete",
 			Status:    agent.SessionCompleted,
-			Model:     "claude-sonnet-4",
+			Model:     "claude-haiku-4-5",
 			CreatedAt: now.Add(-5 * time.Minute),
 		},
 	}
@@ -172,7 +172,7 @@ func TestFormatAgentTableShowsDuration(t *testing.T) {
 		{
 			ID:          "sess-duration",
 			Status:      agent.SessionCompleted,
-			Model:       "claude-sonnet-4",
+			Model:       "claude-haiku-4-5",
 			CreatedAt:   createdAt,
 			UpdatedAt:   completedAt,
 			CompletedAt: completedAt,
@@ -199,14 +199,14 @@ func TestFormatAgentTableUsesSessionPrefixLengths(t *testing.T) {
 		{
 			ID:        "abc123",
 			Status:    agent.SessionActive,
-			Model:     "claude-sonnet-4",
+			Model:     "claude-haiku-4-5",
 			CreatedAt: createdAt,
 			UpdatedAt: createdAt,
 		},
 		{
 			ID:          "abd999",
 			Status:      agent.SessionCompleted,
-			Model:       "claude-sonnet-4",
+			Model:       "claude-haiku-4-5",
 			CreatedAt:   createdAt,
 			UpdatedAt:   now,
 			CompletedAt: now,
@@ -234,7 +234,7 @@ func TestFormatAgentTableShowsTokensAndCost(t *testing.T) {
 		{
 			ID:          "sess-usage",
 			Status:      agent.SessionCompleted,
-			Model:       "claude-sonnet-4",
+			Model:       "claude-haiku-4-5",
 			CreatedAt:   createdAt,
 			UpdatedAt:   now,
 			CompletedAt: now,
