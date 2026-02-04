@@ -1199,3 +1199,154 @@ func TestRunReviewingStageProjectSetsProjectReview(t *testing.T) {
 		t.Fatalf("expected project review session id %q, got %q", "oc-project-review", result.Job.ProjectReview.AgentSessionID)
 	}
 }
+
+func TestBuildLLMFailureMessageIncludesExitCodeAndError(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-123",
+		ExitCode:  1,
+		Error:     "context deadline exceeded",
+	}
+	runOpts := AgentRunOptions{
+		Model:         "claude-sonnet-4",
+		RepoPath:      "/repo",
+		WorkspacePath: "/workspace",
+	}
+
+	msg := buildLLMFailureMessage("implement", "prompt-implementation.tmpl", result, runOpts, "before-commit", "after-commit", nil, false, nil, 0)
+
+	// Check that message starts with the unified format prefix
+	expectedPrefix := "agent implement failed with exit code 1:"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+
+	// Check for error reason
+	if !strings.Contains(msg, "error: context deadline exceeded") {
+		t.Errorf("expected error reason in message, got %q", msg)
+	}
+
+	// Check for session ID
+	if !strings.Contains(msg, "session session-123") {
+		t.Errorf("expected session ID in message, got %q", msg)
+	}
+
+	// Check for model
+	if !strings.Contains(msg, `model "claude-sonnet-4"`) {
+		t.Errorf("expected model in message, got %q", msg)
+	}
+}
+
+func TestBuildLLMFailureMessageNegativeExitCode(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-456",
+		ExitCode:  -1,
+	}
+	runOpts := AgentRunOptions{
+		Model: "claude-sonnet-4",
+	}
+
+	msg := buildLLMFailureMessage("implement", "prompt-implementation.tmpl", result, runOpts, "", "", nil, false, nil, 0)
+
+	// Check that message starts with the unified format prefix including parenthetical
+	expectedPrefix := "agent implement failed with exit code -1 (process did not exit cleanly):"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+}
+
+func TestBuildLLMFailureMessageWithoutError(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-789",
+		ExitCode:  1,
+		Error:     "", // No error message available (e.g., external backend)
+	}
+	runOpts := AgentRunOptions{
+		Model: "claude-sonnet-4",
+	}
+
+	msg := buildLLMFailureMessage("implement", "prompt-implementation.tmpl", result, runOpts, "", "", nil, false, nil, 0)
+
+	// Check that message starts with the unified format prefix
+	expectedPrefix := "agent implement failed with exit code 1:"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+
+	// Should NOT contain "error:" prefix when Error is empty
+	if strings.Contains(msg, "error:") {
+		t.Errorf("did not expect error prefix when Error is empty, got %q", msg)
+	}
+}
+
+func TestBuildReviewFailureMessageIncludesExitCodeAndError(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-review-123",
+		ExitCode:  1,
+		Error:     "API rate limit exceeded",
+	}
+
+	msg := buildReviewFailureMessage("review", result, "claude-opus-4")
+
+	// Check that message starts with the unified format prefix
+	expectedPrefix := "agent review failed with exit code 1:"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+
+	// Check for error reason
+	if !strings.Contains(msg, "error: API rate limit exceeded") {
+		t.Errorf("expected error reason in message, got %q", msg)
+	}
+
+	// Check for session ID
+	if !strings.Contains(msg, "session session-review-123") {
+		t.Errorf("expected session ID in message, got %q", msg)
+	}
+
+	// Check for model
+	if !strings.Contains(msg, `model "claude-opus-4"`) {
+		t.Errorf("expected model in message, got %q", msg)
+	}
+}
+
+func TestBuildReviewFailureMessageNegativeExitCode(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-review-456",
+		ExitCode:  -1,
+		Error:     "signal: killed",
+	}
+
+	msg := buildReviewFailureMessage("project-review", result, "claude-sonnet-4")
+
+	// Check that message starts with the unified format prefix including parenthetical
+	expectedPrefix := "agent project-review failed with exit code -1 (process did not exit cleanly):"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+}
+
+func TestBuildReviewFailureMessageWithoutError(t *testing.T) {
+	result := AgentRunResult{
+		SessionID: "session-review-789",
+		ExitCode:  1,
+		Error:     "", // No error message available (e.g., external backend)
+	}
+
+	msg := buildReviewFailureMessage("review", result, "claude-sonnet-4")
+
+	// Check that message starts with the unified format prefix
+	expectedPrefix := "agent review failed with exit code 1:"
+	if !strings.HasPrefix(msg, expectedPrefix) {
+		t.Errorf("expected message to start with %q, got %q", expectedPrefix, msg)
+	}
+
+	// Should NOT contain "error:" prefix when Error is empty
+	if strings.Contains(msg, "error:") {
+		t.Errorf("did not expect error prefix when Error is empty, got %q", msg)
+	}
+
+	// Should still include session and model
+	if !strings.Contains(msg, "session session-review-789") {
+		t.Errorf("expected session ID in message, got %q", msg)
+	}
+}

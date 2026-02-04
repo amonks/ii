@@ -392,6 +392,7 @@ func (h *RunHandle) Wait() (RunResult, error)
 type RunResult struct {
     SessionID string
     ExitCode  int
+    Error     string  // Optional: error message when ExitCode is non-zero (best-effort)
     Messages  []llm.Message
     Usage     llm.Usage
 }

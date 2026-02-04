@@ -62,6 +62,7 @@ func makeRunLLMFunc(repoPath string, runner agents.Runner) (func(jobpkg.AgentRun
 		return jobpkg.AgentRunResult{
 			SessionID: result.SessionID,
 			ExitCode:  result.ExitCode,
+			Error:     result.Error,
 		}, nil
 	}, nil
 }

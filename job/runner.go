@@ -817,7 +817,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	logger.Prompt(PromptLog{Purpose: purpose, Template: promptName, Prompt: prompt, Transcript: transcript})
 
 	if llmResult.ExitCode != 0 {
-		return ReviewingStageResult{}, fmt.Errorf("LLM review failed with exit code %d", llmResult.ExitCode)
+		return ReviewingStageResult{}, fmt.Errorf("%s", buildReviewFailureMessage(purpose, llmResult, model))
 	}
 
 	feedback, err := ReadReviewFeedback(feedbackPath)
@@ -1024,6 +1024,10 @@ func renderPromptTemplate(item todo.Todo, feedback, message string, transcripts 
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {
 	parts := []string{}
+	// Include the error reason first if available - this is the most important context
+	if !internalstrings.IsBlank(result.Error) {
+		parts = append(parts, fmt.Sprintf("error: %s", result.Error))
+	}
 	if !internalstrings.IsBlank(result.SessionID) {
 		parts = append(parts, fmt.Sprintf("session %s", result.SessionID))
 	}
@@ -1056,6 +1060,30 @@ func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, r
 	}
 	if retryCount > 0 {
 		parts = append(parts, fmt.Sprintf("retry %d", retryCount))
+	}
+	message := fmt.Sprintf("agent %s failed with exit code %d", purpose, result.ExitCode)
+	if result.ExitCode < 0 {
+		message += " (process did not exit cleanly)"
+	}
+	if len(parts) == 0 {
+		return message
+	}
+	return fmt.Sprintf("%s: %s", message, strings.Join(parts, ", "))
+}
+
+// buildReviewFailureMessage builds the full error message for agent review failures.
+// Format: "agent <purpose> failed with exit code <n>: <details>" matching buildLLMFailureMessage.
+func buildReviewFailureMessage(purpose string, result AgentRunResult, model string) string {
+	parts := []string{}
+	// Include the error reason first if available - this is the most important context
+	if !internalstrings.IsBlank(result.Error) {
+		parts = append(parts, fmt.Sprintf("error: %s", result.Error))
+	}
+	if !internalstrings.IsBlank(result.SessionID) {
+		parts = append(parts, fmt.Sprintf("session %s", result.SessionID))
+	}
+	if !internalstrings.IsBlank(model) {
+		parts = append(parts, fmt.Sprintf("model %q", model))
 	}
 	message := fmt.Sprintf("agent %s failed with exit code %d", purpose, result.ExitCode)
 	if result.ExitCode < 0 {

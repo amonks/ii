@@ -69,6 +69,10 @@ type RunOptions struct {
 type RunResult struct {
 	SessionID string
 	ExitCode  int
+	// Error contains the error message when ExitCode is non-zero.
+	// This field is optional and may be empty even when ExitCode != 0;
+	// external agent backends may not provide error details beyond the exit code.
+	Error string
 }
 
 // RunHandle provides access to a running agent session.
@@ -134,7 +138,7 @@ func (h internalHandle) Wait() (RunResult, error) {
 	if err != nil {
 		return RunResult{}, err
 	}
-	return RunResult{SessionID: result.SessionID, ExitCode: result.ExitCode}, nil
+	return RunResult{SessionID: result.SessionID, ExitCode: result.ExitCode, Error: result.Error}, nil
 }
 
 // NewClaudeRunner returns a runner that shells out to the Claude CLI.

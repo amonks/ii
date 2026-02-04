@@ -139,8 +139,8 @@ any stage -> failed (unrecoverable error)
 11. If agent returns an error before completion, record a `job.agent.error`
     event with the purpose and error message, then mark the job `failed`.
 12. If agent fails (nonzero exit): mark job `failed` with an error that
-    includes purpose, session id, model, prompt template, repo/workspace paths,
-    and before/after commit ids. If the exit code is negative and the working
+    includes the exit code, error reason (if available), session id, model, prompt
+    template, repo/workspace paths, and before/after commit ids. If the exit code is negative and the working
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
     failing and include the retry attempt in the error details.
@@ -194,7 +194,7 @@ any stage -> failed (unrecoverable error)
 9. If agent returns an error before completion, record a `job.agent.error`
    event with the purpose and error message, then mark the job `failed`.
 10. If agent fails (nonzero exit): mark job `failed` with an error that
-    includes purpose, session id, model, prompt template, and repo/workspace paths.
+    includes the exit code, error reason (if available), session id, and model.
 11. Read `.incrementum-feedback` from the workspace root:
    - Delete `.incrementum-feedback` after reading.
    - Missing or first line is `ACCEPT`:
@@ -506,8 +506,21 @@ type AgentRunOptions struct {
 type AgentRunResult struct {
     SessionID string
     ExitCode  int
+    Error     string  // Optional: error message when ExitCode is non-zero
 }
+```
 
+`ExitCode` is a result code indicating success (0) or failure (non-zero). For
+external agent backends, this is the process exit code. For the internal backend,
+it is a synthetic code set to 1 when an error occurs. Error messages reference
+"exit code" for consistency across backends even though the internal backend does
+not spawn a subprocess.
+
+`Error` is optional and may be empty even when `ExitCode` is non-zero. External
+agent backends (claude, codex) do not provide detailed error messages beyond the
+exit code.
+
+```go
 type AgentSession struct {
     Purpose string // "implement", "review", or "project-review"
     ID      string // Agent session ID

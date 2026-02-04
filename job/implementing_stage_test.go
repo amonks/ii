@@ -153,7 +153,10 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 	}
 	message := err.Error()
 	if !strings.Contains(message, "agent implement failed with exit code -1") {
-		t.Fatalf("expected exit code context, got %v", message)
+		t.Fatalf("expected agent failure message with exit code, got %v", message)
+	}
+	if !strings.Contains(message, "process did not exit cleanly") {
+		t.Fatalf("expected unclean exit context, got %v", message)
 	}
 	if !strings.Contains(message, "session ses-790") {
 		t.Fatalf("expected session context, got %v", message)
@@ -365,5 +368,62 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 	}
 	if _, err := os.Stat(messagePath); !os.IsNotExist(err) {
 		t.Fatalf("expected commit message to be deleted")
+	}
+}
+
+func TestRunImplementingStageIncludesErrorInFailureMessage(t *testing.T) {
+	repoPath := t.TempDir()
+	stateDir := t.TempDir()
+
+	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	now := time.Date(2026, time.January, 2, 3, 4, 7, 0, time.UTC)
+	current, err := manager.Create("todo-error", now, CreateOptions{})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	item := todo.Todo{
+		ID:       "todo-error",
+		Title:    "Example",
+		Type:     todo.TypeTask,
+		Priority: todo.PriorityLow,
+	}
+
+	opts := RunOptions{
+		Now: func() time.Time { return now },
+		CurrentCommitID: func(string) (string, error) {
+			return "same-commit", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-error", nil
+		},
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{
+				SessionID: "ses-error",
+				ExitCode:  1,
+				Error:     "context overflow: max tokens reached",
+			}, nil
+		},
+		Model: "test-model",
+	}
+
+	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err == nil {
+		t.Fatal("expected error for failed agent")
+	}
+	message := err.Error()
+	// The error message should now include the actual error reason and exit code
+	if !strings.Contains(message, "agent implement failed with exit code 1") {
+		t.Fatalf("expected agent failure message with exit code, got %v", message)
+	}
+	if !strings.Contains(message, "error: context overflow: max tokens reached") {
+		t.Fatalf("expected error reason in message, got %v", message)
+	}
+	if !strings.Contains(message, "session ses-error") {
+		t.Fatalf("expected session context, got %v", message)
 	}
 }

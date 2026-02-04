@@ -296,7 +296,7 @@ func (s *Store) forwardEvents(
 	writer.Flush()
 
 	// Wait for final result
-	internalResult, err := internalHandle.Wait()
+	internalResult, _ := internalHandle.Wait()
 
 	// Build result
 	result := RunResult{
@@ -314,11 +314,14 @@ func (s *Store) forwardEvents(
 	session.TokensUsed = internalResult.Usage.Total
 	session.Cost = internalResult.Usage.Cost.Total
 
-	if err != nil || internalResult.Error != nil {
+	// internalResult.Error is the authoritative error source for the agent run.
+	// The Wait() return error is the same value (Wait returns result, result.Error).
+	if internalResult.Error != nil {
 		session.Status = SessionFailed
 		exitCode := 1
 		session.ExitCode = &exitCode
 		result.ExitCode = 1
+		result.Error = internalResult.Error.Error()
 	} else {
 		session.Status = SessionCompleted
 		exitCode := 0

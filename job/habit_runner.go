@@ -586,7 +586,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		logger.Prompt(PromptLog{Purpose: "review", Template: promptName, Prompt: prompt, Transcript: transcript})
 
 		if llmResult.ExitCode != 0 {
-			return Job{}, fmt.Errorf("LLM review failed with exit code %d", llmResult.ExitCode)
+			return Job{}, fmt.Errorf("%s", buildReviewFailureMessage("review", llmResult, model))
 		}
 
 		feedback, err := ReadReviewFeedback(feedbackPath)

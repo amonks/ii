@@ -34,6 +34,7 @@ type RunOptions struct {
 type RunResult struct {
     SessionID string
     ExitCode  int
+    Error     string  // Error message when ExitCode is non-zero (optional; best-effort, depends on backend)
 }
 
 type RunHandle interface {
@@ -45,6 +46,12 @@ type Runner interface {
     Run(context.Context, RunOptions) (RunHandle, error)
 }
 ```
+
+`ExitCode` is a result code indicating success (0) or failure (non-zero). For shell
+backends (claude, codex), this is the actual process exit code. For the internal
+backend, it is a synthetic code: 0 when the agent run completes without error, 1
+when an error occurs. The term "exit code" is used for consistency across backends
+even though the internal backend does not spawn a subprocess.
 
 ## Session IDs
 

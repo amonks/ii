@@ -181,6 +181,11 @@ type RunResult struct {
 	// ExitCode is 0 on success, non-zero on failure.
 	ExitCode int
 
+	// Error contains the error message when ExitCode is non-zero.
+	// This field is optional and may be empty even when ExitCode != 0;
+	// not all failure conditions produce a detailed error message.
+	Error string
+
 	// Messages contains the full conversation history.
 	Messages []llm.Message
 
