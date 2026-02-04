@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/agents"
 	"github.com/amonks/incrementum/habit"
 	"github.com/amonks/incrementum/internal/editor"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
@@ -34,6 +34,14 @@ var jobDoTodo = runJobDoTodo
 // runInteractiveSession is the function called to run an interactive agent session.
 // It can be overridden for testing.
 var runInteractiveSession = defaultRunInteractiveSession
+
+type jobAgentKind string
+
+const (
+	jobAgentInternal jobAgentKind = "internal"
+	jobAgentClaude   jobAgentKind = "claude"
+	jobAgentCodex    jobAgentKind = "codex"
+)
 
 var (
 	jobDoTitle               string
@@ -64,10 +72,24 @@ func init() {
 	jobDoCmd.Flags().StringArrayVar(&jobDoDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	jobDoCmd.Flags().BoolVarP(&jobDoEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	jobDoCmd.Flags().BoolVar(&jobDoNoEdit, "no-edit", false, "Do not open $EDITOR")
-	jobDoCmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent binary path")
+	jobDoCmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent backend (internal, claude, codex)")
 	jobDoCmd.Flags().StringVar(&jobDoHabit, "habit", "", "Run a habit instead of a todo (use habit name or empty for first)")
 	// Allow --habit without a value to run the first habit alphabetically
 	jobDoCmd.Flags().Lookup("habit").NoOptDefVal = " "
+}
+
+func parseJobDoAgentKind(cmd *cobra.Command) (jobAgentKind, error) {
+	value := internalstrings.NormalizeLowerTrimSpace(jobDoAgent)
+	if value == "" {
+		return jobAgentInternal, nil
+	}
+
+	switch jobAgentKind(value) {
+	case jobAgentInternal, jobAgentClaude, jobAgentCodex:
+		return jobAgentKind(value), nil
+	default:
+		return "", fmt.Errorf("unknown agent %q (use internal, claude, or codex)", value)
+	}
 }
 
 func runJobDo(cmd *cobra.Command, args []string) error {
@@ -142,10 +164,18 @@ func runHabitJob(cmd *cobra.Command) error {
 		}
 	}
 
-	model := jobDoAgent // --agent flag value is used as model
+	agentKind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		return err
+	}
+
+	runner, err := makeAgentRunner(repoPath, agentKind)
+	if err != nil {
+		return err
+	}
 
 	// Set up LLM runner
-	runLLM, err := makeRunLLMFunc(repoPath)
+	runLLM, err := makeRunLLMFunc(repoPath, runner)
 	if err != nil {
 		return err
 	}
@@ -190,7 +220,6 @@ func runHabitJob(cmd *cobra.Command) error {
 		OnStageChange: onStageChange,
 		Logger:        logger,
 		EventStream:   eventStream,
-		Model:         model,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
 	})
@@ -271,9 +300,10 @@ func runJobDoTodo(cmd *cobra.Command, todoID string) error {
 
 // interactiveSessionOptions contains the parameters for running an interactive session.
 type interactiveSessionOptions struct {
-	repoPath string
-	prompt   string
-	model    string
+	repoPath  string
+	prompt    string
+	model     string
+	agentKind jobAgentKind
 }
 
 // interactiveSessionResult contains the result of an interactive session.
@@ -283,9 +313,7 @@ type interactiveSessionResult struct {
 
 // defaultRunInteractiveSession runs an interactive agent session.
 func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSessionResult, error) {
-	store, err := agent.OpenWithOptions(agent.Options{
-		RepoPath: opts.repoPath,
-	})
+	runner, err := makeAgentRunner(opts.repoPath, opts.agentKind)
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
@@ -302,7 +330,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		cancel()
 	}()
 
-	handle, err := store.Run(ctx, agent.RunOptions{
+	handle, err := runner.Run(ctx, agents.RunOptions{
 		RepoPath:  opts.repoPath,
 		WorkDir:   opts.repoPath,
 		Prompt:    opts.prompt,
@@ -315,7 +343,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 	}
 
 	// Stream events to stderr (same as agent run command)
-	streamAgentEventsToStderr(handle.Events)
+	streamAgentEventsToStderr(handle.Events())
 
 	result, err := handle.Wait()
 	if err != nil {
@@ -327,6 +355,11 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 
 // runDesignTodo runs an interactive agent session for design todos.
 func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
+	agentKind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		return err
+	}
+
 	// Mark the todo as started
 	store, err := todo.Open(repoPath, todo.OpenOptions{
 		CreateIfMissing: false,
@@ -358,9 +391,10 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	// otherwise the agent store will resolve the model via priority chain
 	// (INCREMENTUM_AGENT_MODEL env var -> config implementation-model)
 	result, err := runInteractiveSession(interactiveSessionOptions{
-		repoPath: repoPath,
-		prompt:   prompt,
-		model:    item.ImplementationModel,
+		repoPath:  repoPath,
+		prompt:    prompt,
+		model:     item.ImplementationModel,
+		agentKind: agentKind,
 	})
 	if err != nil {
 		return err
@@ -410,10 +444,18 @@ func formatDesignTodoBlock(item todo.Todo) string {
 }
 
 func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
-	model := jobDoAgent // --agent flag value is used as model
+	agentKind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		return err
+	}
+
+	runner, err := makeAgentRunner(repoPath, agentKind)
+	if err != nil {
+		return err
+	}
 
 	// Set up LLM runner
-	runLLM, err := makeRunLLMFunc(repoPath)
+	runLLM, err := makeRunLLMFunc(repoPath, runner)
 	if err != nil {
 		return err
 	}
@@ -458,7 +500,6 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		OnStageChange: onStageChange,
 		Logger:        logger,
 		EventStream:   eventStream,
-		Model:         model,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
 	})

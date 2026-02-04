@@ -67,8 +67,8 @@ Fields (JSON keys):
 
 ## Model Selection
 
-- The model is resolved in this order: CLI override (`--agent` flag) -> todo-level
-  model for the stage -> config stage model -> config default model.
+- The model is resolved in this order: `RunOptions.Model` override (API only) ->
+  todo-level model for the stage -> config stage model -> config default model.
 - Todo-level fields map to stages: `implementation_model` for implementing,
   `code_review_model` for step review, `project_review_model` for project review.
 
@@ -295,10 +295,10 @@ Config is loaded from `incrementum.toml` or `.incrementum/config.toml` and
 Callers can supply a preloaded config via `RunOptions.Config` to avoid
 filesystem reads; when set, the job runner does not call `LoadConfig`.
 
-`agent` is an optional default model; it is overridden by the `--agent` flag.
+`agent` is an optional default model.
 
 `implementation-model`, `code-review-model`, and `project-review-model` override
-`agent` for their respective stages unless `--agent` is set.
+`agent` for their respective stages.
 
 ## Templates
 
@@ -358,7 +358,8 @@ Create and run a job to completion (blocking).
 - If creation flags provided: create todo first (same flags as `ii todo create`:
   `--title`, `--type`, `--priority`, `--description/--desc`, `--deps`,
   `--edit/--no-edit`).
-- `--agent` selects the model for the job.
+- `--agent` selects the agent backend (`internal`, `claude`, `codex`); it does not
+  override model selection.
 - `--habit <name>` runs the named habit from `.incrementum/habits/<name>.md`.
   Accepts habit name or unique prefix.
 - `--habit` (no name) runs the alphabetically first habit.
@@ -475,7 +476,7 @@ and message content (thinking/response).
 
 ## Agent Event Rendering
 
-The job event log renderer supports agent events (from the `agent` package).
+The job event log renderer supports agent events (from the `agents` package).
 Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
 `tool.` prefixes) and rendered with:
 
@@ -485,7 +486,7 @@ Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
 
 ## LLM Integration
 
-The job runner uses the `agent` package to run LLM sessions. The key types are:
+The job runner uses the `agents` package to run LLM sessions. The key types are:
 
 ### Types
 
@@ -518,9 +519,9 @@ type AgentTranscript struct {
 
 ### RunOptions Fields
 
-- `RunLLM`: Callback to run an LLM session. Defaults to using the agent package.
+- `RunLLM`: Callback to run an LLM session. CLI wiring uses the `agents` package.
 - `Transcripts`: Retrieves transcripts for sessions. Defaults to using
-  `agent.Store.TranscriptSnapshot`.
+  `agent.Store.TranscriptSnapshot` via `agents.OpenTranscriptStore`.
 - `Model`: Overrides model selection for all stages when set.
 
 ### Job Events

@@ -116,6 +116,47 @@ func TestRunJobDoMultipleTodos(t *testing.T) {
 	}
 }
 
+func TestJobDoAgentDefaultsToInternal(t *testing.T) {
+	resetJobDoGlobals()
+	cmd := newTestJobDoCommand()
+
+	kind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if kind != jobAgentInternal {
+		t.Fatalf("expected internal agent, got %q", kind)
+	}
+}
+
+func TestJobDoAgentAllowsClaude(t *testing.T) {
+	resetJobDoGlobals()
+	cmd := newTestJobDoCommand()
+	if err := cmd.Flags().Set("agent", "claude"); err != nil {
+		t.Fatalf("set agent flag: %v", err)
+	}
+
+	kind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if kind != jobAgentClaude {
+		t.Fatalf("expected claude agent, got %q", kind)
+	}
+}
+
+func TestJobDoAgentRejectsUnknown(t *testing.T) {
+	resetJobDoGlobals()
+	cmd := newTestJobDoCommand()
+	if err := cmd.Flags().Set("agent", "unknown"); err != nil {
+		t.Fatalf("set agent flag: %v", err)
+	}
+
+	if _, err := parseJobDoAgentKind(cmd); err == nil {
+		t.Fatal("expected error for unknown agent")
+	}
+}
+
 func resetJobDoGlobals() {
 	jobDoTitle = ""
 	jobDoType = "task"
@@ -137,7 +178,7 @@ func newTestJobDoCommand() *cobra.Command {
 	cmd.Flags().StringArrayVar(&jobDoDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	cmd.Flags().BoolVarP(&jobDoEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	cmd.Flags().BoolVar(&jobDoNoEdit, "no-edit", false, "Do not open $EDITOR")
-	cmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent binary path")
+	cmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent backend (internal, claude, codex)")
 	return cmd
 }
 

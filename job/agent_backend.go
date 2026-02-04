@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/agents"
 	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 )
@@ -90,7 +90,7 @@ type agentErrorEventData struct {
 
 // RecordAgentEvents forwards agent events to the job event log.
 // Returns a channel that receives any error encountered during recording.
-func RecordAgentEvents(log *EventLog, events <-chan agent.Event) <-chan error {
+func RecordAgentEvents(log *EventLog, events <-chan agents.Event) <-chan error {
 	done := make(chan error, 1)
 	if events == nil {
 		done <- nil
@@ -102,7 +102,7 @@ func RecordAgentEvents(log *EventLog, events <-chan agent.Event) <-chan error {
 			if log == nil || recordErr != nil {
 				continue
 			}
-			sse := agent.EventToSSE(event)
+			sse := agents.EventToSSE(event)
 			recordErr = log.Append(Event{ID: sse.ID, Name: sse.Name, Data: sse.Data})
 		}
 		done <- recordErr
@@ -113,15 +113,8 @@ func RecordAgentEvents(log *EventLog, events <-chan agent.Event) <-chan error {
 // defaultRunLLM is the default implementation for RunOptions.RunLLM.
 // It uses the agent package to run LLM sessions.
 func defaultRunLLM(opts AgentRunOptions) (AgentRunResult, error) {
-	store, err := agent.Open()
-	if err != nil {
-		return AgentRunResult{}, err
-	}
 	// Note: The actual agent run is handled by the caller who sets up
-	// the agent store and calls store.Run. This function is called by
-	// normalizeRunOptions to set up a default.
-	// For now, we return an error since the proper implementation requires
-	// the CLI to set up RunLLM with the agent store.
-	_ = store
+	// the agent runner. This function is called by normalizeRunOptions
+	// to set up a default.
 	return AgentRunResult{}, errors.New("RunLLM not configured; set RunOptions.RunLLM or use CLI helpers")
 }

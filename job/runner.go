@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/agents"
 	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/internal/jj"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
@@ -44,7 +44,7 @@ type RunOptions struct {
 	// When nil, LoadConfig is used.
 	Config   *config.Config
 	RunTests func(string, []string) ([]TestCommandResult, error)
-	// RunLLM runs an LLM session using the agent package.
+	// RunLLM runs an LLM session using an agent backend.
 	RunLLM func(AgentRunOptions) (AgentRunResult, error)
 	// Model overrides model selection for all stages when set.
 	Model              string
@@ -947,7 +947,7 @@ func defaultTranscripts(_ string, sessions []AgentSession) ([]AgentTranscript, e
 		return nil, nil
 	}
 
-	store, err := agent.Open()
+	store, err := agents.OpenTranscriptStore()
 	if err != nil {
 		return nil, err
 	}

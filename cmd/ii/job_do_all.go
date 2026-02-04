@@ -116,10 +116,18 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		return err
 	}
 
-	model := jobDoAgent // --agent flag value is used as model
+	agentKind, err := parseJobDoAgentKind(cmd)
+	if err != nil {
+		return err
+	}
+
+	runner, err := makeAgentRunner(repoPath, agentKind)
+	if err != nil {
+		return err
+	}
 
 	// Set up LLM runner
-	runLLM, err := makeRunLLMFunc(repoPath)
+	runLLM, err := makeRunLLMFunc(repoPath, runner)
 	if err != nil {
 		return err
 	}
@@ -136,7 +144,6 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		OnStart:       onStart,
 		OnStageChange: onStageChange,
 		Logger:        logger,
-		Model:         model,
 		RunLLM:        runLLM,
 		Transcripts:   transcripts,
 	})

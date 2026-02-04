@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/agents"
 	jobpkg "github.com/amonks/incrementum/job"
 )
 
@@ -24,31 +26,25 @@ func openAgentStoreAndRepoPath() (*agent.Store, string, error) {
 }
 
 // makeRunLLMFunc creates an LLM run function for use with job.RunOptions.RunLLM.
-func makeRunLLMFunc(repoPath string) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
-	store, err := agent.OpenWithOptions(agent.Options{
-		RepoPath: repoPath,
-	})
-	if err != nil {
-		return nil, err
-	}
-
+func makeRunLLMFunc(repoPath string, runner agents.Runner) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
 	return func(opts jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error) {
 		ctx := context.Background()
 
-		handle, err := store.Run(ctx, agent.RunOptions{
+		handle, err := runner.Run(ctx, agents.RunOptions{
 			RepoPath:  opts.RepoPath,
 			WorkDir:   opts.WorkspacePath,
 			Prompt:    opts.Prompt,
 			Model:     opts.Model,
 			StartedAt: opts.StartedAt,
 			Version:   buildCommitID,
+			Env:       opts.Env,
 		})
 		if err != nil {
 			return jobpkg.AgentRunResult{}, err
 		}
 
 		// Record events to job event log
-		eventErrCh := jobpkg.RecordAgentEvents(opts.EventLog, handle.Events)
+		eventErrCh := jobpkg.RecordAgentEvents(opts.EventLog, handle.Events())
 		result, err := handle.Wait()
 		eventErr := <-eventErrCh
 		if err != nil {
@@ -72,7 +68,7 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 			return nil, nil
 		}
 
-		store, err := agent.Open()
+		store, err := agents.OpenTranscriptStore()
 		if err != nil {
 			return nil, err
 		}
@@ -93,5 +89,18 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 			})
 		}
 		return transcripts, nil
+	}
+}
+
+func makeAgentRunner(repoPath string, kind jobAgentKind) (agents.Runner, error) {
+	switch kind {
+	case jobAgentInternal:
+		return agents.NewInternalRunner(repoPath)
+	case jobAgentClaude:
+		return agents.NewClaudeRunner(), nil
+	case jobAgentCodex:
+		return agents.NewCodexRunner(), nil
+	default:
+		return nil, fmt.Errorf("unknown agent %q", kind)
 	}
 }
