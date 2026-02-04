@@ -311,6 +311,7 @@ type RunOptions struct {
     Prompt    string
     Model     string    // Model ID; resolved via priority chain
     StartedAt time.Time
+    Version   string    // Version string (commit ID) included in User-Agent header
     Env       []string  // Additional environment variables passed to tool executions
 }
 ```
