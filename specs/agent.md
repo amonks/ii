@@ -453,7 +453,11 @@ job state. It adds one top-level collection:
   - Polls the transcript snapshot
   - Prints only newly appended transcript content (append-only diff)
   - If the current transcript snapshot is not prefixed by the previous snapshot, prints the full snapshot (non-append fallback)
-- With `--json`: prints a JSONL snapshot of the stored event log to stdout and exits (tailing JSONL is not yet implemented; use `ii agent logs --json` for snapshots).
+- With `--json`: remains alive until the agent session ends
+  - Polls the stored event log (`events/<session-id>.jsonl`)
+  - Writes only newly appended **complete** JSONL lines to stdout (append-only diff; requires a trailing `\n`)
+  - Incomplete trailing JSON fragments are withheld until completed by a later poll
+  - If the current JSONL snapshot is not prefixed by the previous snapshot, prints only **complete** lines (up to the last `\n`) (non-append fallback)
 
 ## Error Handling
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/agents"
@@ -16,7 +17,9 @@ func openAgentStoreAndRepoPath() (*agent.Store, string, error) {
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		RepoPath: repoPath,
+		RepoPath:  repoPath,
+		StateDir:  os.Getenv("INCREMENTUM_STATE_DIR"),
+		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
 	})
 	if err != nil {
 		return nil, "", err

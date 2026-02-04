@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -112,13 +113,31 @@ func runAgentTail(cmd *cobra.Command, args []string) error {
 	}
 
 	if agentTailJSON {
-		// Snapshot JSONL output for now; real tailing of JSONL will come with event log streaming.
-		logContent, err := store.Logs(repoPath, args[0])
-		if err != nil {
-			return err
+		// Follow-mode JSONL: poll the stored event log and emit only newly appended lines.
+		var last string
+		for {
+			session, err := store.FindSession(repoPath, args[0])
+			if err != nil {
+				return err
+			}
+
+			logContent, err := store.Logs(repoPath, session.ID)
+			if err != nil {
+				return err
+			}
+
+			diff := agent.JSONLTailDiff(last, logContent)
+			if diff != "" {
+				fmt.Print(diff)
+				os.Stdout.Sync() // Flush output immediately for tail mode
+			}
+			last = logContent
+
+			if session.Status != agent.SessionActive {
+				return nil
+			}
+			time.Sleep(500 * time.Millisecond)
 		}
-		fmt.Print(logContent)
-		return nil
 	}
 
 	// Tail currently polls until the session ends and prints only newly appended

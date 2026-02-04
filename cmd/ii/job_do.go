@@ -301,10 +301,11 @@ func runJobDoTodo(cmd *cobra.Command, todoID string) error {
 
 // interactiveSessionOptions contains the parameters for running an interactive session.
 type interactiveSessionOptions struct {
-	repoPath  string
-	prompt    string
-	model     string
-	agentKind jobAgentKind
+	repoPath      string
+	workspacePath string
+	prompt        string
+	model         string
+	agentKind     jobAgentKind
 }
 
 // interactiveSessionResult contains the result of an interactive session.
@@ -333,7 +334,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 
 	handle, err := runner.Run(ctx, agents.RunOptions{
 		RepoPath:  opts.repoPath,
-		WorkDir:   opts.repoPath,
+		WorkDir:   opts.workspacePath,
 		Prompt:    opts.prompt,
 		Model:     opts.model,
 		StartedAt: time.Now(),
@@ -393,10 +394,11 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	// otherwise the agent store will resolve the model via priority chain
 	// (INCREMENTUM_AGENT_MODEL env var -> config implementation-model)
 	result, err := runInteractiveSession(interactiveSessionOptions{
-		repoPath:  repoPath,
-		prompt:    prompt,
-		model:     item.ImplementationModel,
-		agentKind: agentKind,
+		repoPath:      repoPath,
+		workspacePath: repoPath,
+		prompt:        prompt,
+		model:         item.ImplementationModel,
+		agentKind:     agentKind,
 	})
 	if err != nil {
 		return err

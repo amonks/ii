@@ -373,9 +373,15 @@ func (s *Store) FindSession(repoPath, sessionID string) (Session, error) {
 		return Session{}, fmt.Errorf("load state: %w", err)
 	}
 
-	// Try exact match first
+	// Try exact match first. The canonical state key is "<repoName>/<sessionID>".
 	key := repoName + "/" + sessionID
 	if rawSession, ok := st.AgentSessions[key]; ok {
+		return sessionFromState(rawSession), nil
+	}
+
+	// Some call sites may pass the full state key as the session ID ("<repo>/<id>").
+	// Accept that form as well.
+	if rawSession, ok := st.AgentSessions[sessionID]; ok {
 		return sessionFromState(rawSession), nil
 	}
 
@@ -558,8 +564,11 @@ func (s *Store) getRepoNameIfExists(repoPath string) (string, error) {
 		return "", err
 	}
 
+	// Normalize paths for comparison to handle symlink differences (e.g., /var vs /private/var)
+	normalizedRepoPath := paths.NormalizePath(repoPath)
+
 	for name, info := range st.Repos {
-		if info.SourcePath == repoPath {
+		if paths.NormalizePath(info.SourcePath) == normalizedRepoPath {
 			return name, nil
 		}
 	}

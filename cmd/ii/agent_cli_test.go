@@ -9,7 +9,7 @@ import (
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
-func TestAgentTranscriptCommandRemoved(t *testing.T) {
+func TestAgentCLI(t *testing.T) {
 	moduleRoot := findModuleRootForTest(t)
 	configPath := filepath.Join(moduleRoot, "incrementum.toml")
 	configContent, err := os.ReadFile(configPath)
@@ -25,6 +25,9 @@ func TestAgentTranscriptCommandRemoved(t *testing.T) {
 			}
 			configFile := filepath.Join(env.WorkDir, "incrementum.toml")
 			return os.WriteFile(configFile, configContent, 0644)
+		},
+		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+			"runbg": testsupport.CmdRunBG,
 		},
 	})
 }
