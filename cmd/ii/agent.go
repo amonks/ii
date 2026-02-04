@@ -36,15 +36,6 @@ var agentTailCmd = &cobra.Command{
 	RunE:  runAgentTail,
 }
 
-// agentTranscriptCmd remains as an alias for logs (readable view) for now; it is hidden.
-var agentTranscriptCmd = &cobra.Command{
-	Use:    "transcript <session-id>",
-	Short:  "Show readable transcript of agent session (deprecated; use 'ii agent logs')",
-	Args:   cobra.ExactArgs(1),
-	Hidden: true,
-	RunE:   runAgentTranscript,
-}
-
 var agentLogsJSON bool
 var agentTailJSON bool
 
@@ -53,7 +44,7 @@ var agentListAll bool
 
 func init() {
 	rootCmd.AddCommand(agentCmd)
-	agentCmd.AddCommand(agentListCmd, agentLogsCmd, agentTranscriptCmd, agentTailCmd)
+	agentCmd.AddCommand(agentListCmd, agentLogsCmd, agentTailCmd)
 
 	agentListCmd.Flags().BoolVar(&agentListJSON, "json", false, "Output as JSON")
 	listflags.AddAllFlag(agentListCmd, &agentListAll)
@@ -103,21 +94,6 @@ func runAgentLogs(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(logContent)
 		return nil
-	}
-
-	transcript, err := store.Transcript(repoPath, args[0])
-	if err != nil {
-		return err
-	}
-
-	fmt.Print(transcript)
-	return nil
-}
-
-func runAgentTranscript(cmd *cobra.Command, args []string) error {
-	store, repoPath, err := openAgentStoreAndRepoPath()
-	if err != nil {
-		return err
 	}
 
 	transcript, err := store.Transcript(repoPath, args[0])

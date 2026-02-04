@@ -1,0 +1,10 @@
+# Ensure deprecated `ii agent transcript` is removed.
+
+# setup repo and copy the real config
+mkdir repo
+cd repo
+exec jj git init
+cp $WORK/incrementum.toml incrementum.toml
+
+exec $II agent transcript some-id
+! stderr 'unknown command'
