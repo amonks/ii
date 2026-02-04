@@ -25,6 +25,8 @@ func openAgentStoreAndRepoPath() (*agent.Store, string, error) {
 	return store, repoPath, nil
 }
 
+var makeAgentRunnerFunc = makeAgentRunner
+
 // makeRunLLMFunc creates an LLM run function for use with job.RunOptions.RunLLM.
 func makeRunLLMFunc(repoPath string, runner agents.Runner) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
 	return func(opts jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error) {

@@ -579,6 +579,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		Model:         model,
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
+		Env:           agentRunEnv(),
 	}
 	runAttempt := func() (AgentRunResult, error) {
 		result, err := runLLMWithEvents(opts, runOpts, "implement")
@@ -793,6 +794,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		Model:         model,
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
+		Env:           agentRunEnv(),
 	}, purpose)
 	if err != nil {
 		return ReviewingStageResult{}, err

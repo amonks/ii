@@ -374,6 +374,7 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
+			Env:           agentRunEnv(),
 		}
 		runAttempt := func() (AgentRunResult, error) {
 			result, err := runLLMWithEvents(ctx.opts.toRunOptions(), runOpts, "implement")
@@ -565,6 +566,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
+			Env:           agentRunEnv(),
 		}, "review")
 		if err != nil {
 			return Job{}, err

@@ -204,6 +204,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		Model:       model,
 		Permissions: defaultBashPermissions(),
 		WorkDir:     opts.WorkDir,
+		Env:         opts.Env,
 		SessionID:   sessionID,
 		Version:     opts.Version,
 	}

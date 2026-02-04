@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/amonks/incrementum/agents"
 	"github.com/amonks/incrementum/internal/jj"
+	"github.com/amonks/incrementum/internal/todoenv"
 	jobpkg "github.com/amonks/incrementum/job"
 	"github.com/amonks/incrementum/todo"
 	"github.com/spf13/cobra"
@@ -416,6 +419,72 @@ func TestRunDesignTodoDoesNotMarkDoneOnNonZeroExit(t *testing.T) {
 	}
 	if items[0].Status == todo.StatusDone {
 		t.Fatal("expected todo NOT to be marked as done after failed session")
+	}
+}
+
+type fakeInteractiveRunner struct {
+	capture func(agents.RunOptions)
+}
+
+func (r fakeInteractiveRunner) Run(ctx context.Context, opts agents.RunOptions) (agents.RunHandle, error) {
+	if r.capture != nil {
+		r.capture(opts)
+	}
+	events := make(chan agents.Event)
+	close(events)
+	return fakeInteractiveHandle{
+		events: events,
+		result: agents.RunResult{SessionID: "fake-session", ExitCode: 0},
+	}, nil
+}
+
+type fakeInteractiveHandle struct {
+	events chan agents.Event
+	result agents.RunResult
+}
+
+func (h fakeInteractiveHandle) Events() <-chan agents.Event {
+	return h.events
+}
+
+func (h fakeInteractiveHandle) Wait() (agents.RunResult, error) {
+	return h.result, nil
+}
+
+func TestDefaultRunInteractiveSessionSetsProposerEnv(t *testing.T) {
+	originalRunnerFactory := makeAgentRunnerFunc
+	defer func() { makeAgentRunnerFunc = originalRunnerFactory }()
+
+	var gotEnv []string
+	makeAgentRunnerFunc = func(repoPath string, kind jobAgentKind) (agents.Runner, error) {
+		return fakeInteractiveRunner{
+			capture: func(opts agents.RunOptions) {
+				gotEnv = opts.Env
+			},
+		}, nil
+	}
+
+	repoPath := setupJobDoTestRepo(t)
+	_, err := defaultRunInteractiveSession(interactiveSessionOptions{
+		repoPath:  repoPath,
+		prompt:    "test",
+		model:     "",
+		agentKind: jobAgentInternal,
+	})
+	if err != nil {
+		t.Fatalf("defaultRunInteractiveSession failed: %v", err)
+	}
+
+	want := todoenv.ProposerEnvVar + "=true"
+	found := false
+	for _, entry := range gotEnv {
+		if entry == want {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected env %q, got %v", want, gotEnv)
 	}
 }
 

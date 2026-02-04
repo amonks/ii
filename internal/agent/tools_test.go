@@ -112,6 +112,31 @@ func TestToolExecutor_Bash(t *testing.T) {
 			t.Errorf("expected pwd to contain %q, got %q", tmpDir, text)
 		}
 	})
+
+	t.Run("environment variables", func(t *testing.T) {
+		envExecutor := &toolExecutor{
+			workDir: tmpDir,
+			permissions: BashPermissions{
+				Rules: []BashRule{
+					{Pattern: "*", Allow: true},
+				},
+			},
+			env: []string{"INCREMENTUM_TODO_PROPOSER=true"},
+		}
+		tc := llm.ToolCall{
+			ID:        "tc6",
+			Name:      "bash",
+			Arguments: map[string]any{"command": "echo $INCREMENTUM_TODO_PROPOSER"},
+		}
+		result := envExecutor.executeTool(context.Background(), tc)
+		if result.IsError {
+			t.Errorf("unexpected error: %v", getToolResultText(result))
+		}
+		text := strings.TrimSpace(getToolResultText(result))
+		if text != "true" {
+			t.Errorf("expected env var to be 'true', got %q", text)
+		}
+	})
 }
 
 func TestToolExecutor_Read(t *testing.T) {

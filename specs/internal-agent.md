@@ -31,6 +31,7 @@ type AgentConfig struct {
     Model       llm.Model
     Permissions BashPermissions
     WorkDir     string
+    Env         []string
 }
 
 type RunHandle struct {

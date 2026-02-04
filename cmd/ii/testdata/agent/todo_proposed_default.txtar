@@ -1,0 +1,16 @@
+# Test that agent tool-created todos default to proposed status.
+
+# setup repo and config
+mkdir repo
+cd repo
+exec jj git init
+cp ../incrementum.toml incrementum.toml
+
+# Run agent asking it to create a todo via the bash tool
+exec $II agent run --model claude-haiku-4-5 'Use the bash tool to run: $II todo create --title Agent_proposed_todo'
+
+# Verify the todo status defaults to proposed
+exec $II todo list --json
+todoid stdout 'Agent_proposed_todo' TODO_ID
+exec $II todo show $TODO_ID --json
+stdout '"status": "proposed"'

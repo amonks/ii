@@ -65,6 +65,7 @@ type AgentConfig struct {
     Model       llm.Model
     Permissions BashPermissions
     WorkDir     string // Working directory for tools
+    Env         []string // Extra environment variables for tool execution
 }
 ```
 
@@ -114,7 +115,8 @@ Parameters:
 - `timeout` (int, optional): Timeout in seconds, default 120
 
 Returns stdout/stderr. Command is checked against bash permissions before
-execution; denied commands return an error result.
+execution; denied commands return an error result. Commands inherit the current
+process environment plus any `AgentConfig.Env` entries.
 
 ### read
 
@@ -309,7 +311,7 @@ type RunOptions struct {
     Prompt    string
     Model     string    // Model ID; resolved via priority chain
     StartedAt time.Time
-    Env       []string  // Additional environment variables (TODO: not yet implemented)
+    Env       []string  // Additional environment variables passed to tool executions
 }
 ```
 

@@ -66,6 +66,7 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 	executor := &toolExecutor{
 		workDir:     workDir,
 		permissions: config.Permissions,
+		env:         config.Env,
 	}
 
 	// Track aggregate usage

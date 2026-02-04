@@ -121,7 +121,7 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		return err
 	}
 
-	runner, err := makeAgentRunner(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
 	if err != nil {
 		return err
 	}

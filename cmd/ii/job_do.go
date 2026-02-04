@@ -13,6 +13,7 @@ import (
 	"github.com/amonks/incrementum/habit"
 	"github.com/amonks/incrementum/internal/editor"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"github.com/amonks/incrementum/internal/todoenv"
 	jobpkg "github.com/amonks/incrementum/job"
 	"github.com/amonks/incrementum/todo"
 	"github.com/muesli/reflow/wordwrap"
@@ -169,7 +170,7 @@ func runHabitJob(cmd *cobra.Command) error {
 		return err
 	}
 
-	runner, err := makeAgentRunner(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
 	if err != nil {
 		return err
 	}
@@ -313,7 +314,7 @@ type interactiveSessionResult struct {
 
 // defaultRunInteractiveSession runs an interactive agent session.
 func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSessionResult, error) {
-	runner, err := makeAgentRunner(opts.repoPath, opts.agentKind)
+	runner, err := makeAgentRunnerFunc(opts.repoPath, opts.agentKind)
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
@@ -337,6 +338,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		Model:     opts.model,
 		StartedAt: time.Now(),
 		Version:   buildCommitID,
+		Env:       []string{todoenv.ProposerEnvVar + "=true"},
 	})
 	if err != nil {
 		return interactiveSessionResult{}, err
@@ -449,7 +451,7 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		return err
 	}
 
-	runner, err := makeAgentRunner(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/amonks/incrementum/agent"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"github.com/amonks/incrementum/internal/todoenv"
 	"github.com/amonks/incrementum/llm"
 	"github.com/spf13/cobra"
 )
@@ -67,6 +68,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 		Model:     agentRunModel,
 		StartedAt: time.Now(),
 		Version:   buildCommitID,
+		Env:       []string{todoenv.ProposerEnvVar + "=true"},
 	})
 	if err != nil {
 		return err

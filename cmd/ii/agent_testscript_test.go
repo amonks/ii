@@ -69,6 +69,9 @@ func TestAgentScripts(t *testing.T) {
 			}
 			return nil
 		},
+		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+			"todoid": testsupport.CmdTodoID,
+		},
 	})
 }
 

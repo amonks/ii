@@ -7,6 +7,7 @@ import (
 	"github.com/amonks/incrementum/agents"
 	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"github.com/amonks/incrementum/internal/todoenv"
 )
 
 // AgentRunOptions configures an LLM run for job execution.
@@ -24,6 +25,10 @@ type AgentRunOptions struct {
 type AgentRunResult struct {
 	SessionID string
 	ExitCode  int
+}
+
+func agentRunEnv() []string {
+	return []string{todoenv.ProposerEnvVar + "=true"}
 }
 
 // AgentSession identifies an LLM session within a job.

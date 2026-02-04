@@ -98,6 +98,7 @@ func builtInTools() []llm.Tool {
 type toolExecutor struct {
 	workDir     string
 	permissions BashPermissions
+	env         []string
 }
 
 // executeTool executes a tool call and returns the result.
@@ -162,6 +163,9 @@ func (e *toolExecutor) executeBash(ctx context.Context, args map[string]any) (st
 	// Execute command
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	cmd.Dir = e.workDir
+	if len(e.env) > 0 {
+		cmd.Env = append(os.Environ(), e.env...)
+	}
 
 	// Capture both stdout and stderr
 	var stdout, stderr bytes.Buffer

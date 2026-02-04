@@ -21,6 +21,9 @@ type AgentConfig struct {
 	// If empty, the current working directory is used.
 	WorkDir string
 
+	// Env contains additional environment variables for tool execution.
+	Env []string
+
 	// SessionID is an optional identifier for grouping related API requests
 	// into sessions for observability purposes.
 	SessionID string

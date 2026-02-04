@@ -89,6 +89,8 @@ Fields (JSON keys):
 - Defaults: `type=task`, `priority=medium` (2), `status=open`.
 - If `INCREMENTUM_TODO_PROPOSER=true` is set in the CLI environment, the default
   status is `proposed` instead.
+- Agent runs set `INCREMENTUM_TODO_PROPOSER=true` for tool commands, so todos
+  created by the agent default to `proposed`.
 - Type inputs are case-insensitive and stored as lowercase.
 - Editor mode is used by default only when no create fields are supplied; use `--edit` to force it or `--no-edit` to skip it.
 - CLI description input via `--description -` / `--desc -` trims trailing CR/LF characters.
