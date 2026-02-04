@@ -7,8 +7,7 @@ repo_root=$(cd "${script_dir}/.." && pwd)
 
 change_id=$(cd "$repo_root" && jj log -r @ -T change_id --no-graph)
 commit_id=$(cd "$repo_root" && jj log -r @ -T commit_id --no-graph)
-pkg="github.com/amonks/incrementum/cmd/ii"
-ldflags="-X ${pkg}.buildChangeID=${change_id} -X ${pkg}.buildCommitID=${commit_id}"
+ldflags="-X main.buildChangeID=${change_id} -X main.buildCommitID=${commit_id}"
 
 cd "$repo_root"
 go install -ldflags "$ldflags" ./cmd/ii
