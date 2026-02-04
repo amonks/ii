@@ -179,11 +179,63 @@ for relative path resolution.
 
 ## AGENTS.md (agent prelude)
 
-If an `AGENTS.md` file exists in the agent working directory, its contents are prepended
-to the *first user message* in the session (followed by a blank line). This allows repos
-to provide persistent, local instructions without changing the global system prompt.
+Context files (`AGENTS.md` or `CLAUDE.md`) provide persistent, local instructions to the
+agent without changing the global system prompt. The agent discovers and loads these files
+following a specific order, concatenating their contents into a prelude for the first user
+message.
 
-If `AGENTS.md` is missing or empty, nothing is added.
+### Discovery Order
+
+1. **Global config directory** (`~/.config/incrementum/`): If an `AGENTS.md` or `CLAUDE.md`
+   file exists here, it is loaded first.
+
+2. **Ancestor directories**: Starting from the filesystem root and walking down to the
+   working directory, any `AGENTS.md` or `CLAUDE.md` files found are collected in order
+   (root to working directory).
+
+Within each directory, `AGENTS.md` takes precedence over `CLAUDE.md` (if both exist,
+only `AGENTS.md` is used).
+
+### Path Handling
+
+- The working directory is resolved to an absolute, cleaned path before ancestor traversal.
+  This ensures that relative paths (e.g., `.` or `./subdir`) are handled correctly.
+- Returned `ContextFile.Path` values are canonicalized (absolute + cleaned).
+- Deduplication uses canonicalized paths, so the same file won't be included twice even
+  if accessed via different textual path representations (e.g., `/a/b/..` vs `/a`).
+  Note: symlinks are not resolved, so different symlinks pointing to the same file may
+  result in duplicate content.
+
+### Concatenation
+
+All discovered context files are concatenated in discovery order (global first, then
+ancestors from root to working directory), separated by blank lines. The combined
+content is prepended to the *first user message* in the session.
+
+### Example
+
+Given this directory structure:
+```
+~/.config/incrementum/
+  AGENTS.md           # "Global instructions"
+/home/user/projects/
+  AGENTS.md           # "Project-wide rules"
+/home/user/projects/myapp/
+  CLAUDE.md           # "App-specific context"
+/home/user/projects/myapp/src/
+  (working directory, no context file)
+```
+
+The agent prelude would be:
+```
+Global instructions
+
+Project-wide rules
+
+App-specific context
+```
+
+If no context files are found, nothing is added to the user message.
 
 ## Event Streaming
 

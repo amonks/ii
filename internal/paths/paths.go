@@ -70,6 +70,11 @@ func DefaultJobEventsDir() (string, error) {
 	return defaultHomeDirPath(".local", "share", "incrementum", "jobs", "events")
 }
 
+// DefaultConfigDir returns the default incrementum config directory.
+func DefaultConfigDir() (string, error) {
+	return defaultHomeDirPath(".config", "incrementum")
+}
+
 // HomeDir returns the current user's home directory.
 func HomeDir() (string, error) {
 	home, err := os.UserHomeDir()

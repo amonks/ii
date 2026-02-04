@@ -199,14 +199,21 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		return nil, fmt.Errorf("save session: %w", err)
 	}
 
+	// Resolve global config directory for AGENTS.md support
+	globalConfigDir, err := paths.DefaultConfigDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolve global config dir: %w", err)
+	}
+
 	// Configure agent
 	agentConfig := AgentConfig{
-		Model:       model,
-		Permissions: defaultBashPermissions(),
-		WorkDir:     opts.WorkDir,
-		Env:         opts.Env,
-		SessionID:   sessionID,
-		Version:     opts.Version,
+		Model:           model,
+		Permissions:     defaultBashPermissions(),
+		WorkDir:         opts.WorkDir,
+		GlobalConfigDir: globalConfigDir,
+		Env:             opts.Env,
+		SessionID:       sessionID,
+		Version:         opts.Version,
 	}
 
 	// Start internal agent

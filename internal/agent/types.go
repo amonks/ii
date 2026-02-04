@@ -21,6 +21,11 @@ type AgentConfig struct {
 	// If empty, the current working directory is used.
 	WorkDir string
 
+	// GlobalConfigDir is the global config directory (e.g., ~/.config/incrementum)
+	// for loading global AGENTS.md or CLAUDE.md files.
+	// If empty, no global context is loaded.
+	GlobalConfigDir string
+
 	// Env contains additional environment variables for tool execution.
 	Env []string
 

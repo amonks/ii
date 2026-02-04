@@ -46,7 +46,7 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 	events <- AgentStartEvent{Config: config}
 
 	// Initialize conversation with user message
-	prelude, err := agentsPrelude(workDir)
+	prelude, err := agentsPrelude(workDir, config.GlobalConfigDir)
 	if err != nil {
 		result <- RunResult{Error: err}
 		return
