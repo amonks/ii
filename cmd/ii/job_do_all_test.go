@@ -123,6 +123,90 @@ func TestNextJobDoAllTodoIDRespectsPriorityFilter(t *testing.T) {
 	}
 }
 
+func TestJobDoAllAgentFlagParsing(t *testing.T) {
+	resetJobDoAllGlobals()
+
+	cases := []struct {
+		name      string
+		flagValue string
+		wantKind  jobAgentKind
+		wantErr   bool
+	}{
+		{"default", "", jobAgentInternal, false},
+		{"internal", "internal", jobAgentInternal, false},
+		{"claude", "claude", jobAgentClaude, false},
+		{"codex", "codex", jobAgentCodex, false},
+		{"Claude uppercase", "Claude", jobAgentClaude, false},
+		{"invalid", "invalid", "", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resetJobDoAllGlobals()
+			cmd := newTestJobDoAllCommand()
+			if tc.flagValue != "" {
+				if err := cmd.Flags().Set("agent", tc.flagValue); err != nil {
+					t.Fatalf("set agent flag: %v", err)
+				}
+			}
+
+			kind, err := parseJobDoAgentKind(cmd)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if kind != tc.wantKind {
+				t.Fatalf("expected %q, got %q", tc.wantKind, kind)
+			}
+		})
+	}
+}
+
+// TestParseJobDoAgentKindReadsFromPassedCommand verifies that parseJobDoAgentKind
+// reads the --agent flag from the command that is passed to it, not from global
+// state or from a different command's flags.
+func TestParseJobDoAgentKindReadsFromPassedCommand(t *testing.T) {
+	resetJobDoAllGlobals()
+
+	// Create two independent commands with their own --agent flags
+	var agentA, agentB string
+	cmdA := &cobra.Command{}
+	cmdA.Flags().StringVar(&agentA, "agent", "", "Agent backend")
+	cmdB := &cobra.Command{}
+	cmdB.Flags().StringVar(&agentB, "agent", "", "Agent backend")
+
+	// Set different values on each command
+	if err := cmdA.Flags().Set("agent", "claude"); err != nil {
+		t.Fatalf("set agent on cmdA: %v", err)
+	}
+	if err := cmdB.Flags().Set("agent", "codex"); err != nil {
+		t.Fatalf("set agent on cmdB: %v", err)
+	}
+
+	// parseJobDoAgentKind should read from cmdA's flags when passed cmdA
+	kindA, err := parseJobDoAgentKind(cmdA)
+	if err != nil {
+		t.Fatalf("parseJobDoAgentKind(cmdA): %v", err)
+	}
+	if kindA != jobAgentClaude {
+		t.Fatalf("expected claude from cmdA, got %q", kindA)
+	}
+
+	// parseJobDoAgentKind should read from cmdB's flags when passed cmdB
+	kindB, err := parseJobDoAgentKind(cmdB)
+	if err != nil {
+		t.Fatalf("parseJobDoAgentKind(cmdB): %v", err)
+	}
+	if kindB != jobAgentCodex {
+		t.Fatalf("expected codex from cmdB, got %q", kindB)
+	}
+}
+
 // nextJobDoAllTodoIDFromList is a test helper that applies the filter logic
 // to a pre-loaded list of todos, matching the logic in nextJobDoAllTodoID.
 func nextJobDoAllTodoIDFromList(todos []todo.Todo, filter jobDoAllFilter) (string, error) {
@@ -148,11 +232,15 @@ type mockReadyStore struct {
 func resetJobDoAllGlobals() {
 	jobDoAllPriority = -1
 	jobDoAllType = ""
+	jobDoAllAgent = ""
+	jobDoAllHabits = false
 }
 
 func newTestJobDoAllCommand() *cobra.Command {
 	cmd := &cobra.Command{RunE: runJobDoAll}
 	cmd.Flags().IntVar(&jobDoAllPriority, "priority", -1, "Filter by priority (0-4, includes higher priorities)")
 	cmd.Flags().StringVar(&jobDoAllType, "type", "", "Filter by type (task, bug, feature); design todos are excluded")
+	cmd.Flags().StringVar(&jobDoAllAgent, "agent", "", "Agent backend (internal, claude, codex)")
+	cmd.Flags().BoolVar(&jobDoAllHabits, "habits", false, "Run habits after todo queue is empty (round-robin)")
 	return cmd
 }

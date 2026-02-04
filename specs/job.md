@@ -410,13 +410,15 @@ When `--habit` is provided, the workflow differs from regular todos:
 Habits skip the project review stage. The commit message includes the full habit
 instructions text.
 
-### `ii job do-all [--priority <n>] [--type <type>]`
+### `ii job do-all [--priority <n>] [--type <type>] [--agent <backend>]`
 
 Run jobs for all ready todos that match the provided filters.
 
 - `--priority` filters by maximum priority; `--priority=1` includes priority 0
   and 1 todos (priority 0 first).
 - `--type` filters by exact todo type (`task`, `bug`, `feature`).
+- `--agent` selects the agent backend (`internal`, `claude`, `codex`); it does not
+  override model selection. Same as `ii job do --agent`.
 
 Behavior:
 

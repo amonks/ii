@@ -82,7 +82,15 @@ func init() {
 }
 
 func parseJobDoAgentKind(cmd *cobra.Command) (jobAgentKind, error) {
-	value := internalstrings.NormalizeLowerTrimSpace(jobDoAgent)
+	// Read the --agent flag from the command that was passed. This allows
+	// both ii job do and ii job do-all to define their own --agent flag and
+	// have this function parse whichever command is being executed.
+	value, err := cmd.Flags().GetString("agent")
+	if err != nil {
+		// Flag not defined on this command - use default
+		return jobAgentInternal, nil
+	}
+	value = internalstrings.NormalizeLowerTrimSpace(value)
 	if value == "" {
 		return jobAgentInternal, nil
 	}
