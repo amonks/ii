@@ -169,7 +169,7 @@ func TestFormatHabitCommitMessageWithReviewComments(t *testing.T) {
 }
 
 func TestNewHabitPromptData(t *testing.T) {
-	data := newHabitPromptData("cleanup", "Clean up code.", "", "", nil, nil, "/path/to/repo")
+	data := newHabitPromptData("cleanup", "Clean up code.", "", "", nil, "/path/to/repo")
 
 	if data.HabitName != "cleanup" {
 		t.Errorf("HabitName = %q, want %q", data.HabitName, "cleanup")

@@ -357,7 +357,7 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		if !internalstrings.IsBlank(current.Feedback) {
 			promptName = "prompt-feedback.tmpl"
 		}
-		prompt, err := renderHabitPromptTemplate(ctx.habit, current.Feedback, ctx.commitMessage, nil, nil, promptName, ctx.workspacePath)
+		prompt, err := renderHabitPromptTemplate(ctx.habit, current.Feedback, ctx.commitMessage, nil, promptName, ctx.workspacePath)
 		if err != nil {
 			return Job{}, err
 		}
@@ -550,7 +550,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			return Job{}, err
 		}
 		promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-		data := newHabitPromptData(ctx.habit.Name, ctx.habit.Instructions, "", message, nil, nil, ctx.workspacePath)
+		data := newHabitPromptData(ctx.habit.Name, ctx.habit.Instructions, "", message, nil, ctx.workspacePath)
 		prompt, err := RenderPrompt(ctx.workspacePath, promptTemplate, data)
 		if err != nil {
 			return Job{}, err
@@ -766,12 +766,12 @@ func resolveHabitModel(cfg *config.Config, override, habitModel, purpose string)
 	return internalstrings.TrimSpace(model)
 }
 
-func renderHabitPromptTemplate(h *habit.Habit, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
+func renderHabitPromptTemplate(h *habit.Habit, feedback, message string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
 		return "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newHabitPromptData(h.Name, h.Instructions, feedback, message, commitLog, transcripts, workspacePath))
+	return RenderPrompt(workspacePath, prompt, newHabitPromptData(h.Name, h.Instructions, feedback, message, transcripts, workspacePath))
 }
 
 // formatHabitCommitMessage formats a commit message for a habit commit.

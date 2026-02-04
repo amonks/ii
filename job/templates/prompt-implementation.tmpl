@@ -25,11 +25,4 @@ When you make changes, `./.incrementum-commit-message` is the commit message for
 Update it as-necessary. Describe the what _and_ the why. Keep changes focused on
 this current step.
 
-{{if .CommitLog}}We've already made these changes towards completing this todo:
-{{range .CommitLog}}- ID: {{.ID}}
-Message:
-{{.Message}}
-{{end}}
-{{end}}
-
 {{.TodoBlock}}

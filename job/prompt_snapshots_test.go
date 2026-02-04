@@ -56,16 +56,5 @@ func promptSnapshotData() PromptData {
 	message := "feat: snapshot text formatting\n\n" +
 		"Add snapshot tests for prompts and commit messages, ensuring wrapping for long lines and bulleted lists stays consistent."
 
-	commitLog := []CommitLogEntry{
-		{
-			ID:      "abc1234",
-			Message: "feat: initial formatting\n\n- Added wordwrap for bullet lists.\n- Preserved indentation for subdocuments.",
-		},
-		{
-			ID:      "def5678",
-			Message: "fix: reflow todo blocks\n\nEnsure long lines wrap within the expected width for logs and prompts.",
-		},
-	}
-
-	return newPromptData(item, feedback, message, commitLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"))
+	return newPromptData(item, feedback, message, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"))
 }

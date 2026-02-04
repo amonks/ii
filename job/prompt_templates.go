@@ -60,7 +60,6 @@ func promptTemplateVariables() []PromptTemplateVariable {
 		{Name: "Todo", Type: "todo.Todo"},
 		{Name: "Feedback", Type: "string"},
 		{Name: "Message", Type: "string"},
-		{Name: "CommitLog", Type: "[]CommitLogEntry"},
 		{Name: "AgentTranscripts", Type: "[]AgentTranscript"},
 		{Name: "WorkspacePath", Type: "string"},
 		{Name: "ReviewInstructions", Type: "string"},

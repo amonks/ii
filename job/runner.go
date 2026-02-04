@@ -68,7 +68,6 @@ type RunOptions struct {
 type RunResult struct {
 	Job           Job
 	CommitMessage string
-	CommitLog     []CommitLogEntry
 }
 
 type reviewScope int
@@ -393,7 +392,7 @@ func (ctx *runContext) runImplementingStage(current Job) func() (Job, error) {
 		}
 		ctx.item = item
 
-		result, err := runImplementingStage(ctx.manager, current, ctx.item, ctx.repoPath, ctx.workspacePath, ctx.opts, ctx.result.CommitLog, ctx.commitMessage)
+		result, err := runImplementingStage(ctx.manager, current, ctx.item, ctx.repoPath, ctx.workspacePath, ctx.opts, ctx.commitMessage)
 		if err != nil {
 			return Job{}, err
 		}
@@ -411,7 +410,7 @@ func (ctx *runContext) runTestingStage(current Job) func() (Job, error) {
 
 func (ctx *runContext) runReviewingStage(current Job) func() (Job, error) {
 	return func() (Job, error) {
-		result, err := runReviewingStage(ctx.manager, current, ctx.item, ctx.repoPath, ctx.workspacePath, ctx.opts, ctx.commitMessage, ctx.result.CommitLog, ctx.reviewScope)
+		result, err := runReviewingStage(ctx.manager, current, ctx.item, ctx.repoPath, ctx.workspacePath, ctx.opts, ctx.commitMessage, ctx.reviewScope)
 		if err != nil {
 			return result.Job, err
 		}
@@ -531,7 +530,7 @@ func todoModelForPurpose(item todo.Todo, purpose string) string {
 	}
 }
 
-func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPath, workspacePath string, opts RunOptions, commitLog []CommitLogEntry, previousMessage string) (ImplementingStageResult, error) {
+func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPath, workspacePath string, opts RunOptions, previousMessage string) (ImplementingStageResult, error) {
 	logger := resolveLogger(opts.Logger)
 	updateStaleWorkspace(opts.UpdateStale, workspacePath)
 	feedbackPath := filepath.Join(workspacePath, feedbackFilename)
@@ -566,7 +565,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 			return ImplementingStageResult{}, err
 		}
 	}
-	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, commitLog, nil, promptName, workspacePath)
+	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, nil, promptName, workspacePath)
 	if err != nil {
 		return ImplementingStageResult{}, err
 	}
@@ -757,7 +756,7 @@ func runTestingStage(manager *Manager, current Job, repoPath, workspacePath stri
 	return updated, nil
 }
 
-func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, workspacePath string, opts RunOptions, commitMessage string, commitLog []CommitLogEntry, scope reviewScope) (ReviewingStageResult, error) {
+func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, workspacePath string, opts RunOptions, commitMessage string, scope reviewScope) (ReviewingStageResult, error) {
 	logger := resolveLogger(opts.Logger)
 	updateStaleWorkspace(opts.UpdateStale, workspacePath)
 	feedbackPath := filepath.Join(workspacePath, feedbackFilename)
@@ -783,7 +782,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 	promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, commitLog, nil, workspacePath))
+	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, nil, workspacePath))
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -932,12 +931,6 @@ func runCommittingStage(opts CommittingStageOptions) (Job, error) {
 		return Job{}, err
 	}
 
-	commitID, err := opts.RunOptions.CommitIDAt(opts.WorkspacePath, "@-")
-	if err != nil {
-		return Job{}, err
-	}
-	opts.Result.CommitLog = append(opts.Result.CommitLog, CommitLogEntry{ID: commitID, Message: message})
-
 	nextStage := StageImplementing
 	updated, err := opts.Manager.Update(opts.Current.ID, UpdateOptions{Stage: &nextStage}, opts.RunOptions.Now())
 	if err != nil {
@@ -1021,12 +1014,12 @@ func diffStatHasChanges(diffStat string) bool {
 	return seenChangeLine
 }
 
-func renderPromptTemplate(item todo.Todo, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
+func renderPromptTemplate(item todo.Todo, feedback, message string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
 		return "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, commitLog, transcripts, workspacePath))
+	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, transcripts, workspacePath))
 }
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {

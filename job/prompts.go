@@ -29,7 +29,6 @@ type PromptData struct {
 	Todo               todo.Todo
 	Feedback           string
 	Message            string
-	CommitLog          []CommitLogEntry
 	AgentTranscripts   []AgentTranscript
 	WorkspacePath      string
 	ReviewInstructions string
@@ -42,12 +41,11 @@ type PromptData struct {
 	HabitInstructions string
 }
 
-func newPromptData(item todo.Todo, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, workspacePath string) PromptData {
+func newPromptData(item todo.Todo, feedback, message string, transcripts []AgentTranscript, workspacePath string) PromptData {
 	return PromptData{
 		Todo:               item,
 		Feedback:           feedback,
 		Message:            message,
-		CommitLog:          commitLog,
 		AgentTranscripts:   transcripts,
 		WorkspacePath:      workspacePath,
 		ReviewInstructions: reviewInstructionsText,
@@ -58,11 +56,10 @@ func newPromptData(item todo.Todo, feedback, message string, commitLog []CommitL
 }
 
 // newHabitPromptData creates prompt data for a habit run.
-func newHabitPromptData(habitName, habitInstructions, feedback, message string, commitLog []CommitLogEntry, transcripts []AgentTranscript, workspacePath string) PromptData {
+func newHabitPromptData(habitName, habitInstructions, feedback, message string, transcripts []AgentTranscript, workspacePath string) PromptData {
 	return PromptData{
 		Feedback:           feedback,
 		Message:            message,
-		CommitLog:          commitLog,
 		AgentTranscripts:   transcripts,
 		WorkspacePath:      workspacePath,
 		ReviewInstructions: reviewInstructionsText,

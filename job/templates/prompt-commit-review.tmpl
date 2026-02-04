@@ -3,13 +3,6 @@ towards our todo and is described by the commit message below.
 
 {{.CommitMessageBlock}}
 
-{{if .CommitLog}}Previous commits for this todo:
-{{range .CommitLog}}- ID: {{.ID}}
-Message:
-{{.Message}}
-{{end}}
-{{end}}
-
 Review the changes:
 {{template "review_questions"}}
 

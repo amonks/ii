@@ -76,7 +76,7 @@ func TestRunImplementingStageUpdatesStaleWorkspace(t *testing.T) {
 		Priority:    todo.PriorityMedium,
 	}
 
-	result, err := runImplementingStage(manager, created, item, repoPath, workspacePath, opts, nil, "")
+	result, err := runImplementingStage(manager, created, item, repoPath, workspacePath, opts, "")
 	if err != nil {
 		t.Fatalf("run implementing stage: %v", err)
 	}
@@ -153,7 +153,7 @@ func TestRunImplementingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 		Priority:    todo.PriorityMedium,
 	}
 
-	result, err := runImplementingStage(manager, created, item, repoPath, workspacePath, opts, nil, "")
+	result, err := runImplementingStage(manager, created, item, repoPath, workspacePath, opts, "")
 	if err != nil {
 		t.Fatalf("run implementing stage: %v", err)
 	}
@@ -215,7 +215,7 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 	}
 
 	commitMessage := "fix: stale review"
-	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, nil, reviewScopeStep)
+	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, reviewScopeStep)
 	if err != nil {
 		t.Fatalf("run reviewing stage: %v", err)
 	}
@@ -277,7 +277,7 @@ func TestRunReviewingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 	}
 
 	commitMessage := "fix: snapshot review"
-	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, nil, reviewScopeStep)
+	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, reviewScopeStep)
 	if err != nil {
 		t.Fatalf("run reviewing stage: %v", err)
 	}

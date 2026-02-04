@@ -8,21 +8,6 @@ Commit message
     Add snapshot tests for prompts and commit messages, ensuring wrapping for
     long lines and bulleted lists stays consistent.
 
-Previous commits for this todo:
-- ID: abc1234
-Message:
-feat: initial formatting
-
-- Added wordwrap for bullet lists.
-- Preserved indentation for subdocuments.
-- ID: def5678
-Message:
-fix: reflow todo blocks
-
-Ensure long lines wrap within the expected width for logs and prompts.
-
-
-
 Review the changes:
 - Does it do what the message says?
 - Does it move us towards the goal in the todo?

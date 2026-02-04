@@ -36,21 +36,6 @@ When you make changes, `./.incrementum-commit-message` is the commit message for
 Update it as-necessary. Describe the what _and_ the why. Keep changes focused on
 this current step.
 
-We've already made these changes towards completing this todo:
-- ID: abc1234
-Message:
-feat: initial formatting
-
-- Added wordwrap for bullet lists.
-- Preserved indentation for subdocuments.
-- ID: def5678
-Message:
-fix: reflow todo blocks
-
-Ensure long lines wrap within the expected width for logs and prompts.
-
-
-
 Todo
 
     ID: todo-57uzut5r

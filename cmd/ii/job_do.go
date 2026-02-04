@@ -521,29 +521,10 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		return streamErr
 	}
 
-	if len(result.CommitLog) > 0 {
-		fmt.Printf("\n%s\n", formatCommitMessagesOutput(result.CommitLog))
-	} else if !internalstrings.IsBlank(result.CommitMessage) {
+	if !internalstrings.IsBlank(result.CommitMessage) {
 		fmt.Printf("\n%s\n", formatCommitMessageOutput(result.CommitMessage))
 	}
 	return nil
-}
-
-func formatCommitMessagesOutput(entries []jobpkg.CommitLogEntry) string {
-	var out strings.Builder
-	out.WriteString("Commit messages:\n")
-	for _, entry := range entries {
-		out.WriteString("\n")
-		label := "Commit"
-		if !internalstrings.IsBlank(entry.ID) {
-			label = fmt.Sprintf("Commit %s", entry.ID)
-		}
-		out.WriteString(jobpkg.IndentBlock(label+":", jobDocumentIndent))
-		out.WriteString("\n")
-		out.WriteString(formatCommitMessageBody(entry.Message, jobSubdocumentIndent))
-		out.WriteString("\n")
-	}
-	return internalstrings.TrimTrailingNewlines(out.String())
 }
 
 func formatCommitMessageOutput(message string) string {

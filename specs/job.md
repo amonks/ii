@@ -187,8 +187,8 @@ any stage -> failed (unrecoverable error)
    - If the commit message is required for the step review and missing, fail with
      a descriptive error that calls out the implementation prompt and expected
      `.incrementum-commit-message` location.
-6. Template instructs the agent to inspect changes (or the commit sequence for
-   project review) and write outcome to `.incrementum-feedback`.
+6. Template instructs the agent to inspect changes and write outcome to
+   `.incrementum-feedback`.
 7. Run agent to completion.
 8. Record session in job record with purpose `review` or `project-review`.
 9. If agent returns an error before completion, record a `job.agent.error`
@@ -326,10 +326,8 @@ All prompt templates receive the same data:
   `CreatedAt`, `UpdatedAt`, `ClosedAt`, `DeletedAt`, `DeleteReason`.
 - `Feedback` (`string`)
 - `Message` (`string`)
-- `CommitLog` (`[]CommitLogEntry`): list of commits recorded so far with fields `ID`
-  and `Message`. The `Message` field contains only the draft commit message (summary
-  and body) as written by the agent, not the fully formatted message with todo context
-  and review comments.
+- `AgentTranscripts` (`[]AgentTranscript`): list of transcripts from prior agent
+  sessions in this job.
 - `WorkspacePath` (`string`): absolute path to the job's workspace root.
 - `ReviewInstructions` (`string`): standard review output instructions block.
 - `TodoBlock` (`string`): formatted heading-and-indent block that includes ID, title,

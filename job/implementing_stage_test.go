@@ -54,7 +54,7 @@ func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) 
 		},
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
+	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err == nil {
 		t.Fatal("expected missing commit message error")
 	}
@@ -141,7 +141,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 		Model: "claude-haiku-4-5",
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
+	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err == nil {
 		t.Fatal("expected opencode failure error")
 	}
@@ -230,7 +230,7 @@ func TestRunImplementingStageRetriesOpencodeAfterRestore(t *testing.T) {
 		},
 	}
 
-	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err != nil {
 		t.Fatalf("expected retry to succeed, got %v", err)
 	}
@@ -296,7 +296,7 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChange(t *testing.T) {
 		},
 	}
 
-	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -356,7 +356,7 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 		},
 	}
 
-	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, nil, "")
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

@@ -61,12 +61,6 @@ type JobCommit = statestore.JobCommit
 // JobReview captures a review decision for a commit or the project.
 type JobReview = statestore.JobReview
 
-// CommitLogEntry captures a commit made during the job.
-type CommitLogEntry struct {
-	ID      string
-	Message string
-}
-
 // Job captures job metadata for a todo.
 type Job = statestore.Job
 

@@ -271,7 +271,7 @@ func TestRunImplementingStageLogsPromptAndCommitMessage(t *testing.T) {
 		Logger: logger,
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, nil, "")
+	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, "")
 	if err != nil {
 		t.Fatalf("run implementing stage: %v", err)
 	}
@@ -358,7 +358,7 @@ func TestRunImplementingStageUsesFeedbackPrompt(t *testing.T) {
 		Logger: logger,
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, nil, "feat: previous")
+	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, "feat: previous")
 	if err != nil {
 		t.Fatalf("run implementing stage: %v", err)
 	}
@@ -440,7 +440,7 @@ func TestRunImplementingStageRecordsEventLog(t *testing.T) {
 		EventLog: eventLog,
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, nil, "")
+	_, err = runImplementingStage(manager, current, item, repoPath, workspacePath, opts, "")
 	if err != nil {
 		t.Fatalf("run implementing stage: %v", err)
 	}
@@ -530,7 +530,7 @@ func TestRunReviewingStageLogsFeedback(t *testing.T) {
 		Logger: logger,
 	}
 
-	_, err = runReviewingStage(manager, current, item, repoPath, workspacePath, opts, "feat: review", nil, reviewScopeStep)
+	_, err = runReviewingStage(manager, current, item, repoPath, workspacePath, opts, "feat: review", reviewScopeStep)
 	if err != nil {
 		t.Fatalf("run reviewing stage: %v", err)
 	}

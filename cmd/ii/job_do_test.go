@@ -50,30 +50,6 @@ func TestFormatJobFieldWrapsValue(t *testing.T) {
 	}
 }
 
-func TestFormatCommitMessagesOutputPreservesIndentation(t *testing.T) {
-	entries := []jobpkg.CommitLogEntry{{
-		ID:      "commit-123",
-		Message: "Summary line\n\nHere is a generated commit message:\n\n    Body line\n\nThis commit is a step towards implementing this todo:\n\n    ID: todo-1",
-	}}
-
-	output := formatCommitMessagesOutput(entries)
-	if !strings.Contains(output, "Commit messages:") {
-		t.Fatalf("expected header, got %q", output)
-	}
-	if !strings.Contains(output, "    Commit commit-123:") {
-		t.Fatalf("expected commit id label, got %q", output)
-	}
-	if !strings.Contains(output, "\n        Summary line") {
-		t.Fatalf("expected summary line indentation, got %q", output)
-	}
-	if !strings.Contains(output, "\n            Body line") {
-		t.Fatalf("expected body line indentation, got %q", output)
-	}
-	if !strings.Contains(output, "\n            ID: todo-1") {
-		t.Fatalf("expected commit message indentation preserved, got %q", output)
-	}
-}
-
 func TestFormatCommitMessageOutputIndentsMessage(t *testing.T) {
 	message := "Summary line\n\nHere is a generated commit message:\n\n    Body line\n\nThis commit is a step towards implementing this todo:\n\n    ID: todo-1"
 	output := formatCommitMessageOutput(message)
