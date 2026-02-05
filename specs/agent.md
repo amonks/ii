@@ -559,5 +559,30 @@ The job package uses the agent store:
 3. Call `handle.Wait()` to get the final result
 4. Use the session ID for logging and auditing
 
+### Event Channel Semantics
+
+The `Events` channel is closed when the agent run completes, independently of
+whether `Wait()` has been called. This allows consumers to fully drain events
+before getting the result.
+
+**Important**: The `Wait()` method also drains the `Events` channel internally.
+If you have another goroutine consuming events (e.g., `RecordAgentEvents`),
+calling `Wait()` concurrently creates a race condition where events may be lost
+to the wrong consumer.
+
+When using `RecordAgentEvents` to log events:
+
+```go
+// Correct: Wait for recording to complete before Wait()
+eventErrCh := job.RecordAgentEvents(eventLog, handle.Events())
+eventErr := <-eventErrCh  // Wait for all events to be recorded
+result, err := handle.Wait()  // Now safe - channel already drained and closed
+
+// Incorrect: Race condition - events may be lost
+eventErrCh := job.RecordAgentEvents(eventLog, handle.Events())
+result, err := handle.Wait()  // Races with recording goroutine!
+eventErr := <-eventErrCh
+```
+
 The job runner injects agent runs via a function parameter, allowing tests
 to provide mock implementations.

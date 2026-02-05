@@ -17,13 +17,25 @@ func TestRecordAgentEvents(t *testing.T) {
 	}
 	defer log.Close()
 
-	eventCh := make(chan agent.Event, 3)
+	eventCh := make(chan agent.Event, 10)
 
-	// Simulate agent events
+	// Simulate agent events including tool start/end pairs
 	eventCh <- agent.AgentStartEvent{Config: agent.AgentConfig{
 		Model: llm.Model{ID: "test-model"},
 	}}
 	eventCh <- agent.TurnStartEvent{TurnIndex: 0}
+	eventCh <- agent.ToolExecutionStartEvent{
+		TurnIndex:  0,
+		ToolCallID: "tool-1",
+		ToolName:   "bash",
+		Arguments:  map[string]any{"command": "echo hello"},
+	}
+	eventCh <- agent.ToolExecutionEndEvent{
+		TurnIndex:  0,
+		ToolCallID: "tool-1",
+		ToolName:   "bash",
+		Result:     llm.ToolResultMessage{ToolCallID: "tool-1"},
+	}
 	eventCh <- agent.AgentEndEvent{
 		Messages: nil,
 		Usage:    llm.Usage{Input: 100, Output: 50},
@@ -34,6 +46,32 @@ func TestRecordAgentEvents(t *testing.T) {
 	err = <-errCh
 	if err != nil {
 		t.Fatalf("RecordAgentEvents error: %v", err)
+	}
+
+	// Verify all events were recorded
+	events, err := EventSnapshot("test-job", EventLogOptions{EventsDir: tmpDir})
+	if err != nil {
+		t.Fatalf("EventSnapshot error: %v", err)
+	}
+	if len(events) != 5 {
+		t.Fatalf("expected 5 events, got %d", len(events))
+	}
+
+	// Verify tool start and end events are both present
+	var toolStarts, toolEnds int
+	for _, e := range events {
+		switch e.Name {
+		case "tool.start":
+			toolStarts++
+		case "tool.end":
+			toolEnds++
+		}
+	}
+	if toolStarts != 1 {
+		t.Errorf("expected 1 tool.start event, got %d", toolStarts)
+	}
+	if toolEnds != 1 {
+		t.Errorf("expected 1 tool.end event, got %d", toolEnds)
 	}
 }
 

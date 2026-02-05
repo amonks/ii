@@ -46,15 +46,18 @@ func makeRunLLMFunc(repoPath string, store *agent.Store) (func(jobpkg.AgentRunOp
 			return jobpkg.AgentRunResult{}, err
 		}
 
-		// Record events to job event log
+		// Record events to job event log.
+		// Wait for recording to complete before calling Wait() to avoid a race
+		// condition where both RecordAgentEvents and Wait() consume from the
+		// same events channel.
 		eventErrCh := jobpkg.RecordAgentEvents(opts.EventLog, handle.Events)
-		result, err := handle.Wait()
 		eventErr := <-eventErrCh
-		if err != nil {
-			return jobpkg.AgentRunResult{}, err
-		}
+		result, err := handle.Wait()
 		if eventErr != nil {
 			return jobpkg.AgentRunResult{}, eventErr
+		}
+		if err != nil {
+			return jobpkg.AgentRunResult{}, err
 		}
 
 		return jobpkg.AgentRunResult{
