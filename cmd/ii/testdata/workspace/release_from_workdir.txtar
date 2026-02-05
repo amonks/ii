@@ -21,6 +21,7 @@ stdout 'ws-001'
 # change into the workspace directory and release without providing name
 cd $WORKSPACE_PATH
 exec $II workspace release
+stdout 'released workspace ws-001'
 
 # verify workspace is now available
 cd $WORK/repo

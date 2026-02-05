@@ -15,6 +15,7 @@ stdout 'ws-001'
 ! stdout 'CHANGE'
 
 exec $II workspace release ws-001
+stdout 'released workspace ws-001'
 
 exec $II workspace list
 stdout 'available'
