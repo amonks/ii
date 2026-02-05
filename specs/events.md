@@ -83,6 +83,12 @@ For both event types:
 - Paths are shown repo-relative when possible.
 - For `apply_patch` tools, file paths are extracted from the unified diff and shown in the summary.
 - For `bash` tools, the full command is shown without truncation so the actual command is always visible.
+
+For agent events:
+- For `bash` tools with empty command input, the tool name alone is shown (e.g., `Tool start: bash`).
+  This ensures every tool start has a corresponding tool end.
+
+For legacy opencode events:
 - For `bash` tools with empty command input, no log is emitted (the command arrives in a subsequent event).
 
 ### Other rendered content

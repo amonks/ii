@@ -224,7 +224,10 @@ func (i *agentEventInterpreter) handleToolStart(data string) ([]agentRenderedEve
 
 	summary := i.summarizeToolCall(payload.ToolName, payload.Arguments)
 	if summary == "" {
-		return nil, nil // Suppress tools without meaningful summary
+		summary = i.summarizeToolName(payload.ToolName)
+	}
+	if summary == "" {
+		return nil, nil
 	}
 
 	return []agentRenderedEvent{{
@@ -285,7 +288,7 @@ func (i *agentEventInterpreter) summarizeToolCall(tool string, args map[string]a
 			cmd = internalstrings.TrimSpace(cmd)
 			return fmt.Sprintf("bash '%s'", cmd)
 		}
-		return "" // Suppress bash without command
+		return "" // No command yet; caller will fall back to summarizeToolName
 	case "read":
 		if path, ok := args["path"].(string); ok {
 			return fmt.Sprintf("read file '%s'", i.relativePathForLog(path))

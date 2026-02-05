@@ -298,10 +298,10 @@ func TestEventFormatterRendersAgentEvents(t *testing.T) {
 	}
 }
 
-func TestAgentEventInterpreterSuppressesBashWithoutCommand(t *testing.T) {
+func TestAgentEventInterpreterBashWithoutCommand(t *testing.T) {
 	interp := newAgentEventInterpreter("")
 
-	// Bash without command should be suppressed
+	// Bash without command should fall back to tool name summary (like tool.end does)
 	bashEvent := Event{
 		Name: "tool.start",
 		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"bash","Arguments":{}}`,
@@ -310,8 +310,11 @@ func TestAgentEventInterpreterSuppressesBashWithoutCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Handle bash tool.start: %v", err)
 	}
-	if len(results) != 0 {
-		t.Errorf("expected no results for bash without command, got %d", len(results))
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result for bash without command, got %d", len(results))
+	}
+	if !strings.Contains(results[0].Inline, "Tool start: bash") {
+		t.Errorf("expected tool start bash output, got %q", results[0].Inline)
 	}
 }
 
