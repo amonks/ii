@@ -104,7 +104,12 @@ func runWorkspaceRelease(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return pool.ReleaseByName(repoPath, wsName)
+	if err := pool.ReleaseByName(repoPath, wsName); err != nil {
+		return err
+	}
+
+	fmt.Printf("released workspace %s\n", wsName)
+	return nil
 }
 
 func runWorkspaceList(cmd *cobra.Command, args []string) error {
