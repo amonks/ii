@@ -22,9 +22,8 @@ var workspaceAcquireCmd = &cobra.Command{
 }
 
 var workspaceReleaseCmd = &cobra.Command{
-	Use:   "release [name]",
-	Short: "Release an acquired workspace back to the pool",
-	Args:  cobra.MaximumNArgs(1),
+	Use:   "release [name...]",
+	Short: "Release one or more acquired workspaces back to the pool",
 	RunE:  runWorkspaceRelease,
 }
 
@@ -99,16 +98,21 @@ func runWorkspaceRelease(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	wsName, err := resolveWorkspaceName(args, pool)
-	if err != nil {
-		return err
+	// If no args provided, resolve from current directory
+	if len(args) == 0 {
+		wsName, err := resolveWorkspaceName(nil, pool)
+		if err != nil {
+			return err
+		}
+		args = []string{wsName}
 	}
 
-	if err := pool.ReleaseByName(repoPath, wsName); err != nil {
-		return err
+	for _, wsName := range args {
+		if err := pool.ReleaseByName(repoPath, wsName); err != nil {
+			return err
+		}
+		fmt.Printf("released workspace %s\n", wsName)
 	}
-
-	fmt.Printf("released workspace %s\n", wsName)
 	return nil
 }
 

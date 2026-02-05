@@ -53,6 +53,6 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 
 ## CLI Commands
 - `ii workspace acquire [--rev <rev>] --purpose <text>`: acquire or create a workspace; prints the workspace path.
-- `ii workspace release [name]`: release the named workspace (or current workspace when omitted); prints "released workspace <name>".
+- `ii workspace release [name...]`: release one or more workspaces by name (or the current workspace when no names provided); prints "released workspace <name>" for each.
 - `ii workspace list [--json] [--all]`: list workspaces for the current repo.
 - `ii workspace destroy-all`: remove all workspaces for the current repo.
