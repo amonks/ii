@@ -76,7 +76,7 @@ Fields (JSON keys):
 
 ### Status + Timestamp Rules
 
-- `open`/`proposed`/`queued`/`in_progress`/`waiting`: `closed_at` must be empty; `deleted_at` must be empty.
+- `open`/`proposed`/`queued`/`in_progress`/`waiting`/`stuck`: `closed_at` must be empty; `deleted_at` must be empty.
 - `queued` indicates the todo is scheduled for batch processing by `job do` when
   multiple todos are specified. The CLI marks all specified todos as `queued`
   before starting work, then processes each one. Queued todos that are not

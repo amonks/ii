@@ -678,6 +678,37 @@ func TestStore_Queue(t *testing.T) {
 	}
 }
 
+func TestStore_Queue_ClearsClosedAt(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	// Create and close a todo
+	created, _ := store.Create("Queue from closed", CreateOptions{})
+	closed, err := store.Close([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to close: %v", err)
+	}
+	if closed[0].ClosedAt == nil {
+		t.Fatal("expected ClosedAt to be set after closing")
+	}
+
+	// Queue the closed todo - should clear ClosedAt
+	queued, err := store.Queue([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to queue closed todo: %v", err)
+	}
+
+	if queued[0].Status != StatusQueued {
+		t.Errorf("expected status 'queued', got %q", queued[0].Status)
+	}
+	if queued[0].ClosedAt != nil {
+		t.Errorf("expected ClosedAt to be cleared when queueing from closed, got %v", queued[0].ClosedAt)
+	}
+}
+
 func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
 	store, err := openTestStore(t)
 	if err != nil {
