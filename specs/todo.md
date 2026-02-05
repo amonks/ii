@@ -43,7 +43,7 @@ Fields (JSON keys):
 - `id`: 8-character lowercase base32 identifier.
 - `title`: required; must include non-whitespace characters; max length 500 characters.
 - `description`: optional free text.
-- `status`: `open`, `proposed`, `in_progress`, `closed`, `done`, `waiting`, `stuck`, or `tombstone`.
+- `status`: `open`, `proposed`, `queued`, `in_progress`, `closed`, `done`, `waiting`, `stuck`, or `tombstone`.
 - `priority`: integer 0..4 (0 = critical, 4 = backlog).
 - `type`: `task`, `bug`, or `feature`.
 - `implementation_model`: optional model override for implementation.
@@ -76,7 +76,11 @@ Fields (JSON keys):
 
 ### Status + Timestamp Rules
 
-- `open`/`proposed`/`in_progress`/`waiting`: `closed_at` must be empty; `deleted_at` must be empty.
+- `open`/`proposed`/`queued`/`in_progress`/`waiting`: `closed_at` must be empty; `deleted_at` must be empty.
+- `queued` indicates the todo is scheduled for batch processing by `job do` when
+  multiple todos are specified. The CLI marks all specified todos as `queued`
+  before starting work, then processes each one. Queued todos that are not
+  reached (due to early exit or interruption) must be reset to `open` by the CLI.
 - `closed`/`done`: `closed_at` must be set; `deleted_at` must be empty.
 - `tombstone`: `deleted_at` must be set; `closed_at` must be empty;
   `delete_reason` is allowed only when tombstoned.

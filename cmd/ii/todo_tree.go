@@ -43,6 +43,8 @@ func statusIcon(s todo.Status) string {
 	switch s {
 	case todo.StatusOpen:
 		return "[ ]"
+	case todo.StatusQueued:
+		return "[q]"
 	case todo.StatusInProgress:
 		return "[~]"
 	case todo.StatusClosed:

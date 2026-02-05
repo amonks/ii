@@ -22,6 +22,12 @@ const (
 	// StatusProposed indicates the todo is awaiting review before starting.
 	StatusProposed Status = "proposed"
 
+	// StatusQueued indicates the todo is queued for batch processing.
+	// Used by `job do` when multiple todos are specified to show that work
+	// on this todo is scheduled. The CLI is responsible for cleanup:
+	// queued todos must be reset to open if the batch exits before processing them.
+	StatusQueued Status = "queued"
+
 	// StatusInProgress indicates the todo is currently being worked on.
 	StatusInProgress Status = "in_progress"
 
@@ -48,7 +54,7 @@ const (
 
 // ValidStatuses returns all valid status values.
 func ValidStatuses() []Status {
-	return []Status{StatusOpen, StatusProposed, StatusInProgress, StatusClosed, StatusDone, StatusWaiting, StatusStuck, StatusTombstone}
+	return []Status{StatusOpen, StatusProposed, StatusQueued, StatusInProgress, StatusClosed, StatusDone, StatusWaiting, StatusStuck, StatusTombstone}
 }
 
 // IsValid returns true if the status is a known valid value.
