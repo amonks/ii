@@ -22,9 +22,16 @@ Design todos follow the same lifecycle as regular todos:
 - Can be `waiting` when blocked on external factors
 - Can be `proposed` when created by agents
 
-If an interactive session fails or exits non-zero, the todo reverts from
-`in_progress` to `open`. This matches headless job behavior and prevents todos
-from getting stuck in `in_progress` with no active job.
+If an error occurs after the todo is marked `in_progress`, we attempt to revert
+it to `open`. This is best-effort: if the reopen itself fails (e.g., due to the
+same underlying issue that caused the original error), both errors are returned.
+Error paths that trigger reopening include:
+- Store release failures after marking the todo started
+- Interactive session errors
+- Non-zero exit codes from the agent
+
+This matches headless job behavior and prevents todos from getting stuck in
+`in_progress` with no active job.
 
 ## Job Integration
 

@@ -139,7 +139,10 @@ func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 		return result, errors.Join(err, releaseErr)
 	}
 	if releaseErr != nil {
-		return result, releaseErr
+		// Start() succeeded but Release() failed. The todo is now in_progress
+		// but we can't continue, so reopen it to avoid leaving it stuck.
+		reopenErr := reopenTodo(repoPath, item.ID)
+		return result, errors.Join(releaseErr, reopenErr)
 	}
 	startedAt := opts.Now()
 	workspacePath := repoPath

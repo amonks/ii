@@ -570,3 +570,181 @@ func TestFormatDesignTodoBlockEmptyDescription(t *testing.T) {
 		t.Fatalf("expected '-' for empty description, got %q", output)
 	}
 }
+
+// wrappingDesignTodoStore wraps a real store but fails on Release.
+// This allows Start() to actually modify the todo while simulating a Release failure.
+type wrappingDesignTodoStore struct {
+	inner      *todo.Store
+	releaseErr error
+	startCalls int
+	// statusAfterStart records the status of each todo after Start() succeeds.
+	// This allows tests to verify that the todo actually transitioned to in_progress.
+	statusAfterStart map[string]todo.Status
+}
+
+func (s *wrappingDesignTodoStore) Start(ids []string) ([]todo.Todo, error) {
+	s.startCalls++
+	todos, err := s.inner.Start(ids)
+	if err == nil && s.statusAfterStart != nil {
+		// Record the status of each started todo
+		for _, t := range todos {
+			s.statusAfterStart[t.ID] = t.Status
+		}
+	}
+	return todos, err
+}
+
+func (s *wrappingDesignTodoStore) Release() error {
+	// Release the underlying store to avoid leaking resources.
+	// Join any underlying error with the configured simulated error.
+	innerErr := s.inner.Release()
+	return errors.Join(s.releaseErr, innerErr)
+}
+
+func TestRunDesignTodoReopensTodoOnReleaseFailureAfterStart(t *testing.T) {
+	// Save and restore original functions
+	originalSession := runInteractiveSession
+	originalStoreOpener := openDesignTodoStore
+	defer func() {
+		runInteractiveSession = originalSession
+		openDesignTodoStore = originalStoreOpener
+	}()
+
+	repoPath := setupJobDoTestRepo(t)
+
+	// Create a todo store and design todo using the real store
+	store, err := todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: true,
+		PromptToCreate:  false,
+		Purpose:         "test setup",
+	})
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	created, err := store.Create("Test design todo", todo.CreateOptions{
+		Type: todo.TypeDesign,
+	})
+	if err != nil {
+		t.Fatalf("failed to create todo: %v", err)
+	}
+	if err := store.Release(); err != nil {
+		t.Fatalf("failed to release store after create: %v", err)
+	}
+
+	releaseErr := errors.New("simulated release failure")
+	var wrapper *wrappingDesignTodoStore
+
+	// Override the store opener to return a wrapper that fails on Release
+	openDesignTodoStore = func(repoPath, purpose string) (designTodoStore, error) {
+		// For the "start" operation, return a wrapper around the real store
+		// that calls real Start() but returns an error on Release()
+		if strings.Contains(purpose, "start") {
+			realStore, err := todo.Open(repoPath, todo.OpenOptions{
+				CreateIfMissing: false,
+				PromptToCreate:  false,
+				Purpose:         purpose,
+			})
+			if err != nil {
+				return nil, err
+			}
+			wrapper = &wrappingDesignTodoStore{
+				inner:            realStore,
+				releaseErr:       releaseErr,
+				statusAfterStart: make(map[string]todo.Status),
+			}
+			return wrapper, nil
+		}
+		// Fallback for any other store operations (though currently only "start" uses
+		// openDesignTodoStore). Note: reopenDesignTodo() calls todo.Open directly
+		// rather than going through openDesignTodoStore.
+		return todo.Open(repoPath, todo.OpenOptions{
+			CreateIfMissing: false,
+			PromptToCreate:  false,
+			Purpose:         purpose,
+		})
+	}
+
+	// Track whether interactive session was called
+	sessionCalled := false
+	runInteractiveSession = func(opts interactiveSessionOptions) (interactiveSessionResult, error) {
+		sessionCalled = true
+		return interactiveSessionResult{}, nil
+	}
+
+	// Verify the todo starts as open
+	store, err = todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         "verify initial status",
+	})
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	items, err := store.Show([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to show todo: %v", err)
+	}
+	if items[0].Status != todo.StatusOpen {
+		t.Fatalf("expected initial status 'open', got %q", items[0].Status)
+	}
+	if err := store.Release(); err != nil {
+		t.Fatalf("failed to release store after status check: %v", err)
+	}
+
+	// Run the design todo - should fail with the release error
+	cmd := newTestJobDoCommand()
+	err = runDesignTodo(cmd, repoPath, *created)
+
+	// Verify we got the release error
+	if err == nil {
+		t.Fatal("expected error from runDesignTodo")
+	}
+	if !errors.Is(err, releaseErr) {
+		t.Fatalf("expected release error, got %v", err)
+	}
+
+	// Verify the wrapper's Start was called (which calls the real store)
+	if wrapper == nil || wrapper.startCalls != 1 {
+		t.Fatal("expected Start to be called once on the wrapper")
+	}
+
+	// Verify that Start() actually transitioned the todo to in_progress.
+	// This is critical: it proves the reopen logic is actually needed (the todo
+	// was in_progress) rather than passing trivially (if Start were a no-op).
+	statusAfterStart, ok := wrapper.statusAfterStart[created.ID]
+	if !ok {
+		t.Fatal("expected Start to record the todo status")
+	}
+	if statusAfterStart != todo.StatusInProgress {
+		t.Fatalf("expected todo to be in_progress after Start(), got %q", statusAfterStart)
+	}
+
+	// Verify interactive session was NOT called (we fail before reaching it)
+	if sessionCalled {
+		t.Fatal("interactive session should not be called when Release fails after Start")
+	}
+
+	// Verify the todo was reopened (should be back to open status, not in_progress)
+	// This is the critical assertion: the todo WAS in_progress after Start() succeeded,
+	// but should now be open because our reopen logic ran.
+	store, err = todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         "verify reopened",
+	})
+	if err != nil {
+		t.Fatalf("failed to open store to verify: %v", err)
+	}
+	defer store.Release()
+
+	items, err = store.Show([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to show todo: %v", err)
+	}
+	if len(items) == 0 {
+		t.Fatal("todo not found")
+	}
+	if items[0].Status != todo.StatusOpen {
+		t.Fatalf("expected todo to be reopened to 'open' status after Release failure, got %q", items[0].Status)
+	}
+}

@@ -38,6 +38,23 @@ var jobDoTodo = runJobDoTodo
 // It can be overridden for testing.
 var runInteractiveSession = defaultRunInteractiveSession
 
+// designTodoStore is an interface for the store operations needed by runDesignTodo.
+// This allows mocking store operations in tests.
+type designTodoStore interface {
+	Start(ids []string) ([]todo.Todo, error)
+	Release() error
+}
+
+// openDesignTodoStore opens a store for design todo operations.
+// It can be overridden for testing.
+var openDesignTodoStore = func(repoPath, purpose string) (designTodoStore, error) {
+	return todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         purpose,
+	})
+}
+
 type jobAgentKind string
 
 const (
@@ -401,11 +418,7 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	}
 
 	// Mark the todo as started
-	store, err := todo.Open(repoPath, todo.OpenOptions{
-		CreateIfMissing: false,
-		PromptToCreate:  false,
-		Purpose:         fmt.Sprintf("design todo %s start", item.ID),
-	})
+	store, err := openDesignTodoStore(repoPath, fmt.Sprintf("design todo %s start", item.ID))
 	if err != nil {
 		return err
 	}
@@ -413,8 +426,13 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 		releaseErr := store.Release()
 		return errors.Join(err, releaseErr)
 	}
-	if err := store.Release(); err != nil {
-		return err
+	if releaseErr := store.Release(); releaseErr != nil {
+		// Todo was marked in_progress but we failed to release the store.
+		// Attempt to reopen it to avoid leaving it stuck in in_progress.
+		// This is best-effort: if the same underlying issue (e.g., lock
+		// contention) prevents reopening, we return both errors.
+		reopenErr := reopenDesignTodo(repoPath, item.ID)
+		return errors.Join(releaseErr, reopenErr)
 	}
 
 	fmt.Printf("Starting design session for todo %s\n", item.ID)
@@ -470,6 +488,10 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 }
 
 // reopenDesignTodo reopens a design todo after a failed interactive session.
+// This uses todo.Open directly rather than openDesignTodoStore because:
+// 1. The reopen operation needs Reopen() which isn't in designTodoStore interface
+// 2. Reopen is best-effort recovery - we don't need to mock it in tests
+// 3. Tests verify reopen behavior by checking the final todo status
 func reopenDesignTodo(repoPath, todoID string) error {
 	store, err := todo.Open(repoPath, todo.OpenOptions{
 		CreateIfMissing: false,
