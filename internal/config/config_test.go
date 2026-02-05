@@ -164,7 +164,7 @@ func TestLoad_JobConfig(t *testing.T) {
 	configContent := `
 [job]
 test-commands = ["go test ./...", "golangci-lint run"]
-agent = "claude-haiku-4-5"
+model = "claude-haiku-4-5"
 implementation-model = "claude-haiku-4-5-20251001"
 code-review-model = "claude-haiku-4-5"
 project-review-model = "claude-haiku-4-5-20251001"
@@ -187,8 +187,8 @@ project-review-model = "claude-haiku-4-5-20251001"
 		t.Fatalf("expected first test command %q, got %q", "go test ./...", cfg.Job.TestCommands[0])
 	}
 
-	if cfg.Job.Agent != "claude-haiku-4-5" {
-		t.Fatalf("expected agent %q, got %q", "claude-haiku-4-5", cfg.Job.Agent)
+	if cfg.Job.Model != "claude-haiku-4-5" {
+		t.Fatalf("expected model %q, got %q", "claude-haiku-4-5", cfg.Job.Model)
 	}
 	if cfg.Job.ImplementationModel != "claude-haiku-4-5-20251001" {
 		t.Fatalf("expected implementation model %q, got %q", "claude-haiku-4-5-20251001", cfg.Job.ImplementationModel)
@@ -304,7 +304,7 @@ func TestLoad_UsesGlobalWhenProjectMissing(t *testing.T) {
 on-create = "global create"
 
 [job]
-agent = "global-agent"
+model = "global-model"
 implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
@@ -325,8 +325,8 @@ test-commands = ["go test ./..."]
 	if cfg.Workspace.OnCreate != "global create" {
 		t.Errorf("OnCreate = %q, expected %q", cfg.Workspace.OnCreate, "global create")
 	}
-	if cfg.Job.Agent != "global-agent" {
-		t.Errorf("Agent = %q, expected %q", cfg.Job.Agent, "global-agent")
+	if cfg.Job.Model != "global-model" {
+		t.Errorf("Model = %q, expected %q", cfg.Job.Model, "global-model")
 	}
 	if cfg.Job.ImplementationModel != "global-implement" {
 		t.Errorf("ImplementationModel = %q, expected %q", cfg.Job.ImplementationModel, "global-implement")
@@ -354,7 +354,7 @@ func TestLoad_ProjectOverridesGlobal(t *testing.T) {
 on-create = "global create"
 
 [job]
-agent = "global-agent"
+model = "global-model"
 implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
@@ -370,7 +370,7 @@ test-commands = ["global command"]
 on-acquire = "project acquire"
 
 [job]
-agent = "project-agent"
+model = "project-model"
 implementation-model = "project-implement"
 code-review-model = "project-review"
 project-review-model = "project-project"
@@ -393,8 +393,8 @@ test-commands = ["project command"]
 	if cfg.Workspace.OnAcquire != "project acquire" {
 		t.Errorf("OnAcquire = %q, expected %q", cfg.Workspace.OnAcquire, "project acquire")
 	}
-	if cfg.Job.Agent != "project-agent" {
-		t.Errorf("Agent = %q, expected %q", cfg.Job.Agent, "project-agent")
+	if cfg.Job.Model != "project-model" {
+		t.Errorf("Model = %q, expected %q", cfg.Job.Model, "project-model")
 	}
 	if cfg.Job.ImplementationModel != "project-implement" {
 		t.Errorf("ImplementationModel = %q, expected %q", cfg.Job.ImplementationModel, "project-implement")
@@ -423,7 +423,7 @@ on-create = "global create"
 on-acquire = "global acquire"
 
 [job]
-agent = "global-agent"
+model = "global-model"
 implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
@@ -440,7 +440,7 @@ on-create = ""
 on-acquire = ""
 
 [job]
-agent = ""
+model = ""
 implementation-model = ""
 code-review-model = ""
 project-review-model = ""
@@ -463,8 +463,8 @@ test-commands = []
 	if cfg.Workspace.OnAcquire != "" {
 		t.Errorf("OnAcquire = %q, expected empty string", cfg.Workspace.OnAcquire)
 	}
-	if cfg.Job.Agent != "" {
-		t.Errorf("Agent = %q, expected empty string", cfg.Job.Agent)
+	if cfg.Job.Model != "" {
+		t.Errorf("Model = %q, expected empty string", cfg.Job.Model)
 	}
 	if cfg.Job.ImplementationModel != "" {
 		t.Errorf("ImplementationModel = %q, expected empty string", cfg.Job.ImplementationModel)

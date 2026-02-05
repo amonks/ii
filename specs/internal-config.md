@@ -6,7 +6,7 @@ The config package loads project and global configuration files and runs hook sc
 ## Configuration Model
 - `Config` holds workspace, job, and LLM configuration.
 - `Workspace` defines `on-create` and `on-acquire` scripts.
-- `Job` defines `test-commands`, the optional default `agent`, and optional per-stage
+- `Job` defines `test-commands`, the optional default `model`, and optional per-stage
   models (`implementation-model`, `code-review-model`, `project-review-model`).
 - `LLM` defines LLM providers available for use.
 

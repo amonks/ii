@@ -8,7 +8,7 @@ import (
 )
 
 func TestResolveModelForPurposePrefersOverride(t *testing.T) {
-	cfg := &config.Config{Job: config.Job{Agent: "default", ImplementationModel: "impl"}}
+	cfg := &config.Config{Job: config.Job{Model: "default", ImplementationModel: "impl"}}
 	item := todo.Todo{ImplementationModel: "todo-impl"}
 
 	got := resolveModelForPurpose(cfg, "override", "implement", item)
@@ -20,7 +20,7 @@ func TestResolveModelForPurposePrefersOverride(t *testing.T) {
 
 func TestResolveModelForPurposeUsesTodoModels(t *testing.T) {
 	cfg := &config.Config{Job: config.Job{
-		Agent:               "default",
+		Model:               "default",
 		ImplementationModel: "impl",
 		CodeReviewModel:     "review",
 		ProjectReviewModel:  "project",
@@ -48,8 +48,8 @@ func TestResolveModelForPurposeUsesTodoModels(t *testing.T) {
 	}
 }
 
-func TestResolveModelForPurposeFallsBackToAgent(t *testing.T) {
-	cfg := &config.Config{Job: config.Job{Agent: "default"}}
+func TestResolveModelForPurposeFallsBackToModel(t *testing.T) {
+	cfg := &config.Config{Job: config.Job{Model: "default"}}
 	item := todo.Todo{}
 
 	got := resolveModelForPurpose(cfg, "", "review", item)

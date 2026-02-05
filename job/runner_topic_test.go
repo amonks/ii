@@ -90,14 +90,14 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 	}
 }
 
-func TestRunStoresOpencodeAgent(t *testing.T) {
+func TestRunStoresModelInJobState(t *testing.T) {
 	repoPath := setupJobRepo(t)
 
 	store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: true, PromptToCreate: false})
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Agent tracking", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
+	created, err := store.Create("Model tracking", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)
@@ -132,8 +132,10 @@ func TestRunStoresOpencodeAgent(t *testing.T) {
 		t.Fatalf("run job: %v", err)
 	}
 
+	// result.Job.Agent is the persisted state field (state.Job.Agent) that records
+	// the model actually used for the run, distinct from config.Job.Model
 	if result.Job.Agent != "agent-42" {
-		t.Fatalf("expected agent on result job, got %q", result.Job.Agent)
+		t.Fatalf("expected model %q stored in job state (Agent field), got %q", "agent-42", result.Job.Agent)
 	}
 
 	manager, err := Open(repoPath, OpenOptions{})
@@ -144,8 +146,9 @@ func TestRunStoresOpencodeAgent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find job: %v", err)
 	}
+	// stored.Agent is the persisted state field that records the model used
 	if stored.Agent != "agent-42" {
-		t.Fatalf("expected agent in state, got %q", stored.Agent)
+		t.Fatalf("expected model %q stored in job state (Agent field), got %q", "agent-42", stored.Agent)
 	}
 }
 
@@ -165,7 +168,7 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 
 	now := time.Date(2026, 1, 4, 5, 6, 7, 0, time.UTC)
 	loadConfigCalled := false
-	agents := []string{}
+	modelsUsed := []string{}
 	preloaded := &config.Config{
 		Job: config.Job{
 			ImplementationModel: "impl-model",
@@ -191,8 +194,8 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 			return true, nil // @ is empty
 		},
 		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
-			agents = append(agents, opts.Model)
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", len(agents)), ExitCode: 0}, nil
+			modelsUsed = append(modelsUsed, opts.Model)
+			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", len(modelsUsed)), ExitCode: 0}, nil
 		},
 	})
 	if err != nil {
@@ -201,16 +204,17 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 	if loadConfigCalled {
 		t.Fatal("expected LoadConfig not to be called")
 	}
+	// result.Job.Agent is the persisted state field that records the model used
 	if result.Job.Agent != "impl-model" {
-		t.Fatalf("expected job agent %q, got %q", "impl-model", result.Job.Agent)
+		t.Fatalf("expected model %q stored in job state (Agent field), got %q", "impl-model", result.Job.Agent)
 	}
-	if len(agents) < 2 {
-		t.Fatalf("expected opencode calls for implement and review, got %d", len(agents))
+	if len(modelsUsed) < 2 {
+		t.Fatalf("expected LLM calls for implement and review, got %d", len(modelsUsed))
 	}
-	if agents[0] != "impl-model" {
-		t.Fatalf("expected implement agent %q, got %q", "impl-model", agents[0])
+	if modelsUsed[0] != "impl-model" {
+		t.Fatalf("expected implementation model %q, got %q", "impl-model", modelsUsed[0])
 	}
-	if agents[1] != "project-model" {
-		t.Fatalf("expected review agent %q, got %q", "project-model", agents[1])
+	if modelsUsed[1] != "project-model" {
+		t.Fatalf("expected review model %q, got %q", "project-model", modelsUsed[1])
 	}
 }

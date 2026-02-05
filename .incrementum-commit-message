@@ -1,0 +1,22 @@
+config: rename Job.Agent to Job.Model
+
+The config.Job.Agent field was misleadingly named - it doesn't select an
+"agent" but rather specifies the default model for job workflow stages that
+don't have a stage-specific model configured.
+
+Rename to Job.Model with TOML key "model" to better reflect its purpose.
+
+Changes:
+- config.go: Rename field from Agent to Model, TOML key from "agent" to "model"
+- runner.go, habit_runner.go: Update references to use cfg.Job.Model
+- Tests: Update config literals and assertions
+- Specs: Update job.md and internal-config.md documentation
+- runner_topic_test.go: Clarify assertion messages to distinguish between
+  RunOptions.Model (input) and state.Job.Agent (persisted state field)
+  - Rename test function to TestRunStoresModelInJobState
+  - Rename variable "agents" to "modelsUsed" for clarity
+  - Add comments explaining that result.Job.Agent is the persisted state field
+
+Note: The state.Job.Agent field (persisted job state) is NOT renamed. That
+field stores the model that was used when a job ran, which is a different
+concern from the config default.

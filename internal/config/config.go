@@ -64,8 +64,8 @@ type Workspace struct {
 type Job struct {
 	// TestCommands defines commands to run during job testing.
 	TestCommands []string `toml:"test-commands"`
-	// Agent selects the default agent for job runs.
-	Agent string `toml:"agent"`
+	// Model is the default model for job runs when no stage-specific model is set.
+	Model string `toml:"model"`
 	// ImplementationModel selects the model for implementing.
 	ImplementationModel string `toml:"implementation-model"`
 	// CodeReviewModel selects the model for step review.
@@ -184,7 +184,7 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 	merged := Config{}
 	merged.Workspace.OnCreate = mergeString(projectMeta.IsDefined("workspace", "on-create"), projectCfg.Workspace.OnCreate, globalCfg.Workspace.OnCreate)
 	merged.Workspace.OnAcquire = mergeString(projectMeta.IsDefined("workspace", "on-acquire"), projectCfg.Workspace.OnAcquire, globalCfg.Workspace.OnAcquire)
-	merged.Job.Agent = mergeString(projectMeta.IsDefined("job", "agent"), projectCfg.Job.Agent, globalCfg.Job.Agent)
+	merged.Job.Model = mergeString(projectMeta.IsDefined("job", "model"), projectCfg.Job.Model, globalCfg.Job.Model)
 	merged.Job.ImplementationModel = mergeString(projectMeta.IsDefined("job", "implementation-model"), projectCfg.Job.ImplementationModel, globalCfg.Job.ImplementationModel)
 	merged.Job.CodeReviewModel = mergeString(projectMeta.IsDefined("job", "code-review-model"), projectCfg.Job.CodeReviewModel, globalCfg.Job.CodeReviewModel)
 	merged.Job.ProjectReviewModel = mergeString(projectMeta.IsDefined("job", "project-review-model"), projectCfg.Job.ProjectReviewModel, globalCfg.Job.ProjectReviewModel)

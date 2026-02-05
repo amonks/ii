@@ -758,10 +758,10 @@ func resolveHabitModel(cfg *config.Config, override, habitModel, purpose string)
 	case "review":
 		model = cfg.Job.CodeReviewModel
 	default:
-		model = cfg.Job.Agent
+		model = cfg.Job.Model
 	}
 	if internalstrings.IsBlank(model) {
-		model = cfg.Job.Agent
+		model = cfg.Job.Model
 	}
 	return internalstrings.TrimSpace(model)
 }

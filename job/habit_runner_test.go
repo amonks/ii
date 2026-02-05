@@ -128,10 +128,10 @@ func TestResolveHabitModel(t *testing.T) {
 			want:    "config-review",
 		},
 		{
-			name:    "falls back to agent when purpose model empty",
-			cfg:     &config.Config{Job: config.Job{Agent: "default-agent"}},
+			name:    "falls back to model when purpose model empty",
+			cfg:     &config.Config{Job: config.Job{Model: "default-model"}},
 			purpose: "implement",
-			want:    "default-agent",
+			want:    "default-model",
 		},
 		{
 			name: "returns empty when no config",

@@ -280,7 +280,7 @@ without proper cleanup.
 
 ```toml
 [job]
-agent = "claude-sonnet-4-20250514"
+model = "claude-sonnet-4-20250514"
 implementation-model = "claude-sonnet-4-20250514"
 code-review-model = "claude-sonnet-4-20250514"
 project-review-model = "claude-sonnet-4-20250514"
@@ -299,10 +299,10 @@ Config is loaded from `incrementum.toml` or `.incrementum/config.toml` and
 Callers can supply a preloaded config via `RunOptions.Config` to avoid
 filesystem reads; when set, the job runner does not call `LoadConfig`.
 
-`agent` is an optional default model.
+`model` is an optional default model.
 
 `implementation-model`, `code-review-model`, and `project-review-model` override
-`agent` for their respective stages.
+`model` for their respective stages.
 
 ## Templates
 

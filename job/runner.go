@@ -512,10 +512,10 @@ func resolveModelForPurpose(cfg *config.Config, override, purpose string, item t
 	case "project-review":
 		model = cfg.Job.ProjectReviewModel
 	default:
-		model = cfg.Job.Agent
+		model = cfg.Job.Model
 	}
 	if internalstrings.IsBlank(model) {
-		model = cfg.Job.Agent
+		model = cfg.Job.Model
 	}
 	return internalstrings.TrimSpace(model)
 }
