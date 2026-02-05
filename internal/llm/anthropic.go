@@ -224,31 +224,49 @@ func thinkingBudget(level ThinkingLevel) int {
 
 func convertMessagesToAnthropic(messages []Message) []anthropicMessage {
 	var result []anthropicMessage
+	var pendingToolResults []anthropicContent
+
+	flushToolResults := func() {
+		if len(pendingToolResults) > 0 {
+			result = append(result, anthropicMessage{
+				Role:    "user",
+				Content: pendingToolResults,
+			})
+			pendingToolResults = nil
+		}
+	}
 
 	for _, msg := range messages {
 		switch m := msg.(type) {
 		case UserMessage:
+			flushToolResults()
 			result = append(result, anthropicMessage{
 				Role:    "user",
 				Content: convertContentBlocksToAnthropic(m.Content),
 			})
 		case AssistantMessage:
-			result = append(result, anthropicMessage{
-				Role:    "assistant",
-				Content: convertContentBlocksToAnthropic(m.Content),
-			})
+			flushToolResults()
+			content := convertContentBlocksToAnthropic(m.Content)
+			// Only add assistant message if it has content
+			if len(content) > 0 {
+				result = append(result, anthropicMessage{
+					Role:    "assistant",
+					Content: content,
+				})
+			}
 		case ToolResultMessage:
-			result = append(result, anthropicMessage{
-				Role: "user",
-				Content: []anthropicContent{{
-					Type:      "tool_result",
-					ToolUseID: m.ToolCallID,
-					Content:   extractTextFromContent(m.Content),
-					IsError:   m.IsError,
-				}},
+			// Accumulate tool results to merge into a single user message
+			pendingToolResults = append(pendingToolResults, anthropicContent{
+				Type:      "tool_result",
+				ToolUseID: m.ToolCallID,
+				Content:   extractTextFromContent(m.Content),
+				IsError:   m.IsError,
 			})
 		}
 	}
+
+	// Flush any remaining tool results at the end
+	flushToolResults()
 
 	return result
 }
@@ -264,11 +282,11 @@ func convertContentBlocksToAnthropic(blocks []ContentBlock) []anthropicContent {
 				Text: b.Text,
 			})
 		case ThinkingContent:
-			// Convert thinking to text for previous turns
-			result = append(result, anthropicContent{
-				Type: "text",
-				Text: b.Thinking,
-			})
+			// Exclude thinking blocks from replayed messages.
+			// Thinking is internal reasoning that doesn't need to be sent back
+			// to the API. Including it without the original signature would
+			// cause validation errors.
+			continue
 		case ImageContent:
 			result = append(result, anthropicContent{
 				Type: "image",
