@@ -434,3 +434,27 @@ func TestEventFormatterRendersToolFailure(t *testing.T) {
 		t.Fatalf("expected failed status in output, got %q", chunk)
 	}
 }
+
+func TestEventFormatterLongBashCommand(t *testing.T) {
+	formatter := NewEventFormatter()
+
+	// Long command similar to real-world usage (full workspace path)
+	longCommand := "cd /Users/ajm/.local/share/incrementum/workspaces/users-ajm-git-amonks-incrementum/ws-005 && go test ./job -v"
+
+	bashJSON := `{"type":"message.part.updated","properties":{"part":{"id":"prt-bash","messageID":"msg-bash","type":"tool","tool":"bash","state":{"status":"running","input":{"command":"` + longCommand + `"}}}}}`
+	chunk, err := formatter.Append(Event{Data: bashJSON})
+	if err != nil {
+		t.Fatalf("append bash event: %v", err)
+	}
+
+	// The full command should be in the output without truncation
+	if !strings.Contains(chunk, longCommand) {
+		t.Errorf("expected full command in output (no truncation), got %q", chunk)
+	}
+
+	// Should end with the command, not truncated with ellipsis
+	// Note: we avoid '...' in the command itself to reliably detect truncation
+	if strings.HasSuffix(strings.TrimSpace(chunk), "...") {
+		t.Errorf("bash command should not be truncated with trailing ellipsis, got %q", chunk)
+	}
+}

@@ -351,6 +351,37 @@ func TestAgentEventInterpreterGlobGrep(t *testing.T) {
 	}
 }
 
+func TestAgentEventInterpreterLongBashCommand(t *testing.T) {
+	interp := newAgentEventInterpreter("/repo")
+
+	// Long command similar to real-world usage (e.g., changing to a workspace directory)
+	longCommand := "cd /Users/ajm/.local/share/incrementum/workspaces/users-ajm-git-amonks-incrementum/ws-005 && go test ./job -run Agent -v"
+
+	event := Event{
+		Name: "tool.start",
+		Data: `{"TurnIndex":0,"ToolCallID":"tool-1","ToolName":"bash","Arguments":{"command":"` + longCommand + `"}}`,
+	}
+
+	results, err := interp.Handle(event)
+	if err != nil {
+		t.Fatalf("Handle tool.start: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	// The full command should be in the output without truncation
+	if !strings.Contains(results[0].Inline, longCommand) {
+		t.Errorf("expected full command in output (no truncation), got %q", results[0].Inline)
+	}
+
+	// Should end with the full path, not truncated with ellipsis
+	// Note: this test intentionally avoids using '...' in the command to detect truncation
+	if strings.HasSuffix(results[0].Inline, "...") || strings.HasSuffix(results[0].Inline, "...'") {
+		t.Errorf("bash command should not be truncated with trailing ellipsis, got %q", results[0].Inline)
+	}
+}
+
 func TestLogSnapshotFormatsAgentEvents(t *testing.T) {
 	eventsDir := t.TempDir()
 	jobID := "job-agent"
