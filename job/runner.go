@@ -664,6 +664,31 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 			}
 			continue
 		}
+		// Context overflow: retry without restoring the workspace. The agent may
+		// have made partial progress that we want to keep. We only retry once
+		// within this stage invocation.
+		if isContextOverflowError(llmResult.Error) && retryCount == 0 {
+			retryCount++
+			llmResult, err = runAttempt()
+			if err != nil {
+				return ImplementingStageResult{}, err
+			}
+			continue
+		}
+		// Context overflow after retry: stay in implementing stage with feedback
+		// instead of failing the job. This allows the agent to continue from where
+		// it left off with a fresh context window.
+		if isContextOverflowError(llmResult.Error) {
+			feedback := "Context overflow: the conversation exceeded the model's context window. " +
+				"The working tree has been preserved with any partial progress. " +
+				"Please continue your work from where you left off."
+			nextStage := StageImplementing
+			updated, err = manager.Update(updated.ID, UpdateOptions{Stage: &nextStage, Feedback: &feedback}, opts.Now())
+			if err != nil {
+				return ImplementingStageResult{}, err
+			}
+			return ImplementingStageResult{Job: updated, CommitMessage: previousMessage, Changed: true}, nil
+		}
 		return ImplementingStageResult{}, errors.New(buildLLMFailureMessage("implement", promptName, llmResult, runOpts, beforeCommitID, afterCommitID, afterCommitErr, restored, restoreErr, retryCount))
 	}
 
@@ -1125,6 +1150,12 @@ func buildReviewFailureMessage(purpose string, result AgentRunResult, model stri
 		return message
 	}
 	return fmt.Sprintf("%s: %s", message, strings.Join(parts, ", "))
+}
+
+// isContextOverflowError returns true if the error message indicates a context
+// overflow (max tokens reached). These errors can be retried with a fresh context.
+func isContextOverflowError(errMsg string) bool {
+	return strings.Contains(errMsg, "context overflow")
 }
 
 func ensureCommitMessageInPrompt(prompt, message string) string {

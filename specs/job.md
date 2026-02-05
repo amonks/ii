@@ -142,7 +142,12 @@ any stage -> failed (unrecoverable error)
     template, repo/workspace paths, and before/after commit ids. If the exit code is negative and the working
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
-    failing and include the retry attempt in the error details.
+    failing and include the retry attempt in the error details. Context overflow
+    errors (max tokens reached) are handled specially: retry once within the
+    stage invocation, and if the retry also fails with context overflow, stay in
+    the implementing stage with feedback instead of failing the job. This allows
+    the agent to continue from where it left off with a fresh context window;
+    the working tree is preserved with any partial progress.
 13. Run `jj log -r @ -T empty --no-graph` to check if the current change has
     uncommitted work. Treat `true` (empty) as no work to commit, `false` (not
     empty) as work to commit. This check uses the `empty` template rather than

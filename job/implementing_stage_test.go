@@ -436,8 +436,9 @@ func TestRunImplementingStageDetectsUncommittedWorkFromPreviousRun(t *testing.T)
 		t.Fatalf("expected commit message from file, got %q", result.CommitMessage)
 	}
 }
-
 func TestRunImplementingStageIncludesErrorInFailureMessage(t *testing.T) {
+	// This test verifies that non-context-overflow errors are properly included in
+	// the failure message without triggering retry logic.
 	repoPath := t.TempDir()
 	stateDir := t.TempDir()
 
@@ -471,7 +472,7 @@ func TestRunImplementingStageIncludesErrorInFailureMessage(t *testing.T) {
 			return AgentRunResult{
 				SessionID: "ses-error",
 				ExitCode:  1,
-				Error:     "context overflow: max tokens reached",
+				Error:     "some other error that should fail",
 			}, nil
 		},
 		Model: "test-model",
@@ -486,10 +487,154 @@ func TestRunImplementingStageIncludesErrorInFailureMessage(t *testing.T) {
 	if !strings.Contains(message, "agent implement failed with exit code 1") {
 		t.Fatalf("expected agent failure message with exit code, got %v", message)
 	}
-	if !strings.Contains(message, "error: context overflow: max tokens reached") {
+	if !strings.Contains(message, "error: some other error that should fail") {
 		t.Fatalf("expected error reason in message, got %v", message)
 	}
 	if !strings.Contains(message, "session ses-error") {
 		t.Fatalf("expected session context, got %v", message)
+	}
+}
+
+func TestRunImplementingStageRetriesOnContextOverflow(t *testing.T) {
+	// This test verifies that context overflow errors trigger a retry without
+	// restoring the workspace.
+	repoPath := t.TempDir()
+	stateDir := t.TempDir()
+
+	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	now := time.Date(2026, time.January, 2, 3, 4, 7, 0, time.UTC)
+	current, err := manager.Create("todo-overflow", now, CreateOptions{})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	item := todo.Todo{
+		ID:       "todo-overflow",
+		Title:    "Example",
+		Type:     todo.TypeTask,
+		Priority: todo.PriorityLow,
+	}
+
+	runCalls := 0
+	restoreCalls := 0
+	opts := RunOptions{
+		Now: func() time.Time { return now },
+		CurrentCommitID: func(string) (string, error) {
+			return "same-commit", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-overflow", nil
+		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil // No changes after retry
+		},
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			runCalls++
+			if runCalls == 1 {
+				// First call: context overflow
+				return AgentRunResult{
+					SessionID: "ses-overflow-1",
+					ExitCode:  1,
+					Error:     "context overflow: max tokens reached",
+				}, nil
+			}
+			// Second call: success
+			return AgentRunResult{
+				SessionID: "ses-overflow-2",
+				ExitCode:  0,
+			}, nil
+		},
+		RestoreWorkspace: func(string, string) error {
+			restoreCalls++
+			return nil
+		},
+		Model: "test-model",
+	}
+
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err != nil {
+		t.Fatalf("expected retry to succeed, got %v", err)
+	}
+	if runCalls != 2 {
+		t.Fatalf("expected agent to run twice, got %d", runCalls)
+	}
+	// Important: workspace should NOT be restored for context overflow
+	if restoreCalls != 0 {
+		t.Fatalf("expected no workspace restore for context overflow, got %d restore calls", restoreCalls)
+	}
+	if result.Changed {
+		t.Fatalf("expected no change (workspace empty)")
+	}
+}
+
+func TestRunImplementingStageContextOverflowStaysInImplementingAfterRetry(t *testing.T) {
+	// This test verifies that if both attempts hit context overflow, the job
+	// stays in the implementing stage with feedback instead of failing.
+	repoPath := t.TempDir()
+	stateDir := t.TempDir()
+
+	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	now := time.Date(2026, time.January, 2, 3, 4, 7, 0, time.UTC)
+	current, err := manager.Create("todo-overflow-fail", now, CreateOptions{})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	item := todo.Todo{
+		ID:       "todo-overflow-fail",
+		Title:    "Example",
+		Type:     todo.TypeTask,
+		Priority: todo.PriorityLow,
+	}
+
+	runCalls := 0
+	opts := RunOptions{
+		Now: func() time.Time { return now },
+		CurrentCommitID: func(string) (string, error) {
+			return "same-commit", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-overflow-fail", nil
+		},
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			runCalls++
+			// Both calls fail with context overflow
+			return AgentRunResult{
+				SessionID: "ses-overflow-fail",
+				ExitCode:  1,
+				Error:     "context overflow: max tokens reached",
+			}, nil
+		},
+		Model: "test-model",
+	}
+
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err != nil {
+		t.Fatalf("expected no error (should retry with feedback), got %v", err)
+	}
+	if runCalls != 2 {
+		t.Fatalf("expected agent to run twice, got %d", runCalls)
+	}
+	// Should stay in implementing stage with feedback
+	if result.Job.Stage != StageImplementing {
+		t.Fatalf("expected stage %q, got %q", StageImplementing, result.Job.Stage)
+	}
+	if result.Job.Feedback == "" {
+		t.Fatal("expected feedback to be set")
+	}
+	if !strings.Contains(result.Job.Feedback, "context overflow") && !strings.Contains(result.Job.Feedback, "Context overflow") {
+		t.Fatalf("expected feedback to mention context overflow, got %q", result.Job.Feedback)
+	}
+	// Changed should be true so we don't skip to project review
+	if !result.Changed {
+		t.Fatal("expected changed to be true")
 	}
 }
