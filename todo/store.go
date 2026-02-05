@@ -71,15 +71,16 @@ var jsonlDependencyBufPool = sync.Pool{
 // Store provides access to the todo data for a jujutsu repository.
 // It manages workspace acquisition and file locking for concurrent access.
 type Store struct {
-	repoPath  string
-	wsPath    string
-	pool      *workspace.Pool
-	snapshot  Snapshotter
-	prompter  Prompter
-	client    *jj.Client
-	readOnly  bool
-	wsRelease func() error
-	lockFile  *os.File
+	repoPath     string
+	wsPath       string
+	pool         *workspace.Pool
+	snapshot     Snapshotter
+	prompter     Prompter
+	client       *jj.Client
+	readOnly     bool
+	wsRelease    func() error
+	lockFile     *os.File
+	lockFilePath string
 }
 
 // Snapshotter records workspace changes.
@@ -193,14 +194,14 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		}, nil
 	}
 
-	lockFile, err := acquireTodoLock(repoPath)
+	lockFile, lockFilePath, err := acquireTodoLock(repoPath)
 	if err != nil {
 		return nil, err
 	}
 
 	pool, err := workspace.Open()
 	if err != nil {
-		releaseTodoLock(lockFile)
+		releaseTodoLock(lockFile, lockFilePath)
 		return nil, fmt.Errorf("open workspace pool: %w", err)
 	}
 
@@ -208,7 +209,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	// the store in this workspace, then edit to it.
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: purpose})
 	if err != nil {
-		releaseTodoLock(lockFile)
+		releaseTodoLock(lockFile, lockFilePath)
 		return nil, fmt.Errorf("acquire workspace: %w", err)
 	}
 
@@ -216,7 +217,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	if !hasBookmark {
 		if err := createTodoStore(client, wsPath); err != nil {
 			pool.Release(wsPath)
-			releaseTodoLock(lockFile)
+			releaseTodoLock(lockFile, lockFilePath)
 			return nil, fmt.Errorf("create todo store: %w", err)
 		}
 	}
@@ -224,7 +225,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	// Edit to the bookmark
 	if err := client.Edit(wsPath, BookmarkName); err != nil {
 		pool.Release(wsPath)
-		releaseTodoLock(lockFile)
+		releaseTodoLock(lockFile, lockFilePath)
 		return nil, fmt.Errorf("edit to todo store: %w", err)
 	}
 
@@ -245,7 +246,8 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		wsRelease: func() error {
 			return pool.Release(wsPath)
 		},
-		lockFile: lockFile,
+		lockFile:     lockFile,
+		lockFilePath: lockFilePath,
 	}, nil
 }
 
@@ -254,10 +256,10 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 func (s *Store) Release() error {
 	if s.wsRelease != nil {
 		releaseErr := s.wsRelease()
-		lockErr := releaseTodoLock(s.lockFile)
+		lockErr := releaseTodoLock(s.lockFile, s.lockFilePath)
 		return errors.Join(releaseErr, lockErr)
 	}
-	return releaseTodoLock(s.lockFile)
+	return releaseTodoLock(s.lockFile, s.lockFilePath)
 }
 
 // createTodoStore creates the orphan change and bookmark for the todo store.
@@ -819,34 +821,37 @@ func snapshotStore(store *Store) error {
 	return store.snapshot.Snapshot(store.wsPath)
 }
 
-func acquireTodoLock(repoPath string) (*os.File, error) {
+func acquireTodoLock(repoPath string) (*os.File, string, error) {
 	stateDir, err := paths.DefaultStateDir()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if err := os.MkdirAll(stateDir, 0o755); err != nil {
-		return nil, fmt.Errorf("create todo lock dir: %w", err)
+		return nil, "", fmt.Errorf("create todo lock dir: %w", err)
 	}
 	lockName := fmt.Sprintf("todo-%s.lock", statestore.SanitizeRepoName(repoPath))
 	lockPath := filepath.Join(stateDir, lockName)
 	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
-		return nil, fmt.Errorf("open todo lock file: %w", err)
+		return nil, "", fmt.Errorf("open todo lock file: %w", err)
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
 		_ = file.Close()
-		return nil, fmt.Errorf("lock todo store: %w", err)
+		return nil, "", fmt.Errorf("lock todo store: %w", err)
 	}
-	return file, nil
+	return file, lockPath, nil
 }
 
-func releaseTodoLock(file *os.File) error {
+func releaseTodoLock(file *os.File, path string) error {
 	if file == nil {
 		return nil
 	}
 	unlockErr := syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 	closeErr := file.Close()
-	return errors.Join(unlockErr, closeErr)
+	// Remove the lock file to avoid accumulating stale lock files,
+	// especially when tests use temporary directories with unique paths.
+	removeErr := os.Remove(path)
+	return errors.Join(unlockErr, closeErr, removeErr)
 }
 
 func isStaleWorkspaceError(err error) bool {
