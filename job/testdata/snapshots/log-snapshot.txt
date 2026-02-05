@@ -29,8 +29,8 @@ Running implementation prompt:
         go test ./job -run Snapshot
         ```
 
-    Tool start: run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
-    Tool end: run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
+    Tool (running): run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
+    Tool (completed): run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
 
 Implementation prompt complete; running tests:
     Command: go test ./job/...

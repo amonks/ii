@@ -502,6 +502,16 @@ Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
 - Message content showing thinking blocks and assistant responses
 - Agent start/end showing model and token usage
 
+Agent tool events (`tool.start`, `tool.end`) emit exactly one "Tool start" log
+when a tool begins executing and exactly one "Tool end" log when the tool
+completes (with success or failure). This ensures that every start is paired
+with an end in the rendered output.
+
+Legacy tool events (from opencode `message.part.updated`) are rendered as
+individual status updates without pairing: `Tool (<status>): <summary>`. The
+same tool may appear multiple times with different statuses (pending, running,
+completed, failed). See `specs/events.md` for details.
+
 ## LLM Integration
 
 The job runner uses the `agent` package to run LLM sessions. The key types are:

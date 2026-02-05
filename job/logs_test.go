@@ -69,8 +69,8 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 		"        Opencode line.",
 		"    Draft change description:",
 		"        feat: add logs",
-		"    Tool start: read file '/tmp/example.txt'",
-		"    Tool end: read file '/tmp/example.txt'",
+		"    Tool (running): read file '/tmp/example.txt'",
+		"    Tool (completed): read file '/tmp/example.txt'",
 		"Implementation prompt complete; running tests:",
 		"Command: go test ./...",
 		"Exit Code: 1",
@@ -246,16 +246,16 @@ func TestEventFormatterAppendsOutput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("append opencode tool start event: %v", err)
 	}
-	if !strings.Contains(chunk, "Tool start: glob '") {
-		t.Fatalf("expected tool start output, got %q", chunk)
+	if !strings.Contains(chunk, "Tool (running): glob '") {
+		t.Fatalf("expected tool status output, got %q", chunk)
 	}
 	opencodeToolEnd := `{"type":"message.part.updated","properties":{"part":{"id":"prt-tool","messageID":"msg-tool","type":"tool","tool":"glob","state":{"status":"completed","input":{"pattern":"**/*.go","path":"/tmp"}}}}}`
 	chunk, err = formatter.Append(Event{Data: opencodeToolEnd})
 	if err != nil {
 		t.Fatalf("append opencode tool end event: %v", err)
 	}
-	if !strings.Contains(chunk, "Tool end: glob '") {
-		t.Fatalf("expected tool end output, got %q", chunk)
+	if !strings.Contains(chunk, "Tool (completed): glob '") {
+		t.Fatalf("expected tool completed output, got %q", chunk)
 	}
 
 	chunk, err = formatter.Append(Event{Name: "job.opencode.error", Data: "{\"purpose\":\"implement\",\"error\":\"opencode session not found\"}"})
@@ -396,7 +396,7 @@ func TestEventFormatterRendersApplyPatchWithoutPatchContent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("append apply_patch event: %v", err)
 	}
-	if !strings.Contains(chunk, "Tool start: apply patch") {
+	if !strings.Contains(chunk, "Tool (running): apply patch") {
 		t.Fatalf("expected fallback apply patch summary, got %q", chunk)
 	}
 }
@@ -456,5 +456,61 @@ func TestEventFormatterLongBashCommand(t *testing.T) {
 	// Note: we avoid '...' in the command itself to reliably detect truncation
 	if strings.HasSuffix(strings.TrimSpace(chunk), "...") {
 		t.Errorf("bash command should not be truncated with trailing ellipsis, got %q", chunk)
+	}
+}
+
+func TestEventFormatterLegacyToolStatus(t *testing.T) {
+	// Verify that each legacy tool status update is rendered independently.
+	// Unlike agent events which emit explicit tool.start/tool.end, legacy
+	// opencode events only have status updates. Each status is shown as-is.
+	formatter := NewEventFormatter()
+
+	makeEvent := func(status string) Event {
+		return Event{Data: `{"type":"message.part.updated","properties":{"part":{"id":"prt-status","messageID":"msg-status","type":"tool","tool":"read","state":{"status":"` + status + `","input":{"filePath":"/tmp/test.txt"}}}}}`}
+	}
+
+	// First pending status
+	chunk, err := formatter.Append(makeEvent("pending"))
+	if err != nil {
+		t.Fatalf("append pending event: %v", err)
+	}
+	if !strings.Contains(chunk, "Tool (pending):") {
+		t.Fatalf("expected Tool (pending) on first pending, got %q", chunk)
+	}
+
+	// Second pending status - should still emit (no deduplication)
+	chunk, err = formatter.Append(makeEvent("pending"))
+	if err != nil {
+		t.Fatalf("append second pending event: %v", err)
+	}
+	if !strings.Contains(chunk, "Tool (pending):") {
+		t.Fatalf("expected Tool (pending) on duplicate pending, got %q", chunk)
+	}
+
+	// Running status
+	chunk, err = formatter.Append(makeEvent("running"))
+	if err != nil {
+		t.Fatalf("append running event: %v", err)
+	}
+	if !strings.Contains(chunk, "Tool (running):") {
+		t.Fatalf("expected Tool (running), got %q", chunk)
+	}
+
+	// Completed status
+	chunk, err = formatter.Append(makeEvent("completed"))
+	if err != nil {
+		t.Fatalf("append completed event: %v", err)
+	}
+	if !strings.Contains(chunk, "Tool (completed):") {
+		t.Fatalf("expected Tool (completed), got %q", chunk)
+	}
+
+	// Another completed status - should still emit (no deduplication)
+	chunk, err = formatter.Append(makeEvent("completed"))
+	if err != nil {
+		t.Fatalf("append second completed event: %v", err)
+	}
+	if !strings.Contains(chunk, "Tool (completed):") {
+		t.Fatalf("expected Tool (completed) on duplicate completed, got %q", chunk)
 	}
 }

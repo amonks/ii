@@ -57,12 +57,36 @@ Switches control what is shown to users; all events are still recorded in full o
 Only a curated subset of activity is shown in the text logs (CLI/TUI). Output is
 formatted to the standard line width and indented like other job log entries.
 
-- Tool calls: one-line summaries with start/end markers. Tool start is emitted when the tool begins; tool end is emitted when the state reaches a terminal status (completed, failed, error, cancelled).
-  - Example: `Tool start: read file 'src/file.ts'` and `Tool end: read file 'src/file.ts'` (paths are repo-relative when possible).
-  - Failed tools show the status: `Tool end: read file '/missing.txt' (failed)`
-  - For `apply_patch` tools, file paths are extracted from the unified diff and shown in the summary.
-  - For `bash` tools, the full command is shown without truncation so the actual command is always visible.
-  - For `bash` tools with empty command input, no log is emitted (the command arrives in a subsequent event).
+### Agent tool events
+
+For agent events (`internal/agent`), tool start and end are emitted directly
+around actual tool execution, ensuring proper pairing:
+
+- `tool.start`: Emitted immediately before tool execution begins.
+- `tool.end`: Emitted immediately after tool execution completes.
+- Example: `Tool start: read file 'src/file.ts'` and `Tool end: read file 'src/file.ts'`
+- Failed tools show the status: `Tool end: read file '/missing.txt' (failed)`
+
+### Legacy tool events
+
+For legacy opencode events (`message.part.updated`), the renderer shows each
+tool status update as it arrives. Because external tools don't reliably report
+status transitions, no start/end pairing is attempted:
+
+- Format: `Tool (<status>): <summary>` where status is the raw status from the event (pending, running, completed, failed, etc.)
+- Example: `Tool (running): read file 'src/file.ts'`
+- This means the same tool may appear multiple times with different statuses.
+
+### Common tool rendering
+
+For both event types:
+- Paths are shown repo-relative when possible.
+- For `apply_patch` tools, file paths are extracted from the unified diff and shown in the summary.
+- For `bash` tools, the full command is shown without truncation so the actual command is always visible.
+- For `bash` tools with empty command input, no log is emitted (the command arrives in a subsequent event).
+
+### Other rendered content
+
 - Prompt text: emitted for user messages.
   - Label: `LLM prompt:`
 - Assistant responses: emitted when an assistant message completes.
