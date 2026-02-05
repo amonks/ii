@@ -438,7 +438,8 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 		agentKind:     agentKind,
 	})
 	if err != nil {
-		return err
+		reopenErr := reopenDesignTodo(repoPath, item.ID)
+		return errors.Join(err, reopenErr)
 	}
 
 	// Mark todo as done on successful completion
@@ -462,9 +463,25 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 	}
 
 	if result.exitCode != 0 {
-		return exitError{code: result.exitCode}
+		reopenErr := reopenDesignTodo(repoPath, item.ID)
+		return errors.Join(exitError{code: result.exitCode}, reopenErr)
 	}
 	return nil
+}
+
+// reopenDesignTodo reopens a design todo after a failed interactive session.
+func reopenDesignTodo(repoPath, todoID string) error {
+	store, err := todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         fmt.Sprintf("design todo %s reopen", todoID),
+	})
+	if err != nil {
+		return err
+	}
+	_, err = store.Reopen([]string{todoID})
+	releaseErr := store.Release()
+	return errors.Join(err, releaseErr)
 }
 
 func formatDesignTodoBlock(item todo.Todo) string {

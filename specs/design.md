@@ -22,13 +22,19 @@ Design todos follow the same lifecycle as regular todos:
 - Can be `waiting` when blocked on external factors
 - Can be `proposed` when created by agents
 
+If an interactive session fails or exits non-zero, the todo reverts from
+`in_progress` to `open`. This matches headless job behavior and prevents todos
+from getting stuck in `in_progress` with no active job.
+
 ## Job Integration
 
 When `ii job do` runs a todo with `type: design`:
 
-1. Launch an interactive agent session instead of headless
-2. The user collaborates with the agent to produce the design
-3. On completion, the todo is marked `done`
+1. Mark the todo `in_progress`
+2. Launch an interactive agent session instead of headless
+3. The user collaborates with the agent to produce the design
+4. On successful completion (exit code 0), the todo is marked `done`
+5. On failure (non-zero exit or error), the todo is reopened to `open`
 
 Design todos are excluded from `ii job do-all` since they require interaction.
 

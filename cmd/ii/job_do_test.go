@@ -336,7 +336,7 @@ func TestRunDesignTodoMarksTodoAsDoneOnSuccess(t *testing.T) {
 	}
 }
 
-func TestRunDesignTodoDoesNotMarkDoneOnNonZeroExit(t *testing.T) {
+func TestRunDesignTodoReopensTodoOnNonZeroExit(t *testing.T) {
 	originalSession := runInteractiveSession
 	defer func() { runInteractiveSession = originalSession }()
 
@@ -375,11 +375,11 @@ func TestRunDesignTodoDoesNotMarkDoneOnNonZeroExit(t *testing.T) {
 		t.Fatalf("expected exit code 1, got %d", exitErr.code)
 	}
 
-	// Verify the todo is NOT marked as done
+	// Verify the todo is reopened to open status (not in_progress or done)
 	store, err = todo.Open(repoPath, todo.OpenOptions{
 		CreateIfMissing: false,
 		PromptToCreate:  false,
-		Purpose:         "verify not done",
+		Purpose:         "verify reopened",
 	})
 	if err != nil {
 		t.Fatalf("failed to open store: %v", err)
@@ -393,8 +393,8 @@ func TestRunDesignTodoDoesNotMarkDoneOnNonZeroExit(t *testing.T) {
 	if len(items) == 0 {
 		t.Fatal("todo not found")
 	}
-	if items[0].Status == todo.StatusDone {
-		t.Fatal("expected todo NOT to be marked as done after failed session")
+	if items[0].Status != todo.StatusOpen {
+		t.Fatalf("expected todo to be reopened to 'open' status, got %q", items[0].Status)
 	}
 }
 
@@ -464,7 +464,7 @@ func TestDefaultRunInteractiveSessionSetsProposerEnv(t *testing.T) {
 	}
 }
 
-func TestRunDesignTodoReturnsSessionError(t *testing.T) {
+func TestRunDesignTodoReopensTodoOnSessionError(t *testing.T) {
 	originalSession := runInteractiveSession
 	defer func() { runInteractiveSession = originalSession }()
 
@@ -497,6 +497,28 @@ func TestRunDesignTodoReturnsSessionError(t *testing.T) {
 	err = runDesignTodo(cmd, repoPath, *created)
 	if !errors.Is(err, expectedErr) {
 		t.Fatalf("expected session error, got %v", err)
+	}
+
+	// Verify the todo is reopened to open status (not in_progress)
+	store, err = todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         "verify reopened",
+	})
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	items, err := store.Show([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to show todo: %v", err)
+	}
+	if len(items) == 0 {
+		t.Fatal("todo not found")
+	}
+	if items[0].Status != todo.StatusOpen {
+		t.Fatalf("expected todo to be reopened to 'open' status, got %q", items[0].Status)
 	}
 }
 
