@@ -129,15 +129,16 @@ Fields (JSON keys):
 - Reapplying the current status does not reset timestamps unless explicitly provided.
 - `updated_at` always changes when a todo is updated.
 
-### Close / Reopen / Start / Delete
+### Close / Reopen / Start / Queue / Delete
 
 - `close` sets status to `closed` and updates `closed_at`.
 - `reopen` sets status to `open` and clears `closed_at`.
 - `start` sets status to `in_progress`, clears `closed_at`, and sets `started_at`.
+- `queue` sets status to `queued` and clears `closed_at`.
 - `finish` sets status to `done` and sets `completed_at` when transitioning from `in_progress`.
 - `delete` sets status to `tombstone`, sets `deleted_at`, clears `closed_at`,
   and optionally records a delete reason.
-- Close/finish/reopen/start do not store reasons; only delete supports
+- Close/finish/reopen/start/queue do not store reasons; only delete supports
   `delete_reason`.
 
 ### List

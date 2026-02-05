@@ -653,6 +653,31 @@ func TestStore_Start(t *testing.T) {
 	}
 }
 
+func TestStore_Queue(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	created, _ := store.Create("Queue this work", CreateOptions{})
+
+	queued, err := store.Queue([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to queue: %v", err)
+	}
+
+	if len(queued) != 1 {
+		t.Fatalf("expected 1 queued todo, got %d", len(queued))
+	}
+	if queued[0].Status != StatusQueued {
+		t.Errorf("expected status 'queued', got %q", queued[0].Status)
+	}
+	if queued[0].ClosedAt != nil {
+		t.Error("expected ClosedAt to be nil")
+	}
+}
+
 func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
 	store, err := openTestStore(t)
 	if err != nil {

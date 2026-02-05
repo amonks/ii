@@ -261,6 +261,11 @@ func (s *Store) Start(ids []string) ([]Todo, error) {
 	return s.updateStatus(ids, StatusInProgress)
 }
 
+// Queue marks one or more todos as queued for batch processing.
+func (s *Store) Queue(ids []string) ([]Todo, error) {
+	return s.updateStatus(ids, StatusQueued)
+}
+
 // Delete tombstones one or more todos with an optional reason.
 func (s *Store) Delete(ids []string, reason string) ([]Todo, error) {
 	status := StatusTombstone
