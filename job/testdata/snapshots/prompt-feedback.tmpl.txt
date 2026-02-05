@@ -101,3 +101,11 @@ Todo
         
             Indented block line two continues with more words to force another
             wrap and confirm spacing.
+
+
+Series so far (commits in this patch series):
+
+```
+abc123 john@example.com 5 minutes ago main
+Add snapshot tests for text formatting
+```

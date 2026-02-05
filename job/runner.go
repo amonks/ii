@@ -57,6 +57,8 @@ type RunOptions struct {
 	RestoreWorkspace   func(string, string) error
 	UpdateStale        func(string) error
 	Snapshot           func(string) error
+	// SeriesLog retrieves the log of commits from fork_point(@|main) to @-.
+	SeriesLog func(string) (string, error)
 	// Transcripts retrieves transcripts for LLM sessions.
 	Transcripts     func(string, []AgentSession) ([]AgentTranscript, error)
 	EventLog        *EventLog
@@ -485,6 +487,9 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.Snapshot == nil {
 		opts.Snapshot = getJJ().Snapshot
 	}
+	if opts.SeriesLog == nil {
+		opts.SeriesLog = getJJ().SeriesLog
+	}
 	if opts.Transcripts == nil {
 		opts.Transcripts = defaultTranscripts
 	}
@@ -568,7 +573,22 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 			return ImplementingStageResult{}, err
 		}
 	}
-	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, nil, promptName, workspacePath)
+
+	// Get the series log (commits in this patch series) for context.
+	// Best-effort: if this fails, we continue without it but log a warning.
+	seriesLog := ""
+	if opts.SeriesLog != nil {
+		var seriesLogErr error
+		seriesLog, seriesLogErr = opts.SeriesLog(workspacePath)
+		if seriesLogErr != nil {
+			_ = appendJobEvent(opts.EventLog, jobEventWarning, warningEventData{
+				Context: "series_log",
+				Message: seriesLogErr.Error(),
+			})
+		}
+	}
+
+	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, seriesLog, nil, promptName, workspacePath)
 	if err != nil {
 		return ImplementingStageResult{}, err
 	}
@@ -783,7 +803,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 	promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, nil, workspacePath))
+	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, "", nil, workspacePath))
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -1015,12 +1035,12 @@ func diffStatHasChanges(diffStat string) bool {
 	return seenChangeLine
 }
 
-func renderPromptTemplate(item todo.Todo, feedback, message string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
+func renderPromptTemplate(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
 		return "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, transcripts, workspacePath))
+	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath))
 }
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {

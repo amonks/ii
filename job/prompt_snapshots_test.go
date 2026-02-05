@@ -56,5 +56,8 @@ func promptSnapshotData() PromptData {
 	message := "feat: snapshot text formatting\n\n" +
 		"Add snapshot tests for prompts and commit messages, ensuring wrapping for long lines and bulleted lists stays consistent."
 
-	return newPromptData(item, feedback, message, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"))
+	seriesLog := "abc123 john@example.com 5 minutes ago main\n" +
+		"Add snapshot tests for text formatting"
+
+	return newPromptData(item, feedback, message, seriesLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"))
 }

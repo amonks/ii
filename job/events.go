@@ -21,9 +21,10 @@ const (
 	jobEventCommitMessage = "job.commit_message"
 	jobEventReview        = "job.review"
 	jobEventTests         = "job.tests"
-	jobEventAgentStart = "job.agent.start"
-	jobEventAgentEnd   = "job.agent.end"
-	jobEventAgentError = "job.agent.error"
+	jobEventAgentStart    = "job.agent.start"
+	jobEventAgentEnd      = "job.agent.end"
+	jobEventAgentError    = "job.agent.error"
+	jobEventWarning       = "job.warning"
 )
 
 // Event captures a job log event.
@@ -251,4 +252,9 @@ func buildTestsEventData(results []TestCommandResult) testsEventData {
 		data.Results = append(data.Results, testResultEventData{Command: result.Command, ExitCode: result.ExitCode, Output: result.Output})
 	}
 	return data
+}
+
+type warningEventData struct {
+	Context string `json:"context"`
+	Message string `json:"message"`
 }

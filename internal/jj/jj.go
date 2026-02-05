@@ -284,3 +284,22 @@ func isFileNotFoundOutput(output []byte) bool {
 		"path doesn't exist",
 	)
 }
+
+// SeriesLog returns the jj log for the patch series from fork_point(@|main) to @-.
+// The output includes commit descriptions and diff stats.
+// Returns an empty string if there are no commits in the series (including when
+// jj outputs "No revisions to show").
+func (c *Client) SeriesLog(workspacePath string) (string, error) {
+	cmd := exec.Command("jj", "log", "-r", "fork_point(@|main)..@-", "--no-graph", "--stat")
+	cmd.Dir = workspacePath
+	output, err := commandOutputString(cmd, "jj log series")
+	if err != nil {
+		return "", err
+	}
+	// jj outputs "No revisions to show" when the revset is empty; treat this as
+	// an empty series rather than returning the message.
+	if output == "" || output == "No revisions to show" || output == "No revisions to show." {
+		return "", nil
+	}
+	return output, nil
+}

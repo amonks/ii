@@ -337,6 +337,10 @@ All prompt templates receive the same data:
 - `FeedbackBlock` (`string`): formatted heading-and-indent block for the feedback text.
 - `CommitMessageBlock` (`string`): formatted heading-and-indent block for the commit
   message text.
+- `SeriesLogBlock` (`string`): formatted block showing the jj log for the patch series
+  (commits from `fork_point(@|main)` to `@-`) with descriptions and diff stats. Empty when there
+  are no commits in the series. Included in `prompt-implementation.tmpl` and
+  `prompt-feedback.tmpl` to give the agent context about work already completed.
 - `HabitName` (`string`): name of the habit (filename without extension). Empty for
   regular todo jobs.
 - `HabitInstructions` (`string`): full text of the habit instruction document,

@@ -36,13 +36,14 @@ type PromptData struct {
 	TodoBlock          string
 	FeedbackBlock      string
 	CommitMessageBlock string
+	SeriesLogBlock     string
 
 	// Habit fields (empty for regular todo jobs)
 	HabitName         string
 	HabitInstructions string
 }
 
-func newPromptData(item todo.Todo, feedback, message string, transcripts []AgentTranscript, workspacePath string) PromptData {
+func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string) PromptData {
 	return PromptData{
 		Todo:               item,
 		Feedback:           feedback,
@@ -53,6 +54,7 @@ func newPromptData(item todo.Todo, feedback, message string, transcripts []Agent
 		TodoBlock:          formatTodoBlock(item),
 		FeedbackBlock:      formatFeedbackBlock(feedback),
 		CommitMessageBlock: formatPromptBlock("Change description", message),
+		SeriesLogBlock:     formatSeriesLogBlock(seriesLog),
 	}
 }
 
@@ -118,6 +120,14 @@ func formatFeedbackBlock(body string) string {
 		return formatPromptMarkdownBlock("Previous feedback", body)
 	}
 	return formatPromptBlock("Previous feedback", body)
+}
+
+func formatSeriesLogBlock(seriesLog string) string {
+	seriesLog = internalstrings.TrimTrailingNewlines(seriesLog)
+	if internalstrings.IsBlank(seriesLog) {
+		return ""
+	}
+	return fmt.Sprintf("Series so far (commits in this patch series):\n\n```\n%s\n```", seriesLog)
 }
 
 func formatPromptMarkdownBlock(label, body string) string {
