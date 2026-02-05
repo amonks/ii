@@ -283,9 +283,6 @@ func (i *agentEventInterpreter) summarizeToolCall(tool string, args map[string]a
 	case "bash":
 		if cmd, ok := args["command"].(string); ok && cmd != "" {
 			cmd = internalstrings.TrimSpace(cmd)
-			if len(cmd) > 60 {
-				cmd = cmd[:60] + "..."
-			}
 			return fmt.Sprintf("bash '%s'", cmd)
 		}
 		return "" // Suppress bash without command

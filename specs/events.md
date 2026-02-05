@@ -61,6 +61,7 @@ formatted to the standard line width and indented like other job log entries.
   - Example: `Tool start: read file 'src/file.ts'` and `Tool end: read file 'src/file.ts'` (paths are repo-relative when possible).
   - Failed tools show the status: `Tool end: read file '/missing.txt' (failed)`
   - For `apply_patch` tools, file paths are extracted from the unified diff and shown in the summary.
+  - For `bash` tools, the full command is shown without truncation so the actual command is always visible.
   - For `bash` tools with empty command input, no log is emitted (the command arrives in a subsequent event).
 - Prompt text: emitted for user messages.
   - Label: `LLM prompt:`

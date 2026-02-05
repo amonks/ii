@@ -379,7 +379,7 @@ func (i *opencodeEventInterpreter) summarizeToolCall(tool string, input map[stri
 		}
 	case "bash":
 		if command := stringFromMap(input, "command"); command != "" {
-			return fmt.Sprintf("run %s", quoteForLog(truncateForLog(command)))
+			return fmt.Sprintf("run %s", quoteForLog(command))
 		}
 		// Return empty string to suppress redundant "bash" log when command is empty.
 		// The command will arrive in a subsequent event.
