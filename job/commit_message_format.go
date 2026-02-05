@@ -17,7 +17,7 @@ func formatCommitMessageWithWidth(item todo.Todo, message, reviewComments string
 	formatted := renderMarkdownText(summary, width)
 
 	bodyText := renderMarkdownTextOrDash(body, width-documentIndent)
-	formatted += "\n\nHere is a generated commit message:\n\n"
+	formatted += "\n\nHere is a generated change description:\n\n"
 	formatted += IndentBlock(bodyText, documentIndent)
 
 	if reviewComments != "" {
@@ -26,7 +26,7 @@ func formatCommitMessageWithWidth(item todo.Todo, message, reviewComments string
 		formatted += IndentBlock(reviewText, documentIndent)
 	}
 
-	formatted += "\n\nThis commit is a step towards implementing this todo:\n\n"
+	formatted += "\n\nThis change is part of a series implementing this todo:\n\n"
 	formatted += formatCommitTodoWithWidth(item, width)
 	return normalizeFormattedCommitMessage(formatted)
 }

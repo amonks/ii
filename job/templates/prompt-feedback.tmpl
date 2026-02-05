@@ -1,10 +1,9 @@
-You are responding to feedback on a change (in the jujutsu working tree) that is
-intended to move us towards completion of a todo. The todo may take several
-changes to resolve.
-
+You are in the IMPLEMENTATION phase, responding to feedback on your previous
+change. The todo may take a series of changes to resolve.
+{{template "workflow_context"}}
 {{.FeedbackBlock}}
 {{if .Message}}
-Commit message from the previous version:
+Change description from the previous iteration:
 {{.CommitMessageBlock}}
 {{end}}
 
@@ -12,7 +11,7 @@ Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, `./.incrementum-commit-message` is the commit message for this change.
-Update it as-necessary. Describe the what _and_ the why.
+When you make changes, write a change description to `./.incrementum-commit-message`.
+Update it as necessary. Describe the what _and_ the why.
 
 {{.TodoBlock}}

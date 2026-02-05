@@ -1,9 +1,10 @@
-You are implementing the next step towards completing a todo.
-
-Do the highest-priority remaining step toward resolution of the todo. Dot 'i's,
-cross 't's: this change should be complete and atomic; tests should pass, specs
-should be updated. Don't do additional work that does not move us towards todo
-resolution. If the todo is already complete, make no changes.
+You are in the IMPLEMENTATION phase, creating the next change towards completing
+a todo.
+{{template "workflow_context"}}
+Make the highest-priority remaining change toward resolution of the todo. Dot
+'i's, cross 't's: this change should be complete and atomic; tests should pass,
+specs should be updated. Don't do additional work that does not move us towards
+todo resolution. If the todo is already complete, make no changes.
 
 Example of a good atomic change:
 - Adds input validation to user registration
@@ -11,17 +12,17 @@ Example of a good atomic change:
 - Updates relevant specs
 - Single focused goal
 
-Example of a poor change:
+Example of a bad change:
 - "Fix bug and refactor authentication and update docs"
-- Multiple unrelated changes
+- Multiple unrelated concerns
 - Hard to review and understand
-- Should be separate steps
+- Should be separate changes
 
 Changes are reviewed according to these questions:
 
 {{template "review_questions"}}
 
-When you make changes, `./.incrementum-commit-message` is the commit message for this change.
-Update it as-necessary. Describe the what _and_ the why.
+When you make changes, write a change description (jj's equivalent of a commit
+message) to `./.incrementum-commit-message`. Describe the what _and_ the why.
 
 {{.TodoBlock}}

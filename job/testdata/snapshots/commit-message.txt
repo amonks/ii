@@ -1,6 +1,6 @@
 feat: snapshot long text
 
-Here is a generated commit message:
+Here is a generated change description:
 
       This adds snapshot coverage for prompt rendering and log snapshots. It
       includes long paragraphs that should wrap cleanly and a list:
@@ -12,7 +12,7 @@ Here is a generated commit message:
 
         go test ./... -run Snapshot
 
-This commit is a step towards implementing this todo:
+This change is part of a series implementing this todo:
 
       ID: todo-57uzut5r
       Title: Snapshot-test text formatting

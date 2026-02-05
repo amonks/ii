@@ -59,7 +59,7 @@ func TestConsoleLoggerFormatsEntries(t *testing.T) {
 		"Implement the change",
 		"LLM transcript:",
 		"Plan the work.",
-		"Draft commit message:",
+		"Draft change description:",
 		"feat: draft commit",
 		"Command: go test ./...",
 		"Exit Code: 1",
@@ -67,7 +67,7 @@ func TestConsoleLoggerFormatsEntries(t *testing.T) {
 		"go test output",
 		"Code review result:",
 		"Add tests.",
-		"Final commit message:",
+		"Final change description:",
 		"feat: final commit",
 	}
 	for _, check := range checks {
@@ -173,11 +173,11 @@ func TestConsoleLoggerPreservesFormattedCommitMessageIndentation(t *testing.T) {
 	message := strings.Join([]string{
 		"Summary line",
 		"",
-		"Here is a generated commit message:",
+		"Here is a generated change description:",
 		"",
 		"    Body line",
 		"",
-		"This commit is a step towards implementing this todo:",
+		"This change is part of a series implementing this todo:",
 		"",
 		"    ID: todo-1",
 		"    Description:",
@@ -187,8 +187,8 @@ func TestConsoleLoggerPreservesFormattedCommitMessageIndentation(t *testing.T) {
 	logger.CommitMessage(CommitMessageLog{Label: "Final", Message: message, Preformatted: true})
 
 	output := stripANSI(buf.String())
-	if !strings.Contains(output, "Final commit message:") {
-		t.Fatalf("expected commit message label, got %q", output)
+	if !strings.Contains(output, "Final change description:") {
+		t.Fatalf("expected change description label, got %q", output)
 	}
 	if !strings.Contains(output, "\n        Summary line") {
 		t.Fatalf("expected summary line indentation, got %q", output)

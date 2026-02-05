@@ -67,7 +67,7 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 		"        First line. Second line.",
 		"    LLM transcript:",
 		"        Opencode line.",
-		"    Draft commit message:",
+		"    Draft change description:",
 		"        feat: add logs",
 		"    Tool start: read file '/tmp/example.txt'",
 		"    Tool end: read file '/tmp/example.txt'",

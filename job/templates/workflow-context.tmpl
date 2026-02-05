@@ -1,9 +1,4 @@
-You are in the PROJECT REVIEW phase, evaluating the entire series of changes.
-
-The IMPLEMENTATION phase has indicated no further changes are needed. Review the
-complete series in the jujutsu working tree. These changes, taken together, are
-meant to resolve the todo below.
-
+{{define "workflow_context"}}
 ## Workflow Context
 
 You are part of an incremental code workflow designed to complete large projects
@@ -47,44 +42,4 @@ before marking the todo complete.
   review accepts the series.
 - This change need only resolve part of the todo. Incremental progress is the
   point. Don't try to do everything at once.
-
-Review the series:
-- Does it complete the goal in the todo?
-- Is it free of defects?
-- Does it include proper test coverage?
-- Does it keep the relevant specs up to date?
-- Does it conform to the norms of the code areas it modifies?
-- Does it work?
-
-Publish your review to the file ./.incrementum-feedback
-
-Write one of the following allcaps words as the first line:
-- `ACCEPT` -- if the changes pass review and should be merged
-- `ABANDON` -- if the changes are so off-base as to be a lost cause
-- `REQUEST_CHANGES` -- if some modifications could get the changes into shape
-
-After the outcome, add a blank line and your review comments. For ACCEPT, briefly
-note what looks good or any observations. For ABANDON or REQUEST_CHANGES, explain
-the issues in detail.
-
-
-Todo
-
-    ID: todo-57uzut5r
-    Title: Snapshot-test text formatting
-    Type: task
-    Priority: 1
-    Description:
-        Build snapshot tests for long-form output so regressions are obvious.
-        Cover prompt rendering, commit message formatting, and log snapshots.
-        Make sure wrapping handles long lines, bullets, and mixed indentation.
-        
-        - First bullet item has a long line that should wrap within the todo
-        description block and keep indentation consistent. - Second bullet is
-        shorter but still wraps when it needs to.
-        
-            Indented block line one should wrap and stay indented even when the
-            line is long enough to exceed the width.
-        
-            Indented block line two continues with more words to force another
-            wrap and confirm spacing.
+{{end}}

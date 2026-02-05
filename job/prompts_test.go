@@ -41,7 +41,7 @@ func TestLoadPrompt_UsesEmbeddedDefault(t *testing.T) {
 		t.Fatalf("load prompt: %v", err)
 	}
 
-	if !strings.Contains(loaded, "Review the changes") {
+	if !strings.Contains(loaded, "Review the change") {
 		t.Fatalf("expected embedded prompt, got %q", loaded)
 	}
 }
@@ -166,7 +166,7 @@ func TestRenderPrompt_RendersReviewQuestionsTemplate(t *testing.T) {
 		t.Fatalf("render prompt: %v", err)
 	}
 
-	if !strings.Contains(rendered, "Does it do what the message says?") {
+	if !strings.Contains(rendered, "Does it do what the change description says?") {
 		t.Fatalf("expected review questions to render, got %q", rendered)
 	}
 }

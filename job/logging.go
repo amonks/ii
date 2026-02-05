@@ -344,9 +344,9 @@ func reviewLabel(purpose string) string {
 
 func commitMessageLabel(label string) string {
 	if internalstrings.IsBlank(label) {
-		return "Commit message:"
+		return "Change description:"
 	}
-	return fmt.Sprintf("%s commit message:", label)
+	return fmt.Sprintf("%s change description:", label)
 }
 
 // StageMessage returns the standard log message for a stage transition.

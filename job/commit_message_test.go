@@ -98,9 +98,9 @@ func TestFormatCommitMessage(t *testing.T) {
 	}
 
 	checks := []string{
-		"Here is a generated commit message:",
+		"Here is a generated change description:",
 		"    Ensure log output is wrapped and indented for clarity.",
-		"This commit is a step towards implementing this todo:",
+		"This change is part of a series implementing this todo:",
 		"    ID: todo-555",
 		"    Title: Shore up logs",
 		"    Type: task",

@@ -546,11 +546,11 @@ func TestRunReviewingStageInjectsCommitMessageWhenTemplateMissing(t *testing.T) 
 		t.Fatalf("run reviewing stage: %v", err)
 	}
 
-	if !strings.Contains(seenPrompt, "Commit message\n\n    "+commitMessage) {
-		t.Fatalf("expected prompt to include injected commit message block, got %q", seenPrompt)
+	if !strings.Contains(seenPrompt, "Change description\n\n    "+commitMessage) {
+		t.Fatalf("expected prompt to include injected change description block, got %q", seenPrompt)
 	}
 	if !strings.Contains(seenPrompt, commitMessage) {
-		t.Fatalf("expected prompt to include commit message, got %q", seenPrompt)
+		t.Fatalf("expected prompt to include change description, got %q", seenPrompt)
 	}
 }
 
@@ -623,8 +623,8 @@ func TestRunCommittingStageFormatsCommitMessage(t *testing.T) {
 
 	checks := []string{
 		"feat: expand commit metadata",
-		"Here is a generated commit message:",
-		"This commit is a step towards implementing this todo:",
+		"Here is a generated change description:",
+		"This change is part of a series implementing this todo:",
 		"    ID: todo-333",
 		"    Title: Expand commit message",
 		"    Type: task",

@@ -17,6 +17,7 @@ const (
 	promptOverrideDir              = ".incrementum/templates"
 	reviewQuestionsTemplateName    = "review-questions.tmpl"
 	reviewInstructionsTemplateName = "review-instructions.tmpl"
+	workflowContextTemplateName    = "workflow-context.tmpl"
 )
 
 //go:embed templates/*.tmpl
@@ -51,7 +52,7 @@ func newPromptData(item todo.Todo, feedback, message string, transcripts []Agent
 		ReviewInstructions: reviewInstructionsText,
 		TodoBlock:          formatTodoBlock(item),
 		FeedbackBlock:      formatFeedbackBlock(feedback),
-		CommitMessageBlock: formatPromptBlock("Commit message", message),
+		CommitMessageBlock: formatPromptBlock("Change description", message),
 	}
 }
 
@@ -64,7 +65,7 @@ func newHabitPromptData(habitName, habitInstructions, feedback, message string, 
 		WorkspacePath:      workspacePath,
 		ReviewInstructions: reviewInstructionsText,
 		FeedbackBlock:      formatFeedbackBlock(feedback),
-		CommitMessageBlock: formatPromptBlock("Commit message", message),
+		CommitMessageBlock: formatPromptBlock("Change description", message),
 		HabitName:          habitName,
 		HabitInstructions:  formatHabitInstructions(habitInstructions),
 	}
@@ -248,9 +249,19 @@ func RenderPrompt(repoPath, contents string, data PromptData) (string, error) {
 		return "", fmt.Errorf("load review questions template: %w", err)
 	}
 
+	workflowContextTemplate, err := LoadPrompt(repoPath, workflowContextTemplateName)
+	if err != nil {
+		return "", fmt.Errorf("load workflow context template: %w", err)
+	}
+
 	tmpl, err := template.New("prompt").Option("missingkey=error").Parse(reviewQuestionsTemplate)
 	if err != nil {
 		return "", fmt.Errorf("parse review questions template: %w", err)
+	}
+
+	tmpl, err = tmpl.Parse(workflowContextTemplate)
+	if err != nil {
+		return "", fmt.Errorf("parse workflow context template: %w", err)
 	}
 
 	tmpl, err = tmpl.Parse(contents)

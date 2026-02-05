@@ -17,7 +17,7 @@ Running implementation prompt:
         Opencode transcript line one.
         Opencode transcript line two.
 
-    Final commit message:
+    Final change description:
         feat: snapshot log output
         
         Keep this description long enough to wrap and include a short list:
