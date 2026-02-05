@@ -49,7 +49,6 @@
 | [cli.md](./cli.md)                 | [cmd/ii/](../cmd/ii/)       | CLI conventions and behavior notes                                                                             |
 | [llm.md](./llm.md)                 | [llm/](../llm/)             | LLM abstraction: unified API for Anthropic, OpenAI completions, and OpenAI responses                         |
 | [agent.md](./agent.md)             | [agent/](../agent/)         | Agent loop: autonomous task execution with built-in tools (bash, read, write, edit)                          |
-| [agents.md](./agents.md)           | [agents/](../agents/)       | Agent backend abstraction: internal runner plus shell-outs for external CLIs                                 |
 | [job.md](./job.md)                 | [job/](../job/)             | Jobs system: workflow management for LLM-based todo completion, with acceptance testing                      |
 | [job-changes.md](./job-changes.md) | [job/](../job/)             | Job change tracking: persistent state for changes, commits, and reviews within a job                         |
 | [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |

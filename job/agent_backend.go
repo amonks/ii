@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/amonks/incrementum/agents"
+	"github.com/amonks/incrementum/agent"
 	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
@@ -99,7 +99,7 @@ type agentErrorEventData struct {
 
 // RecordAgentEvents forwards agent events to the job event log.
 // Returns a channel that receives any error encountered during recording.
-func RecordAgentEvents(log *EventLog, events <-chan agents.Event) <-chan error {
+func RecordAgentEvents(log *EventLog, events <-chan agent.Event) <-chan error {
 	done := make(chan error, 1)
 	if events == nil {
 		done <- nil
@@ -111,7 +111,7 @@ func RecordAgentEvents(log *EventLog, events <-chan agents.Event) <-chan error {
 			if log == nil || recordErr != nil {
 				continue
 			}
-			sse := agents.EventToSSE(event)
+			sse := agent.EventToSSE(event)
 			recordErr = log.Append(Event{ID: sse.ID, Name: sse.Name, Data: sse.Data})
 		}
 		done <- recordErr

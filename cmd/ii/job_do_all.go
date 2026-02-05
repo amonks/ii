@@ -25,7 +25,6 @@ var (
 	jobDoAllPriority int
 	jobDoAllType     string
 	jobDoAllHabits   bool
-	jobDoAllAgent    string
 )
 
 type jobDoAllFilter struct {
@@ -39,7 +38,6 @@ func init() {
 	jobDoAllCmd.Flags().IntVar(&jobDoAllPriority, "priority", -1, "Filter by priority (0-4, includes higher priorities)")
 	jobDoAllCmd.Flags().StringVar(&jobDoAllType, "type", "", "Filter by type (task, bug, feature); design todos are excluded")
 	jobDoAllCmd.Flags().BoolVar(&jobDoAllHabits, "habits", false, "Run habits after todo queue is empty (round-robin)")
-	jobDoAllCmd.Flags().StringVar(&jobDoAllAgent, "agent", "", "Agent backend (internal, claude, codex)")
 }
 
 func runJobDoAll(cmd *cobra.Command, args []string) error {
@@ -133,12 +131,7 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		return err
 	}
 
-	agentKind, err := parseJobDoAgentKind(cmd)
-	if err != nil {
-		return err
-	}
-
-	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath)
 	if err != nil {
 		return err
 	}

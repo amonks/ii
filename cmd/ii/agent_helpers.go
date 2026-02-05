@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/agents"
 	jobpkg "github.com/amonks/incrementum/job"
 )
 
@@ -31,11 +29,11 @@ func openAgentStoreAndRepoPath() (*agent.Store, string, error) {
 var makeAgentRunnerFunc = makeAgentRunner
 
 // makeRunLLMFunc creates an LLM run function for use with job.RunOptions.RunLLM.
-func makeRunLLMFunc(repoPath string, runner agents.Runner) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
+func makeRunLLMFunc(repoPath string, store *agent.Store) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
 	return func(opts jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error) {
 		ctx := context.Background()
 
-		handle, err := runner.Run(ctx, agents.RunOptions{
+		handle, err := store.Run(ctx, agent.RunOptions{
 			RepoPath:  opts.RepoPath,
 			WorkDir:   opts.WorkspacePath,
 			Prompt:    opts.Prompt,
@@ -49,7 +47,7 @@ func makeRunLLMFunc(repoPath string, runner agents.Runner) (func(jobpkg.AgentRun
 		}
 
 		// Record events to job event log
-		eventErrCh := jobpkg.RecordAgentEvents(opts.EventLog, handle.Events())
+		eventErrCh := jobpkg.RecordAgentEvents(opts.EventLog, handle.Events)
 		result, err := handle.Wait()
 		eventErr := <-eventErrCh
 		if err != nil {
@@ -74,7 +72,7 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 			return nil, nil
 		}
 
-		store, err := agents.OpenTranscriptStore()
+		store, err := agent.Open()
 		if err != nil {
 			return nil, err
 		}
@@ -98,15 +96,10 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 	}
 }
 
-func makeAgentRunner(repoPath string, kind jobAgentKind) (agents.Runner, error) {
-	switch kind {
-	case jobAgentInternal:
-		return agents.NewInternalRunner(repoPath)
-	case jobAgentClaude:
-		return agents.NewClaudeRunner(), nil
-	case jobAgentCodex:
-		return agents.NewCodexRunner(), nil
-	default:
-		return nil, fmt.Errorf("unknown agent %q", kind)
-	}
+func makeAgentRunner(repoPath string) (*agent.Store, error) {
+	return agent.OpenWithOptions(agent.Options{
+		RepoPath:  repoPath,
+		StateDir:  os.Getenv("INCREMENTUM_STATE_DIR"),
+		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
+	})
 }

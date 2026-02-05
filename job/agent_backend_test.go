@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agents"
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/internal/llm"
 )
 
@@ -17,14 +17,14 @@ func TestRecordAgentEvents(t *testing.T) {
 	}
 	defer log.Close()
 
-	eventCh := make(chan agents.Event, 3)
+	eventCh := make(chan agent.Event, 3)
 
 	// Simulate agent events
-	eventCh <- agents.AgentStartEvent{Config: agents.AgentConfig{
+	eventCh <- agent.AgentStartEvent{Config: agent.AgentConfig{
 		Model: llm.Model{ID: "test-model"},
 	}}
-	eventCh <- agents.TurnStartEvent{TurnIndex: 0}
-	eventCh <- agents.AgentEndEvent{
+	eventCh <- agent.TurnStartEvent{TurnIndex: 0}
+	eventCh <- agent.AgentEndEvent{
 		Messages: nil,
 		Usage:    llm.Usage{Input: 100, Output: 50},
 	}
@@ -46,8 +46,8 @@ func TestRecordAgentEvents_NilEvents(t *testing.T) {
 }
 
 func TestRecordAgentEvents_NilLog(t *testing.T) {
-	eventCh := make(chan agents.Event, 1)
-	eventCh <- agents.TurnStartEvent{TurnIndex: 0}
+	eventCh := make(chan agent.Event, 1)
+	eventCh <- agent.TurnStartEvent{TurnIndex: 0}
 	close(eventCh)
 
 	errCh := RecordAgentEvents(nil, eventCh)

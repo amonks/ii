@@ -360,8 +360,6 @@ Create and run a job to completion (blocking).
 - If creation flags provided: create todo first (same flags as `ii todo create`:
   `--title`, `--type`, `--priority`, `--description/--desc`, `--deps`,
   `--edit/--no-edit`).
-- `--agent` selects the agent backend (`internal`, `claude`, `codex`); it does not
-  override model selection.
 - `--habit <name>` runs the named habit from `.incrementum/habits/<name>.md`.
   Accepts habit name or unique prefix.
 - `--habit` (no name) runs the alphabetically first habit.
@@ -430,15 +428,13 @@ When `--habit` is provided, the workflow differs from regular todos:
 Habits skip the project review stage. The commit message includes the full habit
 instructions text.
 
-### `ii job do-all [--priority <n>] [--type <type>] [--agent <backend>]`
+### `ii job do-all [--priority <n>] [--type <type>]`
 
 Run jobs for all ready todos that match the provided filters.
 
 - `--priority` filters by maximum priority; `--priority=1` includes priority 0
   and 1 todos (priority 0 first).
 - `--type` filters by exact todo type (`task`, `bug`, `feature`).
-- `--agent` selects the agent backend (`internal`, `claude`, `codex`); it does not
-  override model selection. Same as `ii job do --agent`.
 
 Behavior:
 
@@ -498,7 +494,7 @@ and message content (thinking/response).
 
 ## Agent Event Rendering
 
-The job event log renderer supports agent events (from the `agents` package).
+The job event log renderer supports agent events (from the `agent` package).
 Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
 `tool.` prefixes) and rendered with:
 
@@ -508,7 +504,7 @@ Agent events are identified by their event names (`agent.`, `turn.`, `message.`,
 
 ## LLM Integration
 
-The job runner uses the `agents` package to run LLM sessions. The key types are:
+The job runner uses the `agent` package to run LLM sessions. The key types are:
 
 ### Types
 
@@ -530,15 +526,11 @@ type AgentRunResult struct {
 }
 ```
 
-`ExitCode` is a result code indicating success (0) or failure (non-zero). For
-external agent backends, this is the process exit code. For the internal backend,
-it is a synthetic code set to 1 when an error occurs. Error messages reference
-"exit code" for consistency across backends even though the internal backend does
-not spawn a subprocess.
+`ExitCode` is a result code indicating success (0) or failure (non-zero). It is
+a synthetic code set to 1 when an error occurs. The term "exit code" is used
+for consistency even though the agent does not spawn a subprocess.
 
-`Error` is optional and may be empty even when `ExitCode` is non-zero. External
-agent backends (claude, codex) do not provide detailed error messages beyond the
-exit code.
+`Error` is optional and may be empty even when `ExitCode` is non-zero.
 
 ```go
 type AgentSession struct {
@@ -554,9 +546,9 @@ type AgentTranscript struct {
 
 ### RunOptions Fields
 
-- `RunLLM`: Callback to run an LLM session. CLI wiring uses the `agents` package.
+- `RunLLM`: Callback to run an LLM session. CLI wiring uses the `agent` package.
 - `Transcripts`: Retrieves transcripts for sessions. Defaults to using
-  `agent.Store.TranscriptSnapshot` via `agents.OpenTranscriptStore`.
+  `agent.Store.TranscriptSnapshot`.
 - `Model`: Overrides model selection for all stages when set.
 
 ### Job Events

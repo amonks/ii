@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agents"
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/internal/jj"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
@@ -947,7 +947,7 @@ func defaultTranscripts(_ string, sessions []AgentSession) ([]AgentTranscript, e
 		return nil, nil
 	}
 
-	store, err := agents.OpenTranscriptStore()
+	store, err := agent.Open()
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agents"
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/habit"
 	"github.com/amonks/incrementum/internal/editor"
 	"github.com/amonks/incrementum/internal/jj"
@@ -72,15 +72,6 @@ var openQueueStore = func(repoPath, purpose string) (queueStore, error) {
 		Purpose:         purpose,
 	})
 }
-
-type jobAgentKind string
-
-const (
-	jobAgentInternal jobAgentKind = "internal"
-	jobAgentClaude   jobAgentKind = "claude"
-	jobAgentCodex    jobAgentKind = "codex"
-)
-
 var (
 	jobDoTitle               string
 	jobDoType                string
@@ -90,10 +81,9 @@ var (
 	jobDoCodeReviewModel     string
 	jobDoProjectReviewModel  string
 	jobDoDeps                []string
-	jobDoEdit                bool
-	jobDoNoEdit              bool
-	jobDoAgent               string
-	jobDoHabit               string
+	jobDoEdit    bool
+	jobDoNoEdit  bool
+	jobDoHabit   string
 )
 
 func init() {
@@ -110,32 +100,9 @@ func init() {
 	jobDoCmd.Flags().StringArrayVar(&jobDoDeps, "deps", nil, "Dependencies in format <id> (e.g., abc123)")
 	jobDoCmd.Flags().BoolVarP(&jobDoEdit, "edit", "e", false, "Open $EDITOR (default if interactive and no create flags)")
 	jobDoCmd.Flags().BoolVar(&jobDoNoEdit, "no-edit", false, "Do not open $EDITOR")
-	jobDoCmd.Flags().StringVar(&jobDoAgent, "agent", "", "Agent backend (internal, claude, codex)")
 	jobDoCmd.Flags().StringVar(&jobDoHabit, "habit", "", "Run a habit instead of a todo (use habit name or empty for first)")
 	// Allow --habit without a value to run the first habit alphabetically
 	jobDoCmd.Flags().Lookup("habit").NoOptDefVal = " "
-}
-
-func parseJobDoAgentKind(cmd *cobra.Command) (jobAgentKind, error) {
-	// Read the --agent flag from the command that was passed. This allows
-	// both ii job do and ii job do-all to define their own --agent flag and
-	// have this function parse whichever command is being executed.
-	value, err := cmd.Flags().GetString("agent")
-	if err != nil {
-		// Flag not defined on this command - use default
-		return jobAgentInternal, nil
-	}
-	value = internalstrings.NormalizeLowerTrimSpace(value)
-	if value == "" {
-		return jobAgentInternal, nil
-	}
-
-	switch jobAgentKind(value) {
-	case jobAgentInternal, jobAgentClaude, jobAgentCodex:
-		return jobAgentKind(value), nil
-	default:
-		return "", fmt.Errorf("unknown agent %q (use internal, claude, or codex)", value)
-	}
 }
 
 func runJobDo(cmd *cobra.Command, args []string) error {
@@ -294,12 +261,7 @@ func runHabitJob(cmd *cobra.Command) error {
 		}
 	}
 
-	agentKind, err := parseJobDoAgentKind(cmd)
-	if err != nil {
-		return err
-	}
-
-	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath)
 	if err != nil {
 		return err
 	}
@@ -435,7 +397,6 @@ type interactiveSessionOptions struct {
 	workspacePath string
 	prompt        string
 	model         string
-	agentKind     jobAgentKind
 }
 
 // interactiveSessionResult contains the result of an interactive session.
@@ -445,7 +406,7 @@ type interactiveSessionResult struct {
 
 // defaultRunInteractiveSession runs an interactive agent session.
 func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSessionResult, error) {
-	runner, err := makeAgentRunnerFunc(opts.repoPath, opts.agentKind)
+	store, err := makeAgentRunnerFunc(opts.repoPath)
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
@@ -462,7 +423,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		cancel()
 	}()
 
-	handle, err := runner.Run(ctx, agents.RunOptions{
+	handle, err := store.Run(ctx, agent.RunOptions{
 		RepoPath:  opts.repoPath,
 		WorkDir:   opts.workspacePath,
 		Prompt:    opts.prompt,
@@ -476,7 +437,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 	}
 
 	// Stream events to stderr (same as agent run command)
-	streamAgentEventsToStderr(handle.Events())
+	streamAgentEventsToStderr(handle.Events)
 
 	result, err := handle.Wait()
 	if err != nil {
@@ -488,11 +449,6 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 
 // runDesignTodo runs an interactive agent session for design todos.
 func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
-	agentKind, err := parseJobDoAgentKind(cmd)
-	if err != nil {
-		return err
-	}
-
 	// Get the workspace path from the current working directory.
 	// This ensures we run jobs in the workspace we're currently in,
 	// not the source repo root.
@@ -542,7 +498,6 @@ func runDesignTodo(cmd *cobra.Command, repoPath string, item todo.Todo) error {
 		workspacePath: workspacePath,
 		prompt:        prompt,
 		model:         item.ImplementationModel,
-		agentKind:     agentKind,
 	})
 	if err != nil {
 		reopenErr := reopenDesignTodo(repoPath, item.ID)
@@ -613,11 +568,6 @@ func formatDesignTodoBlock(item todo.Todo) string {
 }
 
 func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
-	agentKind, err := parseJobDoAgentKind(cmd)
-	if err != nil {
-		return err
-	}
-
 	// Get the workspace path from the current working directory.
 	// This ensures we run jobs in the workspace we're currently in,
 	// not the source repo root.
@@ -631,7 +581,7 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 		return err
 	}
 
-	runner, err := makeAgentRunnerFunc(repoPath, agentKind)
+	runner, err := makeAgentRunnerFunc(repoPath)
 	if err != nil {
 		return err
 	}
