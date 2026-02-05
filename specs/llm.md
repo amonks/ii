@@ -347,6 +347,10 @@ type UsageCost struct {
 ## Error Handling
 
 - Network errors and rate limits trigger automatic retry with exponential backoff
+- Default retry configuration: up to 5 retries (6 total attempts), starting at 1 second
+  and doubling up to a maximum of 30 seconds between attempts
+- Retryable errors: HTTP 429 (rate limit), 500, 502, 503, 504, and network failures
+- Non-retryable errors: HTTP 4xx (except 429) return immediately without retry
 - Retries are capped at a configurable maximum delay
 - Context cancellation stops retries and returns `StopReasonAborted`
 - Unrecoverable errors return `StopReasonError` with `ErrorMessage` populated

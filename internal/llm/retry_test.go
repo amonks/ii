@@ -114,8 +114,8 @@ func TestWaitWithJitter_CompletesNormally(t *testing.T) {
 func TestDefaultRetryConfig(t *testing.T) {
 	config := DefaultRetryConfig()
 
-	if config.MaxRetries != 3 {
-		t.Errorf("MaxRetries = %d, want 3", config.MaxRetries)
+	if config.MaxRetries != 5 {
+		t.Errorf("MaxRetries = %d, want 5", config.MaxRetries)
 	}
 	if config.InitialWait != 1*time.Second {
 		t.Errorf("InitialWait = %v, want 1s", config.InitialWait)

@@ -16,9 +16,10 @@ type RetryConfig struct {
 }
 
 // DefaultRetryConfig returns the default retry configuration.
+// Retries up to 5 times (6 total attempts) with exponential backoff.
 func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
-		MaxRetries:  3,
+		MaxRetries:  5,
 		InitialWait: 1 * time.Second,
 		MaxWait:     30 * time.Second,
 		Multiplier:  2.0,
