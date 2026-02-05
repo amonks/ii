@@ -21,6 +21,13 @@ func formatValidationError(toolName string, paramName string, expectedType strin
 		toolName, paramName, expectedType, string(argsJSON))
 }
 
+// formatInvalidValueError creates a detailed error message for invalid parameter values (e.g., invalid enum).
+func formatInvalidValueError(toolName string, paramName string, receivedValue string, validValues []string, args map[string]any) string {
+	argsJSON, _ := json.Marshal(args)
+	return fmt.Sprintf("Validation error for tool %q:\n  - %s: invalid value %q, valid values are %v\n\nReceived arguments:\n%s",
+		toolName, paramName, receivedValue, validValues, string(argsJSON))
+}
+
 // Tool parameter types for JSON schema generation
 
 // BashParams contains parameters for the bash tool.
@@ -68,9 +75,29 @@ type EditParams struct {
 	ReplaceAll *bool `json:"replace_all,omitempty" jsonschema:"description=Replace all occurrences (default false),optional"`
 }
 
+// TaskParams contains parameters for the task tool that spawns subagents.
+type TaskParams struct {
+	// Description is a short (3-5 word) description of the task.
+	Description string `json:"description" jsonschema:"description=A short (3-5 word) description of the task"`
+
+	// Prompt is the task for the agent to perform.
+	Prompt string `json:"prompt" jsonschema:"description=The task for the agent to perform"`
+
+	// SubagentType is the type of specialized agent to use.
+	SubagentType string `json:"subagent_type" jsonschema:"description=The type of specialized agent to use for this task"`
+}
+
 // builtInTools returns the list of built-in agent tools.
+// The task tool is not included until subagent spawning is implemented.
 func builtInTools() []llm.Tool {
-	return []llm.Tool{
+	return builtInToolsWithTask(false)
+}
+
+// builtInToolsWithTask returns the list of built-in agent tools,
+// optionally including the task tool. Subagents should not have the
+// task tool to prevent recursive spawning.
+func builtInToolsWithTask(includeTask bool) []llm.Tool {
+	tools := []llm.Tool{
 		{
 			Name:        "bash",
 			Description: "Execute a shell command in the working directory. Commands are checked against permission rules before execution.",
@@ -92,6 +119,16 @@ func builtInTools() []llm.Tool {
 			Parameters:  EditParams{},
 		},
 	}
+
+	if includeTask {
+		tools = append(tools, llm.Tool{
+			Name:        "task",
+			Description: "Launch a subagent to handle a task. Use this for complex multi-step operations that benefit from focused context. The subagent runs synchronously and returns its result.",
+			Parameters:  TaskParams{},
+		})
+	}
+
+	return tools
 }
 
 // toolExecutor executes tools and returns results.
@@ -115,6 +152,8 @@ func (e *toolExecutor) executeTool(ctx context.Context, toolCall llm.ToolCall) l
 		content, isError = e.executeWrite(toolCall.Arguments)
 	case "edit":
 		content, isError = e.executeEdit(toolCall.Arguments)
+	case "task":
+		content, isError = e.executeTask(ctx, toolCall.Arguments)
 	default:
 		content = fmt.Sprintf("Unknown tool: %s", toolCall.Name)
 		isError = true
@@ -382,6 +421,42 @@ func (e *toolExecutor) executeEdit(args map[string]any) (string, bool) {
 		return fmt.Sprintf("Replaced %d occurrences in %s", count, path), false
 	}
 	return fmt.Sprintf("Successfully edited %s", path), false
+}
+
+// executeTask spawns a subagent to handle a task.
+// This is a placeholder that will be implemented to actually spawn subagents.
+func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (string, bool) {
+	description, ok := args["description"].(string)
+	if !ok || description == "" {
+		return formatValidationError("task", "description", "string", args), true
+	}
+
+	prompt, ok := args["prompt"].(string)
+	if !ok || prompt == "" {
+		return formatValidationError("task", "prompt", "string", args), true
+	}
+
+	subagentType, ok := args["subagent_type"].(string)
+	if !ok || subagentType == "" {
+		return formatValidationError("task", "subagent_type", "string", args), true
+	}
+
+	// Validate subagent type
+	validTypes := []string{"general", "explore", "bash"}
+	isValid := false
+	for _, t := range validTypes {
+		if subagentType == t {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		return formatInvalidValueError("task", "subagent_type", subagentType, validTypes, args), true
+	}
+
+	// Placeholder: actual subagent spawning will be implemented in a follow-up change.
+	// For now, return an error indicating the feature is not yet implemented.
+	return fmt.Sprintf("Subagent spawning not yet implemented (description: %q, type: %q)", description, subagentType), true
 }
 
 // isBinary checks if data appears to be binary content.

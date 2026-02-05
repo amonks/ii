@@ -557,6 +557,7 @@ func TestIsBinary(t *testing.T) {
 func TestBuiltInTools(t *testing.T) {
 	tools := builtInTools()
 
+	// builtInTools() no longer includes the task tool until subagent spawning is implemented
 	if len(tools) != 4 {
 		t.Errorf("expected 4 built-in tools, got %d", len(tools))
 	}
@@ -587,6 +588,146 @@ func TestBuiltInTools(t *testing.T) {
 			t.Errorf("missing expected tool: %s", name)
 		}
 	}
+}
+
+func TestBuiltInToolsWithTask(t *testing.T) {
+	t.Run("with task tool", func(t *testing.T) {
+		tools := builtInToolsWithTask(true)
+		hasTask := false
+		for _, tool := range tools {
+			if tool.Name == "task" {
+				hasTask = true
+				break
+			}
+		}
+		if !hasTask {
+			t.Error("expected task tool when includeTask=true")
+		}
+	})
+
+	t.Run("without task tool", func(t *testing.T) {
+		tools := builtInToolsWithTask(false)
+		for _, tool := range tools {
+			if tool.Name == "task" {
+				t.Error("did not expect task tool when includeTask=false")
+			}
+		}
+		if len(tools) != 4 {
+			t.Errorf("expected 4 tools without task, got %d", len(tools))
+		}
+	})
+}
+
+func TestToolExecutor_Task(t *testing.T) {
+	tmpDir := t.TempDir()
+	executor := &toolExecutor{
+		workDir: tmpDir,
+		permissions: BashPermissions{
+			Rules: []BashRule{{Pattern: "*", Allow: true}},
+		},
+	}
+
+	t.Run("missing description", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc1",
+			Name: "task",
+			Arguments: map[string]any{
+				"prompt":        "do something",
+				"subagent_type": "general",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		if !result.IsError {
+			t.Error("expected error for missing description")
+		}
+		text := getToolResultText(result)
+		if !strings.Contains(text, "Validation error") {
+			t.Errorf("expected 'Validation error' in message, got %q", text)
+		}
+	})
+
+	t.Run("missing prompt", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc2",
+			Name: "task",
+			Arguments: map[string]any{
+				"description":   "test task",
+				"subagent_type": "general",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		if !result.IsError {
+			t.Error("expected error for missing prompt")
+		}
+		text := getToolResultText(result)
+		if !strings.Contains(text, "Validation error") {
+			t.Errorf("expected 'Validation error' in message, got %q", text)
+		}
+	})
+
+	t.Run("missing subagent_type", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc3",
+			Name: "task",
+			Arguments: map[string]any{
+				"description": "test task",
+				"prompt":      "do something",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		if !result.IsError {
+			t.Error("expected error for missing subagent_type")
+		}
+		text := getToolResultText(result)
+		if !strings.Contains(text, "Validation error") {
+			t.Errorf("expected 'Validation error' in message, got %q", text)
+		}
+	})
+
+	t.Run("invalid subagent_type", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc4",
+			Name: "task",
+			Arguments: map[string]any{
+				"description":   "test task",
+				"prompt":        "do something",
+				"subagent_type": "invalid-type",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		if !result.IsError {
+			t.Error("expected error for invalid subagent_type")
+		}
+		text := getToolResultText(result)
+		// Should use consistent validation error format
+		if !strings.Contains(text, "Validation error") {
+			t.Errorf("expected 'Validation error' in message, got %q", text)
+		}
+		if !strings.Contains(text, "invalid value") {
+			t.Errorf("expected 'invalid value' in message, got %q", text)
+		}
+	})
+
+	t.Run("valid parameters returns not implemented", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc5",
+			Name: "task",
+			Arguments: map[string]any{
+				"description":   "test task",
+				"prompt":        "do something",
+				"subagent_type": "general",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		// Currently returns an error because subagent spawning is not yet implemented
+		if !result.IsError {
+			t.Error("expected error (not yet implemented)")
+		}
+		text := getToolResultText(result)
+		if !strings.Contains(text, "not yet implemented") {
+			t.Errorf("expected 'not yet implemented' in message, got %q", text)
+		}
+	})
 }
 
 // Helper to extract text from tool result
