@@ -320,6 +320,7 @@ type ToolExecutionEndEvent struct {
     TurnIndex  int
     ToolCallID string
     ToolName   string
+    Arguments  map[string]any
     Result     llm.ToolResultMessage
 }
 ```

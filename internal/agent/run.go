@@ -257,6 +257,7 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 					TurnIndex:  turnIndex,
 					ToolCallID: tc.ID,
 					ToolName:   tc.Name,
+					Arguments:  tc.Arguments,
 					Result:     toolResult,
 				}
 
