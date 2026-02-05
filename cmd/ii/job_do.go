@@ -55,6 +55,24 @@ var openDesignTodoStore = func(repoPath, purpose string) (designTodoStore, error
 	})
 }
 
+// queueStore is an interface for the store operations needed for queueing/cleanup.
+// This allows mocking store operations in tests.
+type queueStore interface {
+	Queue(ids []string) ([]todo.Todo, error)
+	Reopen(ids []string) ([]todo.Todo, error)
+	Release() error
+}
+
+// openQueueStore opens a store for queue operations.
+// It can be overridden for testing.
+var openQueueStore = func(repoPath, purpose string) (queueStore, error) {
+	return todo.Open(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         purpose,
+	})
+}
+
 type jobAgentKind string
 
 const (
@@ -151,13 +169,84 @@ func runJobDo(cmd *cobra.Command, args []string) error {
 		todoIDs = []string{createdID}
 	}
 
-	for _, todoID := range todoIDs {
-		if err := jobDoTodo(cmd, todoID); err != nil {
+	// When multiple todos are specified, mark them all as queued first.
+	// This shows users that all specified todos are accounted for.
+	// We need to clean up (reset to open) any remaining queued todos on exit.
+	if len(todoIDs) > 1 {
+		repoPath, err := getRepoPath()
+		if err != nil {
+			return err
+		}
+		store, err := openQueueStore(repoPath, "job do queue todos")
+		if err != nil {
+			return err
+		}
+		if _, err := store.Queue(todoIDs); err != nil {
+			releaseErr := store.Release()
+			return errors.Join(err, releaseErr)
+		}
+		if err := store.Release(); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	// Track which todos remain to be processed so we can clean them up on early exit.
+	// nextIndex points to the todo currently being processed; todos at [nextIndex+1:]
+	// are still queued and untouched. On error, we only reopen those (not the
+	// currently-running one which may have transitioned to in_progress).
+	nextIndex := 0
+
+	// Ensure we clean up any remaining queued todos if we exit early.
+	// This runs on both success (no-op, no remaining todos) and failure.
+	var jobErr error
+	defer func() {
+		// Only reopen todos that were never started (after the one that errored).
+		// The currently-running todo may have transitioned to in_progress before
+		// erroring, so we don't want to clobber that state.
+		startOfRemaining := nextIndex + 1
+		if startOfRemaining > len(todoIDs) {
+			startOfRemaining = len(todoIDs)
+		}
+		todosToReopen := todoIDs[startOfRemaining:]
+		if len(todosToReopen) > 0 && len(todoIDs) > 1 {
+			cleanupErr := cleanupQueuedTodos(todosToReopen)
+			if cleanupErr != nil {
+				// Combine job error and cleanup error so operators see both
+				jobErr = errors.Join(jobErr, cleanupErr)
+			}
+		}
+	}()
+
+	for i, todoID := range todoIDs {
+		nextIndex = i
+		if err := jobDoTodo(cmd, todoID); err != nil {
+			jobErr = err
+			return jobErr
+		}
+	}
+
+	return jobErr
+}
+
+// cleanupQueuedTodos resets any remaining queued todos back to open status.
+// This is called when job do exits before processing all queued todos.
+func cleanupQueuedTodos(todoIDs []string) error {
+	if len(todoIDs) == 0 {
+		return nil
+	}
+	repoPath, err := getRepoPath()
+	if err != nil {
+		return err
+	}
+	store, err := openQueueStore(repoPath, "job do cleanup queued todos")
+	if err != nil {
+		return err
+	}
+
+	// Reopen resets todos to open status
+	_, reopenErr := store.Reopen(todoIDs)
+	releaseErr := store.Release()
+	return errors.Join(reopenErr, releaseErr)
 }
 
 // runHabitJob runs a habit job using the --habit flag value.

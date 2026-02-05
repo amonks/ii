@@ -73,14 +73,32 @@ func TestStageMessageUsesReviewLabel(t *testing.T) {
 
 func TestRunJobDoMultipleTodos(t *testing.T) {
 	originalJobDoTodo := jobDoTodo
+	originalOpenQueueStore := openQueueStore
 	defer func() {
 		jobDoTodo = originalJobDoTodo
+		openQueueStore = originalOpenQueueStore
 	}()
 
 	var got []string
 	jobDoTodo = func(cmd *cobra.Command, todoID string) error {
 		got = append(got, todoID)
 		return nil
+	}
+
+	// Mock the queue store to track queueing calls
+	var queuedIDs []string
+	var reopenedIDs []string
+	openQueueStore = func(repoPath, purpose string) (queueStore, error) {
+		return &fakeQueueStore{
+			queueFn: func(ids []string) ([]todo.Todo, error) {
+				queuedIDs = append(queuedIDs, ids...)
+				return nil, nil
+			},
+			reopenFn: func(ids []string) ([]todo.Todo, error) {
+				reopenedIDs = append(reopenedIDs, ids...)
+				return nil, nil
+			},
+		}, nil
 	}
 
 	resetJobDoGlobals()
@@ -92,6 +110,113 @@ func TestRunJobDoMultipleTodos(t *testing.T) {
 	want := []string{"todo-1", "todo-2", "todo-3"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("expected job runs %v, got %v", want, got)
+	}
+
+	// Verify todos were queued at the start
+	if strings.Join(queuedIDs, ",") != strings.Join(want, ",") {
+		t.Fatalf("expected queued todos %v, got %v", want, queuedIDs)
+	}
+
+	// Verify no todos were reopened (all completed successfully)
+	if len(reopenedIDs) != 0 {
+		t.Fatalf("expected no reopened todos, got %v", reopenedIDs)
+	}
+}
+
+func TestRunJobDoMultipleTodosCleanupOnError(t *testing.T) {
+	originalJobDoTodo := jobDoTodo
+	originalOpenQueueStore := openQueueStore
+	defer func() {
+		jobDoTodo = originalJobDoTodo
+		openQueueStore = originalOpenQueueStore
+	}()
+
+	// Simulate error on second todo
+	expectedErr := errors.New("job failed")
+	callCount := 0
+	jobDoTodo = func(cmd *cobra.Command, todoID string) error {
+		callCount++
+		if callCount == 2 {
+			return expectedErr
+		}
+		return nil
+	}
+
+	// Track queueing and cleanup calls
+	var queuedIDs []string
+	var reopenedIDs []string
+	openQueueStore = func(repoPath, purpose string) (queueStore, error) {
+		return &fakeQueueStore{
+			queueFn: func(ids []string) ([]todo.Todo, error) {
+				queuedIDs = append(queuedIDs, ids...)
+				return nil, nil
+			},
+			reopenFn: func(ids []string) ([]todo.Todo, error) {
+				reopenedIDs = append(reopenedIDs, ids...)
+				return nil, nil
+			},
+		}, nil
+	}
+
+	resetJobDoGlobals()
+	cmd := newTestJobDoCommand()
+	err := runJobDo(cmd, []string{"todo-1", "todo-2", "todo-3"})
+
+	// Should get the error from the failed job
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	// Verify all todos were queued at the start
+	want := []string{"todo-1", "todo-2", "todo-3"}
+	if strings.Join(queuedIDs, ",") != strings.Join(want, ",") {
+		t.Fatalf("expected queued todos %v, got %v", want, queuedIDs)
+	}
+
+	// Verify remaining todos (only todo-3) were reopened for cleanup
+	// Note: todo-1 was processed successfully, todo-2 failed (may have started),
+	// so only todo-3 (never started) gets reopened
+	wantReopened := []string{"todo-3"}
+	if strings.Join(reopenedIDs, ",") != strings.Join(wantReopened, ",") {
+		t.Fatalf("expected reopened todos %v, got %v", wantReopened, reopenedIDs)
+	}
+}
+
+func TestRunJobDoSingleTodoNoQueueing(t *testing.T) {
+	originalJobDoTodo := jobDoTodo
+	originalOpenQueueStore := openQueueStore
+	defer func() {
+		jobDoTodo = originalJobDoTodo
+		openQueueStore = originalOpenQueueStore
+	}()
+
+	var got []string
+	jobDoTodo = func(cmd *cobra.Command, todoID string) error {
+		got = append(got, todoID)
+		return nil
+	}
+
+	// Track if store was ever opened
+	storeOpened := false
+	openQueueStore = func(repoPath, purpose string) (queueStore, error) {
+		storeOpened = true
+		return &fakeQueueStore{}, nil
+	}
+
+	resetJobDoGlobals()
+	cmd := newTestJobDoCommand()
+	if err := runJobDo(cmd, []string{"todo-1"}); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify the single todo was processed
+	if strings.Join(got, ",") != "todo-1" {
+		t.Fatalf("expected job run for todo-1, got %v", got)
+	}
+
+	// Verify store was NOT opened for queueing (single todo case)
+	if storeOpened {
+		t.Fatal("expected store not to be opened for single todo")
 	}
 }
 
@@ -425,6 +550,30 @@ func (h fakeInteractiveHandle) Events() <-chan agents.Event {
 
 func (h fakeInteractiveHandle) Wait() (agents.RunResult, error) {
 	return h.result, nil
+}
+
+// fakeQueueStore is a mock queueStore for testing queue operations.
+type fakeQueueStore struct {
+	queueFn  func(ids []string) ([]todo.Todo, error)
+	reopenFn func(ids []string) ([]todo.Todo, error)
+}
+
+func (s *fakeQueueStore) Queue(ids []string) ([]todo.Todo, error) {
+	if s.queueFn != nil {
+		return s.queueFn(ids)
+	}
+	return nil, nil
+}
+
+func (s *fakeQueueStore) Reopen(ids []string) ([]todo.Todo, error) {
+	if s.reopenFn != nil {
+		return s.reopenFn(ids)
+	}
+	return nil, nil
+}
+
+func (s *fakeQueueStore) Release() error {
+	return nil
 }
 
 func TestDefaultRunInteractiveSessionSetsProposerEnv(t *testing.T) {

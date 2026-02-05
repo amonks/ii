@@ -369,6 +369,24 @@ Create and run a job to completion (blocking).
 - If no args and interactive: open $EDITOR to create todo.
 - If `--rev` is omitted, default to `trunk()`.
 
+#### Multi-Todo Queueing
+
+When multiple todo IDs are specified (e.g., `ii job do abc def ghi`), the CLI
+marks all specified todos as `queued` before starting work. This shows in the
+todo list that the work is accounted for. As each todo is processed, it
+transitions from `queued` to `in_progress` to `done`.
+
+If the job exits before processing all queued todos (due to error, interrupt, or
+early completion), any todos that were never started are reset to `open`. The
+currently-running todo that errored is left in its current state (likely
+`in_progress`) since it may have legitimately transitioned before failing.
+This ensures no todos are left in a stale `queued` state while preserving
+accurate state for todos that were actually worked on.
+
+Note: This queueing behavior only applies to explicit multi-todo `job do`
+invocations. `job do-all` does not use queueing because it dynamically selects
+the next todo from the ready list after each job completes.
+
 Behavior:
 
 1. Resolve or create todo(s).
