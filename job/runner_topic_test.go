@@ -51,7 +51,7 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 					return AgentRunResult{}, err
 				}
 			}
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", llmCount), ExitCode: 0}, nil
 		},
 		OnStart: func(StartInfo) {
 			store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
@@ -124,7 +124,7 @@ func TestRunStoresModelInJobState(t *testing.T) {
 		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			llmCount++
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", llmCount), ExitCode: 0}, nil
 		},
 		Model: "agent-42",
 	})
@@ -195,7 +195,7 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 		},
 		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 			modelsUsed = append(modelsUsed, opts.Model)
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", len(modelsUsed)), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", len(modelsUsed)), ExitCode: 0}, nil
 		},
 	})
 	if err != nil {

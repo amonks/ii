@@ -20,7 +20,7 @@ func TestIsAgentEvent(t *testing.T) {
 		{"message.end", Event{Name: "message.end"}, true},
 		{"tool.start", Event{Name: "tool.start"}, true},
 		{"tool.end", Event{Name: "tool.end"}, true},
-		{"opencode message.updated", Event{Name: "", Data: `{"type":"message.updated"}`}, false},
+		{"legacy message.updated (ignored)", Event{Name: "", Data: `{"type":"message.updated"}`}, false},
 		{"job.stage", Event{Name: "job.stage"}, false},
 		{"empty", Event{}, false},
 	}

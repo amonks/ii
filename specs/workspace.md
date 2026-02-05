@@ -5,7 +5,7 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 
 ## Architecture
 - `workspace.Pool` is the public API for acquiring, releasing, listing, and destroying workspaces.
-- Opencode session timing helpers (for age/duration display) live in `workspace` to keep the CLI thin.
+- Agent session timing helpers (for age/duration display) live in `workspace` to keep the CLI thin.
 - State is persisted via `internal/state` which manages `~/.local/state/incrementum/state.json` with advisory file locking.
 - Workspaces live under a shared base directory (`~/.local/share/incrementum/workspaces` by default).
 - Jujutsu operations are delegated to `internal/jj` (workspace add/forget, edit, and new change).

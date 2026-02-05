@@ -14,8 +14,8 @@ Running implementation prompt:
             export SNAPSHOT_MODE=enabled
             ./bin/ii job run --preview
     LLM transcript:
-        Opencode transcript line one.
-        Opencode transcript line two.
+        Agent transcript line one.
+        Agent transcript line two.
 
     Final change description:
         feat: snapshot log output
@@ -28,9 +28,6 @@ Running implementation prompt:
         ```bash
         go test ./job -run Snapshot
         ```
-
-    Tool (running): run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
-    Tool (completed): run 'rg "snapshot" -g "*.go" /tmp/workspaces/snapshot-test'
 
 Implementation prompt complete; running tests:
     Command: go test ./job/...

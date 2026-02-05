@@ -109,9 +109,8 @@ type JobCommit struct {
     // Nil until the reviewing stage completes.
     Review *JobReview `json:"review,omitempty"`
 
-    // OpencodeSessionID references the agent session that produced this commit.
-    // (Field name is a legacy artifact; kept for backward compatibility.)
-    OpencodeSessionID string `json:"opencode_session_id"`
+    // AgentSessionID references the agent session that produced this commit.
+    AgentSessionID string `json:"agent_session_id"`
 
     // CreatedAt is when this commit was created.
     CreatedAt time.Time `json:"created_at"`
@@ -133,9 +132,8 @@ type JobReview struct {
     // Present for all outcomes; may be empty for accept.
     Comments string `json:"comments,omitempty"`
 
-    // OpencodeSessionID references the agent session that produced this review.
-    // (Field name is a legacy artifact; kept for backward compatibility.)
-    OpencodeSessionID string `json:"opencode_session_id"`
+    // AgentSessionID references the agent session that produced this review.
+    AgentSessionID string `json:"agent_session_id"`
 
     // ReviewedAt is when the review was recorded.
     ReviewedAt time.Time `json:"reviewed_at"`
@@ -159,7 +157,7 @@ On exiting the implementing stage (with changes detected):
 1. Create a new `JobCommit` with:
    - `CommitID`: current working copy commit ID
    - `DraftMessage`: from `.incrementum-commit-message`
-   - `OpencodeSessionID` (legacy field name): the agent session that just ran
+   - `AgentSessionID`: the agent session that just ran
    - `CreatedAt`: now
 2. Append the commit to the current change's `Commits` slice.
 

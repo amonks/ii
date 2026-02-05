@@ -28,8 +28,8 @@ type logSnapshotWriter struct {
 	started      bool
 	skipSpacing  bool
 	lastCategory string
-	opencode     *opencodeEventInterpreter
 	agent        *agentEventInterpreter
+	opencode     *opencodeEventInterpreter
 	repoPath     string
 }
 
@@ -86,15 +86,6 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 				return err
 			}
 			writer.writeTests(data.Results)
-		case jobEventOpencodeError:
-			data, err := decodeEventData[opencodeErrorEventData](event.Data)
-			if err != nil {
-				return err
-			}
-			writer.writeBlock(
-				formatLogLabel(legacyErrorLabel(data.Purpose), documentIndent),
-				formatLogBody(data.Error, subdocumentIndent, false),
-			)
 		case jobEventAgentError:
 			data, err := decodeEventData[agentErrorEventData](event.Data)
 			if err != nil {
@@ -104,8 +95,6 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 				formatLogLabel(agentErrorLabel(data.Purpose), documentIndent),
 				formatLogBody(data.Error, subdocumentIndent, false),
 			)
-		case jobEventOpencodeStart, jobEventOpencodeEnd:
-			return nil
 		case jobEventAgentStart, jobEventAgentEnd:
 			return nil
 		default:
@@ -124,24 +113,13 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 		return writer.appendAgentEvent(event)
 	}
 
-	return writer.appendOpencodeEvent(event)
-}
-
-func legacyEventLabel(name string) string {
-	trimmed, ok := trimmedLabelValue(name)
-	if !ok {
-		return "LLM event:"
+	// Check if this is an opencode event (legacy format)
+	if isOpencodeEvent(event) {
+		return writer.appendOpencodeEvent(event)
 	}
-	return fmt.Sprintf("LLM event (%s):", trimmed)
-}
 
-func legacyErrorLabel(purpose string) string {
-	trimmed, ok := trimmedLabelValue(purpose)
-	if !ok {
-		return "LLM error:"
-	}
-	label := strings.ReplaceAll(trimmed, "-", " ")
-	return fmt.Sprintf("LLM %s error:", label)
+	// Ignore unknown events
+	return nil
 }
 
 func agentErrorLabel(purpose string) string {
@@ -189,6 +167,28 @@ func (writer *logSnapshotWriter) writeBlock(lines ...string) {
 	}
 }
 
+func (writer *logSnapshotWriter) appendAgentEvent(event Event) error {
+	if writer.agent == nil {
+		writer.agent = newAgentEventInterpreter(writer.repoPath)
+	}
+	outputs, err := writer.agent.Handle(event)
+	if err != nil {
+		return err
+	}
+	for _, output := range outputs {
+		lines := formatAgentText(output)
+		if len(lines) == 0 {
+			continue
+		}
+		if writer.lastCategory == "agent" {
+			writer.skipSpacing = true
+		}
+		writer.writeBlock(lines...)
+		writer.lastCategory = "agent"
+	}
+	return nil
+}
+
 func (writer *logSnapshotWriter) appendOpencodeEvent(event Event) error {
 	if writer.opencode == nil {
 		writer.opencode = newOpencodeEventInterpreter(nil, writer.repoPath)
@@ -211,26 +211,42 @@ func (writer *logSnapshotWriter) appendOpencodeEvent(event Event) error {
 	return nil
 }
 
-func (writer *logSnapshotWriter) appendAgentEvent(event Event) error {
-	if writer.agent == nil {
-		writer.agent = newAgentEventInterpreter(writer.repoPath)
+func isOpencodeEvent(event Event) bool {
+	if internalstrings.IsBlank(event.Data) {
+		return false
 	}
-	outputs, err := writer.agent.Handle(event)
-	if err != nil {
-		return err
+	// Quick check for opencode event types in the JSON
+	return strings.Contains(event.Data, `"type":"message.`) ||
+		strings.Contains(event.Data, `"type": "message.`)
+}
+
+func formatOpencodeText(output opencodeRenderedEvent) []string {
+	if output.Kind == "" {
+		return nil
 	}
-	for _, output := range outputs {
-		lines := formatAgentText(output)
-		if len(lines) == 0 {
-			continue
+	var lines []string
+	switch output.Kind {
+	case "tool":
+		line := formatLogLabel(output.Label, documentIndent)
+		if output.Inline != "" {
+			line += " " + output.Inline
 		}
-		if writer.lastCategory == "agent" {
-			writer.skipSpacing = true
+		lines = append(lines, line)
+	case "raw":
+		lines = append(lines, formatLogLabel(output.Label, documentIndent))
+		lines = append(lines, formatLogBody(output.Body, subdocumentIndent, false))
+	case "prompt", "response", "thinking":
+		lines = append(lines, formatLogLabel(output.Label, documentIndent))
+		lines = append(lines, formatLogBody(output.Body, subdocumentIndent, true))
+	default:
+		if output.Label != "" {
+			lines = append(lines, formatLogLabel(output.Label, documentIndent))
 		}
-		writer.writeBlock(lines...)
-		writer.lastCategory = "agent"
+		if output.Body != "" {
+			lines = append(lines, formatLogBody(output.Body, subdocumentIndent, false))
+		}
 	}
-	return nil
+	return lines
 }
 
 func (writer *logSnapshotWriter) writeTests(results []testResultEventData) {

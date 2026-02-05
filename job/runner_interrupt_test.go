@@ -38,7 +38,7 @@ func TestRunInterruptMarksJobFailed(t *testing.T) {
 			RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 				close(started)
 				<-block
-				return AgentRunResult{SessionID: "opencode-1", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "session-1", ExitCode: 0}, nil
 			},
 		})
 		close(done)

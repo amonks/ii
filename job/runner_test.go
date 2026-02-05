@@ -929,7 +929,7 @@ func TestRunImplementingStageCreatesJobChange(t *testing.T) {
 		t.Fatalf("expected draft message %q, got %q", "feat: track changes", commit.DraftMessage)
 	}
 	if commit.AgentSessionID != "oc-change-track" {
-		t.Fatalf("expected opencode session id %q, got %q", "oc-change-track", commit.AgentSessionID)
+		t.Fatalf("expected agent session id %q, got %q", "oc-change-track", commit.AgentSessionID)
 	}
 }
 

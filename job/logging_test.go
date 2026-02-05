@@ -474,15 +474,15 @@ func TestRunImplementingStageRecordsEventLog(t *testing.T) {
 		t.Fatalf("expected prompt template, got %q", promptData["template"])
 	}
 
-	var opencodeData map[string]any
-	if err := json.Unmarshal([]byte(events[2].Data), &opencodeData); err != nil {
-		t.Fatalf("decode opencode data: %v", err)
+	var agentData map[string]any
+	if err := json.Unmarshal([]byte(events[2].Data), &agentData); err != nil {
+		t.Fatalf("decode agent data: %v", err)
 	}
-	if opencodeData["session_id"] != "oc-event" {
-		t.Fatalf("expected session id oc-event, got %v", opencodeData["session_id"])
+	if agentData["session_id"] != "oc-event" {
+		t.Fatalf("expected session id oc-event, got %v", agentData["session_id"])
 	}
-	if opencodeData["exit_code"] != float64(0) {
-		t.Fatalf("expected exit code 0, got %v", opencodeData["exit_code"])
+	if agentData["exit_code"] != float64(0) {
+		t.Fatalf("expected exit code 0, got %v", agentData["exit_code"])
 	}
 }
 

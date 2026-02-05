@@ -455,3 +455,10 @@ func truncateForLog(value string) string {
 	}
 	return value[:maxLen-3] + "..."
 }
+
+func legacyEventLabel(eventType string) string {
+	if eventType == "" {
+		return "LLM event:"
+	}
+	return fmt.Sprintf("LLM event (%s):", eventType)
+}

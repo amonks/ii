@@ -52,9 +52,8 @@ Fields (JSON keys):
 - `stage`: `implementing`, `testing`, `reviewing`, `committing`.
 - `feedback`: feedback from last failed stage (test results list or review
   feedback).
-- `opencode_sessions`: list of `{"purpose": string, "id": string}` tracking
-  LLM sessions created during this job. (Note: field name is a legacy artifact
-  from before the agent migration; kept for backward compatibility.)
+- `agent_sessions`: list of `{"purpose": string, "id": string}` tracking
+  LLM sessions created during this job.
 - `changes`: list of changes created during this job (see
   [job-changes.md](./job-changes.md)).
 - `project_review`: final project review outcome (see

@@ -1,7 +1,6 @@
 package job
 
 import (
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -26,19 +25,11 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 	if err := appendJobEvent(log, jobEventPrompt, promptEventData{Purpose: "implement", Prompt: "First line.\nSecond line."}); err != nil {
 		t.Fatalf("append prompt event: %v", err)
 	}
-	if err := appendJobEvent(log, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: "Opencode line."}); err != nil {
+	if err := appendJobEvent(log, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: "Transcript line."}); err != nil {
 		t.Fatalf("append transcript event: %v", err)
 	}
 	if err := appendJobEvent(log, jobEventCommitMessage, commitMessageEventData{Label: "Draft", Message: "feat: add logs"}); err != nil {
 		t.Fatalf("append commit message event: %v", err)
-	}
-	opencodeToolStart := `{"type":"message.part.updated","properties":{"part":{"id":"prt-tool","messageID":"msg-tool","type":"tool","tool":"read","state":{"status":"running","input":{"filePath":"/tmp/example.txt"}}}}}`
-	if err := log.Append(Event{Data: opencodeToolStart}); err != nil {
-		t.Fatalf("append opencode tool start event: %v", err)
-	}
-	opencodeToolEnd := `{"type":"message.part.updated","properties":{"part":{"id":"prt-tool","messageID":"msg-tool","type":"tool","tool":"read","state":{"status":"completed","input":{"filePath":"/tmp/example.txt"}}}}}`
-	if err := log.Append(Event{Data: opencodeToolEnd}); err != nil {
-		t.Fatalf("append opencode tool end event: %v", err)
 	}
 	if err := appendJobEvent(log, jobEventStage, stageEventData{Stage: StageTesting}); err != nil {
 		t.Fatalf("append test stage event: %v", err)
@@ -66,11 +57,9 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 		"    Implementation prompt:",
 		"        First line. Second line.",
 		"    LLM transcript:",
-		"        Opencode line.",
+		"        Transcript line.",
 		"    Draft change description:",
 		"        feat: add logs",
-		"    Tool (running): read file '/tmp/example.txt'",
-		"    Tool (completed): read file '/tmp/example.txt'",
 		"Implementation prompt complete; running tests:",
 		"Command: go test ./...",
 		"Exit Code: 1",
@@ -85,69 +74,6 @@ func TestLogSnapshotFormatsJobEvents(t *testing.T) {
 		if !strings.Contains(snapshot, check) {
 			t.Fatalf("expected snapshot to include %q, got %q", check, snapshot)
 		}
-	}
-}
-
-func TestLogSnapshotIncludesLegacyError(t *testing.T) {
-	eventsDir := t.TempDir()
-	jobID := "job-opencode-error"
-	log, err := OpenEventLog(jobID, EventLogOptions{EventsDir: eventsDir})
-	if err != nil {
-		t.Fatalf("open event log: %v", err)
-	}
-	defer func() {
-		if err := log.Close(); err != nil {
-			t.Fatalf("close log: %v", err)
-		}
-	}()
-
-	if err := appendJobEvent(log, jobEventOpencodeError, opencodeErrorEventData{Purpose: "implement", Error: "opencode session not found"}); err != nil {
-		t.Fatalf("append opencode error: %v", err)
-	}
-
-	snapshot, err := LogSnapshot(jobID, EventLogOptions{EventsDir: eventsDir})
-	if err != nil {
-		t.Fatalf("snapshot: %v", err)
-	}
-
-	if !strings.Contains(snapshot, "LLM implement error:") {
-		t.Fatalf("expected LLM error label, got %q", snapshot)
-	}
-	if !strings.Contains(snapshot, "opencode session not found") {
-		t.Fatalf("expected opencode error details, got %q", snapshot)
-	}
-}
-
-func TestLogSnapshotUsesRepoRelativePaths(t *testing.T) {
-	eventsDir := t.TempDir()
-	repoDir := t.TempDir()
-	jobID := "job-logs-relative"
-	log, err := OpenEventLog(jobID, EventLogOptions{EventsDir: eventsDir})
-	if err != nil {
-		t.Fatalf("open event log: %v", err)
-	}
-	defer func() {
-		if err := log.Close(); err != nil {
-			t.Fatalf("close log: %v", err)
-		}
-	}()
-
-	filePath := filepath.Join(repoDir, "src", "file.txt")
-	opencodeToolStart := `{"type":"message.part.updated","properties":{"part":{"id":"prt-tool","messageID":"msg-tool","type":"tool","tool":"read","state":{"status":"running","input":{"filePath":"` + filePath + `"}}}}}`
-	if err := log.Append(Event{Data: opencodeToolStart}); err != nil {
-		t.Fatalf("append opencode tool start event: %v", err)
-	}
-
-	snapshot, err := LogSnapshot(jobID, EventLogOptions{EventsDir: eventsDir, RepoPath: repoDir})
-	if err != nil {
-		t.Fatalf("snapshot: %v", err)
-	}
-
-	if !strings.Contains(snapshot, "read file 'src/file.txt'") {
-		t.Fatalf("expected repo-relative path, got %q", snapshot)
-	}
-	if strings.Contains(snapshot, repoDir) {
-		t.Fatalf("expected absolute path to be omitted, got %q", snapshot)
 	}
 }
 
@@ -258,15 +184,15 @@ func TestEventFormatterAppendsOutput(t *testing.T) {
 		t.Fatalf("expected tool completed output, got %q", chunk)
 	}
 
-	chunk, err = formatter.Append(Event{Name: "job.opencode.error", Data: "{\"purpose\":\"implement\",\"error\":\"opencode session not found\"}"})
+	chunk, err = formatter.Append(Event{Name: "job.agent.error", Data: "{\"purpose\":\"implement\",\"error\":\"agent session not found\"}"})
 	if err != nil {
-		t.Fatalf("append opencode error: %v", err)
+		t.Fatalf("append agent error: %v", err)
 	}
-	if !strings.Contains(chunk, "LLM implement error:") {
-		t.Fatalf("expected LLM error label, got %q", chunk)
+	if !strings.Contains(chunk, "Agent implement error:") {
+		t.Fatalf("expected agent error label, got %q", chunk)
 	}
-	if !strings.Contains(chunk, "opencode session not found") {
-		t.Fatalf("expected opencode error details, got %q", chunk)
+	if !strings.Contains(chunk, "agent session not found") {
+		t.Fatalf("expected agent error details, got %q", chunk)
 	}
 }
 

@@ -21,14 +21,9 @@ const (
 	jobEventCommitMessage = "job.commit_message"
 	jobEventReview        = "job.review"
 	jobEventTests         = "job.tests"
-	jobEventAgentStart    = "job.agent.start"
-	jobEventAgentEnd      = "job.agent.end"
-	jobEventAgentError    = "job.agent.error"
-
-	// Legacy event constants (for backward compatibility parsing old logs)
-	jobEventOpencodeStart = "job.opencode.start"
-	jobEventOpencodeEnd   = "job.opencode.end"
-	jobEventOpencodeError = "job.opencode.error"
+	jobEventAgentStart = "job.agent.start"
+	jobEventAgentEnd   = "job.agent.end"
+	jobEventAgentError = "job.agent.error"
 )
 
 // Event captures a job log event.
@@ -248,12 +243,6 @@ type testResultEventData struct {
 
 type testsEventData struct {
 	Results []testResultEventData `json:"results"`
-}
-
-// Legacy event data types (for backward compatibility parsing old logs)
-type opencodeErrorEventData struct {
-	Purpose string `json:"purpose"`
-	Error   string `json:"error"`
 }
 
 func buildTestsEventData(results []TestCommandResult) testsEventData {

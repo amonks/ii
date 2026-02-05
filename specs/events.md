@@ -16,42 +16,6 @@ for the full list of event types. Agent events are rendered with:
 - Message content showing thinking blocks and assistant responses
 - Agent start/end showing model and token usage
 
-## Legacy Event Format
-
-Job logs from before the agent migration contain events in an older format
-(originally from the opencode tool). The event renderer in
-`job/opencode_event_renderer.go` parses and displays these legacy events for
-backward compatibility with existing job log files.
-
-### Legacy Event Types
-
-Legacy events use SSE-style JSON payloads with a `type` field:
-
-- `server.connected`
-- `server.heartbeat`
-- `session.created`
-- `session.updated`
-- `session.status`
-- `session.idle`
-- `session.diff`
-- `message.updated`
-- `message.part.updated`
-- `file.edited`
-- `file.watcher.updated`
-- `lsp.updated`
-- `lsp.client.diagnostics`
-- `todo.updated`
-
-### Rendering switches
-
-Each legacy event type has a display switch (see `job/opencode_event_renderer.go`).
-Default behavior:
-
-- `message.part.updated`: enabled (drives prompt/response/thinking/tool summaries)
-- all other listed event types: disabled
-
-Switches control what is shown to users; all events are still recorded in full on disk.
-
 ## Text rendering (width-aware)
 
 Only a curated subset of activity is shown in the text logs (CLI/TUI). Output is
@@ -101,8 +65,7 @@ For legacy opencode events:
   - Label: `LLM thinking:`
 - Prompt, response, and thinking bodies are rendered as markdown via `internal/markdown` (glamour) before indentation.
 
-## Raw event display
+## Unknown Events
 
-Raw JSON payloads are not rendered by default. If an event payload cannot be
-decoded into a known shape, it falls back to a generic "LLM event" block to
-avoid hiding malformed data in logs.
+Unknown events are silently ignored. If an event payload cannot be decoded into
+a known shape, it is not displayed.

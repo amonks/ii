@@ -22,7 +22,7 @@ The state file contains:
 - Note: Prompts are not stored to keep the state file small; they can be reconstructed from job/todo context
 
 ### Job
-- `id`, `repo`, `todo_id`, `stage`, `feedback`, `agent`, `opencode_sessions` (legacy field name), `status`, `created_at`, `started_at`, `updated_at`, `completed_at`
+- `id`, `repo`, `todo_id`, `stage`, `feedback`, `agent`, `agent_sessions`, `status`, `created_at`, `started_at`, `updated_at`, `completed_at`
 - `changes`: list of `JobChange` tracking changes created during the job
 - `project_review`: final project review outcome (`JobReview`)
 - Stage: `implementing`, `testing`, `reviewing`, or `committing`

@@ -58,7 +58,7 @@ func TestRunImplementingStageUpdatesStaleWorkspace(t *testing.T) {
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !updateCalled {
-				return AgentRunResult{}, fmt.Errorf("expected update-stale before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected update-stale before agent")
 			}
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: stale"), 0o644); err != nil {
@@ -88,7 +88,7 @@ func TestRunImplementingStageUpdatesStaleWorkspace(t *testing.T) {
 	}
 }
 
-func TestRunImplementingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
+func TestRunImplementingStageSnapshotsWorkspaceBeforeAgent(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/repo"
 
@@ -135,7 +135,7 @@ func TestRunImplementingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !snapshotCalled {
-				return AgentRunResult{}, fmt.Errorf("expected snapshot before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected snapshot before agent")
 			}
 			messagePath := filepath.Join(runOpts.WorkspacePath, commitMessageFilename)
 			if err := os.WriteFile(messagePath, []byte("feat: snapshot"), 0o644); err != nil {
@@ -197,7 +197,7 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !updateCalled {
-				return AgentRunResult{}, fmt.Errorf("expected update-stale before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected update-stale before agent")
 			}
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err
@@ -227,7 +227,7 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 	}
 }
 
-func TestRunReviewingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
+func TestRunReviewingStageSnapshotsWorkspaceBeforeAgent(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/repo-review"
 
@@ -259,7 +259,7 @@ func TestRunReviewingStageSnapshotsWorkspaceBeforeOpencode(t *testing.T) {
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !snapshotCalled {
-				return AgentRunResult{}, fmt.Errorf("expected snapshot before opencode")
+				return AgentRunResult{}, fmt.Errorf("expected snapshot before agent")
 			}
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err

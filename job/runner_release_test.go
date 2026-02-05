@@ -52,7 +52,7 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 					return AgentRunResult{}, err
 				}
 			}
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", llmCount), ExitCode: 0}, nil
 		},
 		Now: func() time.Time { return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC) },
 		OnStart: func(StartInfo) {

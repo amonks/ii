@@ -167,7 +167,7 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 					return AgentRunResult{}, err
 				}
 
-				return AgentRunResult{SessionID: "opencode-1", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "session-1", ExitCode: 0}, nil
 			}
 
 			// Second implementation run (after test failure)
@@ -177,7 +177,7 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 				if err := os.WriteFile(messagePath, []byte("feat: second change"), 0o644); err != nil {
 					return AgentRunResult{}, err
 				}
-				return AgentRunResult{SessionID: "opencode-2", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "session-2", ExitCode: 0}, nil
 			}
 
 			// Step review after second implementation
@@ -186,13 +186,13 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 				if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 					return AgentRunResult{}, err
 				}
-				return AgentRunResult{SessionID: "opencode-3", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "session-3", ExitCode: 0}, nil
 			}
 
 			// Third implementation (no changes) then project review
 			if llmCount == 4 {
 				// No changes, no commit message needed
-				return AgentRunResult{SessionID: "opencode-4", ExitCode: 0}, nil
+				return AgentRunResult{SessionID: "session-4", ExitCode: 0}, nil
 			}
 
 			// Project review
@@ -200,7 +200,7 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err
 			}
-			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", llmCount), ExitCode: 0}, nil
 		},
 		CurrentCommitID: func(string) (string, error) {
 			if commitIdx >= len(commitIDSequence) {

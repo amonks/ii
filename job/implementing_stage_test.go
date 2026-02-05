@@ -71,14 +71,14 @@ func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) 
 		t.Fatalf("expected commit change context, got %v", err)
 	}
 	if !strings.Contains(err.Error(), "was instructed to write") {
-		t.Fatalf("expected opencode instruction context, got %v", err)
+		t.Fatalf("expected agent instruction context, got %v", err)
 	}
 	if !strings.Contains(err.Error(), commitMessageFilename) {
 		t.Fatalf("expected error to mention commit message file, got %v", err)
 	}
 }
 
-func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *testing.T) {
+func TestRunImplementingStageFailedAgentRestoresRetriesAndReportsContext(t *testing.T) {
 	repoPath := t.TempDir()
 	stateDir := t.TempDir()
 
@@ -143,7 +143,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 
 	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
 	if err == nil {
-		t.Fatal("expected opencode failure error")
+		t.Fatal("expected agent failure error")
 	}
 	if restoreCalls != 2 {
 		t.Fatalf("expected restore to be called twice, got %d", restoreCalls)
@@ -179,7 +179,7 @@ func TestRunImplementingStageFailedOpencodeRestoresRetriesAndReportsContext(t *t
 	}
 }
 
-func TestRunImplementingStageRetriesOpencodeAfterRestore(t *testing.T) {
+func TestRunImplementingStageRetriesAgentAfterRestore(t *testing.T) {
 	repoPath := t.TempDir()
 	stateDir := t.TempDir()
 
@@ -241,7 +241,7 @@ func TestRunImplementingStageRetriesOpencodeAfterRestore(t *testing.T) {
 		t.Fatalf("expected retry to succeed, got %v", err)
 	}
 	if runCalls != 2 {
-		t.Fatalf("expected opencode to run twice, got %d", runCalls)
+		t.Fatalf("expected agent to run twice, got %d", runCalls)
 	}
 	if restoreCalls != 1 {
 		t.Fatalf("expected restore to be called once, got %d", restoreCalls)
