@@ -402,7 +402,23 @@ func isBinary(data []byte) bool {
 
 // IsAllowed checks if a command is allowed by the permission rules.
 // Rules are evaluated in order; first match wins. Default is deny.
+//
+// For compound commands (containing &&, ||, ;, or |), each sub-command
+// is checked independently. All sub-commands must be allowed for the
+// entire command to be allowed.
 func (p BashPermissions) IsAllowed(command string) bool {
+	// Split on shell operators and check each sub-command
+	subCommands := splitShellCommand(command)
+	for _, subCmd := range subCommands {
+		if !p.isSubCommandAllowed(subCmd) {
+			return false
+		}
+	}
+	return true
+}
+
+// isSubCommandAllowed checks if a single (non-compound) command is allowed.
+func (p BashPermissions) isSubCommandAllowed(command string) bool {
 	for _, rule := range p.Rules {
 		if matchPattern(rule.Pattern, command) {
 			return rule.Allow
@@ -410,6 +426,52 @@ func (p BashPermissions) IsAllowed(command string) bool {
 	}
 	// Default deny
 	return false
+}
+
+// splitShellCommand splits a command string on shell operators (&&, ||, ;, |).
+// Each resulting sub-command is trimmed of leading/trailing whitespace.
+// Empty sub-commands are skipped.
+func splitShellCommand(command string) []string {
+	var result []string
+	var current strings.Builder
+	i := 0
+
+	for i < len(command) {
+		// Check for two-character operators first
+		if i+1 < len(command) {
+			twoChar := command[i : i+2]
+			if twoChar == "&&" || twoChar == "||" {
+				// Found a two-character operator
+				if sub := strings.TrimSpace(current.String()); sub != "" {
+					result = append(result, sub)
+				}
+				current.Reset()
+				i += 2
+				continue
+			}
+		}
+
+		// Check for single-character operators
+		if command[i] == ';' || command[i] == '|' {
+			if sub := strings.TrimSpace(current.String()); sub != "" {
+				result = append(result, sub)
+			}
+			current.Reset()
+			i++
+			continue
+		}
+
+		// Regular character
+		current.WriteByte(command[i])
+		i++
+	}
+
+	// Don't forget the last segment
+	if sub := strings.TrimSpace(current.String()); sub != "" {
+		result = append(result, sub)
+	}
+
+	return result
 }
 
 // matchPattern matches a command against a glob pattern.

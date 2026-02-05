@@ -305,3 +305,129 @@ func TestBashPermissions_ComplexPatterns(t *testing.T) {
 	}
 }
 
+func TestSplitShellCommand(t *testing.T) {
+	tests := []struct {
+		command string
+		want    []string
+	}{
+		// Simple command
+		{"ls", []string{"ls"}},
+		{"echo hello", []string{"echo hello"}},
+
+		// && operator
+		{"cd /tmp && ls", []string{"cd /tmp", "ls"}},
+		{"a && b && c", []string{"a", "b", "c"}},
+
+		// || operator
+		{"test -f x || echo missing", []string{"test -f x", "echo missing"}},
+
+		// ; operator
+		{"cd /tmp; ls", []string{"cd /tmp", "ls"}},
+		{"a; b; c", []string{"a", "b", "c"}},
+
+		// | operator (pipe)
+		{"ls | grep foo", []string{"ls", "grep foo"}},
+		{"cat file | head -10 | tail -5", []string{"cat file", "head -10", "tail -5"}},
+
+		// Mixed operators
+		{"cd /tmp && ls | grep foo", []string{"cd /tmp", "ls", "grep foo"}},
+		{"a && b || c; d | e", []string{"a", "b", "c", "d", "e"}},
+
+		// Extra whitespace
+		{"  cd /tmp  &&  ls  ", []string{"cd /tmp", "ls"}},
+
+		// Empty segments are skipped
+		{"ls &&", []string{"ls"}},
+		{"&& ls", []string{"ls"}},
+
+		// Edge cases
+		{"", []string{}},
+		{"   ", []string{}},
+		{"&&", []string{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.command, func(t *testing.T) {
+			got := splitShellCommand(tt.command)
+			if len(got) != len(tt.want) {
+				t.Errorf("splitShellCommand(%q) = %v, want %v", tt.command, got, tt.want)
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("splitShellCommand(%q)[%d] = %q, want %q", tt.command, i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestBashPermissions_CompoundCommands(t *testing.T) {
+	perms := BashPermissions{
+		Rules: []BashRule{
+			{Pattern: "rm *", Allow: false},
+			{Pattern: "*", Allow: true},
+		},
+	}
+
+	tests := []struct {
+		command string
+		want    bool
+	}{
+		// Simple allowed commands
+		{"ls", true},
+		{"echo hello", true},
+		{"cd /tmp", true},
+
+		// Simple denied commands
+		{"rm foo", false},
+		{"rm -rf /", false},
+
+		// Compound commands with all allowed
+		{"cd /tmp && ls", true},
+		{"echo hello; cat file", true},
+		{"ls | grep foo", true},
+		{"test -f x || echo missing", true},
+
+		// Compound commands with one denied
+		{"cd /tmp && rm foo", false},
+		{"rm foo && ls", false},
+		{"ls; rm bar; echo done", false},
+		{"echo start && rm x || echo fallback", false},
+
+		// Pipes with denied command
+		{"cat file | rm -", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.command, func(t *testing.T) {
+			got := perms.IsAllowed(tt.command)
+			if got != tt.want {
+				t.Errorf("IsAllowed(%q) = %v, want %v", tt.command, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBashPermissions_CompoundCommands_FromTodo(t *testing.T) {
+	// Test case from the todo description:
+	// the rule 'ban:"rm *"' should match 'cd somewhere && rm something'
+	// (but not, eg, 'echo worm juice')
+	perms := BashPermissions{
+		Rules: []BashRule{
+			{Pattern: "rm *", Allow: false},
+			{Pattern: "*", Allow: true},
+		},
+	}
+
+	// This should be denied because it contains "rm something"
+	if perms.IsAllowed("cd somewhere && rm something") {
+		t.Error("expected 'cd somewhere && rm something' to be denied")
+	}
+
+	// This should be allowed because it doesn't contain rm
+	if !perms.IsAllowed("echo worm juice") {
+		t.Error("expected 'echo worm juice' to be allowed")
+	}
+}
+

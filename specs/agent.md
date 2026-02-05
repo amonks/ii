@@ -85,6 +85,24 @@ type BashRule struct {
 }
 ```
 
+#### Compound Commands
+
+For compound commands containing shell operators (`&&`, `||`, `;`, `|`), each
+sub-command is checked independently. All sub-commands must be allowed for the
+entire command to be allowed.
+
+For example, with a rule `{Pattern: "rm *", Allow: false}`:
+- `rm foo` → denied (matches `rm *`)
+- `cd /tmp && rm foo` → denied (sub-command `rm foo` matches `rm *`)
+- `echo worm juice` → allowed (no sub-command matches `rm *`)
+- `ls | grep foo` → both `ls` and `grep foo` must be allowed
+
+This is not a security boundary—it handles typical shell usage patterns without
+attempting to be robust against intentionally crafted inputs designed to
+circumvent the mechanism.
+
+#### Example
+
 Example matching typical bash permission rules:
 
 ```go
