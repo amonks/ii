@@ -154,9 +154,14 @@ any stage -> failed (unrecoverable error)
 15. If the change is not empty:
     - Read `.incrementum-commit-message` from the workspace root, trimming trailing
       newlines, trailing whitespace on each line, and any leading blank lines.
+    - If the file is missing, set feedback instructing the agent to write a commit
+      message describing the changes, stay in `implementing` stage, and restart
+      the work loop. This handles cases where the LLM made changes but forgot to
+      write the commit message file.
     - Store the message for the committing stage.
-16. Transition to `testing` when changes were detected (change not empty),
-    otherwise transition to `reviewing`.
+16. Transition to `testing` when changes were detected (change not empty) and
+    commit message was provided, stay in `implementing` when commit message was
+    missing, otherwise transition to `reviewing`.
 
 ### testing
 

@@ -1,7 +1,6 @@
 package job
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +10,7 @@ import (
 	"github.com/amonks/incrementum/todo"
 )
 
-func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) {
+func TestRunImplementingStage_MissingCommitMessageRetries(t *testing.T) {
 	repoPath := t.TempDir()
 	stateDir := t.TempDir()
 
@@ -54,27 +53,26 @@ func TestRunImplementingStage_MissingCommitMessageExplainsContext(t *testing.T) 
 		},
 	}
 
-	_, err = runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
-	if err == nil {
-		t.Fatal("expected missing commit message error")
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err != nil {
+		t.Fatalf("expected no error for missing commit message (should retry), got %v", err)
 	}
-	if !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("expected missing file error, got %v", err)
+	// Should stay in implementing stage with feedback
+	if result.Job.Stage != StageImplementing {
+		t.Fatalf("expected stage %q, got %q", StageImplementing, result.Job.Stage)
 	}
-	if !strings.Contains(err.Error(), "commit message missing after LLM implementation") {
-		t.Fatalf("expected context in error, got %v", err)
+	if result.Job.Feedback == "" {
+		t.Fatal("expected feedback to be set")
 	}
-	if !strings.Contains(err.Error(), "session ses-123") {
-		t.Fatalf("expected session context, got %v", err)
+	if !strings.Contains(result.Job.Feedback, "commit message") {
+		t.Fatalf("expected feedback to mention commit message, got %q", result.Job.Feedback)
 	}
-	if !strings.Contains(err.Error(), "before") || !strings.Contains(err.Error(), "after") {
-		t.Fatalf("expected commit change context, got %v", err)
+	if !strings.Contains(result.Job.Feedback, commitMessageFilename) {
+		t.Fatalf("expected feedback to mention commit message file, got %q", result.Job.Feedback)
 	}
-	if !strings.Contains(err.Error(), "was instructed to write") {
-		t.Fatalf("expected agent instruction context, got %v", err)
-	}
-	if !strings.Contains(err.Error(), commitMessageFilename) {
-		t.Fatalf("expected error to mention commit message file, got %v", err)
+	// Changed should be true so we don't go to project review
+	if !result.Changed {
+		t.Fatal("expected changed to be true")
 	}
 }
 

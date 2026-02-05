@@ -277,6 +277,11 @@ func runJobStages(ctx *runContext, current Job, interrupts <-chan os.Signal) (Jo
 		if current.Status != StatusActive {
 			break
 		}
+		if current.Stage == StageImplementing {
+			// Implementing stage requested retry (e.g., missing commit message).
+			ctx.reviewScope = reviewScopeStep
+			continue
+		}
 		if ctx.workComplete {
 			ctx.reviewScope = reviewScopeProject
 		}
@@ -684,14 +689,20 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		message, err = readCommitMessage(messagePath)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				return ImplementingStageResult{}, fmt.Errorf(
-					"commit message missing after LLM implementation; session %s was instructed to write %s because the workspace changed from %s to %s: %w",
-					llmResult.SessionID,
-					messagePath,
-					beforeCommitID,
-					afterCommitID,
-					err,
+				// Commit message is missing but there are changes. Instead of failing,
+				// set feedback and retry. This handles cases where the LLM made changes
+				// but forgot to write the commit message file.
+				feedback := fmt.Sprintf(
+					"You made changes to the workspace but did not write a commit message. "+
+						"Please write a commit message describing your changes to %s.",
+					commitMessageFilename,
 				)
+				nextStage := StageImplementing
+				updated, err = manager.Update(updated.ID, UpdateOptions{Stage: &nextStage, Feedback: &feedback}, opts.Now())
+				if err != nil {
+					return ImplementingStageResult{}, err
+				}
+				return ImplementingStageResult{Job: updated, CommitMessage: "", Changed: true}, nil
 			}
 			return ImplementingStageResult{}, err
 		}
