@@ -110,16 +110,32 @@ var todoReopenCmd = &cobra.Command{
 
 // todo delete
 var todoDeleteCmd = &cobra.Command{
-	Use:   "delete <id>...",
+	Use:   "delete [<id>...]",
 	Short: "Delete one or more todos",
+	Long: `Delete one or more todos.
+
+Accepts todo IDs as positional arguments, or use filter flags to select todos.
+At least one ID or filter flag must be provided.
+
+Examples:
+  ii todo delete abc123 def456     # Delete specific todos by ID
+  ii todo delete --status=proposed # Delete all proposed todos
+  ii todo delete --type=bug        # Delete all bugs`,
 	Aliases: []string{
 		"destroy",
 	},
-	Args: cobra.MinimumNArgs(1),
 	RunE: runTodoDelete,
 }
 
-var todoDeleteReason string
+var (
+	todoDeleteReason   string
+	todoDeleteStatus   string
+	todoDeletePriority int
+	todoDeleteType     string
+	todoDeleteIDs      string
+	todoDeleteTitle    string
+	todoDeleteDesc     string
+)
 
 // todo show
 var todoShowCmd = &cobra.Command{
@@ -223,6 +239,12 @@ func init() {
 
 	// todo delete flags
 	todoDeleteCmd.Flags().StringVar(&todoDeleteReason, "reason", "", "Reason for deletion")
+	todoDeleteCmd.Flags().StringVar(&todoDeleteStatus, "status", "", "Filter by status")
+	todoDeleteCmd.Flags().IntVar(&todoDeletePriority, "priority", -1, "Filter by priority (0-4)")
+	todoDeleteCmd.Flags().StringVar(&todoDeleteType, "type", "", "Filter by type")
+	todoDeleteCmd.Flags().StringVar(&todoDeleteIDs, "id", "", "Filter by IDs (comma-separated)")
+	todoDeleteCmd.Flags().StringVar(&todoDeleteTitle, "title", "", "Filter by title substring")
+	todoDeleteCmd.Flags().StringVarP(&todoDeleteDesc, "description", "d", "", "Filter by description substring")
 
 	// todo show flags
 	todoShowCmd.Flags().BoolVar(&todoShowJSON, "json", false, "Output as JSON")
@@ -487,9 +509,72 @@ func runTodoReopen(cmd *cobra.Command, args []string) error {
 }
 
 func runTodoDelete(cmd *cobra.Command, args []string) error {
-	return runTodoAction(cmd, args, "Deleted", func(store *todo.Store) ([]todo.Todo, error) {
-		return store.Delete(args, todoDeleteReason)
-	})
+	hasFilterFlags := hasChangedFlags(cmd, "status", "priority", "type", "id", "title", "description")
+	hasIDArgs := len(args) > 0
+
+	if !hasFilterFlags && !hasIDArgs {
+		return fmt.Errorf("at least one ID or filter flag must be provided")
+	}
+
+	store, err := openTodoStore(cmd, args)
+	if err != nil {
+		return err
+	}
+	defer store.Release()
+
+	// Collect IDs to delete
+	var idsToDelete []string
+
+	if hasFilterFlags {
+		// Build filter and get matching todos
+		filter := todo.ListFilter{}
+
+		if todoDeleteStatus != "" {
+			status := todo.Status(todoDeleteStatus)
+			filter.Status = &status
+			if status == todo.StatusTombstone {
+				filter.IncludeTombstones = true
+			}
+		}
+		priority, err := todoListPriorityFilter(todoDeletePriority, cmd.Flags().Changed("priority"))
+		if err != nil {
+			return err
+		}
+		filter.Priority = priority
+		if todoDeleteType != "" {
+			typ := todo.TodoType(todoDeleteType)
+			filter.Type = &typ
+		}
+		if todoDeleteIDs != "" {
+			filter.IDs = parseIDList(todoDeleteIDs)
+		}
+		filter.TitleSubstring = todoDeleteTitle
+		filter.DescriptionSubstring = todoDeleteDesc
+
+		matched, err := store.List(filter)
+		if err != nil {
+			return err
+		}
+
+		for _, t := range matched {
+			idsToDelete = append(idsToDelete, t.ID)
+		}
+	}
+
+	// Add positional args
+	idsToDelete = append(idsToDelete, args...)
+
+	if len(idsToDelete) == 0 {
+		fmt.Println("No todos matched the filter.")
+		return nil
+	}
+
+	deleted, err := store.Delete(idsToDelete, todoDeleteReason)
+	if err != nil {
+		return err
+	}
+
+	return printTodoActionResults(store, "Deleted", deleted)
 }
 
 func runTodoShow(cmd *cobra.Command, args []string) error {

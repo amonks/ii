@@ -138,6 +138,9 @@ Fields (JSON keys):
 - `finish` sets status to `done` and sets `completed_at` when transitioning from `in_progress`.
 - `delete` sets status to `tombstone`, sets `deleted_at`, clears `closed_at`,
   and optionally records a delete reason.
+- CLI `todo delete` accepts the same filter flags as `todo list` (status,
+  priority, type, id, title, description), plus positional IDs. At least one
+  ID or filter flag must be provided. Filters and positional IDs are combined.
 - Close/finish/reopen/start/queue do not store reasons; only delete supports
   `delete_reason`.
 

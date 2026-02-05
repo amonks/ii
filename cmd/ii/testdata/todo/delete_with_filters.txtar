@@ -1,0 +1,53 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# create todos with different types
+stdin input.txt
+exec $II todo create --title 'Bug 1' --type bug
+exec $II todo create --title 'Bug 2' --type bug
+exec $II todo create --title 'Task 1' --type task
+exec $II todo create --title 'Open Bug' --type bug
+
+exec $II todo list --json
+todoid stdout 'Bug 1' BUG1_ID
+todoid stdout 'Bug 2' BUG2_ID
+todoid stdout 'Task 1' TASK1_ID
+todoid stdout 'Open Bug' OPEN_BUG_ID
+
+# change some todos to proposed status
+exec $II todo update $BUG1_ID $BUG2_ID $TASK1_ID --status proposed
+
+# delete using filters: all proposed bugs
+exec $II todo delete --status=proposed --type=bug
+stdout 'Bug 1'
+stdout 'Bug 2'
+! stdout 'Task 1'
+! stdout 'Open Bug'
+
+# verify the deletions
+exec $II todo list --tombstones --json
+stdout 'Bug 1'
+stdout 'Bug 2'
+stdout '"status": "tombstone"'
+
+# the task and open bug should still be present
+exec $II todo list --json
+stdout 'Task 1'
+stdout 'Open Bug'
+
+# delete by title filter
+exec $II todo delete --title='Task'
+stdout 'Task 1'
+
+exec $II todo list --json
+! stdout 'Task 1'
+stdout 'Open Bug'
+
+# delete with no args or filters fails
+! exec $II todo delete
+stderr 'at least one ID or filter flag must be provided'
+
+-- repo/input.txt --
+y
