@@ -12,8 +12,7 @@ import (
 // agentEventInterpreter renders agent events from the agent package.
 // Agent events use a Name field with values like "agent.start", "tool.start", etc.
 type agentEventInterpreter struct {
-	repoPath    string
-	currentTurn int
+	repoPath string
 }
 
 func newAgentEventInterpreter(repoPath string) *agentEventInterpreter {
@@ -138,18 +137,7 @@ func (i *agentEventInterpreter) handleAgentEnd(data string) ([]agentRenderedEven
 	}}, nil
 }
 
-// turnStartData is the JSON structure for turn.start events.
-type turnStartData struct {
-	TurnIndex int `json:"TurnIndex"`
-}
-
 func (i *agentEventInterpreter) handleTurnStart(data string) ([]agentRenderedEvent, error) {
-	var payload turnStartData
-	if err := json.Unmarshal([]byte(data), &payload); err != nil {
-		return nil, nil
-	}
-
-	i.currentTurn = payload.TurnIndex
 	return nil, nil // Don't render turn start
 }
 
