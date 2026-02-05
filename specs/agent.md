@@ -220,6 +220,7 @@ The agent uses a dynamically generated system prompt that includes:
 - Current working directory
 - Current date and time
 - Available tools and their parameter schemas
+- Task tool usage guidance (when to use/not use, subagent type descriptions)
 - Code editing best practices (read before edit, use precise edits, prefer edit over write)
 - Guidelines for handling tool errors gracefully
 

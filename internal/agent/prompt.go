@@ -57,15 +57,25 @@ Parameters:
 - subagent_type (string, required): The type of specialized agent to use
 
 Available subagent types:
-- general: General-purpose agent with full tool access. Use for multi-step tasks requiring file edits.
-- explore: Read-only agent for exploring codebases and searching code. Cannot modify files.
-- bash: Command execution specialist for running bash commands only.
+- general: General-purpose agent with full tool access (bash, read, write, edit). Use for multi-step tasks requiring file edits or when you need to research complex questions and execute multi-step operations.
+- explore: Fast, read-only agent for exploring codebases (bash, read only). Use when you need to quickly find files, search code for keywords, or answer questions about the codebase. Cannot modify files.
+- bash: Command execution specialist for running bash commands only. Use for git operations, command execution, and other terminal tasks.
+
+When to use the task tool:
+- **Use for codebase exploration**: When exploring the codebase to gather context or answer questions that aren't simple file lookups, use explore subagent.
+- **Use for complex multi-step operations**: When a task requires multiple tool calls with focused context.
+- **Use to reduce context usage**: Subagents help keep the main conversation focused.
+
+When NOT to use the task tool:
+- If you want to read a specific file path, use the read tool directly.
+- If you are searching for a specific class or function definition, use bash with grep directly.
+- If you are searching within a specific file or 2-3 files, use the read tool directly.
 
 Usage notes:
-- Use task for complex operations that benefit from focused context
-- Provide clear, detailed prompts so the subagent can work autonomously
-- The subagent's response is returned as the tool result
-- Subagents cannot spawn further subagents (single level of nesting)
+- Provide clear, detailed prompts so the subagent can work autonomously.
+- Tell the subagent whether you expect it to write code or just research (search, read).
+- The subagent's response is returned as the tool result.
+- Subagents cannot spawn further subagents (single level of nesting).
 
 ## Guidelines
 
