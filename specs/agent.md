@@ -177,28 +177,31 @@ Parameters:
 Returns error if `old_string` not found or found multiple times (when
 `replace_all` is false).
 
-### task (planned)
+### task
 
 Spawns a subagent to handle a task. Use this for complex multi-step operations
 that benefit from focused context. The subagent runs synchronously and returns
-its result.
-
-**Status**: The task tool is not yet registered. The infrastructure (parameter
-validation, `builtInToolsWithTask()`) exists but is disabled until subagent
-spawning is implemented. Once enabled, the tool will use the following interface:
+its final text response.
 
 Parameters:
 - `description` (string, required): A short (3-5 word) description of the task
 - `prompt` (string, required): The task for the agent to perform
 - `subagent_type` (string, required): The type of specialized agent to use
 
-Planned subagent types:
-- `general`: General-purpose agent with full tool access (except task tool itself)
-- `explore`: Fast agent for exploring codebases and searching code
-- `bash`: Command execution specialist for running bash commands
+Supported subagent types:
+- `general`: General-purpose agent with full tool access (bash, read, write, edit) except task
+- `explore`: Read-only agent for exploring codebases with bash and read tools
+- `bash`: Command execution specialist with bash tool only
 
-Subagents will not have access to the task tool themselves to prevent recursive
-spawning. The `builtInToolsWithTask(includeTask bool)` function controls this.
+Subagents:
+- Run synchronously and return their final text response
+- Inherit the parent's model, permissions, and working directory
+- Do not have access to the task tool (prevents recursive spawning)
+- Do not emit events (their activity is internal to the parent agent)
+
+The `toolExecutor.config` field controls task tool availability:
+- Parent agents have `config` set, enabling subagent spawning
+- Subagents have `config = nil`, preventing further spawning
 
 ### Tool Validation Errors
 

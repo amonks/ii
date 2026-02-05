@@ -48,6 +48,25 @@ Parameters:
 - new_string (string, required): Replacement text
 - replace_all (bool, optional): Replace all occurrences, default false
 
+### task
+Launch a subagent to handle a complex, multi-step task autonomously. The subagent runs synchronously and returns its result.
+
+Parameters:
+- description (string, required): A short (3-5 word) description of the task
+- prompt (string, required): The task for the agent to perform
+- subagent_type (string, required): The type of specialized agent to use
+
+Available subagent types:
+- general: General-purpose agent with full tool access. Use for multi-step tasks requiring file edits.
+- explore: Read-only agent for exploring codebases and searching code. Cannot modify files.
+- bash: Command execution specialist for running bash commands only.
+
+Usage notes:
+- Use task for complex operations that benefit from focused context
+- Provide clear, detailed prompts so the subagent can work autonomously
+- The subagent's response is returned as the tool result
+- Subagents cannot spawn further subagents (single level of nesting)
+
 ## Guidelines
 
 1. **Read before editing**: Always read a file before editing it to understand its content and structure.

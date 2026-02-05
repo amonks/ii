@@ -136,6 +136,10 @@ type toolExecutor struct {
 	workDir     string
 	permissions BashPermissions
 	env         []string
+
+	// config is the full agent configuration, needed for spawning subagents.
+	// Only set for parent agents; nil for subagents (which can't spawn).
+	config *AgentConfig
 }
 
 // executeTool executes a tool call and returns the result.
@@ -424,7 +428,8 @@ func (e *toolExecutor) executeEdit(args map[string]any) (string, bool) {
 }
 
 // executeTask spawns a subagent to handle a task.
-// This is a placeholder that will be implemented to actually spawn subagents.
+// Subagents run synchronously and return their final text response.
+// They do not have access to the task tool to prevent recursive spawning.
 func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (string, bool) {
 	description, ok := args["description"].(string)
 	if !ok || description == "" {
@@ -454,9 +459,93 @@ func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (st
 		return formatInvalidValueError("task", "subagent_type", subagentType, validTypes, args), true
 	}
 
-	// Placeholder: actual subagent spawning will be implemented in a follow-up change.
-	// For now, return an error indicating the feature is not yet implemented.
-	return fmt.Sprintf("Subagent spawning not yet implemented (description: %q, type: %q)", description, subagentType), true
+	// Check that we have config to spawn from (subagents don't have config, preventing recursion)
+	if e.config == nil {
+		return "Cannot spawn subagent: task tool not available in this context", true
+	}
+
+	// Get tools for this subagent type
+	tools := subagentTools(subagentType)
+
+	// Create subagent config (inherits from parent)
+	subConfig := AgentConfig{
+		Model:           e.config.Model,
+		Permissions:     e.config.Permissions,
+		WorkDir:         e.workDir,
+		GlobalConfigDir: e.config.GlobalConfigDir,
+		Env:             e.env,
+		SessionID:       e.config.SessionID, // Share session ID for observability
+		Version:         e.config.Version,
+	}
+
+	// Run the subagent synchronously
+	result, err := runSubagent(ctx, prompt, subConfig, tools)
+	if err != nil {
+		return fmt.Sprintf("Subagent error: %v", err), true
+	}
+
+	// Extract the final text response from the subagent
+	response := extractFinalResponse(result.Messages)
+	if response == "" {
+		return "Subagent completed but produced no text response", true
+	}
+
+	return response, false
+}
+
+// subagentTools returns the tools available for a given subagent type.
+// None of the subagent types have access to the task tool to prevent recursion.
+func subagentTools(subagentType string) []llm.Tool {
+	// Get base tools without task
+	allTools := builtInToolsWithTask(false)
+
+	switch subagentType {
+	case "bash":
+		// Bash agent only gets the bash tool
+		for _, t := range allTools {
+			if t.Name == "bash" {
+				return []llm.Tool{t}
+			}
+		}
+		return allTools // fallback
+
+	case "explore":
+		// Explore agent gets read-only tools (no write/edit)
+		var tools []llm.Tool
+		for _, t := range allTools {
+			if t.Name == "bash" || t.Name == "read" {
+				tools = append(tools, t)
+			}
+		}
+		return tools
+
+	case "general":
+		// General agent gets all tools except task
+		return allTools
+
+	default:
+		return allTools
+	}
+}
+
+// extractFinalResponse extracts the final text response from messages.
+// It looks at the last assistant message and concatenates all text content.
+func extractFinalResponse(messages []llm.Message) string {
+	// Find the last assistant message
+	for i := len(messages) - 1; i >= 0; i-- {
+		if msg, ok := messages[i].(llm.AssistantMessage); ok {
+			var textParts []string
+			for _, block := range msg.Content {
+				if tc, ok := block.(llm.TextContent); ok {
+					textParts = append(textParts, tc.Text)
+				}
+			}
+			if len(textParts) > 0 {
+				return strings.Join(textParts, "\n")
+			}
+		}
+	}
+	return ""
 }
 
 // isBinary checks if data appears to be binary content.

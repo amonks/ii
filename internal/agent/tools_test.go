@@ -708,7 +708,8 @@ func TestToolExecutor_Task(t *testing.T) {
 		}
 	})
 
-	t.Run("valid parameters returns not implemented", func(t *testing.T) {
+	t.Run("task tool without config returns error", func(t *testing.T) {
+		// Executor without config (as in subagents) should not be able to spawn subagents
 		tc := llm.ToolCall{
 			ID:   "tc5",
 			Name: "task",
@@ -719,13 +720,72 @@ func TestToolExecutor_Task(t *testing.T) {
 			},
 		}
 		result := executor.executeTool(context.Background(), tc)
-		// Currently returns an error because subagent spawning is not yet implemented
+		// Should return an error because executor has no config
 		if !result.IsError {
-			t.Error("expected error (not yet implemented)")
+			t.Error("expected error when config is nil")
 		}
 		text := getToolResultText(result)
-		if !strings.Contains(text, "not yet implemented") {
-			t.Errorf("expected 'not yet implemented' in message, got %q", text)
+		if !strings.Contains(text, "task tool not available") {
+			t.Errorf("expected 'task tool not available' in message, got %q", text)
+		}
+	})
+}
+
+func TestSubagentTools(t *testing.T) {
+	t.Run("general subagent gets all tools except task", func(t *testing.T) {
+		tools := subagentTools("general")
+		toolNames := make(map[string]bool)
+		for _, tool := range tools {
+			toolNames[tool.Name] = true
+		}
+
+		// Should have bash, read, write, edit
+		expected := []string{"bash", "read", "write", "edit"}
+		for _, name := range expected {
+			if !toolNames[name] {
+				t.Errorf("general subagent missing tool: %s", name)
+			}
+		}
+		// Should NOT have task
+		if toolNames["task"] {
+			t.Error("general subagent should not have task tool")
+		}
+	})
+
+	t.Run("bash subagent only gets bash tool", func(t *testing.T) {
+		tools := subagentTools("bash")
+		if len(tools) != 1 {
+			t.Errorf("bash subagent should have 1 tool, got %d", len(tools))
+		}
+		if len(tools) > 0 && tools[0].Name != "bash" {
+			t.Errorf("bash subagent's tool should be 'bash', got %q", tools[0].Name)
+		}
+	})
+
+	t.Run("explore subagent gets read-only tools", func(t *testing.T) {
+		tools := subagentTools("explore")
+		toolNames := make(map[string]bool)
+		for _, tool := range tools {
+			toolNames[tool.Name] = true
+		}
+
+		// Should have bash and read
+		if !toolNames["bash"] {
+			t.Error("explore subagent should have bash tool")
+		}
+		if !toolNames["read"] {
+			t.Error("explore subagent should have read tool")
+		}
+		// Should NOT have write or edit
+		if toolNames["write"] {
+			t.Error("explore subagent should not have write tool")
+		}
+		if toolNames["edit"] {
+			t.Error("explore subagent should not have edit tool")
+		}
+		// Should NOT have task
+		if toolNames["task"] {
+			t.Error("explore subagent should not have task tool")
 		}
 	})
 }

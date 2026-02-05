@@ -62,11 +62,12 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 		},
 	}
 
-	// Create tool executor
+	// Create tool executor with config (enables task tool for spawning subagents)
 	executor := &toolExecutor{
 		workDir:     workDir,
 		permissions: config.Permissions,
 		env:         config.Env,
+		config:      &config,
 	}
 
 	// Track aggregate usage
@@ -87,11 +88,11 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 		// Send turn start event
 		events <- TurnStartEvent{TurnIndex: turnIndex}
 
-		// Build request
+		// Build request (parent agents have the task tool)
 		req := llm.Request{
 			SystemPrompt: BuildSystemPrompt(workDir),
 			Messages:     messages,
-			Tools:        builtInTools(),
+			Tools:        builtInToolsWithTask(true),
 		}
 
 		// Stream completion from LLM with retry for transient errors
@@ -287,6 +288,140 @@ func extractToolCalls(msg llm.AssistantMessage) []llm.ToolCall {
 		}
 	}
 	return toolCalls
+}
+
+// runSubagent runs an agent synchronously with a custom set of tools.
+// Unlike runAgent, this blocks until completion and returns the result directly.
+// It does not emit events (subagent activity is internal to the parent).
+func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools []llm.Tool) (RunResult, error) {
+	workDir := config.WorkDir
+	if workDir == "" {
+		var err error
+		workDir, err = os.Getwd()
+		if err != nil {
+			return RunResult{}, fmt.Errorf("get working directory: %w", err)
+		}
+	}
+
+	// Initialize conversation with user message
+	prelude, err := agentsPrelude(workDir, config.GlobalConfigDir)
+	if err != nil {
+		return RunResult{}, err
+	}
+
+	messages := []llm.Message{
+		llm.UserMessage{
+			Role: "user",
+			Content: []llm.ContentBlock{
+				llm.TextContent{Type: "text", Text: prelude + prompt},
+			},
+			Timestamp: time.Now(),
+		},
+	}
+
+	// Create tool executor WITHOUT config (subagents can't spawn further subagents)
+	executor := &toolExecutor{
+		workDir:     workDir,
+		permissions: config.Permissions,
+		env:         config.Env,
+		config:      nil, // Prevents task tool from working
+	}
+
+	// Track aggregate usage
+	var totalUsage llm.Usage
+
+	for {
+		// Check for context cancellation
+		if ctx.Err() != nil {
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    ctx.Err(),
+			}, ctx.Err()
+		}
+
+		// Build request with custom tools
+		req := llm.Request{
+			SystemPrompt: BuildSystemPrompt(workDir),
+			Messages:     messages,
+			Tools:        tools,
+		}
+
+		// Stream completion from LLM with retry for transient errors
+		streamHandle, err := llm.StreamWithRetry(ctx, config.Model, req, llm.StreamOptions{
+			SessionID: config.SessionID,
+			UserAgent: UserAgent(workDir, config.Version),
+		}, llm.DefaultRetryConfig())
+		if err != nil {
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    fmt.Errorf("start stream: %w", err),
+			}, err
+		}
+
+		// Drain stream events (we don't emit them for subagents)
+		for range streamHandle.Events {
+		}
+
+		// Wait for stream completion and get final message
+		assistantMsg, err := streamHandle.Wait()
+		if err != nil {
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    fmt.Errorf("stream error: %w", err),
+			}, err
+		}
+
+		// Update total usage
+		totalUsage = addUsage(totalUsage, assistantMsg.Usage)
+
+		// Add assistant message to conversation
+		messages = append(messages, assistantMsg)
+
+		// Check stop reason
+		switch assistantMsg.StopReason {
+		case llm.StopReasonMaxTokens:
+			err := fmt.Errorf("context overflow: max tokens reached")
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    err,
+			}, err
+
+		case llm.StopReasonError:
+			err := fmt.Errorf("LLM error: %s", assistantMsg.ErrorMessage)
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    err,
+			}, err
+
+		case llm.StopReasonAborted:
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+				Error:    ctx.Err(),
+			}, ctx.Err()
+
+		case llm.StopReasonEnd:
+			// Natural completion - no tool calls
+			return RunResult{
+				Messages: messages,
+				Usage:    totalUsage,
+			}, nil
+
+		case llm.StopReasonToolUse:
+			// Execute tool calls
+			toolCalls := extractToolCalls(assistantMsg)
+			for _, tc := range toolCalls {
+				toolResult := executor.executeTool(ctx, tc)
+				messages = append(messages, toolResult)
+			}
+			// Continue to next turn
+		}
+	}
 }
 
 // addUsage adds two usage values together.
