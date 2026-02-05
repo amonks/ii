@@ -38,6 +38,12 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 			return nil, nil
 		},
 		UpdateStale: func(string) error { return nil },
+		CurrentChangeEmpty: func(string) (bool, error) {
+			if llmCount < 3 {
+				return true, nil // Empty until the third LLM call
+			}
+			return false, nil // Not empty after third call writes commit message
+		},
 		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 			llmCount++
 			if llmCount == 3 {

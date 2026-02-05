@@ -231,6 +231,9 @@ func TestRunImplementingStageRetriesOpencodeAfterRestore(t *testing.T) {
 			restoreCalls++
 			return nil
 		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil // @ is empty after retry and restore
+		},
 	}
 
 	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
@@ -368,6 +371,71 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 	}
 	if _, err := os.Stat(messagePath); !os.IsNotExist(err) {
 		t.Fatalf("expected commit message to be deleted")
+	}
+}
+
+func TestRunImplementingStageDetectsUncommittedWorkFromPreviousRun(t *testing.T) {
+	// This tests the scenario where a previous job left uncommitted work in @.
+	// The LLM makes no changes (commit ID doesn't change), but @ is not empty
+	// because of work from the previous run.
+	repoPath := t.TempDir()
+	stateDir := t.TempDir()
+
+	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	now := time.Date(2026, time.January, 2, 3, 4, 8, 0, time.UTC)
+	current, err := manager.Create("todo-prior", now, CreateOptions{})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	item := todo.Todo{
+		ID:       "todo-prior",
+		Title:    "Example",
+		Type:     todo.TypeTask,
+		Priority: todo.PriorityLow,
+	}
+
+	// Write a commit message file (simulating that the previous run created it)
+	messagePath := filepath.Join(repoPath, commitMessageFilename)
+	if err := os.WriteFile(messagePath, []byte("feat: work from previous run\n"), 0o644); err != nil {
+		t.Fatalf("write commit message: %v", err)
+	}
+
+	opts := RunOptions{
+		Now: func() time.Time { return now },
+		// Commit ID does NOT change during this run (LLM made no changes)
+		CurrentCommitID: func(string) (string, error) {
+			return "same-commit", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-prior", nil
+		},
+		// But @ is NOT empty because of work from a previous run
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return false, nil
+		},
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			return AgentRunResult{SessionID: "ses-prior", ExitCode: 0}, nil
+		},
+	}
+
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	// Should detect the uncommitted work and flag it as changed
+	if !result.Changed {
+		t.Fatalf("expected changed=true because @ is not empty")
+	}
+	if result.Job.Stage != StageTesting {
+		t.Fatalf("expected stage %q, got %q", StageTesting, result.Job.Stage)
+	}
+	if result.CommitMessage != "feat: work from previous run" {
+		t.Fatalf("expected commit message from file, got %q", result.CommitMessage)
 	}
 }
 

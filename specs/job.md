@@ -144,18 +144,20 @@ any stage -> failed (unrecoverable error)
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
     failing and include the retry attempt in the error details.
-13. Record the current working copy commit id again.
-14. If the commit id changed, run `jj log -r @ -T empty --no-graph` and treat a
-    `true` result as no change (empty working copy) and `false` as changed.
-15. If the commit id did not change (or the change is empty):
+13. Run `jj log -r @ -T empty --no-graph` to check if the current change has
+    uncommitted work. Treat `true` (empty) as no work to commit, `false` (not
+    empty) as work to commit. This check uses the `empty` template rather than
+    comparing commit IDs because a previous job run may have left uncommitted
+    work in `@` if it failed after making changes.
+14. If the change is empty:
     - Delete `.incrementum-commit-message` from the workspace root if it exists.
     - Flag the next review cycle as the final project review.
-16. If the commit id changed and the change is not empty:
+15. If the change is not empty:
     - Read `.incrementum-commit-message` from the workspace root, trimming trailing
       newlines, trailing whitespace on each line, and any leading blank lines.
     - Store the message for the committing stage.
-17. Transition to `testing` when changes were detected, otherwise transition to
-    `reviewing`.
+16. Transition to `testing` when changes were detected (change not empty),
+    otherwise transition to `reviewing`.
 
 ### testing
 

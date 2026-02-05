@@ -210,7 +210,7 @@ func TestRunImplementingStageNoChangesSkipsTesting(t *testing.T) {
 			return "change-790", nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, fmt.Errorf("change empty check should not be called")
+			return true, nil // @ is empty (no uncommitted work)
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			return AgentRunResult{SessionID: "oc-790", ExitCode: 0}, nil
@@ -282,7 +282,7 @@ func TestRunImplementingStageIncludesCommitMessageInstructionWithFeedback(t *tes
 			return "change-111", nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, fmt.Errorf("change empty check should not be called")
+			return true, nil // @ is empty after feedback run
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			seenPrompt = runOpts.Prompt

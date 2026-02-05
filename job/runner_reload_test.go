@@ -214,7 +214,13 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 			return "change-1", nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, nil
+			// First two implementations make changes, third does not
+			// The check happens after implementation runs 1, 2, 4 (not 3 which is review)
+			// At the time of the fourth llmCount call, we want @ to be empty
+			if llmCount >= 4 {
+				return true, nil // @ is empty for third implementation (project review path)
+			}
+			return false, nil // @ has changes from implementations 1 and 2
 		},
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n1 file changed", nil
@@ -349,7 +355,12 @@ func TestRunContextReloadTodoUpdatesItem(t *testing.T) {
 			return "change-1", nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
-			return false, nil
+			// First implementation makes changes, second does not
+			// At the time of the third llmCount call (impl-2), we want @ to be empty
+			if llmCount >= 3 {
+				return true, nil // @ is empty for second implementation (project review path)
+			}
+			return false, nil // @ has changes from first implementation
 		},
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n1 file changed", nil

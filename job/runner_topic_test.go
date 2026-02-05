@@ -37,6 +37,12 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 			return nil, nil
 		},
 		UpdateStale: func(string) error { return nil },
+		CurrentChangeEmpty: func(string) (bool, error) {
+			if llmCount < 3 {
+				return true, nil // Empty until the third LLM call
+			}
+			return false, nil // Not empty after third call writes commit message
+		},
 		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 			llmCount++
 			if llmCount == 3 {
@@ -113,6 +119,9 @@ func TestRunStoresOpencodeAgent(t *testing.T) {
 		CurrentCommitID: func(string) (string, error) {
 			return "same", nil
 		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil // @ is empty
+		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			llmCount++
 			return AgentRunResult{SessionID: fmt.Sprintf("opencode-%d", llmCount), ExitCode: 0}, nil
@@ -177,6 +186,9 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 		UpdateStale: func(string) error { return nil },
 		CurrentCommitID: func(string) (string, error) {
 			return "same", nil
+		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil // @ is empty
 		},
 		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
 			agents = append(agents, opts.Model)

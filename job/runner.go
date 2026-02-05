@@ -647,19 +647,17 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		return ImplementingStageResult{}, err
 	}
 
-	changed := beforeCommitID != afterCommitID
-	if changed {
-		if opts.CurrentChangeEmpty == nil {
-			return ImplementingStageResult{}, fmt.Errorf("current change empty check is required")
-		}
-		empty, err := opts.CurrentChangeEmpty(workspacePath)
-		if err != nil {
-			return ImplementingStageResult{}, err
-		}
-		if empty {
-			changed = false
-		}
+	// Check if the current change has work to commit. We use the empty check
+	// rather than comparing commit IDs because a previous job run may have
+	// left uncommitted work in @ if it failed after making changes.
+	if opts.CurrentChangeEmpty == nil {
+		return ImplementingStageResult{}, fmt.Errorf("current change empty check is required")
 	}
+	empty, err := opts.CurrentChangeEmpty(workspacePath)
+	if err != nil {
+		return ImplementingStageResult{}, err
+	}
+	changed := !empty
 	message := ""
 	if changed {
 		messagePath := filepath.Join(workspacePath, commitMessageFilename)
