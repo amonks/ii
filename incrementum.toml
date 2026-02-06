@@ -1,11 +1,11 @@
 [job]
 test-commands = ["go test ./..."]
-implementation-model = "claude-opus-4-5"
-code-review-model = "gpt-5.2"
-project-review-model = "claude-opus-4-5"
+implementation-model = "gpt-5.2-codex"
+code-review-model = "gpt-5.2-codex"
+project-review-model = "gpt-5.2-codex"
 
 [llm]
-model = "gpt-5.2"
+model = "gpt-5.2-codex"
 
 [[llm.providers]]
 name = "tailnet-openai"
