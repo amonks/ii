@@ -56,12 +56,4 @@ mode = "prod"
     writing = "monks-writing-fly-ord"
     dogs = "monks-dogs-fly-ord"
 
-[[service]]
-  type = "tsnet"
-  addr = ":80"
-  storage_path = "/data"
-  [service.apps]
-    mailer = "monks-mailer-fly-ord"
-    traffic = "monks-traffic-fly-ord"
-    errlog = "monks-errlog-fly-ord"
 

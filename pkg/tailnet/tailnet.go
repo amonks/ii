@@ -76,30 +76,3 @@ func Client() *http.Client {
 	})
 	return clientNode.HTTPClient()
 }
-
-// Server returns a lazily-started tsnet server.
-// Deprecated: use ListenAndServe for app servers or Client for outbound requests.
-// This exists temporarily for the proxy's tsnet service listener.
-var (
-	serverOnce sync.Once
-	serverNode *tsnet.Server
-)
-
-func Server() *tsnet.Server {
-	if !meta.IsFly() {
-		panic("don't use tailnet outside of fly")
-	}
-	serverOnce.Do(func() {
-		h := hostname()
-		serverNode = &tsnet.Server{
-			Hostname:  h,
-			Dir:       filepath.Join(os.TempDir(), "tsnet-"+h),
-			Ephemeral: true,
-			AuthKey:   tailscaleAuthKey,
-		}
-		if err := serverNode.Start(); err != nil {
-			panic(fmt.Errorf("failed to start tailnet server: %w", err))
-		}
-	})
-	return serverNode
-}

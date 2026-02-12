@@ -122,9 +122,7 @@ func (s *Service) ListenAndServe(ctx context.Context) error {
 		return s.listenAndServeRedirects(ctx)
 	case "https":
 		return s.listenAndServeHTTPS(ctx)
-	case "tsnet":
-		return s.listenAndServeTSNet(ctx)
-	default:
+default:
 		return fmt.Errorf("unsupported service type: '%s'", s.service.Type)
 	}
 }
@@ -210,45 +208,6 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 }
 
-func (s *Service) listenAndServeTSNet(ctx context.Context) error {
-	traf, err := traffic.New(s.service.Addr)
-	if err != nil {
-		return fmt.Errorf("error starting traffic logger: %w", err)
-	}
-	defer traf.Close()
-
-	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tailnet.Client().Transport})
-	httpSrv := &http.Server{
-		ConnContext: deriveConnectionContext,
-		Addr:        s.service.Addr,
-		Handler:     handler,
-	}
-
-	tsSrv := tailnet.Server()
-
-	ln, err := tsSrv.Listen("tcp", ":80")
-	if err != nil {
-		return fmt.Errorf("error listening on tsnet: %w", err)
-	}
-
-	proxyListener := &proxyproto.Listener{
-		Listener:          ln,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
-	defer proxyListener.Close()
-
-	errs := make(chan error)
-	go func() {
-		errs <- httpSrv.Serve(proxyListener)
-	}()
-	select {
-	case err := <-errs:
-		return err
-	case <-ctx.Done():
-		return httpSrv.Shutdown(context.Background())
-	}
-}
 
 func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {
