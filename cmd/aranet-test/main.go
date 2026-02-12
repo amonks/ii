@@ -26,7 +26,7 @@ func main() {
 	if err := adapter.Enable(); err != nil {
 		log.Fatalf("Failed to enable adapter: %v", err)
 	}
-	fmt.Println("Adapter enabled.\n")
+	fmt.Println("Adapter enabled.")
 
 	found := make(map[string]string) // addr -> name
 	done := make(chan struct{})
