@@ -1,6 +1,10 @@
 cache
 .git
+.jj
 .envrc
 bin
 node_modules
+data
+aws/terraform
+apps/dogs/archive.zip
 
