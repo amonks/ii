@@ -16,7 +16,7 @@ func EmailMe(message email.Message) error {
 	form.Set("subject", message.Subject)
 	form.Set("body", message.Body)
 
-	const url = "http://fly.ss.cx/mailer/"
+	const url = "http://monks-mailer-fly-ord/"
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(form.Encode()))
 	if err != nil {

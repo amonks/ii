@@ -21,7 +21,7 @@ import (
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tls"
-	"monks.co/pkg/traffic"
+	"monks.co/pkg/trafficclient"
 )
 
 var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
@@ -170,14 +170,12 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer stopTLS()
 
-	traf, err := traffic.New(s.service.Addr)
-	if err != nil {
-		return fmt.Errorf("error starting traffic logger: %w", err)
-	}
+	tsClient := tailnet.Client()
+	traf := trafficclient.New("http://monks-traffic-fly-ord/log", tsClient)
 	defer traf.Close()
 
 	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tailnet.Client().Transport})
+	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tsClient.Transport})
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
@@ -218,7 +216,7 @@ func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context
 			log.Printf("couldn't retrieve remote address")
 		}
 
-		return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
+		return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
 	}
-	return context.WithValue(ctx, traffic.RemoteAddrKey, conn.RemoteAddr().String())
+	return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
 }

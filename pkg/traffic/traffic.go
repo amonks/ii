@@ -2,18 +2,13 @@ package traffic
 
 import (
 	"fmt"
-	"log"
 	"net"
-	"net/http"
 	"time"
 
 	"gorm.io/gorm"
 	"monks.co/pkg/color"
 	"monks.co/pkg/database"
-	"monks.co/pkg/middleware"
 )
-
-var RemoteAddrKey = &struct{}{}
 
 type Request struct {
 	gorm.Model
@@ -63,13 +58,6 @@ func (r *Request) PrintUserAgent() string {
 	return r.UserAgent
 }
 
-var _ middleware.Middleware = &TrafficLogger{}
-
-type TrafficLogger struct {
-	model *Model
-	host  string
-}
-
 type Model struct {
 	*database.DB
 }
@@ -95,60 +83,36 @@ func (m *Model) migrate() error {
 	return m.Exec(sql).Error
 }
 
-func New(host string) (*TrafficLogger, error) {
-	db, err := Open()
-	if err != nil {
-		return nil, err
-	}
-	return &TrafficLogger{db, host}, nil
+// LogEntry is the wire format for traffic log entries sent from the proxy.
+type LogEntry struct {
+	Timestamp  time.Time     `json:"timestamp"`
+	Host       string        `json:"host"`
+	Path       string        `json:"path"`
+	Query      string        `json:"query"`
+	RemoteAddr string        `json:"remote_addr"`
+	UserAgent  string        `json:"user_agent"`
+	Referer    string        `json:"referer"`
+	StatusCode int           `json:"status_code"`
+	Duration   time.Duration `json:"duration"`
 }
 
-func (tl *TrafficLogger) Close() error {
-	return tl.model.Close()
-}
-
-func (tl *TrafficLogger) ModifyHandler(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		ww := &StatusRecorder{w, 0}
-
-		start := time.Now()
-		handler.ServeHTTP(ww, req)
-		dur := time.Since(start)
-
-		if tx := tl.model.Create(&Request{
-			Host:  req.Host,
-			Path:  req.URL.Path,
-			Query: req.URL.RawQuery,
-
-			RemoteAddr: getRemoteAddr(req),
-			UserAgent:  req.UserAgent(),
-			Referer:    req.Header.Get("Referer"),
-
-			StatusCode: ww.status,
-			Duration:   dur,
-		}); tx.Error != nil {
-			log.Println("error", tx.Error)
+func (m *Model) LogEntries(entries []LogEntry) error {
+	for _, e := range entries {
+		t := e.Timestamp
+		r := &Request{
+			CreatedAt:  &t,
+			Host:       e.Host,
+			Path:       e.Path,
+			Query:      e.Query,
+			RemoteAddr: e.RemoteAddr,
+			UserAgent:  e.UserAgent,
+			Referer:    e.Referer,
+			StatusCode: e.StatusCode,
+			Duration:   e.Duration,
 		}
-	})
-}
-
-type StatusRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (r *StatusRecorder) WriteHeader(status int) {
-	r.status = status
-	r.ResponseWriter.WriteHeader(status)
-}
-
-func getRemoteAddr(req *http.Request) string {
-	ctx := req.Context()
-	v := ctx.Value(RemoteAddrKey)
-	switch v := v.(type) {
-	case string:
-		return v
-	default:
-		return req.RemoteAddr
+		if tx := m.Create(r); tx.Error != nil {
+			return tx.Error
+		}
 	}
+	return nil
 }

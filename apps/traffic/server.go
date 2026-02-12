@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"html/template"
 	"net/http"
 
@@ -32,6 +33,7 @@ type Server struct {
 func NewServer(m *traffic.Model) *Server {
 	s := &Server{serve.NewMux(), m}
 	s.HandleFunc("GET /{$}", s.serveTraffic)
+	s.HandleFunc("POST /log", s.handleLog)
 	s.Handle("GET /index.css", serve.StaticServer("./static/"))
 	return s
 }
@@ -102,4 +104,17 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		serve.Errorf(w, req, 500, "failed to read template: %s", err)
 		return
 	}
+}
+
+func (app *Server) handleLog(w http.ResponseWriter, req *http.Request) {
+	var entries []traffic.LogEntry
+	if err := json.NewDecoder(req.Body).Decode(&entries); err != nil {
+		serve.Errorf(w, req, 400, "bad request: %s", err)
+		return
+	}
+	if err := app.model.LogEntries(entries); err != nil {
+		serve.Errorf(w, req, 500, "failed to log entries: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

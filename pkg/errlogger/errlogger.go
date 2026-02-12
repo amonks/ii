@@ -64,7 +64,7 @@ func Report(statusCode int, report string) {
 }
 
 func sendReport(report *ErrorReport) error {
-	const url = "http://fly.ss.cx/errlog/"
+	const url = "http://monks-errlog-fly-ord/"
 
 	client := tailnet.Client()
 
