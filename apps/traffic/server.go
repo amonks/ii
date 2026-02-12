@@ -15,6 +15,9 @@ var (
 	//go:embed templates/*
 	files     embed.FS
 	templates map[string]*template.Template
+
+	//go:embed static/index.css
+	indexCSS string
 )
 
 func init() {
@@ -34,7 +37,10 @@ func NewServer(m *traffic.Model) *Server {
 	s := &Server{serve.NewMux(), m}
 	s.HandleFunc("GET /{$}", s.serveTraffic)
 	s.HandleFunc("POST /log", s.handleLog)
-	s.Handle("GET /index.css", serve.StaticServer("./static/"))
+	s.HandleFunc("GET /index.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write([]byte(indexCSS))
+	})
 	return s
 }
 

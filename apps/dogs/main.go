@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,8 +16,8 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/templib"
 )
 
@@ -28,6 +29,9 @@ func main() {
 	}
 	log.Printf("done")
 }
+
+//go:embed migrate.sql
+var migrateSQL string
 
 var (
 	archiveDir = "/data/tank/hotdogs"
@@ -52,11 +56,7 @@ func run() error {
 	}
 
 	log.Printf("migrating db")
-	migrate, err := os.ReadFile("migrate.sql")
-	if err != nil {
-		return err
-	}
-	if err := db.DB.Exec(string(migrate)).Error; err != nil {
+	if err := db.DB.Exec(migrateSQL).Error; err != nil {
 		return err
 	}
 
