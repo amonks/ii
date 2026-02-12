@@ -96,7 +96,11 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 		fmt.Fprintf(&b, "  COPY --from=gobuild /app/%s /app/%s\n", f, f)
 	}
 	b.WriteString("  ENV MONKS_ROOT=/app\n")
-	b.WriteString("  ENV MONKS_DATA=/data\n")
+	if app.Volume != "" {
+		b.WriteString("  ENV MONKS_DATA=/data\n")
+	} else {
+		b.WriteString("  ENV MONKS_DATA=/tmp\n")
+	}
 
 	cmd := app.Cmd
 	if len(cmd) == 0 {
@@ -134,8 +138,13 @@ func buildFlyToml(name string, app flyAppEntry, defaults flyAppDefaults) string 
 	b.WriteString("\n")
 
 	b.WriteString("[env]\n")
+	fmt.Fprintf(&b, "  MONKS_APP_NAME = %q\n", name)
 	b.WriteString("  MONKS_ROOT = \"/app\"\n")
-	b.WriteString("  MONKS_DATA = \"/data\"\n")
+	if app.Volume != "" {
+		b.WriteString("  MONKS_DATA = \"/data\"\n")
+	} else {
+		b.WriteString("  MONKS_DATA = \"/tmp\"\n")
+	}
 	b.WriteString("\n")
 
 	b.WriteString("[[vm]]\n")

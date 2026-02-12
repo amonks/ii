@@ -7,8 +7,9 @@ primary_region = "ord"
   dockerfile = "Dockerfile.fly"
 
 [env]
+  MONKS_APP_NAME = "mailer"
   MONKS_ROOT = "/app"
-  MONKS_DATA = "/data"
+  MONKS_DATA = "/tmp"
 
 [[vm]]
   size = "shared-cpu-1x"

@@ -14,5 +14,5 @@ FROM alpine
   WORKDIR /app/apps/mailer
   COPY --from=gobuild /app/bin/mailer /app/bin/app
   ENV MONKS_ROOT=/app
-  ENV MONKS_DATA=/data
+  ENV MONKS_DATA=/tmp
   CMD ["/app/bin/app"]

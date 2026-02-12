@@ -7,6 +7,7 @@ primary_region = "ord"
   dockerfile = "Dockerfile.fly"
 
 [env]
+  MONKS_APP_NAME = "dogs"
   MONKS_ROOT = "/app"
   MONKS_DATA = "/data"
 

@@ -18,6 +18,9 @@ func MachineName() string { return machineName.get() }
 func IsFly() bool         { return strings.HasPrefix(MachineName(), "fly-") }
 
 func getAppName() string {
+	if name := os.Getenv("MONKS_APP_NAME"); name != "" {
+		return name
+	}
 	if path, err := os.Executable(); err != nil {
 		return "unknown"
 	} else {
