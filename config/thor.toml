@@ -1,27 +1,2 @@
 mode = "dev"
-
-[[service]]
-  type = "redirect-to-https"
-  addr = "0.0.0.0:80"
-
-[[service]]
-  type = "https"
-  addr = "0.0.0.0:443"
-  extra_routes = { "genres" = 9999 }
-  [service.apps]
-    air = "monks-air-thor"
-    dogs = "monks-dogs-thor"
-    monitor = "monks-monitor-thor"
-    movies = "monks-movies-thor"
-    reddit = "monks-reddit-thor"
-    traffic = "monks-traffic-thor"
-
-[acme]
-  storage_path = "cache"
-  production = true
-  domains = ["thr.ss.cx", "thor.ss.cx"]
-  on_demand = true
-
-  [[acme.strategies]]
-    strategy = "dns"
-
+apps = ["air", "dogs", "monitor", "movies", "reddit", "traffic"]

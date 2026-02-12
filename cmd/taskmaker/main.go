@@ -64,14 +64,17 @@ func buildAppTasks() ([]*task, error) {
 		return nil, err
 	}
 
-	// add build tasks: collect all app names from machine configs
+	// collect all app names from dev machine configs
 	allApps := map[string]struct{}{}
 	for _, machine := range machineConfigs {
+		if machine.Mode != "dev" {
+			continue
+		}
 		for _, app := range machine.Apps() {
 			allApps[app] = struct{}{}
 		}
 	}
-	buildDependencies := []string{"apps/proxy/build"}
+	var buildDependencies []string
 	for name := range allApps {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}
@@ -83,46 +86,25 @@ func buildAppTasks() ([]*task, error) {
 		Dependencies: buildDependencies,
 	}}
 
-	// add run tasks
+	// add run tasks for dev machines only
 	for machineName, machine := range machineConfigs {
-		proxyRunID := "proxy-"+machineName
-		proxyRun := &task{
-			Id:   proxyRunID,
-			Type: "long",
-			Cmd:  fmt.Sprintf("./bin/proxy -machine=%s", machineName),
+		if machine.Mode != "dev" {
+			continue
 		}
 
 		machineStart := &task{
-			Id:           machineName,
-			Dependencies: []string{proxyRunID},
-			Type:         "long",
-		}
-
-		switch machine.Mode {
-		case "dev":
-			proxyRun.Dependencies = []string{"apps/proxy/build"}
-		case "prod":
-		default:
-			return nil, fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
+			Id:   machineName,
+			Type: "long",
 		}
 
 		for _, app := range machine.Apps() {
-			switch machine.Mode {
-			case "dev":
-				machineStart.Dependencies = append(machineStart.Dependencies,
-					"apps/"+app+"/dev")
-			case "prod":
-				machineStart.Dependencies = append(machineStart.Dependencies,
-					"apps/"+app+"/start")
-			default:
-				return nil, fmt.Errorf("unexpected machine mode '%s'", machine.Mode)
-			}
+			machineStart.Dependencies = append(machineStart.Dependencies,
+				"apps/"+app+"/dev")
 		}
 
 		sort.Strings(machineStart.Dependencies)
 
 		tasks = append(tasks, machineStart)
-		tasks = append(tasks, proxyRun)
 	}
 
 	return tasks, nil

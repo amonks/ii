@@ -16,8 +16,7 @@
     'apps/sms/dev',
     'apps/traffic/dev',
     'apps/writing/dev',
-    'apps/youtube/dev',
-    'proxy-brigid'
+    'apps/youtube/dev'
   ]
 
 [[task]]
@@ -29,16 +28,12 @@
     'apps/calendar/build',
     'apps/directory/build',
     'apps/dogs/build',
-    'apps/errlog/build',
     'apps/golink/build',
     'apps/homepage/build',
-    'apps/mailer/build',
-    'apps/mailrules/build',
     'apps/map/build',
     'apps/monitor/build',
     'apps/movies/build',
     'apps/ping/build',
-    'apps/proxy/build',
     'apps/reddit/build',
     'apps/scrobbles/build',
     'apps/sms/build',
@@ -58,30 +53,17 @@
   cmd = 'go run ./cmd/deploy'
 
 [[task]]
-  id = 'fly'
-  type = 'long'
-  dependencies = [
-    'apps/dogs/start',
-    'apps/errlog/start',
-    'apps/homepage/start',
-    'apps/mailer/start',
-    'apps/map/start',
-    'apps/traffic/start',
-    'apps/writing/start',
-    'proxy-fly'
-  ]
-
-[[task]]
   id = 'generate'
   type = 'short'
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/writing/templ',
     'apps/directory/templ',
     'apps/map/build-css',
     'apps/traffic/build-css',
-    'apps/youtube/templ'
+    'apps/youtube/templ',
+    'apps/dogs/templ',
+    'apps/writing/templ'
   ]
 
 [[task]]
@@ -93,27 +75,6 @@
   id = 'govulncheck'
   type = 'short'
   cmd = 'go tool govulncheck ./...'
-
-[[task]]
-  id = 'proxy-brigid'
-  type = 'long'
-  dependencies = [
-    'apps/proxy/build'
-  ]
-  cmd = './bin/proxy -machine=brigid'
-
-[[task]]
-  id = 'proxy-fly'
-  type = 'long'
-  cmd = './bin/proxy -machine=fly'
-
-[[task]]
-  id = 'proxy-thor'
-  type = 'long'
-  dependencies = [
-    'apps/proxy/build'
-  ]
-  cmd = './bin/proxy -machine=thor'
 
 [[task]]
   id = 'staticcheck'
@@ -155,6 +116,5 @@
     'apps/monitor/dev',
     'apps/movies/dev',
     'apps/reddit/dev',
-    'apps/traffic/dev',
-    'proxy-thor'
+    'apps/traffic/dev'
   ]

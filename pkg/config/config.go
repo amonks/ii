@@ -12,12 +12,16 @@ import (
 
 type Config struct {
 	Mode      string            `toml:"mode"`
+	AppList   []string          `toml:"apps"`
 	Services  []Service         `toml:"service"`
 	ACME      tls.ACME          `toml:"acme"`
 	Redirects map[string]string `toml:"redirects"`
 }
 
 func (c *Config) Apps() []string {
+	if len(c.AppList) > 0 {
+		return c.AppList
+	}
 	apps := map[string]struct{}{}
 	for _, service := range c.Services {
 		for app := range service.Apps {
