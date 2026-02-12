@@ -70,10 +70,13 @@ func run() error {
 		serviceConfig := serviceConfig
 		go func() {
 			defer wg.Done()
-			routes := map[string]int{}
+			routes := map[string]string{}
+			for app, backend := range serviceConfig.Apps {
+				routes[app] = backend
+			}
 			for path, port := range serviceConfig.ExtraRoutes {
 				log.Printf("extra route %s %d", path, port)
-				routes[path] = port
+				routes[path] = fmt.Sprintf("127.0.0.1:%d", port)
 			}
 			service := &Service{
 				routes:    routes,
@@ -107,7 +110,7 @@ func run() error {
 }
 
 type Service struct {
-	routes    map[string]int
+	routes    map[string]string
 	service   config.Service
 	acme      tls.ACME
 	redirects map[string]string
@@ -176,7 +179,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	defer traf.Close()
 
 	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites})
+	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tailnet.Client().Transport})
 	srv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
@@ -215,7 +218,7 @@ func (s *Service) listenAndServeTSNet(ctx context.Context) error {
 	defer traf.Close()
 
 	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites})
+	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tailnet.Client().Transport})
 	httpSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,

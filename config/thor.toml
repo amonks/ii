@@ -7,15 +7,14 @@ mode = "dev"
 [[service]]
   type = "https"
   addr = "0.0.0.0:443"
-  apps = [
-    "air",
-    "dogs",
-    "monitor",
-    "movies",
-    "reddit",
-    "traffic"
-  ]
   extra_routes = { "genres" = 9999 }
+  [service.apps]
+    air = "monks-air-thor"
+    dogs = "monks-dogs-thor"
+    monitor = "monks-monitor-thor"
+    movies = "monks-movies-thor"
+    reddit = "monks-reddit-thor"
+    traffic = "monks-traffic-thor"
 
 [acme]
   storage_path = "cache"

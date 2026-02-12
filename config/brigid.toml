@@ -7,23 +7,22 @@ mode = "dev"
 [[service]]
   type = "https"
   addr = "0.0.0.0:443"
-  apps = [
-    "golink",
-    "map",
-    "ping",
-    "writing",
-    "sms",
-    "traffic",
-    "youtube",
-    "directory",
-    "homepage",
-    "dogs",
-    "scrobbles",
-    "calendar",
-    "aranet"
-  ]
   [service.rewrites]
     "/" = "/homepage/"
+  [service.apps]
+    golink = "monks-golink-brigid"
+    map = "monks-map-brigid"
+    ping = "monks-ping-brigid"
+    writing = "monks-writing-brigid"
+    sms = "monks-sms-brigid"
+    traffic = "monks-traffic-brigid"
+    youtube = "monks-youtube-brigid"
+    directory = "monks-directory-brigid"
+    homepage = "monks-homepage-brigid"
+    dogs = "monks-dogs-brigid"
+    scrobbles = "monks-scrobbles-brigid"
+    calendar = "monks-calendar-brigid"
+    aranet = "monks-aranet-brigid"
 
 [acme]
   storage_path = "cache"

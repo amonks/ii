@@ -20,7 +20,7 @@ type Config struct {
 func (c *Config) Apps() []string {
 	apps := map[string]struct{}{}
 	for _, service := range c.Services {
-		for _, app := range service.Apps {
+		for app := range service.Apps {
 			apps[app] = struct{}{}
 		}
 	}
@@ -34,7 +34,7 @@ func (c *Config) Apps() []string {
 type Service struct {
 	Type        string            `toml:"type"`
 	Addr        string            `toml:"addr"`
-	Apps        []string          `toml:"apps"`
+	Apps        map[string]string `toml:"apps"`
 	ExtraRoutes map[string]int    `toml:"extra_routes"`
 	StoragePath string            `toml:"storage_path"`
 	Rewrites    map[string]string `toml:"rewrites"`

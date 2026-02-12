@@ -49,21 +49,19 @@ mode = "prod"
   type = "https"
   addr = "0.0.0.0:4433"
   rewrites = { "/" = "/homepage/" }
-  apps = [
-    "map",
-    "traffic",
-    "homepage",
-    "writing",
-    "dogs"
-  ]
+  [service.apps]
+    map = "monks-map-fly-ord"
+    traffic = "monks-traffic-fly-ord"
+    homepage = "monks-homepage-fly-ord"
+    writing = "monks-writing-fly-ord"
+    dogs = "monks-dogs-fly-ord"
 
 [[service]]
   type = "tsnet"
   addr = ":80"
   storage_path = "/data"
-  apps = [
-    "mailer",
-    "traffic",
-    "errlog"
-  ]
+  [service.apps]
+    mailer = "monks-mailer-fly-ord"
+    traffic = "monks-traffic-fly-ord"
+    errlog = "monks-errlog-fly-ord"
 

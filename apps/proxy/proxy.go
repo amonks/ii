@@ -14,8 +14,9 @@ import (
 )
 
 type proxy struct {
-	routes   map[string]int
-	rewrites map[string]string
+	routes    map[string]string
+	rewrites  map[string]string
+	transport http.RoundTripper
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -24,7 +25,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	firstSegment := strings.Split(req.URL.Path, "/")[1]
-	if port, hasRoute := p.routes[firstSegment]; hasRoute {
+	if backend, hasRoute := p.routes[firstSegment]; hasRoute {
 		// We need to visit the subsites at a url that ends in a "/",
 		// otherwise relative links within the subsite won't use the
 		// subsite's prefix.
@@ -40,7 +41,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		p.proxyRequest(firstSegment, port, w, req)
+		p.proxyRequest(firstSegment, backend, w, req)
 		return
 	}
 
@@ -61,13 +62,14 @@ func (w *StatusCodeWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func (p *proxy) proxyRequest(prefix string, port int, w http.ResponseWriter, req *http.Request) {
+func (p *proxy) proxyRequest(prefix string, backend string, w http.ResponseWriter, req *http.Request) {
 	proxy := &httputil.ReverseProxy{
+		Transport: p.transport,
 		Rewrite: func(req *httputil.ProxyRequest) {
 			req.Out.URL.Scheme = "http"
-			req.Out.URL.Host = fmt.Sprintf("0.0.0.0:%d", port)
+			req.Out.URL.Host = backend
 			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/"+prefix)
-			req.Out.Host = req.Out.URL.Host
+			req.Out.Host = backend
 			log.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},
 	}
