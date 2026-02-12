@@ -48,22 +48,17 @@
   cmd = 'go run ./cmd/compressor -dir=static -workers=8 -force -v'
 
 [[task]]
-  id = 'deploy'
-  type = 'short'
-  cmd = 'go run ./cmd/deploy'
-
-[[task]]
   id = 'generate'
   type = 'short'
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/directory/templ',
+    'apps/dogs/templ',
+    'apps/youtube/templ',
     'apps/map/build-css',
     'apps/traffic/build-css',
-    'apps/youtube/templ',
-    'apps/dogs/templ',
-    'apps/writing/templ'
+    'apps/writing/templ',
+    'apps/directory/templ'
   ]
 
 [[task]]

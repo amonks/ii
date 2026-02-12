@@ -55,6 +55,10 @@ func start() error {
 		return fmt.Errorf("writing finished tasks.toml: %w", err)
 	}
 
+	if err := generateFlyConfigs(); err != nil {
+		return fmt.Errorf("generating fly configs: %w", err)
+	}
+
 	return nil
 }
 
@@ -118,6 +122,9 @@ func getMachineConfigs() (map[string]*config.Config, error) {
 
 	machineConfigs := make(map[string]*config.Config, len(machines))
 	for _, machine := range machines {
+		if machine == "fly-apps" {
+			continue
+		}
 		config, err := config.Load(machine)
 		if err != nil {
 			return nil, fmt.Errorf("loading config for '%s': %w", machine, err)

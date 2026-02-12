@@ -1,0 +1,37 @@
+[defaults]
+  region = "ord"
+  vm_size = "shared-cpu-1x"
+  vm_memory = 256
+
+[apps.proxy]
+  vm_size = "shared-cpu-2x"
+  vm_memory = 512
+  volume = "monks-proxy-data"
+  public = true
+  packages = ["iptables", "ip6tables", "sqlite"]
+  files = ["config/fly.toml", "static/"]
+  cmd = ["/app/bin/app", "-machine", "fly"]
+
+[apps.homepage]
+  files = ["writing/"]
+
+[apps.writing]
+  files = ["writing/"]
+
+[apps.dogs]
+  volume = "monks-dogs-data"
+  packages = ["sqlite"]
+
+[apps.traffic]
+  volume = "monks-traffic-data"
+  packages = ["sqlite"]
+
+[apps.errlog]
+  volume = "monks-errlog-data"
+  packages = ["sqlite"]
+
+[apps.map]
+  volume = "monks-map-data"
+  packages = ["sqlite"]
+
+[apps.mailer]

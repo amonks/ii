@@ -15,11 +15,6 @@ var baseTasks = []*task{
 		Dependencies: []string{"aws/apply"},
 	},
 	{
-		Id:   "deploy",
-		Type: "short",
-		Cmd:  "go run ./cmd/deploy",
-	},
-	{
 		Id:           "generate",
 		Type:         "short",
 		Dependencies: []string{"templ", "compress-statics"},
