@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"monks.co/pkg/config"
-	"monks.co/pkg/ports"
 )
 
 type Table struct {
@@ -32,8 +31,14 @@ func LoadTable() (Table, error) {
 		Headers: append([]string{""}, machines...),
 	}
 
+	appSet := map[string]struct{}{}
+	for _, cfg := range configs {
+		for _, app := range cfg.Apps() {
+			appSet[app] = struct{}{}
+		}
+	}
 	var appNames []string
-	for app := range ports.Apps {
+	for app := range appSet {
 		appNames = append(appNames, app)
 	}
 	sort.Strings(appNames)

@@ -17,7 +17,6 @@ import (
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/middleware"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -72,9 +71,6 @@ func run() error {
 		go func() {
 			defer wg.Done()
 			routes := map[string]int{}
-			for _, app := range serviceConfig.Apps {
-				routes[app] = ports.Apps[app]
-			}
 			for path, port := range serviceConfig.ExtraRoutes {
 				log.Printf("extra route %s %d", path, port)
 				routes[path] = port

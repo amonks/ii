@@ -12,7 +12,6 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
-	"monks.co/pkg/ports"
 )
 
 func main() {
@@ -65,9 +64,15 @@ func buildAppTasks() ([]*task, error) {
 		return nil, err
 	}
 
-	// add build tasks
+	// add build tasks: collect all app names from machine configs
+	allApps := map[string]struct{}{}
+	for _, machine := range machineConfigs {
+		for _, app := range machine.Apps() {
+			allApps[app] = struct{}{}
+		}
+	}
 	buildDependencies := []string{"apps/proxy/build"}
-	for name := range ports.Apps {
+	for name := range allApps {
 		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
 	}
 	sort.Strings(buildDependencies)
