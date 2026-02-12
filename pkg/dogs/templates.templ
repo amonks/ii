@@ -52,7 +52,7 @@ templ Grid(entries []*Entry) {
 templ EntryCard(e *Entry) {
 	<li class="relative">
 		<div class="group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
-			<img src={ e.PhotoURL } alt="" class="object-cover"/>
+			<img src={ e.PhotoFilename } alt="" class="object-cover"/>
 		</div>
 		<p class="mt-2 block text-sm font-medium text-gray-900">{ fmt.Sprintf("#%d: %s (%.1f dogs)", e.Number, e.Eater, e.Count) }</p>
 		<p class="block text-sm text-gray-500">{ e.Date }</p>

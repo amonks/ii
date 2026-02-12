@@ -46,11 +46,13 @@ func run() error {
 	flag.Parse()
 	port := ports.Apps["dogs"]
 
+	log.Printf("opening db")
 	db, err := dogs.NewDB(archiveDir)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("migrating db")
 	migrate, err := os.ReadFile("migrate.sql")
 	if err != nil {
 		return err
@@ -59,12 +61,10 @@ func run() error {
 		return err
 	}
 
-	imp, err := dogs.NewImporter(db, archiveDir)
-	if err != nil {
-		return err
-	}
+	imp := dogs.NewImporter(db, archiveDir)
 
 	mux := serve.NewMux()
+	mux.Handle("GET /images/", http.StripPrefix("/images/", http.FileServer(http.Dir(filepath.Join(archiveDir, "images")))))
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
 
@@ -128,6 +128,7 @@ func run() error {
 	errs := make(chan error)
 
 	go func() {
+		log.Println("starting importer")
 		err := imp.Start(ctx)
 		if !errors.Is(err, context.Canceled) {
 			cancel()
@@ -137,6 +138,7 @@ func run() error {
 
 	go func() {
 		addr := fmt.Sprintf("127.0.0.1:%d", port)
+		log.Println("starting server on", addr)
 		err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux))
 		if !errors.Is(err, context.Canceled) {
 			cancel()

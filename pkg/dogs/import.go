@@ -21,9 +21,12 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const importInterval = time.Hour
+
 type Importer struct {
-	db         *DB
-	archiveDir string
+	db             *DB
+	archiveDir     string
+	lastImportFile string
 
 	mu    sync.Mutex
 	state importerState
@@ -61,12 +64,14 @@ func (imp *Importer) importNow() error {
 	err := imp.db.Import(imp.archiveDir)
 	if err == nil {
 		last = time.Now()
+		// Touch marker file to record import time on disk.
+		os.WriteFile(imp.lastImportFile, nil, 0666)
 	}
 	imp.set(importerState{
 		label:        "waiting",
 		importedAt:   last,
 		startedAt:    time.Time{},
-		nextImportAt: time.Now().Add(time.Hour),
+		nextImportAt: time.Now().Add(importInterval),
 	})
 	return err
 }
@@ -91,15 +96,32 @@ func (imp *Importer) String() string {
 	}
 }
 
-func NewImporter(db *DB, archiveDir string) (*Importer, error) {
-	imp := &Importer{
-		db:         db,
-		archiveDir: archiveDir,
+func NewImporter(db *DB, archiveDir string) *Importer {
+	return &Importer{
+		db:             db,
+		archiveDir:     archiveDir,
+		lastImportFile: filepath.Join(archiveDir, "last_import"),
 	}
-	return imp, imp.importNow()
 }
 
 func (imp *Importer) Start(ctx context.Context) error {
+	// Check marker file to see if a recent import already happened (e.g.
+	// across process restarts). If so, skip the initial import and just
+	// wait for the next interval.
+	if info, err := os.Stat(imp.lastImportFile); err == nil && time.Since(info.ModTime()) < importInterval {
+		log.Printf("skipping initial import: last import was %s ago", time.Since(info.ModTime()).Round(time.Second))
+		imp.set(importerState{
+			label:        "waiting",
+			importedAt:   info.ModTime(),
+			nextImportAt: info.ModTime().Add(importInterval),
+		})
+	} else {
+		log.Printf("running initial import")
+		if err := imp.importNow(); err != nil {
+			return err
+		}
+	}
+
 	for {
 		next := imp.get().nextImportAt
 
@@ -129,11 +151,13 @@ func (db *DB) Import(archiveDir string) error {
 		return err
 	}
 
-	var htmlFile *zip.File
 	z, err := zip.OpenReader(filename)
 	if err != nil {
 		return err
 	}
+	defer z.Close()
+
+	var htmlFile *zip.File
 	for _, f := range z.File {
 		if f.Name == `🗄️ (DO NOT EDIT) Archive.html` {
 			htmlFile = f
@@ -195,10 +219,19 @@ func (db *DB) Import(archiveDir string) error {
 					if imageOnDisk, has := imagesOnDisk[filenameRoot]; has {
 						filename = imageOnDisk.filename
 						imageOnDisk.isUsed = true
-					} else {
+					} else if strings.HasPrefix(url, "http") {
 						f, err := downloadFile(filepath.Join(archiveDir, filenameRoot), url)
 						if err != nil {
 							colsLoopErr = fmt.Errorf("error downloading image in row %d: %w", r, err)
+							return false
+						}
+						// downloadFile returns the absolute path; trim to relative.
+						filename, _ = filepath.Rel(archiveDir, f)
+					} else {
+						// Image is embedded in the zip (relative path).
+						f, err := extractFromZip(z, url, filepath.Join(archiveDir, filenameRoot))
+						if err != nil {
+							colsLoopErr = fmt.Errorf("error extracting image in row %d: %w", r, err)
 							return false
 						}
 						filename = f
@@ -282,6 +315,41 @@ func collectImages(archiveDir string) (imagesOnDisk, error) {
 		}
 	}
 	return images, nil
+}
+
+func extractFromZip(z *zip.ReadCloser, zipPath string, destRoot string) (string, error) {
+	var zf *zip.File
+	for _, f := range z.File {
+		if f.Name == zipPath {
+			zf = f
+			break
+		}
+	}
+	if zf == nil {
+		return "", fmt.Errorf("file %s not found in zip", zipPath)
+	}
+
+	ext := filepath.Ext(zf.Name)
+	destFilename := destRoot + ext
+
+	rc, err := zf.Open()
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	out, err := os.Create(destFilename)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, rc); err != nil {
+		return "", err
+	}
+
+	// Return just the relative part (images/N-Name.ext).
+	return filepath.Base(filepath.Dir(destRoot)) + "/" + filepath.Base(destFilename), nil
 }
 
 func downloadFile(filenameRoot, url string) (string, error) {
