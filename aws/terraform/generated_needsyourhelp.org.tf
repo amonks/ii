@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-needsyourhelp-org-AAAA" {
   name    = "www.needsyourhelp.org."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-needsyourhelp-org-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-needsyourhelp-org-A" {
   name    = "www.needsyourhelp.org."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "needsyourhelp-org-AAAA" {
@@ -23,7 +23,7 @@ resource "aws_route53_record" "needsyourhelp-org-AAAA" {
   name    = "needsyourhelp.org."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "needsyourhelp-org-A" {
@@ -31,7 +31,7 @@ resource "aws_route53_record" "needsyourhelp-org-A" {
   name    = "needsyourhelp.org."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "doge-needsyourhelp-org-CNAME" {

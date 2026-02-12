@@ -12,8 +12,8 @@ primary_region = "ord"
   MONKS_DATA = "/data"
 
 [[vm]]
-  size = "shared-cpu-2x"
-  memory = 512
+  size = "shared-cpu-1x"
+  memory = "512"
 
 [[mounts]]
   source = "monks_proxy_data"

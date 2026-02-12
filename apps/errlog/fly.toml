@@ -13,7 +13,7 @@ primary_region = "ord"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = 256
+  memory = "256"
 
 [[mounts]]
   source = "monks_errlog_data"

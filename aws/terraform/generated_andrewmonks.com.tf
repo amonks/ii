@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-andrewmonks-com-AAAA" {
   name    = "www.andrewmonks.com."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-andrewmonks-com-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-andrewmonks-com-A" {
   name    = "www.andrewmonks.com."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "andrewmonks-com-AAAA" {
@@ -23,7 +23,7 @@ resource "aws_route53_record" "andrewmonks-com-AAAA" {
   name    = "andrewmonks.com."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "andrewmonks-com-A" {
@@ -31,5 +31,5 @@ resource "aws_route53_record" "andrewmonks-com-A" {
   name    = "andrewmonks.com."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }

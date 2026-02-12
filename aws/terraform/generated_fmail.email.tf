@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-fmail-email-AAAA" {
   name    = "www.fmail.email."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-fmail-email-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-fmail-email-A" {
   name    = "www.fmail.email."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "mesmtp-_domainkey-fmail-email-CNAME" {
@@ -55,7 +55,7 @@ resource "aws_route53_record" "fmail-email-AAAA" {
   name    = "fmail.email."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "fmail-email-A" {
@@ -63,7 +63,7 @@ resource "aws_route53_record" "fmail-email-A" {
   name    = "fmail.email."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "fm3-_domainkey-fmail-email-CNAME" {

@@ -9,7 +9,6 @@ require (
 	github.com/amonks/run v1.0.0-beta.31
 	github.com/andybalholm/brotli v1.2.0
 	github.com/caddyserver/certmagic v0.25.0
-	github.com/evanw/esbuild v0.25.11
 	github.com/google/uuid v1.6.0
 	github.com/kevinpollet/nego v0.0.0-20211010160919-a65cd48cee43
 	github.com/libdns/route53 v1.6.0

@@ -12,19 +12,19 @@ import (
 )
 
 type flyAppsConfig struct {
-	Defaults flyAppDefaults          `toml:"defaults"`
-	Apps     map[string]flyAppEntry  `toml:"apps"`
+	Defaults flyAppDefaults         `toml:"defaults"`
+	Apps     map[string]flyAppEntry `toml:"apps"`
 }
 
 type flyAppDefaults struct {
 	Region   string `toml:"region"`
 	VMSize   string `toml:"vm_size"`
-	VMMemory int    `toml:"vm_memory"`
+	VMMemory string `toml:"vm_memory"`
 }
 
 type flyAppEntry struct {
 	VMSize   string   `toml:"vm_size"`
-	VMMemory int      `toml:"vm_memory"`
+	VMMemory string   `toml:"vm_memory"`
 	Volume   string   `toml:"volume"`
 	Public   bool     `toml:"public"`
 	Packages []string `toml:"packages"`
@@ -122,7 +122,7 @@ func buildFlyToml(name string, app flyAppEntry, defaults flyAppDefaults) string 
 		vmSize = app.VMSize
 	}
 	vmMemory := defaults.VMMemory
-	if app.VMMemory != 0 {
+	if app.VMMemory != "" {
 		vmMemory = app.VMMemory
 	}
 
@@ -149,7 +149,7 @@ func buildFlyToml(name string, app flyAppEntry, defaults flyAppDefaults) string 
 
 	b.WriteString("[[vm]]\n")
 	fmt.Fprintf(&b, "  size = %q\n", vmSize)
-	fmt.Fprintf(&b, "  memory = %d\n", vmMemory)
+	fmt.Fprintf(&b, "  memory = \"%s\"\n", vmMemory)
 
 	if app.Volume != "" {
 		b.WriteString("\n")

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"monks.co/apps/map/model"
 	"monks.co/pkg/serve"
@@ -17,6 +20,13 @@ var (
 	//go:embed templates/*
 	files     embed.FS
 	templates map[string]*template.Template
+
+	//go:embed static/index.js
+	indexJS string
+	//go:embed static/index.css
+	indexCSS string
+	//go:embed static/dot.png
+	dotPNG []byte
 )
 
 func init() {
@@ -35,10 +45,18 @@ type server struct {
 func NewServer(m *model.Model) *server {
 	s := &server{serve.NewMux(), m}
 
-	s.Handle("GET /index.js", serve.JSServer("./ts/index.ts"))
-
-	s.Handle("GET /index.css", serve.StaticServer("./static/"))
-	s.Handle("GET /dot.png", serve.StaticServer("./static/"))
+	s.HandleFunc("GET /index.js", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		http.ServeContent(w, req, "index.js", time.Time{}, strings.NewReader(indexJS))
+	})
+	s.HandleFunc("GET /index.css", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		http.ServeContent(w, req, "index.css", time.Time{}, strings.NewReader(indexCSS))
+	})
+	s.HandleFunc("GET /dot.png", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		http.ServeContent(w, req, "dot.png", time.Time{}, bytes.NewReader(dotPNG))
+	})
 
 	s.HandleFunc("GET /{$}", s.places)
 

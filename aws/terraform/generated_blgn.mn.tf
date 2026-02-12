@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-blgn-mn-AAAA" {
   name    = "www.blgn.mn."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-blgn-mn-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-blgn-mn-A" {
   name    = "www.blgn.mn."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "blgn-mn-AAAA" {
@@ -23,7 +23,7 @@ resource "aws_route53_record" "blgn-mn-AAAA" {
   name    = "blgn.mn."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "blgn-mn-A" {
@@ -31,5 +31,5 @@ resource "aws_route53_record" "blgn-mn-A" {
   name    = "blgn.mn."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }

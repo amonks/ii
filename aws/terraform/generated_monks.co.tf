@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-monks-co-AAAA" {
   name    = "www.monks.co."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-monks-co-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-monks-co-A" {
   name    = "www.monks.co."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "updates-monks-co-CNAME" {
@@ -71,7 +71,7 @@ resource "aws_route53_record" "monks-co-AAAA" {
   name    = "monks.co."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "monks-co-A" {
@@ -79,7 +79,7 @@ resource "aws_route53_record" "monks-co-A" {
   name    = "monks.co."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "fm3-_domainkey-monks-co-CNAME" {

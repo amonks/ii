@@ -12,5 +12,5 @@ primary_region = "ord"
   MONKS_DATA = "/tmp"
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = 256
+  size = "shared-cpu-4x"
+  memory = "2gb"

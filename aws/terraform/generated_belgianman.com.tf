@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-belgianman-com-AAAA" {
   name    = "www.belgianman.com."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-belgianman-com-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-belgianman-com-A" {
   name    = "www.belgianman.com."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "old-belgianman-com-CNAME" {
@@ -39,7 +39,7 @@ resource "aws_route53_record" "belgianman-com-AAAA" {
   name    = "belgianman.com."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "belgianman-com-A" {
@@ -47,5 +47,5 @@ resource "aws_route53_record" "belgianman-com-A" {
   name    = "belgianman.com."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }

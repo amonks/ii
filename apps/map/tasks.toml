@@ -14,7 +14,7 @@
   id = "build"
   type = "short"
   watch = ["**/*.go", "*.go"]
-  dependencies = ["build-css"]
+  dependencies = ["build-css", "build-js"]
   env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
   cmd = "go build -o ../../bin/ ."
 
@@ -37,4 +37,18 @@
   id = "install-css"
   type = "short"
   cmd = "cd css && npm install"
+
+[[task]]
+  id = "build-js"
+  type = "short"
+  dependencies = ["install-ts"]
+  cmd = """
+    cd ts
+    node -e "require('esbuild').buildSync({entryPoints:['index.ts'],bundle:true,outfile:'../static/index.js'})"
+  """
+
+[[task]]
+  id = "install-ts"
+  type = "short"
+  cmd = "cd ts && npm install"
 

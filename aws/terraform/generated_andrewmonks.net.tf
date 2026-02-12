@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-andrewmonks-net-AAAA" {
   name    = "www.andrewmonks.net."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-andrewmonks-net-A" {
@@ -23,7 +23,7 @@ resource "aws_route53_record" "www-andrewmonks-net-A" {
   name    = "www.andrewmonks.net."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "oblique-andrewmonks-net-CNAME" {
@@ -119,7 +119,7 @@ resource "aws_route53_record" "andrewmonks-net-AAAA" {
   name    = "andrewmonks.net."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "andrewmonks-net-A" {
@@ -127,5 +127,5 @@ resource "aws_route53_record" "andrewmonks-net-A" {
   name    = "andrewmonks.net."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }

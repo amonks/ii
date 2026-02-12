@@ -7,7 +7,7 @@ resource "aws_route53_record" "www-ss-cx-AAAA" {
   name    = "www.ss.cx."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "www-ss-cx-A" {
@@ -15,7 +15,7 @@ resource "aws_route53_record" "www-ss-cx-A" {
   name    = "www.ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "wifi-ss-cx-A" {
@@ -55,7 +55,7 @@ resource "aws_route53_record" "ss-cx-AAAA" {
   name    = "ss.cx."
   type    = "AAAA"
   ttl     = "300"
-  records = ["2a09:8280:1::f:478"]
+  records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
 resource "aws_route53_record" "ss-cx-A" {
@@ -63,7 +63,7 @@ resource "aws_route53_record" "ss-cx-A" {
   name    = "ss.cx."
   type    = "A"
   ttl     = "300"
-  records = ["66.51.122.238"]
+  records = ["37.16.29.186"]
 }
 
 resource "aws_route53_record" "lugh-ss-cx-A" {

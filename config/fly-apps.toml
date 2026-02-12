@@ -1,11 +1,10 @@
 [defaults]
   region = "ord"
   vm_size = "shared-cpu-1x"
-  vm_memory = 256
+  vm_memory = "256"
 
 [apps.proxy]
-  vm_size = "shared-cpu-2x"
-  vm_memory = 512
+  vm_memory = "512"
   volume = "monks_proxy_data"
   public = true
   packages = ["iptables", "ip6tables", "sqlite"]
@@ -16,6 +15,8 @@
   files = ["writing/"]
 
 [apps.writing]
+  vm_size = "shared-cpu-4x"
+  vm_memory = "2gb"
   files = ["writing/"]
 
 [apps.dogs]
@@ -23,6 +24,7 @@
   packages = ["sqlite"]
 
 [apps.traffic]
+  vm_memory = "512"
   volume = "monks_traffic_data"
   packages = ["sqlite"]
 
