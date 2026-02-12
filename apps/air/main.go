@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"monks.co/pkg/errlogger"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/sigctx"
 )
 
@@ -25,8 +24,6 @@ func main() {
 
 func run() error {
 	flag.Parse()
-
-	port := ports.Apps["air"]
 
 	db, err := NewDB()
 	if err != nil {
@@ -53,8 +50,7 @@ func run() error {
 		log.Printf("run serve")
 		ctx := sigctx.New()
 
-		addr := fmt.Sprintf("127.0.0.1:%d", port)
-		if err := serveAir(ctx, db, addr); err != nil {
+		if err := serveAir(ctx, db); err != nil {
 			errs = errors.Join(errs, err)
 		}
 

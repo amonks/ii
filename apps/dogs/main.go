@@ -14,8 +14,8 @@ import (
 	"monks.co/pkg/env"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/templib"
 )
@@ -44,7 +44,6 @@ func run() error {
 	}
 
 	flag.Parse()
-	port := ports.Apps["dogs"]
 
 	log.Printf("opening db")
 	db, err := dogs.NewDB(archiveDir)
@@ -137,9 +136,8 @@ func run() error {
 	}()
 
 	go func() {
-		addr := fmt.Sprintf("127.0.0.1:%d", port)
-		log.Println("starting server on", addr)
-		err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux))
+		log.Println("starting server")
+		err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
 		if !errors.Is(err, context.Canceled) {
 			cancel()
 		}

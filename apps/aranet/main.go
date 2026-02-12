@@ -9,9 +9,9 @@ import (
 	"monks.co/pkg/aranet4"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
@@ -51,8 +51,6 @@ func (d *DeviceData) Get() ([]*aranet4.Device, time.Time, error) {
 }
 
 func run() error {
-	port := ports.Apps["aranet"]
-
 	// Create a shared data structure for the latest readings
 	deviceData := &DeviceData{}
 
@@ -102,8 +100,7 @@ func run() error {
 		serve.JSON(w, req, response)
 	})
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 

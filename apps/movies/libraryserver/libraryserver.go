@@ -19,8 +19,8 @@ import (
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tmdb"
 )
 
@@ -43,8 +43,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *LibraryServer {
 }
 
 func (app *LibraryServer) Run(ctx context.Context) error {
-	port := ports.Apps["movies"]
-
 	log.Println("libraryserver started")
 	defer log.Println("libraryserver done")
 
@@ -75,28 +73,7 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("POST /tv/ignore-show/{$}", app.serveTVIgnoreShow)
 	mux.HandleFunc("POST /tv/ignore-episodes/{$}", app.serveTVIgnoreEpisodes)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	s := &http.Server{Addr: addr, Handler: gzip.Middleware(mux)}
-
-	errs := make(chan error)
-	go func() {
-		if err := s.ListenAndServe(); err != nil {
-			log.Println(err)
-			errs <- err
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		log.Println("shutting down server")
-		s.Shutdown(context.TODO())
-		log.Println("done")
-	case err := <-errs:
-		log.Println("got an err! hopefully we're already shut down.")
-		return err
-	}
-
-	return nil
+	return tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
 }
 
 func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {

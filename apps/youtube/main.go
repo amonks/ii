@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,9 +9,9 @@ import (
 	"monks.co/apps/youtube/model"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
@@ -24,8 +23,6 @@ func main() {
 }
 
 func run() error {
-	port := ports.Apps["youtube"]
-
 	history, err := model.LoadHistory("histories")
 	if err != nil {
 		return err
@@ -40,8 +37,7 @@ func run() error {
 
 	ctx := sigctx.New()
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 

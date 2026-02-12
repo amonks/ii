@@ -15,9 +15,9 @@ import (
 	"monks.co/apps/writing/templates"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/posts"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
 
 	"github.com/a-h/templ"
@@ -142,9 +142,7 @@ func run() error {
 		}
 	})
 
-	port := ports.Apps["writing"]
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 	return nil

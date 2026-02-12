@@ -12,6 +12,7 @@ import (
 
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/tailnet"
 )
 
 var (
@@ -50,7 +51,7 @@ func (d *Data) JSON() (template.JS, error) {
 	return template.JS("window.data = " + string(bs) + ";"), nil
 }
 
-func serveAir(ctx context.Context, db *DB, addr string) error {
+func serveAir(ctx context.Context, db *DB) error {
 	tmpl := template.New("movies")
 	tmpl, err := tmpl.Parse(tmplSrc)
 	if err != nil {
@@ -154,7 +155,7 @@ func serveAir(ctx context.Context, db *DB, addr string) error {
 		}
 	})
 
-	if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}
 

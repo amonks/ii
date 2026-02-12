@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -13,8 +12,8 @@ import (
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/lastfm"
 	"monks.co/pkg/periodically"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/snitch"
 )
@@ -27,7 +26,6 @@ func main() {
 }
 
 func run() error {
-	port := ports.Apps["scrobbles"]
 	lfm := lastfm.New(lastFmAPIKey)
 
 	db, err := NewDB()
@@ -69,8 +67,6 @@ func run() error {
 		}
 		Index(scrobbles).Render(context.Background(), w)
 	})
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-
 	ctx, cancel := sigctx.NewWithCancel()
 	wg := new(errgroup.Group)
 
@@ -83,7 +79,7 @@ func run() error {
 	})
 
 	wg.Go(func() error {
-		if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+		if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 			cancel(err)
 			return err
 		}

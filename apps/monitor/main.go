@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 	"monks.co/apps/monitor/monitor"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
@@ -48,8 +47,6 @@ var reporter = monitor.Reporter{
 }
 
 func run() error {
-	port := ports.Apps["monitor"]
-
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", http.StatusMovedPermanently)
@@ -67,8 +64,7 @@ func run() error {
 	})
 
 	wg.Go(func() error {
-		addr := fmt.Sprintf("127.0.0.1:%d", port)
-		if err := serve.ListenAndServe(ctx, addr, gzip.Middleware(mux)); err != nil {
+		if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 			cancel(err)
 			return err
 		}

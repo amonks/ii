@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
-	"monks.co/pkg/ports"
 	"monks.co/pkg/serve"
+	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/twilio"
 )
 
@@ -19,8 +19,6 @@ func main() {
 }
 
 func run() error {
-	port := ports.Apps["sms"]
-
 	mux := serve.NewMux()
 	mux.Handle("POST /{$}", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		msg := req.URL.Query().Get("message")
@@ -34,8 +32,6 @@ func run() error {
 		}
 	}))
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	http.ListenAndServe(addr, gzip.Middleware(mux))
-
-	return nil
+	ctx := sigctx.New()
+	return tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
 }
