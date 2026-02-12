@@ -141,10 +141,7 @@ func (imp *Importer) Start(ctx context.Context) error {
 const downloadURL = "https://docs.google.com/spreadsheets/d/1qWoxtqSUGb4qnO_ZVyxV_yJUG01kpIBbEJByOXgjEVI/export?format=zip&id=1qWoxtqSUGb4qnO_ZVyxV_yJUG01kpIBbEJByOXgjEVI"
 
 func (db *DB) Import(archiveDir string) error {
-	imagesOnDisk, err := collectImages(archiveDir)
-	if err != nil {
-		return err
-	}
+	newImages := map[string]struct{}{}
 
 	filename, err := downloadFile("archive", downloadURL)
 	if err != nil {
@@ -216,28 +213,26 @@ func (db *DB) Import(archiveDir string) error {
 					url = sizeRE.ReplaceAllString(url, "")
 					filenameRoot := fmt.Sprintf("images/%d-%s", entry.Number, entry.Eater)
 					var filename string
-					if imageOnDisk, has := imagesOnDisk[filenameRoot]; has {
-						filename = imageOnDisk.filename
-						imageOnDisk.isUsed = true
-					} else if strings.HasPrefix(url, "http") {
+					if strings.HasPrefix(url, "http") {
 						f, err := downloadFile(filepath.Join(archiveDir, filenameRoot), url)
 						if err != nil {
-							colsLoopErr = fmt.Errorf("error downloading image in row %d: %w", r, err)
-							return false
+							log.Printf("warning: error downloading image in row %d: %v", r, err)
+						} else {
+							// downloadFile returns the absolute path; trim to relative.
+							filename, _ = filepath.Rel(archiveDir, f)
 						}
-						// downloadFile returns the absolute path; trim to relative.
-						filename, _ = filepath.Rel(archiveDir, f)
 					} else {
 						// Image is embedded in the zip (relative path).
 						f, err := extractFromZip(z, url, filepath.Join(archiveDir, filenameRoot))
 						if err != nil {
-							colsLoopErr = fmt.Errorf("error extracting image in row %d: %w", r, err)
-							return false
+							log.Printf("warning: error extracting image in row %d: %v", r, err)
+						} else {
+							filename = f
 						}
-						filename = f
 					}
 					entry.PhotoFilename = filename
 					entry.PhotoURL = url
+					newImages[filename] = struct{}{}
 				}
 				return true
 			case 4:
@@ -277,10 +272,18 @@ func (db *DB) Import(archiveDir string) error {
 		}
 	}
 
-	for _, imageOnDisk := range imagesOnDisk {
-		if !imageOnDisk.isUsed {
-			log.Printf("delete %s", imageOnDisk.filename)
-			if err := os.Remove(filepath.Join(archiveDir, imageOnDisk.filename)); err != nil {
+	dirEntries, err := os.ReadDir(filepath.Join(archiveDir, "images"))
+	if err != nil {
+		return err
+	}
+	for _, de := range dirEntries {
+		if de.IsDir() {
+			continue
+		}
+		fn := "images/" + de.Name()
+		if _, inUse := newImages[fn]; !inUse {
+			log.Printf("delete %s", fn)
+			if err := os.Remove(filepath.Join(archiveDir, fn)); err != nil {
 				return fmt.Errorf("removing stale image: %w", err)
 			}
 		}
@@ -291,31 +294,6 @@ func (db *DB) Import(archiveDir string) error {
 
 var sizeRE = regexp.MustCompile(`=w\d+-h\d+$`)
 
-// key includes "images/" but not file extension
-type imagesOnDisk map[string]*imageOnDisk
-type imageOnDisk struct {
-	// includes both "images/" and file extension
-	filename string
-	isUsed   bool
-}
-
-func collectImages(archiveDir string) (imagesOnDisk, error) {
-	dirEntries, err := os.ReadDir(filepath.Join(archiveDir, "images"))
-	if err != nil {
-		return nil, err
-	}
-	images := imagesOnDisk{}
-	for _, entry := range dirEntries {
-		if entry.IsDir() {
-			continue
-		}
-		parts := strings.Split(entry.Name(), ".")
-		images["images/"+parts[0]] = &imageOnDisk{
-			filename: "images/" + entry.Name(),
-		}
-	}
-	return images, nil
-}
 
 func extractFromZip(z *zip.ReadCloser, zipPath string, destRoot string) (string, error) {
 	var zf *zip.File
