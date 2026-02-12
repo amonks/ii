@@ -79,7 +79,8 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 	b.WriteString("  WORKDIR /app\n")
 	b.WriteString("  COPY . .\n")
 	b.WriteString("  RUN go install github.com/amonks/run/cmd/run@latest\n")
-	b.WriteString("  RUN run apps/air/build && run build\n")
+	fmt.Fprintf(&b, "  WORKDIR /app/apps/%s\n", name)
+	b.WriteString("  RUN run build\n")
 	b.WriteString("\n")
 
 	// Runtime stage (per-app).
@@ -129,7 +130,7 @@ func buildFlyToml(name string, app flyAppEntry, defaults flyAppDefaults) string 
 	b.WriteString("\n")
 
 	b.WriteString("[build]\n")
-	fmt.Fprintf(&b, "  dockerfile = %q\n", "apps/"+name+"/Dockerfile.fly")
+	fmt.Fprintf(&b, "  dockerfile = %q\n", "Dockerfile.fly")
 	b.WriteString("\n")
 
 	b.WriteString("[env]\n")

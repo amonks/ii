@@ -4,7 +4,7 @@ app = "monks-homepage"
 primary_region = "ord"
 
 [build]
-  dockerfile = "apps/homepage/Dockerfile.fly"
+  dockerfile = "Dockerfile.fly"
 
 [env]
   MONKS_ROOT = "/app"

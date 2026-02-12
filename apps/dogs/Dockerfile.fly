@@ -6,7 +6,8 @@ FROM golang:alpine AS gobuild
   WORKDIR /app
   COPY . .
   RUN go install github.com/amonks/run/cmd/run@latest
-  RUN run apps/air/build && run build
+  WORKDIR /app/apps/dogs
+  RUN run build
 
 FROM alpine
   RUN apk add --no-cache ca-certificates sqlite

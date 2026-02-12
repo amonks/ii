@@ -6,7 +6,7 @@
 [apps.proxy]
   vm_size = "shared-cpu-2x"
   vm_memory = 512
-  volume = "monks-proxy-data"
+  volume = "monks_proxy_data"
   public = true
   packages = ["iptables", "ip6tables", "sqlite"]
   files = ["config/fly.toml", "static/"]
@@ -19,19 +19,19 @@
   files = ["writing/"]
 
 [apps.dogs]
-  volume = "monks-dogs-data"
+  volume = "monks_dogs_data"
   packages = ["sqlite"]
 
 [apps.traffic]
-  volume = "monks-traffic-data"
+  volume = "monks_traffic_data"
   packages = ["sqlite"]
 
 [apps.errlog]
-  volume = "monks-errlog-data"
+  volume = "monks_errlog_data"
   packages = ["sqlite"]
 
 [apps.map]
-  volume = "monks-map-data"
+  volume = "monks_map_data"
   packages = ["sqlite"]
 
 [apps.mailer]
