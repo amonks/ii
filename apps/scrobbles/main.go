@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-	"monks.co/credentials"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/lastfm"
@@ -29,7 +28,7 @@ func main() {
 
 func run() error {
 	port := ports.Apps["scrobbles"]
-	lfm := lastfm.New(credentials.LastFmAPIKey)
+	lfm := lastfm.New(lastFmAPIKey)
 
 	db, err := NewDB()
 	if err != nil {

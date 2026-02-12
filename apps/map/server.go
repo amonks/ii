@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"monks.co/apps/map/model"
-	"monks.co/credentials"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
@@ -88,7 +87,7 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 
 	googleMapsImportURL := fmt.Sprintf(
 		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=beta&libraries=marker",
-		credentials.PlacesBrowserAPIKey,
+		placesBrowserAPIKey,
 	)
 
 	placesJSON, err := json.Marshal(places)
