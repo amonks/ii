@@ -16,9 +16,9 @@ var (
 	// Format: Season 1 Episode 2
 	SeasonEpPattern = regexp.MustCompile(`(?i)Season\s*(\d+).*?Episode\s*(\d+)`)
 
-	// Format: 1x02
+	// Format: 1x02, 1x13b (optional letter suffix for multi-part episodes)
 	// Use word boundaries and limit season/episode to reasonable ranges to avoid matching resolutions like 1008x720
-	DotSeasonEpPattern = regexp.MustCompile(`\b(\d{1,2})x(\d{1,3})\b`)
+	DotSeasonEpPattern = regexp.MustCompile(`\b(\d{1,2})x(\d{1,3})[a-z]?\b`)
 
 	// Format: Season 1 (for directories)
 	SeasonFolderPattern = regexp.MustCompile(`(?i)Season\s*(\d+)`)

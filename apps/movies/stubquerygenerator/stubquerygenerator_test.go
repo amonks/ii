@@ -81,6 +81,10 @@ func (m *MockDB) GetMovies() ([]*db.Movie, error) {
 	return m.movies, nil
 }
 
+func (m *MockDB) IgnorePath(mediaType db.MediaType, path string) error {
+	return nil
+}
+
 // MockTMDB is a mock implementation of the TMDB client
 type MockTMDB struct {
 	movieResults []tmdb.SearchResult
