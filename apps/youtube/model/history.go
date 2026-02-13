@@ -28,7 +28,7 @@ func LoadHistory(dir string) ([]*HistoryEntry, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := json.Unmarshal(bs, &history); err != nil {
+		if err := json.Unmarshal(bs, &thisHistory); err != nil {
 			return nil, err
 		}
 		history = append(history, thisHistory...)
