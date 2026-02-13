@@ -45,6 +45,11 @@ func NewServer(m *traffic.Model) *Server {
 }
 
 func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
+	if req.URL.RawQuery == "" {
+		http.Redirect(w, req, req.URL.Path+"?range=7d", http.StatusFound)
+		return
+	}
+
 	tr := traffic.ParseTimeRange(req)
 
 	var log []traffic.Request

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"time"
 
 	"monks.co/pkg/color"
@@ -101,10 +100,7 @@ func (m *Model) migrate() error {
 			PRIMARY KEY (host, window_duration, window_start_at)
 		);
 
-		CREATE TABLE IF NOT EXISTS traffic_meta (
-			key TEXT PRIMARY KEY,
-			value TEXT
-		);
+		DROP TABLE IF EXISTS traffic_meta;
 	`
 	return m.Exec(sql).Error
 }
@@ -141,6 +137,7 @@ func (m *Model) LogEntries(entries []LogEntry) error {
 		}
 		m.incrementAggregate(e.Host, t.Truncate(time.Hour), time.Hour)
 		m.incrementAggregate(e.Host, t.Truncate(24*time.Hour), 24*time.Hour)
+		m.incrementAggregate(e.Host, weekStart(t), 7*24*time.Hour)
 	}
 	return nil
 }
@@ -157,59 +154,19 @@ func (m *Model) incrementAggregate(host string, windowStart time.Time, windowDur
 	}
 }
 
-func (m *Model) BackfillAggregates() {
-	// Check high-water mark
-	var hwm string
-	err := m.Raw("SELECT value FROM traffic_meta WHERE key = 'backfill_hwm'").Scan(&hwm).Error
-	if err == nil && hwm == "done" {
-		log.Println("traffic: backfill already complete")
-		return
-	}
-
-	var lastID uint
-	if hwm != "" {
-		if v, err := strconv.ParseUint(hwm, 10, 64); err == nil {
-			lastID = uint(v)
-		}
-	}
-
-	log.Printf("traffic: starting backfill from id %d", lastID)
-
-	for {
-		var batch []struct {
-			ID        uint
-			Host      string
-			CreatedAt time.Time
-		}
-		if err := m.Raw(
-			"SELECT id, host, created_at FROM requests WHERE id > ? ORDER BY id ASC LIMIT 10000",
-			lastID,
-		).Scan(&batch).Error; err != nil {
-			log.Printf("traffic: backfill query error: %v", err)
-			return
-		}
-		if len(batch) == 0 {
-			break
-		}
-
-		for _, r := range batch {
-			m.incrementAggregate(r.Host, r.CreatedAt.Truncate(time.Hour), time.Hour)
-			m.incrementAggregate(r.Host, r.CreatedAt.Truncate(24*time.Hour), 24*time.Hour)
-		}
-
-		lastID = batch[len(batch)-1].ID
-		m.Exec("INSERT INTO traffic_meta (key, value) VALUES ('backfill_hwm', ?) ON CONFLICT (key) DO UPDATE SET value = ?",
-			fmt.Sprintf("%d", lastID), fmt.Sprintf("%d", lastID))
-		log.Printf("traffic: backfilled through id %d", lastID)
-	}
-
-	m.Exec("INSERT INTO traffic_meta (key, value) VALUES ('backfill_hwm', 'done') ON CONFLICT (key) DO UPDATE SET value = 'done'")
-	log.Println("traffic: backfill complete")
+// weekStart returns the Monday 00:00 UTC at the start of t's ISO week.
+func weekStart(t time.Time) time.Time {
+	t = t.UTC().Truncate(24 * time.Hour)
+	offset := (int(t.Weekday()) + 6) % 7 // Monday=0 … Sunday=6
+	return t.AddDate(0, 0, -offset)
 }
 
 func (m *Model) GetTrafficAggregates(tr TimeRange) (map[string][]TrafficAggregate, error) {
 	windowDuration := int64(time.Hour)
-	if tr.Days() > 30 {
+	days := tr.Days()
+	if days >= 180 {
+		windowDuration = int64(7 * 24 * time.Hour)
+	} else if days >= 7 {
 		windowDuration = int64(24 * time.Hour)
 	}
 
