@@ -85,6 +85,7 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 	b.WriteString("  WORKDIR /app\n")
 	b.WriteString("  COPY go.mod go.sum ./\n")
 	b.WriteString("  RUN go mod download\n")
+	b.WriteString("  RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3\n")
 	b.WriteString("  COPY . .\n")
 	fmt.Fprintf(&b, "  WORKDIR /app/apps/%s\n", name)
 	b.WriteString("  RUN run build\n")

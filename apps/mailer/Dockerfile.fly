@@ -7,6 +7,7 @@ FROM golang:alpine AS gobuild
   WORKDIR /app
   COPY go.mod go.sum ./
   RUN go mod download
+  RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3
   COPY . .
   WORKDIR /app/apps/mailer
   RUN run build
