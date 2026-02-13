@@ -5,15 +5,14 @@ import (
 	"net"
 	"time"
 
-	"gorm.io/gorm"
 	"monks.co/pkg/color"
 	"monks.co/pkg/database"
 )
 
 type Request struct {
-	gorm.Model
-
+	ID        uint `gorm:"primarykey"`
 	CreatedAt *time.Time
+	UpdatedAt *time.Time
 
 	Host  string
 	Path  string
@@ -79,6 +78,7 @@ func (m *Model) migrate() error {
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at DESC);
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at_remote_addr ON requests(created_at, remote_addr);
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at_host_path ON requests(created_at, host, path);
+		DROP INDEX IF EXISTS idx_requests_deleted_at;
 	`
 	return m.Exec(sql).Error
 }
