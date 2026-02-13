@@ -12,6 +12,7 @@ apps/dogs/archive.zip
 # exclude all other apps
 apps/*
 !apps/dogs
+apps/dogs/archive.zip
 
 # exclude build artifacts
 **/node_modules
