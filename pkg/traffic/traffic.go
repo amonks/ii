@@ -10,6 +10,19 @@ import (
 	"monks.co/pkg/database"
 )
 
+// Duration buckets in milliseconds (upper bounds, non-cumulative).
+var durationBucketsMs = []int64{1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000}
+
+func durationBucketMs(d time.Duration) int64 {
+	ms := d.Milliseconds()
+	for _, b := range durationBucketsMs {
+		if ms <= b {
+			return b
+		}
+	}
+	return durationBucketsMs[len(durationBucketsMs)-1]
+}
+
 type Request struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt *time.Time
@@ -58,15 +71,11 @@ func (r *Request) PrintUserAgent() string {
 	return r.UserAgent
 }
 
-type TrafficAggregate struct {
-	Host           string        `gorm:"primaryKey" json:"host"`
-	WindowDuration time.Duration `gorm:"primaryKey" json:"-"`
-	WindowStartAt  time.Time     `gorm:"primaryKey" json:"window_start_at"`
-	Count          int64         `json:"count"`
-}
-
-func (TrafficAggregate) TableName() string {
-	return "traffic_aggregates"
+// ChartPoint is a single data point for the traffic chart.
+type ChartPoint struct {
+	Host          string    `json:"host"`
+	WindowStartAt time.Time `json:"window_start_at"`
+	Count         int64     `json:"count"`
 }
 
 type Model struct {
@@ -92,14 +101,24 @@ func (m *Model) migrate() error {
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at_host_path ON requests(created_at, host, path);
 		DROP INDEX IF EXISTS idx_requests_deleted_at;
 
-		CREATE TABLE IF NOT EXISTS traffic_aggregates (
+		CREATE TABLE IF NOT EXISTS daily_stats (
+			day DATETIME NOT NULL,
 			host TEXT NOT NULL,
-			window_duration INTEGER NOT NULL,
-			window_start_at DATETIME NOT NULL,
+			status_code INTEGER NOT NULL,
+			duration_bucket INTEGER NOT NULL,
 			count INTEGER NOT NULL DEFAULT 0,
-			PRIMARY KEY (host, window_duration, window_start_at)
+			PRIMARY KEY (day, host, status_code, duration_bucket)
 		);
 
+		CREATE TABLE IF NOT EXISTS page_daily (
+			day DATETIME NOT NULL,
+			host TEXT NOT NULL,
+			path TEXT NOT NULL,
+			count INTEGER NOT NULL DEFAULT 0,
+			PRIMARY KEY (day, host, path)
+		);
+
+		DROP TABLE IF EXISTS traffic_aggregates;
 		DROP TABLE IF EXISTS traffic_meta;
 	`
 	return m.Exec(sql).Error
@@ -135,50 +154,74 @@ func (m *Model) LogEntries(entries []LogEntry) error {
 		if tx := m.Create(r); tx.Error != nil {
 			return tx.Error
 		}
-		m.incrementAggregate(e.Host, t.Truncate(time.Hour), time.Hour)
-		m.incrementAggregate(e.Host, t.Truncate(24*time.Hour), 24*time.Hour)
-		m.incrementAggregate(e.Host, weekStart(t), 7*24*time.Hour)
+		day := t.Truncate(24 * time.Hour)
+		m.incrementDailyStat(e.Host, day, e.StatusCode, durationBucketMs(e.Duration))
+		m.incrementPageDaily(e.Host, e.Path, day)
 	}
 	return nil
 }
 
-func (m *Model) incrementAggregate(host string, windowStart time.Time, windowDuration time.Duration) {
+func (m *Model) incrementDailyStat(host string, day time.Time, statusCode int, durationBucket int64) {
 	err := m.Exec(`
-		INSERT INTO traffic_aggregates (host, window_duration, window_start_at, count)
-		VALUES (?, ?, ?, 1)
-		ON CONFLICT (host, window_duration, window_start_at)
+		INSERT INTO daily_stats (day, host, status_code, duration_bucket, count)
+		VALUES (?, ?, ?, ?, 1)
+		ON CONFLICT (day, host, status_code, duration_bucket)
 		DO UPDATE SET count = count + 1
-	`, host, int64(windowDuration), windowStart).Error
+	`, day, host, statusCode, durationBucket).Error
 	if err != nil {
-		log.Printf("traffic: incrementAggregate error: %v", err)
+		log.Printf("traffic: incrementDailyStat error: %v", err)
 	}
 }
 
-// weekStart returns the Monday 00:00 UTC at the start of t's ISO week.
-func weekStart(t time.Time) time.Time {
-	t = t.UTC().Truncate(24 * time.Hour)
-	offset := (int(t.Weekday()) + 6) % 7 // Monday=0 … Sunday=6
-	return t.AddDate(0, 0, -offset)
+func (m *Model) incrementPageDaily(host string, path string, day time.Time) {
+	err := m.Exec(`
+		INSERT INTO page_daily (day, host, path, count)
+		VALUES (?, ?, ?, 1)
+		ON CONFLICT (day, host, path)
+		DO UPDATE SET count = count + 1
+	`, day, host, path).Error
+	if err != nil {
+		log.Printf("traffic: incrementPageDaily error: %v", err)
+	}
 }
 
-func (m *Model) GetTrafficAggregates(tr TimeRange) (map[string][]TrafficAggregate, error) {
-	windowDuration := int64(time.Hour)
+func (m *Model) GetChartData(tr TimeRange) (map[string][]ChartPoint, error) {
 	days := tr.Days()
-	if days >= 180 {
-		windowDuration = int64(7 * 24 * time.Hour)
-	} else if days >= 7 {
-		windowDuration = int64(24 * time.Hour)
+
+	var query string
+	if days < 7 {
+		// Hourly from raw requests (fast for small date ranges)
+		query = `SELECT host,
+			strftime('%Y-%m-%d %H:00:00+00:00', created_at) as window_start_at,
+			count(*) as count
+			FROM requests
+			WHERE created_at >= ? AND created_at <= ?
+			GROUP BY host, strftime('%Y-%m-%d %H', created_at)
+			ORDER BY window_start_at ASC`
+	} else if days >= 180 {
+		// Weekly from daily_stats
+		query = `SELECT host,
+			strftime('%Y-%m-%d 00:00:00+00:00', day, '-' || ((cast(strftime('%w', day) as integer) + 6) % 7) || ' days') as window_start_at,
+			SUM(count) as count
+			FROM daily_stats
+			WHERE day >= ? AND day <= ?
+			GROUP BY host, window_start_at
+			ORDER BY window_start_at ASC`
+	} else {
+		// Daily from daily_stats
+		query = `SELECT host, day as window_start_at, SUM(count) as count
+			FROM daily_stats
+			WHERE day >= ? AND day <= ?
+			GROUP BY host, day
+			ORDER BY day ASC`
 	}
 
-	var points []TrafficAggregate
-	if err := m.Raw(
-		"SELECT host, window_duration, window_start_at, count FROM traffic_aggregates WHERE window_start_at >= ? AND window_start_at <= ? AND window_duration = ? ORDER BY window_start_at ASC",
-		tr.StartTime(), tr.EndTime(), windowDuration,
-	).Scan(&points).Error; err != nil {
+	var points []ChartPoint
+	if err := m.Raw(query, tr.StartTime(), tr.EndTime()).Scan(&points).Error; err != nil {
 		return nil, err
 	}
 
-	result := make(map[string][]TrafficAggregate)
+	result := make(map[string][]ChartPoint)
 	for _, p := range points {
 		result[p.Host] = append(result[p.Host], p)
 	}

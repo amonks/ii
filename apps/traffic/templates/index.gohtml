@@ -7,7 +7,7 @@
 <style>
   .chart-container {
     margin: 2rem 1rem;
-    background-color: rgb(30 41 59); /* bg-slate-800 */
+    background-color: rgb(30 41 59);
     border-radius: 8px;
     padding: 20px;
   }
@@ -84,6 +84,38 @@
     cursor: pointer;
   }
   .range-picker button:hover { background: rgb(71 85 105); }
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 0 1rem;
+  }
+  @media (max-width: 768px) {
+    .panels { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background-color: rgb(30 41 59);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .panel h2 {
+    color: #e2e8f0;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .panel table { width: 100%; }
+  .panel td { padding: 4px 0; font-size: 13px; }
+  .panel td:last-child { text-align: right; }
+  .status-2xx { color: #34d399; }
+  .status-3xx { color: #60a5fa; }
+  .status-4xx { color: #fbbf24; }
+  .status-5xx { color: #f87171; }
+  .dur-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 13px; }
+  .dur-label { width: 60px; text-align: right; color: #94a3b8; flex-shrink: 0; }
+  .dur-bar-bg { flex: 1; height: 18px; background: rgb(51 65 85); border-radius: 3px; overflow: hidden; }
+  .dur-bar { height: 100%; background: #60a5fa; border-radius: 3px; min-width: 1px; }
+  .dur-count { width: 70px; text-align: right; color: #94a3b8; flex-shrink: 0; }
 </style>
 </head>
 
@@ -109,27 +141,31 @@
       <div class="d3-chart" id="chart"></div>
     </div>
 
-    <div class="mt-8 flow-root">
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-	  <table class="min-w-full divide-y divide-gray-300">
-	    <thead>
-	      <tr>
-		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Top Clients</th>
-		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-200">Requests</th>
-	      </tr>
-	    </thead>
-	    <tbody class="divide-y divide-gray-500">
-	      {{ range .TopClients }}
-		<tr>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .Client }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-right text-sm">{{ .RequestCount }}</td>
-		</tr>
-	      {{ end }}
-	    </tbody>
-	  </table>
-	</div>
+    <div class="panels">
+      <div class="panel">
+        <h2>Status Codes</h2>
+        <table>
+          {{ range .StatusCodes }}
+            <tr>
+              <td class="{{ if ge .StatusCode 500 }}status-5xx{{ else if ge .StatusCode 400 }}status-4xx{{ else if ge .StatusCode 300 }}status-3xx{{ else }}status-2xx{{ end }}">{{ .StatusCode }}</td>
+              <td>{{ .RequestCount }}</td>
+            </tr>
+          {{ end }}
+        </table>
       </div>
+      <div class="panel">
+        <h2>Duration Distribution</h2>
+        {{ range .Durations }}
+          <div class="dur-row">
+            <span class="dur-label">{{ if ge .DurationBucket 10000 }}>5s{{ else if ge .DurationBucket 1000 }}{{ divide .DurationBucket 1000 }}s{{ else }}{{ .DurationBucket }}ms{{ end }}</span>
+            <div class="dur-bar-bg"><div class="dur-bar" style="width: {{ percent .RequestCount $.MaxDurCount }}%"></div></div>
+            <span class="dur-count">{{ .RequestCount }}</span>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+
+    <div class="mt-8 flow-root">
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
 	  <table class="min-w-full divide-y divide-gray-300">
@@ -194,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const hosts = Object.keys(chartData || {});
   if (hosts.length === 0) return;
 
-  // Legend
   const legendEl = document.getElementById("chart-legend");
   hosts.forEach((host, i) => {
     const item = document.createElement("div");
@@ -209,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
     legendEl.appendChild(item);
   });
 
-  // Dimensions
   const chartDiv = document.getElementById("chart");
   const margin = {top: 10, right: 20, bottom: 30, left: 50};
   const width = chartDiv.clientWidth - margin.left - margin.right;
@@ -221,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Collect all points for scales
   const allPoints = [];
   hosts.forEach(h => {
     chartData[h].forEach(p => {
@@ -238,19 +271,16 @@ document.addEventListener('DOMContentLoaded', function() {
     .domain([0, d3.max(allPoints, d => d.count) * 1.1])
     .range([height, 0]);
 
-  // Grid
   svg.append("g").attr("class", "grid").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(10).tickSize(-height).tickFormat(""));
   svg.append("g").attr("class", "grid")
     .call(d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(""));
 
-  // Axes
   svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(width > 600 ? 10 : 5).tickFormat(formatDate));
   svg.append("g").attr("class", "y axis")
     .call(d3.axisLeft(yScale).ticks(5));
 
-  // Lines
   const line = d3.line()
     .x(d => xScale(d._time))
     .y(d => yScale(d.count))
@@ -264,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
       .attr("d", line);
   });
 
-  // Tooltip
   const tooltip = d3.select("body").append("div")
     .attr("class", "chart-tooltip")
     .style("opacity", 0);

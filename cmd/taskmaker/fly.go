@@ -110,6 +110,7 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 	} else {
 		b.WriteString("  ENV MONKS_DATA=/tmp\n")
 	}
+	b.WriteString("  ENV TSNET_FORCE_LOGIN=1\n")
 
 	cmd := app.Cmd
 	if len(cmd) == 0 {
@@ -155,6 +156,7 @@ func buildFlyToml(name string, app flyAppEntry, defaults flyAppDefaults) string 
 	} else {
 		b.WriteString("  MONKS_DATA = \"/tmp\"\n")
 	}
+	b.WriteString("  TSNET_FORCE_LOGIN = \"1\"\n")
 	b.WriteString("\n")
 
 	b.WriteString("[[vm]]\n")
