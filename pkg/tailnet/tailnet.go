@@ -21,7 +21,7 @@ func hostname() string {
 var server = &tsnet.Server{
 	Hostname:  hostname(),
 	Dir:       filepath.Join(os.TempDir(), "tsnet-"+hostname()),
-	Ephemeral: false,
+	Ephemeral: true,
 	AuthKey:   tailscaleAuthKey,
 }
 
