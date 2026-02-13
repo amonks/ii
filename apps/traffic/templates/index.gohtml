@@ -4,10 +4,111 @@
 <head>
 <title>traffic</title>
 <link rel="stylesheet" type="text/css" href="./index.css" />
+<style>
+  .chart-container {
+    margin: 2rem 1rem;
+    background-color: rgb(30 41 59); /* bg-slate-800 */
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .chart-container h2 {
+    color: #e2e8f0;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .d3-chart {
+    width: 100%;
+    height: 350px;
+  }
+  .axis path, .axis line { fill: none; stroke: #475569; shape-rendering: crispEdges; }
+  .axis text { font-size: 11px; fill: #94a3b8; }
+  .grid line { stroke: #334155; shape-rendering: crispEdges; }
+  .grid path { stroke-width: 0; }
+  .chart-line { fill: none; stroke-width: 2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; font-size: 12px; color: #94a3b8; }
+  .legend-color { width: 12px; height: 3px; margin-right: 5px; border-radius: 1px; }
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    color: #e2e8f0;
+  }
+  .chart-tooltip .tt-title { font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #334155; padding-bottom: 4px; }
+  .chart-tooltip .tt-row { margin-top: 2px; }
+  .range-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 1.5rem 1rem 0;
+    flex-wrap: wrap;
+  }
+  .range-picker a {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
+    text-decoration: none;
+    background: rgb(30 41 59);
+    border: 1px solid transparent;
+  }
+  .range-picker a:hover { color: #e2e8f0; }
+  .range-picker a.active {
+    color: #e2e8f0;
+    border-color: #475569;
+    background: rgb(51 65 85);
+  }
+  .range-picker .sep { color: #475569; font-size: 12px; margin: 0 2px; }
+  .range-picker input[type="date"] {
+    background: rgb(30 41 59);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    padding: 4px 8px;
+    color-scheme: dark;
+  }
+  .range-picker button {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .range-picker button:hover { background: rgb(71 85 105); }
+</style>
 </head>
 
 <body class="bg-slate-900 text-gray-100">
   <div class="px-4 sm:px-6 lg:px-8">
+
+    <div class="range-picker">
+      {{ range .TimeRange.CannedRanges }}
+        <a href="?range={{ .Key }}"{{ if .Active }} class="active"{{ end }}>{{ .Label }}</a>
+      {{ end }}
+      <span class="sep">|</span>
+      <form method="get" style="display:contents">
+        <input type="date" name="start" value="{{ .TimeRange.Start }}">
+        <span class="sep">&ndash;</span>
+        <input type="date" name="end" value="{{ .TimeRange.End }}">
+        <button type="submit">Apply</button>
+      </form>
+    </div>
+
+    <div class="chart-container">
+      <h2>Requests Over Time</h2>
+      <div class="legend" id="chart-legend"></div>
+      <div class="d3-chart" id="chart"></div>
+    </div>
+
     <div class="mt-8 flow-root">
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 	<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -81,6 +182,120 @@
       </div>
     </div>
   </div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+{{ .ChartJSON }}
+
+const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
+const formatDate = d3.timeFormat("%b %d, %H:%M");
+
+document.addEventListener('DOMContentLoaded', function() {
+  const hosts = Object.keys(chartData || {});
+  if (hosts.length === 0) return;
+
+  // Legend
+  const legendEl = document.getElementById("chart-legend");
+  hosts.forEach((host, i) => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const swatch = document.createElement("div");
+    swatch.className = "legend-color";
+    swatch.style.backgroundColor = colors[i % colors.length];
+    const label = document.createElement("span");
+    label.textContent = host;
+    item.appendChild(swatch);
+    item.appendChild(label);
+    legendEl.appendChild(item);
+  });
+
+  // Dimensions
+  const chartDiv = document.getElementById("chart");
+  const margin = {top: 10, right: 20, bottom: 30, left: 50};
+  const width = chartDiv.clientWidth - margin.left - margin.right;
+  const height = chartDiv.clientHeight - margin.top - margin.bottom;
+
+  const svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Collect all points for scales
+  const allPoints = [];
+  hosts.forEach(h => {
+    chartData[h].forEach(p => {
+      p._time = new Date(p.window_start_at);
+      allPoints.push(p);
+    });
+  });
+
+  const xScale = d3.scaleTime()
+    .domain(d3.extent(allPoints, d => d._time))
+    .range([0, width]);
+
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(allPoints, d => d.count) * 1.1])
+    .range([height, 0]);
+
+  // Grid
+  svg.append("g").attr("class", "grid").attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(xScale).ticks(10).tickSize(-height).tickFormat(""));
+  svg.append("g").attr("class", "grid")
+    .call(d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(""));
+
+  // Axes
+  svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(xScale).ticks(width > 600 ? 10 : 5).tickFormat(formatDate));
+  svg.append("g").attr("class", "y axis")
+    .call(d3.axisLeft(yScale).ticks(5));
+
+  // Lines
+  const line = d3.line()
+    .x(d => xScale(d._time))
+    .y(d => yScale(d.count))
+    .curve(d3.curveMonotoneX);
+
+  hosts.forEach((host, i) => {
+    svg.append("path")
+      .datum(chartData[host])
+      .attr("class", "chart-line")
+      .attr("stroke", colors[i % colors.length])
+      .attr("d", line);
+  });
+
+  // Tooltip
+  const tooltip = d3.select("body").append("div")
+    .attr("class", "chart-tooltip")
+    .style("opacity", 0);
+
+  svg.append("rect")
+    .attr("width", width).attr("height", height)
+    .style("fill", "none").style("pointer-events", "all")
+    .on("mouseover", () => tooltip.transition().duration(200).style("opacity", 0.9))
+    .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0))
+    .on("mousemove", function(event) {
+      const x0 = xScale.invert(d3.pointer(event)[0]);
+      let html = `<div class="tt-title">${formatDate(x0)}</div>`;
+      hosts.forEach((host, i) => {
+        const data = chartData[host];
+        const bisect = d3.bisector(d => d._time).left;
+        const idx = bisect(data, x0, 1);
+        if (idx > 0 && idx < data.length) {
+          const d0 = data[idx - 1], d1 = data[idx];
+          const d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
+          html += `<div class="tt-row" style="color:${colors[i % colors.length]}">${host}: ${d.count}</div>`;
+        } else if (data.length > 0) {
+          const d = idx === 0 ? data[0] : data[data.length - 1];
+          html += `<div class="tt-row" style="color:${colors[i % colors.length]}">${host}: ${d.count}</div>`;
+        }
+      });
+      tooltip.html(html)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    });
+});
+</script>
 </body>
 
 </html>

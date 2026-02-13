@@ -24,6 +24,8 @@ func run() error {
 		panic(err)
 	}
 
+	go db.BackfillAggregates()
+
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)

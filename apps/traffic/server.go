@@ -45,8 +45,11 @@ func NewServer(m *traffic.Model) *Server {
 }
 
 func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
+	tr := traffic.ParseTimeRange(req)
+
 	var log []traffic.Request
 	if err := app.model.
+		Where("created_at >= ? AND created_at <= ?", tr.StartTime(), tr.EndTime()).
 		Order("created_at desc").
 		Limit(50).
 		Find(&log).
@@ -61,7 +64,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	}
 	if err := app.model.Table("requests").
 		Select("case when instr(remote_addr, ']') then substr(remote_addr, 0, instr(remote_addr, ']')+1) when instr(remote_addr, ':') then substr(remote_addr, 0, instr(remote_addr, ':')) else remote_addr end as client, count(*) as request_count").
-		Where("created_at > datetime('now', '-7 day')").
+		Where("created_at >= ? AND created_at <= ?", tr.StartTime(), tr.EndTime()).
 		Group("client").
 		Limit(20).
 		Order("request_count desc").
@@ -77,7 +80,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	}
 	if err := app.model.Table("requests").
 		Select("host || path as url, count(*) as request_count").
-		Where("created_at > datetime('now', '-7 day')").
+		Where("created_at >= ? AND created_at <= ?", tr.StartTime(), tr.EndTime()).
 		Group("url").
 		Limit(20).
 		Order("request_count desc").
@@ -87,9 +90,21 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	chartData, err := app.model.GetTrafficAggregates(tr)
+	if err != nil {
+		serve.Errorf(w, req, 500, "failed to read chart data: %s", err)
+		return
+	}
+	chartJSON, err := json.Marshal(chartData)
+	if err != nil {
+		serve.Errorf(w, req, 500, "failed to marshal chart data: %s", err)
+		return
+	}
+
 	type PageData struct {
-		Log      []traffic.Request
-		TopPages []struct {
+		TimeRange traffic.TimeRange
+		Log       []traffic.Request
+		TopPages  []struct {
 			URL          string
 			RequestCount int
 		}
@@ -97,12 +112,15 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			Client       string
 			RequestCount int
 		}
+		ChartJSON template.JS
 	}
 
 	pageData := PageData{
+		TimeRange:  tr,
 		Log:        log,
 		TopPages:   topPages,
 		TopClients: topClients,
+		ChartJSON:  template.JS("window.chartData = " + string(chartJSON) + ";"),
 	}
 
 	w.Header().Set("Content-type", "text/html; charset=utf-8")
