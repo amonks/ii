@@ -118,7 +118,7 @@ func (imp *Importer) Start(ctx context.Context) error {
 	} else {
 		log.Printf("running initial import")
 		if err := imp.importNow(); err != nil {
-			return err
+			log.Printf("initial import error (will retry in %s): %v", importInterval, err)
 		}
 	}
 
@@ -133,7 +133,7 @@ func (imp *Importer) Start(ctx context.Context) error {
 		}
 
 		if err := imp.importNow(); err != nil {
-			return err
+			log.Printf("import error (will retry in %s): %v", importInterval, err)
 		}
 	}
 }
