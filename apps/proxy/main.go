@@ -5,7 +5,7 @@ import (
 	cryptotls "crypto/tls"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -77,10 +77,9 @@ func run() error {
 				redirects: config.Redirects,
 			}
 
-			log.Printf("listening at %s", serviceConfig.Addr)
+			slog.Info("listening", "addr", serviceConfig.Addr)
 			if err := service.ListenAndServe(ctx); err != nil {
-				log.Println(err)
-				log.Printf("service at '%s' failed; canceling run", service.service.Addr)
+				slog.Error("service failed", "addr", service.service.Addr, "error", err)
 				cancel(err)
 			}
 		}()
@@ -92,7 +91,7 @@ func run() error {
 		mux := http.NewServeMux()
 		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		if err := serve.ListenAndServe(ctx, "0.0.0.0:9999", mux); err != nil {
-			log.Println(err)
+			slog.Error("metrics server failed", "error", err)
 			cancel(err)
 		}
 	}()
@@ -165,8 +164,6 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	traf := trafficclient.New("http://monks-traffic-fly-ord/log", tsClient)
 	defer traf.Close()
 
-	// Create tsnet listener first — Listen blocks until the server is
-	// fully connected and has its netmap, which AnonCaps needs.
 	tsLn, err := tailnet.Listen("tcp", ":443")
 	if err != nil {
 		return fmt.Errorf("tsnet listen: %w", err)
@@ -175,7 +172,9 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 
 	anonCaps, err := tailnet.AnonCaps(ctx)
 	if err != nil {
-		log.Printf("tailauth: failed to get anon caps: %v", err)
+		slog.Error("tailauth: failed to get anon caps", "error", err)
+	} else {
+		slog.Info("tailauth: loaded anon caps", "caps", capNames(anonCaps))
 	}
 
 	p := &proxy{s.service.Rewrites, tsClient.Transport}
@@ -239,10 +238,10 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {
 		if conn.LocalAddr() == nil {
-			log.Printf("couldn't retrieve local address")
+			slog.Warn("proxyproto: missing local address")
 		}
 		if conn.RemoteAddr() == nil {
-			log.Printf("couldn't retrieve remote address")
+			slog.Warn("proxyproto: missing remote address")
 		}
 
 		return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())

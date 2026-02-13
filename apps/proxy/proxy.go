@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -32,6 +32,11 @@ func routesFromCaps(req *http.Request) map[string]string {
 			Backend string `json:"backend"`
 		}
 		if err := json.Unmarshal([]byte(values[0]), &entries); err != nil {
+			slog.Warn("route: failed to parse cap header",
+				"header", key,
+				"value", values[0],
+				"error", err,
+			)
 			continue
 		}
 		for _, e := range entries {
@@ -48,6 +53,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.URL.Path = to
 	}
 
+	user := req.Header.Get("Tailscale-User")
 	firstSegment := strings.Split(req.URL.Path, "/")[1]
 	routes := routesFromCaps(req)
 
@@ -67,12 +73,36 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+		slog.Info("route: proxying",
+			"user", user,
+			"host", req.Host,
+			"method", req.Method,
+			"path", req.URL.Path,
+			"app", firstSegment,
+			"backend", backend,
+			"routes", routeKeys(routes),
+		)
 		p.proxyRequest(firstSegment, backend, w, req)
 		return
 	}
 
+	slog.Info("route: static",
+		"user", user,
+		"host", req.Host,
+		"method", req.Method,
+		"path", req.URL.Path,
+		"routes", routeKeys(routes),
+	)
 	srv := gzipserver.FileServer(gzipserver.Dir(env.InMonksRoot("apps", "proxy", "static")))
 	srv.ServeHTTP(w, req)
+}
+
+func routeKeys(routes map[string]string) []string {
+	keys := make([]string, 0, len(routes))
+	for k := range routes {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 type StatusCodeWriter struct {
@@ -96,7 +126,6 @@ func (p *proxy) proxyRequest(prefix string, backend string, w http.ResponseWrite
 			req.Out.URL.Host = backend
 			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/"+prefix)
 			req.Out.Host = backend
-			log.Println("proxy", req.In.URL.String(), req.Out.URL.String())
 		},
 	}
 	startAt := time.Now()

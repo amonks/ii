@@ -83,6 +83,12 @@ func WhoIs(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, erro
 // AnonCaps returns capabilities from filter rules with SrcIPs: ["*"]
 // (i.e. autogroup:danger-all grants). Called once at startup, cached by caller.
 func AnonCaps(ctx context.Context) (tailcfg.PeerCapMap, error) {
+	// Ensure the server is fully connected and has its netmap before
+	// querying filter rules. Start() is non-blocking and Listen()
+	// doesn't guarantee the netmap is ready.
+	if _, err := server.Up(ctx); err != nil {
+		return nil, fmt.Errorf("tailnet up: %w", err)
+	}
 	lc, err := server.LocalClient()
 	if err != nil {
 		return nil, fmt.Errorf("tailnet local client: %w", err)

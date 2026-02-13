@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -36,14 +36,27 @@ func (tailscaleAuthMiddleware) ModifyHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		whois, err := tailnet.WhoIs(r.Context(), r.RemoteAddr)
 		if err != nil {
-			log.Printf("tailauth: whois error: %v", err)
+			slog.Warn("tailauth: whois failed",
+				"error", err,
+				"remote_addr", r.RemoteAddr,
+			)
 			h.ServeHTTP(w, r)
 			return
 		}
+		user := ""
 		if whois.UserProfile != nil {
-			r.Header.Set("Tailscale-User", whois.UserProfile.LoginName)
+			user = whois.UserProfile.LoginName
+			r.Header.Set("Tailscale-User", user)
 		}
+		caps := capNames(whois.CapMap)
 		setCapsHeaders(r, whois.CapMap)
+		slog.Info("tailauth: identified user",
+			"listener", "tailnet",
+			"user", user,
+			"node", whois.Node.Name,
+			"remote_addr", r.RemoteAddr,
+			"caps", caps,
+		)
 		h.ServeHTTP(w, r)
 	})
 }
@@ -57,6 +70,7 @@ type anonCapsMiddleware struct {
 }
 
 func (m anonCapsMiddleware) ModifyHandler(h http.Handler) http.Handler {
+	caps := capNames(m.caps)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for key := range r.Header {
 			if strings.HasPrefix(key, "Tailscale-") {
@@ -64,6 +78,22 @@ func (m anonCapsMiddleware) ModifyHandler(h http.Handler) http.Handler {
 			}
 		}
 		setCapsHeaders(r, m.caps)
+		slog.Debug("tailauth: anon request",
+			"listener", "public",
+			"caps", caps,
+			"remote_addr", r.RemoteAddr,
+		)
 		h.ServeHTTP(w, r)
 	})
+}
+
+// capNames returns the short app names from a PeerCapMap (e.g. ["map", "dogs"]).
+func capNames(caps tailcfg.PeerCapMap) []string {
+	var names []string
+	for cap := range caps {
+		if s := string(cap); strings.HasPrefix(s, capPrefix) {
+			names = append(names, strings.TrimPrefix(s, capPrefix))
+		}
+	}
+	return names
 }
