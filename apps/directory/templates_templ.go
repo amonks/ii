@@ -83,7 +83,7 @@ func IndexTempl(data Table) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if strings.HasPrefix(col, "https://") {
+					if strings.HasPrefix(col, "http://") || strings.HasPrefix(col, "https://") {
 						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<a href=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err

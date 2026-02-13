@@ -50,7 +50,7 @@ func LoadTable() (Table, error) {
 			config := configs[machine]
 			for _, _app := range config.Apps() {
 				if app == _app {
-					row[i+1] = fmt.Sprintf("https://%s.ss.cx/%s", machine, app)
+					row[i+1] = fmt.Sprintf("http://monks-%s-%s/", app, machine)
 					break
 				}
 			}
