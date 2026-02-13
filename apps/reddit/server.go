@@ -142,7 +142,7 @@ func (s *Server) listServer() http.Handler {
 			starred = &[]bool{false}[0]
 		}
 
-		posts, err := s.db.getPosts(1000, 1, subreddit, author, starred)
+		posts, err := s.db.getPosts(-1, 1, subreddit, author, starred)
 		if err != nil {
 			serve.Error(w, req, http.StatusInternalServerError, err)
 			return
