@@ -61,9 +61,15 @@ func ListMachines() ([]string, error) {
 		if entry.IsDir() {
 			continue
 		}
-		if name := entry.Name(); strings.HasSuffix(name, ".toml") {
-			machines = append(machines, strings.TrimSuffix(name, ".toml"))
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".toml") {
+			continue
 		}
+		name = strings.TrimSuffix(name, ".toml")
+		if name == "fly-apps" {
+			continue
+		}
+		machines = append(machines, name)
 	}
 
 	sort.Strings(machines)
