@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"monks.co/pkg/tailnet"
 )
 
 func fetch(db *DB) error {
@@ -115,11 +117,9 @@ func getAranetDevices() ([]AranetDevice, error) {
 	log.Printf("getAranetDevices: starting fetch")
 	httpStart := time.Now()
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	client := tailnet.Client()
 
-	req, err := http.NewRequest("GET", "https://brigid.ss.cx/aranet/", nil)
+	req, err := http.NewRequest("GET", "http://monks-aranet-brigid/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
