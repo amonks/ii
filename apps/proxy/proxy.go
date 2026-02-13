@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,9 +15,32 @@ import (
 )
 
 type proxy struct {
-	routes    map[string]string
 	rewrites  map[string]string
 	transport http.RoundTripper
+}
+
+// routesFromCaps builds a route table from Tailscale-Cap-* headers.
+// Each cap header contains a JSON array of {path, backend} entries.
+func routesFromCaps(req *http.Request) map[string]string {
+	routes := map[string]string{}
+	for key, values := range req.Header {
+		if !strings.HasPrefix(key, "Tailscale-Cap-") {
+			continue
+		}
+		var entries []struct {
+			Path    string `json:"path"`
+			Backend string `json:"backend"`
+		}
+		if err := json.Unmarshal([]byte(values[0]), &entries); err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.Path != "" && e.Backend != "" {
+				routes[e.Path] = e.Backend
+			}
+		}
+	}
+	return routes
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -25,7 +49,9 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	firstSegment := strings.Split(req.URL.Path, "/")[1]
-	if backend, hasRoute := p.routes[firstSegment]; hasRoute {
+	routes := routesFromCaps(req)
+
+	if backend, hasRoute := routes[firstSegment]; hasRoute {
 		// We need to visit the subsites at a url that ends in a "/",
 		// otherwise relative links within the subsite won't use the
 		// subsite's prefix.

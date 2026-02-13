@@ -1,4 +1,5 @@
 mode = "prod"
+apps = ["dogs", "homepage", "map", "traffic", "writing"]
 
 [redirects]
   "belgianman.com" = "https://belgianman.bandcamp.com/"
@@ -49,11 +50,5 @@ mode = "prod"
   type = "https"
   addr = "0.0.0.0:4433"
   rewrites = { "/" = "/homepage/" }
-  [service.apps]
-    map = "monks-map-fly-ord"
-    traffic = "monks-traffic-fly-ord"
-    homepage = "monks-homepage-fly-ord"
-    writing = "monks-writing-fly-ord"
-    dogs = "monks-dogs-fly-ord"
 
 

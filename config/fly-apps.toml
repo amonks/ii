@@ -12,10 +12,12 @@
   cmd = ["/app/bin/app", "-machine", "fly"]
 
 [apps.homepage]
+  volume = "monks_homepage_data"
 
 [apps.writing]
   vm_size = "shared-cpu-4x"
   vm_memory = "2gb"
+  volume = "monks_writing_data"
   files = ["apps/writing/writing/"]
 
 [apps.dogs]
@@ -38,3 +40,4 @@
   packages = ["sqlite"]
 
 [apps.mailer]
+  volume = "monks_mailer_data"

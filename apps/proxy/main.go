@@ -71,16 +71,7 @@ func run() error {
 		serviceConfig := serviceConfig
 		go func() {
 			defer wg.Done()
-			routes := map[string]string{}
-			for app, backend := range serviceConfig.Apps {
-				routes[app] = backend
-			}
-			for path, port := range serviceConfig.ExtraRoutes {
-				log.Printf("extra route %s %d", path, port)
-				routes[path] = fmt.Sprintf("127.0.0.1:%d", port)
-			}
 			service := &Service{
-				routes:    routes,
 				service:   serviceConfig,
 				acme:      config.ACME,
 				redirects: config.Redirects,
@@ -111,7 +102,6 @@ func run() error {
 }
 
 type Service struct {
-	routes    map[string]string
 	service   config.Service
 	acme      tls.ACME
 	redirects map[string]string
@@ -188,7 +178,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 		log.Printf("tailauth: failed to get anon caps: %v", err)
 	}
 
-	p := &proxy{s.routes, s.service.Rewrites, tsClient.Transport}
+	p := &proxy{s.service.Rewrites, tsClient.Transport}
 
 	// Public handler: anon caps → redirector → traffic → proxy
 	publicMW := middleware.Combine(anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects), traf)
