@@ -56,6 +56,9 @@ func run() error {
 
 	// Start the Bluetooth scanning goroutine
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 		defer ticker.Stop()

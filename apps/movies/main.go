@@ -27,6 +27,7 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/llm"
 	"monks.co/pkg/loggingwaitgroup"
+	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tmdb"
 )
 
@@ -63,6 +64,10 @@ func run() error {
 
 	wg := &loggingwaitgroup.WaitGroup{}
 	ctx, cancel := context.WithCancelCause(context.Background())
+
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 
 	runAfterImport := func(name string, run func(ctx context.Context) error) {
 		wg.Add(name)

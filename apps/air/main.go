@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 )
 
 var (
@@ -34,6 +36,9 @@ func run() error {
 	switch *mode {
 	case "fetch":
 		log.Printf("run fetch")
+		if err := tailnet.WaitReady(context.Background()); err != nil {
+			return fmt.Errorf("tailnet: %w", err)
+		}
 		if err := fetch(db); err != nil {
 			errs = errors.Join(errs, fmt.Errorf("fetch error: %w", err))
 		}
@@ -49,6 +54,9 @@ func run() error {
 	case "serve":
 		log.Printf("run serve")
 		ctx := sigctx.New()
+		if err := tailnet.WaitReady(ctx); err != nil {
+			return fmt.Errorf("tailnet: %w", err)
+		}
 
 		if err := serveAir(ctx, db); err != nil {
 			errs = errors.Join(errs, err)

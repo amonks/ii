@@ -63,6 +63,10 @@ func run() error {
 	var wg sync.WaitGroup
 	ctx, cancel := sigctx.NewWithCancel()
 
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(requestsMetric, requestDurationsMetric)
 

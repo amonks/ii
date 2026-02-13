@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -95,6 +96,9 @@ func run() error {
 	})
 
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}

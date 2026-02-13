@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -24,6 +25,9 @@ func main() {
 
 func run() error {
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /error/{$}", func(w http.ResponseWriter, req *http.Request) {

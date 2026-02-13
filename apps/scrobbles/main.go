@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -68,6 +69,9 @@ func run() error {
 		Index(scrobbles).Render(context.Background(), w)
 	})
 	ctx, cancel := sigctx.NewWithCancel()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	wg := new(errgroup.Group)
 
 	wg.Go(func() error {

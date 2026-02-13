@@ -43,6 +43,9 @@ func runServer() error {
 	}
 
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	var errs error
 
 	s := newServer(db)

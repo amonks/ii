@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -31,5 +32,8 @@ func run() error {
 		h.ServeHTTP(w, req)
 	})
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	return tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
 }

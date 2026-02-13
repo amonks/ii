@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/serve"
@@ -19,6 +21,9 @@ func run() error {
 	mux := serve.NewMux()
 
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
 		return err
 	}

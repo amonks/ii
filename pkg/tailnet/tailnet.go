@@ -31,10 +31,12 @@ var server = &tsnet.Server{
 	AuthKey:  tailscaleAuthKey,
 }
 
-func init() {
-	if meta.IsFly() {
-		server.Start()
-	}
+// WaitReady blocks until the tailscale node is fully authenticated
+// and connected to the tailnet. Apps should call this early in startup,
+// before making any outbound tailnet connections.
+func WaitReady(ctx context.Context) error {
+	_, err := server.Up(ctx)
+	return err
 }
 
 // ListenAndServe starts a tsnet server with hostname

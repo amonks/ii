@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
@@ -24,6 +25,9 @@ func run() error {
 	}
 
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	var errs error
 
 	s := NewServer(db)

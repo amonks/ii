@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"monks.co/pkg/email"
@@ -43,5 +44,8 @@ func run() error {
 	}))
 
 	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
 	return tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
 }
