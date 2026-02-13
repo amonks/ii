@@ -20,6 +20,8 @@
   files = ["writing/"]
 
 [apps.dogs]
+  vm_size = "shared-cpu-2x"
+  vm_memory = "1gb"
   volume = "monks_dogs_data"
   packages = ["sqlite"]
 

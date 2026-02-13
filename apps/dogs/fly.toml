@@ -12,8 +12,8 @@ primary_region = "ord"
   MONKS_DATA = "/data"
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256"
+  size = "shared-cpu-2x"
+  memory = "1gb"
 
 [[mounts]]
   source = "monks_dogs_data"
