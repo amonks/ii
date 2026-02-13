@@ -88,7 +88,7 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 	b.WriteString("  RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3\n")
 	b.WriteString("  COPY . .\n")
 	fmt.Fprintf(&b, "  WORKDIR /app/apps/%s\n", name)
-	b.WriteString("  RUN run build\n")
+	b.WriteString("  RUN --mount=type=cache,target=/root/.cache/go-build run build\n")
 	b.WriteString("\n")
 
 	// Runtime stage (per-app).
@@ -101,7 +101,8 @@ func buildDockerfile(name string, app flyAppEntry, defaults flyAppDefaults) stri
 	fmt.Fprintf(&b, "  WORKDIR /app/apps/%s\n", name)
 	fmt.Fprintf(&b, "  COPY --from=gobuild /app/bin/%s /app/bin/app\n", name)
 	for _, f := range app.Files {
-		fmt.Fprintf(&b, "  COPY --from=gobuild /app/%s /app/%s\n", f, f)
+		// Copy runtime files directly from build context, not through the build stage.
+		fmt.Fprintf(&b, "  COPY %s /app/%s\n", f, f)
 	}
 	b.WriteString("  ENV MONKS_ROOT=/app\n")
 	if app.Volume != "" {

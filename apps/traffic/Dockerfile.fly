@@ -10,7 +10,7 @@ FROM golang:alpine AS gobuild
   RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3
   COPY . .
   WORKDIR /app/apps/traffic
-  RUN run build
+  RUN --mount=type=cache,target=/root/.cache/go-build run build
 
 FROM alpine
   RUN apk add --no-cache ca-certificates sqlite

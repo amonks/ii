@@ -10,13 +10,13 @@ FROM golang:alpine AS gobuild
   RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3
   COPY . .
   WORKDIR /app/apps/writing
-  RUN run build
+  RUN --mount=type=cache,target=/root/.cache/go-build run build
 
 FROM alpine
   RUN apk add --no-cache ca-certificates
   WORKDIR /app/apps/writing
   COPY --from=gobuild /app/bin/writing /app/bin/app
-  COPY --from=gobuild /app/apps/writing/writing/ /app/apps/writing/writing/
+  COPY apps/writing/writing/ /app/apps/writing/writing/
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/tmp
   CMD ["/app/bin/app"]

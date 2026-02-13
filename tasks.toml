@@ -53,14 +53,14 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/traffic/build-css',
+    'apps/directory/templ',
     'apps/reddit/templ',
-    'apps/map/build-css',
-    'apps/map/build-js',
     'apps/dogs/templ',
-    'apps/writing/templ',
     'apps/youtube/templ',
-    'apps/directory/templ'
+    'apps/traffic/build-css',
+    'apps/writing/templ',
+    'apps/map/build-css',
+    'apps/map/build-js'
   ]
 
 [[task]]
