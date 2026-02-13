@@ -18,5 +18,5 @@ FROM alpine
   COPY --from=gobuild /app/bin/writing /app/bin/app
   COPY apps/writing/writing/ /app/apps/writing/writing/
   ENV MONKS_ROOT=/app
-  ENV MONKS_DATA=/tmp
+  ENV MONKS_DATA=/data
   CMD ["/app/bin/app"]

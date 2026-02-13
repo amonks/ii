@@ -10,8 +10,12 @@ primary_region = "ord"
 [env]
   MONKS_APP_NAME = "homepage"
   MONKS_ROOT = "/app"
-  MONKS_DATA = "/tmp"
+  MONKS_DATA = "/data"
 
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256"
+
+[[mounts]]
+  source = "monks_homepage_data"
+  destination = "/data"

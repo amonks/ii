@@ -54,13 +54,13 @@
     'templ',
     'compress-statics',
     'apps/directory/templ',
-    'apps/reddit/templ',
     'apps/dogs/templ',
-    'apps/youtube/templ',
-    'apps/traffic/build-css',
-    'apps/writing/templ',
     'apps/map/build-css',
-    'apps/map/build-js'
+    'apps/map/build-js',
+    'apps/writing/templ',
+    'apps/reddit/templ',
+    'apps/traffic/build-css',
+    'apps/youtube/templ'
   ]
 
 [[task]]

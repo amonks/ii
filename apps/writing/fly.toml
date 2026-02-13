@@ -10,8 +10,12 @@ primary_region = "ord"
 [env]
   MONKS_APP_NAME = "writing"
   MONKS_ROOT = "/app"
-  MONKS_DATA = "/tmp"
+  MONKS_DATA = "/data"
 
 [[vm]]
   size = "shared-cpu-4x"
   memory = "2gb"
+
+[[mounts]]
+  source = "monks_writing_data"
+  destination = "/data"

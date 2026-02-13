@@ -18,11 +18,17 @@ func hostname() string {
 	return "monks-" + meta.AppName() + "-" + meta.MachineName()
 }
 
+func tsnetDir() string {
+	if data := os.Getenv("MONKS_DATA"); data != "" {
+		return filepath.Join(data, "tsnet-"+hostname())
+	}
+	return filepath.Join(os.TempDir(), "tsnet-"+hostname())
+}
+
 var server = &tsnet.Server{
-	Hostname:  hostname(),
-	Dir:       filepath.Join(os.TempDir(), "tsnet-"+hostname()),
-	Ephemeral: true,
-	AuthKey:   tailscaleAuthKey,
+	Hostname: hostname(),
+	Dir:      tsnetDir(),
+	AuthKey:  tailscaleAuthKey,
 }
 
 func init() {
