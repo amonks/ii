@@ -45,7 +45,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	srv := gzipserver.FileServer(gzipserver.Dir(env.InMonksRoot("static")))
+	srv := gzipserver.FileServer(gzipserver.Dir(env.InMonksRoot("apps", "proxy", "static")))
 	srv.ServeHTTP(w, req)
 }
 

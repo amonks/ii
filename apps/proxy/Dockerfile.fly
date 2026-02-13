@@ -3,9 +3,11 @@
 FROM golang:alpine AS gobuild
   ENV MONKS_ROOT=/app
   RUN apk update && apk add build-base gcc bash nodejs npm
-  WORKDIR /app
-  COPY . .
   RUN go install github.com/amonks/run/cmd/run@latest
+  WORKDIR /app
+  COPY go.mod go.sum ./
+  RUN go mod download
+  COPY . .
   WORKDIR /app/apps/proxy
   RUN run build
 
@@ -14,7 +16,7 @@ FROM alpine
   WORKDIR /app/apps/proxy
   COPY --from=gobuild /app/bin/proxy /app/bin/app
   COPY --from=gobuild /app/config/fly.toml /app/config/fly.toml
-  COPY --from=gobuild /app/static/ /app/static/
+  COPY --from=gobuild /app/apps/proxy/static/ /app/apps/proxy/static/
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/data
   CMD ["/app/bin/app", "-machine", "fly"]

@@ -8,16 +8,15 @@
   volume = "monks_proxy_data"
   public = true
   packages = ["iptables", "ip6tables", "sqlite"]
-  files = ["config/fly.toml", "static/"]
+  files = ["config/fly.toml", "apps/proxy/static/"]
   cmd = ["/app/bin/app", "-machine", "fly"]
 
 [apps.homepage]
-  files = ["writing/"]
 
 [apps.writing]
   vm_size = "shared-cpu-4x"
   vm_memory = "2gb"
-  files = ["writing/"]
+  files = ["apps/writing/writing/"]
 
 [apps.dogs]
   vm_size = "shared-cpu-2x"

@@ -9,7 +9,6 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
-	"monks.co/pkg/posts"
 	"monks.co/pkg/rotate"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -26,11 +25,6 @@ func main() {
 func run() error {
 	ctx := sigctx.New()
 
-	posts, err := posts.Load(ctx)
-	if err != nil {
-		return err
-	}
-
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /error/{$}", func(w http.ResponseWriter, req *http.Request) {
 		code := 500
@@ -46,14 +40,12 @@ func run() error {
 		if err != nil {
 			log.Printf("letterboxd diary error: %s\n", err)
 			h := templ.Handler(Homepage(&PageData{
-				Posts:   posts,
 				Watches: nil,
 			}))
 			h.ServeHTTP(w, req)
 			return
 		}
 		h := templ.Handler(Homepage(&PageData{
-			Posts:     posts,
 			Watches:   diary,
 			GoSynonym: goSynonyms.Next(),
 		}))

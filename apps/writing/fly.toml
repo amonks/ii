@@ -5,6 +5,7 @@ primary_region = "ord"
 
 [build]
   dockerfile = "Dockerfile.fly"
+  ignorefile = "apps/writing/Dockerfile.fly.dockerignore"
 
 [env]
   MONKS_APP_NAME = "writing"

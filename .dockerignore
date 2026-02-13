@@ -7,4 +7,4 @@ node_modules
 data
 aws/terraform
 apps/dogs/archive.zip
-
+**/node_modules

@@ -3,9 +3,11 @@
 FROM golang:alpine AS gobuild
   ENV MONKS_ROOT=/app
   RUN apk update && apk add build-base gcc bash nodejs npm
-  WORKDIR /app
-  COPY . .
   RUN go install github.com/amonks/run/cmd/run@latest
+  WORKDIR /app
+  COPY go.mod go.sum ./
+  RUN go mod download
+  COPY . .
   WORKDIR /app/apps/traffic
   RUN run build
 

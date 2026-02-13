@@ -2,13 +2,11 @@ package main
 
 import (
 	"monks.co/apps/movies/db"
-	"monks.co/pkg/posts"
 )
 
 type PageData struct {
 	Watches   []*db.Watch
 	GoSynonym string
-	Posts     *posts.Posts
 }
 
 templ Homepage(data *PageData) {

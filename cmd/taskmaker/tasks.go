@@ -28,7 +28,7 @@ var baseTasks = []*task{
 	{
 		Id:   "compress-statics",
 		Type: "short",
-		Cmd:  "go run ./cmd/compressor -dir=static -workers=8 -force -v",
+		Cmd:  "go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -force -v",
 	},
 	{
 		Id:           "test",

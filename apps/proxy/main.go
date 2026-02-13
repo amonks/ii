@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	cryptotls "crypto/tls"
 	"flag"
 	"fmt"
 	"log"
@@ -174,12 +175,34 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	traf := trafficclient.New("http://monks-traffic-fly-ord/log", tsClient)
 	defer traf.Close()
 
-	mw := middleware.Combine(RedirectorMiddleware(s.redirects), traf)
-	handler := mw.ModifyHandler(&proxy{s.routes, s.service.Rewrites, tsClient.Transport})
-	srv := &http.Server{
+	// Create tsnet listener first — Listen blocks until the server is
+	// fully connected and has its netmap, which AnonCaps needs.
+	tsLn, err := tailnet.Listen("tcp", ":443")
+	if err != nil {
+		return fmt.Errorf("tsnet listen: %w", err)
+	}
+	defer tsLn.Close()
+
+	anonCaps, err := tailnet.AnonCaps(ctx)
+	if err != nil {
+		log.Printf("tailauth: failed to get anon caps: %v", err)
+	}
+
+	p := &proxy{s.routes, s.service.Rewrites, tsClient.Transport}
+
+	// Public handler: anon caps → redirector → traffic → proxy
+	publicMW := middleware.Combine(anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects), traf)
+	publicHandler := publicMW.ModifyHandler(p)
+
+	// Tailnet handler: tailscale auth → traffic → proxy
+	tailnetMW := middleware.Combine(tailscaleAuthMiddleware{}, traf)
+	tailnetHandler := tailnetMW.ModifyHandler(p)
+
+	// Public listener (with ProxyProto)
+	publicSrv := &http.Server{
 		ConnContext: deriveConnectionContext,
 		Addr:        s.service.Addr,
-		Handler:     handler,
+		Handler:     publicHandler,
 		TLSConfig:   tlsConfig,
 	}
 
@@ -194,15 +217,31 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer proxyListener.Close()
 
-	errs := make(chan error)
+	errs := make(chan error, 2)
 	go func() {
-		errs <- srv.ServeTLS(proxyListener, "", "")
+		errs <- publicSrv.ServeTLS(proxyListener, "", "")
 	}()
+
+	// Tailnet listener (tsnet with TLS)
+	go func() {
+
+		tlsLn := cryptotls.NewListener(tsLn, tlsConfig)
+		defer tlsLn.Close()
+
+		tailnetSrv := &http.Server{
+			Handler: tailnetHandler,
+			ConnContext: func(ctx context.Context, conn net.Conn) context.Context {
+				return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
+			},
+		}
+		errs <- tailnetSrv.Serve(tlsLn)
+	}()
+
 	select {
 	case err := <-errs:
 		return err
 	case <-ctx.Done():
-		return srv.Shutdown(context.Background())
+		return publicSrv.Shutdown(context.Background())
 	}
 }
 

@@ -92,7 +92,7 @@ var gm = goldmark.New(
 )
 
 func Load(ctx context.Context) (*Posts, error) {
-	dir := env.InMonksRoot("writing")
+	dir := env.InMonksRoot("apps", "writing", "writing")
 	ps, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("reading posts dir: %w", err)

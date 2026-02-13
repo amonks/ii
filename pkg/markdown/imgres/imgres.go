@@ -55,7 +55,7 @@ func (*astTransformer) Transform(doc *ast.Document, r text.Reader, ctx parser.Co
 
 		filename := string(imgNode.Destination)
 
-		imgPath := env.InMonksRoot("writing", dir, filename)
+		imgPath := env.InMonksRoot("apps", "writing", "writing", dir, filename)
 		f, err := os.Open(imgPath)
 		if err != nil {
 			err := fmt.Errorf("opening '%s' for post '%s': %w", imgPath, slug, err)

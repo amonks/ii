@@ -45,7 +45,7 @@
 [[task]]
   id = 'compress-statics'
   type = 'short'
-  cmd = 'go run ./cmd/compressor -dir=static -workers=8 -force -v'
+  cmd = 'go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -force -v'
 
 [[task]]
   id = 'generate'
@@ -54,13 +54,13 @@
     'templ',
     'compress-statics',
     'apps/youtube/templ',
+    'apps/dogs/templ',
+    'apps/traffic/build-css',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/directory/templ',
-    'apps/writing/templ',
-    'apps/traffic/build-css',
     'apps/reddit/templ',
-    'apps/dogs/templ'
+    'apps/directory/templ',
+    'apps/writing/templ'
   ]
 
 [[task]]
