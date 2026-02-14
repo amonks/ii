@@ -283,36 +283,57 @@
     overflow-y: auto;
   }
   .logs-entry {
-    border-bottom: 1px solid #334155;
-    padding: 8px 0;
+    border-bottom: 1px solid rgb(51 65 85 / 0.5);
+    padding: 1px 0;
   }
   .logs-entry:last-child { border-bottom: none; }
   .logs-entry-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0;
     cursor: pointer;
-  }
-  .logs-entry-header:hover { color: #e2e8f0; }
-  .logs-entry-time {
-    color: #94a3b8;
     font-size: 12px;
-    flex-shrink: 0;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
   }
-  .logs-entry-summary {
-    font-size: 12px;
-    color: #cbd5e1;
+  .logs-entry-header:hover { background: rgb(51 65 85 / 0.5); }
+  .logs-col {
+    padding: 0 6px;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .logs-entry-arrow {
-    color: #64748b;
-    font-size: 10px;
+    color: #94a3b8;
     flex-shrink: 0;
-    transition: transform 0.15s;
   }
-  .logs-entry-arrow.open { transform: rotate(90deg); }
+  .logs-col-arrow { width: 18px; text-align: center; font-size: 10px; color: #64748b; transition: transform 0.15s; }
+  .logs-col-arrow.open { transform: rotate(90deg); }
+  .logs-col-time { width: 140px; }
+  .logs-col-level { width: 44px; text-transform: uppercase; }
+  .logs-col-level-error { color: #f87171; }
+  .logs-col-level-warn { color: #fbbf24; }
+  .logs-col-level-info { color: #94a3b8; }
+  .logs-col-level-debug { color: #64748b; }
+  .logs-col-app { width: 80px; color: #7dd3fc; }
+  .logs-col-method { width: 52px; color: #cbd5e1; }
+  .logs-col-status { width: 36px; }
+  .logs-col-status-2 { color: #4ade80; }
+  .logs-col-status-3 { color: #60a5fa; }
+  .logs-col-status-4 { color: #fbbf24; }
+  .logs-col-status-5 { color: #f87171; }
+  .logs-col-duration { width: 64px; text-align: right; color: #94a3b8; }
+  .logs-col-msg { width: 72px; color: #94a3b8; }
+  .logs-col-path { flex: 1; min-width: 0; color: #cbd5e1; }
+  .logs-table-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: 11px;
+    color: #64748b;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  .logs-table-header .logs-col { color: #64748b; font-weight: 600; }
   .logs-pagination {
     display: flex;
     align-items: center;
@@ -933,6 +954,28 @@ function renderLogs(result) {
     return;
   }
 
+  // Table header row.
+  const thead = document.createElement("div");
+  thead.className = "logs-table-header";
+  const thCols = [
+    ["logs-col logs-col-arrow", ""],
+    ["logs-col logs-col-time", "Time"],
+    ["logs-col logs-col-level", "Lvl"],
+    ["logs-col logs-col-app", "App"],
+    ["logs-col logs-col-method", "Method"],
+    ["logs-col logs-col-status", "St"],
+    ["logs-col logs-col-duration", "Dur"],
+    ["logs-col logs-col-msg", "Msg"],
+    ["logs-col logs-col-path", "Path"],
+  ];
+  thCols.forEach(([cls, label]) => {
+    const col = document.createElement("span");
+    col.className = cls;
+    col.textContent = label;
+    thead.appendChild(col);
+  });
+  container.appendChild(thead);
+
   events.forEach(ev => {
     const entry = document.createElement("div");
     entry.className = "logs-entry";
@@ -941,25 +984,58 @@ function renderLogs(result) {
     header.className = "logs-entry-header";
 
     const arrow = document.createElement("span");
-    arrow.className = "logs-entry-arrow";
+    arrow.className = "logs-col logs-col-arrow";
     arrow.textContent = "\u25b6";
 
     const ts = document.createElement("span");
-    ts.className = "logs-entry-time";
+    ts.className = "logs-col logs-col-time";
     const d = new Date(ev.timestamp);
     ts.textContent = d.toISOString().replace("T", " ").substring(0, 19);
 
-    const summary = document.createElement("span");
-    summary.className = "logs-entry-summary";
-    const parts = [];
-    if (ev.method) parts.push(ev.method);
-    if (ev.status) parts.push(String(ev.status));
-    if (ev.host) parts.push(ev.host + (ev.path || ""));
-    summary.textContent = parts.join(" ") || "event";
+    const level = document.createElement("span");
+    const lvl = (ev.level || "").toLowerCase();
+    level.className = "logs-col logs-col-level logs-col-level-" + (lvl || "info");
+    level.textContent = lvl || "";
+
+    const app = document.createElement("span");
+    app.className = "logs-col logs-col-app";
+    app.textContent = ev.app || "";
+
+    const method = document.createElement("span");
+    method.className = "logs-col logs-col-method";
+    method.textContent = ev.method || "";
+
+    const status = document.createElement("span");
+    const sc = ev.status ? String(ev.status) : "";
+    const sclass = sc ? "logs-col-status-" + sc.charAt(0) : "";
+    status.className = "logs-col logs-col-status " + sclass;
+    status.textContent = sc;
+
+    const duration = document.createElement("span");
+    duration.className = "logs-col logs-col-duration";
+    if (ev.duration_ms != null) {
+      duration.textContent = ev.duration_ms < 1000
+        ? Math.round(ev.duration_ms) + "ms"
+        : (ev.duration_ms / 1000).toFixed(1) + "s";
+    }
+
+    const msg = document.createElement("span");
+    msg.className = "logs-col logs-col-msg";
+    msg.textContent = ev.msg || "";
+
+    const path = document.createElement("span");
+    path.className = "logs-col logs-col-path";
+    path.textContent = (ev.host || "") + (ev.path || "");
 
     header.appendChild(arrow);
     header.appendChild(ts);
-    header.appendChild(summary);
+    header.appendChild(level);
+    header.appendChild(app);
+    header.appendChild(method);
+    header.appendChild(status);
+    header.appendChild(duration);
+    header.appendChild(msg);
+    header.appendChild(path);
 
     const jsonDiv = document.createElement("div");
     jsonDiv.className = "event-json";
