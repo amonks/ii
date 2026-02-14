@@ -1,11 +1,11 @@
 package main
 
 import (
-	"monks.co/apps/movies/db"
+	"monks.co/pkg/letterboxd"
 )
 
 type PageData struct {
-	Watches   []*db.Watch
+	Watches   []*letterboxd.Watch
 	GoSynonym string
 }
 
