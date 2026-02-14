@@ -17,7 +17,6 @@ import (
 
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
-	"monks.co/pkg/logsclient"
 	"monks.co/pkg/middleware"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
@@ -68,9 +67,7 @@ func run() error {
 		return fmt.Errorf("tailnet: %w", err)
 	}
 
-	lc := logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
-	defer lc.Close()
-	reqlog.SetupLogging(lc)
+	reqlog.SetupLogging()
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(requestsMetric, requestDurationsMetric)

@@ -100,13 +100,18 @@ func NewServer(m *logs.Model) *Server {
 	s.HandleFunc("GET /query", s.handleQuery)
 	s.HandleFunc("GET /events", s.handleEvents)
 	s.HandleFunc("GET /values", s.handleValues)
-	s.HandleFunc("POST /ingest", s.handleIngest)
 	s.HandleFunc("GET /trace/{id}", s.serveTrace)
 	s.HandleFunc("GET /index.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write([]byte(indexCSS))
 	})
 	return s
+}
+
+// IngestHandler returns the ingest handler separately so it can be
+// mounted without reqlog middleware, avoiding a log shipping loop.
+func (app *Server) IngestHandler() http.Handler {
+	return http.HandlerFunc(app.handleIngest)
 }
 
 func (app *Server) serveDashboard(w http.ResponseWriter, req *http.Request) {

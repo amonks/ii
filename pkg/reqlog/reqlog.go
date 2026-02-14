@@ -22,8 +22,10 @@ import (
 	"time"
 
 	"monks.co/pkg/errlogger"
+	"monks.co/pkg/logsclient"
 	"monks.co/pkg/meta"
 	"monks.co/pkg/middleware"
+	"monks.co/pkg/tailnet"
 )
 
 const RequestIDHeader = "X-Request-ID"
@@ -32,16 +34,11 @@ const RequestIDHeader = "X-Request-ID"
 // Set this via http.Server.ConnContext when using ProxyProto or similar.
 var RemoteAddrKey = &struct{}{}
 
-// SetupLogging configures the default slog logger to output JSON to stderr.
-// Additional writers can be passed to tee log output (e.g. a logsclient).
-func SetupLogging(writers ...io.Writer) {
-	var w io.Writer = os.Stderr
-	if len(writers) > 0 {
-		all := make([]io.Writer, 0, len(writers)+1)
-		all = append(all, os.Stderr)
-		all = append(all, writers...)
-		w = io.MultiWriter(all...)
-	}
+// SetupLogging configures the default slog logger to output JSON to stderr
+// and ships logs to the logs service via the tailnet.
+func SetupLogging() {
+	lc := logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
+	w := io.MultiWriter(os.Stderr, lc)
 	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))

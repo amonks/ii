@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
@@ -33,7 +34,11 @@ func run() error {
 	var errs error
 
 	s := NewServer(db)
-	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(s))); err != nil {
+	// Mount ingest without reqlog middleware to avoid a log shipping loop.
+	mux := http.NewServeMux()
+	mux.Handle("POST /ingest", s.IngestHandler())
+	mux.Handle("/", reqlog.Middleware().ModifyHandler(gzip.Middleware(s)))
+	if err := tailnet.ListenAndServe(ctx, mux); err != nil {
 		errs = errors.Join(errs, err)
 	}
 
