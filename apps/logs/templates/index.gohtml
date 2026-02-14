@@ -844,17 +844,18 @@ function renderChart(data) {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
+  let windowMs;
+  if (stackData.length > 1) {
+    windowMs = d3.min(d3.pairs(stackData, (a, b) => b._time - a._time));
+  } else {
+    windowMs = 3600000; // 1h fallback
+  }
+
   const xScale = d3.scaleTime()
-    .domain(d3.extent(stackData, d => d._time))
+    .domain([stackData[0]._time, new Date(stackData[stackData.length - 1]._time.getTime() + windowMs)])
     .range([0, width]);
 
-  let barWidth;
-  if (stackData.length > 1) {
-    const minGapMs = d3.min(d3.pairs(stackData, (a, b) => b._time - a._time));
-    barWidth = Math.max(1, xScale(new Date(xScale.domain()[0].getTime() + minGapMs)) - xScale(xScale.domain()[0]) - 1);
-  } else {
-    barWidth = width * 0.1;
-  }
+  const barWidth = Math.max(1, xScale(new Date(stackData[0]._time.getTime() + windowMs)) - xScale(stackData[0]._time) - 1);
 
   const series = d3.stack().keys(visibleKeys)(stackData);
 
@@ -879,7 +880,7 @@ function renderChart(data) {
       .data(s)
       .enter()
       .append("rect")
-      .attr("x", d => xScale(d.data._time) - barWidth / 2)
+      .attr("x", d => xScale(d.data._time))
       .attr("y", d => yScale(d[1]))
       .attr("height", d => Math.max(0, yScale(d[0]) - yScale(d[1])))
       .attr("width", barWidth)
@@ -1009,7 +1010,7 @@ function renderLogs(result) {
     reqid.className = "logs-col logs-col-reqid";
     if (ev.request_id) {
       const reqLink = document.createElement("a");
-      reqLink.href = "/trace/" + ev.request_id;
+      reqLink.href = "trace/" + ev.request_id;
       reqLink.textContent = ev.request_id.substring(0, 8);
       reqLink.addEventListener("click", e => e.stopPropagation());
       reqid.appendChild(reqLink);

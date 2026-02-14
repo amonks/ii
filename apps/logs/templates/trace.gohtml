@@ -60,19 +60,7 @@
   .event-meta .status-2xx { color: #34d399; }
   .event-meta .status-4xx { color: #fbbf24; }
   .event-meta .status-5xx { color: #f87171; }
-  .json-toggle {
-    cursor: pointer;
-    color: #60a5fa;
-    font-size: 11px;
-    background: none;
-    border: 1px solid #475569;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-family: inherit;
-  }
-  .json-toggle:hover { color: #93c5fd; border-color: #64748b; }
   .json-pre {
-    display: none;
     background: rgb(15 23 42);
     border: 1px solid #334155;
     border-radius: 4px;
@@ -111,7 +99,6 @@
         {{ if .Status }}<span class="status {{ if ge (derefInt .Status) 500 }}status-5xx{{ else if ge (derefInt .Status) 400 }}status-4xx{{ else }}status-2xx{{ end }}">{{ derefInt .Status }}</span>{{ end }}
         {{ if .DurationMs }}<span class="dur">{{ formatDuration .DurationMs }}</span>{{ end }}
       </div>
-      <button class="json-toggle" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">JSON</button>
       <pre class="json-pre">{{ prettyJSON .Data }}</pre>
     </div>
   {{ end }}
