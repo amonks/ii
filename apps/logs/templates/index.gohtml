@@ -306,7 +306,7 @@
   }
   .logs-col-arrow { width: 18px; text-align: center; font-size: 10px; color: #64748b; transition: transform 0.15s; }
   .logs-col-arrow.open { transform: rotate(90deg); }
-  .logs-col-time { width: 140px; }
+  .logs-col-time { width: 188px; }
   .logs-col-level { width: 44px; text-transform: uppercase; }
   .logs-col-level-error { color: #f87171; }
   .logs-col-level-warn { color: #fbbf24; }
@@ -319,6 +319,9 @@
   .logs-col-status-3 { color: #60a5fa; }
   .logs-col-status-4 { color: #fbbf24; }
   .logs-col-status-5 { color: #f87171; }
+  .logs-col-reqid { width: 80px; color: #64748b; }
+  .logs-col-reqid a { color: #64748b; text-decoration: none; }
+  .logs-col-reqid a:hover { color: #94a3b8; text-decoration: underline; }
   .logs-col-duration { width: 64px; text-align: right; color: #94a3b8; }
   .logs-col-msg { width: 72px; color: #94a3b8; }
   .logs-col-path { flex: 1; min-width: 0; color: #cbd5e1; }
@@ -962,6 +965,7 @@ function renderLogs(result) {
     ["logs-col logs-col-time", "Time"],
     ["logs-col logs-col-level", "Lvl"],
     ["logs-col logs-col-app", "App"],
+    ["logs-col logs-col-reqid", "ReqID"],
     ["logs-col logs-col-method", "Method"],
     ["logs-col logs-col-status", "St"],
     ["logs-col logs-col-duration", "Dur"],
@@ -1001,6 +1005,16 @@ function renderLogs(result) {
     app.className = "logs-col logs-col-app";
     app.textContent = ev.app || "";
 
+    const reqid = document.createElement("span");
+    reqid.className = "logs-col logs-col-reqid";
+    if (ev.request_id) {
+      const reqLink = document.createElement("a");
+      reqLink.href = "/trace/" + ev.request_id;
+      reqLink.textContent = ev.request_id.substring(0, 8);
+      reqLink.addEventListener("click", e => e.stopPropagation());
+      reqid.appendChild(reqLink);
+    }
+
     const method = document.createElement("span");
     method.className = "logs-col logs-col-method";
     method.textContent = ev.method || "";
@@ -1031,6 +1045,7 @@ function renderLogs(result) {
     header.appendChild(ts);
     header.appendChild(level);
     header.appendChild(app);
+    header.appendChild(reqid);
     header.appendChild(method);
     header.appendChild(status);
     header.appendChild(duration);

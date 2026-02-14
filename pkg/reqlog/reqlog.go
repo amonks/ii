@@ -187,8 +187,6 @@ func Middleware() middleware.Middleware {
 				level := slog.LevelInfo
 				if rw.statusCode >= 500 {
 					level = slog.LevelError
-				} else if rw.statusCode >= 400 {
-					level = slog.LevelWarn
 				}
 				slog.Log(req.Context(), level, "request", args...)
 			}()
