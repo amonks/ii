@@ -1,7 +1,12 @@
 package serve
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"runtime/debug"
+
+	"monks.co/pkg/errlogger"
 )
 
 type Mux struct {
@@ -13,6 +18,14 @@ func NewMux() *Mux {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			msg := fmt.Sprintf("panic: %v\n%s", r, debug.Stack())
+			log.Printf("[500] %s: %s", req.URL.Path, msg)
+			errlogger.Report(500, msg)
+			http.Error(w, http.StatusText(500), 500)
+		}
+	}()
 	m.ServeMux.ServeHTTP(&smuggler{w, false, req}, req)
 }
 

@@ -3,7 +3,7 @@
 
 <head>
 <title>traffic</title>
-<link rel="stylesheet" type="text/css" href="./index.css" />
+<link rel="stylesheet" type="text/css" href="index.css" />
 <style>
   .chart-container {
     margin: 2rem 1rem;
@@ -116,6 +116,101 @@
   .dur-bar-bg { flex: 1; height: 18px; background: rgb(51 65 85); border-radius: 3px; overflow: hidden; }
   .dur-bar { height: 100%; background: #60a5fa; border-radius: 3px; min-width: 1px; }
   .dur-count { width: 70px; text-align: right; color: #94a3b8; flex-shrink: 0; }
+
+  /* Query builder styles */
+  .query-builder {
+    margin: 1rem 1rem 0;
+    background-color: rgb(30 41 59);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .query-builder h2 {
+    color: #e2e8f0;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .query-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .query-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .query-row select {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  .query-filters {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: #e2e8f0;
+  }
+  .filter-pill .remove-filter {
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .filter-pill .remove-filter:hover { color: #f87171; }
+  .query-btn {
+    background: none;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  .query-btn:hover { color: #e2e8f0; border-color: #64748b; }
+  .query-btn.remove { color: #f87171; border-color: transparent; }
+  .query-btn.remove:hover { color: #ef4444; }
+  .add-query-btn {
+    background: none;
+    border: 1px dashed #475569;
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .add-query-btn:hover { color: #e2e8f0; border-color: #64748b; }
+  .filter-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .filter-add select {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 11px;
+    padding: 2px 6px;
+  }
 </style>
 </head>
 
@@ -133,6 +228,12 @@
         <input type="date" name="end" value="{{ .TimeRange.End }}">
         <button type="submit">Apply</button>
       </form>
+    </div>
+
+    <div class="query-builder">
+      <h2>Queries</h2>
+      <div id="query-rows"></div>
+      <button class="add-query-btn" id="add-query">+ Add query</button>
     </div>
 
     <div class="chart-container">
@@ -221,30 +322,299 @@
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-{{ .ChartJSON }}
+window.chartData = {{ .ChartJSON }};
+window.queries = {{ .QueriesJSON }};
 
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
 const formatDate = d3.timeFormat("%b %d, %H:%M");
 
-document.addEventListener('DOMContentLoaded', function() {
-  const hosts = Object.keys(chartData || {});
-  if (hosts.length === 0) return;
+const groupByOptions = {
+  stats: ["host", "status_code", "duration_bucket"],
+  pages: ["host", "path"],
+};
 
+// Get current range params from URL for API calls.
+function getRangeParams() {
+  const params = new URLSearchParams(window.location.search);
+  const out = new URLSearchParams();
+  if (params.has("range")) out.set("range", params.get("range"));
+  if (params.has("start")) out.set("start", params.get("start"));
+  if (params.has("end")) out.set("end", params.get("end"));
+  return out;
+}
+
+function formatQuery(q) {
+  let parts = ["source:" + q.Source, "group:" + q.GroupBy];
+  if (q.Filters) {
+    for (const f of q.Filters) {
+      const key = (f.Negate ? "!" : "") + f.Column;
+      parts.push(key + ":" + f.Values.join("|"));
+    }
+  }
+  return parts.join(",");
+}
+
+function updateURL() {
+  const params = getRangeParams();
+  for (const q of window.queries) {
+    params.append("q", formatQuery(q));
+  }
+  history.replaceState(null, "", "?" + params.toString());
+}
+
+async function fetchValues(source, dim) {
+  const params = getRangeParams();
+  params.set("source", source);
+  params.set("dim", dim);
+  const resp = await fetch("values?" + params.toString());
+  return resp.json();
+}
+
+async function fetchQueryData(q) {
+  const params = getRangeParams();
+  params.set("q", formatQuery(q));
+  const resp = await fetch("query?" + params.toString());
+  return resp.json();
+}
+
+async function refreshChart() {
+  const allData = {};
+  const results = await Promise.all(window.queries.map(q => fetchQueryData(q)));
+  results.forEach((data, i) => {
+    for (const [key, pts] of Object.entries(data)) {
+      allData["q" + i + ":" + key] = pts;
+    }
+  });
+  window.chartData = allData;
+  renderChart(allData);
+  updateURL();
+}
+
+function renderQueryBuilder() {
+  const container = document.getElementById("query-rows");
+  container.innerHTML = "";
+
+  window.queries.forEach((q, qi) => {
+    const row = document.createElement("div");
+    row.className = "query-row";
+
+    // Color swatch
+    const swatch = document.createElement("div");
+    swatch.className = "query-swatch";
+    swatch.style.backgroundColor = colors[qi % colors.length];
+    row.appendChild(swatch);
+
+    // Source dropdown
+    const srcSel = document.createElement("select");
+    srcSel.title = "Data source";
+    ["stats", "pages"].forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      opt.selected = q.Source === s;
+      srcSel.appendChild(opt);
+    });
+    srcSel.addEventListener("change", () => {
+      q.Source = srcSel.value;
+      // Reset group-by if not valid for new source
+      if (!groupByOptions[q.Source].includes(q.GroupBy)) {
+        q.GroupBy = groupByOptions[q.Source][0];
+      }
+      // Remove filters not valid for new source
+      if (q.Filters) {
+        q.Filters = q.Filters.filter(f => groupByOptions[q.Source].includes(f.Column));
+      }
+      renderQueryBuilder();
+      refreshChart();
+    });
+    row.appendChild(srcSel);
+
+    // Group-by dropdown
+    const grpSel = document.createElement("select");
+    grpSel.title = "Group by";
+    groupByOptions[q.Source].forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g;
+      opt.textContent = "group: " + g;
+      opt.selected = q.GroupBy === g;
+      grpSel.appendChild(opt);
+    });
+    grpSel.addEventListener("change", () => {
+      q.GroupBy = grpSel.value;
+      refreshChart();
+    });
+    row.appendChild(grpSel);
+
+    // Filter pills
+    const filtersDiv = document.createElement("div");
+    filtersDiv.className = "query-filters";
+    if (q.Filters) {
+      q.Filters.forEach((f, fi) => {
+        const pill = document.createElement("span");
+        pill.className = "filter-pill";
+        const op = f.Negate
+          ? (f.Values.length > 1 ? " not in " : " \u2260 ")
+          : (f.Values.length > 1 ? " in " : " = ");
+        const valText = f.Values.length > 1 ? f.Values.join(", ") : f.Values[0];
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "filter-label";
+        labelSpan.textContent = f.Column + op + valText;
+        labelSpan.title = "Click to toggle negation";
+        labelSpan.style.cursor = "pointer";
+        labelSpan.addEventListener("click", () => {
+          f.Negate = !f.Negate;
+          renderQueryBuilder();
+          refreshChart();
+        });
+        pill.appendChild(labelSpan);
+
+        const removeSpan = document.createElement("span");
+        removeSpan.className = "remove-filter";
+        removeSpan.textContent = "\u00d7";
+        removeSpan.addEventListener("click", () => {
+          q.Filters.splice(fi, 1);
+          renderQueryBuilder();
+          refreshChart();
+        });
+        pill.appendChild(removeSpan);
+
+        filtersDiv.appendChild(pill);
+      });
+    }
+
+    // +filter button
+    const addFilterBtn = document.createElement("button");
+    addFilterBtn.className = "query-btn";
+    addFilterBtn.textContent = "+filter";
+    addFilterBtn.addEventListener("click", () => {
+      // Show inline filter add UI
+      addFilterBtn.style.display = "none";
+      const addDiv = document.createElement("span");
+      addDiv.className = "filter-add";
+
+      // Dimension picker: all columns available for this source
+      const dimSel = document.createElement("select");
+      const availDims = groupByOptions[q.Source];
+      if (availDims.length === 0) {
+        addFilterBtn.style.display = "";
+        return;
+      }
+      const placeholder = document.createElement("option");
+      placeholder.textContent = "dimension...";
+      placeholder.value = "";
+      dimSel.appendChild(placeholder);
+      availDims.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        dimSel.appendChild(opt);
+      });
+      addDiv.appendChild(dimSel);
+
+      // Value picker (populated on dimension change)
+      const valSel = document.createElement("select");
+      valSel.style.display = "none";
+      addDiv.appendChild(valSel);
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "query-btn remove";
+      cancelBtn.textContent = "\u00d7";
+      cancelBtn.addEventListener("click", () => {
+        addDiv.remove();
+        addFilterBtn.style.display = "";
+      });
+      addDiv.appendChild(cancelBtn);
+
+      dimSel.addEventListener("change", async () => {
+        if (!dimSel.value) return;
+        valSel.innerHTML = "";
+        valSel.style.display = "";
+        const vp = document.createElement("option");
+        vp.textContent = "loading...";
+        vp.value = "";
+        valSel.appendChild(vp);
+        const vals = await fetchValues(q.Source, dimSel.value);
+        valSel.innerHTML = "";
+        const vph = document.createElement("option");
+        vph.textContent = "value...";
+        vph.value = "";
+        valSel.appendChild(vph);
+        (vals || []).forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          valSel.appendChild(opt);
+        });
+      });
+
+      valSel.addEventListener("change", () => {
+        if (!valSel.value) return;
+        if (!q.Filters) q.Filters = [];
+        // Check if there's already a filter for this dimension: add to its Values
+        const existing = q.Filters.find(f => f.Column === dimSel.value && !f.Negate);
+        if (existing) {
+          if (!existing.Values.includes(valSel.value)) {
+            existing.Values.push(valSel.value);
+          }
+        } else {
+          q.Filters.push({Column: dimSel.value, Negate: false, Values: [valSel.value]});
+        }
+        renderQueryBuilder();
+        refreshChart();
+      });
+
+      filtersDiv.appendChild(addDiv);
+    });
+    filtersDiv.appendChild(addFilterBtn);
+    row.appendChild(filtersDiv);
+
+    // Remove query button (only if more than one query)
+    if (window.queries.length > 1) {
+      const rmBtn = document.createElement("button");
+      rmBtn.className = "query-btn remove";
+      rmBtn.textContent = "\u00d7";
+      rmBtn.title = "Remove query";
+      rmBtn.addEventListener("click", () => {
+        window.queries.splice(qi, 1);
+        renderQueryBuilder();
+        refreshChart();
+      });
+      row.appendChild(rmBtn);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+function renderChart(data) {
+  const keys = Object.keys(data || {});
+  const chartDiv = document.getElementById("chart");
   const legendEl = document.getElementById("chart-legend");
-  hosts.forEach((host, i) => {
+
+  // Clear previous
+  chartDiv.innerHTML = "";
+  legendEl.innerHTML = "";
+
+  // Remove old tooltips
+  d3.selectAll(".chart-tooltip").remove();
+
+  if (keys.length === 0) return;
+
+  // Build legend
+  keys.forEach((key, i) => {
     const item = document.createElement("div");
     item.className = "legend-item";
     const swatch = document.createElement("div");
     swatch.className = "legend-color";
     swatch.style.backgroundColor = colors[i % colors.length];
     const label = document.createElement("span");
-    label.textContent = host;
+    label.textContent = key;
     item.appendChild(swatch);
     item.appendChild(label);
     legendEl.appendChild(item);
   });
 
-  const chartDiv = document.getElementById("chart");
   const margin = {top: 10, right: 20, bottom: 30, left: 50};
   const width = chartDiv.clientWidth - margin.left - margin.right;
   const height = chartDiv.clientHeight - margin.top - margin.bottom;
@@ -256,12 +626,14 @@ document.addEventListener('DOMContentLoaded', function() {
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   const allPoints = [];
-  hosts.forEach(h => {
-    chartData[h].forEach(p => {
+  keys.forEach(k => {
+    (data[k] || []).forEach(p => {
       p._time = new Date(p.window_start_at);
       allPoints.push(p);
     });
   });
+
+  if (allPoints.length === 0) return;
 
   const xScale = d3.scaleTime()
     .domain(d3.extent(allPoints, d => d._time))
@@ -286,9 +658,9 @@ document.addEventListener('DOMContentLoaded', function() {
     .y(d => yScale(d.count))
     .curve(d3.curveMonotoneX);
 
-  hosts.forEach((host, i) => {
+  keys.forEach((key, i) => {
     svg.append("path")
-      .datum(chartData[host])
+      .datum(data[key])
       .attr("class", "chart-line")
       .attr("stroke", colors[i % colors.length])
       .attr("d", line);
@@ -306,23 +678,40 @@ document.addEventListener('DOMContentLoaded', function() {
     .on("mousemove", function(event) {
       const x0 = xScale.invert(d3.pointer(event)[0]);
       let html = `<div class="tt-title">${formatDate(x0)}</div>`;
-      hosts.forEach((host, i) => {
-        const data = chartData[host];
+      const rows = [];
+      keys.forEach((key, i) => {
+        const pts = data[key];
+        if (!pts || pts.length === 0) return;
         const bisect = d3.bisector(d => d._time).left;
-        const idx = bisect(data, x0, 1);
-        if (idx > 0 && idx < data.length) {
-          const d0 = data[idx - 1], d1 = data[idx];
-          const d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
-          html += `<div class="tt-row" style="color:${colors[i % colors.length]}">${host}: ${d.count}</div>`;
-        } else if (data.length > 0) {
-          const d = idx === 0 ? data[0] : data[data.length - 1];
-          html += `<div class="tt-row" style="color:${colors[i % colors.length]}">${host}: ${d.count}</div>`;
+        const idx = bisect(pts, x0, 1);
+        let d;
+        if (idx > 0 && idx < pts.length) {
+          const d0 = pts[idx - 1], d1 = pts[idx];
+          d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
+        } else if (pts.length > 0) {
+          d = idx === 0 ? pts[0] : pts[pts.length - 1];
         }
+        if (d) rows.push({key, color: colors[i % colors.length], count: d.count});
+      });
+      rows.sort((a, b) => b.count - a.count);
+      rows.forEach(r => {
+        html += `<div class="tt-row" style="color:${r.color}">${r.key}: ${r.count}</div>`;
       });
       tooltip.html(html)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 28) + "px");
     });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  renderQueryBuilder();
+  renderChart(window.chartData);
+
+  document.getElementById("add-query").addEventListener("click", () => {
+    window.queries.push({Source: "stats", GroupBy: "host", Filters: []});
+    renderQueryBuilder();
+    refreshChart();
+  });
 });
 </script>
 </body>

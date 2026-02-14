@@ -1,15 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"sync"
 
 	"monks.co/pkg/serve"
 	"monks.co/pkg/traffic"
-	"monks.co/pkg/util"
 )
 
 var (
@@ -22,11 +24,25 @@ var (
 )
 
 func init() {
-	ts, err := util.ReadTemplates(files, "templates")
+	funcMap := template.FuncMap{
+		"divide": func(a, b int64) int64 {
+			if b == 0 {
+				return 0
+			}
+			return a / b
+		},
+		"percent": func(a, b int) string {
+			if b == 0 {
+				return "0"
+			}
+			return fmt.Sprintf("%.1f", float64(a)/float64(b)*100)
+		},
+	}
+	t, err := template.New("index.gohtml").Funcs(funcMap).ParseFS(files, "templates/index.gohtml")
 	if err != nil {
 		panic(err)
 	}
-	templates = ts
+	templates = map[string]*template.Template{"index.gohtml": t}
 }
 
 type Server struct {
@@ -37,6 +53,8 @@ type Server struct {
 func NewServer(m *traffic.Model) *Server {
 	s := &Server{serve.NewMux(), m}
 	s.HandleFunc("GET /{$}", s.serveTraffic)
+	s.HandleFunc("GET /query", s.handleQuery)
+	s.HandleFunc("GET /values", s.handleValues)
 	s.HandleFunc("POST /log", s.handleLog)
 	s.HandleFunc("GET /index.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
@@ -47,11 +65,23 @@ func NewServer(m *traffic.Model) *Server {
 
 func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	if req.URL.RawQuery == "" {
-		http.Redirect(w, req, req.URL.Path+"?range=7d", http.StatusFound)
+		w.Header().Set("Location", "?range=7d")
+		w.WriteHeader(http.StatusFound)
 		return
 	}
 
 	tr := traffic.ParseTimeRange(req)
+
+	// Parse query params: use q= params if present, otherwise default.
+	qParams := req.URL.Query()["q"]
+	var queries []traffic.Query
+	if len(qParams) > 0 {
+		for _, qs := range qParams {
+			queries = append(queries, traffic.ParseQuery(qs))
+		}
+	} else {
+		queries = []traffic.Query{{Source: "stats", GroupBy: "host"}}
+	}
 
 	var (
 		wg       sync.WaitGroup
@@ -68,11 +98,17 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			DurationBucket int64
 			RequestCount   int
 		}
-		chartData                                    map[string][]traffic.ChartPoint
-		logErr, pagesErr, statusErr, durErr, chartErr error
+		logErr, pagesErr, statusErr, durErr error
 	)
 
-	wg.Add(5)
+	// Run chart queries (one per q param).
+	type queryResult struct {
+		data map[string][]traffic.ChartPoint
+		err  error
+	}
+	chartResults := make([]queryResult, len(queries))
+
+	wg.Add(4 + len(queries))
 	go func() {
 		defer wg.Done()
 		logErr = app.model.
@@ -113,35 +149,58 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			ORDER BY duration_bucket ASC
 		`, tr.StartTime(), tr.EndTime()).Scan(&durations).Error
 	}()
-	go func() {
-		defer wg.Done()
-		chartData, chartErr = app.model.GetChartData(tr)
-	}()
+	for i, q := range queries {
+		go func(i int, q traffic.Query) {
+			defer wg.Done()
+			data, err := app.model.QueryChartData(tr, q)
+			chartResults[i] = queryResult{data, err}
+		}(i, q)
+	}
 	wg.Wait()
 
 	if logErr != nil {
+		log.Printf("serveTraffic: logErr: %.200s", fmt.Sprint(logErr))
 		serve.Errorf(w, req, 500, "failed to read logs: %s", logErr)
 		return
 	}
 	if pagesErr != nil {
+		log.Printf("serveTraffic: pagesErr: %.200s", fmt.Sprint(pagesErr))
 		serve.Errorf(w, req, 500, "failed to read top pages: %s", pagesErr)
 		return
 	}
 	if statusErr != nil {
+		log.Printf("serveTraffic: statusErr: %.200s", fmt.Sprint(statusErr))
 		serve.Errorf(w, req, 500, "failed to read status codes: %s", statusErr)
 		return
 	}
 	if durErr != nil {
+		log.Printf("serveTraffic: durErr: %.200s", fmt.Sprint(durErr))
 		serve.Errorf(w, req, 500, "failed to read durations: %s", durErr)
 		return
 	}
-	if chartErr != nil {
-		serve.Errorf(w, req, 500, "failed to read chart data: %s", chartErr)
-		return
+
+	// Merge chart results: prefix series keys with query index.
+	chartData := make(map[string][]traffic.ChartPoint)
+	for i, cr := range chartResults {
+		if cr.err != nil {
+			log.Printf("serveTraffic: chartErr[%d]: %.200s", i, fmt.Sprint(cr.err))
+			serve.Errorf(w, req, 500, "failed to run query %d: %s", i, cr.err)
+			return
+		}
+		for key, pts := range cr.data {
+			prefixed := fmt.Sprintf("q%d:%s", i, key)
+			chartData[prefixed] = pts
+		}
 	}
+
 	chartJSON, err := json.Marshal(chartData)
 	if err != nil {
 		serve.Errorf(w, req, 500, "failed to marshal chart data: %s", err)
+		return
+	}
+	queriesJSON, err := json.Marshal(queries)
+	if err != nil {
+		serve.Errorf(w, req, 500, "failed to marshal queries: %s", err)
 		return
 	}
 
@@ -170,6 +229,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		}
 		MaxDurCount int
 		ChartJSON   template.JS
+		QueriesJSON template.JS
 	}
 
 	pageData := PageData{
@@ -179,14 +239,52 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		StatusCodes: statusCodes,
 		Durations:   durations,
 		MaxDurCount: maxDurCount,
-		ChartJSON:   template.JS("window.chartData = " + string(chartJSON) + ";"),
+		ChartJSON:   template.JS(string(chartJSON)),
+		QueriesJSON: template.JS(string(queriesJSON)),
 	}
 
-	w.Header().Set("Content-type", "text/html; charset=utf-8")
-	if err := templates["index.gohtml"].Execute(w, pageData); err != nil {
-		serve.Errorf(w, req, 500, "failed to read template: %s", err)
+	var buf bytes.Buffer
+	if err := templates["index.gohtml"].Execute(&buf, pageData); err != nil {
+		log.Printf("serveTraffic: template error: %.200s", fmt.Sprint(err))
+		serve.Errorf(w, req, 500, "failed to execute template: %s", err)
 		return
 	}
+	w.Header().Set("Content-type", "text/html; charset=utf-8")
+	buf.WriteTo(w)
+}
+
+func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
+	tr := traffic.ParseTimeRange(req)
+	qs := req.URL.Query().Get("q")
+	if qs == "" {
+		serve.Errorf(w, req, 400, "missing q parameter")
+		return
+	}
+	q := traffic.ParseQuery(qs)
+	data, err := app.model.QueryChartData(tr, q)
+	if err != nil {
+		serve.Errorf(w, req, 500, "query error: %s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func (app *Server) handleValues(w http.ResponseWriter, req *http.Request) {
+	tr := traffic.ParseTimeRange(req)
+	source := req.URL.Query().Get("source")
+	dim := req.URL.Query().Get("dim")
+	if source == "" || dim == "" {
+		serve.Errorf(w, req, 400, "missing source or dim parameter")
+		return
+	}
+	vals, err := app.model.GetDimensionValues(tr, source, dim)
+	if err != nil {
+		serve.Errorf(w, req, 500, "values error: %s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vals)
 }
 
 func (app *Server) handleLog(w http.ResponseWriter, req *http.Request) {
