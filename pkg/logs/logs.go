@@ -56,7 +56,7 @@ func (m *Model) migrate() error {
 			status        INTEGER GENERATED ALWAYS AS (json_extract(data, '$."http.status"')) STORED,
 			duration_ms   REAL GENERATED ALWAYS AS (json_extract(data, '$."http.duration_ms"')) STORED,
 			remote_addr   TEXT GENERATED ALWAYS AS (json_extract(data, '$."http.remote_addr"')) STORED,
-			proxy_app     TEXT GENERATED ALWAYS AS (json_extract(data, '$."proxy.app"')) STORED,
+			proxy_upstream TEXT GENERATED ALWAYS AS (json_extract(data, '$."proxy.upstream"')) STORED,
 
 			duration_bucket INTEGER GENERATED ALWAYS AS (
 				CASE
@@ -272,7 +272,7 @@ type Query struct {
 }
 
 // validColumns lists whitelisted group-by and filter columns.
-var validColumns = []string{"app", "proxy_app", "level", "host", "method", "status", "duration_bucket", "route"}
+var validColumns = []string{"app", "proxy_upstream", "level", "host", "method", "status", "duration_bucket", "route"}
 
 func isValidColumn(col string) bool {
 	for _, c := range validColumns {
@@ -390,7 +390,7 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 		// Map event columns to daily_stats columns.
 		statsCol := groupCol
 		switch groupCol {
-		case "proxy_app", "level", "route":
+		case "proxy_upstream", "level", "route":
 			// These don't exist in daily_stats; fall back to events table.
 			return m.queryChartDataFromEvents(tr, q)
 		}
@@ -473,7 +473,7 @@ func (m *Model) GetDimensionValues(tr TimeRange, dim string) ([]string, error) {
 	var sqlStr string
 
 	// Dimensions only available in events table.
-	eventsOnly := dim == "proxy_app" || dim == "level" || dim == "route"
+	eventsOnly := dim == "proxy_upstream" || dim == "level" || dim == "route"
 
 	if days < 7 || eventsOnly {
 		sqlStr = fmt.Sprintf(`SELECT DISTINCT CAST(%s AS TEXT) as val FROM events WHERE msg = 'request' AND timestamp >= ? AND timestamp <= ? AND %s IS NOT NULL ORDER BY val`, dim, dim)

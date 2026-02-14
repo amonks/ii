@@ -79,7 +79,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		reqlog.Set(ctx, "proxy.action", "proxy")
-		reqlog.Set(ctx, "proxy.app", firstSegment)
+		reqlog.Set(ctx, "proxy.upstream", firstSegment)
 		reqlog.Set(ctx, "proxy.backend", backend)
 		p.proxyRequest(firstSegment, backend, w, req)
 		return
@@ -134,9 +134,9 @@ func (p *proxy) proxyRequest(prefix string, backend string, w http.ResponseWrite
 	proxy.ServeHTTP(scw, req)
 	dur := time.Since(startAt)
 
-	reqlog.Set(req.Context(), "proxy.downstream_ms", dur.Milliseconds())
-	reqlog.Set(req.Context(), "proxy.downstream_status", scw.code)
-	reqlog.Set(req.Context(), "proxy.downstream_route", scw.route)
+	reqlog.Set(req.Context(), "proxy.upstream_ms", dur.Milliseconds())
+	reqlog.Set(req.Context(), "proxy.upstream_status", scw.code)
+	reqlog.Set(req.Context(), "proxy.upstream_route", scw.route)
 
 	labels := prometh.SanitizeLabels(
 		req.Host,

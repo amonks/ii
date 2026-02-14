@@ -478,7 +478,7 @@ window.query = {{ .QueryJSON }};
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
 const formatDate = d3.timeFormat("%b %d, %H:%M");
 
-const groupByOptions = ["host", "app", "proxy_app", "level", "status", "duration_bucket", "method", "route"];
+const groupByOptions = ["host", "app", "proxy_upstream", "level", "status", "duration_bucket", "method", "route"];
 
 function getRangeParams() {
   const params = new URLSearchParams(window.location.search);
