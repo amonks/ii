@@ -2,7 +2,7 @@
 <html>
 
 <head>
-<title>traffic</title>
+<title>logs</title>
 <link rel="stylesheet" type="text/css" href="index.css" />
 <style>
   .chart-container {
@@ -248,6 +248,22 @@
   }
   .filter-ms-item:hover { background: rgb(51 65 85); }
   .filter-ms-item input[type="checkbox"] { margin: 0; accent-color: #60a5fa; }
+  .event-json { display: none; }
+  .event-json.open { display: block; }
+  .event-toggle { cursor: pointer; color: #60a5fa; font-size: 11px; }
+  .event-toggle:hover { color: #93c5fd; }
+  .json-pre {
+    background: rgb(15 23 42);
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    overflow-x: auto;
+    margin-top: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
 </head>
 
@@ -327,26 +343,26 @@
 	    <thead>
 	      <tr>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Date</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">App</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Method</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">URL</th>
-		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">StatusCode</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Status</th>
 		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-200">Duration</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">RemoteAddr</th>
-		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Referer</th>
-		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">UserAgent</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Trace</th>
 	      </tr>
 	    </thead>
 	    <tbody class="divide-y divide-gray-500">
-	      {{ range .Log }}
+	      {{ range .Events }}
 		<tr>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintDate }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ .Method }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm"><a class="text-blue-300" href="//{{ .PrintURL }}">{{ .PrintURL }}</a></td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ .StatusCode }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm text-right">{{ .PrintDuration }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm" style="color: {{ .ColorRemoteAddr }}">{{ .PrintRemoteAddr }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .Referer }}</td>
-		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintUserAgent }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ formatTime .Timestamp }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ deref .App }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ deref .Method }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ if .Host }}<a class="text-blue-300" href="//{{ deref .Host }}{{ deref .Path }}">{{ deref .Host }}{{ deref .Path }}</a>{{ end }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ derefInt .Status }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm text-right">{{ formatDuration .DurationMs }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm" {{ if .RemoteAddr }}style="color: {{ colorHash (deref .RemoteAddr) }}"{{ end }}>{{ deref .RemoteAddr }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ if .RequestID }}<a class="text-blue-300" href="/trace/{{ deref .RequestID }}">{{ deref .RequestID }}</a>{{ end }}</td>
 		</tr>
 	      {{ end }}
 	    </tbody>
@@ -364,9 +380,8 @@ window.query = {{ .QueryJSON }};
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
 const formatDate = d3.timeFormat("%b %d, %H:%M");
 
-const groupByOptions = ["host", "status_code", "duration_bucket", "app", "method"];
+const groupByOptions = ["host", "app", "proxy_app", "level", "status", "duration_bucket", "method", "route"];
 
-// Get current range params from URL for API calls.
 function getRangeParams() {
   const params = new URLSearchParams(window.location.search);
   const out = new URLSearchParams();
@@ -422,7 +437,6 @@ function renderQueryBuilder() {
   const row = document.createElement("div");
   row.className = "query-row";
 
-  // Group-by dropdown
   const grpSel = document.createElement("select");
   grpSel.title = "Group by";
   groupByOptions.forEach(g => {
@@ -438,7 +452,6 @@ function renderQueryBuilder() {
   });
   row.appendChild(grpSel);
 
-  // Filter pills
   const filtersDiv = document.createElement("div");
   filtersDiv.className = "query-filters";
   if (q.Filters) {
@@ -476,7 +489,6 @@ function renderQueryBuilder() {
     });
   }
 
-  // +filter button
   const addFilterBtn = document.createElement("button");
   addFilterBtn.className = "query-btn";
   addFilterBtn.textContent = "+filter";
@@ -488,13 +500,8 @@ function renderQueryBuilder() {
     let negate = false;
     let selectedValues = new Set();
 
-    // Dimension picker
     const dimSel = document.createElement("select");
     const availDims = groupByOptions;
-    if (availDims.length === 0) {
-      addFilterBtn.style.display = "";
-      return;
-    }
     const placeholder = document.createElement("option");
     placeholder.textContent = "dimension...";
     placeholder.value = "";
@@ -507,7 +514,6 @@ function renderQueryBuilder() {
     });
     addDiv.appendChild(dimSel);
 
-    // Negate toggle (hidden until dimension chosen)
     const negBtn = document.createElement("button");
     negBtn.className = "negate-toggle";
     negBtn.type = "button";
@@ -521,7 +527,6 @@ function renderQueryBuilder() {
     });
     addDiv.appendChild(negBtn);
 
-    // Multi-select value picker (hidden until dimension chosen)
     const msContainer = document.createElement("span");
     msContainer.className = "filter-ms";
     msContainer.style.display = "none";
@@ -538,7 +543,6 @@ function renderQueryBuilder() {
     msContainer.appendChild(msDropdown);
     addDiv.appendChild(msContainer);
 
-    // Apply button (hidden until values selected)
     const applyBtn = document.createElement("button");
     applyBtn.className = "query-btn";
     applyBtn.type = "button";
@@ -546,7 +550,6 @@ function renderQueryBuilder() {
     applyBtn.style.display = "none";
     addDiv.appendChild(applyBtn);
 
-    // Cancel button
     const cancelBtn = document.createElement("button");
     cancelBtn.className = "query-btn remove";
     cancelBtn.type = "button";
@@ -608,7 +611,6 @@ function renderQueryBuilder() {
       msDropdown.style.display = msDropdown.style.display === "none" ? "" : "none";
     });
 
-    // Close dropdown when clicking outside
     const closeHandler = (e) => {
       if (!msContainer.contains(e.target)) {
         msDropdown.style.display = "none";
@@ -673,12 +675,10 @@ function renderChart(data) {
   const chartDiv = document.getElementById("chart");
   const legendEl = document.getElementById("chart-legend");
 
-  // Clear previous
   chartDiv.innerHTML = "";
   legendEl.innerHTML = "";
   d3.selectAll(".chart-tooltip").remove();
 
-  // Derive hidden keys from negation filters on the current groupBy.
   const q = window.query;
   const hiddenKeys = new Set();
   if (q.Filters) {
@@ -689,13 +689,11 @@ function renderChart(data) {
     });
   }
 
-  // Legend shows data keys + hidden keys (so filtered-out values remain clickable).
   const keys = Array.from(new Set([...dataKeys, ...hiddenKeys]));
   keys.sort();
 
   if (keys.length === 0) return;
 
-  // Collect all unique timestamps and build unified stacked data.
   const timeSet = new Set();
   dataKeys.forEach(k => {
     (data[k] || []).forEach(p => timeSet.add(p.window_start_at));
@@ -714,7 +712,6 @@ function renderChart(data) {
     return obj;
   });
 
-  // Build clickable legend (all keys shown, hidden ones greyed out).
   keys.forEach((key, i) => {
     const hidden = hiddenKeys.has(key);
     const item = document.createElement("div");
@@ -749,7 +746,6 @@ function renderChart(data) {
     .domain(d3.extent(stackData, d => d._time))
     .range([0, width]);
 
-  // Compute bar width from time gaps between data points.
   let barWidth;
   if (stackData.length > 1) {
     const minGapMs = d3.min(d3.pairs(stackData, (a, b) => b._time - a._time));
@@ -758,7 +754,6 @@ function renderChart(data) {
     barWidth = width * 0.1;
   }
 
-  // Stack the data (visible keys only).
   const series = d3.stack().keys(visibleKeys)(stackData);
 
   const yMax = d3.max(stackData, d => visibleKeys.reduce((sum, k) => sum + d[k], 0));
@@ -766,19 +761,16 @@ function renderChart(data) {
     .domain([0, yMax * 1.1])
     .range([height, 0]);
 
-  // Grid lines.
   svg.append("g").attr("class", "grid").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(10).tickSize(-height).tickFormat(""));
   svg.append("g").attr("class", "grid")
     .call(d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(""));
 
-  // Axes.
   svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(width > 600 ? 10 : 5).tickFormat(formatDate));
   svg.append("g").attr("class", "y axis")
     .call(d3.axisLeft(yScale).ticks(5));
 
-  // Draw stacked bars.
   series.forEach((s, si) => {
     const keyIndex = keys.indexOf(visibleKeys[si]);
     svg.selectAll(null)
@@ -792,7 +784,6 @@ function renderChart(data) {
       .attr("fill", colors[keyIndex % colors.length]);
   });
 
-  // Tooltip.
   const tooltip = d3.select("body").append("div")
     .attr("class", "chart-tooltip")
     .style("opacity", 0);
@@ -804,7 +795,6 @@ function renderChart(data) {
     .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0))
     .on("mousemove", function(event) {
       const x0 = xScale.invert(d3.pointer(event)[0]);
-      // Find closest time bucket.
       const bisect = d3.bisector(d => d._time).left;
       const idx = bisect(stackData, x0, 1);
       let d;
@@ -837,7 +827,6 @@ document.addEventListener("DOMContentLoaded", function() {
   renderQueryBuilder();
   renderChart(window.chartData);
 
-  // Preserve query param when switching time ranges.
   document.querySelectorAll('.range-picker a').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
@@ -850,7 +839,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  // Preserve query param when using custom date range.
   const dateForm = document.querySelector('.range-picker form');
   if (dateForm) {
     dateForm.addEventListener('submit', () => {

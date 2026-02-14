@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+
+<head>
+<title>trace: {{ .RequestID }}</title>
+<style>
+  body {
+    background: rgb(15 23 42);
+    color: #e2e8f0;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 2rem;
+  }
+  a { color: #60a5fa; text-decoration: none; }
+  a:hover { color: #93c5fd; }
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+  }
+  .back { font-size: 13px; margin-bottom: 1.5rem; display: block; }
+  .trace-header {
+    background: rgb(30 41 59);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 1.5rem;
+  }
+  .trace-header .req-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+  .event-card {
+    background: rgb(30 41 59);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 3px solid #475569;
+  }
+  .event-card.level-error { border-left-color: #f87171; }
+  .event-card.level-warn { border-left-color: #fbbf24; }
+  .event-card.level-info { border-left-color: #34d399; }
+  .event-meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .event-meta .ts { color: #94a3b8; }
+  .event-meta .app { color: #c084fc; font-weight: 500; }
+  .event-meta .level { font-weight: 600; }
+  .event-meta .level-INFO { color: #34d399; }
+  .event-meta .level-WARN { color: #fbbf24; }
+  .event-meta .level-ERROR { color: #f87171; }
+  .event-meta .msg { color: #e2e8f0; }
+  .event-meta .dur { color: #60a5fa; }
+  .event-meta .status { font-weight: 500; }
+  .event-meta .status-2xx { color: #34d399; }
+  .event-meta .status-4xx { color: #fbbf24; }
+  .event-meta .status-5xx { color: #f87171; }
+  .json-toggle {
+    cursor: pointer;
+    color: #60a5fa;
+    font-size: 11px;
+    background: none;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: inherit;
+  }
+  .json-toggle:hover { color: #93c5fd; border-color: #64748b; }
+  .json-pre {
+    display: none;
+    background: rgb(15 23 42);
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 11px;
+    color: #94a3b8;
+    overflow-x: auto;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  .empty { color: #64748b; font-size: 14px; padding: 2rem; text-align: center; }
+</style>
+</head>
+
+<body>
+  <a class="back" href="/">&larr; Dashboard</a>
+
+  <div class="trace-header">
+    <h1>Request Trace</h1>
+    <div class="req-id">{{ .RequestID }}</div>
+  </div>
+
+  {{ if not .Events }}
+    <div class="empty">No events found for this request ID.</div>
+  {{ end }}
+
+  {{ range .Events }}
+    <div class="event-card {{ if .Level }}level-{{ deref .Level | printf "%s" }}{{ end }}">
+      <div class="event-meta">
+        <span class="ts">{{ formatTime .Timestamp }}</span>
+        {{ if .App }}<span class="app">{{ deref .App }}</span>{{ end }}
+        {{ if .Level }}<span class="level level-{{ deref .Level }}">{{ deref .Level }}</span>{{ end }}
+        {{ if .Msg }}<span class="msg">{{ deref .Msg }}</span>{{ end }}
+        {{ if .Status }}<span class="status {{ if ge (derefInt .Status) 500 }}status-5xx{{ else if ge (derefInt .Status) 400 }}status-4xx{{ else }}status-2xx{{ end }}">{{ derefInt .Status }}</span>{{ end }}
+        {{ if .DurationMs }}<span class="dur">{{ formatDuration .DurationMs }}</span>{{ end }}
+      </div>
+      <button class="json-toggle" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">JSON</button>
+      <pre class="json-pre">{{ prettyJSON .Data }}</pre>
+    </div>
+  {{ end }}
+</body>
+
+</html>

@@ -9,13 +9,16 @@ FROM golang:alpine AS gobuild
   RUN go mod download
   RUN CGO_ENABLED=1 go build github.com/mattn/go-sqlite3
   COPY . .
-  WORKDIR /app/apps/traffic
+  WORKDIR /app/apps/logs
   RUN --mount=type=cache,target=/root/.cache/go-build run build
+  WORKDIR /app
+  RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=1 go build -o /app/bin/backfill-logs ./cmd/backfill-logs
 
 FROM alpine
   RUN apk add --no-cache ca-certificates sqlite
-  WORKDIR /app/apps/traffic
-  COPY --from=gobuild /app/bin/traffic /app/bin/app
+  WORKDIR /app/apps/logs
+  COPY --from=gobuild /app/bin/logs /app/bin/app
+  COPY --from=gobuild /app/bin/backfill-logs /app/bin/backfill-logs
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/data
   ENV TSNET_FORCE_LOGIN=1

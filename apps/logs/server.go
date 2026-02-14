@@ -8,9 +8,11 @@ import (
 	"html/template"
 	"net/http"
 	"sync"
+	"time"
 
+	"monks.co/pkg/color"
+	"monks.co/pkg/logs"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/traffic"
 )
 
 var (
@@ -36,25 +38,68 @@ func init() {
 			}
 			return fmt.Sprintf("%.1f", float64(a)/float64(b)*100)
 		},
+		"colorHash": color.Hash,
+		"formatDuration": func(ms *float64) string {
+			if ms == nil {
+				return ""
+			}
+			if *ms < 1 {
+				return fmt.Sprintf("%.0fus", *ms*1000)
+			}
+			if *ms < 1000 {
+				return fmt.Sprintf("%.0fms", *ms)
+			}
+			return fmt.Sprintf("%.2fs", *ms/1000)
+		},
+		"formatTime": func(t time.Time) string {
+			return t.Format("2006-01-02 15:04:05")
+		},
+		"deref": func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		},
+		"derefInt": func(i *int) int {
+			if i == nil {
+				return 0
+			}
+			return *i
+		},
+		"prettyJSON": func(raw logs.JSONText) string {
+			var buf bytes.Buffer
+			if err := json.Indent(&buf, []byte(raw), "", "  "); err != nil {
+				return string(raw)
+			}
+			return buf.String()
+		},
 	}
 	t, err := template.New("index.gohtml").Funcs(funcMap).ParseFS(files, "templates/index.gohtml")
 	if err != nil {
 		panic(err)
 	}
-	templates = map[string]*template.Template{"index.gohtml": t}
+	traceT, err := template.New("trace.gohtml").Funcs(funcMap).ParseFS(files, "templates/trace.gohtml")
+	if err != nil {
+		panic(err)
+	}
+	templates = map[string]*template.Template{
+		"index.gohtml": t,
+		"trace.gohtml": traceT,
+	}
 }
 
 type Server struct {
 	*serve.Mux
-	model *traffic.Model
+	model *logs.Model
 }
 
-func NewServer(m *traffic.Model) *Server {
+func NewServer(m *logs.Model) *Server {
 	s := &Server{serve.NewMux(), m}
-	s.HandleFunc("GET /{$}", s.serveTraffic)
+	s.HandleFunc("GET /{$}", s.serveDashboard)
 	s.HandleFunc("GET /query", s.handleQuery)
 	s.HandleFunc("GET /values", s.handleValues)
-	s.HandleFunc("POST /log", s.handleLog)
+	s.HandleFunc("POST /ingest", s.handleIngest)
+	s.HandleFunc("GET /trace/{id}", s.serveTrace)
 	s.HandleFunc("GET /index.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write([]byte(indexCSS))
@@ -62,26 +107,25 @@ func NewServer(m *traffic.Model) *Server {
 	return s
 }
 
-func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
+func (app *Server) serveDashboard(w http.ResponseWriter, req *http.Request) {
 	if req.URL.RawQuery == "" {
 		w.Header().Set("Location", "?range=7d")
 		w.WriteHeader(http.StatusFound)
 		return
 	}
 
-	tr := traffic.ParseTimeRange(req)
+	tr := logs.ParseTimeRange(req)
 
-	// Parse query param.
-	var query traffic.Query
+	var query logs.Query
 	if qs := req.URL.Query().Get("q"); qs != "" {
-		query = traffic.ParseQuery(qs)
+		query = logs.ParseQuery(qs)
 	} else {
-		query = traffic.Query{GroupBy: "host"}
+		query = logs.Query{GroupBy: "host"}
 	}
 
 	var (
 		wg       sync.WaitGroup
-		logRows  []traffic.Request
+		events   []logs.Event
 		topPages []struct {
 			URL          string
 			RequestCount int
@@ -94,21 +138,16 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			DurationBucket int64
 			RequestCount   int
 		}
-		logErr, pagesErr, statusErr, durErr error
+		eventsErr, pagesErr, statusErr, durErr error
 	)
 
-	var chartData map[string][]traffic.ChartPoint
+	var chartData map[string][]logs.ChartPoint
 	var chartErr error
 
 	wg.Add(5)
 	go func() {
 		defer wg.Done()
-		logErr = app.model.
-			Where("created_at >= ? AND created_at <= ?", tr.StartTime(), tr.EndTime()).
-			Order("created_at desc").
-			Limit(50).
-			Find(&logRows).
-			Error
+		events, eventsErr = app.model.GetRecentEvents(tr, 50)
 	}()
 	go func() {
 		defer wg.Done()
@@ -124,10 +163,10 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	go func() {
 		defer wg.Done()
 		statusErr = app.model.Raw(`
-			SELECT status_code, SUM(count) as request_count
+			SELECT status as status_code, SUM(count) as request_count
 			FROM daily_stats
 			WHERE day >= ? AND day <= ?
-			GROUP BY status_code
+			GROUP BY status
 			ORDER BY request_count DESC
 		`, tr.StartTime(), tr.EndTime()).Scan(&statusCodes).Error
 	}()
@@ -147,8 +186,8 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	}()
 	wg.Wait()
 
-	if logErr != nil {
-		serve.Errorf(w, req, 500, "failed to read logs: %s", logErr)
+	if eventsErr != nil {
+		serve.Errorf(w, req, 500, "failed to read events: %s", eventsErr)
 		return
 	}
 	if pagesErr != nil {
@@ -163,7 +202,6 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		serve.Errorf(w, req, 500, "failed to read durations: %s", durErr)
 		return
 	}
-
 	if chartErr != nil {
 		serve.Errorf(w, req, 500, "failed to run query: %s", chartErr)
 		return
@@ -190,8 +228,8 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	}
 
 	type PageData struct {
-		TimeRange   traffic.TimeRange
-		Log         []traffic.Request
+		TimeRange   logs.TimeRange
+		Events      []logs.Event
 		TopPages    []struct {
 			URL          string
 			RequestCount int
@@ -212,7 +250,7 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 
 	pageData := PageData{
 		TimeRange:        tr,
-		Log:              logRows,
+		Events:           events,
 		TopPages:         topPages,
 		StatusCodes:      statusCodes,
 		Durations:        durations,
@@ -232,13 +270,13 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 }
 
 func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
-	tr := traffic.ParseTimeRange(req)
+	tr := logs.ParseTimeRange(req)
 	qs := req.URL.Query().Get("q")
 	if qs == "" {
 		serve.Errorf(w, req, 400, "missing q parameter")
 		return
 	}
-	q := traffic.ParseQuery(qs)
+	q := logs.ParseQuery(qs)
 	data, err := app.model.QueryChartData(tr, q)
 	if err != nil {
 		serve.Errorf(w, req, 500, "query error: %s", err)
@@ -249,7 +287,7 @@ func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
 }
 
 func (app *Server) handleValues(w http.ResponseWriter, req *http.Request) {
-	tr := traffic.ParseTimeRange(req)
+	tr := logs.ParseTimeRange(req)
 	dim := req.URL.Query().Get("dim")
 	if dim == "" {
 		serve.Errorf(w, req, 400, "missing dim parameter")
@@ -264,15 +302,47 @@ func (app *Server) handleValues(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(vals)
 }
 
-func (app *Server) handleLog(w http.ResponseWriter, req *http.Request) {
-	var entries []traffic.LogEntry
-	if err := json.NewDecoder(req.Body).Decode(&entries); err != nil {
+func (app *Server) handleIngest(w http.ResponseWriter, req *http.Request) {
+	var events []json.RawMessage
+	if err := json.NewDecoder(req.Body).Decode(&events); err != nil {
 		serve.Errorf(w, req, 400, "bad request: %s", err)
 		return
 	}
-	if err := app.model.LogEntries(entries); err != nil {
-		serve.Errorf(w, req, 500, "failed to log entries: %s", err)
+	if err := app.model.Ingest(events); err != nil {
+		serve.Errorf(w, req, 500, "failed to ingest events: %s", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *Server) serveTrace(w http.ResponseWriter, req *http.Request) {
+	requestID := req.PathValue("id")
+	if requestID == "" {
+		serve.Errorf(w, req, 400, "missing request ID")
+		return
+	}
+
+	events, err := app.model.GetTrace(requestID)
+	if err != nil {
+		serve.Errorf(w, req, 500, "failed to get trace: %s", err)
+		return
+	}
+
+	type TraceData struct {
+		RequestID string
+		Events    []logs.Event
+	}
+
+	data := TraceData{
+		RequestID: requestID,
+		Events:    events,
+	}
+
+	var buf bytes.Buffer
+	if err := templates["trace.gohtml"].Execute(&buf, data); err != nil {
+		serve.Errorf(w, req, 500, "failed to execute template: %s", err)
+		return
+	}
+	w.Header().Set("Content-type", "text/html; charset=utf-8")
+	buf.WriteTo(w)
 }

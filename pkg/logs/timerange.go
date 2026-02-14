@@ -1,4 +1,4 @@
-package traffic
+package logs
 
 import (
 	"net/http"

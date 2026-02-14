@@ -13,6 +13,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -32,8 +33,16 @@ const RequestIDHeader = "X-Request-ID"
 var RemoteAddrKey = &struct{}{}
 
 // SetupLogging configures the default slog logger to output JSON to stderr.
-func SetupLogging() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+// Additional writers can be passed to tee log output (e.g. a logsclient).
+func SetupLogging(writers ...io.Writer) {
+	var w io.Writer = os.Stderr
+	if len(writers) > 0 {
+		all := make([]io.Writer, 0, len(writers)+1)
+		all = append(all, os.Stderr)
+		all = append(all, writers...)
+		w = io.MultiWriter(all...)
+	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
 }

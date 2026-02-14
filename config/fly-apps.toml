@@ -26,9 +26,9 @@
   volume = "monks_dogs_data"
   packages = ["sqlite"]
 
-[apps.traffic]
+[apps.logs]
   vm_memory = "512"
-  volume = "monks_traffic_data"
+  volume = "monks_logs_data"
   packages = ["sqlite"]
 
 [apps.errlog]

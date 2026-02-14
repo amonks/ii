@@ -17,13 +17,13 @@ import (
 
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
+	"monks.co/pkg/logsclient"
 	"monks.co/pkg/middleware"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tls"
-	"monks.co/pkg/trafficclient"
 )
 
 var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
@@ -54,7 +54,9 @@ var (
 )
 
 func run() error {
-	reqlog.SetupLogging()
+	lc := logsclient.New("http://monks-logs.fly-internal/ingest")
+	defer lc.Close()
+	reqlog.SetupLogging(lc)
 	flag.Parse()
 
 	config, err := config.Load(*machine)
@@ -167,8 +169,6 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	defer stopTLS()
 
 	tsClient := tailnet.Client()
-	traf := trafficclient.New("http://monks-traffic-fly-ord/log", tsClient)
-	defer traf.Close()
 
 	tsLn, err := tailnet.Listen("tcp", ":443")
 	if err != nil {
@@ -185,12 +185,12 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 
 	p := &proxy{s.service.Rewrites, tsClient.Transport}
 
-	// Public handler: reqlog → anon caps → redirector → traffic → proxy
-	publicMW := middleware.Combine(reqlog.Middleware(), anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects), traf)
+	// Public handler: reqlog → anon caps → redirector → proxy
+	publicMW := middleware.Combine(reqlog.Middleware(), anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects))
 	publicHandler := publicMW.ModifyHandler(p)
 
-	// Tailnet handler: reqlog → tailscale auth → traffic → proxy
-	tailnetMW := middleware.Combine(reqlog.Middleware(), tailscaleAuthMiddleware{}, traf)
+	// Tailnet handler: reqlog → tailscale auth → proxy
+	tailnetMW := middleware.Combine(reqlog.Middleware(), tailscaleAuthMiddleware{})
 	tailnetHandler := tailnetMW.ModifyHandler(p)
 
 	// Public listener (with ProxyProto)

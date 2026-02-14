@@ -2,12 +2,12 @@
   id = "dev"
   type = "long"
   dependencies = ["build"]
-  cmd = "../../bin/traffic"
+  cmd = "../../bin/logs"
 
 [[task]]
   id = "start"
   type = "long"
-  cmd = "../../bin/traffic"
+  cmd = "../../bin/logs"
 
 [[task]]
   id = "build"
@@ -36,4 +36,3 @@
   id = "install-css"
   type = "short"
   cmd = "cd css && npm install"
-

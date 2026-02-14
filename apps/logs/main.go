@@ -6,10 +6,10 @@ import (
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/logs"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
-	"monks.co/pkg/traffic"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 
 func run() error {
 	reqlog.SetupLogging()
-	db, err := traffic.Open()
+	db, err := logs.Open()
 	if err != nil {
 		panic(err)
 	}

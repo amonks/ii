@@ -11,7 +11,7 @@ apps/dogs/archive.zip
 
 # exclude all other apps
 apps/*
-!apps/traffic
+!apps/logs
 
 # exclude build artifacts
 **/node_modules

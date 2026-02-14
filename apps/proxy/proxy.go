@@ -12,7 +12,6 @@ import (
 	"monks.co/pkg/gzipserver"
 	"monks.co/pkg/prometh"
 	"monks.co/pkg/reqlog"
-	"monks.co/pkg/trafficclient"
 )
 
 type proxy struct {
@@ -64,7 +63,6 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	reqlog.Set(ctx, "proxy.routes", routeKeys(routes))
 
 	if backend, hasRoute := routes[firstSegment]; hasRoute {
-		trafficclient.SetApp(req, firstSegment)
 		// We need to visit the subsites at a url that ends in a "/",
 		// otherwise relative links within the subsite won't use the
 		// subsite's prefix.
