@@ -50,13 +50,13 @@
   dependencies = [
     'templ',
     'compress-statics',
+    'apps/homepage/templ',
+    'apps/reddit/templ',
+    'apps/writing/templ',
+    'apps/youtube/templ',
+    'apps/directory/templ',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/homepage/templ',
-    'apps/youtube/templ',
-    'apps/reddit/templ',
-    'apps/directory/templ',
-    'apps/writing/templ',
     'apps/dogs/templ'
   ]
 

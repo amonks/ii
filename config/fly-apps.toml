@@ -4,7 +4,8 @@
   vm_memory = "256"
 
 [apps.proxy]
-  vm_memory = "512"
+  vm_size = "shared-cpu-8x"
+  vm_memory = "2gb"
   volume = "monks_proxy_data"
   public = true
   packages = ["iptables", "ip6tables", "sqlite"]
