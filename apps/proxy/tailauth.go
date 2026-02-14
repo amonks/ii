@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strings"
 
 	"monks.co/pkg/middleware"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/tailnet"
 	"tailscale.com/tailcfg"
 )
@@ -34,12 +34,10 @@ type tailscaleAuthMiddleware struct{}
 
 func (tailscaleAuthMiddleware) ModifyHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := reqlog.Logger(r.Context())
 		whois, err := tailnet.WhoIs(r.Context(), r.RemoteAddr)
 		if err != nil {
-			slog.Warn("tailauth: whois failed",
-				"error", err,
-				"remote_addr", r.RemoteAddr,
-			)
+			log.Warn("tailauth: whois failed", "error", err, "remote_addr", r.RemoteAddr)
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -50,13 +48,10 @@ func (tailscaleAuthMiddleware) ModifyHandler(h http.Handler) http.Handler {
 		}
 		caps := capNames(whois.CapMap)
 		setCapsHeaders(r, whois.CapMap)
-		slog.Info("tailauth: identified user",
-			"listener", "tailnet",
-			"user", user,
-			"node", whois.Node.Name,
-			"remote_addr", r.RemoteAddr,
-			"caps", caps,
-		)
+		reqlog.Set(r.Context(), "proxy.listener", "tailnet")
+		reqlog.Set(r.Context(), "proxy.tailnet_user", user)
+		reqlog.Set(r.Context(), "proxy.tailnet_node", whois.Node.Name)
+		reqlog.Set(r.Context(), "proxy.tailnet_caps", caps)
 		h.ServeHTTP(w, r)
 	})
 }
@@ -78,11 +73,8 @@ func (m anonCapsMiddleware) ModifyHandler(h http.Handler) http.Handler {
 			}
 		}
 		setCapsHeaders(r, m.caps)
-		slog.Debug("tailauth: anon request",
-			"listener", "public",
-			"caps", caps,
-			"remote_addr", r.RemoteAddr,
-		)
+		reqlog.Set(r.Context(), "proxy.listener", "public")
+		reqlog.Set(r.Context(), "proxy.anon_caps", caps)
 		h.ServeHTTP(w, r)
 	})
 }

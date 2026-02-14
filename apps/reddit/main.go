@@ -7,6 +7,7 @@ import (
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 )
@@ -27,6 +28,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	// If first argument is "update", run the archive update process
 	if len(os.Args) > 1 && os.Args[1] == "update" {
 		return runUpdate()
@@ -49,7 +52,7 @@ func runServer() error {
 	var errs error
 
 	s := newServer(db)
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(s)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(s))); err != nil {
 		if errs != nil {
 			errs = fmt.Errorf("%v; %v", errs, err)
 		} else {

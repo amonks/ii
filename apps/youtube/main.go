@@ -10,6 +10,7 @@ import (
 	"monks.co/apps/youtube/model"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -24,6 +25,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	history, err := model.LoadHistory("histories")
 	if err != nil {
 		return err
@@ -41,7 +44,7 @@ func run() error {
 		return fmt.Errorf("tailnet: %w", err)
 	}
 
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}
 

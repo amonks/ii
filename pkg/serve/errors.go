@@ -2,15 +2,15 @@ package serve
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"monks.co/pkg/errlogger"
+	"monks.co/pkg/reqlog"
 )
 
 func Errorf(w http.ResponseWriter, req *http.Request, statusCode int, msg string, args ...interface{}) {
 	msg = fmt.Sprintf(msg, args...)
-	log.Printf("[%d] %s: %s\n", statusCode, req.URL.Path, msg)
+	reqlog.Set(req.Context(), "err.message", msg)
 	if statusCode >= 500 && statusCode < 600 {
 		errlogger.Report(statusCode, msg)
 	}

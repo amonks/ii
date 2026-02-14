@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/tailnet"
 )
@@ -137,7 +137,7 @@ func serveAir(ctx context.Context, db *DB) error {
 
 		// Handle errors
 		if errs != nil {
-			log.Println(errs)
+			reqlog.Logger(req.Context()).Error("aggregation errors", "err", errs)
 			w.WriteHeader(500)
 			w.Write([]byte(errs.Error()))
 			return
@@ -145,11 +145,11 @@ func serveAir(ctx context.Context, db *DB) error {
 
 		// Execute template with data
 		if err := tmpl.Execute(w, data); err != nil {
-			log.Println(err)
+			reqlog.Logger(req.Context()).Error("template execution failed", "err", err)
 		}
 	})
 
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}
 

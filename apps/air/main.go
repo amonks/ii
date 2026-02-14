@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"monks.co/pkg/errlogger"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 )
@@ -25,6 +26,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	flag.Parse()
 
 	db, err := NewDB()

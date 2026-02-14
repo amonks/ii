@@ -18,6 +18,7 @@ import (
 	"monks.co/pkg/config"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/middleware"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -53,6 +54,7 @@ var (
 )
 
 func run() error {
+	reqlog.SetupLogging()
 	flag.Parse()
 
 	config, err := config.Load(*machine)
@@ -183,12 +185,12 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 
 	p := &proxy{s.service.Rewrites, tsClient.Transport}
 
-	// Public handler: anon caps → redirector → traffic → proxy
-	publicMW := middleware.Combine(anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects), traf)
+	// Public handler: reqlog → anon caps → redirector → traffic → proxy
+	publicMW := middleware.Combine(reqlog.Middleware(), anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects), traf)
 	publicHandler := publicMW.ModifyHandler(p)
 
-	// Tailnet handler: tailscale auth → traffic → proxy
-	tailnetMW := middleware.Combine(tailscaleAuthMiddleware{}, traf)
+	// Tailnet handler: reqlog → tailscale auth → traffic → proxy
+	tailnetMW := middleware.Combine(reqlog.Middleware(), tailscaleAuthMiddleware{}, traf)
 	tailnetHandler := tailnetMW.ModifyHandler(p)
 
 	// Public listener (with ProxyProto)
@@ -224,7 +226,7 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 		tailnetSrv := &http.Server{
 			Handler: tailnetHandler,
 			ConnContext: func(ctx context.Context, conn net.Conn) context.Context {
-				return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
+				return context.WithValue(ctx, reqlog.RemoteAddrKey, conn.RemoteAddr().String())
 			},
 		}
 		errs <- tailnetSrv.Serve(tlsLn)
@@ -248,7 +250,7 @@ func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context
 			slog.Warn("proxyproto: missing remote address")
 		}
 
-		return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
+		return context.WithValue(ctx, reqlog.RemoteAddrKey, conn.RemoteAddr().String())
 	}
-	return context.WithValue(ctx, trafficclient.RemoteAddrKey, conn.RemoteAddr().String())
+	return context.WithValue(ctx, reqlog.RemoteAddrKey, conn.RemoteAddr().String())
 }

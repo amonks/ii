@@ -19,6 +19,7 @@ import (
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tmdb"
@@ -73,11 +74,11 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("POST /tv/ignore-show/{$}", app.serveTVIgnoreShow)
 	mux.HandleFunc("POST /tv/ignore-episodes/{$}", app.serveTVIgnoreEpisodes)
 
-	return tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
+	return tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux)))
 }
 
 func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
-	log.Println("serveIndex")
+	reqlog.Logger(req.Context()).Info("serveIndex")
 	q := req.URL.Query()
 
 	selectedGenres := q["genres"]
@@ -307,12 +308,12 @@ func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := Movies(&data).Render(req.Context(), w); err != nil {
-		log.Println(err)
+		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
 	}
 }
 
 func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) {
-	log.Println("serveImport")
+	reqlog.Logger(req.Context()).Info("serveImport")
 
 	var data ImportPageData
 
@@ -347,26 +348,27 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 
 					// Check if this stub is adding episodes to an already-imported show
 					showPrefix := filepath.Join(config.TVImportDir, stub.ImportedFromPath)
-					log.Printf("DEBUG: Checking if show exists with prefix: %s", showPrefix)
+					l := reqlog.Logger(req.Context())
+					l.Debug("checking if show exists", "prefix", showPrefix)
 					if exists, err := app.db.TVShowExistsByPathPrefix(showPrefix); err != nil {
-						log.Printf("Warning: Error checking if TV show exists: %v", err)
+						l.Warn("error checking if TV show exists", "err", err)
 					} else if exists {
-						log.Printf("DEBUG: Show exists! Setting IsAddingToExisting = true for: %s", stub.ImportedFromPath)
+						l.Debug("show exists, setting IsAddingToExisting", "path", stub.ImportedFromPath)
 						info.IsAddingToExisting = true
 
 						// Get the existing show by querying for ANY episode from this show directory
 						// Use the directory prefix, not a specific file (since the stub's files are NEW and not yet in DB)
-						log.Printf("DEBUG: Looking up show by directory prefix: %s", showPrefix)
+						l.Debug("looking up show by directory prefix", "prefix", showPrefix)
 						if show, err := app.getTVShowByEpisodePath(showPrefix); err != nil {
-							log.Printf("Warning: Error getting TV show: %v", err)
+							l.Warn("error getting TV show", "err", err)
 						} else if show != nil {
-							log.Printf("DEBUG: Found existing show: %s (ID: %d)", show.Name, show.ID)
+							l.Debug("found existing show", "name", show.Name, "id", show.ID)
 							info.ExistingShow = show
 
 							// Get existing episodes for this show and season
 							if stub.SeasonNumber > 0 {
 								if episodes, err := app.db.GetTVSeasonEpisodes(show.ID, stub.SeasonNumber); err != nil {
-									log.Printf("Warning: Error getting existing episodes: %v", err)
+									l.Warn("error getting existing episodes", "err", err)
 								} else {
 									info.ExistingEpisodes = episodes
 								}
@@ -374,12 +376,12 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 
 							// The new episodes are just the stub's episode files
 							info.NewEpisodes = stub.EpisodeFiles
-							log.Printf("DEBUG: Set ExistingShow, %d existing episodes, %d new episodes", len(info.ExistingEpisodes), len(info.NewEpisodes))
+							l.Debug("set ExistingShow", "existing_episodes", len(info.ExistingEpisodes), "new_episodes", len(info.NewEpisodes))
 						} else {
-							log.Printf("DEBUG: getTVShowByEpisodePath returned nil show")
+							l.Debug("getTVShowByEpisodePath returned nil show")
 						}
 					} else {
-						log.Printf("DEBUG: Show does NOT exist with prefix: %s", showPrefix)
+						l.Debug("show does not exist", "prefix", showPrefix)
 					}
 
 					tvStubsInfo = append(tvStubsInfo, info)
@@ -399,7 +401,7 @@ func (app *LibraryServer) serveImport(w http.ResponseWriter, req *http.Request) 
 	}
 
 	if err := Import(&data).Render(req.Context(), w); err != nil {
-		log.Println(err)
+		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
 	}
 }
 
@@ -420,7 +422,7 @@ func (app *LibraryServer) servePoster(w http.ResponseWriter, req *http.Request) 
 }
 
 func (app *LibraryServer) serveEnqueueButton(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /enqueue")
+	reqlog.Logger(req.Context()).Info("req /enqueue")
 
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
@@ -444,7 +446,7 @@ func (app *LibraryServer) serveEnqueueButton(w http.ResponseWriter, req *http.Re
 }
 
 func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /play")
+	reqlog.Logger(req.Context()).Info("req /play")
 
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
@@ -468,7 +470,7 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 		}
 		go func() {
 			if err := cmd.Wait(); err != nil {
-				log.Println("start on lugh error:", err)
+				reqlog.Logger(req.Context()).Error("start on lugh error", "err", err)
 			}
 		}()
 	}
@@ -477,7 +479,7 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 }
 
 func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /search")
+	reqlog.Logger(req.Context()).Info("req /search")
 
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
@@ -496,7 +498,7 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	log.Println("search", query, year)
+	reqlog.Logger(req.Context()).Info("search", "query", query, "year", year)
 	results, err := app.tmdb.Search(query, year)
 	if err != nil {
 		serve.InternalServerError(w, req, err)
@@ -504,7 +506,7 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 	}
 
 	stub.Results = results
-	log.Printf("%d results", len(results))
+	reqlog.Logger(req.Context()).Info("search results", "count", len(results))
 	if err := app.db.SaveStub(stub); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -514,7 +516,7 @@ func (app *LibraryServer) serveSearch(w http.ResponseWriter, req *http.Request) 
 }
 
 func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /ignore")
+	reqlog.Logger(req.Context()).Info("req /ignore")
 
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
@@ -549,7 +551,7 @@ func (app *LibraryServer) serveIgnore(w http.ResponseWriter, req *http.Request) 
 }
 
 func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /identify")
+	reqlog.Logger(req.Context()).Info("req /identify")
 
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
@@ -596,7 +598,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 			}
 		} else {
 			// new movie; create
-			log.Println("create", movie)
+			reqlog.Logger(req.Context()).Info("create movie", "movie", movie)
 			if _, err := tx.CreateMovie(tmdbMovie, path); err != nil {
 				return fmt.Errorf("error creating movie '%d': %w", tmdbMovie.ID, err)
 			}
@@ -615,7 +617,7 @@ func (app *LibraryServer) serveIdentify(w http.ResponseWriter, req *http.Request
 }
 
 func (app *LibraryServer) serveIgnores(w http.ResponseWriter, req *http.Request) {
-	log.Println("serveIgnores")
+	reqlog.Logger(req.Context()).Info("serveIgnores")
 
 	var data IgnoresPageData
 
@@ -655,12 +657,12 @@ func (app *LibraryServer) serveIgnores(w http.ResponseWriter, req *http.Request)
 	}
 
 	if err := Ignores(&data).Render(req.Context(), w); err != nil {
-		log.Println(err)
+		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
 	}
 }
 
 func (app *LibraryServer) serveDeleteIgnore(w http.ResponseWriter, req *http.Request) {
-	log.Println("serveDeleteIgnore")
+	reqlog.Logger(req.Context()).Info("serveDeleteIgnore")
 
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
@@ -698,7 +700,7 @@ func (app *LibraryServer) serveDeleteIgnore(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	log.Printf("Deleted ignore for path: %s (type: %s)", path, mediaTypeStr)
+	reqlog.Logger(req.Context()).Info("deleted ignore", "path", path, "type", mediaTypeStr)
 
 	// Redirect back to ignores page with same filters
 	redirectURL := "/movies/ignores/"
@@ -710,7 +712,7 @@ func (app *LibraryServer) serveDeleteIgnore(w http.ResponseWriter, req *http.Req
 }
 
 func (app *LibraryServer) serveValidateMetacritic(w http.ResponseWriter, req *http.Request) {
-	log.Println("req /validate-metacritic")
+	reqlog.Logger(req.Context()).Info("req /validate-metacritic")
 
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))

@@ -3,10 +3,10 @@ package main
 import (
 	"embed"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
@@ -40,7 +40,7 @@ func NewServer(m *model) *server {
 }
 
 func (s *server) handleList(w http.ResponseWriter, req *http.Request) {
-	log.Printf("path: list")
+	reqlog.Logger(req.Context()).Info("path: list")
 	urls, err := s.model.List()
 	if err != nil {
 		serve.InternalServerError(w, req, err)
@@ -55,7 +55,7 @@ func (s *server) handleList(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *server) handlePost(w http.ResponseWriter, req *http.Request) {
-	log.Printf("path: post")
+	reqlog.Logger(req.Context()).Info("path: post")
 	if err := req.ParseForm(); err != nil {
 		serve.Error(w, req, http.StatusBadRequest, err)
 		return
@@ -79,7 +79,7 @@ func (s *server) handlePost(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *server) handleDelete(w http.ResponseWriter, req *http.Request) {
-	log.Printf("path: del")
+	reqlog.Logger(req.Context()).Info("path: del")
 	key := strings.TrimPrefix(req.URL.Path, "/golink/")
 
 	if err := s.model.Delete(key); err != nil {
@@ -91,19 +91,19 @@ func (s *server) handleDelete(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *server) handleGet(w http.ResponseWriter, req *http.Request) {
-	log.Printf("path: get '%s'", req.URL.Path)
+	reqlog.Logger(req.Context()).Info("path: get", "path", req.URL.Path)
 
 	key := strings.TrimPrefix(req.URL.Path, "/")
 
 	url, err := s.model.Get(key)
 	if err != nil {
-		log.Printf("no such link: '%s'", key)
+		reqlog.Logger(req.Context()).Warn("no such link", "key", key)
 		serve.InternalServerError(w, req, err)
 		return
 	}
 
 	if url == "" {
-		log.Printf("no match for key: '%s'", key)
+		reqlog.Logger(req.Context()).Warn("no match for key", "key", key)
 		serve.Error(w, req, http.StatusNotFound, err)
 		return
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"monks.co/pkg/env"
 	"monks.co/pkg/gzipserver"
 	"monks.co/pkg/prometh"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/trafficclient"
 )
 
@@ -23,6 +23,7 @@ type proxy struct {
 // routesFromCaps builds a route table from Tailscale-Cap-* headers.
 // Each cap header contains a JSON array of {path, backend} entries.
 func routesFromCaps(req *http.Request) map[string]string {
+	log := reqlog.Logger(req.Context())
 	routes := map[string]string{}
 	for key, values := range req.Header {
 		if !strings.HasPrefix(key, "Tailscale-Cap-") {
@@ -33,7 +34,7 @@ func routesFromCaps(req *http.Request) map[string]string {
 			Backend string `json:"backend"`
 		}
 		if err := json.Unmarshal([]byte(values[0]), &entries); err != nil {
-			slog.Warn("route: failed to parse cap header",
+			log.Warn("failed to parse cap header",
 				"header", key,
 				"value", values[0],
 				"error", err,
@@ -54,9 +55,13 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.URL.Path = to
 	}
 
+	ctx := req.Context()
 	user := req.Header.Get("Tailscale-User")
 	firstSegment := strings.Split(req.URL.Path, "/")[1]
 	routes := routesFromCaps(req)
+
+	reqlog.Set(ctx, "proxy.user", user)
+	reqlog.Set(ctx, "proxy.routes", routeKeys(routes))
 
 	if backend, hasRoute := routes[firstSegment]; hasRoute {
 		trafficclient.SetApp(req, firstSegment)
@@ -75,26 +80,14 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		slog.Info("route: proxying",
-			"user", user,
-			"host", req.Host,
-			"method", req.Method,
-			"path", req.URL.Path,
-			"app", firstSegment,
-			"backend", backend,
-			"routes", routeKeys(routes),
-		)
+		reqlog.Set(ctx, "proxy.action", "proxy")
+		reqlog.Set(ctx, "proxy.app", firstSegment)
+		reqlog.Set(ctx, "proxy.backend", backend)
 		p.proxyRequest(firstSegment, backend, w, req)
 		return
 	}
 
-	slog.Info("route: static",
-		"user", user,
-		"host", req.Host,
-		"method", req.Method,
-		"path", req.URL.Path,
-		"routes", routeKeys(routes),
-	)
+	reqlog.Set(ctx, "proxy.action", "static")
 	srv := gzipserver.FileServer(gzipserver.Dir(env.InMonksRoot("apps", "proxy", "static")))
 	srv.ServeHTTP(w, req)
 }
@@ -120,20 +113,32 @@ func (w *StatusCodeWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+func (w *StatusCodeWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 func (p *proxy) proxyRequest(prefix string, backend string, w http.ResponseWriter, req *http.Request) {
 	proxy := &httputil.ReverseProxy{
 		Transport: p.transport,
-		Rewrite: func(req *httputil.ProxyRequest) {
-			req.Out.URL.Scheme = "http"
-			req.Out.URL.Host = backend
-			req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/"+prefix)
-			req.Out.Host = backend
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.Out.URL.Scheme = "http"
+			pr.Out.URL.Host = backend
+			pr.Out.URL.Path = strings.TrimPrefix(pr.Out.URL.Path, "/"+prefix)
+			pr.Out.Host = backend
+			// Forward request ID to downstream.
+			if id := reqlog.RequestID(pr.In.Context()); id != "" {
+				pr.Out.Header.Set(reqlog.RequestIDHeader, id)
+			}
 		},
 	}
 	startAt := time.Now()
 	scw := &StatusCodeWriter{ResponseWriter: w}
 	proxy.ServeHTTP(scw, req)
 	dur := time.Since(startAt)
+
+	reqlog.Set(req.Context(), "proxy.downstream_ms", dur.Milliseconds())
+	reqlog.Set(req.Context(), "proxy.downstream_status", scw.code)
+	reqlog.Set(req.Context(), "proxy.downstream_route", scw.route)
 
 	labels := prometh.SanitizeLabels(
 		req.Host,

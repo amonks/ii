@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"sync"
 
@@ -149,28 +148,23 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 	wg.Wait()
 
 	if logErr != nil {
-		log.Printf("serveTraffic: logErr: %.200s", fmt.Sprint(logErr))
 		serve.Errorf(w, req, 500, "failed to read logs: %s", logErr)
 		return
 	}
 	if pagesErr != nil {
-		log.Printf("serveTraffic: pagesErr: %.200s", fmt.Sprint(pagesErr))
 		serve.Errorf(w, req, 500, "failed to read top pages: %s", pagesErr)
 		return
 	}
 	if statusErr != nil {
-		log.Printf("serveTraffic: statusErr: %.200s", fmt.Sprint(statusErr))
 		serve.Errorf(w, req, 500, "failed to read status codes: %s", statusErr)
 		return
 	}
 	if durErr != nil {
-		log.Printf("serveTraffic: durErr: %.200s", fmt.Sprint(durErr))
 		serve.Errorf(w, req, 500, "failed to read durations: %s", durErr)
 		return
 	}
 
 	if chartErr != nil {
-		log.Printf("serveTraffic: chartErr: %.200s", fmt.Sprint(chartErr))
 		serve.Errorf(w, req, 500, "failed to run query: %s", chartErr)
 		return
 	}
@@ -230,7 +224,6 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 
 	var buf bytes.Buffer
 	if err := templates["index.gohtml"].Execute(&buf, pageData); err != nil {
-		log.Printf("serveTraffic: template error: %.200s", fmt.Sprint(err))
 		serve.Errorf(w, req, 500, "failed to execute template: %s", err)
 		return
 	}

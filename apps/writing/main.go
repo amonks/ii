@@ -16,6 +16,7 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/posts"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
@@ -33,6 +34,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
@@ -145,7 +148,7 @@ func run() error {
 		}
 	})
 
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}
 	return nil

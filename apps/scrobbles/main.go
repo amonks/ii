@@ -13,6 +13,7 @@ import (
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/lastfm"
 	"monks.co/pkg/periodically"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
@@ -27,6 +28,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	lfm := lastfm.New(lastFmAPIKey)
 
 	db, err := NewDB()
@@ -83,7 +86,7 @@ func run() error {
 	})
 
 	wg.Go(func() error {
-		if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+		if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 			cancel(err)
 			return err
 		}

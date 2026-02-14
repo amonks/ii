@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"monks.co/apps/map/model"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/util"
 )
@@ -101,7 +101,7 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Printf("%d places", len(places))
+	reqlog.Set(req.Context(), "map.places_count", len(places))
 
 	googleMapsImportURL := fmt.Sprintf(
 		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=beta&libraries=marker",

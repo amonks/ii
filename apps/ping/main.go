@@ -6,6 +6,7 @@ import (
 
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 )
@@ -18,6 +19,7 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
 	db, err := NewModel()
 	if err != nil {
 		return fmt.Errorf("constructing model: %w", err)
@@ -30,7 +32,7 @@ func run() error {
 	var errs error
 
 	s := NewServer(db)
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(s)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(s))); err != nil {
 		errs = errors.Join(errs, err)
 	}
 

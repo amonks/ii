@@ -27,6 +27,7 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/llm"
 	"monks.co/pkg/loggingwaitgroup"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tmdb"
 )
@@ -41,6 +42,8 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	// how to get a token from an api key:
 	// http://dev.travisbell.com/play/v4_auth.html
 	tmdb := tmdb.New(

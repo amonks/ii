@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"monks.co/pkg/middleware"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/traffic"
 )
 
-var RemoteAddrKey = &struct{}{}
 var appKey = &struct{}{}
 
 // SetApp stores the matched app/route name for the current request's traffic log entry.
@@ -54,10 +54,8 @@ func (c *Client) ModifyHandler(handler http.Handler) http.Handler {
 		app := new(string)
 		req = req.WithContext(context.WithValue(req.Context(), appKey, app))
 
-		ww := &statusRecorder{ResponseWriter: w}
-
 		start := time.Now()
-		handler.ServeHTTP(ww, req)
+		handler.ServeHTTP(w, req)
 		dur := time.Since(start)
 
 		c.enqueue(traffic.LogEntry{
@@ -69,7 +67,7 @@ func (c *Client) ModifyHandler(handler http.Handler) http.Handler {
 			RemoteAddr: getRemoteAddr(req),
 			UserAgent:  req.UserAgent(),
 			Referer:    req.Header.Get("Referer"),
-			StatusCode: ww.status,
+			StatusCode: reqlog.Status(req.Context()),
 			Duration:   dur,
 			App:        *app,
 		})
@@ -126,18 +124,8 @@ func (c *Client) flush() {
 	}
 }
 
-type statusRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (r *statusRecorder) WriteHeader(status int) {
-	r.status = status
-	r.ResponseWriter.WriteHeader(status)
-}
-
 func getRemoteAddr(req *http.Request) string {
-	if v, ok := req.Context().Value(RemoteAddrKey).(string); ok {
+	if v, ok := req.Context().Value(reqlog.RemoteAddrKey).(string); ok {
 		return v
 	}
 	return req.RemoteAddr

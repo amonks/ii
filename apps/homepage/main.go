@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/letterboxd"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/rotate"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
@@ -24,6 +24,7 @@ func main() {
 }
 
 func run() error {
+	reqlog.SetupLogging()
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
@@ -42,7 +43,7 @@ func run() error {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
 		if err != nil {
-			log.Printf("letterboxd diary error: %s\n", err)
+			reqlog.Logger(req.Context()).Error("letterboxd diary error", "error", err)
 			h := templ.Handler(Homepage(&PageData{
 				Watches: nil,
 			}))
@@ -56,7 +57,7 @@ func run() error {
 		h.ServeHTTP(w, req)
 	})
 
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}
 

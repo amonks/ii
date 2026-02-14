@@ -9,6 +9,7 @@ import (
 	"monks.co/pkg/aranet4"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -51,6 +52,8 @@ func (d *DeviceData) Get() ([]*aranet4.Device, time.Time, error) {
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	// Create a shared data structure for the latest readings
 	deviceData := &DeviceData{}
 
@@ -103,7 +106,7 @@ func run() error {
 		serve.JSON(w, req, response)
 	})
 
-	if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}
 

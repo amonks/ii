@@ -11,6 +11,7 @@ import (
 	"monks.co/apps/monitor/monitor"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -48,6 +49,8 @@ var reporter = monitor.Reporter{
 }
 
 func run() error {
+	reqlog.SetupLogging()
+
 	mux := serve.NewMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "https://deadmanssnitch.com/cases/20c59c12-7c79-443a-9bb1-b9feb56c3159/snitches", http.StatusMovedPermanently)
@@ -68,7 +71,7 @@ func run() error {
 	})
 
 	wg.Go(func() error {
-		if err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux)); err != nil {
+		if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 			cancel(err)
 			return err
 		}

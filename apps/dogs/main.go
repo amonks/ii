@@ -15,6 +15,7 @@ import (
 	"monks.co/pkg/env"
 	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -38,6 +39,8 @@ var (
 )
 
 func run() error {
+	reqlog.SetupLogging()
+
 	if _, err := os.Stat(archiveDir); os.IsNotExist(err) {
 		archiveDir = env.InMonksData("dogs")
 	} else if err != nil {
@@ -71,7 +74,7 @@ func run() error {
 
 		selectedCombatantSet := map[string]struct{}{}
 		for _, c := range q["combatants"] {
-			log.Printf("has: %s", c)
+			reqlog.Logger(req.Context()).Info("has combatant", "combatant", c)
 			selectedCombatantSet[c] = struct{}{}
 			qOpts.Combatants = append(qOpts.Combatants, c)
 		}
@@ -113,12 +116,12 @@ func run() error {
 
 		entries, err := db.All(qOpts)
 		if err != nil {
-			log.Println(err)
+			reqlog.Logger(req.Context()).Error("querying entries", "err", err)
 			return
 		}
 
 		if err := dogs.Page(entries, filters, imp.String()).Render(req.Context(), w); err != nil {
-			log.Println(err)
+			reqlog.Logger(req.Context()).Error("rendering page", "err", err)
 		}
 	})
 
@@ -140,7 +143,7 @@ func run() error {
 
 	go func() {
 		log.Println("starting server")
-		err := tailnet.ListenAndServe(ctx, gzip.Middleware(mux))
+		err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux)))
 		if !errors.Is(err, context.Canceled) {
 			cancel()
 		}
