@@ -264,6 +264,76 @@
     white-space: pre-wrap;
     word-break: break-all;
   }
+
+  /* Logs widget */
+  .logs-widget {
+    margin: 0 1rem;
+    background-color: rgb(30 41 59);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .logs-widget h2 {
+    color: #e2e8f0;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  #logs-entries {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .logs-entry {
+    border-bottom: 1px solid #334155;
+    padding: 8px 0;
+  }
+  .logs-entry:last-child { border-bottom: none; }
+  .logs-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .logs-entry-header:hover { color: #e2e8f0; }
+  .logs-entry-time {
+    color: #94a3b8;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .logs-entry-summary {
+    font-size: 12px;
+    color: #cbd5e1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .logs-entry-arrow {
+    color: #64748b;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .logs-entry-arrow.open { transform: rotate(90deg); }
+  .logs-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .logs-pagination button {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+  .logs-pagination button:hover { background: rgb(71 85 105); }
+  .logs-pagination button:disabled { opacity: 0.4; cursor: default; }
+  .logs-pagination button:disabled:hover { background: rgb(51 65 85); }
 </style>
 </head>
 
@@ -291,6 +361,12 @@
       <h2>Requests Over Time</h2>
       <div class="legend" id="chart-legend"></div>
       <div class="d3-chart" id="chart"></div>
+    </div>
+
+    <div class="logs-widget" id="logs-widget">
+      <h2>Logs</h2>
+      <div id="logs-entries"></div>
+      <div class="logs-pagination" id="logs-pagination"></div>
     </div>
 
     <div class="panels">
@@ -370,6 +446,7 @@
 	</div>
       </div>
     </div>
+
   </div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -427,6 +504,7 @@ async function refreshChart() {
   window.chartData = data;
   renderChart(data);
   updateURL();
+  refreshLogs(1);
 }
 
 function renderQueryBuilder() {
@@ -823,9 +901,110 @@ function renderChart(data) {
     });
 }
 
+let logsCurrentPage = 1;
+
+async function refreshLogs(page) {
+  logsCurrentPage = page;
+  const params = getRangeParams();
+  const q = window.query;
+  params.set("q", formatQuery(q));
+  params.set("page", page);
+  params.set("limit", 50);
+
+  const resp = await fetch("events?" + params.toString());
+  const result = await resp.json();
+  renderLogs(result);
+}
+
+function renderLogs(result) {
+  const container = document.getElementById("logs-entries");
+  const pagination = document.getElementById("logs-pagination");
+  container.innerHTML = "";
+  pagination.innerHTML = "";
+
+  const events = result.events || [];
+  const total = result.total || 0;
+  const page = result.page || 1;
+  const pageSize = result.pageSize || 50;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  if (events.length === 0) {
+    container.innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px 0">No matching events.</div>';
+    return;
+  }
+
+  events.forEach(ev => {
+    const entry = document.createElement("div");
+    entry.className = "logs-entry";
+
+    const header = document.createElement("div");
+    header.className = "logs-entry-header";
+
+    const arrow = document.createElement("span");
+    arrow.className = "logs-entry-arrow";
+    arrow.textContent = "\u25b6";
+
+    const ts = document.createElement("span");
+    ts.className = "logs-entry-time";
+    const d = new Date(ev.timestamp);
+    ts.textContent = d.toISOString().replace("T", " ").substring(0, 19);
+
+    const summary = document.createElement("span");
+    summary.className = "logs-entry-summary";
+    const parts = [];
+    if (ev.method) parts.push(ev.method);
+    if (ev.status) parts.push(String(ev.status));
+    if (ev.host) parts.push(ev.host + (ev.path || ""));
+    summary.textContent = parts.join(" ") || "event";
+
+    header.appendChild(arrow);
+    header.appendChild(ts);
+    header.appendChild(summary);
+
+    const jsonDiv = document.createElement("div");
+    jsonDiv.className = "event-json";
+    const pre = document.createElement("pre");
+    pre.className = "json-pre";
+    try {
+      pre.textContent = JSON.stringify(ev.data, null, 2);
+    } catch (e) {
+      pre.textContent = String(ev.data);
+    }
+    jsonDiv.appendChild(pre);
+
+    header.addEventListener("click", () => {
+      const open = jsonDiv.classList.toggle("open");
+      arrow.classList.toggle("open", open);
+    });
+
+    entry.appendChild(header);
+    entry.appendChild(jsonDiv);
+    container.appendChild(entry);
+  });
+
+  // Pagination controls.
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "Previous";
+  prevBtn.disabled = page <= 1;
+  prevBtn.addEventListener("click", () => refreshLogs(page - 1));
+
+  const info = document.createElement("span");
+  info.textContent = "Page " + page + " of " + totalPages + " (" + total + " events)";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "Next";
+  nextBtn.disabled = page >= totalPages;
+  nextBtn.addEventListener("click", () => refreshLogs(page + 1));
+
+  pagination.appendChild(prevBtn);
+  pagination.appendChild(info);
+  pagination.appendChild(nextBtn);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   renderQueryBuilder();
   renderChart(window.chartData);
+  refreshLogs(1);
 
   document.querySelectorAll('.range-picker a').forEach(a => {
     a.addEventListener('click', (e) => {

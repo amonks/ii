@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -97,6 +98,7 @@ func NewServer(m *logs.Model) *Server {
 	s := &Server{serve.NewMux(), m}
 	s.HandleFunc("GET /{$}", s.serveDashboard)
 	s.HandleFunc("GET /query", s.handleQuery)
+	s.HandleFunc("GET /events", s.handleEvents)
 	s.HandleFunc("GET /values", s.handleValues)
 	s.HandleFunc("POST /ingest", s.handleIngest)
 	s.HandleFunc("GET /trace/{id}", s.serveTrace)
@@ -284,6 +286,43 @@ func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+}
+
+func (app *Server) handleEvents(w http.ResponseWriter, req *http.Request) {
+	tr := logs.ParseTimeRange(req)
+	qs := req.URL.Query().Get("q")
+	q := logs.Query{GroupBy: "host"}
+	if qs != "" {
+		q = logs.ParseQuery(qs)
+	}
+
+	page := 1
+	if v := req.URL.Query().Get("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	limit := 50
+	if v := req.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 200 {
+			limit = n
+		}
+	}
+	offset := (page - 1) * limit
+
+	events, total, err := app.model.GetFilteredEvents(tr, q, limit, offset)
+	if err != nil {
+		serve.Errorf(w, req, 500, "events error: %s", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"events":   events,
+		"total":    total,
+		"page":     page,
+		"pageSize": limit,
+	})
 }
 
 func (app *Server) handleValues(w http.ResponseWriter, req *http.Request) {

@@ -1,5 +1,5 @@
 mode = "prod"
-apps = ["dogs", "homepage", "map", "traffic", "writing"]
+apps = ["dogs", "homepage", "map", "logs", "writing"]
 
 [redirects]
   "belgianman.com" = "https://belgianman.bandcamp.com/"

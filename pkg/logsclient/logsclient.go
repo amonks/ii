@@ -12,17 +12,20 @@ import (
 // Client implements io.Writer. Each Write receives one complete JSON line
 // from slog.JSONHandler. Events are buffered and flushed in batches.
 type Client struct {
-	url  string
-	mu   sync.Mutex
-	buf  []json.RawMessage
-	done chan struct{}
+	url    string
+	client *http.Client
+	mu     sync.Mutex
+	buf    []json.RawMessage
+	done   chan struct{}
 }
 
-// New creates a new log shipping client that sends batched events to url.
-func New(url string) *Client {
+// New creates a new log shipping client that sends batched events to url
+// using the provided HTTP client.
+func New(url string, client *http.Client) *Client {
 	c := &Client{
-		url:  url,
-		done: make(chan struct{}),
+		url:    url,
+		client: client,
+		done:   make(chan struct{}),
 	}
 	go c.flushLoop()
 	return c
@@ -82,7 +85,7 @@ func (c *Client) flush() {
 		return
 	}
 
-	resp, err := http.Post(c.url, "application/json", &buf)
+	resp, err := c.client.Post(c.url, "application/json", &buf)
 	if err != nil {
 		log.Printf("logsclient: post error: %v", err)
 		return

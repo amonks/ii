@@ -54,9 +54,6 @@ var (
 )
 
 func run() error {
-	lc := logsclient.New("http://monks-logs.fly-internal/ingest")
-	defer lc.Close()
-	reqlog.SetupLogging(lc)
 	flag.Parse()
 
 	config, err := config.Load(*machine)
@@ -70,6 +67,10 @@ func run() error {
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
 	}
+
+	lc := logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
+	defer lc.Close()
+	reqlog.SetupLogging(lc)
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(requestsMetric, requestDurationsMetric)

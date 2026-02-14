@@ -1,2 +1,2 @@
 mode = "dev"
-apps = ["aranet", "calendar", "directory", "dogs", "golink", "homepage", "map", "ping", "scrobbles", "sms", "writing", "youtube"]
+apps = ["aranet", "calendar", "directory", "golink", "homepage", "map", "ping", "scrobbles", "sms", "writing", "youtube"]

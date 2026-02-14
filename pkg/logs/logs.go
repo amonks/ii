@@ -525,3 +525,39 @@ func (m *Model) GetRecentEvents(tr TimeRange, limit int) ([]Event, error) {
 	}
 	return events, nil
 }
+
+// GetFilteredEvents returns paginated events matching the given query filters.
+func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]Event, int, error) {
+	for _, f := range q.Filters {
+		if !isValidColumn(f.Column) {
+			return nil, 0, fmt.Errorf("invalid filter column %q", f.Column)
+		}
+	}
+
+	where := `WHERE msg = 'request' AND timestamp >= ? AND timestamp <= ?`
+	args := []interface{}{tr.StartTime(), tr.EndTime()}
+	for _, f := range q.Filters {
+		s, a := f.buildSQL(f.Column)
+		where += s
+		args = append(args, a...)
+	}
+
+	// Get total count.
+	var total int
+	countSQL := `SELECT COUNT(*) FROM events ` + where
+	row := m.Raw(countSQL, args...).Row()
+	if err := row.Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Get page of events.
+	dataSQL := `SELECT id, timestamp, data, app, level, msg, request_id, method, host, path, status, duration_ms, remote_addr
+		FROM events ` + where + ` ORDER BY timestamp DESC LIMIT ? OFFSET ?`
+	dataArgs := append(append([]interface{}{}, args...), limit, offset)
+
+	var events []Event
+	if err := m.Raw(dataSQL, dataArgs...).Scan(&events).Error; err != nil {
+		return nil, 0, err
+	}
+	return events, total, nil
+}

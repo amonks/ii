@@ -7,7 +7,6 @@
     'apps/aranet/dev',
     'apps/calendar/dev',
     'apps/directory/dev',
-    'apps/dogs/dev',
     'apps/golink/dev',
     'apps/homepage/dev',
     'apps/map/dev',
@@ -53,12 +52,12 @@
     'compress-statics',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/directory/templ',
-    'apps/dogs/templ',
+    'apps/homepage/templ',
     'apps/youtube/templ',
     'apps/reddit/templ',
-    'apps/homepage/templ',
-    'apps/writing/templ'
+    'apps/directory/templ',
+    'apps/writing/templ',
+    'apps/dogs/templ'
   ]
 
 [[task]]
