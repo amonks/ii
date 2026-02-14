@@ -14,7 +14,6 @@
     'apps/ping/dev',
     'apps/scrobbles/dev',
     'apps/sms/dev',
-    'apps/traffic/dev',
     'apps/writing/dev',
     'apps/youtube/dev'
   ]
@@ -37,7 +36,6 @@
     'apps/reddit/build',
     'apps/scrobbles/build',
     'apps/sms/build',
-    'apps/traffic/build',
     'apps/writing/build',
     'apps/youtube/build'
   ]
@@ -53,14 +51,13 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/directory/templ',
     'apps/dogs/templ',
-    'apps/map/build-css',
-    'apps/map/build-js',
-    'apps/writing/templ',
+    'apps/youtube/templ',
     'apps/reddit/templ',
-    'apps/traffic/build-css',
-    'apps/youtube/templ'
+    'apps/directory/templ',
+    'apps/writing/templ',
+    'apps/map/build-css',
+    'apps/map/build-js'
   ]
 
 [[task]]
@@ -112,6 +109,5 @@
     'apps/dogs/dev',
     'apps/monitor/dev',
     'apps/movies/dev',
-    'apps/reddit/dev',
-    'apps/traffic/dev'
+    'apps/reddit/dev'
   ]

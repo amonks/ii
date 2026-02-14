@@ -19,4 +19,5 @@ FROM alpine
   COPY apps/writing/writing/ /app/apps/writing/writing/
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/data
+  ENV TSNET_FORCE_LOGIN=1
   CMD ["/app/bin/app"]

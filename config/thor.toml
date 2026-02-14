@@ -1,2 +1,2 @@
 mode = "dev"
-apps = ["air", "dogs", "monitor", "movies", "reddit", "traffic"]
+apps = ["air", "dogs", "monitor", "movies", "reddit"]

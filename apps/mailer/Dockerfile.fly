@@ -18,4 +18,5 @@ FROM alpine
   COPY --from=gobuild /app/bin/mailer /app/bin/app
   ENV MONKS_ROOT=/app
   ENV MONKS_DATA=/data
+  ENV TSNET_FORCE_LOGIN=1
   CMD ["/app/bin/app"]
