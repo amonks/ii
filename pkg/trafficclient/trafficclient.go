@@ -2,6 +2,7 @@ package trafficclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,6 +14,14 @@ import (
 )
 
 var RemoteAddrKey = &struct{}{}
+var appKey = &struct{}{}
+
+// SetApp stores the matched app/route name for the current request's traffic log entry.
+func SetApp(req *http.Request, name string) {
+	if p, ok := req.Context().Value(appKey).(*string); ok {
+		*p = name
+	}
+}
 
 var _ middleware.Middleware = &Client{}
 
@@ -42,6 +51,9 @@ func (c *Client) Close() {
 
 func (c *Client) ModifyHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		app := new(string)
+		req = req.WithContext(context.WithValue(req.Context(), appKey, app))
+
 		ww := &statusRecorder{ResponseWriter: w}
 
 		start := time.Now()
@@ -53,11 +65,13 @@ func (c *Client) ModifyHandler(handler http.Handler) http.Handler {
 			Host:       req.Host,
 			Path:       req.URL.Path,
 			Query:      req.URL.RawQuery,
+			Method:     req.Method,
 			RemoteAddr: getRemoteAddr(req),
 			UserAgent:  req.UserAgent(),
 			Referer:    req.Header.Get("Referer"),
 			StatusCode: ww.status,
 			Duration:   dur,
+			App:        *app,
 		})
 	})
 }

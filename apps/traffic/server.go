@@ -72,15 +72,12 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 
 	tr := traffic.ParseTimeRange(req)
 
-	// Parse query params: use q= params if present, otherwise default.
-	qParams := req.URL.Query()["q"]
-	var queries []traffic.Query
-	if len(qParams) > 0 {
-		for _, qs := range qParams {
-			queries = append(queries, traffic.ParseQuery(qs))
-		}
+	// Parse query param.
+	var query traffic.Query
+	if qs := req.URL.Query().Get("q"); qs != "" {
+		query = traffic.ParseQuery(qs)
 	} else {
-		queries = []traffic.Query{{Source: "stats", GroupBy: "host"}}
+		query = traffic.Query{GroupBy: "host"}
 	}
 
 	var (
@@ -101,14 +98,10 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		logErr, pagesErr, statusErr, durErr error
 	)
 
-	// Run chart queries (one per q param).
-	type queryResult struct {
-		data map[string][]traffic.ChartPoint
-		err  error
-	}
-	chartResults := make([]queryResult, len(queries))
+	var chartData map[string][]traffic.ChartPoint
+	var chartErr error
 
-	wg.Add(4 + len(queries))
+	wg.Add(5)
 	go func() {
 		defer wg.Done()
 		logErr = app.model.
@@ -149,13 +142,10 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			ORDER BY duration_bucket ASC
 		`, tr.StartTime(), tr.EndTime()).Scan(&durations).Error
 	}()
-	for i, q := range queries {
-		go func(i int, q traffic.Query) {
-			defer wg.Done()
-			data, err := app.model.QueryChartData(tr, q)
-			chartResults[i] = queryResult{data, err}
-		}(i, q)
-	}
+	go func() {
+		defer wg.Done()
+		chartData, chartErr = app.model.QueryChartData(tr, query)
+	}()
 	wg.Wait()
 
 	if logErr != nil {
@@ -179,18 +169,10 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Merge chart results: prefix series keys with query index.
-	chartData := make(map[string][]traffic.ChartPoint)
-	for i, cr := range chartResults {
-		if cr.err != nil {
-			log.Printf("serveTraffic: chartErr[%d]: %.200s", i, fmt.Sprint(cr.err))
-			serve.Errorf(w, req, 500, "failed to run query %d: %s", i, cr.err)
-			return
-		}
-		for key, pts := range cr.data {
-			prefixed := fmt.Sprintf("q%d:%s", i, key)
-			chartData[prefixed] = pts
-		}
+	if chartErr != nil {
+		log.Printf("serveTraffic: chartErr: %.200s", fmt.Sprint(chartErr))
+		serve.Errorf(w, req, 500, "failed to run query: %s", chartErr)
+		return
 	}
 
 	chartJSON, err := json.Marshal(chartData)
@@ -198,18 +180,19 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 		serve.Errorf(w, req, 500, "failed to marshal chart data: %s", err)
 		return
 	}
-	queriesJSON, err := json.Marshal(queries)
+	queryJSON, err := json.Marshal(query)
 	if err != nil {
-		serve.Errorf(w, req, 500, "failed to marshal queries: %s", err)
+		serve.Errorf(w, req, 500, "failed to marshal query: %s", err)
 		return
 	}
 
-	// Find max duration count for bar scaling
-	maxDurCount := 0
+	totalStatusCount := 0
+	for _, s := range statusCodes {
+		totalStatusCount += s.RequestCount
+	}
+	totalDurCount := 0
 	for _, d := range durations {
-		if d.RequestCount > maxDurCount {
-			maxDurCount = d.RequestCount
-		}
+		totalDurCount += d.RequestCount
 	}
 
 	type PageData struct {
@@ -227,20 +210,22 @@ func (app *Server) serveTraffic(w http.ResponseWriter, req *http.Request) {
 			DurationBucket int64
 			RequestCount   int
 		}
-		MaxDurCount int
-		ChartJSON   template.JS
-		QueriesJSON template.JS
+		TotalStatusCount int
+		TotalDurCount    int
+		ChartJSON        template.JS
+		QueryJSON        template.JS
 	}
 
 	pageData := PageData{
-		TimeRange:   tr,
-		Log:         logRows,
-		TopPages:    topPages,
-		StatusCodes: statusCodes,
-		Durations:   durations,
-		MaxDurCount: maxDurCount,
-		ChartJSON:   template.JS(string(chartJSON)),
-		QueriesJSON: template.JS(string(queriesJSON)),
+		TimeRange:        tr,
+		Log:              logRows,
+		TopPages:         topPages,
+		StatusCodes:      statusCodes,
+		Durations:        durations,
+		TotalStatusCount: totalStatusCount,
+		TotalDurCount:    totalDurCount,
+		ChartJSON:        template.JS(string(chartJSON)),
+		QueryJSON:        template.JS(string(queryJSON)),
 	}
 
 	var buf bytes.Buffer
@@ -272,13 +257,12 @@ func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
 
 func (app *Server) handleValues(w http.ResponseWriter, req *http.Request) {
 	tr := traffic.ParseTimeRange(req)
-	source := req.URL.Query().Get("source")
 	dim := req.URL.Query().Get("dim")
-	if source == "" || dim == "" {
-		serve.Errorf(w, req, 400, "missing source or dim parameter")
+	if dim == "" {
+		serve.Errorf(w, req, 400, "missing dim parameter")
 		return
 	}
-	vals, err := app.model.GetDimensionValues(tr, source, dim)
+	vals, err := app.model.GetDimensionValues(tr, dim)
 	if err != nil {
 		serve.Errorf(w, req, 500, "values error: %s", err)
 		return

@@ -553,8 +553,16 @@ video {
 
 /* utilities */
 
+.visible {
+  visibility: visible;
+}
+
 .absolute {
   position: absolute;
+}
+
+.relative {
+  position: relative;
 }
 
 .-mx-4 {
@@ -575,10 +583,6 @@ video {
   display: inline-block;
 }
 
-.inline {
-  display: inline;
-}
-
 .flex {
   display: flex;
 }
@@ -597,6 +601,10 @@ video {
 
 .hidden {
   display: none;
+}
+
+.\!hidden {
+  display: none !important;
 }
 
 .min-w-full {

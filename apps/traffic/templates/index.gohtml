@@ -25,10 +25,10 @@
   .axis text { font-size: 11px; fill: #94a3b8; }
   .grid line { stroke: #334155; shape-rendering: crispEdges; }
   .grid path { stroke-width: 0; }
-  .chart-line { fill: none; stroke-width: 2; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
-  .legend-item { display: flex; align-items: center; font-size: 12px; color: #94a3b8; }
-  .legend-color { width: 12px; height: 3px; margin-right: 5px; border-radius: 1px; }
+  .legend-item { display: flex; align-items: center; font-size: 12px; color: #94a3b8; cursor: pointer; }
+  .legend-item:hover { color: #e2e8f0; }
+  .legend-color { width: 12px; height: 12px; margin-right: 5px; border-radius: 2px; }
   .chart-tooltip {
     position: absolute;
     pointer-events: none;
@@ -137,12 +137,6 @@
     margin-bottom: 8px;
     flex-wrap: wrap;
   }
-  .query-swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    flex-shrink: 0;
-  }
   .query-row select {
     background: rgb(51 65 85);
     border: 1px solid #475569;
@@ -187,17 +181,6 @@
   .query-btn:hover { color: #e2e8f0; border-color: #64748b; }
   .query-btn.remove { color: #f87171; border-color: transparent; }
   .query-btn.remove:hover { color: #ef4444; }
-  .add-query-btn {
-    background: none;
-    border: 1px dashed #475569;
-    border-radius: 4px;
-    color: #94a3b8;
-    font-size: 12px;
-    padding: 5px 12px;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-  .add-query-btn:hover { color: #e2e8f0; border-color: #64748b; }
   .filter-add {
     display: inline-flex;
     align-items: center;
@@ -211,6 +194,60 @@
     font-size: 11px;
     padding: 2px 6px;
   }
+  .negate-toggle {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 11px;
+    padding: 2px 8px;
+    cursor: pointer;
+    min-width: 32px;
+    text-align: center;
+    font-family: inherit;
+  }
+  .negate-toggle:hover { border-color: #64748b; }
+  .negate-toggle.negated { color: #f87171; border-color: #f87171; }
+  .filter-ms { position: relative; display: inline-block; }
+  .filter-ms-toggle {
+    background: rgb(51 65 85);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+    min-width: 80px;
+    text-align: left;
+    font-family: inherit;
+  }
+  .filter-ms-toggle:hover { border-color: #64748b; }
+  .filter-ms-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 2px;
+    background: rgb(30 41 59);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 4px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 150px;
+    z-index: 100;
+  }
+  .filter-ms-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #e2e8f0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .filter-ms-item:hover { background: rgb(51 65 85); }
+  .filter-ms-item input[type="checkbox"] { margin: 0; accent-color: #60a5fa; }
 </style>
 </head>
 
@@ -231,9 +268,7 @@
     </div>
 
     <div class="query-builder">
-      <h2>Queries</h2>
-      <div id="query-rows"></div>
-      <button class="add-query-btn" id="add-query">+ Add query</button>
+      <div id="query-row"></div>
     </div>
 
     <div class="chart-container">
@@ -245,22 +280,21 @@
     <div class="panels">
       <div class="panel">
         <h2>Status Codes</h2>
-        <table>
-          {{ range .StatusCodes }}
-            <tr>
-              <td class="{{ if ge .StatusCode 500 }}status-5xx{{ else if ge .StatusCode 400 }}status-4xx{{ else if ge .StatusCode 300 }}status-3xx{{ else }}status-2xx{{ end }}">{{ .StatusCode }}</td>
-              <td>{{ .RequestCount }}</td>
-            </tr>
-          {{ end }}
-        </table>
+        {{ range .StatusCodes }}
+          <div class="dur-row">
+            <span class="dur-label {{ if ge .StatusCode 500 }}status-5xx{{ else if ge .StatusCode 400 }}status-4xx{{ else if ge .StatusCode 300 }}status-3xx{{ else }}status-2xx{{ end }}">{{ .StatusCode }}</span>
+            <div class="dur-bar-bg"><div class="dur-bar" style="width: {{ percent .RequestCount $.TotalStatusCount }}%; background: {{ if ge .StatusCode 500 }}#f87171{{ else if ge .StatusCode 400 }}#fbbf24{{ else if ge .StatusCode 300 }}#60a5fa{{ else }}#34d399{{ end }}"></div></div>
+            <span class="dur-count">{{ percent .RequestCount $.TotalStatusCount }}%</span>
+          </div>
+        {{ end }}
       </div>
       <div class="panel">
         <h2>Duration Distribution</h2>
         {{ range .Durations }}
           <div class="dur-row">
             <span class="dur-label">{{ if ge .DurationBucket 10000 }}>5s{{ else if ge .DurationBucket 1000 }}{{ divide .DurationBucket 1000 }}s{{ else }}{{ .DurationBucket }}ms{{ end }}</span>
-            <div class="dur-bar-bg"><div class="dur-bar" style="width: {{ percent .RequestCount $.MaxDurCount }}%"></div></div>
-            <span class="dur-count">{{ .RequestCount }}</span>
+            <div class="dur-bar-bg"><div class="dur-bar" style="width: {{ percent .RequestCount $.TotalDurCount }}%"></div></div>
+            <span class="dur-count">{{ percent .RequestCount $.TotalDurCount }}%</span>
           </div>
         {{ end }}
       </div>
@@ -293,6 +327,7 @@
 	    <thead>
 	      <tr>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Date</th>
+		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Method</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">URL</th>
 		<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">StatusCode</th>
 		<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-200">Duration</th>
@@ -305,6 +340,7 @@
 	      {{ range .Log }}
 		<tr>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .PrintDate }}</td>
+		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ .Method }}</td>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm"><a class="text-blue-300" href="//{{ .PrintURL }}">{{ .PrintURL }}</a></td>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ .StatusCode }}</td>
 		  <td class="whitespace-nowrap px-3 py-4 text-sm text-right">{{ .PrintDuration }}</td>
@@ -323,15 +359,12 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 window.chartData = {{ .ChartJSON }};
-window.queries = {{ .QueriesJSON }};
+window.query = {{ .QueryJSON }};
 
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
 const formatDate = d3.timeFormat("%b %d, %H:%M");
 
-const groupByOptions = {
-  stats: ["host", "status_code", "duration_bucket"],
-  pages: ["host", "path"],
-};
+const groupByOptions = ["host", "status_code", "duration_bucket", "app", "method"];
 
 // Get current range params from URL for API calls.
 function getRangeParams() {
@@ -344,7 +377,7 @@ function getRangeParams() {
 }
 
 function formatQuery(q) {
-  let parts = ["source:" + q.Source, "group:" + q.GroupBy];
+  let parts = ["group:" + q.GroupBy];
   if (q.Filters) {
     for (const f of q.Filters) {
       const key = (f.Negate ? "!" : "") + f.Column;
@@ -356,15 +389,12 @@ function formatQuery(q) {
 
 function updateURL() {
   const params = getRangeParams();
-  for (const q of window.queries) {
-    params.append("q", formatQuery(q));
-  }
+  params.set("q", formatQuery(window.query));
   history.replaceState(null, "", "?" + params.toString());
 }
 
-async function fetchValues(source, dim) {
+async function fetchValues(dim) {
   const params = getRangeParams();
-  params.set("source", source);
   params.set("dim", dim);
   const resp = await fetch("values?" + params.toString());
   return resp.json();
@@ -378,233 +408,318 @@ async function fetchQueryData(q) {
 }
 
 async function refreshChart() {
-  const allData = {};
-  const results = await Promise.all(window.queries.map(q => fetchQueryData(q)));
-  results.forEach((data, i) => {
-    for (const [key, pts] of Object.entries(data)) {
-      allData["q" + i + ":" + key] = pts;
-    }
-  });
-  window.chartData = allData;
-  renderChart(allData);
+  const data = await fetchQueryData(window.query);
+  window.chartData = data;
+  renderChart(data);
   updateURL();
 }
 
 function renderQueryBuilder() {
-  const container = document.getElementById("query-rows");
+  const container = document.getElementById("query-row");
   container.innerHTML = "";
+  const q = window.query;
 
-  window.queries.forEach((q, qi) => {
-    const row = document.createElement("div");
-    row.className = "query-row";
+  const row = document.createElement("div");
+  row.className = "query-row";
 
-    // Color swatch
-    const swatch = document.createElement("div");
-    swatch.className = "query-swatch";
-    swatch.style.backgroundColor = colors[qi % colors.length];
-    row.appendChild(swatch);
+  // Group-by dropdown
+  const grpSel = document.createElement("select");
+  grpSel.title = "Group by";
+  groupByOptions.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = "group: " + g;
+    opt.selected = q.GroupBy === g;
+    grpSel.appendChild(opt);
+  });
+  grpSel.addEventListener("change", () => {
+    q.GroupBy = grpSel.value;
+    refreshChart();
+  });
+  row.appendChild(grpSel);
 
-    // Source dropdown
-    const srcSel = document.createElement("select");
-    srcSel.title = "Data source";
-    ["stats", "pages"].forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s;
-      opt.textContent = s;
-      opt.selected = q.Source === s;
-      srcSel.appendChild(opt);
+  // Filter pills
+  const filtersDiv = document.createElement("div");
+  filtersDiv.className = "query-filters";
+  if (q.Filters) {
+    q.Filters.forEach((f, fi) => {
+      const pill = document.createElement("span");
+      pill.className = "filter-pill";
+      const op = f.Negate
+        ? (f.Values.length > 1 ? " not in " : " \u2260 ")
+        : (f.Values.length > 1 ? " in " : " = ");
+      const valText = f.Values.length > 1 ? f.Values.join(", ") : f.Values[0];
+
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "filter-label";
+      labelSpan.textContent = f.Column + op + valText;
+      labelSpan.title = "Click to toggle negation";
+      labelSpan.style.cursor = "pointer";
+      labelSpan.addEventListener("click", () => {
+        f.Negate = !f.Negate;
+        renderQueryBuilder();
+        refreshChart();
+      });
+      pill.appendChild(labelSpan);
+
+      const removeSpan = document.createElement("span");
+      removeSpan.className = "remove-filter";
+      removeSpan.textContent = "\u00d7";
+      removeSpan.addEventListener("click", () => {
+        q.Filters.splice(fi, 1);
+        renderQueryBuilder();
+        refreshChart();
+      });
+      pill.appendChild(removeSpan);
+
+      filtersDiv.appendChild(pill);
     });
-    srcSel.addEventListener("change", () => {
-      q.Source = srcSel.value;
-      // Reset group-by if not valid for new source
-      if (!groupByOptions[q.Source].includes(q.GroupBy)) {
-        q.GroupBy = groupByOptions[q.Source][0];
+  }
+
+  // +filter button
+  const addFilterBtn = document.createElement("button");
+  addFilterBtn.className = "query-btn";
+  addFilterBtn.textContent = "+filter";
+  addFilterBtn.addEventListener("click", () => {
+    addFilterBtn.style.display = "none";
+    const addDiv = document.createElement("span");
+    addDiv.className = "filter-add";
+
+    let negate = false;
+    let selectedValues = new Set();
+
+    // Dimension picker
+    const dimSel = document.createElement("select");
+    const availDims = groupByOptions;
+    if (availDims.length === 0) {
+      addFilterBtn.style.display = "";
+      return;
+    }
+    const placeholder = document.createElement("option");
+    placeholder.textContent = "dimension...";
+    placeholder.value = "";
+    dimSel.appendChild(placeholder);
+    availDims.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.textContent = d;
+      dimSel.appendChild(opt);
+    });
+    addDiv.appendChild(dimSel);
+
+    // Negate toggle (hidden until dimension chosen)
+    const negBtn = document.createElement("button");
+    negBtn.className = "negate-toggle";
+    negBtn.type = "button";
+    negBtn.textContent = "=";
+    negBtn.title = "Toggle: equals / not equals";
+    negBtn.style.display = "none";
+    negBtn.addEventListener("click", () => {
+      negate = !negate;
+      negBtn.textContent = negate ? "\u2260" : "=";
+      negBtn.classList.toggle("negated", negate);
+    });
+    addDiv.appendChild(negBtn);
+
+    // Multi-select value picker (hidden until dimension chosen)
+    const msContainer = document.createElement("span");
+    msContainer.className = "filter-ms";
+    msContainer.style.display = "none";
+
+    const msBtn = document.createElement("button");
+    msBtn.className = "filter-ms-toggle";
+    msBtn.type = "button";
+    msBtn.textContent = "select values...";
+    msContainer.appendChild(msBtn);
+
+    const msDropdown = document.createElement("div");
+    msDropdown.className = "filter-ms-dropdown";
+    msDropdown.style.display = "none";
+    msContainer.appendChild(msDropdown);
+    addDiv.appendChild(msContainer);
+
+    // Apply button (hidden until values selected)
+    const applyBtn = document.createElement("button");
+    applyBtn.className = "query-btn";
+    applyBtn.type = "button";
+    applyBtn.textContent = "apply";
+    applyBtn.style.display = "none";
+    addDiv.appendChild(applyBtn);
+
+    // Cancel button
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "query-btn remove";
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "\u00d7";
+    cancelBtn.addEventListener("click", () => {
+      addDiv.remove();
+      addFilterBtn.style.display = "";
+    });
+    addDiv.appendChild(cancelBtn);
+
+    function updateMsBtnText() {
+      if (selectedValues.size === 0) {
+        msBtn.textContent = "select values...";
+        applyBtn.style.display = "none";
+      } else {
+        const arr = Array.from(selectedValues);
+        msBtn.textContent = arr.length <= 2 ? arr.join(", ") : arr.length + " selected";
+        applyBtn.style.display = "";
       }
-      // Remove filters not valid for new source
-      if (q.Filters) {
-        q.Filters = q.Filters.filter(f => groupByOptions[q.Source].includes(f.Column));
+    }
+
+    dimSel.addEventListener("change", async () => {
+      if (!dimSel.value) {
+        negBtn.style.display = "none";
+        msContainer.style.display = "none";
+        applyBtn.style.display = "none";
+        return;
+      }
+      negBtn.style.display = "";
+      msContainer.style.display = "inline-block";
+      msBtn.textContent = "loading...";
+      msDropdown.innerHTML = "";
+      selectedValues.clear();
+      applyBtn.style.display = "none";
+
+      const vals = await fetchValues(dimSel.value);
+      msBtn.textContent = "select values...";
+      (vals || []).forEach(v => {
+        const item = document.createElement("label");
+        item.className = "filter-ms-item";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = v;
+        cb.addEventListener("change", () => {
+          if (cb.checked) selectedValues.add(v);
+          else selectedValues.delete(v);
+          updateMsBtnText();
+        });
+        const span = document.createElement("span");
+        span.textContent = v;
+        item.appendChild(cb);
+        item.appendChild(span);
+        msDropdown.appendChild(item);
+      });
+    });
+
+    msBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      msDropdown.style.display = msDropdown.style.display === "none" ? "" : "none";
+    });
+
+    // Close dropdown when clicking outside
+    const closeHandler = (e) => {
+      if (!msContainer.contains(e.target)) {
+        msDropdown.style.display = "none";
+      }
+      if (!document.body.contains(addDiv)) {
+        document.removeEventListener("click", closeHandler);
+      }
+    };
+    document.addEventListener("click", closeHandler);
+
+    applyBtn.addEventListener("click", () => {
+      if (selectedValues.size === 0) return;
+      if (!q.Filters) q.Filters = [];
+      const values = Array.from(selectedValues);
+      const existing = q.Filters.find(f => f.Column === dimSel.value && f.Negate === negate);
+      if (existing) {
+        values.forEach(v => {
+          if (!existing.Values.includes(v)) existing.Values.push(v);
+        });
+      } else {
+        q.Filters.push({Column: dimSel.value, Negate: negate, Values: values});
       }
       renderQueryBuilder();
       refreshChart();
     });
-    row.appendChild(srcSel);
 
-    // Group-by dropdown
-    const grpSel = document.createElement("select");
-    grpSel.title = "Group by";
-    groupByOptions[q.Source].forEach(g => {
-      const opt = document.createElement("option");
-      opt.value = g;
-      opt.textContent = "group: " + g;
-      opt.selected = q.GroupBy === g;
-      grpSel.appendChild(opt);
-    });
-    grpSel.addEventListener("change", () => {
-      q.GroupBy = grpSel.value;
-      refreshChart();
-    });
-    row.appendChild(grpSel);
-
-    // Filter pills
-    const filtersDiv = document.createElement("div");
-    filtersDiv.className = "query-filters";
-    if (q.Filters) {
-      q.Filters.forEach((f, fi) => {
-        const pill = document.createElement("span");
-        pill.className = "filter-pill";
-        const op = f.Negate
-          ? (f.Values.length > 1 ? " not in " : " \u2260 ")
-          : (f.Values.length > 1 ? " in " : " = ");
-        const valText = f.Values.length > 1 ? f.Values.join(", ") : f.Values[0];
-
-        const labelSpan = document.createElement("span");
-        labelSpan.className = "filter-label";
-        labelSpan.textContent = f.Column + op + valText;
-        labelSpan.title = "Click to toggle negation";
-        labelSpan.style.cursor = "pointer";
-        labelSpan.addEventListener("click", () => {
-          f.Negate = !f.Negate;
-          renderQueryBuilder();
-          refreshChart();
-        });
-        pill.appendChild(labelSpan);
-
-        const removeSpan = document.createElement("span");
-        removeSpan.className = "remove-filter";
-        removeSpan.textContent = "\u00d7";
-        removeSpan.addEventListener("click", () => {
-          q.Filters.splice(fi, 1);
-          renderQueryBuilder();
-          refreshChart();
-        });
-        pill.appendChild(removeSpan);
-
-        filtersDiv.appendChild(pill);
-      });
-    }
-
-    // +filter button
-    const addFilterBtn = document.createElement("button");
-    addFilterBtn.className = "query-btn";
-    addFilterBtn.textContent = "+filter";
-    addFilterBtn.addEventListener("click", () => {
-      // Show inline filter add UI
-      addFilterBtn.style.display = "none";
-      const addDiv = document.createElement("span");
-      addDiv.className = "filter-add";
-
-      // Dimension picker: all columns available for this source
-      const dimSel = document.createElement("select");
-      const availDims = groupByOptions[q.Source];
-      if (availDims.length === 0) {
-        addFilterBtn.style.display = "";
-        return;
-      }
-      const placeholder = document.createElement("option");
-      placeholder.textContent = "dimension...";
-      placeholder.value = "";
-      dimSel.appendChild(placeholder);
-      availDims.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d;
-        opt.textContent = d;
-        dimSel.appendChild(opt);
-      });
-      addDiv.appendChild(dimSel);
-
-      // Value picker (populated on dimension change)
-      const valSel = document.createElement("select");
-      valSel.style.display = "none";
-      addDiv.appendChild(valSel);
-
-      const cancelBtn = document.createElement("button");
-      cancelBtn.className = "query-btn remove";
-      cancelBtn.textContent = "\u00d7";
-      cancelBtn.addEventListener("click", () => {
-        addDiv.remove();
-        addFilterBtn.style.display = "";
-      });
-      addDiv.appendChild(cancelBtn);
-
-      dimSel.addEventListener("change", async () => {
-        if (!dimSel.value) return;
-        valSel.innerHTML = "";
-        valSel.style.display = "";
-        const vp = document.createElement("option");
-        vp.textContent = "loading...";
-        vp.value = "";
-        valSel.appendChild(vp);
-        const vals = await fetchValues(q.Source, dimSel.value);
-        valSel.innerHTML = "";
-        const vph = document.createElement("option");
-        vph.textContent = "value...";
-        vph.value = "";
-        valSel.appendChild(vph);
-        (vals || []).forEach(v => {
-          const opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          valSel.appendChild(opt);
-        });
-      });
-
-      valSel.addEventListener("change", () => {
-        if (!valSel.value) return;
-        if (!q.Filters) q.Filters = [];
-        // Check if there's already a filter for this dimension: add to its Values
-        const existing = q.Filters.find(f => f.Column === dimSel.value && !f.Negate);
-        if (existing) {
-          if (!existing.Values.includes(valSel.value)) {
-            existing.Values.push(valSel.value);
-          }
-        } else {
-          q.Filters.push({Column: dimSel.value, Negate: false, Values: [valSel.value]});
-        }
-        renderQueryBuilder();
-        refreshChart();
-      });
-
-      filtersDiv.appendChild(addDiv);
-    });
-    filtersDiv.appendChild(addFilterBtn);
-    row.appendChild(filtersDiv);
-
-    // Remove query button (only if more than one query)
-    if (window.queries.length > 1) {
-      const rmBtn = document.createElement("button");
-      rmBtn.className = "query-btn remove";
-      rmBtn.textContent = "\u00d7";
-      rmBtn.title = "Remove query";
-      rmBtn.addEventListener("click", () => {
-        window.queries.splice(qi, 1);
-        renderQueryBuilder();
-        refreshChart();
-      });
-      row.appendChild(rmBtn);
-    }
-
-    container.appendChild(row);
+    filtersDiv.appendChild(addDiv);
   });
+  filtersDiv.appendChild(addFilterBtn);
+  row.appendChild(filtersDiv);
+
+  container.appendChild(row);
+}
+
+function toggleLegendFilter(value) {
+  const q = window.query;
+  const dim = q.GroupBy;
+  if (!q.Filters) q.Filters = [];
+
+  const existing = q.Filters.find(f => f.Column === dim && f.Negate);
+  if (existing) {
+    const idx = existing.Values.indexOf(value);
+    if (idx >= 0) {
+      existing.Values.splice(idx, 1);
+      if (existing.Values.length === 0) {
+        q.Filters = q.Filters.filter(f => f !== existing);
+      }
+    } else {
+      existing.Values.push(value);
+    }
+  } else {
+    q.Filters.push({Column: dim, Negate: true, Values: [value]});
+  }
+
+  renderQueryBuilder();
+  renderChart(window.chartData);
+  updateURL();
 }
 
 function renderChart(data) {
-  const keys = Object.keys(data || {});
+  const dataKeys = Object.keys(data || {});
   const chartDiv = document.getElementById("chart");
   const legendEl = document.getElementById("chart-legend");
 
   // Clear previous
   chartDiv.innerHTML = "";
   legendEl.innerHTML = "";
-
-  // Remove old tooltips
   d3.selectAll(".chart-tooltip").remove();
+
+  // Derive hidden keys from negation filters on the current groupBy.
+  const q = window.query;
+  const hiddenKeys = new Set();
+  if (q.Filters) {
+    q.Filters.forEach(f => {
+      if (f.Column === q.GroupBy && f.Negate) {
+        f.Values.forEach(v => hiddenKeys.add(v));
+      }
+    });
+  }
+
+  // Legend shows data keys + hidden keys (so filtered-out values remain clickable).
+  const keys = Array.from(new Set([...dataKeys, ...hiddenKeys]));
+  keys.sort();
 
   if (keys.length === 0) return;
 
-  // Build legend
+  // Collect all unique timestamps and build unified stacked data.
+  const timeSet = new Set();
+  dataKeys.forEach(k => {
+    (data[k] || []).forEach(p => timeSet.add(p.window_start_at));
+  });
+  const times = Array.from(timeSet).sort();
+
+  const lookup = {};
+  dataKeys.forEach(k => {
+    lookup[k] = {};
+    (data[k] || []).forEach(p => { lookup[k][p.window_start_at] = p.count; });
+  });
+
+  const stackData = times.map(t => {
+    const obj = { _time: new Date(t) };
+    dataKeys.forEach(k => { obj[k] = lookup[k][t] || 0; });
+    return obj;
+  });
+
+  // Build clickable legend (all keys shown, hidden ones greyed out).
   keys.forEach((key, i) => {
+    const hidden = hiddenKeys.has(key);
     const item = document.createElement("div");
     item.className = "legend-item";
+    if (hidden) item.style.opacity = "0.35";
     const swatch = document.createElement("div");
     swatch.className = "legend-color";
     swatch.style.backgroundColor = colors[i % colors.length];
@@ -612,8 +727,13 @@ function renderChart(data) {
     label.textContent = key;
     item.appendChild(swatch);
     item.appendChild(label);
+    item.addEventListener("click", () => toggleLegendFilter(key));
     legendEl.appendChild(item);
   });
+
+  const visibleKeys = keys.filter(k => !hiddenKeys.has(k));
+
+  if (stackData.length === 0 || visibleKeys.length === 0) return;
 
   const margin = {top: 10, right: 20, bottom: 30, left: 50};
   const width = chartDiv.clientWidth - margin.left - margin.right;
@@ -625,47 +745,54 @@ function renderChart(data) {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  const allPoints = [];
-  keys.forEach(k => {
-    (data[k] || []).forEach(p => {
-      p._time = new Date(p.window_start_at);
-      allPoints.push(p);
-    });
-  });
-
-  if (allPoints.length === 0) return;
-
   const xScale = d3.scaleTime()
-    .domain(d3.extent(allPoints, d => d._time))
+    .domain(d3.extent(stackData, d => d._time))
     .range([0, width]);
 
+  // Compute bar width from time gaps between data points.
+  let barWidth;
+  if (stackData.length > 1) {
+    const minGapMs = d3.min(d3.pairs(stackData, (a, b) => b._time - a._time));
+    barWidth = Math.max(1, xScale(new Date(xScale.domain()[0].getTime() + minGapMs)) - xScale(xScale.domain()[0]) - 1);
+  } else {
+    barWidth = width * 0.1;
+  }
+
+  // Stack the data (visible keys only).
+  const series = d3.stack().keys(visibleKeys)(stackData);
+
+  const yMax = d3.max(stackData, d => visibleKeys.reduce((sum, k) => sum + d[k], 0));
   const yScale = d3.scaleLinear()
-    .domain([0, d3.max(allPoints, d => d.count) * 1.1])
+    .domain([0, yMax * 1.1])
     .range([height, 0]);
 
+  // Grid lines.
   svg.append("g").attr("class", "grid").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(10).tickSize(-height).tickFormat(""));
   svg.append("g").attr("class", "grid")
     .call(d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(""));
 
+  // Axes.
   svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(width > 600 ? 10 : 5).tickFormat(formatDate));
   svg.append("g").attr("class", "y axis")
     .call(d3.axisLeft(yScale).ticks(5));
 
-  const line = d3.line()
-    .x(d => xScale(d._time))
-    .y(d => yScale(d.count))
-    .curve(d3.curveMonotoneX);
-
-  keys.forEach((key, i) => {
-    svg.append("path")
-      .datum(data[key])
-      .attr("class", "chart-line")
-      .attr("stroke", colors[i % colors.length])
-      .attr("d", line);
+  // Draw stacked bars.
+  series.forEach((s, si) => {
+    const keyIndex = keys.indexOf(visibleKeys[si]);
+    svg.selectAll(null)
+      .data(s)
+      .enter()
+      .append("rect")
+      .attr("x", d => xScale(d.data._time) - barWidth / 2)
+      .attr("y", d => yScale(d[1]))
+      .attr("height", d => Math.max(0, yScale(d[0]) - yScale(d[1])))
+      .attr("width", barWidth)
+      .attr("fill", colors[keyIndex % colors.length]);
   });
 
+  // Tooltip.
   const tooltip = d3.select("body").append("div")
     .attr("class", "chart-tooltip")
     .style("opacity", 0);
@@ -677,26 +804,29 @@ function renderChart(data) {
     .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0))
     .on("mousemove", function(event) {
       const x0 = xScale.invert(d3.pointer(event)[0]);
-      let html = `<div class="tt-title">${formatDate(x0)}</div>`;
-      const rows = [];
-      keys.forEach((key, i) => {
-        const pts = data[key];
-        if (!pts || pts.length === 0) return;
-        const bisect = d3.bisector(d => d._time).left;
-        const idx = bisect(pts, x0, 1);
-        let d;
-        if (idx > 0 && idx < pts.length) {
-          const d0 = pts[idx - 1], d1 = pts[idx];
-          d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
-        } else if (pts.length > 0) {
-          d = idx === 0 ? pts[0] : pts[pts.length - 1];
-        }
-        if (d) rows.push({key, color: colors[i % colors.length], count: d.count});
-      });
-      rows.sort((a, b) => b.count - a.count);
+      // Find closest time bucket.
+      const bisect = d3.bisector(d => d._time).left;
+      const idx = bisect(stackData, x0, 1);
+      let d;
+      if (idx > 0 && idx < stackData.length) {
+        const d0 = stackData[idx - 1], d1 = stackData[idx];
+        d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
+      } else {
+        d = idx === 0 ? stackData[0] : stackData[stackData.length - 1];
+      }
+
+      let html = `<div class="tt-title">${formatDate(d._time)}</div>`;
+      let total = 0;
+      const rows = visibleKeys.map(k => ({key: k, color: colors[keys.indexOf(k) % colors.length], count: d[k]}))
+        .filter(r => r.count > 0)
+        .sort((a, b) => b.count - a.count);
       rows.forEach(r => {
+        total += r.count;
         html += `<div class="tt-row" style="color:${r.color}">${r.key}: ${r.count}</div>`;
       });
+      if (visibleKeys.length > 1) {
+        html += `<div class="tt-row" style="color:#e2e8f0; border-top: 1px solid #334155; margin-top: 4px; padding-top: 4px;">total: ${total}</div>`;
+      }
       tooltip.html(html)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 28) + "px");
@@ -707,11 +837,36 @@ document.addEventListener("DOMContentLoaded", function() {
   renderQueryBuilder();
   renderChart(window.chartData);
 
-  document.getElementById("add-query").addEventListener("click", () => {
-    window.queries.push({Source: "stats", GroupBy: "host", Filters: []});
-    renderQueryBuilder();
-    refreshChart();
+  // Preserve query param when switching time ranges.
+  document.querySelectorAll('.range-picker a').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      const linkParams = new URL(a.href, window.location.origin).searchParams;
+      params.delete('start');
+      params.delete('end');
+      params.set('range', linkParams.get('range'));
+      window.location.search = params.toString();
+    });
   });
+
+  // Preserve query param when using custom date range.
+  const dateForm = document.querySelector('.range-picker form');
+  if (dateForm) {
+    dateForm.addEventListener('submit', () => {
+      const q = new URLSearchParams(window.location.search).get('q');
+      if (q) {
+        let hidden = dateForm.querySelector('input[name="q"]');
+        if (!hidden) {
+          hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'q';
+          dateForm.appendChild(hidden);
+        }
+        hidden.value = q;
+      }
+    });
+  }
 });
 </script>
 </body>

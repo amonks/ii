@@ -24,14 +24,51 @@ func durationBucketMs(d time.Duration) int64 {
 	return durationBucketsMs[len(durationBucketsMs)-1]
 }
 
+// knownApps is the set of recognized app names (first path component).
+// Requests whose first path segment isn't in this set get app="other".
+var knownApps = map[string]bool{
+	"air": true, "aranet": true, "calendar": true, "directory": true,
+	"dogs": true, "errlog": true, "golink": true, "homepage": true,
+	"mailer": true, "mailrules": true, "map": true, "monitor": true,
+	"movies": true, "ping": true, "proxy": true, "reddit": true,
+	"scrobbles": true, "sms": true, "template": true, "traffic": true,
+	"writing": true, "youtube": true,
+}
+
+// appFromPath extracts the first path component and returns it if it's
+// a known app, otherwise "other".
+func appFromPath(path string) string {
+	p := strings.TrimPrefix(path, "/")
+	if idx := strings.IndexByte(p, '/'); idx >= 0 {
+		p = p[:idx]
+	}
+	if knownApps[p] {
+		return p
+	}
+	return "other"
+}
+
+// appExpr returns a SQL expression that extracts the app name from a path column,
+// returning the first path component if it's a known app, otherwise 'other'.
+func appExpr(pathCol string) string {
+	seg := fmt.Sprintf(`SUBSTR(%s, 2, INSTR(SUBSTR(%s, 2) || '/', '/') - 1)`, pathCol, pathCol)
+	var apps []string
+	for app := range knownApps {
+		apps = append(apps, "'"+app+"'")
+	}
+	return fmt.Sprintf(`CASE WHEN %s IN (%s) THEN %s ELSE 'other' END`,
+		seg, strings.Join(apps, ","), seg)
+}
+
 type Request struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 
-	Host  string
-	Path  string
-	Query string
+	Host   string
+	Path   string
+	Query  string
+	Method string
 
 	RemoteAddr string
 	UserAgent  string
@@ -96,19 +133,25 @@ func Open() (*Model, error) {
 }
 
 func (m *Model) migrate() error {
-	sql := `
+	if err := m.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at DESC);
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at_remote_addr ON requests(created_at, remote_addr);
 		CREATE INDEX IF NOT EXISTS idx_requests_created_at_host_path ON requests(created_at, host, path);
 		DROP INDEX IF EXISTS idx_requests_deleted_at;
+	`).Error; err != nil {
+		return err
+	}
 
+	return m.Exec(`
 		CREATE TABLE IF NOT EXISTS daily_stats (
 			day DATETIME NOT NULL,
 			host TEXT NOT NULL,
+			app TEXT NOT NULL DEFAULT '',
+			method TEXT NOT NULL DEFAULT 'unknown',
 			status_code INTEGER NOT NULL,
 			duration_bucket INTEGER NOT NULL,
 			count INTEGER NOT NULL DEFAULT 0,
-			PRIMARY KEY (day, host, status_code, duration_bucket)
+			PRIMARY KEY (day, host, app, method, status_code, duration_bucket)
 		);
 
 		CREATE TABLE IF NOT EXISTS page_daily (
@@ -121,8 +164,7 @@ func (m *Model) migrate() error {
 
 		DROP TABLE IF EXISTS traffic_aggregates;
 		DROP TABLE IF EXISTS traffic_meta;
-	`
-	return m.Exec(sql).Error
+	`).Error
 }
 
 // LogEntry is the wire format for traffic log entries sent from the proxy.
@@ -131,22 +173,29 @@ type LogEntry struct {
 	Host       string        `json:"host"`
 	Path       string        `json:"path"`
 	Query      string        `json:"query"`
+	Method     string        `json:"method"`
 	RemoteAddr string        `json:"remote_addr"`
 	UserAgent  string        `json:"user_agent"`
 	Referer    string        `json:"referer"`
 	StatusCode int           `json:"status_code"`
 	Duration   time.Duration `json:"duration"`
+	App        string        `json:"app"`
 }
 
 func (m *Model) LogEntries(entries []LogEntry) error {
 	for _, e := range entries {
 		e.Host = strings.ToLower(e.Host)
 		t := e.Timestamp
+		method := e.Method
+		if method == "" {
+			method = "unknown"
+		}
 		r := &Request{
 			CreatedAt:  &t,
 			Host:       e.Host,
 			Path:       e.Path,
 			Query:      e.Query,
+			Method:     method,
 			RemoteAddr: e.RemoteAddr,
 			UserAgent:  e.UserAgent,
 			Referer:    e.Referer,
@@ -157,19 +206,23 @@ func (m *Model) LogEntries(entries []LogEntry) error {
 			return tx.Error
 		}
 		day := t.Truncate(24 * time.Hour)
-		m.incrementDailyStat(e.Host, day, e.StatusCode, durationBucketMs(e.Duration))
+		app := e.App
+		if app == "" {
+			app = appFromPath(e.Path)
+		}
+		m.incrementDailyStat(e.Host, app, method, day, e.StatusCode, durationBucketMs(e.Duration))
 		m.incrementPageDaily(e.Host, e.Path, day)
 	}
 	return nil
 }
 
-func (m *Model) incrementDailyStat(host string, day time.Time, statusCode int, durationBucket int64) {
+func (m *Model) incrementDailyStat(host, app, method string, day time.Time, statusCode int, durationBucket int64) {
 	err := m.Exec(`
-		INSERT INTO daily_stats (day, host, status_code, duration_bucket, count)
-		VALUES (?, ?, ?, ?, 1)
-		ON CONFLICT (day, host, status_code, duration_bucket)
+		INSERT INTO daily_stats (day, host, app, method, status_code, duration_bucket, count)
+		VALUES (?, ?, ?, ?, ?, ?, 1)
+		ON CONFLICT (day, host, app, method, status_code, duration_bucket)
 		DO UPDATE SET count = count + 1
-	`, day, host, statusCode, durationBucket).Error
+	`, day, host, app, method, statusCode, durationBucket).Error
 	if err != nil {
 		log.Printf("traffic: incrementDailyStat error: %v", err)
 	}
@@ -194,9 +247,8 @@ type Filter struct {
 	Values []string `json:"Values"`
 }
 
-// Query describes a chart query: which data source, how to group, and optional filters.
+// Query describes a chart query: how to group, and optional filters.
 type Query struct {
-	Source  string   // "stats" or "pages"
 	GroupBy string   // column to group by
 	Filters []Filter // column filters
 }
@@ -227,14 +279,11 @@ func (f Filter) buildSQL(colExpr string) (string, []interface{}) {
 	return fmt.Sprintf(` AND %s %s (%s)`, colExpr, op, placeholders), args
 }
 
-// validColumns lists whitelisted group-by and filter columns per source.
-var validColumns = map[string][]string{
-	"stats": {"host", "status_code", "duration_bucket"},
-	"pages": {"host", "path"},
-}
+// validColumns lists whitelisted group-by and filter columns.
+var validColumns = []string{"host", "status_code", "duration_bucket", "app", "method"}
 
-func isValidColumn(source, col string) bool {
-	for _, c := range validColumns[source] {
+func isValidColumn(col string) bool {
+	for _, c := range validColumns {
 		if c == col {
 			return true
 		}
@@ -259,7 +308,7 @@ func ParseQuery(s string) Query {
 		k, v := kv[0], kv[1]
 		switch k {
 		case "source":
-			q.Source = v
+			// Ignored for backwards compatibility with old URLs.
 		case "group":
 			q.GroupBy = v
 		default:
@@ -273,9 +322,6 @@ func ParseQuery(s string) Query {
 			q.Filters = append(q.Filters, Filter{Column: col, Negate: negate, Values: values})
 		}
 	}
-	if q.Source == "" {
-		q.Source = "stats"
-	}
 	if q.GroupBy == "" {
 		q.GroupBy = "host"
 	}
@@ -284,7 +330,7 @@ func ParseQuery(s string) Query {
 
 // FormatQuery serializes a Query back to the wire format.
 func (q Query) FormatQuery() string {
-	parts := []string{"source:" + q.Source, "group:" + q.GroupBy}
+	parts := []string{"group:" + q.GroupBy}
 	for _, f := range q.Filters {
 		key := f.Column
 		if f.Negate {
@@ -297,30 +343,29 @@ func (q Query) FormatQuery() string {
 
 // QueryChartData runs a query and returns chart points grouped by the group-by column.
 func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, error) {
-	if q.Source != "stats" && q.Source != "pages" {
-		return nil, fmt.Errorf("invalid source: %s", q.Source)
-	}
-	if !isValidColumn(q.Source, q.GroupBy) {
-		return nil, fmt.Errorf("invalid group_by %q for source %q", q.GroupBy, q.Source)
+	if !isValidColumn(q.GroupBy) {
+		return nil, fmt.Errorf("invalid group_by %q", q.GroupBy)
 	}
 	for _, f := range q.Filters {
-		if !isValidColumn(q.Source, f.Column) {
-			return nil, fmt.Errorf("invalid filter column %q for source %q", f.Column, q.Source)
+		if !isValidColumn(f.Column) {
+			return nil, fmt.Errorf("invalid filter column %q", f.Column)
 		}
 	}
 
 	days := tr.Days()
 
-	// Build the query depending on source and time range.
+	// Build the query depending on time range.
 	var sqlStr string
 	var args []interface{}
 
 	if days < 7 {
 		// Use raw requests table for short ranges.
 		groupCol := q.GroupBy
-		if q.Source == "stats" && q.GroupBy == "duration_bucket" {
-			// Compute bucket from raw duration for the requests table.
+		if q.GroupBy == "duration_bucket" {
 			groupCol = durationBucketExpr()
+		}
+		if q.GroupBy == "app" {
+			groupCol = appExpr("path")
 		}
 		sqlStr = fmt.Sprintf(`SELECT %s as host,
 			strftime('%%Y-%%m-%%d %%H:00:00+00:00', created_at) as window_start_at,
@@ -333,6 +378,9 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 			if f.Column == "duration_bucket" {
 				filterCol = durationBucketExpr()
 			}
+			if f.Column == "app" {
+				filterCol = appExpr("path")
+			}
 			s, a := f.buildSQL(filterCol)
 			sqlStr += s
 			args = append(args, a...)
@@ -340,13 +388,9 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 		sqlStr += fmt.Sprintf(` GROUP BY %s, strftime('%%Y-%%m-%%d %%H', created_at)
 			ORDER BY window_start_at ASC`, groupCol)
 	} else {
-		table := "daily_stats"
 		dayCol := "day"
-		if q.Source == "pages" {
-			table = "page_daily"
-		}
-
 		groupCol := q.GroupBy
+
 		var timeExpr string
 		if days >= 180 {
 			timeExpr = fmt.Sprintf(`strftime('%%Y-%%m-%%dT00:00:00Z', %s, '-' || ((cast(strftime('%%w', %s) as integer) + 6) %% 7) || ' days')`, dayCol, dayCol)
@@ -355,8 +399,8 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 		}
 
 		sqlStr = fmt.Sprintf(`SELECT %s as host, %s as window_start_at, SUM(count) as count
-			FROM %s
-			WHERE %s >= ? AND %s <= ?`, groupCol, timeExpr, table, dayCol, dayCol)
+			FROM daily_stats
+			WHERE %s >= ? AND %s <= ?`, groupCol, timeExpr, dayCol, dayCol)
 		args = append(args, tr.StartTime(), tr.EndTime())
 		for _, f := range q.Filters {
 			s, a := f.buildSQL(f.Column)
@@ -400,12 +444,9 @@ func durationBucketExpr() string {
 }
 
 // GetDimensionValues returns distinct values for a dimension within a time range.
-func (m *Model) GetDimensionValues(tr TimeRange, source, dim string) ([]string, error) {
-	if source != "stats" && source != "pages" {
-		return nil, fmt.Errorf("invalid source: %s", source)
-	}
-	if !isValidColumn(source, dim) {
-		return nil, fmt.Errorf("invalid dimension %q for source %q", dim, source)
+func (m *Model) GetDimensionValues(tr TimeRange, dim string) ([]string, error) {
+	if !isValidColumn(dim) {
+		return nil, fmt.Errorf("invalid dimension %q", dim)
 	}
 
 	days := tr.Days()
@@ -415,13 +456,12 @@ func (m *Model) GetDimensionValues(tr TimeRange, source, dim string) ([]string, 
 		if dim == "duration_bucket" {
 			col = durationBucketExpr()
 		}
+		if dim == "app" {
+			col = appExpr("path")
+		}
 		sqlStr = fmt.Sprintf(`SELECT DISTINCT CAST(%s AS TEXT) as val FROM requests WHERE created_at >= ? AND created_at <= ? ORDER BY val`, col)
 	} else {
-		table := "daily_stats"
-		if source == "pages" {
-			table = "page_daily"
-		}
-		sqlStr = fmt.Sprintf(`SELECT DISTINCT CAST(%s AS TEXT) as val FROM %s WHERE day >= ? AND day <= ? ORDER BY val`, dim, table)
+		sqlStr = fmt.Sprintf(`SELECT DISTINCT CAST(%s AS TEXT) as val FROM daily_stats WHERE day >= ? AND day <= ? ORDER BY val`, dim)
 	}
 
 	var vals []string
@@ -438,47 +478,4 @@ func (m *Model) GetDimensionValues(tr TimeRange, source, dim string) ([]string, 
 		vals = append(vals, v)
 	}
 	return vals, nil
-}
-
-func (m *Model) GetChartData(tr TimeRange) (map[string][]ChartPoint, error) {
-	days := tr.Days()
-
-	var query string
-	if days < 7 {
-		// Hourly from raw requests (fast for small date ranges)
-		query = `SELECT host,
-			strftime('%Y-%m-%d %H:00:00+00:00', created_at) as window_start_at,
-			count(*) as count
-			FROM requests
-			WHERE created_at >= ? AND created_at <= ?
-			GROUP BY host, strftime('%Y-%m-%d %H', created_at)
-			ORDER BY window_start_at ASC`
-	} else if days >= 180 {
-		// Weekly from daily_stats
-		query = `SELECT host,
-			strftime('%Y-%m-%dT00:00:00Z', day, '-' || ((cast(strftime('%w', day) as integer) + 6) % 7) || ' days') as window_start_at,
-			SUM(count) as count
-			FROM daily_stats
-			WHERE day >= ? AND day <= ?
-			GROUP BY host, window_start_at
-			ORDER BY window_start_at ASC`
-	} else {
-		// Daily from daily_stats
-		query = `SELECT host, day as window_start_at, SUM(count) as count
-			FROM daily_stats
-			WHERE day >= ? AND day <= ?
-			GROUP BY host, day
-			ORDER BY day ASC`
-	}
-
-	var points []ChartPoint
-	if err := m.Raw(query, tr.StartTime(), tr.EndTime()).Scan(&points).Error; err != nil {
-		return nil, err
-	}
-
-	result := make(map[string][]ChartPoint)
-	for _, p := range points {
-		result[p.Host] = append(result[p.Host], p)
-	}
-	return result, nil
 }
