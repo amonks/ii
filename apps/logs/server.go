@@ -253,6 +253,7 @@ func (app *Server) serveDashboard(w http.ResponseWriter, req *http.Request) {
 		TotalDurCount    int
 		ChartJSON        template.JS
 		QueryJSON        template.JS
+		WindowMs         int
 	}
 
 	pageData := PageData{
@@ -265,6 +266,7 @@ func (app *Server) serveDashboard(w http.ResponseWriter, req *http.Request) {
 		TotalDurCount:    totalDurCount,
 		ChartJSON:        template.JS(string(chartJSON)),
 		QueryJSON:        template.JS(string(queryJSON)),
+		WindowMs:         tr.WindowMs(),
 	}
 
 	var buf bytes.Buffer
@@ -290,7 +292,10 @@ func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"chart":    data,
+		"windowMs": tr.WindowMs(),
+	})
 }
 
 func (app *Server) handleEvents(w http.ResponseWriter, req *http.Request) {

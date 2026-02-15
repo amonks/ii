@@ -477,6 +477,7 @@
 <script>
 window.chartData = {{ .ChartJSON }};
 window.query = {{ .QueryJSON }};
+window.windowMs = {{ .WindowMs }};
 
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
 const formatDate = d3.utcFormat("%b %d, %H:%M UTC");
@@ -520,7 +521,9 @@ async function fetchQueryData(q) {
   const params = getRangeParams();
   params.set("q", formatQuery(q));
   const resp = await fetch("query?" + params.toString());
-  return resp.json();
+  const result = await resp.json();
+  window.windowMs = result.windowMs;
+  return result.chart;
 }
 
 async function refreshChart() {
@@ -844,13 +847,7 @@ function renderChart(data) {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  let windowMs;
-  if (stackData.length > 1) {
-    const totalMs = stackData[stackData.length - 1]._time - stackData[0]._time;
-    windowMs = totalMs / (stackData.length - 1);
-  } else {
-    windowMs = 3600000; // 1h fallback
-  }
+  const windowMs = window.windowMs;
 
   const xScale = d3.scaleTime()
     .domain([stackData[0]._time, new Date(stackData[stackData.length - 1]._time.getTime() + windowMs)])

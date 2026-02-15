@@ -77,6 +77,20 @@ func (tr TimeRange) Days() int {
 	return d
 }
 
+// WindowMs returns the chart bucket width in milliseconds.
+// This must match the grouping logic in QueryChartData.
+func (tr TimeRange) WindowMs() int {
+	days := tr.Days()
+	switch {
+	case days < 7:
+		return 3600000 // 1 hour
+	case days < 180:
+		return 86400000 // 1 day
+	default:
+		return 604800000 // 1 week
+	}
+}
+
 func (tr TimeRange) StartTime() time.Time { return tr.start }
 func (tr TimeRange) EndTime() time.Time   { return tr.end }
 
