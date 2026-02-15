@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,13 +14,13 @@ import (
 
 	"golang.org/x/sync/semaphore"
 	"monks.co/apps/writing/templates"
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/meta"
 	"monks.co/pkg/posts"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 
 	"github.com/a-h/templ"
 	"github.com/nao1215/imaging"
@@ -27,7 +28,10 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		}
+		reqlog.Shutdown()
 		log.Println(err.Error())
 		os.Exit(1)
 	}

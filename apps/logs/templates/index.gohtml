@@ -1033,7 +1033,13 @@ function renderLogs(result) {
 
     const path = document.createElement("span");
     path.className = "logs-col logs-col-path";
-    path.textContent = (ev.host || "") + (ev.path || "");
+    const errMsg = ev.data && (ev.data["err.message"] || ev.data["err.panic"]);
+    if (errMsg) {
+      path.textContent = (ev.host || "") + (ev.path || "") + " — " + errMsg;
+      path.style.color = "#f87171";
+    } else {
+      path.textContent = (ev.host || "") + (ev.path || "");
+    }
 
     header.appendChild(arrow);
     header.appendChild(ts);

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"monks.co/apps/map/model"
-	"monks.co/pkg/errlogger"
 )
 
 var (
@@ -14,7 +13,6 @@ var (
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

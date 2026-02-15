@@ -5,25 +5,30 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"golang.org/x/sync/errgroup"
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/lastfm"
+	"monks.co/pkg/meta"
 	"monks.co/pkg/periodically"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
-	"monks.co/pkg/tailnet"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/snitch"
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
-		panic(err)
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		}
+		reqlog.Shutdown()
+		os.Exit(1)
 	}
 }
 

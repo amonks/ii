@@ -9,7 +9,6 @@ require (
 	github.com/amonks/run v1.0.0-beta.32
 	github.com/andybalholm/brotli v1.2.0
 	github.com/caddyserver/certmagic v0.25.1
-	github.com/google/uuid v1.6.0
 	github.com/kevinpollet/nego v0.0.0-20211010160919-a65cd48cee43
 	github.com/libdns/route53 v1.6.0
 	github.com/nao1215/imaging v1.0.9
@@ -25,6 +24,7 @@ require (
 	golang.org/x/text v0.34.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
+	modernc.org/sqlite v1.38.2
 	tailscale.com v1.94.1
 	tinygo.org/x/bluetooth v0.14.0
 )
@@ -112,6 +112,7 @@ require (
 	github.com/google/cel-go v0.26.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/nftables v0.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hdevalence/ed25519consensus v0.2.0 // indirect
@@ -232,7 +233,6 @@ require (
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.38.2 // indirect
 )
 
 tool (

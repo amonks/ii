@@ -41,7 +41,6 @@
     		"app": {
     			"monks.co/cap/public": [
     				// fly
-    				{"path": "errlog", "backend": "monks-errlog-fly-ord"},
     				{"path": "traffic", "backend": "monks-traffic-fly-ord"},
     				{"path": "logs", "backend": "monks-logs-fly-ord"},
 
@@ -64,9 +63,6 @@
     				{"path": "scrobbles", "backend": "monks-scrobbles-brigid"},
     				{"path": "logs", "backend": "monks-logs-fly-ord"},
     				{"path": "youtube", "backend": "monks-youtube-brigid"},
-
-    				// fly
-    				{"path": "errlog", "backend": "monks-errlog-fly-ord"},
 
     				// thor
     				{"path": "reddit", "backend": "monks-reddit-thor"},

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,9 +25,9 @@ import (
 	"monks.co/apps/movies/tvcopier"
 	"monks.co/apps/movies/tvimporter"
 	"monks.co/apps/movies/tvmetadatafetcher"
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/llm"
 	"monks.co/pkg/loggingwaitgroup"
+	"monks.co/pkg/meta"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/tailnet"
 	"monks.co/pkg/tmdb"
@@ -34,8 +35,10 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
-
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		}
+		reqlog.Shutdown()
 		log.Printf("stopped: %s\n", err)
 		os.Exit(1)
 	}

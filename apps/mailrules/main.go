@@ -7,8 +7,6 @@ import (
 	"log"
 	"strings"
 	"time"
-
-	"monks.co/pkg/errlogger"
 )
 
 //go:embed mailrules.json
@@ -16,7 +14,6 @@ var rulesJSON []byte
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
 		panic(err)
 	}
 }

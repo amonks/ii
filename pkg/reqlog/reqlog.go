@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/logsclient"
 	"monks.co/pkg/meta"
 	"monks.co/pkg/middleware"
@@ -34,14 +33,24 @@ const RequestIDHeader = "X-Request-ID"
 // Set this via http.Server.ConnContext when using ProxyProto or similar.
 var RemoteAddrKey = &struct{}{}
 
+var logsClient *logsclient.Client
+
 // SetupLogging configures the default slog logger to output JSON to stderr
 // and ships logs to the logs service via the tailnet.
 func SetupLogging() {
-	lc := logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
-	w := io.MultiWriter(os.Stderr, lc)
+	logsClient = logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
+	w := io.MultiWriter(os.Stderr, logsClient)
 	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
+}
+
+// Shutdown flushes any buffered log events and releases resources.
+// Call this before exiting to ensure all logs are shipped.
+func Shutdown() {
+	if logsClient != nil {
+		logsClient.Close()
+	}
 }
 
 type ctxKey struct{}
@@ -140,7 +149,6 @@ func Middleware() middleware.Middleware {
 					stack := string(debug.Stack())
 					rl.set("err.panic", fmt.Sprint(r))
 					rl.set("err.stack", stack)
-					errlogger.Report(500, fmt.Sprintf("panic: %v\n%s", r, stack))
 					if !rw.wroteHeader {
 						http.Error(rw, http.StatusText(500), 500)
 					}

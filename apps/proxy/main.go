@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"monks.co/pkg/config"
-	"monks.co/pkg/errlogger"
+	"monks.co/pkg/meta"
 	"monks.co/pkg/middleware"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
@@ -29,8 +30,9 @@ var machine = flag.String("machine", "", "machine name; must have a correspondin
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportError(err)
-		panic(err)
+		slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		reqlog.Shutdown()
+		os.Exit(1)
 	}
 }
 
@@ -118,7 +120,7 @@ func (s *Service) ListenAndServe(ctx context.Context) error {
 		return s.listenAndServeRedirects(ctx)
 	case "https":
 		return s.listenAndServeHTTPS(ctx)
-default:
+	default:
 		return fmt.Errorf("unsupported service type: '%s'", s.service.Type)
 	}
 }
@@ -237,7 +239,6 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 		return publicSrv.Shutdown(context.Background())
 	}
 }
-
 
 func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {

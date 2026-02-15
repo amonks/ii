@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/gzip"
+	"monks.co/pkg/meta"
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
@@ -22,8 +25,11 @@ const (
 
 func main() {
 	if err := run(); err != nil {
-		errlogger.ReportPanic(err)
-		panic(err)
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		}
+		reqlog.Shutdown()
+		os.Exit(1)
 	}
 }
 

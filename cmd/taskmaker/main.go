@@ -11,12 +11,10 @@ import (
 	"github.com/amonks/run/pkg/run"
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
-	"monks.co/pkg/errlogger"
 )
 
 func main() {
 	if err := start(); err != nil {
-		errlogger.ReportPanic(err)
 		fmt.Println(err)
 		os.Exit(1)
 	}

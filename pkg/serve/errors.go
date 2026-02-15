@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"monks.co/pkg/errlogger"
 	"monks.co/pkg/reqlog"
 )
 
 func Errorf(w http.ResponseWriter, req *http.Request, statusCode int, msg string, args ...interface{}) {
 	msg = fmt.Sprintf(msg, args...)
 	reqlog.Set(req.Context(), "err.message", msg)
-	if statusCode >= 500 && statusCode < 600 {
-		errlogger.Report(statusCode, msg)
-	}
 	http.Error(w, http.StatusText(statusCode), statusCode)
 }
 
