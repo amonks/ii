@@ -306,7 +306,7 @@
   }
   .logs-col-arrow { width: 18px; text-align: center; font-size: 10px; color: #64748b; transition: transform 0.15s; }
   .logs-col-arrow.open { transform: rotate(90deg); }
-  .logs-col-time { width: 188px; }
+  .logs-col-time { width: 220px; }
   .logs-col-level { width: 44px; text-transform: uppercase; }
   .logs-col-level-error { color: #f87171; }
   .logs-col-level-warn { color: #fbbf24; }
@@ -479,7 +479,7 @@ window.chartData = {{ .ChartJSON }};
 window.query = {{ .QueryJSON }};
 
 const colors = ["#60a5fa","#f87171","#34d399","#c084fc","#fbbf24","#fb923c","#2dd4bf","#f472b6"];
-const formatDate = d3.timeFormat("%b %d, %H:%M");
+const formatDate = d3.utcFormat("%b %d, %H:%M UTC");
 
 const groupByOptions = ["host", "app", "proxy_upstream", "level", "status", "duration_bucket", "method", "route"];
 
@@ -846,7 +846,8 @@ function renderChart(data) {
 
   let windowMs;
   if (stackData.length > 1) {
-    windowMs = d3.min(d3.pairs(stackData, (a, b) => b._time - a._time));
+    const totalMs = stackData[stackData.length - 1]._time - stackData[0]._time;
+    windowMs = totalMs / (stackData.length - 1);
   } else {
     windowMs = 3600000; // 1h fallback
   }
@@ -855,7 +856,8 @@ function renderChart(data) {
     .domain([stackData[0]._time, new Date(stackData[stackData.length - 1]._time.getTime() + windowMs)])
     .range([0, width]);
 
-  const barWidth = Math.max(1, xScale(new Date(stackData[0]._time.getTime() + windowMs)) - xScale(stackData[0]._time) - 1);
+  const windowPx = xScale(new Date(stackData[0]._time.getTime() + windowMs)) - xScale(stackData[0]._time);
+  const barWidth = Math.max(1, windowPx <= 4 ? windowPx : windowPx - 1);
 
   const series = d3.stack().keys(visibleKeys)(stackData);
 
@@ -898,15 +900,9 @@ function renderChart(data) {
     .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0))
     .on("mousemove", function(event) {
       const x0 = xScale.invert(d3.pointer(event)[0]);
-      const bisect = d3.bisector(d => d._time).left;
-      const idx = bisect(stackData, x0, 1);
-      let d;
-      if (idx > 0 && idx < stackData.length) {
-        const d0 = stackData[idx - 1], d1 = stackData[idx];
-        d = (x0 - d0._time > d1._time - x0) ? d1 : d0;
-      } else {
-        d = idx === 0 ? stackData[0] : stackData[stackData.length - 1];
-      }
+      const bisect = d3.bisector(d => d._time).right;
+      const idx = Math.max(1, Math.min(bisect(stackData, x0), stackData.length)) - 1;
+      const d = stackData[idx];
 
       let html = `<div class="tt-title">${formatDate(d._time)}</div>`;
       let total = 0;
@@ -995,7 +991,7 @@ function renderLogs(result) {
     const ts = document.createElement("span");
     ts.className = "logs-col logs-col-time";
     const d = new Date(ev.timestamp);
-    ts.textContent = d.toISOString().replace("T", " ").substring(0, 19);
+    ts.textContent = d.toISOString().replace("T", " ").substring(0, 19) + " UTC";
 
     const level = document.createElement("span");
     const lvl = (ev.level || "").toLowerCase();

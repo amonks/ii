@@ -104,6 +104,11 @@ func (m *Model) migrate() error {
 			count INTEGER NOT NULL DEFAULT 0,
 			PRIMARY KEY (day, host, path)
 		);
+
+		DROP INDEX IF EXISTS idx_page_daily_host_path_day;
+		CREATE INDEX IF NOT EXISTS idx_page_daily_day_count ON page_daily(day, host, path, count);
+		CREATE INDEX IF NOT EXISTS idx_daily_stats_day_status ON daily_stats(day, status, count);
+		CREATE INDEX IF NOT EXISTS idx_daily_stats_day_duration ON daily_stats(day, duration_bucket, count);
 	`).Error
 }
 
@@ -399,7 +404,7 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 		if days >= 180 {
 			timeExpr = fmt.Sprintf(`strftime('%%Y-%%m-%%dT00:00:00Z', %s, '-' || ((cast(strftime('%%w', %s) as integer) + 6) %% 7) || ' days')`, dayCol, dayCol)
 		} else {
-			timeExpr = dayCol
+			timeExpr = fmt.Sprintf(`strftime('%%Y-%%m-%%dT00:00:00Z', %s)`, dayCol)
 		}
 
 		sqlStr = fmt.Sprintf(`SELECT CAST(%s AS TEXT) as host, %s as window_start_at, SUM(count) as count

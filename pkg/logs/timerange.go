@@ -40,29 +40,32 @@ func ParseTimeRange(req *http.Request) TimeRange {
 		}
 	}
 
+	today := now.Truncate(24 * time.Hour)
+	tomorrow := today.Add(24*time.Hour - time.Nanosecond)
+
 	if r := req.URL.Query().Get("range"); r != "" {
 		for _, c := range cannedRanges {
 			if c.Key == r {
-				start := now.AddDate(0, 0, -c.Days)
+				start := today.AddDate(0, 0, -c.Days)
 				return TimeRange{
 					Range: r,
 					Start: start.Format("2006-01-02"),
-					End:   now.Format("2006-01-02"),
+					End:   today.Format("2006-01-02"),
 					start: start,
-					end:   now,
+					end:   tomorrow,
 				}
 			}
 		}
 	}
 
 	// Default: last 7 days.
-	start := now.AddDate(0, 0, -7)
+	start := today.AddDate(0, 0, -7)
 	return TimeRange{
 		Range: "7d",
 		Start: start.Format("2006-01-02"),
-		End:   now.Format("2006-01-02"),
+		End:   today.Format("2006-01-02"),
 		start: start,
-		end:   now,
+		end:   tomorrow,
 	}
 }
 
