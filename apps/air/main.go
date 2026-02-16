@@ -41,9 +41,6 @@ func run() error {
 	var errs error
 	switch *mode {
 	case "fetch":
-		if err := tailnet.WaitReady(context.Background()); err != nil {
-			return fmt.Errorf("tailnet: %w", err)
-		}
 		if err := fetch(db); err != nil {
 			errs = errors.Join(errs, fmt.Errorf("fetch error: %w", err))
 		}

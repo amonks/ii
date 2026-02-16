@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
-	"monks.co/pkg/tailnet"
+	"monks.co/pkg/meta"
+	"monks.co/pkg/requireenv"
+	"tailscale.com/tsnet"
 )
 
 func fetch(db *DB) error {
@@ -82,6 +87,30 @@ func fetch(db *DB) error {
 	return nil
 }
 
+func fetchHostname() string {
+	return "monks-" + meta.AppName() + "-fetch-" + meta.MachineName()
+}
+
+func fetchTsnetDir() string {
+	if data := os.Getenv("MONKS_DATA"); data != "" {
+		return filepath.Join(data, "tsnet-"+fetchHostname())
+	}
+	return filepath.Join(os.TempDir(), "tsnet-"+fetchHostname())
+}
+
+var fetchServer = &tsnet.Server{
+	Hostname: fetchHostname(),
+	Dir:      fetchTsnetDir(),
+	AuthKey:  requireenv.Require("TS_AUTHKEY"),
+}
+
+func fetchClient() (*http.Client, error) {
+	if _, err := fetchServer.Up(context.Background()); err != nil {
+		return nil, fmt.Errorf("fetch tsnet up: %w", err)
+	}
+	return fetchServer.HTTPClient(), nil
+}
+
 // AranetDevice represents the data from an Aranet device
 type AranetDevice struct {
 	Name             string  `json:"name"`
@@ -117,7 +146,10 @@ func getAranetDevices() ([]AranetDevice, error) {
 	log.Printf("getAranetDevices: starting fetch")
 	httpStart := time.Now()
 
-	client := tailnet.Client()
+	client, err := fetchClient()
+	if err != nil {
+		return nil, fmt.Errorf("fetch client: %w", err)
+	}
 
 	req, err := http.NewRequest("GET", "http://monks-aranet-brigid/", nil)
 	if err != nil {
