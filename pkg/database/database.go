@@ -26,7 +26,8 @@ func OpenFromDataFolder(name string) (*DB, error) {
 }
 
 func Open(path string) (*DB, error) {
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+	dsn := path + "?_journal_mode=WAL&_busy_timeout=5000"
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.New(
 			log.New(os.Stderr, "\n", log.LstdFlags),
 			logger.Config{
@@ -40,9 +41,6 @@ func Open(path string) (*DB, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("opening %s: %w", path, err)
-	}
-	if err := db.Exec("pragma journal_mode='wal';").Error; err != nil {
-		return nil, err
 	}
 	return &DB{db}, nil
 }

@@ -82,6 +82,7 @@ func (m *Model) migrate() error {
 		CREATE INDEX IF NOT EXISTS idx_events_request_id ON events(request_id) WHERE request_id IS NOT NULL;
 		CREATE INDEX IF NOT EXISTS idx_events_app_timestamp ON events(app, timestamp);
 		CREATE INDEX IF NOT EXISTS idx_events_msg ON events(msg);
+		CREATE INDEX IF NOT EXISTS idx_events_msg_timestamp ON events(msg, timestamp DESC);
 	`).Error; err != nil {
 		return err
 	}

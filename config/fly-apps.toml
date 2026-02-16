@@ -28,12 +28,9 @@
   packages = ["sqlite"]
 
 [apps.logs]
-  vm_memory = "512"
+  vm_size = "shared-cpu-4x"
+  vm_memory = "2gb"
   volume = "monks_logs_data"
-  packages = ["sqlite"]
-
-[apps.errlog]
-  volume = "monks_errlog_data"
   packages = ["sqlite"]
 
 [apps.map]
