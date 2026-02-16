@@ -85,9 +85,9 @@ func run() error {
 				redirects: config.Redirects,
 			}
 
-			slog.Info("listening", "addr", serviceConfig.Addr)
+			slog.Info("started", "addr", serviceConfig.Addr)
 			if err := service.ListenAndServe(ctx); err != nil {
-				slog.Error("service failed", "addr", service.service.Addr, "error", err)
+				slog.Error("fatal", "detail", "service failed", "addr", service.service.Addr, "error", err)
 				cancel(err)
 			}
 		}()
@@ -99,7 +99,7 @@ func run() error {
 		mux := http.NewServeMux()
 		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		if err := serve.ListenAndServe(ctx, "0.0.0.0:9999", mux); err != nil {
-			slog.Error("metrics server failed", "error", err)
+			slog.Error("fatal", "detail", "metrics server failed", "error", err)
 			cancel(err)
 		}
 	}()
@@ -176,11 +176,11 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 	}
 	defer tsLn.Close()
 
-	anonCaps, err := tailnet.AnonCaps(ctx)
-	if err != nil {
-		slog.Error("tailauth: failed to get anon caps", "error", err)
+	anonCaps, anonCapsErr := tailnet.AnonCaps(ctx)
+	if anonCapsErr != nil {
+		slog.Info("started", "addr", s.service.Addr, "tailauth.error", anonCapsErr.Error())
 	} else {
-		slog.Info("tailauth: loaded anon caps", "caps", capNames(anonCaps))
+		slog.Info("started", "addr", s.service.Addr, "tailauth.caps", capNames(anonCaps))
 	}
 
 	p := &proxy{s.service.Rewrites, tsClient.Transport}
@@ -242,13 +242,6 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 
 func deriveConnectionContext(ctx context.Context, conn net.Conn) context.Context {
 	if conn, ok := conn.(*proxyproto.Conn); ok {
-		if conn.LocalAddr() == nil {
-			slog.Warn("proxyproto: missing local address")
-		}
-		if conn.RemoteAddr() == nil {
-			slog.Warn("proxyproto: missing remote address")
-		}
-
 		return context.WithValue(ctx, reqlog.RemoteAddrKey, conn.RemoteAddr().String())
 	}
 	return context.WithValue(ctx, reqlog.RemoteAddrKey, conn.RemoteAddr().String())

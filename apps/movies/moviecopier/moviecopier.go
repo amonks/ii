@@ -28,9 +28,6 @@ func (app *MovieCopier) Run(ctx context.Context) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
-	log.Println("moviecopier started")
-	defer log.Println("moviecopier done")
-
 	for {
 		if err := ctx.Err(); err != nil {
 			return err

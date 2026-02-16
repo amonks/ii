@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -25,7 +24,6 @@ func main() {
 			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
 		}
 		reqlog.Shutdown()
-		log.Println(err.Error())
 		os.Exit(1)
 	}
 }

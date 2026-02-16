@@ -24,9 +24,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *CreditsFetcher {
 }
 
 func (app *CreditsFetcher) Run(ctx context.Context) error {
-	log.Printf("creditsfetcher started")
-	defer log.Printf("creditsfetcher done")
-
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		return err

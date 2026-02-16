@@ -47,9 +47,6 @@ func (app *TVImporter) WithFS(fs filesystem.FS) *TVImporter {
 }
 
 func (app *TVImporter) Run(ctx context.Context) error {
-	log.Println("tvimporter started")
-	defer log.Println("tvimporter done")
-
 	// Count existing stubs before running the import
 	existingStubs, err := app.db.CountStubsByType(db.MediaTypeTV)
 	if err != nil {

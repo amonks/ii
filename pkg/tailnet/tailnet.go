@@ -3,6 +3,7 @@ package tailnet
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -47,6 +48,8 @@ func ListenAndServe(ctx context.Context, handler http.Handler) error {
 		return fmt.Errorf("tsnet listen: %w", err)
 	}
 	defer ln.Close()
+
+	slog.Info("started")
 
 	httpSrv := &http.Server{Handler: handler}
 	errs := make(chan error, 1)

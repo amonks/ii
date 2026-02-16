@@ -50,7 +50,7 @@ func run() error {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, req *http.Request) {
 		diary, err := letterboxd.FetchDiary()
 		if err != nil {
-			reqlog.Logger(req.Context()).Error("letterboxd diary error", "error", err)
+			reqlog.Set(req.Context(), "err.message", err.Error())
 			h := templ.Handler(Homepage(&PageData{
 				Watches: nil,
 			}))

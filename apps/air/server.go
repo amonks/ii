@@ -137,7 +137,7 @@ func serveAir(ctx context.Context, db *DB) error {
 
 		// Handle errors
 		if errs != nil {
-			reqlog.Logger(req.Context()).Error("aggregation errors", "err", errs)
+			reqlog.Set(req.Context(), "err.message", errs.Error())
 			w.WriteHeader(500)
 			w.Write([]byte(errs.Error()))
 			return
@@ -145,7 +145,7 @@ func serveAir(ctx context.Context, db *DB) error {
 
 		// Execute template with data
 		if err := tmpl.Execute(w, data); err != nil {
-			reqlog.Logger(req.Context()).Error("template execution failed", "err", err)
+			reqlog.Set(req.Context(), "err.message", err.Error())
 		}
 	})
 

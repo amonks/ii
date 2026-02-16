@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -24,7 +23,6 @@ import (
 )
 
 func main() {
-	log.Printf("start")
 	if err := run(); err != nil {
 		if !errors.Is(err, context.Canceled) {
 			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
@@ -32,7 +30,6 @@ func main() {
 		reqlog.Shutdown()
 		os.Exit(1)
 	}
-	log.Printf("done")
 }
 
 //go:embed migrate.sql
@@ -56,13 +53,11 @@ func run() error {
 
 	flag.Parse()
 
-	log.Printf("opening db")
 	db, err := dogs.NewDB(archiveDir)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("migrating db")
 	if err := db.DB.Exec(migrateSQL).Error; err != nil {
 		return err
 	}
@@ -78,7 +73,7 @@ func run() error {
 
 		selectedCombatantSet := map[string]struct{}{}
 		for _, c := range q["combatants"] {
-			reqlog.Logger(req.Context()).Info("has combatant", "combatant", c)
+			reqlog.Set(req.Context(), "dogs.combatant", c)
 			selectedCombatantSet[c] = struct{}{}
 			qOpts.Combatants = append(qOpts.Combatants, c)
 		}
@@ -120,12 +115,12 @@ func run() error {
 
 		entries, err := db.All(qOpts)
 		if err != nil {
-			reqlog.Logger(req.Context()).Error("querying entries", "err", err)
+			reqlog.Set(req.Context(), "err.message", err.Error())
 			return
 		}
 
 		if err := dogs.Page(entries, filters, imp.String()).Render(req.Context(), w); err != nil {
-			reqlog.Logger(req.Context()).Error("rendering page", "err", err)
+			reqlog.Set(req.Context(), "err.message", err.Error())
 		}
 	})
 
@@ -137,7 +132,6 @@ func run() error {
 	errs := make(chan error)
 
 	go func() {
-		log.Println("starting importer")
 		err := imp.Start(ctx)
 		if !errors.Is(err, context.Canceled) {
 			cancel()
@@ -146,7 +140,6 @@ func run() error {
 	}()
 
 	go func() {
-		log.Println("starting server")
 		err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux)))
 		if !errors.Is(err, context.Canceled) {
 			cancel()

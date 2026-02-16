@@ -3,9 +3,11 @@ package reqlog
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -126,6 +128,26 @@ func TestMiddleware_RequestIDGenerated(t *testing.T) {
 
 	if rr.Header().Get(RequestIDHeader) == "" {
 		t.Error("expected X-Request-ID response header to be set")
+	}
+}
+
+func TestSetupLogging_StdLogDoesNotReachSlog(t *testing.T) {
+	// After SetupLogging, standard library log.Printf calls should go to
+	// stderr only, not through slog to the logs service.
+	var buf bytes.Buffer
+	oldClient := logsClient
+	logsClient = nil
+	defer func() { logsClient = oldClient }()
+
+	// Simulate what SetupLogging does: set up slog writing to buf,
+	// then call SetupStdLog to redirect stdlib log to stderr.
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+	SetupStdLog()
+
+	log.Printf("should not appear in slog output")
+
+	if strings.Contains(buf.String(), "should not appear") {
+		t.Error("log.Printf output appeared in slog output; it should only go to stderr")
 	}
 }
 

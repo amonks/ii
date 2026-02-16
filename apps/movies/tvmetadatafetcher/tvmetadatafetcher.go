@@ -31,9 +31,6 @@ func (app *TVMetadataFetcher) Run(ctx context.Context) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
-	log.Println("tvmetadatafetcher started")
-	defer log.Println("tvmetadatafetcher done")
-
 	shows, err := app.db.AllTVShows()
 	if err != nil {
 		return fmt.Errorf("error getting TV shows: %w", err)

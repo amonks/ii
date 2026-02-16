@@ -18,7 +18,6 @@ import (
 
 // serveTVIndex handles the /tv route to show the TV shows library
 func (app *LibraryServer) serveTVIndex(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVIndex")
 	q := req.URL.Query()
 
 	selectedGenres := q["genres"]
@@ -136,14 +135,12 @@ func (app *LibraryServer) serveTVIndex(w http.ResponseWriter, req *http.Request)
 
 	// Render the template using templ
 	if err := TVShows(&data).Render(req.Context(), w); err != nil {
-		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
+		reqlog.Set(req.Context(), "err.message", err.Error())
 	}
 }
 
 // serveTVShow handles the /tv/show route to show details for a specific TV show
 func (app *LibraryServer) serveTVShow(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVShow")
-
 	idStr := req.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -176,14 +173,12 @@ func (app *LibraryServer) serveTVShow(w http.ResponseWriter, req *http.Request) 
 
 	// Render the template using templ
 	if err := TVShowDetails(&data).Render(req.Context(), w); err != nil {
-		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
+		reqlog.Set(req.Context(), "err.message", err.Error())
 	}
 }
 
 // serveTVSeason handles the /tv/season route to show details for a specific season
 func (app *LibraryServer) serveTVSeason(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVSeason")
-
 	showIDStr := req.URL.Query().Get("show_id")
 	showID, err := strconv.ParseInt(showIDStr, 10, 64)
 	if err != nil {
@@ -230,7 +225,7 @@ func (app *LibraryServer) serveTVSeason(w http.ResponseWriter, req *http.Request
 
 	// Render the template using templ
 	if err := TVSeasonDetails(&data).Render(req.Context(), w); err != nil {
-		reqlog.Logger(req.Context()).Error("template render failed", "err", err)
+		reqlog.Set(req.Context(), "err.message", err.Error())
 	}
 }
 
@@ -281,8 +276,6 @@ func (app *LibraryServer) serveTVSeasonPoster(w http.ResponseWriter, req *http.R
 
 // serveTVPlayButton handles the /tv/play route to play an episode
 func (app *LibraryServer) serveTVPlayButton(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVPlayButton")
-
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
@@ -329,7 +322,7 @@ func (app *LibraryServer) serveTVPlayButton(w http.ResponseWriter, req *http.Req
 		}
 		go func() {
 			if err := cmd.Wait(); err != nil {
-				reqlog.Logger(req.Context()).Error("start on lugh error", "err", err)
+				reqlog.Set(req.Context(), "err.message", err.Error())
 			}
 		}()
 	}
@@ -340,8 +333,6 @@ func (app *LibraryServer) serveTVPlayButton(w http.ResponseWriter, req *http.Req
 
 // serveTVSearch handles the /tv/search route to search for TV shows
 func (app *LibraryServer) serveTVSearch(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVSearch")
-
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
@@ -359,7 +350,6 @@ func (app *LibraryServer) serveTVSearch(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	reqlog.Logger(req.Context()).Info("tv search", "query", query, "year", year)
 	results, err := app.tmdb.SearchTV(query, year)
 	if err != nil {
 		serve.InternalServerError(w, req, err)
@@ -377,7 +367,6 @@ func (app *LibraryServer) serveTVSearch(w http.ResponseWriter, req *http.Request
 	}
 
 	stub.TVResults = searchResults
-	reqlog.Logger(req.Context()).Info("tv search results", "count", len(results))
 	if err := app.db.SaveStub(stub); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -389,8 +378,6 @@ func (app *LibraryServer) serveTVSearch(w http.ResponseWriter, req *http.Request
 
 // serveTVIdentify handles the /tv/identify route to identify a TV show
 func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVIdentify")
-
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
@@ -434,7 +421,6 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	l := reqlog.Logger(req.Context())
 	if err := app.db.Transaction(func(tx *db.DB) error {
 		// Check if the show already exists
 		show, err := tx.GetTVShow(tvShow.ID)
@@ -459,24 +445,15 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 			// Extract the season and episode numbers from the file path
 			fileSeasonNum, episodeNum, err := extractSeasonEpisodeFromPath(episodePath)
 			if err != nil {
-				l.Warn("couldn't extract season/episode", "path", episodePath, "err", err)
 				unprocessedFiles = append(unprocessedFiles, episodePath)
 				continue
 			}
 
 			// Handle season number mismatch with fallback for single-season series
 			if fileSeasonNum != seasonNumber {
-				// For single-season series (season 1), fall back to assuming S01
-				// when the detected season seems unreasonable (> 9) or doesn't match.
-				// This handles cases where numbers in the path (like resolution "1008x720")
-				// are misinterpreted as season numbers.
 				if seasonNumber == 1 && fileSeasonNum > 9 {
-					l.Info("detected unlikely season for S01 series, assuming S01",
-						"detected_season", fileSeasonNum, "episode", episodeNum, "path", episodePath)
 					fileSeasonNum = 1
 				} else {
-					l.Info("skipping episode from different season",
-						"file_season", fileSeasonNum, "selected_season", seasonNumber, "path", episodePath)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
@@ -492,14 +469,12 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				// Get the season details from TMDB
 				seasonData, _, err := app.tmdb.GetSeason(tvShow.ID, seasonNumber)
 				if err != nil {
-					l.Warn("error getting season data", "season", seasonNumber, "err", err)
 					continue
 				}
 
 				// Create the season
 				season, err = tx.CreateTVSeason(tvShow.ID, seasonData)
 				if err != nil {
-					l.Warn("error creating season", "season", seasonNumber, "err", err)
 					continue
 				}
 			}
@@ -507,7 +482,6 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 			// Check if the episode already exists
 			episode, err := tx.GetTVEpisode(tvShow.ID, seasonNumber, episodeNum)
 			if err != nil && err.Error() != "record not found" {
-				l.Warn("error checking if episode exists", "season", seasonNumber, "episode", episodeNum, "err", err)
 				continue
 			}
 
@@ -515,8 +489,6 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				// Get the episode details from TMDB
 				episodeData, err := app.tmdb.GetEpisode(tvShow.ID, seasonNumber, episodeNum)
 				if err != nil {
-					l.Warn("error getting episode data",
-						"show", tvShow.Name, "season", seasonNumber, "episode", episodeNum, "file", episodePath, "err", err)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
@@ -525,7 +497,6 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				fullPath := filepath.Join(config.TVImportDir, episodePath)
 				episode, err = tx.CreateTVEpisode(tvShow.ID, episodeData, fullPath)
 				if err != nil {
-					l.Warn("error creating episode", "season", seasonNumber, "episode", episodeNum, "err", err)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
@@ -534,7 +505,6 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				// Create the full path by directly using the episodePath which retains original case
 				fullPath := filepath.Join(config.TVImportDir, episodePath)
 				if err := tx.UpdateTVEpisodePath(episode, fullPath); err != nil {
-					l.Warn("error updating episode path", "season", seasonNumber, "episode", episodeNum, "err", err)
 					unprocessedFiles = append(unprocessedFiles, episodePath)
 					continue
 				}
@@ -550,9 +520,7 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 				// Update the stub to only contain unprocessed files
 				stub.EpisodeFiles = unprocessedFiles
 				if err := tx.SaveStub(stub); err != nil {
-					l.Warn("error updating stub with unprocessed files", "err", err)
-				} else {
-					l.Info("updated stub to retain unprocessed files", "count", len(unprocessedFiles))
+					// best-effort, continue
 				}
 			} else {
 				// All files processed successfully, delete the stub
@@ -560,9 +528,9 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 					return fmt.Errorf("error deleting stub: %w", err)
 				}
 			}
-			l.Info("processed TV show", "name", tvShow.Name, "processed", processedCount, "total", len(stub.EpisodeFiles))
+			reqlog.Set(req.Context(), "tv.processed", processedCount)
 		} else {
-			l.Warn("no episodes processed", "name", tvShow.Name)
+			reqlog.Set(req.Context(), "err.message", "no episodes could be processed")
 			return fmt.Errorf("no episodes could be processed - stub retained for manual review")
 		}
 
@@ -579,14 +547,11 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 // We don't need the serveTVIdentifyAll function anymore since we're now handling shows at the show level
 // This function can be removed, but we're keeping the signature as a no-op for compatibility
 func (app *LibraryServer) serveTVIdentifyAll(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVIdentifyAll - this endpoint is deprecated, using serveTVIdentify instead")
 	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
 }
 
 // serveTVIgnoreShow ignores a TV show
 func (app *LibraryServer) serveTVIgnoreShow(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVIgnoreShow")
-
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
@@ -625,16 +590,12 @@ func (app *LibraryServer) serveTVIgnoreShow(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	reqlog.Logger(req.Context()).Info("ignored TV show", "path", path)
-
 	// Redirect to TV tab
 	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
 }
 
 // serveTVIgnoreEpisodes ignores specific episodes from a TV show stub
 func (app *LibraryServer) serveTVIgnoreEpisodes(w http.ResponseWriter, req *http.Request) {
-	reqlog.Logger(req.Context()).Info("serveTVIgnoreEpisodes")
-
 	if req.Method != "POST" {
 		serve.Errorf(w, req, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
@@ -660,7 +621,6 @@ func (app *LibraryServer) serveTVIgnoreEpisodes(w http.ResponseWriter, req *http
 		// Ignore all episode files in the stub
 		for _, episodeFile := range stub.EpisodeFiles {
 			if err := tx.IgnoreEpisode(episodeFile); err != nil {
-				reqlog.Logger(req.Context()).Warn("error ignoring episode", "file", episodeFile, "err", err)
 				// Continue with other episodes even if one fails
 			}
 		}
@@ -675,8 +635,6 @@ func (app *LibraryServer) serveTVIgnoreEpisodes(w http.ResponseWriter, req *http
 		serve.InternalServerError(w, req, err)
 		return
 	}
-
-	reqlog.Logger(req.Context()).Info("ignored episodes from stub", "count", len(stub.EpisodeFiles), "path", path)
 
 	// Redirect to TV tab
 	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)

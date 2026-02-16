@@ -21,9 +21,6 @@ func New(db *db.DB) *RatingFetcher {
 }
 
 func (app *RatingFetcher) Run(ctx context.Context) error {
-	log.Println("ratingfetcher started")
-	defer log.Println("ratingfetcher done")
-
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		return err

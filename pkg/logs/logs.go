@@ -81,6 +81,7 @@ func (m *Model) migrate() error {
 		CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp DESC);
 		CREATE INDEX IF NOT EXISTS idx_events_request_id ON events(request_id) WHERE request_id IS NOT NULL;
 		CREATE INDEX IF NOT EXISTS idx_events_app_timestamp ON events(app, timestamp);
+		CREATE INDEX IF NOT EXISTS idx_events_msg ON events(msg);
 	`).Error; err != nil {
 		return err
 	}
@@ -277,7 +278,7 @@ type Query struct {
 }
 
 // validColumns lists whitelisted group-by and filter columns.
-var validColumns = []string{"app", "proxy_upstream", "level", "host", "method", "status", "duration_bucket", "route"}
+var validColumns = []string{"app", "proxy_upstream", "level", "msg", "host", "method", "status", "duration_bucket", "route"}
 
 func isValidColumn(col string) bool {
 	for _, c := range validColumns {
@@ -539,8 +540,20 @@ func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]E
 		}
 	}
 
-	where := `WHERE msg = 'request' AND timestamp >= ? AND timestamp <= ?`
+	// Default to msg=request unless an explicit msg filter is provided.
+	hasMsgFilter := false
+	for _, f := range q.Filters {
+		if f.Column == "msg" {
+			hasMsgFilter = true
+			break
+		}
+	}
+
+	where := `WHERE timestamp >= ? AND timestamp <= ?`
 	args := []interface{}{tr.StartTime(), tr.EndTime()}
+	if !hasMsgFilter {
+		where += ` AND msg = 'request'`
+	}
 	for _, f := range q.Filters {
 		s, a := f.buildSQL(f.Column)
 		where += s

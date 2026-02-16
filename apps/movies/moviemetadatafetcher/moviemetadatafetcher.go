@@ -24,9 +24,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *MovieMetadataFetcher {
 }
 
 func (app *MovieMetadataFetcher) Run(ctx context.Context) error {
-	log.Println("moviemetadatafetcher started")
-	defer log.Println("moviemetadatafetcher done")
-
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		return err

@@ -3,7 +3,7 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"monks.co/pkg/snitch"
@@ -30,15 +30,20 @@ func (rep Reporter) Run(ctx context.Context, dur time.Duration) error {
 
 func (rep Reporter) Report() error {
 	start := time.Now()
+	var failCount int
 	for id, mon := range rep {
 		if err := mon.Check(); err == nil {
 			if err := snitch.OK(id); err != nil {
 				return fmt.Errorf("error snitching on %s to '%s': %w", mon.Name(), id, err)
 			}
 		} else {
-			log.Printf("%s", err)
+			failCount++
 		}
 	}
-	log.Printf("report complete in %s", time.Since(start).Truncate(time.Millisecond))
+	if failCount > 0 {
+		slog.Error("task", "task.name", "report", "task.duration_ms", time.Since(start).Milliseconds(), "task.error", fmt.Sprintf("%d checks failed", failCount))
+	} else {
+		slog.Info("task", "task.name", "report", "task.duration_ms", time.Since(start).Milliseconds())
+	}
 	return nil
 }

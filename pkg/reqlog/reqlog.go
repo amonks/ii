@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -43,6 +44,13 @@ func SetupLogging() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
+	SetupStdLog()
+}
+
+// SetupStdLog redirects the standard library log package to stderr only,
+// so that log.Printf calls don't flow through slog to the logs service.
+func SetupStdLog() {
+	log.SetOutput(os.Stderr)
 }
 
 // Shutdown flushes any buffered log events and releases resources.

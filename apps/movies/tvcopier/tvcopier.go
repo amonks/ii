@@ -36,9 +36,6 @@ func (app *TVCopier) Run(ctx context.Context) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
-	log.Println("tvcopier started")
-	defer log.Println("tvcopier done")
-
 	for {
 		if err := ctx.Err(); err != nil {
 			return err

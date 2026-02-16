@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -39,8 +38,15 @@ func main() {
 			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
 		}
 		reqlog.Shutdown()
-		log.Printf("stopped: %s\n", err)
 		os.Exit(1)
+	}
+}
+
+func logTask(name string, err error, dur time.Duration) {
+	if err != nil {
+		slog.Error("task", "task.name", name, "task.duration_ms", dur.Milliseconds(), "task.error", err.Error())
+	} else {
+		slog.Info("task", "task.name", name, "task.duration_ms", dur.Milliseconds())
 	}
 }
 
@@ -59,19 +65,18 @@ func run() error {
 		return err
 	}
 
-	if movies, err := db.AllMovies(); err != nil {
+	if _, err := db.AllMovies(); err != nil {
 		if stopErr := db.Stop(); stopErr != nil {
 			err = errors.Join(err, stopErr)
 		}
 		return err
-	} else {
-		log.Printf("%d movies in the library.\n", len(movies))
 	}
 
 	wg := &loggingwaitgroup.WaitGroup{}
 	ctx, cancel := context.WithCancelCause(context.Background())
 
 	if err := tailnet.WaitReady(ctx); err != nil {
+		cancel(err)
 		return fmt.Errorf("tailnet: %w", err)
 	}
 
@@ -80,9 +85,11 @@ func run() error {
 		go func() {
 			defer wg.Done(name)
 		run:
-			if err := run(ctx); err != nil {
-				err := fmt.Errorf("%s error: %w", name, err)
-				cancel(err)
+			start := time.Now()
+			err := run(ctx)
+			logTask(name, err, time.Since(start))
+			if err != nil {
+				cancel(fmt.Errorf("%s error: %w", name, err))
 				return
 			}
 
@@ -102,9 +109,11 @@ func run() error {
 		go func() {
 			defer wg.Done(name)
 		run:
-			if err := run(ctx); err != nil {
-				err := fmt.Errorf("%s error: %w", name, err)
-				cancel(err)
+			start := time.Now()
+			err := run(ctx)
+			logTask(name, err, time.Since(start))
+			if err != nil {
+				cancel(fmt.Errorf("%s error: %w", name, err))
 				return
 			}
 
@@ -124,9 +133,11 @@ func run() error {
 		go func() {
 			defer wg.Done(name)
 		run:
-			if err := run(ctx); err != nil {
-				err := fmt.Errorf("%s error: %w", name, err)
-				cancel(err)
+			start := time.Now()
+			err := run(ctx)
+			logTask(name, err, time.Since(start))
+			if err != nil {
+				cancel(fmt.Errorf("%s error: %w", name, err))
 				return
 			}
 
@@ -146,9 +157,11 @@ func run() error {
 		go func() {
 			defer wg.Done(name)
 		run:
-			if err := run(ctx); err != nil {
-				err := fmt.Errorf("%s error: %w", name, err)
-				cancel(err)
+			start := time.Now()
+			err := run(ctx)
+			logTask(name, err, time.Since(start))
+			if err != nil {
+				cancel(fmt.Errorf("%s error: %w", name, err))
 				return
 			}
 
@@ -198,7 +211,10 @@ func run() error {
 	go func() {
 		defer wg.Done("letterboxdimporter")
 		for {
-			if err := li.Run(); err != nil {
+			start := time.Now()
+			err := li.Run()
+			logTask("letterboxdimporter", err, time.Since(start))
+			if err != nil {
 				cancel(fmt.Errorf("letterboxdimporter error: %w", err))
 				return
 			}
@@ -216,7 +232,10 @@ func run() error {
 	go func() {
 		defer wg.Done("movieimporter")
 		for {
-			if err := mi.Run(ctx); err != nil {
+			start := time.Now()
+			err := mi.Run(ctx)
+			logTask("movieimporter", err, time.Since(start))
+			if err != nil {
 				cancel(fmt.Errorf("movieimporter error: %w", err))
 				return
 			}
@@ -235,7 +254,10 @@ func run() error {
 	go func() {
 		defer wg.Done("tvimporter")
 		for {
-			if err := ti.Run(ctx); err != nil {
+			start := time.Now()
+			err := ti.Run(ctx)
+			logTask("tvimporter", err, time.Since(start))
+			if err != nil {
 				cancel(fmt.Errorf("tvimporter error: %w", err))
 				return
 			}
@@ -276,7 +298,6 @@ func run() error {
 		case <-ctx.Done():
 			return
 		case sig := <-sigs:
-			log.Println("interrupt")
 			cancel(fmt.Errorf("interrupt signal: %s", sig))
 			return
 		}

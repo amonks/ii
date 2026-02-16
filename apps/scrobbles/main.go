@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -44,6 +43,7 @@ func run() error {
 	defer db.Close()
 
 	fetch := func() error {
+		start := time.Now()
 		var count int
 		for scrobble, err := range lfm.FetchRecentScrobbles("andrewmonks") {
 			if err != nil {
@@ -61,7 +61,7 @@ func run() error {
 				continue
 			}
 		}
-		log.Printf("fetched %d scrobbles", count)
+		slog.Info("task", "task.name", "fetch", "task.duration_ms", time.Since(start).Milliseconds(), "scrobbles.count", count)
 		if err := snitch.OK("537206854d"); err != nil {
 			return err
 		}

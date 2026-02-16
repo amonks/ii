@@ -26,9 +26,6 @@ type MovieImporter struct {
 }
 
 func (app *MovieImporter) Run(ctx context.Context) error {
-	log.Println("movieimporter started")
-	defer log.Println("movieimporter done")
-
 	if err := filepath.Walk(config.MovieImportDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Println("Walk passed an error into callback:", err)

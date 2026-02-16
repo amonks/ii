@@ -20,7 +20,6 @@ func New(db *db.DB) *LetterboxdImporter {
 var ErrDuplicate = fmt.Errorf("duplicate")
 
 func (li *LetterboxdImporter) Run() error {
-	log.Println("letterboxdimporter started")
 	watches, err := letterboxd.FetchDiary()
 	if err != nil {
 		return nil
@@ -46,6 +45,5 @@ func (li *LetterboxdImporter) Run() error {
 		}
 		return nil
 	}
-	log.Println("letterboxdimporter done")
 	return nil
 }

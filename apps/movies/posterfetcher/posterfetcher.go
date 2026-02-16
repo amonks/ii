@@ -29,9 +29,6 @@ func New(tmdb *tmdb.Client, db *db.DB) *PosterFetcher {
 }
 
 func (app *PosterFetcher) Run(ctx context.Context) error {
-	log.Println("posterfetcher started")
-	defer log.Println("posterfetcher done")
-
 	movies, err := app.db.AllMovies()
 	if err != nil {
 		return err

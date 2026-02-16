@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -40,7 +39,7 @@ func run() error {
 	dataDir := "data"
 	storage, err := NewStorage(filepath.Join(dataDir, "storage.json"))
 	if err != nil {
-		log.Fatalf("Failed to initialize storage: %v", err)
+		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
 
 	// Handler for the main page

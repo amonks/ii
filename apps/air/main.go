@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 
@@ -42,7 +41,6 @@ func run() error {
 	var errs error
 	switch *mode {
 	case "fetch":
-		log.Printf("run fetch")
 		if err := tailnet.WaitReady(context.Background()); err != nil {
 			return fmt.Errorf("tailnet: %w", err)
 		}
@@ -51,7 +49,6 @@ func run() error {
 		}
 
 	case "aggregates":
-		log.Printf("run aggregates")
 		if err := db.calculateAggregates(); err != nil {
 			errs = errors.Join(errs, err)
 		}
@@ -59,7 +56,6 @@ func run() error {
 	// Migration has been completed, code removed
 
 	case "serve":
-		log.Printf("run serve")
 		ctx := sigctx.New()
 		if err := tailnet.WaitReady(ctx); err != nil {
 			return fmt.Errorf("tailnet: %w", err)
