@@ -8,7 +8,7 @@ import (
 // JSON encodes the given data as JSON and writes it to the response writer.
 // If encoding fails, it responds with an internal server error.
 // Uses json.Encoder to stream directly to the ResponseWriter.
-func JSON(w http.ResponseWriter, req *http.Request, data interface{}) {
+func JSON(w http.ResponseWriter, req *http.Request, data any) {
 	// Set content type if not already set
 	if w.Header().Get("Content-Type") == "" {
 		w.Header().Set("Content-Type", "application/json")

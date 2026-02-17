@@ -63,7 +63,7 @@ func (p *Post) SetCreatedFromJSON() {
 	}
 
 	// Use a map to extract the created_utc field
-	var data map[string]interface{}
+	var data map[string]any
 	if err := json.Unmarshal(*p.Json, &data); err != nil {
 		return
 	}
@@ -79,8 +79,8 @@ func (p *Post) SetCreatedFromJSON() {
 		p.IsGallery = true
 
 		// Try to get gallery data
-		if galleryData, ok := data["gallery_data"].(map[string]interface{}); ok {
-			if items, ok := galleryData["items"].([]interface{}); ok {
+		if galleryData, ok := data["gallery_data"].(map[string]any); ok {
+			if items, ok := galleryData["items"].([]any); ok {
 				p.GallerySize = len(items)
 			}
 		}

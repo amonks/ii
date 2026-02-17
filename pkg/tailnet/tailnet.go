@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"monks.co/pkg/meta"
 	"tailscale.com/client/tailscale/apitype"
@@ -117,10 +118,5 @@ func AnonCaps(ctx context.Context) (tailcfg.PeerCapMap, error) {
 }
 
 func srcIPsContainsStar(srcIPs []string) bool {
-	for _, ip := range srcIPs {
-		if ip == "*" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(srcIPs, "*")
 }

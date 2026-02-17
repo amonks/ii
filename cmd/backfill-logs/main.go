@@ -139,7 +139,7 @@ func run() error {
 			statusCode = *r.StatusCode
 		}
 
-		m := map[string]interface{}{
+		m := map[string]any{
 			"time":             ts.Format(time.RFC3339Nano),
 			"level":            "INFO",
 			"msg":              "request",
@@ -238,4 +238,3 @@ func run() error {
 	log.Printf("backfill: complete, %d total events", total)
 	return nil
 }
-

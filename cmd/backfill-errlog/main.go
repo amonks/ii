@@ -76,7 +76,7 @@ func run() error {
 			return fmt.Errorf("scanning row: %w", err)
 		}
 
-		event := map[string]interface{}{
+		event := map[string]any{
 			"time":        happenedAt.Format(time.RFC3339Nano),
 			"level":       "ERROR",
 			"msg":         "error_report",

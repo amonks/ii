@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strings"
 
 	"tailscale.com/tailcfg"
@@ -103,12 +104,7 @@ func anonCaps(rules []tailcfg.FilterRule) tailcfg.PeerCapMap {
 }
 
 func srcIPsContainsStar(srcIPs []string) bool {
-	for _, ip := range srcIPs {
-		if ip == "*" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(srcIPs, "*")
 }
 
 func routesFromCaps(caps tailcfg.PeerCapMap) map[string]string {

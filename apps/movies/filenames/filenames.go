@@ -193,8 +193,8 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 	}
 
 	// Last resort: Check if the directory name is in season format and filename has numbers
-	dirParts := strings.Split(dir, "/")
-	for _, part := range dirParts {
+	dirParts := strings.SplitSeq(dir, "/")
+	for part := range dirParts {
 		if seasonMatch := SeasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
 			seasonNum, _ := strconv.Atoi(seasonMatch[1])
 
@@ -249,9 +249,9 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 // DetectSeasonFromPath extracts the season number from a directory path
 // Returns season number (defaults to 1 if not found)
 func DetectSeasonFromPath(dirPath string) int {
-	parts := strings.Split(dirPath, string(filepath.Separator))
+	parts := strings.SplitSeq(dirPath, string(filepath.Separator))
 
-	for _, part := range parts {
+	for part := range parts {
 		if seasonMatch := SeasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
 			if s, err := strconv.Atoi(seasonMatch[1]); err == nil && s > 0 {
 				return s

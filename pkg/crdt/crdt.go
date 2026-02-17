@@ -1,5 +1,7 @@
 package crdt
 
+import "maps"
+
 type CRDT[T any, S any] interface {
 	Value() T
 	State() S
@@ -83,9 +85,7 @@ func (lwwm LWWMap[T]) State() LWWMap[T] {
 
 func (lwwm LWWMap[T]) Merge(other LWWMap[T]) LWWMap[T] {
 	out := LWWMap[T]{}
-	for k, v := range lwwm {
-		out[k] = v
-	}
+	maps.Copy(out, lwwm)
 	for k, v := range other {
 		if existing, exists := out[k]; exists {
 			out[k] = existing.Merge(v)

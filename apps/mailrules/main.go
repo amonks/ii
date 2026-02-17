@@ -35,8 +35,8 @@ func run() error {
 		if strings.HasPrefix(search, "NOT ") {
 			continue
 		}
-		rules := strings.Split(search, " OR ")
-		for _, rule := range rules {
+		rules := strings.SplitSeq(search, " OR ")
+		for rule := range rules {
 			switch true {
 			case strings.HasPrefix(rule, "from:"):
 				address := strings.TrimPrefix(rule, "from:")

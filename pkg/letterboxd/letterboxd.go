@@ -148,8 +148,8 @@ func extractReview(desc string) string {
 
 func deriveMovieURL(link string) string {
 	prefix := fmt.Sprintf("https://letterboxd.com/%s", username)
-	if strings.HasPrefix(link, prefix) {
-		return "https://letterboxd.com" + strings.TrimPrefix(link, prefix)
+	if after, ok := strings.CutPrefix(link, prefix); ok {
+		return "https://letterboxd.com" + after
 	}
 	return link
 }
@@ -243,10 +243,10 @@ func cachedFetch() ([]byte, error) {
 
 func parseMaxAge(header http.Header) time.Duration {
 	cc := header.Get("Cache-Control")
-	for _, part := range strings.Split(cc, ",") {
+	for part := range strings.SplitSeq(cc, ",") {
 		part = strings.TrimSpace(part)
-		if strings.HasPrefix(part, "max-age=") {
-			if secs, err := strconv.Atoi(strings.TrimPrefix(part, "max-age=")); err == nil {
+		if after, ok := strings.CutPrefix(part, "max-age="); ok {
+			if secs, err := strconv.Atoi(after); err == nil {
 				return time.Duration(secs) * time.Second
 			}
 		}

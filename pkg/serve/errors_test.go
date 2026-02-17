@@ -27,7 +27,7 @@ func TestErrorf_SetsErrMessage(t *testing.T) {
 		t.Fatalf("expected status 500, got %d", rr.Code)
 	}
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v\nraw: %s", err, buf.String())
 	}
@@ -55,7 +55,7 @@ func TestErrorf_4xxNoErrorLevel(t *testing.T) {
 		t.Fatalf("expected status 404, got %d", rr.Code)
 	}
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestInternalServerError(t *testing.T) {
 		t.Fatalf("expected status 500, got %d", rr.Code)
 	}
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v", err)
 	}

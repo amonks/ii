@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"monks.co/pkg/config"
@@ -48,11 +49,8 @@ func LoadTable() (Table, error) {
 		row[0] = app
 		for i, machine := range machines {
 			config := configs[machine]
-			for _, _app := range config.Apps() {
-				if app == _app {
-					row[i+1] = fmt.Sprintf("http://monks-%s-%s/", app, machine)
-					break
-				}
+			if slices.Contains(config.Apps(), app) {
+				row[i+1] = fmt.Sprintf("http://monks-%s-%s/", app, machine)
 			}
 		}
 		data.Rows = append(data.Rows, row)

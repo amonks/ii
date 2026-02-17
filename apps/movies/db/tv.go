@@ -282,7 +282,7 @@ func (db *DB) GetTVShows() ([]*TVShow, error) {
 // AddTVShowPoster adds a poster path to a TV show
 func (db *DB) AddTVShowPoster(show *TVShow, posterPath string) error {
 	if err := db.Table("tv_shows").Where("id = ?", show.ID).
-		Updates(map[string]interface{}{"poster_path": posterPath}).Error; err != nil {
+		Updates(map[string]any{"poster_path": posterPath}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -292,7 +292,7 @@ func (db *DB) AddTVShowPoster(show *TVShow, posterPath string) error {
 func (db *DB) SetTVEpisodeCopied(episode *TVEpisode) error {
 	if err := db.Table("tv_episodes").Where("show_id = ? AND season_number = ? AND episode_number = ?",
 		episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
-		Updates(map[string]interface{}{"is_copied": true}).Error; err != nil {
+		Updates(map[string]any{"is_copied": true}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -392,7 +392,7 @@ func (db *DB) UpdateTVEpisodePath(episode *TVEpisode, newPath string) error {
 	return db.Table("tv_episodes").
 		Where("show_id = ? AND season_number = ? AND episode_number = ?",
 			episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"imported_from_path": newPath,
 			"is_copied":          false,
 		}).Error

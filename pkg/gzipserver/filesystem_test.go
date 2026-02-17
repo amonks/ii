@@ -72,7 +72,7 @@ func (f *testFile) Size() int64                              { return f.size }
 func (f *testFile) Mode() fs.FileMode                        { return 0644 }
 func (f *testFile) ModTime() time.Time                       { return time.Now() }
 func (f *testFile) IsDir() bool                              { return f.isDir }
-func (f *testFile) Sys() interface{}                         { return nil }
+func (f *testFile) Sys() any                                 { return nil }
 func (f *testFile) Readdir(count int) ([]os.FileInfo, error) { return nil, fs.ErrNotExist }
 
 func TestDirExists(t *testing.T) {

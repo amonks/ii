@@ -13,23 +13,23 @@ import (
 )
 
 type VerificationResult struct {
-	Movie              *db.Movie
-	DestinationExists  bool
-	SourceExists       bool
-	SizesMatch         bool
-	Action             string
-	Error              error
+	Movie             *db.Movie
+	DestinationExists bool
+	SourceExists      bool
+	SizesMatch        bool
+	Action            string
+	Error             error
 }
 
 type VerificationReport struct {
-	TotalMovies            int
-	DestinationMissing     int
-	SourceMissing          int
-	SizeMismatches         int
-	PathMismatches         int
-	Verified               int
-	Errors                 int
-	Results                []VerificationResult
+	TotalMovies        int
+	DestinationMissing int
+	SourceMissing      int
+	SizeMismatches     int
+	PathMismatches     int
+	Verified           int
+	Errors             int
+	Results            []VerificationResult
 }
 
 func main() {
@@ -65,10 +65,10 @@ func main() {
 		if (i+1)%100 == 0 || i+1 == len(movies) {
 			log.Printf("[%d/%d] Processing movies...", i+1, len(movies))
 		}
-		
+
 		result := verifyMovie(database, movie, *dryRun)
 		report.Results = append(report.Results, result)
-		
+
 		switch result.Action {
 		case "marked_as_not_copied_missing_dest", "would_mark_as_not_copied_missing_dest":
 			report.DestinationMissing++
@@ -146,7 +146,7 @@ func verifyMovie(database *db.DB, movie *db.Movie, dryRun bool) VerificationResu
 	// Check if destination file exists
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		result.DestinationExists = false
-		
+
 		// Check if source file exists to determine the appropriate action
 		if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
 			result.SourceExists = false
@@ -166,7 +166,7 @@ func verifyMovie(database *db.DB, movie *db.Movie, dryRun bool) VerificationResu
 			result.Action = "error"
 			return result
 		}
-		
+
 		result.SourceExists = true
 		if dryRun {
 			result.Action = "would_mark_as_not_copied_missing_dest"
@@ -213,14 +213,14 @@ func verifyMovie(database *db.DB, movie *db.Movie, dryRun bool) VerificationResu
 			result.Action = "would_mark_as_not_copied_size_mismatch"
 		} else {
 			result.Action = "marked_as_not_copied_size_mismatch"
-			
+
 			// Delete the destination file
 			if err := os.Remove(destPath); err != nil {
 				result.Error = fmt.Errorf("failed to delete destination file: %w", err)
 				result.Action = "error"
 				return result
 			}
-			
+
 			// Mark as not copied so moviecopier can handle it
 			if err := setMovieIsNotCopied(database, movie); err != nil {
 				result.Error = fmt.Errorf("failed to mark movie as not copied: %w", err)
@@ -238,7 +238,7 @@ func verifyMovie(database *db.DB, movie *db.Movie, dryRun bool) VerificationResu
 func setMovieIsNotCopied(database *db.DB, movie *db.Movie) error {
 	return database.Table("movies").
 		Where("id = ?", movie.ID).
-		Updates(map[string]interface{}{"is_copied": false}).
+		Updates(map[string]any{"is_copied": false}).
 		Error
 }
 
@@ -266,7 +266,7 @@ func printReport(report VerificationReport, dryRun bool) {
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Printf("Total movies checked: %d\n", report.TotalMovies)
 	fmt.Printf("Verified (no issues): %d\n", report.Verified)
-	
+
 	if dryRun {
 		fmt.Printf("Destination missing (would mark as not copied): %d\n", report.DestinationMissing)
 		fmt.Printf("Source missing (logged only): %d\n", report.SourceMissing)
@@ -278,10 +278,9 @@ func printReport(report VerificationReport, dryRun bool) {
 		fmt.Printf("Size mismatches (fixed): %d\n", report.SizeMismatches)
 		fmt.Printf("Path mismatches (fixed): %d\n", report.PathMismatches)
 	}
-	
+
 	fmt.Printf("Errors: %d\n", report.Errors)
 	fmt.Println(strings.Repeat("=", 60))
-
 
 	// Count movies with source exists vs missing both
 	sourceExistsCount := 0

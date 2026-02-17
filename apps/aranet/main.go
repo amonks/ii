@@ -105,7 +105,7 @@ func run() error {
 		w.Header().Set("Content-Type", "application/json")
 
 		// Create response with timestamp and devices
-		response := map[string]interface{}{
+		response := map[string]any{
 			"timestamp": timestamp,
 			"devices":   devices,
 		}

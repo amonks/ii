@@ -24,15 +24,15 @@ type FixResult struct {
 }
 
 type FixReport struct {
-	TotalShows      int
-	TotalSeasons    int
-	TotalEpisodes   int
-	ShowsFixed      int
-	SeasonsFixed    int
-	EpisodesFixed   int
-	Verified        int
-	Errors          int
-	Results         []FixResult
+	TotalShows    int
+	TotalSeasons  int
+	TotalEpisodes int
+	ShowsFixed    int
+	SeasonsFixed  int
+	EpisodesFixed int
+	Verified      int
+	Errors        int
+	Results       []FixResult
 }
 
 func main() {
@@ -160,7 +160,7 @@ func fixShowPath(database *db.DB, show *db.TVShow, dryRun bool) FixResult {
 			result.Action = "renamed"
 
 			if err := database.Table("tv_shows").Where("id = ?", show.ID).
-				Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+				Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 				result.Action = "error"
 				result.Error = fmt.Errorf("failed to update database: %w", err)
 				return result
@@ -193,7 +193,7 @@ func fixShowPath(database *db.DB, show *db.TVShow, dryRun bool) FixResult {
 
 		// Update the database
 		if err := database.Table("tv_shows").Where("id = ?", show.ID).
-			Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+			Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 			result.Action = "error"
 			result.Error = fmt.Errorf("failed to update database: %w", err)
 			return result
@@ -241,7 +241,7 @@ func fixSeasonPath(database *db.DB, show *db.TVShow, season *db.TVSeason, dryRun
 
 			if err := database.Table("tv_seasons").
 				Where("show_id = ? AND season_number = ?", show.ID, season.SeasonNumber).
-				Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+				Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 				result.Action = "error"
 				result.Error = fmt.Errorf("failed to update database: %w", err)
 				return result
@@ -283,7 +283,7 @@ func fixSeasonPath(database *db.DB, show *db.TVShow, season *db.TVSeason, dryRun
 		// Update the database
 		if err := database.Table("tv_seasons").
 			Where("show_id = ? AND season_number = ?", show.ID, season.SeasonNumber).
-			Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+			Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 			result.Action = "error"
 			result.Error = fmt.Errorf("failed to update database: %w", err)
 			return result
@@ -333,7 +333,7 @@ func fixEpisodePath(database *db.DB, show *db.TVShow, season *db.TVSeason, episo
 			if err := database.Table("tv_episodes").
 				Where("show_id = ? AND season_number = ? AND episode_number = ?",
 					show.ID, episode.SeasonNumber, episode.EpisodeNumber).
-				Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+				Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 				result.Action = "error"
 				result.Error = fmt.Errorf("failed to update database: %w", err)
 				return result
@@ -376,7 +376,7 @@ func fixEpisodePath(database *db.DB, show *db.TVShow, season *db.TVSeason, episo
 		if err := database.Table("tv_episodes").
 			Where("show_id = ? AND season_number = ? AND episode_number = ?",
 				show.ID, episode.SeasonNumber, episode.EpisodeNumber).
-			Updates(map[string]interface{}{"library_path": expectedPath}).Error; err != nil {
+			Updates(map[string]any{"library_path": expectedPath}).Error; err != nil {
 			result.Action = "error"
 			result.Error = fmt.Errorf("failed to update database: %w", err)
 			return result

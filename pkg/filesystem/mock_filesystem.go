@@ -262,4 +262,4 @@ func (fi *mockFileInfo) Size() int64        { return fi.size }
 func (fi *mockFileInfo) Mode() os.FileMode  { return fi.mode }
 func (fi *mockFileInfo) ModTime() time.Time { return fi.modTime }
 func (fi *mockFileInfo) IsDir() bool        { return fi.isDir }
-func (fi *mockFileInfo) Sys() interface{}   { return nil }
+func (fi *mockFileInfo) Sys() any           { return nil }

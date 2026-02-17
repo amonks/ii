@@ -1,5 +1,6 @@
 package ptr
 
+//go:fix inline
 func String(s string) *string {
-	return &s
+	return new(s)
 }

@@ -334,7 +334,7 @@ func (ra *RedditArchiver) fetchSavedPosts(after string) ([]*Post, string, error)
 		}
 
 		// Parse the post data
-		var postData map[string]interface{}
+		var postData map[string]any
 		if err := json.Unmarshal(child.Data, &postData); err != nil {
 			fmt.Printf("Error parsing post data: %v\n", err)
 			continue
@@ -497,7 +497,7 @@ func (ra *RedditArchiver) processGalleryPost(post *Post) error {
 }
 
 // fetchPostData fetches fresh data for a post from the Reddit API
-func (ra *RedditArchiver) fetchPostData(postID string) (map[string]interface{}, error) {
+func (ra *RedditArchiver) fetchPostData(postID string) (map[string]any, error) {
 	// Ensure we have a valid token
 	if err := ra.ensureAuthenticated(); err != nil {
 		return nil, err
@@ -536,7 +536,7 @@ func (ra *RedditArchiver) fetchPostData(postID string) (map[string]interface{}, 
 	var response struct {
 		Data struct {
 			Children []struct {
-				Data map[string]interface{} `json:"data"`
+				Data map[string]any `json:"data"`
 			} `json:"children"`
 		} `json:"data"`
 	}
@@ -562,7 +562,7 @@ func (ra *RedditArchiver) fetchPostData(postID string) (map[string]interface{}, 
 // processGalleryFromJSON processes gallery post from its JSON data
 // Returns true if at least one item was successfully downloaded
 func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
-	var data map[string]interface{}
+	var data map[string]any
 	if err := json.Unmarshal(*post.Json, &data); err != nil {
 		return false, fmt.Errorf("failed to parse post JSON: %w", err)
 	}
@@ -575,20 +575,20 @@ func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
 	}
 
 	// Get gallery data and media metadata
-	galleryData, ok := data["gallery_data"].(map[string]interface{})
+	galleryData, ok := data["gallery_data"].(map[string]any)
 	if !ok {
 		post.Status = StatusUnsupported
 		return false, fmt.Errorf("missing gallery_data")
 	}
 
-	mediaMetadata, ok := data["media_metadata"].(map[string]interface{})
+	mediaMetadata, ok := data["media_metadata"].(map[string]any)
 	if !ok {
 		post.Status = StatusUnsupported
 		return false, fmt.Errorf("missing media_metadata")
 	}
 
 	// Get the gallery items
-	items, ok := galleryData["items"].([]interface{})
+	items, ok := galleryData["items"].([]any)
 	if !ok || len(items) == 0 {
 		post.Status = StatusUnsupported
 		return false, fmt.Errorf("no gallery items found")
@@ -607,7 +607,7 @@ func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
 
 	// Process each gallery item
 	for i, itemObj := range items {
-		item, ok := itemObj.(map[string]interface{})
+		item, ok := itemObj.(map[string]any)
 		if !ok {
 			fmt.Printf("Error: Invalid item format at index %d\n", i)
 			continue
@@ -620,7 +620,7 @@ func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
 		}
 
 		// Get media metadata for this item
-		mediaItemData, ok := mediaMetadata[mediaID].(map[string]interface{})
+		mediaItemData, ok := mediaMetadata[mediaID].(map[string]any)
 		if !ok {
 			fmt.Printf("Error: Missing media metadata for ID %s\n", mediaID)
 			continue
@@ -652,7 +652,7 @@ func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
 		var sourceURL string
 
 		// First try to get the s (source) field
-		if s, ok := mediaItemData["s"].(map[string]interface{}); ok {
+		if s, ok := mediaItemData["s"].(map[string]any); ok {
 			// Check if this is an animated image (gif)
 			if typ, ok := mediaItemData["e"].(string); ok && typ == "AnimatedImage" {
 				if mp4URL, ok := s["mp4"].(string); ok && mp4URL != "" {
@@ -673,10 +673,10 @@ func (ra *RedditArchiver) processGalleryFromJSON(post *Post) (bool, error) {
 
 		// If we still don't have a URL, try to find it in the 'p' field (preview array)
 		if sourceURL == "" {
-			if p, ok := mediaItemData["p"].([]interface{}); ok && len(p) > 0 {
+			if p, ok := mediaItemData["p"].([]any); ok && len(p) > 0 {
 				// Get the last (highest resolution) preview
 				lastPreview := p[len(p)-1]
-				if preview, ok := lastPreview.(map[string]interface{}); ok {
+				if preview, ok := lastPreview.(map[string]any); ok {
 					if url, ok := preview["u"].(string); ok && url != "" {
 						sourceURL = url
 					}

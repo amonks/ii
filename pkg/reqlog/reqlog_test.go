@@ -36,7 +36,7 @@ func TestMiddleware_NormalRequest(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", rr.Code)
 	}
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v\nraw: %s", err, buf.String())
 	}
@@ -70,7 +70,7 @@ func TestMiddleware_PanicSetsErrorAttrs(t *testing.T) {
 		t.Fatalf("expected status 500, got %d", rr.Code)
 	}
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v\nraw: %s", err, buf.String())
 	}
@@ -98,7 +98,7 @@ func TestMiddleware_500SetsErrorLevel(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
-	var event map[string]interface{}
+	var event map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &event); err != nil {
 		t.Fatalf("failed to parse log event: %v", err)
 	}

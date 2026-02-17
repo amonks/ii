@@ -39,7 +39,7 @@ func getMachineName() string {
 	}
 
 	fields := strings.Fields(string(bs))
-	for i := 0; i < len(fields); i++ {
+	for i := range fields {
 		if fields[i] == "machine_name" {
 			return fields[i+1]
 		}

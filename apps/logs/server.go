@@ -235,9 +235,9 @@ func (app *Server) serveDashboard(w http.ResponseWriter, req *http.Request) {
 	}
 
 	type PageData struct {
-		TimeRange   logs.TimeRange
-		Events      []logs.Event
-		TopPages    []struct {
+		TimeRange logs.TimeRange
+		Events    []logs.Event
+		TopPages  []struct {
 			URL          string
 			RequestCount int
 		}
@@ -292,7 +292,7 @@ func (app *Server) handleQuery(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"chart":    data,
 		"windowMs": tr.WindowMs(),
 	})
@@ -327,7 +327,7 @@ func (app *Server) handleEvents(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"events":   events,
 		"total":    total,
 		"page":     page,

@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 )
 
@@ -44,12 +45,7 @@ func NewMockDB() *MockDB {
 
 // StubWasCreated checks if a stub was created for a path
 func (db *MockDB) StubWasCreated(path string) bool {
-	for _, stubPath := range db.createdStubs {
-		if stubPath == path {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(db.createdStubs, path)
 }
 
 // Stub-related methods

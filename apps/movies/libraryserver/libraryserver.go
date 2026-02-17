@@ -442,7 +442,6 @@ func (app *LibraryServer) servePlayButton(w http.ResponseWriter, req *http.Reque
 		exec.Command("ssh", "lugh", fmt.Sprintf("open -a VLC.app 'sftp://ajm@thr.ss.cx/data/tank/movies/%s'", movie.LibraryPath)),
 		exec.Command("ssh", "lugh", `osascript -e 'tell application "VLC" to activate' -e 'tell application "System Events" to keystroke "f" using {command down, control down}'`),
 	} {
-		cmd := cmd
 		if err := cmd.Start(); err != nil {
 			serve.InternalServerError(w, req, err)
 			return

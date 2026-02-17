@@ -134,7 +134,7 @@ func (d *DB) SetMovieIsCopied(movie *Movie) error {
 	if err := d.
 		Table("movies").
 		Where("id = ?", movie.ID).
-		Updates(map[string]interface{}{"is_copied": true}).
+		Updates(map[string]any{"is_copied": true}).
 		Error; err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (d *DB) ValidateMovieMetacriticData(movie *Movie, url string, score int) er
 func (d *DB) AddMovieRating(movie *Movie, score int, metacriticURL string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"metacritic_rating": score,
 			"metacritic_url":    metacriticURL,
 		}).
@@ -221,7 +221,7 @@ func (d *DB) AddMoviePoster(movie *Movie, posterPath string) error {
 func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"imported_from_path": path,
 		}).
 		Error; err != nil {
@@ -233,7 +233,7 @@ func (d *DB) ReplaceMovieFile(movie *Movie, path string) error {
 func (d *DB) UpdateMovieLibraryPath(movie *Movie, libraryPath string) error {
 	if err := d.Model(&Movie{}).
 		Where("id = ?", movie.ID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"library_path": libraryPath,
 		}).
 		Error; err != nil {
@@ -248,22 +248,22 @@ func (d *DB) DeleteMovie(movie *Movie) error {
 		if err := tx.Table("movie_titles").Where("id = ?", movie.ID).Delete(&MovieTitle{}).Error; err != nil {
 			return fmt.Errorf("failed to delete from movie_titles: %w", err)
 		}
-		
+
 		// Delete from movie_watches (join table)
 		if err := tx.Table("movie_watches").Where("id = ?", movie.ID).Delete(&MovieWatch{}).Error; err != nil {
 			return fmt.Errorf("failed to delete from movie_watches: %w", err)
 		}
-		
+
 		// Delete from queued_movies if present
 		if err := tx.Table("queued_movies").Where("id = ?", movie.ID).Delete(&struct{ ID int64 }{}).Error; err != nil {
 			return fmt.Errorf("failed to delete from queued_movies: %w", err)
 		}
-		
+
 		// Delete the movie itself
 		if err := tx.Delete(movie).Error; err != nil {
 			return fmt.Errorf("failed to delete movie: %w", err)
 		}
-		
+
 		return nil
 	})
 }

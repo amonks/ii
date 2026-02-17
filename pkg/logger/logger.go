@@ -3,14 +3,14 @@ package logger
 import "log"
 
 type Logger interface {
-	Logf(msg string, args ...interface{})
+	Logf(msg string, args ...any)
 }
 
 type namedLogger struct {
 	name string
 }
 
-func (l *namedLogger) Logf(msg string, args ...interface{}) {
+func (l *namedLogger) Logf(msg string, args ...any) {
 	log.Printf(l.name+": "+msg+"\n", args...)
 }
 

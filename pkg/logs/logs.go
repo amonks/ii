@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
@@ -117,7 +118,7 @@ func (m *Model) migrate() error {
 // JSONText is a json.RawMessage that scans from a SQL string column.
 type JSONText json.RawMessage
 
-func (j *JSONText) Scan(value interface{}) error {
+func (j *JSONText) Scan(value any) error {
 	switch v := value.(type) {
 	case string:
 		*j = JSONText(v)
@@ -138,9 +139,9 @@ func (j JSONText) MarshalJSON() ([]byte, error) {
 
 // Event is a single log event with its parsed fields.
 type Event struct {
-	ID        int64    `json:"id"`
+	ID        int64     `json:"id"`
 	Timestamp time.Time `json:"timestamp"`
-	Data      JSONText `json:"data"`
+	Data      JSONText  `json:"data"`
 
 	App        *string  `json:"app"`
 	Level      *string  `json:"level"`
@@ -282,15 +283,10 @@ type Query struct {
 var validColumns = []string{"app", "proxy_upstream", "level", "msg", "host", "method", "status", "duration_bucket", "route"}
 
 func isValidColumn(col string) bool {
-	for _, c := range validColumns {
-		if c == col {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(validColumns, col)
 }
 
-func (f Filter) buildSQL(colExpr string) (string, []interface{}) {
+func (f Filter) buildSQL(colExpr string) (string, []any) {
 	if len(f.Values) == 0 {
 		return "", nil
 	}
@@ -299,7 +295,7 @@ func (f Filter) buildSQL(colExpr string) (string, []interface{}) {
 		if f.Negate {
 			op = "!="
 		}
-		return fmt.Sprintf(` AND %s %s ?`, colExpr, op), []interface{}{f.Values[0]}
+		return fmt.Sprintf(` AND %s %s ?`, colExpr, op), []any{f.Values[0]}
 	}
 	placeholders := strings.Repeat("?,", len(f.Values))
 	placeholders = placeholders[:len(placeholders)-1]
@@ -307,7 +303,7 @@ func (f Filter) buildSQL(colExpr string) (string, []interface{}) {
 	if f.Negate {
 		op = "NOT IN"
 	}
-	args := make([]interface{}, len(f.Values))
+	args := make([]any, len(f.Values))
 	for i, v := range f.Values {
 		args[i] = v
 	}
@@ -317,7 +313,7 @@ func (f Filter) buildSQL(colExpr string) (string, []interface{}) {
 // ParseQuery parses a wire-format query string like "group:host,host:monks.co".
 func ParseQuery(s string) Query {
 	var q Query
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		kv := strings.SplitN(part, ":", 2)
 		if len(kv) != 2 {
 			continue
@@ -372,7 +368,7 @@ func (m *Model) QueryChartData(tr TimeRange, q Query) (map[string][]ChartPoint, 
 	days := tr.Days()
 
 	var sqlStr string
-	var args []interface{}
+	var args []any
 
 	if days < 7 {
 		// Use raw events table for short ranges.
@@ -446,20 +442,21 @@ func (m *Model) queryChartDataFromEvents(tr TimeRange, q Query) (map[string][]Ch
 		timeExpr = `strftime('%Y-%m-%dT00:00:00Z', timestamp)`
 	}
 
-	sqlStr := fmt.Sprintf(`SELECT CAST(%s AS TEXT) as host, %s as window_start_at, count(*) as count
+	var sqlStr strings.Builder
+	sqlStr.WriteString(fmt.Sprintf(`SELECT CAST(%s AS TEXT) as host, %s as window_start_at, count(*) as count
 		FROM events
-		WHERE msg = 'request' AND timestamp >= ? AND timestamp <= ?`, groupCol, timeExpr)
-	args := []interface{}{tr.StartTime(), tr.EndTime()}
+		WHERE msg = 'request' AND timestamp >= ? AND timestamp <= ?`, groupCol, timeExpr))
+	args := []any{tr.StartTime(), tr.EndTime()}
 	for _, f := range q.Filters {
 		s, a := f.buildSQL(f.Column)
-		sqlStr += s
+		sqlStr.WriteString(s)
 		args = append(args, a...)
 	}
-	sqlStr += fmt.Sprintf(` GROUP BY CAST(%s AS TEXT), window_start_at
-		ORDER BY window_start_at ASC`, groupCol)
+	sqlStr.WriteString(fmt.Sprintf(` GROUP BY CAST(%s AS TEXT), window_start_at
+		ORDER BY window_start_at ASC`, groupCol))
 
 	var points []ChartPoint
-	if err := m.Raw(sqlStr, args...).Scan(&points).Error; err != nil {
+	if err := m.Raw(sqlStr.String(), args...).Scan(&points).Error; err != nil {
 		return nil, err
 	}
 
@@ -551,7 +548,7 @@ func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]E
 	}
 
 	where := `WHERE timestamp >= ? AND timestamp <= ?`
-	args := []interface{}{tr.StartTime(), tr.EndTime()}
+	args := []any{tr.StartTime(), tr.EndTime()}
 	if !hasMsgFilter {
 		where += ` AND msg = 'request'`
 	}
@@ -572,7 +569,7 @@ func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]E
 	// Get page of events.
 	dataSQL := `SELECT id, timestamp, data, app, level, msg, request_id, method, host, path, status, duration_ms, remote_addr
 		FROM events ` + where + ` ORDER BY timestamp DESC LIMIT ? OFFSET ?`
-	dataArgs := append(append([]interface{}{}, args...), limit, offset)
+	dataArgs := append(append([]any{}, args...), limit, offset)
 
 	var events []Event
 	if err := m.Raw(dataSQL, dataArgs...).Scan(&events).Error; err != nil {

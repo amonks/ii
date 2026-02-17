@@ -90,7 +90,7 @@ func resetEpisodeCopiedStatus(db *db.DB, episode *db.TVEpisode) error {
 	err := db.Table("tv_episodes").
 		Where("show_id = ? AND season_number = ? AND episode_number = ?",
 			episode.ShowID, episode.SeasonNumber, episode.EpisodeNumber).
-		Updates(map[string]interface{}{"is_copied": false}).Error
+		Updates(map[string]any{"is_copied": false}).Error
 
 	if err != nil {
 		return fmt.Errorf("failed to update episode: %w", err)

@@ -93,16 +93,14 @@ func run() error {
 		}()
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		mux := http.NewServeMux()
 		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		if err := serve.ListenAndServe(ctx, "0.0.0.0:9999", mux); err != nil {
 			slog.Error("fatal", "detail", "metrics server failed", "error", err)
 			cancel(err)
 		}
-	}()
+	})
 
 	wg.Wait()
 	return nil

@@ -122,7 +122,7 @@ func (c *Client) approveV4RequestToken(token string) error {
 func (c *Client) getV4WriteAccessToken(token string) error {
 	req, err := http.NewRequest(http.MethodPost,
 		"https://api.themoviedb.org/4/auth/access_token",
-		bytes.NewBuffer([]byte(fmt.Sprintf(`{"request_token":"%s"}`, token))),
+		bytes.NewBuffer(fmt.Appendf(nil, `{"request_token":"%s"}`, token)),
 	)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func (c *Client) AddToList(listId, movieID int64) error {
 	}
 	req, err := http.NewRequest(http.MethodPost,
 		fmt.Sprintf("https://api.themoviedb.org/4/list/%d/items", listId),
-		bytes.NewBuffer([]byte(fmt.Sprintf(`{"items":[{"media_type":"movie","media_id":"%d"}]}`, movieID))),
+		bytes.NewBuffer(fmt.Appendf(nil, `{"items":[{"media_type":"movie","media_id":"%d"}]}`, movieID)),
 	)
 	if err != nil {
 		return err

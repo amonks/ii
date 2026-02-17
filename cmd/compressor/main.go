@@ -113,7 +113,7 @@ func walk(ctx context.Context, root string, workers int, force bool, logger *log
 	var wg sync.WaitGroup
 
 	// Start worker pool
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
