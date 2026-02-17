@@ -25,7 +25,7 @@ type completionRequestJSON struct {
 type messageJSON struct {
 	Role       string             `json:"role"`
 	Content    []contentBlockJSON `json:"content,omitempty"`
-	Timestamp  time.Time          `json:"timestamp,omitempty"`
+	Timestamp  time.Time          `json:"timestamp"`
 	ToolCallID string             `json:"tool_call_id,omitempty"`
 	ToolName   string             `json:"tool_name,omitempty"`
 	IsError    bool               `json:"is_error,omitempty"`

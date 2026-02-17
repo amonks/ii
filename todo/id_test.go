@@ -58,7 +58,7 @@ func TestGenerateID_Uniqueness(t *testing.T) {
 	seen := make(map[string]struct{})
 	base := time.Now()
 
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		id := GenerateID("Test todo", base.Add(time.Duration(i)*time.Nanosecond))
 		if _, ok := seen[id]; ok {
 			t.Errorf("collision detected for ID %q at iteration %d", id, i)

@@ -167,8 +167,8 @@ func normalizePromptMarkdown(value string) string {
 }
 
 func looksLikeMarkdownListBlock(value string) bool {
-	lines := strings.Split(value, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(value, "\n")
+	for line := range lines {
 		trimmed := strings.TrimLeft(line, " ")
 		if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") {
 			return true

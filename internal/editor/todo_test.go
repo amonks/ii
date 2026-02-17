@@ -326,8 +326,8 @@ func TestCreateTodoTempFileExtension(t *testing.T) {
 
 func assertUnindentedFrontmatter(t *testing.T, content string) {
 	t.Helper()
-	lines := strings.Split(content, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(content, "\n")
+	for line := range lines {
 		if internalstrings.IsBlank(line) {
 			continue
 		}

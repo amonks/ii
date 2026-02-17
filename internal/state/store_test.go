@@ -186,11 +186,9 @@ func TestStore_ConcurrentUpdates(t *testing.T) {
 	numGoroutines := 10
 	incrementsPerGoroutine := 10
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < incrementsPerGoroutine; j++ {
+	for range numGoroutines {
+		wg.Go(func() {
+			for range incrementsPerGoroutine {
 				err := store.Update(func(st *State) error {
 					_ = st.Repos["counter"]
 					st.Repos["counter"] = RepoInfo{SourcePath: "updated"}
@@ -200,7 +198,7 @@ func TestStore_ConcurrentUpdates(t *testing.T) {
 					t.Errorf("concurrent update failed: %v", err)
 				}
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

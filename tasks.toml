@@ -1,0 +1,35 @@
+[[task]]
+  id = 'test'
+  type = 'short'
+  dependencies = [
+    'go-test',
+    'go-vet',
+    'gofix',
+    'staticcheck',
+    'govulncheck',
+  ]
+
+[[task]]
+  id = 'go-test'
+  type = 'short'
+  cmd = 'go test ./...'
+
+[[task]]
+  id = 'go-vet'
+  type = 'short'
+  cmd = 'go vet ./...'
+
+[[task]]
+  id = 'gofix'
+  type = 'short'
+  cmd = 'test -z "$(go fix -diff ./...)"'
+
+[[task]]
+  id = 'staticcheck'
+  type = 'short'
+  cmd = 'go tool staticcheck ./...'
+
+[[task]]
+  id = 'govulncheck'
+  type = 'short'
+  cmd = 'go tool govulncheck ./...'

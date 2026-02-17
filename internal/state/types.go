@@ -54,9 +54,9 @@ type WorkspaceInfo struct {
 	Rev           string          `json:"rev,omitempty"`
 	Status        WorkspaceStatus `json:"status"`
 	AcquiredByPID int             `json:"acquired_by_pid,omitempty"`
-	CreatedAt     time.Time       `json:"created_at,omitempty"`
-	UpdatedAt     time.Time       `json:"updated_at,omitempty"`
-	AcquiredAt    time.Time       `json:"acquired_at,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	AcquiredAt    time.Time       `json:"acquired_at"`
 	Provisioned   bool            `json:"provisioned"`
 }
 
@@ -78,10 +78,10 @@ type AgentSession struct {
 	Repo            string             `json:"repo"`
 	Status          AgentSessionStatus `json:"status"`
 	Model           string             `json:"model"`
-	CreatedAt       time.Time          `json:"created_at,omitempty"`
+	CreatedAt       time.Time          `json:"created_at"`
 	StartedAt       time.Time          `json:"started_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
-	CompletedAt     time.Time          `json:"completed_at,omitempty"`
+	CompletedAt     time.Time          `json:"completed_at"`
 	ExitCode        *int               `json:"exit_code,omitempty"`
 	DurationSeconds int                `json:"duration_seconds,omitempty"`
 	TokensUsed      int                `json:"tokens_used,omitempty"`
@@ -212,10 +212,10 @@ type Job struct {
 	// ProjectReview captures the final project review (after all changes complete).
 	ProjectReview *JobReview `json:"project_review,omitempty"`
 	Status        JobStatus  `json:"status"`
-	CreatedAt     time.Time  `json:"created_at,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
 	StartedAt     time.Time  `json:"started_at"`
 	UpdatedAt     time.Time  `json:"updated_at"`
-	CompletedAt   time.Time  `json:"completed_at,omitempty"`
+	CompletedAt   time.Time  `json:"completed_at"`
 }
 
 // CurrentChange returns the current in-progress change.

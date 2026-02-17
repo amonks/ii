@@ -260,9 +260,7 @@ func parseHabit(name string, data []byte) (*Habit, error) {
 	if bodyStart < len(rest) {
 		body := rest[bodyStart:]
 		// Skip leading newline after closing ---
-		if strings.HasPrefix(body, "\n") {
-			body = body[1:]
-		}
+		body = strings.TrimPrefix(body, "\n")
 		habit.Instructions = internalstrings.TrimSpace(body)
 	}
 
@@ -298,10 +296,10 @@ func parseFrontmatter(data string) (implementationModel, reviewModel string) {
 		}
 
 		// Parse implementation: or review: within models section
-		if strings.HasPrefix(trimmed, "implementation:") {
-			implementationModel = internalstrings.TrimSpace(strings.TrimPrefix(trimmed, "implementation:"))
-		} else if strings.HasPrefix(trimmed, "review:") {
-			reviewModel = internalstrings.TrimSpace(strings.TrimPrefix(trimmed, "review:"))
+		if after, ok := strings.CutPrefix(trimmed, "implementation:"); ok {
+			implementationModel = internalstrings.TrimSpace(after)
+		} else if after, ok := strings.CutPrefix(trimmed, "review:"); ok {
+			reviewModel = internalstrings.TrimSpace(after)
 		}
 	}
 

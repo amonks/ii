@@ -43,10 +43,7 @@ func SafeRender(width, indent int, input []byte) []byte {
 	if indent < 0 {
 		indent = 0
 	}
-	renderWidth := width - indent
-	if renderWidth < 1 {
-		renderWidth = 1
-	}
+	renderWidth := max(width-indent, 1)
 
 	renderer := markdownRenderer(renderWidth)
 	rendered := value

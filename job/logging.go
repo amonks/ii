@@ -245,8 +245,8 @@ func looksLikeMarkdown(body string) bool {
 }
 
 func hasIndentedLines(body string) bool {
-	lines := strings.Split(body, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(body, "\n")
+	for line := range lines {
 		if line == "" {
 			continue
 		}
@@ -279,21 +279,13 @@ type testResultLog struct {
 
 func testResultLogsFromEventData(results []testResultEventData) []testResultLog {
 	return testResultLogsFrom(results, func(result testResultEventData) testResultLog {
-		return testResultLog{
-			Command:  result.Command,
-			ExitCode: result.ExitCode,
-			Output:   result.Output,
-		}
+		return testResultLog(result)
 	})
 }
 
 func testResultLogsFromCommandResults(results []TestCommandResult) []testResultLog {
 	return testResultLogsFrom(results, func(result TestCommandResult) testResultLog {
-		return testResultLog{
-			Command:  result.Command,
-			ExitCode: result.ExitCode,
-			Output:   result.Output,
-		}
+		return testResultLog(result)
 	})
 }
 

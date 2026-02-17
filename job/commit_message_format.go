@@ -39,10 +39,6 @@ func splitCommitMessage(message string) (string, string) {
 	return summary, body
 }
 
-func formatCommitTodo(item todo.Todo) string {
-	return formatCommitTodoWithWidth(item, lineWidth)
-}
-
 func formatCommitTodoWithWidth(item todo.Todo, width int) string {
 	fields := []string{
 		fmt.Sprintf("ID: %s", item.ID),

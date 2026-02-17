@@ -19,7 +19,7 @@ func TestRunInterruptMarksJobFailed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Interrupt job", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
+	created, err := store.Create("Interrupt job", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)

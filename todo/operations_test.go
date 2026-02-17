@@ -46,7 +46,7 @@ func TestStore_Create_WithOptions(t *testing.T) {
 
 	todo, err := store.Create("Add dark mode", CreateOptions{
 		Type:        TypeFeature,
-		Priority:    PriorityPtr(PriorityHigh),
+		Priority:    new(PriorityHigh),
 		Description: "Users want dark mode",
 	})
 
@@ -256,7 +256,7 @@ func TestStore_Create_Validation(t *testing.T) {
 	}
 
 	// Invalid priority
-	_, err = store.Create("Test", CreateOptions{Priority: PriorityPtr(10)})
+	_, err = store.Create("Test", CreateOptions{Priority: new(10)})
 	if !errors.Is(err, ErrInvalidPriority) {
 		t.Errorf("expected ErrInvalidPriority, got %v", err)
 	}
@@ -487,8 +487,8 @@ func TestStore_Update_Multiple(t *testing.T) {
 	defer store.Release()
 
 	// Create multiple todos
-	todo1, _ := store.Create("Todo 1", CreateOptions{Priority: PriorityPtr(PriorityLow)})
-	todo2, _ := store.Create("Todo 2", CreateOptions{Priority: PriorityPtr(PriorityLow)})
+	todo1, _ := store.Create("Todo 1", CreateOptions{Priority: new(PriorityLow)})
+	todo2, _ := store.Create("Todo 2", CreateOptions{Priority: new(PriorityLow)})
 
 	// Update both
 	newPriority := PriorityCritical
@@ -951,9 +951,9 @@ func TestStore_List(t *testing.T) {
 	defer store.Release()
 
 	// Create various todos
-	store.Create("Bug 1", CreateOptions{Type: TypeBug, Priority: PriorityPtr(PriorityHigh)})
-	store.Create("Feature 1", CreateOptions{Type: TypeFeature, Priority: PriorityPtr(PriorityLow)})
-	store.Create("Task 1", CreateOptions{Type: TypeTask, Priority: PriorityPtr(PriorityMedium)})
+	store.Create("Bug 1", CreateOptions{Type: TypeBug, Priority: new(PriorityHigh)})
+	store.Create("Feature 1", CreateOptions{Type: TypeFeature, Priority: new(PriorityLow)})
+	store.Create("Task 1", CreateOptions{Type: TypeTask, Priority: new(PriorityMedium)})
 
 	// List all
 	all, err := store.List(ListFilter{})
@@ -1068,9 +1068,9 @@ func TestStore_Ready(t *testing.T) {
 	defer store.Release()
 
 	// Create todos with different priorities
-	todo1, _ := store.Create("Low priority", CreateOptions{Priority: PriorityPtr(PriorityLow)})
-	todo2, _ := store.Create("High priority", CreateOptions{Priority: PriorityPtr(PriorityHigh)})
-	todo3, _ := store.Create("Critical", CreateOptions{Priority: PriorityPtr(PriorityCritical)})
+	todo1, _ := store.Create("Low priority", CreateOptions{Priority: new(PriorityLow)})
+	todo2, _ := store.Create("High priority", CreateOptions{Priority: new(PriorityHigh)})
+	todo3, _ := store.Create("Critical", CreateOptions{Priority: new(PriorityCritical)})
 
 	// All should be ready (no blockers)
 	ready, err := store.Ready(10)
@@ -1100,9 +1100,9 @@ func TestStore_Ready_TypePriority(t *testing.T) {
 	}
 	defer store.Release()
 
-	feature, _ := store.Create("Feature", CreateOptions{Type: TypeFeature, Priority: PriorityPtr(PriorityMedium)})
-	task, _ := store.Create("Task", CreateOptions{Type: TypeTask, Priority: PriorityPtr(PriorityMedium)})
-	bug, _ := store.Create("Bug", CreateOptions{Type: TypeBug, Priority: PriorityPtr(PriorityMedium)})
+	feature, _ := store.Create("Feature", CreateOptions{Type: TypeFeature, Priority: new(PriorityMedium)})
+	task, _ := store.Create("Task", CreateOptions{Type: TypeTask, Priority: new(PriorityMedium)})
+	bug, _ := store.Create("Bug", CreateOptions{Type: TypeBug, Priority: new(PriorityMedium)})
 
 	ready, err := store.Ready(10)
 	if err != nil {
@@ -1344,7 +1344,7 @@ func TestStore_Ready_Limit(t *testing.T) {
 	defer store.Release()
 
 	// Create 5 todos
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		store.Create("Todo", CreateOptions{})
 	}
 

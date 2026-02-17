@@ -21,7 +21,7 @@ func TestRunCommitMessageShowsSummaryInJjLog(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Commit summary log", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityLow)})
+	created, err := store.Create("Commit summary log", todo.CreateOptions{Priority: new(todo.PriorityLow)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)

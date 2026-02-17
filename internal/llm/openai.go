@@ -464,18 +464,12 @@ func mapOpenAIFinishReason(reason string) StopReason {
 
 type responsesAPIRequest struct {
 	Model           string             `json:"model"`
-	Input           any                `json:"input"` // string or []responsesInputItem
+	Input           any                `json:"input"` // string or []map[string]any
 	Instructions    string             `json:"instructions,omitempty"`
 	MaxOutputTokens int                `json:"max_output_tokens,omitempty"`
 	Temperature     *float64           `json:"temperature,omitempty"`
 	Stream          bool               `json:"stream"`
 	Tools           []responsesAPITool `json:"tools,omitempty"`
-}
-
-type responsesInputItem struct {
-	Type    string `json:"type"`    // "message"
-	Role    string `json:"role"`    // "user", "assistant"
-	Content any    `json:"content"` // string or []responsesContentPart
 }
 
 type responsesContentPart struct {

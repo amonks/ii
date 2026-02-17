@@ -3,6 +3,7 @@ package job
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strings"
 
@@ -72,9 +73,7 @@ type opencodeEventInterpreter struct {
 func newOpencodeEventInterpreter(switches map[string]bool, repoPath string) *opencodeEventInterpreter {
 	resolved := defaultOpencodeEventSwitches()
 	if switches != nil {
-		for key, value := range switches {
-			resolved[key] = value
-		}
+		maps.Copy(resolved, switches)
 	}
 	if !internalstrings.IsBlank(repoPath) {
 		repoPath = filepath.Clean(repoPath)
@@ -386,10 +385,10 @@ func (i *opencodeEventInterpreter) extractPatchFiles(input map[string]any) []str
 	}
 	seen := make(map[string]bool)
 	var files []string
-	for _, line := range strings.Split(patch, "\n") {
+	for line := range strings.SplitSeq(patch, "\n") {
 		// Unified diff format: +++ b/path/to/file or +++ path/to/file
-		if strings.HasPrefix(line, "+++ ") {
-			path := strings.TrimPrefix(line, "+++ ")
+		if after, ok := strings.CutPrefix(line, "+++ "); ok {
+			path := after
 			// Strip a/ or b/ prefix commonly used in git diffs
 			path = strings.TrimPrefix(path, "b/")
 			path = strings.TrimPrefix(path, "a/")

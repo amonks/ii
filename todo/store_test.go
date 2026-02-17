@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -91,13 +92,7 @@ func TestOpen_CreateIfMissing(t *testing.T) {
 		t.Fatalf("failed to list bookmarks: %v", err)
 	}
 
-	found := false
-	for _, b := range bookmarks {
-		if b == BookmarkName {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(bookmarks, BookmarkName)
 	if !found {
 		t.Errorf("bookmark %q not found in %v", BookmarkName, bookmarks)
 	}
@@ -192,13 +187,7 @@ func TestOpen_PromptToCreate_NonTTY(t *testing.T) {
 		t.Fatalf("failed to list bookmarks: %v", err)
 	}
 
-	found := false
-	for _, b := range bookmarks {
-		if b == BookmarkName {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(bookmarks, BookmarkName)
 	if !found {
 		t.Errorf("bookmark %q not found in %v", BookmarkName, bookmarks)
 	}

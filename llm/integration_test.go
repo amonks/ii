@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,13 +77,13 @@ func TestIntegration_StreamAnthropic(t *testing.T) {
 		t.Fatalf("Stream failed: %v", err)
 	}
 
-	var receivedText string
+	var receivedText strings.Builder
 	var receivedEvents int
 	for event := range handle.Events {
 		receivedEvents++
 		switch e := event.(type) {
 		case llm.TextDeltaEvent:
-			receivedText += e.Delta
+			receivedText.WriteString(e.Delta)
 		}
 	}
 
@@ -119,7 +120,7 @@ func TestIntegration_StreamAnthropic(t *testing.T) {
 		}
 	}
 
-	t.Logf("Received response: %s", receivedText)
+	t.Logf("Received response: %s", receivedText.String())
 	t.Logf("Received %d events", receivedEvents)
 }
 
@@ -157,13 +158,13 @@ func TestIntegration_StreamOpenAI(t *testing.T) {
 		t.Fatalf("Stream failed: %v", err)
 	}
 
-	var receivedText string
+	var receivedText strings.Builder
 	var receivedEvents int
 	for event := range handle.Events {
 		receivedEvents++
 		switch e := event.(type) {
 		case llm.TextDeltaEvent:
-			receivedText += e.Delta
+			receivedText.WriteString(e.Delta)
 		}
 	}
 
@@ -180,7 +181,7 @@ func TestIntegration_StreamOpenAI(t *testing.T) {
 		t.Errorf("expected StopReasonEnd, got %v", msg.StopReason)
 	}
 
-	t.Logf("Received response: %s", receivedText)
+	t.Logf("Received response: %s", receivedText.String())
 	t.Logf("Received %d events", receivedEvents)
 }
 

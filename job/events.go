@@ -249,7 +249,7 @@ type testsEventData struct {
 func buildTestsEventData(results []TestCommandResult) testsEventData {
 	data := testsEventData{Results: make([]testResultEventData, 0, len(results))}
 	for _, result := range results {
-		data.Results = append(data.Results, testResultEventData{Command: result.Command, ExitCode: result.ExitCode, Output: result.Output})
+		data.Results = append(data.Results, testResultEventData(result))
 	}
 	return data
 }

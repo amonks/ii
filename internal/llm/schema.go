@@ -36,7 +36,7 @@ func GenerateSchema(v any) *Schema {
 	if t == nil {
 		return &Schema{Type: "object"}
 	}
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	return generateSchemaForType(t)
@@ -54,7 +54,7 @@ func generateSchemaForType(t reflect.Type) *Schema {
 	case reflect.Map:
 		// Maps become objects with additionalProperties
 		return &Schema{Type: "object"}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return generateSchemaForType(t.Elem())
 	case reflect.String:
 		return &Schema{Type: "string"}
@@ -76,8 +76,7 @@ func generateStructSchema(t reflect.Type) *Schema {
 		Properties: make(map[string]*Schema),
 	}
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		if !field.IsExported() {
 			continue
 		}
@@ -99,11 +98,11 @@ func generateStructSchema(t reflect.Type) *Schema {
 		schema.Properties[name] = propSchema
 
 		// Non-pointer fields are required by default unless explicitly optional
-		if field.Type.Kind() != reflect.Ptr && !strings.Contains(jsTag, "optional") {
+		if field.Type.Kind() != reflect.Pointer && !strings.Contains(jsTag, "optional") {
 			schema.Required = append(schema.Required, name)
 		}
 		// Pointer fields with "required" tag are also required
-		if field.Type.Kind() == reflect.Ptr && strings.Contains(jsTag, "required") {
+		if field.Type.Kind() == reflect.Pointer && strings.Contains(jsTag, "required") {
 			schema.Required = append(schema.Required, name)
 		}
 	}
@@ -123,13 +122,13 @@ func getJSONName(field reflect.StructField, jsonTag string) string {
 }
 
 func parseJSONSchemaTag(tag string, schema *Schema) {
-	parts := strings.Split(tag, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(tag, ",")
+	for part := range parts {
 		part = strings.TrimSpace(part)
-		if strings.HasPrefix(part, "description=") {
-			schema.Description = strings.TrimPrefix(part, "description=")
-		} else if strings.HasPrefix(part, "enum=") {
-			enumVal := strings.TrimPrefix(part, "enum=")
+		if after, ok := strings.CutPrefix(part, "description="); ok {
+			schema.Description = after
+		} else if after, ok := strings.CutPrefix(part, "enum="); ok {
+			enumVal := after
 			schema.Enum = append(schema.Enum, enumVal)
 		}
 	}

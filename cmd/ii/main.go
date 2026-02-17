@@ -4,7 +4,6 @@ package main
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	"github.com/amonks/incrementum/internal/paths"
 	"github.com/amonks/incrementum/workspace"
@@ -51,27 +50,6 @@ func getRepoPath() (string, error) {
 	}
 
 	return resolveRepoRoot(cwd)
-}
-
-// resolvePath returns the workspace path from args or current directory.
-func resolvePath(args []string) (string, error) {
-	if len(args) > 0 {
-		path := args[0]
-		if !filepath.IsAbs(path) {
-			cwd, err := paths.WorkingDir()
-			if err != nil {
-				return "", err
-			}
-			path = filepath.Join(cwd, path)
-		}
-		return path, nil
-	}
-
-	cwd, err := paths.WorkingDir()
-	if err != nil {
-		return "", err
-	}
-	return cwd, nil
 }
 
 // resolveWorkspaceName returns the workspace name from args or current directory.

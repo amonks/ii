@@ -410,14 +410,14 @@ func TestManager_ChangeTrackingInvariants(t *testing.T) {
 	if _, err := manager.AppendCommitToCurrentChange(created.ID, commit, now.Add(time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
 		t.Fatalf("append commit without change: expected ErrNoCurrentChange, got %v", err)
 	}
-	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: ptrBool(true)}, now.Add(2*time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
+	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: new(true)}, now.Add(2*time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
 		t.Fatalf("update commit without change: expected ErrNoCurrentChange, got %v", err)
 	}
 
 	if _, err := manager.AppendChange(created.ID, JobChange{ChangeID: "chg-1"}, now.Add(3*time.Minute)); err != nil {
 		t.Fatalf("append change: %v", err)
 	}
-	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: ptrBool(true)}, now.Add(4*time.Minute)); !errors.Is(err, ErrNoCurrentCommit) {
+	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: new(true)}, now.Add(4*time.Minute)); !errors.Is(err, ErrNoCurrentCommit) {
 		t.Fatalf("update commit with no commits: expected ErrNoCurrentCommit, got %v", err)
 	}
 
@@ -441,7 +441,7 @@ func TestManager_ChangeTrackingInvariants(t *testing.T) {
 	if _, err := manager.AppendCommitToCurrentChange(created.ID, JobCommit{CommitID: "commit-2", DraftMessage: "fix: example", AgentSessionID: "ses-2"}, now.Add(7*time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
 		t.Fatalf("append commit to completed change: expected ErrNoCurrentChange, got %v", err)
 	}
-	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: ptrBool(false)}, now.Add(8*time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
+	if _, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: new(false)}, now.Add(8*time.Minute)); !errors.Is(err, ErrNoCurrentChange) {
 		t.Fatalf("update commit on completed change: expected ErrNoCurrentChange, got %v", err)
 	}
 
@@ -491,7 +491,7 @@ func TestManager_ChangeTracking_RequestChangesKeepsCurrentChange(t *testing.T) {
 	}
 
 	review := JobReview{Outcome: ReviewOutcomeRequestChanges, Comments: "needs work", AgentSessionID: "ses-review"}
-	withRequestChanges, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: ptrBool(true), Review: &review}, now.Add(3*time.Minute))
+	withRequestChanges, err := manager.UpdateCurrentCommit(created.ID, JobCommitUpdate{TestsPassed: new(true), Review: &review}, now.Add(3*time.Minute))
 	if err != nil {
 		t.Fatalf("request changes review: %v", err)
 	}
@@ -520,10 +520,6 @@ func TestManager_ChangeTracking_RequestChangesKeepsCurrentChange(t *testing.T) {
 	if len(withCommit2.Changes) != 1 || commitsLen != 2 {
 		t.Fatalf("expected 1 change with 2 commits, got %d changes / %d commits", len(withCommit2.Changes), commitsLen)
 	}
-}
-
-func ptrBool(v bool) *bool {
-	return &v
 }
 
 func insertJob(store *statestore.Store, repoSlug string, item statestore.Job) error {

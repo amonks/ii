@@ -268,7 +268,7 @@ func init() {
 
 func todoCreatePriorityValue(cmd *cobra.Command) *int {
 	if cmd.Flags().Changed("priority") {
-		return todo.PriorityPtr(todoCreatePriority)
+		return new(todoCreatePriority)
 	}
 	return nil
 }

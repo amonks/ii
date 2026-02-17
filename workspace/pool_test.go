@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -35,10 +36,8 @@ func ensureMainBookmark(t *testing.T, repoPath string) {
 	if err != nil {
 		t.Fatalf("list bookmarks: %v", err)
 	}
-	for _, bookmark := range bookmarks {
-		if bookmark == "main" {
-			return
-		}
+	if slices.Contains(bookmarks, "main") {
+		return
 	}
 	if err := client.BookmarkCreate(repoPath, "main", "@"); err != nil {
 		t.Fatalf("create main bookmark: %v", err)

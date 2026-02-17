@@ -281,7 +281,7 @@ func EditTodoWithDataRetry(data TodoData, prompter todo.Prompter) (*ParsedTodo, 
 func (p *ParsedTodo) ToCreateOptions() todo.CreateOptions {
 	opts := todo.CreateOptions{
 		Type:                todo.TodoType(p.Type),
-		Priority:            todo.PriorityPtr(p.Priority),
+		Priority:            new(p.Priority),
 		Description:         p.Description,
 		ImplementationModel: p.ImplementationModel,
 		CodeReviewModel:     p.CodeReviewModel,

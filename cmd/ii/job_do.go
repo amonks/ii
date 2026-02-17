@@ -81,9 +81,9 @@ var (
 	jobDoCodeReviewModel     string
 	jobDoProjectReviewModel  string
 	jobDoDeps                []string
-	jobDoEdit    bool
-	jobDoNoEdit  bool
-	jobDoHabit   string
+	jobDoEdit                bool
+	jobDoNoEdit              bool
+	jobDoHabit               string
 )
 
 func init() {
@@ -170,10 +170,7 @@ func runJobDo(cmd *cobra.Command, args []string) error {
 		// Only reopen todos that were never started (after the one that errored).
 		// The currently-running todo may have transitioned to in_progress before
 		// erroring, so we don't want to clobber that state.
-		startOfRemaining := nextIndex + 1
-		if startOfRemaining > len(todoIDs) {
-			startOfRemaining = len(todoIDs)
-		}
+		startOfRemaining := min(nextIndex+1, len(todoIDs))
 		todosToReopen := todoIDs[startOfRemaining:]
 		if len(todosToReopen) > 0 && len(todoIDs) > 1 {
 			cleanupErr := cleanupQueuedTodos(todosToReopen)
@@ -766,7 +763,7 @@ func createTodoFromJobFlags(cmd *cobra.Command, hasCreateFlags bool, openStore f
 
 func jobDoPriorityValue(cmd *cobra.Command) *int {
 	if cmd.Flags().Changed("priority") {
-		return todo.PriorityPtr(jobDoPriority)
+		return new(jobDoPriority)
 	}
 	return nil
 }
@@ -804,10 +801,7 @@ func formatJobField(label, value string) string {
 		value = "-"
 	}
 
-	wrapWidth := jobLineWidth - jobDocumentIndent - len(prefix)
-	if wrapWidth < 1 {
-		wrapWidth = 1
-	}
+	wrapWidth := max(jobLineWidth-jobDocumentIndent-len(prefix), 1)
 	wrapped := wordwrap.String(value, wrapWidth)
 	lines := strings.Split(wrapped, "\n")
 	for i, line := range lines {

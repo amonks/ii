@@ -63,10 +63,7 @@ func UniquePrefixLengthsNormalized(ids []string) map[string]int {
 				maxPrefix = nextPrefix
 			}
 		}
-		prefixLength := maxPrefix + 1
-		if prefixLength > len(id) {
-			prefixLength = len(id)
-		}
+		prefixLength := min(maxPrefix+1, len(id))
 		lengths[id] = prefixLength
 	}
 
@@ -116,11 +113,8 @@ func matchPrefix(ids []string, prefix string, normalizeIDs bool) (string, bool, 
 }
 
 func commonPrefixLength(left, right string) int {
-	limit := len(left)
-	if len(right) < limit {
-		limit = len(right)
-	}
-	for i := 0; i < limit; i++ {
+	limit := min(len(right), len(left))
+	for i := range limit {
 		if left[i] != right[i] {
 			return i
 		}

@@ -227,7 +227,7 @@ func TestTodoListPriorityFilter(t *testing.T) {
 		t.Fatalf("expected nil priority when not set, got %v", priority)
 	}
 
-	priority, err = todoListPriorityFilter(-1, true)
+	_, err = todoListPriorityFilter(-1, true)
 	if err == nil || !errors.Is(err, todo.ErrInvalidPriority) {
 		t.Fatalf("expected invalid priority error, got %v", err)
 	}

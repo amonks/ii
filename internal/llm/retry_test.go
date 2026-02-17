@@ -128,12 +128,6 @@ func TestDefaultRetryConfig(t *testing.T) {
 	}
 }
 
-// mockStreamFunc allows simulating Stream behavior in tests
-type mockStreamResult struct {
-	handle *StreamHandle
-	err    error
-}
-
 func TestStreamWithRetry_SuccessOnFirstAttempt(t *testing.T) {
 	// This test verifies that StreamWithRetry returns immediately on success.
 	// Since we can't easily mock Stream, we test the retry logic indirectly

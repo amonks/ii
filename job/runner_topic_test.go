@@ -18,7 +18,7 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Job topic", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
+	created, err := store.Create("Job topic", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)
@@ -97,7 +97,7 @@ func TestRunStoresModelInJobState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Model tracking", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
+	created, err := store.Create("Model tracking", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)
@@ -159,7 +159,7 @@ func TestRunUsesPreloadedConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Preloaded config", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityMedium)})
+	created, err := store.Create("Preloaded config", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)

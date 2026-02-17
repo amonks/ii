@@ -285,7 +285,7 @@ func benchmarkStoreUpdate(b *testing.B, count int) {
 
 func benchmarkTodos(count int) []Todo {
 	todos := make([]Todo, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		title := fmt.Sprintf("Todo %d", i)
 		todos[i] = Todo{
 			ID:          GenerateID(title, benchmarkNow.Add(time.Duration(i)*time.Second)),

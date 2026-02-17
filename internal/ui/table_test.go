@@ -62,8 +62,8 @@ func TestFormatTableUsesViewportWidth(t *testing.T) {
 
 	got := FormatTable(headers, rows)
 
-	lines := strings.Split(strings.TrimSuffix(got, "\n"), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(strings.TrimSuffix(got, "\n"), "\n")
+	for line := range lines {
 		if width := displayWidth(line); width != 10 {
 			t.Fatalf("expected table width 10, got %d in %q", width, line)
 		}

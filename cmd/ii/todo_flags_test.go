@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -86,10 +87,5 @@ func TestTodoDeleteHasDestroyAlias(t *testing.T) {
 }
 
 func containsAlias(cmd *cobra.Command, alias string) bool {
-	for _, item := range cmd.Aliases {
-		if item == alias {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(cmd.Aliases, alias)
 }

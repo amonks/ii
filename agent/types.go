@@ -99,7 +99,7 @@ type Session struct {
 	Model string `json:"model"`
 
 	// CreatedAt is when the session was created.
-	CreatedAt time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 
 	// StartedAt is when the session started running.
 	StartedAt time.Time `json:"started_at"`
@@ -108,7 +108,7 @@ type Session struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// CompletedAt is when the session completed (set when completed/failed).
-	CompletedAt time.Time `json:"completed_at,omitempty"`
+	CompletedAt time.Time `json:"completed_at"`
 
 	// ExitCode is the exit code (0 for success, non-zero for failure).
 	ExitCode *int `json:"exit_code,omitempty"`

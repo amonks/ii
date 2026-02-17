@@ -23,4 +23,5 @@ the public Go packages defined in this repo.
 ## Development
 
 - Specs live in `specs/README.md` and describe intended behavior.
-- Run `go test ./...` to execute unit and integration tests.
+- Run `go tool run test` to execute the test suite (unit/integration tests and
+  `go fix` conformance). See `tasks.toml` for individual tasks.

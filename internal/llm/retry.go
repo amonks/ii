@@ -69,10 +69,7 @@ func waitWithJitter(ctx context.Context, wait time.Duration) error {
 
 // calculateNextWait calculates the next wait time for exponential backoff.
 func calculateNextWait(current time.Duration, config RetryConfig) time.Duration {
-	next := time.Duration(float64(current) * config.Multiplier)
-	if next > config.MaxWait {
-		next = config.MaxWait
-	}
+	next := min(time.Duration(float64(current)*config.Multiplier), config.MaxWait)
 	return next
 }
 

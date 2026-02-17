@@ -14,8 +14,8 @@ func TranscriptTailDiff(prev, curr string) string {
 	if prev == "" {
 		return curr
 	}
-	if strings.HasPrefix(curr, prev) {
-		return strings.TrimPrefix(curr, prev)
+	if after, ok := strings.CutPrefix(curr, prev); ok {
+		return after
 	}
 	return curr
 }

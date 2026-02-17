@@ -211,7 +211,7 @@ func TestFormatCommitMessageEmptyReviewComments(t *testing.T) {
 
 func maxLineLength(value string) int {
 	max := 0
-	for _, line := range strings.Split(value, "\n") {
+	for line := range strings.SplitSeq(value, "\n") {
 		length := len(line)
 		if length > max {
 			max = length

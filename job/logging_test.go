@@ -673,7 +673,7 @@ func TestRunCommittingStageLogsFinalMessage(t *testing.T) {
 }
 
 func stripANSI(value string) string {
-	ansi := regexp.MustCompile("\\x1b\\[[0-9;]*m")
+	ansi := regexp.MustCompile(`\x1b\[[0-9;]*m`)
 	return ansi.ReplaceAllString(value, "")
 }
 

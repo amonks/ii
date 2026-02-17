@@ -479,16 +479,6 @@ func TestRunReviewingStageMissingCommitMessageExplainsContext(t *testing.T) {
 	}
 }
 
-func envValue(env []string, key string) (string, bool) {
-	prefix := key + "="
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			return strings.TrimPrefix(entry, prefix), true
-		}
-	}
-	return "", false
-}
-
 func TestRunReviewingStageInjectsCommitMessageWhenTemplateMissing(t *testing.T) {
 	stateDir := t.TempDir()
 	repoPath := t.TempDir()

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -301,10 +302,7 @@ func (e *toolExecutor) executeRead(args map[string]any) (string, bool) {
 		return fmt.Sprintf("Offset %d is past end of file (%d lines)", offset, len(lines)), true
 	}
 
-	end := offset + limit
-	if end > len(lines) {
-		end = len(lines)
-	}
+	end := min(offset+limit, len(lines))
 
 	var result strings.Builder
 	for i := offset; i < end; i++ {
@@ -448,13 +446,7 @@ func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (st
 
 	// Validate subagent type
 	validTypes := []string{"general", "explore", "bash"}
-	isValid := false
-	for _, t := range validTypes {
-		if subagentType == t {
-			isValid = true
-			break
-		}
-	}
+	isValid := slices.Contains(validTypes, subagentType)
 	if !isValid {
 		return formatInvalidValueError("task", "subagent_type", subagentType, validTypes, args), true
 	}
@@ -551,12 +543,9 @@ func extractFinalResponse(messages []llm.Message) string {
 // isBinary checks if data appears to be binary content.
 func isBinary(data []byte) bool {
 	// Check for null bytes in the first 8000 bytes
-	checkLen := len(data)
-	if checkLen > 8000 {
-		checkLen = 8000
-	}
+	checkLen := min(len(data), 8000)
 
-	for i := 0; i < checkLen; i++ {
+	for i := range checkLen {
 		if data[i] == 0 {
 			return true
 		}

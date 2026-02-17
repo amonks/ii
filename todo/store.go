@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"sync"
 	"syscall"
@@ -158,13 +159,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		return nil, fmt.Errorf("list bookmarks: %w", err)
 	}
 
-	hasBookmark := false
-	for _, b := range bookmarks {
-		if b == BookmarkName {
-			hasBookmark = true
-			break
-		}
-	}
+	hasBookmark := slices.Contains(bookmarks, BookmarkName)
 
 	if !hasBookmark {
 		if opts.ReadOnly || !opts.CreateIfMissing {
@@ -419,7 +414,7 @@ func scanJSONLReader(reader io.Reader, handle func(line []byte, itemIndex int) (
 	lineBuf = lineBuf[:0]
 	defer func() {
 		if cap(lineBuf) <= jsonlBufferSize {
-			jsonlLineBufPool.Put(lineBuf[:0])
+			jsonlLineBufPool.Put(lineBuf[:0]) //lint:ignore SA6002 []byte pool is intentional; pointer indirection adds complexity without meaningful benefit here
 		}
 	}()
 	itemIndex := 0
@@ -507,7 +502,7 @@ func writeJSONLWithBufferPool[T any](writer *bufio.Writer, items []T, pool *sync
 	buf := pool.Get().([]byte)
 	defer func() {
 		if cap(buf) <= jsonlBufferSize {
-			pool.Put(buf[:0])
+			pool.Put(buf[:0]) //lint:ignore SA6002 []byte pool is intentional
 		}
 	}()
 	for i := range items {
@@ -625,7 +620,7 @@ func appendTodoJSONLine(buf []byte, todo *Todo) []byte {
 		buf = appendJSONString(buf, todo.DeleteReason)
 	}
 	if todo.Source != "" {
-		buf, hasField = appendJSONFieldPrefix(buf, "source", hasField)
+		buf, _ = appendJSONFieldPrefix(buf, "source", hasField)
 		buf = appendJSONString(buf, todo.Source)
 	}
 
@@ -643,7 +638,7 @@ func appendDependencyJSONLine(buf []byte, dependency *Dependency) []byte {
 	buf, hasField = appendJSONFieldPrefix(buf, "depends_on_id", hasField)
 	buf = appendJSONString(buf, dependency.DependsOnID)
 
-	buf, hasField = appendJSONFieldPrefix(buf, "created_at", hasField)
+	buf, _ = appendJSONFieldPrefix(buf, "created_at", hasField)
 	buf = appendJSONTime(buf, dependency.CreatedAt)
 
 	buf = append(buf, '}', '\n')

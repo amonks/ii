@@ -19,7 +19,7 @@ func TestReloadTodoReturnsUpdatedTodo(t *testing.T) {
 		t.Fatalf("open todo store: %v", err)
 	}
 	created, err := store.Create("Original title", todo.CreateOptions{
-		Priority:    todo.PriorityPtr(todo.PriorityMedium),
+		Priority:    new(todo.PriorityMedium),
 		Description: "Original description",
 	})
 	if err != nil {
@@ -104,7 +104,7 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 		t.Fatalf("open todo store: %v", err)
 	}
 	created, err := store.Create("Original title", todo.CreateOptions{
-		Priority:    todo.PriorityPtr(todo.PriorityMedium),
+		Priority:    new(todo.PriorityMedium),
 		Description: "Original description",
 	})
 	if err != nil {
@@ -264,7 +264,7 @@ func TestRunContextReloadTodoUpdatesItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open todo store: %v", err)
 	}
-	created, err := store.Create("Original", todo.CreateOptions{Priority: todo.PriorityPtr(todo.PriorityLow)})
+	created, err := store.Create("Original", todo.CreateOptions{Priority: new(todo.PriorityLow)})
 	if err != nil {
 		store.Release()
 		t.Fatalf("create todo: %v", err)

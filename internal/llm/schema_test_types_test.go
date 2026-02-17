@@ -6,5 +6,5 @@ package llm
 // GenerateSchema regardless of json tags.
 type paramsWithUnexported struct {
 	Public  string `json:"public"`
-	private string //nolint:unused // unexported field for testing
+	private string //lint:ignore U1000 unexported field for testing
 }

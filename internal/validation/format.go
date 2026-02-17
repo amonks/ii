@@ -2,17 +2,13 @@ package validation
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
 // IsValidValue returns true when a value is in the valid list.
 func IsValidValue[T comparable](value T, valid []T) bool {
-	for _, candidate := range valid {
-		if value == candidate {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(valid, value)
 }
 
 // FormatValidValues joins string-like values for error messages.

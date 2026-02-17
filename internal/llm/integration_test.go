@@ -127,9 +127,7 @@ func TestAnthropicStream_Simple(t *testing.T) {
 	}
 
 	// Collect events
-	var events []llm.StreamEvent
-	for event := range handle.Events {
-		events = append(events, event)
+	for range handle.Events {
 	}
 
 	// Wait for completion

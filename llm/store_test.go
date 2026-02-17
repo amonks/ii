@@ -354,7 +354,7 @@ func TestOpenWithOptions_CustomDirs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListCompletions failed: %v", err)
 	}
-	if completions != nil && len(completions) > 0 {
+	if len(completions) > 0 {
 		t.Error("expected empty completions list")
 	}
 }
@@ -375,7 +375,7 @@ func TestListCompletions_Empty(t *testing.T) {
 		t.Fatalf("ListCompletions failed: %v", err)
 	}
 
-	if completions != nil && len(completions) > 0 {
+	if len(completions) > 0 {
 		t.Errorf("expected empty completions, got %d", len(completions))
 	}
 }

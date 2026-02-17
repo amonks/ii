@@ -3,6 +3,8 @@
 ## Overview
 Incrementum tests are organized into tiers that exercise real behavior instead of mocks. Tests should model the way the CLI and jobs interact with jj repositories, filesystem state, and LLM agents.
 
+Run the full test suite with `go tool run test`. Individual tasks are defined in `tasks.toml` at the repo root.
+
 ## No Test Skipping
 
 Tests must never silently skip. All tests must either pass or fail explicitly.
@@ -40,6 +42,15 @@ func getAnthropicKey(t *testing.T) string {
     return key
 }
 ```
+
+## Go Fix Conformance
+
+After upgrading the Go toolchain or changing code, run `go fix -diff ./...` and
+verify there is no output. This confirms that all available modernization fixes
+(e.g. `min`/`max` builtins, `range`-over-int, `strings.CutPrefix`,
+`slices.Contains`) have been applied. If `go fix -diff` produces output, apply
+the fixes with `go fix ./...` and re-run tests. A second pass may be needed for
+synergistic improvements.
 
 ## Test Tiers
 

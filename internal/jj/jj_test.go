@@ -3,6 +3,7 @@ package jj_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/amonks/incrementum/internal/jj"
@@ -222,13 +223,7 @@ func TestBookmarkCreate_WithSlash(t *testing.T) {
 		t.Fatalf("failed to list bookmarks: %v", err)
 	}
 
-	found := false
-	for _, b := range bookmarks {
-		if b == "incr/tasks" {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(bookmarks, "incr/tasks")
 	if !found {
 		t.Errorf("expected to find bookmark 'incr/tasks', got %v", bookmarks)
 	}
