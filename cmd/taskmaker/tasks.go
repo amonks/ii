@@ -33,7 +33,12 @@ var baseTasks = []*task{
 	{
 		Id:           "test",
 		Type:         "short",
-		Dependencies: []string{"staticcheck", "go-test"},
+		Dependencies: []string{"staticcheck", "go-test", "gofix"},
+	},
+	{
+		Id:   "gofix",
+		Type: "short",
+		Cmd:  "test -z \"$(go fix -diff ./...)\"",
 	},
 	{
 		Id:   "staticcheck",

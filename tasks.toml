@@ -50,20 +50,25 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/dogs/templ',
-    'apps/reddit/templ',
     'apps/directory/templ',
     'apps/homepage/templ',
     'apps/writing/templ',
     'apps/youtube/templ',
+    'apps/dogs/templ',
     'apps/map/build-css',
-    'apps/map/build-js'
+    'apps/map/build-js',
+    'apps/reddit/templ'
   ]
 
 [[task]]
   id = 'go-test'
   type = 'short'
   cmd = 'go test ./...'
+
+[[task]]
+  id = 'gofix'
+  type = 'short'
+  cmd = 'test -z "$(go fix -diff ./...)"'
 
 [[task]]
   id = 'govulncheck'
@@ -98,7 +103,8 @@
   type = 'short'
   dependencies = [
     'staticcheck',
-    'go-test'
+    'go-test',
+    'gofix'
   ]
 
 [[task]]
