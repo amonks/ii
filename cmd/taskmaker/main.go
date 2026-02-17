@@ -152,9 +152,7 @@ func findGenerateTaskIDs(tasks []*task) ([]string, error) {
 			continue
 		}
 
-		for _, dep := range loaded.Get(taskID).Metadata().Dependencies {
-			ids = append(ids, dep)
-		}
+		ids = append(ids, loaded.Get(taskID).Metadata().Dependencies...)
 	}
 
 	return ids, nil

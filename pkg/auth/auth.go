@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"tailscale.com/client/tailscale"
+	"tailscale.com/client/local"
 )
 
 func GetRequester(r *http.Request) (bool, string) {
 	addr := r.RemoteAddr
 
-	lc := new(tailscale.LocalClient)
+	lc := new(local.Client)
 	who, err := lc.WhoIs(r.Context(), addr)
 	if err != nil {
 		return false, ""

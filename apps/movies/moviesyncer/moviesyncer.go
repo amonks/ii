@@ -3,16 +3,14 @@ package moviesyncer
 import (
 	"context"
 	"log"
-	"sync"
 
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/tmdb"
 )
 
 type MovieSyncer struct {
-	tmdb  *tmdb.Client
-	db    *db.DB
-	mutex sync.Mutex
+	tmdb *tmdb.Client
+	db   *db.DB
 }
 
 func New(tmdb *tmdb.Client, db *db.DB) *MovieSyncer {

@@ -192,31 +192,6 @@ func (db *DB) notifyTVStub(s *Stub) {
 	db.tvStubSubscriptions = nil
 }
 
-func (db *DB) close() {
-	if db.parent != nil {
-		panic("close called on tx")
-	}
-
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	for _, c := range db.subscriptions {
-		close(c)
-	}
-
-	for _, c := range db.tvSubscriptions {
-		close(c)
-	}
-
-	for _, c := range db.movieStubSubscriptions {
-		close(c)
-	}
-
-	for _, c := range db.tvStubSubscriptions {
-		close(c)
-	}
-}
-
 func New(path string) *DB {
 	return &DB{
 		path: path,

@@ -58,28 +58,6 @@ func (m *model) getPosts(limit, offset int, subreddit, author string, starred *b
 	return posts, nil
 }
 
-func (m *model) getPostsByCreated(subreddit, author string) ([]*Post, error) {
-	posts := []*Post{}
-	query := m.DB.Table("posts").
-		Where("status = ? AND created IS NOT NULL", "archived")
-
-	// Apply filters if provided
-	if subreddit != "" {
-		query = query.Where("subreddit = ?", subreddit)
-	}
-	if author != "" {
-		query = query.Where("author = ?", author)
-	}
-
-	if err := query.
-		Order("created DESC").
-		Find(&posts).
-		Error; err != nil {
-		return nil, err
-	}
-	return posts, nil
-}
-
 // getPostCount returns the total number of posts matching the given filters
 func (m *model) getPostCount(subreddit, author string, starred *bool) (int64, error) {
 	var count int64

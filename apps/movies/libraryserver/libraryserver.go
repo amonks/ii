@@ -12,8 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-
 	"gorm.io/gorm"
 	"monks.co/apps/movies/config"
 	"monks.co/apps/movies/db"
@@ -25,9 +23,8 @@ import (
 )
 
 type LibraryServer struct {
-	tmdb  *tmdb.Client
-	db    *db.DB
-	mutex sync.Mutex
+	tmdb *tmdb.Client
+	db   *db.DB
 }
 
 type Genre struct {

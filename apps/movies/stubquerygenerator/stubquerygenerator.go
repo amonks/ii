@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"sync"
-
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/llm"
 	"monks.co/pkg/tmdb"
@@ -94,10 +92,9 @@ type DBClient interface {
 
 // StubQueryGenerator generates search queries for stubs without existing queries
 type StubQueryGenerator struct {
-	llm   LLMClient
-	tmdb  TMDBClient
-	db    DBClient
-	mutex sync.Mutex
+	llm  LLMClient
+	tmdb TMDBClient
+	db   DBClient
 }
 
 // New creates a new StubQueryGenerator
