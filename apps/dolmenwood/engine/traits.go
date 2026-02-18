@@ -1,6 +1,9 @@
 package engine
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // Trait represents a class or kindred trait with a short description.
 type Trait struct {
@@ -64,7 +67,8 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Horns", Description: "Melee horn attack; damage scales with level."},
 		}
 		if level >= 4 {
-			traits = append(traits, Trait{Name: "Gaze", Description: "Level 4+: charm humans or shorthorns; uses per day by level (save vs spell)."})
+			uses := BreggleGazeUses(level)
+			traits = append(traits, Trait{Name: "Gaze", Description: "Level 4+: charm humans or shorthorns; uses per day by level (" + breggleGazeUsesLabel(uses) + "; save vs spell)."})
 		}
 		return traits
 	default:
@@ -168,4 +172,11 @@ func KindredXPModifier(kindred string) int {
 // TotalXPModifier returns the total XP modifier for a character's kindred and primes.
 func TotalXPModifier(kindred string, scores map[string]int, primes []string) int {
 	return PrimeAbilityXPModifier(scores, primes) + KindredXPModifier(kindred)
+}
+
+func breggleGazeUsesLabel(uses int) string {
+	if uses == 1 {
+		return "1/day"
+	}
+	return strconv.Itoa(uses) + "/day"
 }

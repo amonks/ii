@@ -81,7 +81,7 @@ func TestKindredTraitsBreggleLevel6(t *testing.T) {
 	if traits[2].Name != "Gaze" {
 		t.Errorf("third trait = %q, want Gaze", traits[2].Name)
 	}
-	if traits[2].Description != "Level 4+: charm humans or shorthorns; uses per day by level (save vs spell)." {
+	if traits[2].Description != "Level 4+: charm humans or shorthorns; uses per day by level (2/day; save vs spell)." {
 		t.Errorf("Gaze description = %q, want per-day scaling", traits[2].Description)
 	}
 }
