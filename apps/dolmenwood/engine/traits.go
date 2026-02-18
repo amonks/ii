@@ -26,6 +26,18 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Unearthly Beauty", Description: "+2 CHA with mortals (max 18)."},
 			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
 		}
+	case "grimalkin":
+		return []Trait{
+			{Name: "Armour and Weapons", Description: "Must tailor armour; cannot wield Large weapons."},
+			{Name: "Defensive Bonus", Description: "+2 AC vs Large creatures in melee."},
+			{Name: "Eating Giant Rodents", Description: "Spend 1 Turn eating a giant rodent to heal 1 HP."},
+			{Name: "Glamours", Description: "Know one randomly determined glamour."},
+			{Name: "Grimalkin Skills", Description: "Listen skill target 5."},
+			{Name: "Immortality", Description: "Immune to non-magical disease; no natural death."},
+			{Name: "Magic Resistance", Description: "+2 magic resistance."},
+			{Name: "Shape-Shifting", Description: "Shift between estray, chester, and wilder forms."},
+			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
+		}
 	case "breggle":
 		traits := []Trait{
 			{Name: "Fur", Description: "+1 AC when unarmoured or in light armour."},

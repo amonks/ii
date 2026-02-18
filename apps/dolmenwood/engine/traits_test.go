@@ -67,6 +67,31 @@ func TestKindredTraitsBreggleLevel4(t *testing.T) {
 	}
 }
 
+func TestKindredTraitsGrimalkin(t *testing.T) {
+	traits := KindredTraits("Grimalkin", 1)
+	if len(traits) != 9 {
+		t.Fatalf("expected 9 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Armour and Weapons" {
+		t.Errorf("first trait = %q, want Armour and Weapons", traits[0].Name)
+	}
+	if traits[8].Name != "Vulnerable to Cold Iron" {
+		t.Errorf("ninth trait = %q, want Vulnerable to Cold Iron", traits[8].Name)
+	}
+	foundShapeShifting := false
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+		if trait.Name == "Shape-Shifting" {
+			foundShapeShifting = true
+		}
+	}
+	if !foundShapeShifting {
+		t.Error("expected Shape-Shifting trait")
+	}
+}
+
 func TestClassTraitsKnightLevel5(t *testing.T) {
 	traits := ClassTraits("Knight", 5)
 	if len(traits) != 6 {
