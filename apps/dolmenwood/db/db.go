@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS characters (
 	purse_pp INTEGER NOT NULL DEFAULT 0,
 	coin_companion_id INTEGER REFERENCES companions(id),
 	coin_container_id INTEGER REFERENCES items(id),
+	coins_migrated INTEGER NOT NULL DEFAULT 0,
 	total_xp INTEGER NOT NULL DEFAULT 0,
 	created_at DATETIME,
 	updated_at DATETIME
@@ -248,6 +249,10 @@ ALTER TABLE characters ADD COLUMN coin_companion_id INTEGER REFERENCES companion
 ALTER TABLE characters ADD COLUMN coin_container_id INTEGER REFERENCES items(id);
 `
 
+const migrationCoinsMigrated = `
+ALTER TABLE characters ADD COLUMN coins_migrated INTEGER NOT NULL DEFAULT 0;
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -262,6 +267,7 @@ func New() (*DB, error) {
 	d.Exec(migrationTinyItems)
 	d.Exec(migrationCompanionSaddleType)
 	d.Exec(migrationCoinLocation)
+	d.Exec(migrationCoinsMigrated)
 	return &DB{d}, nil
 }
 

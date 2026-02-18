@@ -349,6 +349,34 @@ func TestCompanionItemsDontAffectSpeed(t *testing.T) {
 	}
 }
 
+func TestCoinItemSlots(t *testing.T) {
+	cases := []struct {
+		name string
+		item Item
+		want int
+	}{
+		// Consolidated "Coins" item — qty is total coin count
+		{"80 coins = 1 slot", Item{Name: "Coins", Quantity: 80}, 1},
+		{"100 coins = 1 slot", Item{Name: "Coins", Quantity: 100}, 1},
+		{"101 coins = 2 slots", Item{Name: "Coins", Quantity: 101}, 2},
+		{"200 coins = 2 slots", Item{Name: "Coins", Quantity: 200}, 2},
+		// Legacy per-denomination names still work
+		{"100 gold pieces = 1 slot", Item{Name: "Gold Pieces", Quantity: 100}, 1},
+		{"200 gold pieces = 2 slots", Item{Name: "Gold Pieces", Quantity: 200}, 2},
+		{"50 silver pieces = 1 slot", Item{Name: "Silver Pieces", Quantity: 50}, 1},
+		{"150 copper pieces = 2 slots", Item{Name: "Copper Pieces", Quantity: 150}, 2},
+		{"1 platinum piece = 1 slot", Item{Name: "Platinum Pieces", Quantity: 1}, 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := ItemSlots(tc.item)
+			if got != tc.want {
+				t.Errorf("ItemSlots = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestCompanionContainerItemsDontAffectSpeed(t *testing.T) {
 	companionID := uint(1)
 	chestID := uint(10)

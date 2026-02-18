@@ -46,7 +46,7 @@ templ InventorySection(view *CharacterView) {
 				</form>
 			</div>
 		}
-		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "coins_move"); len(entries) > 0 {
+		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "item_split"); len(entries) > 0 {
 			<details>
 				<summary class="text-sm text-stone-600 cursor-pointer">Item Log</summary>
 				<div class="mt-2 space-y-1 text-xs">
@@ -65,12 +65,15 @@ templ InventorySection(view *CharacterView) {
 templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100" style={ fmt.Sprintf("padding-left: %dpx", depth*16) }>
 		<div class="flex items-center gap-1">
-			if item.IsCoins {
+			if engine.IsCoinItem(item.Name) {
 				<span class="font-medium text-yellow-700">{ item.Name }</span>
+				if item.Notes != "" {
+					<span class="text-xs bg-yellow-50 text-yellow-700 rounded-full px-1.5">{ item.Notes }</span>
+				}
 			} else {
 				<span class="font-medium">{ item.Name }</span>
 			}
-			if item.Quantity > 1 {
+			if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
 				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%dx", item.Quantity) }</span>
 			}
 			if itemIsTiny(item) {
@@ -91,22 +94,32 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 			if a, ok := engine.ArmorStats(item.Name); ok {
 				<span class="text-xs text-blue-600 ml-1">AC { fmt.Sprintf("%d", a.AC) }</span>
 			}
-			if !item.IsCoins {
-				<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-					hx-target="#inventory" hx-swap="outerHTML"
-					class="inline">
-					<input type="hidden" name="has_notes" value="1"/>
-					<input type="text" name="notes" value={ item.Notes }
-						placeholder="note"
-						onchange="this.form.requestSubmit()"
-						class="text-xs text-stone-400 bg-transparent border-0 border-b border-dashed border-stone-200 focus:border-stone-400 px-0.5 w-16 focus:w-24 transition-all outline-none"/>
-				</form>
-			}
+			<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+				hx-target="#inventory" hx-swap="outerHTML"
+				class="inline">
+				<input type="hidden" name="has_notes" value="1"/>
+				<input type="text" name="notes" value={ item.Notes }
+					placeholder="note"
+					onchange="this.form.requestSubmit()"
+					class="text-xs text-stone-400 bg-transparent border-0 border-b border-dashed border-stone-200 focus:border-stone-400 px-0.5 w-16 focus:w-24 transition-all outline-none"/>
+			</form>
 		</div>
 		<div class="flex items-center gap-1 text-xs text-stone-500">
-			if item.IsCoins {
-				<form hx-post="coins/move/"
-					hx-target="#inventory" hx-swap="outerHTML">
+			if item.Quantity > 1 {
+				<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
+					hx-target="#inventory" hx-swap="outerHTML"
+					class="flex items-center gap-1">
+					if engine.IsCoinItem(item.Name) {
+						<input type="text" name="quantity"
+							placeholder="50gp 10sp"
+							class="text-xs bg-stone-100 rounded px-1 border-0 w-20"/>
+					} else {
+						<input type="number" name="quantity"
+							placeholder={ fmt.Sprintf("%d", item.Quantity) }
+							min="1" max={ fmt.Sprintf("%d", item.Quantity) }
+							value={ fmt.Sprintf("%d", item.Quantity) }
+							class="text-xs bg-stone-100 rounded px-1 border-0 w-12"/>
+					}
 					<select name="move_to" onchange="this.form.requestSubmit()" class="text-xs bg-stone-100 rounded px-1 border-0">
 						<option value="">Move to...</option>
 						for _, target := range moveTargets {
@@ -124,17 +137,17 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 						}
 					</select>
 				</form>
-				if item.BundleSize > 0 && item.Quantity > 1 {
-					<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						<button type="submit" class="text-red-400 hover:text-red-600">-</button>
-					</form>
-				} else {
-					<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
-					</form>
-				}
+			}
+			if item.BundleSize > 0 && item.Quantity > 1 {
+				<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
+					hx-target="#inventory" hx-swap="outerHTML">
+					<button type="submit" class="text-red-400 hover:text-red-600">-</button>
+				</form>
+			} else {
+				<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
+					hx-target="#inventory" hx-swap="outerHTML">
+					<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
+				</form>
 			}
 		</div>
 	</div>
@@ -182,14 +195,7 @@ templ EncumbranceSection(view *CharacterView) {
 						}
 					</div>
 				}
-				if view.CoinItem != nil {
-					@inventoryItem(*view.CoinItem, view.MoveTargets, 0)
-				} else if view.CoinSlotsCount > 0 {
-					<div class="text-xs text-stone-400 mt-0.5">
-						Coins: { fmt.Sprintf("%d", view.CoinSlotsCount) } slots
-					</div>
-				}
-			</div>
+				</div>
 			<div class="flex justify-between text-xs text-stone-400 pt-1">
 				<div class="flex gap-2">
 					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-green-500"></span>40&apos;</span>

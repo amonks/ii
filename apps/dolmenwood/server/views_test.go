@@ -6,6 +6,50 @@ import (
 	"monks.co/apps/dolmenwood/db"
 )
 
+func TestWealthViewAggregatesCoinItems(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 100, FoundGP: 50,
+	}
+	d.CreateCharacter(ch)
+
+	// Create consolidated coin items in various locations
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 280, Notes: "80gp 200sp"})
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 70, Notes: "70gp", CompanionID: &comp.ID})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Should aggregate coins from all locations by parsing notes
+	if view.InventoryCoins["gp"] != 150 {
+		t.Errorf("InventoryCoins[gp] = %d, want 150", view.InventoryCoins["gp"])
+	}
+	if view.InventoryCoins["sp"] != 200 {
+		t.Errorf("InventoryCoins[sp] = %d, want 200", view.InventoryCoins["sp"])
+	}
+
+	// GP value: 150 GP + 200/10 SP = 170 GP
+	if view.InventoryGPValue != 170 {
+		t.Errorf("InventoryGPValue = %d, want 170", view.InventoryGPValue)
+	}
+
+	// Purse/Found accounting should still be intact
+	if view.PurseGPValue != 100 {
+		t.Errorf("PurseGPValue = %d, want 100", view.PurseGPValue)
+	}
+	if view.FoundGPValue != 50 {
+		t.Errorf("FoundGPValue = %d, want 50", view.FoundGPValue)
+	}
+}
+
 func TestItemIsTiny(t *testing.T) {
 	tests := []struct {
 		name string

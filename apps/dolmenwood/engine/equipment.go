@@ -157,6 +157,14 @@ var itemWeights = map[string]int{
 	"riding saddle and bridle": 300,
 	"riding saddle bags":       100,
 
+	// Coins (1 coin = 1 cn weight)
+	"coins":           1,
+	"copper pieces":   1,
+	"silver pieces":   1,
+	"electrum pieces": 1,
+	"gold pieces":     1,
+	"platinum pieces": 1,
+
 	// Treasure items (weight per unit)
 	"gem":       1,
 	"jewellery": 10,

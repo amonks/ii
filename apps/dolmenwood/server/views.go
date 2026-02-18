@@ -29,7 +29,6 @@ type CharacterView struct {
 	Speed            int
 	EquippedSlots    int
 	StowedSlots      int
-	CoinSlotsCount   int
 	TotalStowedSlots int
 	StowedCapacity   int
 	StowedContainers []engine.ContainerInfo
@@ -41,13 +40,12 @@ type CharacterView struct {
 	CanLevelUp       bool
 	PurseGPValue     int
 	FoundGPValue     int
-	TotalPurseCoins  int
-	TotalFoundCoins  int
+	InventoryCoins   map[string]int // coin counts from inventory items, keyed by CoinType
+	InventoryGPValue int            // total GP value of all inventory coin items
 	BreedNames       []string
 
 	// Inventory tree
 	EquippedItems   []InventoryItem
-	CoinItem        *InventoryItem // virtual coin item (nil if no coins)
 	CompanionGroups []CompanionInventory
 	MoveTargets     []MoveTarget
 }
@@ -58,9 +56,8 @@ type InventoryItem struct {
 	Slots      int
 	BundleSize int
 	Children   []InventoryItem
-	Capacity   int  // container capacity (0 if not a container)
-	UsedSlots  int  // sum of children's slots
-	IsCoins    bool // true for the virtual "Coins" item
+	Capacity   int // container capacity (0 if not a container)
+	UsedSlots  int // sum of children's slots
 }
 
 // CompanionInventory groups items under a companion.
@@ -194,33 +191,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	pursePurse := engine.CoinPurse{CP: ch.PurseCP, SP: ch.PurseSP, EP: ch.PurseEP, GP: ch.PurseGP, PP: ch.PursePP}
 	foundPurse := engine.CoinPurse{CP: ch.FoundCP, SP: ch.FoundSP, EP: ch.FoundEP, GP: ch.FoundGP, PP: ch.FoundPP}
 
-	totalCoins := engine.TotalCoins(pursePurse) + engine.TotalCoins(foundPurse)
-	coinSlots := engine.CoinSlots(totalCoins)
-
-	// Determine where coins are located and attribute coin slots accordingly.
-	coinsOnCharacter := ch.CoinCompanionID == nil && ch.CoinContainerID == nil
-	coinCompanionID := ch.CoinCompanionID
-	if !coinsOnCharacter && ch.CoinContainerID != nil {
-		// Coins are in a container; walk up to find the root
-		byID := make(map[uint]engine.Item, len(engineItems))
-		for _, it := range engineItems {
-			byID[it.ID] = it
-		}
-		coinItem := engine.Item{ContainerID: ch.CoinContainerID}
-		root := engine.FindRoot(coinItem, byID)
-		if root.CompanionID != nil {
-			coinCompanionID = root.CompanionID
-		} else {
-			coinsOnCharacter = true
-		}
-	}
-
 	totalStowed := stowed
-	if coinsOnCharacter {
-		totalStowed += coinSlots
-	} else if coinCompanionID != nil {
-		companionSlots[*coinCompanionID] += coinSlots
-	}
 
 	stowedCap, stowedContainers := engine.StowedCapacity(engineItems)
 
@@ -240,28 +211,31 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		compViews[i] = cv
 	}
 
+	// Aggregate coin items from inventory by parsing notes
+	inventoryCoins := make(map[string]int)
+	for _, item := range items {
+		if strings.EqualFold(item.Name, engine.CoinItemNameStr) {
+			parsed := engine.ParseCoinNotes(item.Notes)
+			for ct, qty := range parsed {
+				inventoryCoins[ct] += qty
+			}
+		}
+	}
+	inventoryCoinPurse := engine.CoinPurse{
+		CP: inventoryCoins[engine.CP],
+		SP: inventoryCoins[engine.SP],
+		EP: inventoryCoins[engine.EP],
+		GP: inventoryCoins[engine.GP],
+		PP: inventoryCoins[engine.PP],
+	}
+	inventoryGPValue := engine.CoinPurseGPValue(inventoryCoinPurse)
+
 	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 
-	// Build virtual coin item
-	var coinItem *InventoryItem
-	if totalCoins > 0 {
-		coinItem = &InventoryItem{
-			Item: db.Item{
-				CharacterID: ch.ID,
-				Name:        "Coins",
-				Quantity:    totalCoins,
-				ContainerID: ch.CoinContainerID,
-				CompanionID: ch.CoinCompanionID,
-			},
-			Slots:   coinSlots,
-			IsCoins: true,
-		}
-	}
-
 	// Build inventory tree
-	equippedTree, compGroups, viewCoinItem := buildInventoryTree(items, compViews, companionSlots, coinItem)
+	equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
 	moveTargets := buildMoveTargets(items, compViews)
 
 	return &CharacterView{
@@ -282,7 +256,6 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		Speed:            engine.SpeedFromSlots(equipped, totalStowed),
 		EquippedSlots:    equipped,
 		StowedSlots:      stowed,
-		CoinSlotsCount:   coinSlots,
 		TotalStowedSlots: totalStowed,
 		StowedCapacity:   stowedCap,
 		StowedContainers: stowedContainers,
@@ -294,11 +267,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		CanLevelUp:       canLevelUp,
 		PurseGPValue:     engine.CoinPurseGPValue(pursePurse),
 		FoundGPValue:     engine.CoinPurseGPValue(foundPurse),
-		TotalPurseCoins:  engine.TotalCoins(pursePurse),
-		TotalFoundCoins:  engine.TotalCoins(foundPurse),
+		InventoryCoins:   inventoryCoins,
+		InventoryGPValue: inventoryGPValue,
 		BreedNames:       engine.BreedNames(),
 		EquippedItems:    equippedTree,
-		CoinItem:         viewCoinItem,
 		CompanionGroups:  compGroups,
 		MoveTargets:      moveTargets,
 	}, nil
@@ -337,8 +309,8 @@ func itemSlots(item db.Item) int {
 }
 
 // buildInventoryTree builds the hierarchical inventory from flat items.
-// Returns equipped items, companion groups, and the coin item if it's on the character (not placed in a group).
-func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlots map[uint]int, coinItem *InventoryItem) ([]InventoryItem, []CompanionInventory, *InventoryItem) {
+// Returns equipped items and companion groups.
+func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlots map[uint]int) ([]InventoryItem, []CompanionInventory) {
 	// Index items by ID
 	byID := make(map[uint]db.Item, len(items))
 	for _, it := range items {
@@ -398,50 +370,7 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 		compGroups = append(compGroups, group)
 	}
 
-	// Insert virtual coin item into the appropriate group.
-	// When coins are on the character (no container/companion), return separately
-	// so the template can render them outside the equipped section.
-	var returnedCoinItem *InventoryItem
-	if coinItem != nil {
-		if coinItem.ContainerID != nil {
-			// Add as child of the container, bubbling up UsedSlots through ancestors
-			cid := *coinItem.ContainerID
-			var addToContainer func(items []InventoryItem) ([]InventoryItem, bool)
-			addToContainer = func(items []InventoryItem) ([]InventoryItem, bool) {
-				for i := range items {
-					if items[i].ID == cid {
-						items[i].Children = append(items[i].Children, *coinItem)
-						items[i].UsedSlots += coinItem.Slots
-						return items, true
-					}
-					var found bool
-					items[i].Children, found = addToContainer(items[i].Children)
-					if found {
-						items[i].UsedSlots += coinItem.Slots
-						return items, true
-					}
-				}
-				return items, false
-			}
-			equipped, _ = addToContainer(equipped)
-			for i := range compGroups {
-				compGroups[i].Items, _ = addToContainer(compGroups[i].Items)
-			}
-		} else if coinItem.CompanionID != nil {
-			// Add directly to companion group
-			for i := range compGroups {
-				if compGroups[i].Companion.ID == *coinItem.CompanionID {
-					compGroups[i].Items = append(compGroups[i].Items, *coinItem)
-					break
-				}
-			}
-		} else {
-			// On character: return separately (not in equipped list)
-			returnedCoinItem = coinItem
-		}
-	}
-
-	return equipped, compGroups, returnedCoinItem
+	return equipped, compGroups
 }
 
 func itemIsTiny(item InventoryItem) bool {

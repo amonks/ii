@@ -375,3 +375,4 @@ func TestAuditLog(t *testing.T) {
 		t.Errorf("Action = %q, want %q", logs[0].Action, "hp_change")
 	}
 }
+

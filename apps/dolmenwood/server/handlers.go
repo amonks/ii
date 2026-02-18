@@ -88,7 +88,48 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	name, qty := parseItemInput(r.FormValue("name"))
+	rawName := strings.TrimSpace(r.FormValue("name"))
+
+	// Try to recognize coin expressions like "5 cp", "50gp 10sp"
+	if amounts, err := engine.ParseCoinExpression(rawName); err == nil {
+		coinMap := make(map[engine.CoinType]int)
+		totalCoins := 0
+		for _, a := range amounts {
+			coinMap[a.CoinType] += a.Amount
+			totalCoins += a.Amount
+		}
+		item := &db.Item{
+			CharacterID: ch.ID,
+			Name:        engine.CoinItemNameStr,
+			Quantity:    totalCoins,
+			Notes:       engine.FormatCoinNotes(coinMap),
+			Location:    r.FormValue("location"),
+		}
+		if item.Location == "" {
+			item.Location = "stowed"
+		}
+		if moveTo := r.FormValue("move_to"); moveTo != "" {
+			containerID, companionID := parseMoveTarget(moveTo)
+			item.ContainerID = containerID
+			item.CompanionID = companionID
+			item.Location = ""
+		}
+		if err := s.combineStackableItems(ch.ID, item); err != nil {
+			if !errors.Is(err, errNotCombined) {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := s.db.CreateItem(item); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			s.db.AddAuditLog(ch.ID, "item_add", fmt.Sprintf("Coins (%s)", item.Notes))
+		}
+		s.renderInventory(w, r, ch)
+		return
+	}
+
+	name, qty := parseItemInput(rawName)
 	isTiny, name := extractTinyFlag(name)
 	item := &db.Item{
 		CharacterID: ch.ID,
@@ -108,8 +149,8 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		item.Location = "" // clear legacy location when using hierarchy
 	}
 	if item.Location != "" && item.ContainerID == nil && item.CompanionID == nil {
-		if err := s.combineBundledItems(ch.ID, item); err != nil {
-			if !errors.Is(err, errBundleNotCombined) {
+		if err := s.combineStackableItems(ch.ID, item); err != nil {
+			if !errors.Is(err, errNotCombined) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -125,8 +166,8 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		s.renderInventory(w, r, ch)
 		return
 	}
-	if err := s.combineBundledItems(ch.ID, item); err != nil {
-		if !errors.Is(err, errBundleNotCombined) {
+	if err := s.combineStackableItems(ch.ID, item); err != nil {
+		if !errors.Is(err, errNotCombined) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -178,8 +219,8 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			s.db.UpdateItem(&item)
 			s.db.AddAuditLog(ch.ID, "item_update", fmt.Sprintf("%s: qty %d", item.Name, item.Quantity))
 			if item.ContainerID != nil || item.CompanionID != nil {
-				if err := s.combineBundledItems(ch.ID, &item); err != nil {
-					if !errors.Is(err, errBundleNotCombined) {
+				if err := s.combineStackableItems(ch.ID, &item); err != nil {
+					if !errors.Is(err, errNotCombined) {
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
 					}
@@ -203,6 +244,146 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.db.AddAuditLog(ch.ID, "item_delete", fmt.Sprintf("item %d", itemID))
+	s.renderInventory(w, r, ch)
+}
+
+func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	itemID := atoui(r.PathValue("itemID"))
+	source, err := s.db.GetItem(itemID)
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	moveTo := r.FormValue("move_to")
+	containerID, companionID := parseMoveTarget(moveTo)
+	qtyStr := strings.TrimSpace(r.FormValue("quantity"))
+
+	if strings.EqualFold(source.Name, engine.CoinItemNameStr) {
+		// Consolidated coin split: parse as coin expression, subtract from source notes
+		amounts, err := engine.ParseCoinExpression(qtyStr)
+		if err != nil {
+			http.Error(w, "Invalid coin expression", http.StatusBadRequest)
+			return
+		}
+
+		newNotes, newTotal, err := engine.SubtractCoinNotes(source.Notes, amounts)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Build the split notes for the destination
+		splitMap := make(map[engine.CoinType]int)
+		splitTotal := 0
+		for _, a := range amounts {
+			splitMap[a.CoinType] += a.Amount
+			splitTotal += a.Amount
+		}
+		splitNotes := engine.FormatCoinNotes(splitMap)
+
+		if newTotal == 0 {
+			// Moving all coins: just move the source item
+			source.Notes = splitNotes
+			source.Quantity = splitTotal
+			source.ContainerID = containerID
+			source.CompanionID = companionID
+			source.Location = ""
+			if err := s.db.UpdateItem(source); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// Try to merge at destination
+			s.combineStackableItems(ch.ID, source)
+		} else {
+			// Update source with remaining
+			source.Notes = newNotes
+			source.Quantity = newTotal
+			if err := s.db.UpdateItem(source); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// Create new coin item at destination
+			newItem := &db.Item{
+				CharacterID: ch.ID,
+				Name:        engine.CoinItemNameStr,
+				Quantity:    splitTotal,
+				Notes:       splitNotes,
+				ContainerID: containerID,
+				CompanionID: companionID,
+			}
+			if err := s.combineStackableItems(ch.ID, newItem); err != nil {
+				if !errors.Is(err, errNotCombined) {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if err := s.db.CreateItem(newItem); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		s.db.AddAuditLog(ch.ID, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, moveTo))
+	} else {
+		// Non-coin split: parse quantity as integer
+		qty := atoi(qtyStr)
+		if qty <= 0 {
+			http.Error(w, "Invalid quantity", http.StatusBadRequest)
+			return
+		}
+		if qty > source.Quantity {
+			http.Error(w, fmt.Sprintf("Not enough %s (have %d, want %d)", source.Name, source.Quantity, qty), http.StatusBadRequest)
+			return
+		}
+		if qty == source.Quantity {
+			// Move the whole item
+			source.ContainerID = containerID
+			source.CompanionID = companionID
+			source.Location = ""
+			if err := s.db.UpdateItem(source); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := s.combineStackableItems(ch.ID, source); err != nil {
+				if !errors.Is(err, errNotCombined) {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		} else {
+			// Reduce source and create new item
+			source.Quantity -= qty
+			if err := s.db.UpdateItem(source); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			newItem := &db.Item{
+				CharacterID: ch.ID,
+				Name:        source.Name,
+				Quantity:    qty,
+				ContainerID: containerID,
+				CompanionID: companionID,
+			}
+			if err := s.db.CreateItem(newItem); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := s.combineStackableItems(ch.ID, newItem); err != nil {
+				if !errors.Is(err, errNotCombined) {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		s.db.AddAuditLog(ch.ID, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, moveTo))
+	}
+
 	s.renderInventory(w, r, ch)
 }
 
@@ -311,25 +492,6 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 	s.renderCompanions(w, r, ch)
 }
 
-func (s *Server) handleMoveCoins(w http.ResponseWriter, r *http.Request) {
-	ch, err := s.getCharacter(r)
-	if err != nil {
-		http.Error(w, "Character not found", http.StatusNotFound)
-		return
-	}
-	r.ParseForm()
-	moveTo := r.FormValue("move_to")
-	containerID, companionID := parseMoveTarget(moveTo)
-	ch.CoinContainerID = containerID
-	ch.CoinCompanionID = companionID
-	if err := s.db.UpdateCharacter(ch); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	s.db.AddAuditLog(ch.ID, "coins_move", fmt.Sprintf("Coins → %s", moveTo))
-	s.renderInventory(w, r, ch)
-}
-
 func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
@@ -359,7 +521,7 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update character coins
+	// Update character coins (accounting)
 	if isFound {
 		addToFound(ch, amount, coinType)
 	} else {
@@ -368,6 +530,25 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Create or merge consolidated coin inventory item
+	coinNotes := engine.FormatCoinNotes(map[engine.CoinType]int{coinType: amount})
+	coinItem := &db.Item{
+		CharacterID: ch.ID,
+		Name:        engine.CoinItemNameStr,
+		Quantity:    amount,
+		Notes:       coinNotes,
+	}
+	if err := s.combineStackableItems(ch.ID, coinItem); err != nil {
+		if !errors.Is(err, errNotCombined) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := s.db.CreateItem(coinItem); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	s.db.AddAuditLog(ch.ID, "treasure_add", fmt.Sprintf("%d %s %s (%s)", amount, coinType, desc, txType))
@@ -404,7 +585,7 @@ func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reverse the coin effect
+	// Reverse the coin effect (accounting)
 	if orig.IsFoundTreasure {
 		addToFound(ch, -orig.Amount, orig.CoinType)
 	} else {
@@ -413,6 +594,55 @@ func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Remove coins from consolidated inventory items
+	subAmounts := []engine.CoinAmount{{Amount: orig.Amount, CoinType: orig.CoinType}}
+	items, err := s.db.ListItems(ch.ID)
+	if err == nil {
+		// Prefer items directly on character (no container, no companion)
+		subtracted := false
+		for i := range items {
+			if !strings.EqualFold(items[i].Name, engine.CoinItemNameStr) {
+				continue
+			}
+			if items[i].ContainerID != nil || items[i].CompanionID != nil {
+				continue
+			}
+			newNotes, newTotal, err := engine.SubtractCoinNotes(items[i].Notes, subAmounts)
+			if err != nil {
+				continue // insufficient in this item, try next
+			}
+			if newTotal == 0 {
+				s.db.DeleteItem(items[i].ID)
+			} else {
+				items[i].Notes = newNotes
+				items[i].Quantity = newTotal
+				s.db.UpdateItem(&items[i])
+			}
+			subtracted = true
+			break
+		}
+		// Then from any location
+		if !subtracted {
+			for i := range items {
+				if !strings.EqualFold(items[i].Name, engine.CoinItemNameStr) {
+					continue
+				}
+				newNotes, newTotal, err := engine.SubtractCoinNotes(items[i].Notes, subAmounts)
+				if err != nil {
+					continue
+				}
+				if newTotal == 0 {
+					s.db.DeleteItem(items[i].ID)
+				} else {
+					items[i].Notes = newNotes
+					items[i].Quantity = newTotal
+					s.db.UpdateItem(&items[i])
+				}
+				break
+			}
+		}
 	}
 
 	s.db.AddAuditLog(ch.ID, "treasure_undo", desc)
@@ -591,14 +821,14 @@ func (s *Server) renderSheetBody(w http.ResponseWriter, r *http.Request, ch *db.
 	SheetBody(view).Render(r.Context(), w)
 }
 
-var errBundleNotCombined = errors.New("bundle not combined")
+var errNotCombined = errors.New("not combined")
 
-func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
+func (s *Server) combineStackableItems(characterID uint, item *db.Item) error {
 	if item.ContainerID != nil || item.CompanionID != nil {
 		item.Location = ""
 	}
-	if bundle := engine.ItemBundleSize(item.Name); bundle == 0 {
-		return errBundleNotCombined
+	if engine.ItemBundleSize(item.Name) == 0 && !engine.IsCoinItem(item.Name) {
+		return errNotCombined
 	}
 	items, err := s.db.ListItems(characterID)
 	if err != nil {
@@ -617,7 +847,21 @@ func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
 		if !bundleLocationsMatch(existing, item) {
 			continue
 		}
-		existing.Quantity += item.Quantity
+		// For consolidated "Coins" items, merge denomination notes
+		if strings.EqualFold(existing.Name, engine.CoinItemNameStr) {
+			addAmounts := engine.ParseCoinNotes(item.Notes)
+			var coinAmounts []engine.CoinAmount
+			for ct, qty := range addAmounts {
+				if qty > 0 {
+					coinAmounts = append(coinAmounts, engine.CoinAmount{Amount: qty, CoinType: ct})
+				}
+			}
+			newNotes, newTotal := engine.MergeCoinNotes(existing.Notes, coinAmounts)
+			existing.Notes = newNotes
+			existing.Quantity = newTotal
+		} else {
+			existing.Quantity += item.Quantity
+		}
 		if err := s.db.UpdateItem(&existing); err != nil {
 			return err
 		}
@@ -626,10 +870,10 @@ func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
 				return err
 			}
 		}
-		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (bundled)", item.Name))
+		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (combined)", item.Name))
 		return nil
 	}
-	return errBundleNotCombined
+	return errNotCombined
 }
 
 func bundleLocationsMatch(existing db.Item, item *db.Item) bool {
