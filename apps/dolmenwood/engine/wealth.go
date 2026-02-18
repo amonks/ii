@@ -25,7 +25,7 @@ type CoinPurse struct {
 	PP int
 }
 
-var txPattern = regexp.MustCompile(`^(\d+)\s*(cp|c|sp|s|ep|e|gp|g|pp|p)\s+(.+)$`)
+var txPattern = regexp.MustCompile(`^(-?\d+)\s*(cp|c|sp|s|ep|e|gp|g|pp|p)\s+(.+)$`)
 
 // ParseTransaction parses a shorthand transaction string like "50g dragon hoard"
 // into amount, coin type, and description.

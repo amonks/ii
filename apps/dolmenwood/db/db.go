@@ -59,7 +59,7 @@ type Item struct {
 	ID          uint   `gorm:"primarykey"`
 	CharacterID uint   `gorm:"column:character_id"`
 	Name        string `gorm:"column:name"`
-	SlotCost    int    `gorm:"column:slot_cost"`
+	WeightOverride *int   `gorm:"column:weight_override"`
 	Quantity    int    `gorm:"column:quantity"`
 	Location    string `gorm:"column:location"`
 	Notes       string `gorm:"column:notes"`
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS items (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	character_id INTEGER NOT NULL REFERENCES characters(id),
 	name TEXT NOT NULL,
-	slot_cost INTEGER NOT NULL DEFAULT 1,
+	weight_override INTEGER,
 	quantity INTEGER NOT NULL DEFAULT 1,
 	location TEXT NOT NULL DEFAULT 'stowed',
 	notes TEXT NOT NULL DEFAULT '',
@@ -218,6 +218,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS audit_log_by_character ON audit_log(character_id);
 `
 
+const migrations = `
+-- Replace slot_cost with weight_override (nullable, coins per unit)
+ALTER TABLE items ADD COLUMN weight_override INTEGER;
+ALTER TABLE items DROP COLUMN slot_cost;
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -226,6 +232,8 @@ func New() (*DB, error) {
 	if err := d.Exec(schema).Error; err != nil {
 		return nil, fmt.Errorf("schema: %w", err)
 	}
+	// Best-effort migrations for existing DBs; ignore errors from already-applied migrations.
+	d.Exec(migrations)
 	return &DB{d}, nil
 }
 
@@ -320,6 +328,14 @@ func (db *DB) CreateTransaction(tx *Transaction) error {
 		tx.CreatedAt = time.Now()
 	}
 	return db.Create(tx).Error
+}
+
+func (db *DB) GetTransaction(id uint) (*Transaction, error) {
+	var tx Transaction
+	if err := db.First(&tx, id).Error; err != nil {
+		return nil, err
+	}
+	return &tx, nil
 }
 
 func (db *DB) ListTransactions(characterID uint) ([]Transaction, error) {

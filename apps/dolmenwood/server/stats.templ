@@ -50,16 +50,13 @@ templ StatsSection(view *CharacterView) {
 				<div class="font-bold">{ fmt.Sprintf("%d", view.Speed) }&apos;</div>
 			</div>
 		</div>
-		<details class="text-sm">
-			<summary class="text-stone-600 cursor-pointer">Saving Throws</summary>
-			<div class="grid grid-cols-5 gap-1 mt-2 text-center text-xs">
-				@saveBox("Death", view.Saves.Death)
-				@saveBox("Wands", view.Saves.Wands)
-				@saveBox("Para", view.Saves.Paralysis)
-				@saveBox("Breath", view.Saves.Breath)
-				@saveBox("Spells", view.Saves.Spells)
-			</div>
-		</details>
+		<div class="grid grid-cols-5 gap-1 text-center text-xs">
+			@saveBox("Death", view.Saves.Death)
+			@saveBox("Wands", view.Saves.Wands)
+			@saveBox("Para", view.Saves.Paralysis)
+			@saveBox("Breath", view.Saves.Breath)
+			@saveBox("Spells", view.Saves.Spells)
+		</div>
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
 			<div class="text-xs text-stone-600">
 				if view.Traits.Knighthood {

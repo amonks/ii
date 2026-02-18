@@ -18,6 +18,8 @@ func TestParseTransaction(t *testing.T) {
 		{"25cp rations", 25, CP, "rations", false},
 		{"10ep ring", 10, EP, "ring", false},
 		{"10e ring", 10, EP, "ring", false},
+		{"-50g bought rations", -50, GP, "bought rations", false},
+		{"-10sp ale", -10, SP, "ale", false},
 		{"bad input", 0, "", "", true},
 	}
 	for _, tc := range cases {

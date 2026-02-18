@@ -20,9 +20,14 @@ type CharacterView struct {
 	Saves        engine.SaveTargets
 	Traits       engine.Traits
 	Speed        int
-	EquippedSlots int
-	StowedSlots  int
-	CoinSlotsCount int
+	EquippedSlots   int
+	StowedSlots     int
+	CoinSlotsCount  int
+	TotalStowedSlots int
+	HorseSlots      int
+	StowedCapacity  int
+	StowedContainers []engine.ContainerInfo
+	HorseCapacity   int
 	XPModPercent int
 	XPToNext     int
 	NewLevel     int
@@ -31,6 +36,7 @@ type CharacterView struct {
 	FoundGPValue int
 	TotalPurseCoins int
 	TotalFoundCoins int
+	BreedNames      []string
 }
 
 func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
@@ -59,9 +65,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	engineItems := make([]engine.Item, len(items))
 	for i, item := range items {
 		engineItems[i] = engine.Item{
-			SlotCost: item.SlotCost,
-			Quantity: item.Quantity,
-			Location: item.Location,
+			Name:           item.Name,
+			Quantity:       item.Quantity,
+			Location:       item.Location,
+			WeightOverride: item.WeightOverride,
 		}
 	}
 
@@ -73,6 +80,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	equippedSlots := engine.TotalEquippedSlots(engineItems)
 	stowedSlots := engine.TotalStowedSlots(engineItems)
+	horseSlots := engine.TotalHorseSlots(engineItems)
 
 	pursePurse := engine.CoinPurse{CP: ch.PurseCP, SP: ch.PurseSP, EP: ch.PurseEP, GP: ch.PurseGP, PP: ch.PursePP}
 	foundPurse := engine.CoinPurse{CP: ch.FoundCP, SP: ch.FoundSP, EP: ch.FoundEP, GP: ch.FoundGP, PP: ch.FoundPP}
@@ -81,31 +89,55 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	coinSlots := engine.CoinSlots(totalCoins)
 	totalStowed := stowedSlots + coinSlots
 
+	stowedCap, stowedContainers := engine.StowedCapacity(engineItems)
+
+	// Horse capacity: sum of all companions' LoadCapacity
+	horseCap := 0
+	for _, comp := range companions {
+		horseCap += comp.LoadCapacity
+	}
+
 	xpMod := engine.HumanTotalXPModifier(scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 
 	return &CharacterView{
-		Character:       ch,
-		Items:           items,
-		Companions:      companions,
-		Transactions:    transactions,
-		XPLog:           xpLog,
-		Notes:           notes,
-		AC:              engine.ACFromArmor(ch.ArmorAC, ch.DEX, ch.HasShield),
-		AttackBonus:     engine.KnightAttackBonus(ch.Level),
-		Saves:           engine.KnightSaveTargets(ch.Level),
-		Traits:          engine.KnightTraits(ch.Level),
-		Speed:           engine.SpeedFromSlots(equippedSlots, totalStowed),
-		EquippedSlots:   equippedSlots,
-		StowedSlots:     stowedSlots,
-		CoinSlotsCount:  coinSlots,
-		XPModPercent:    xpMod,
-		XPToNext:        engine.XPToNextLevel(ch.Level, ch.TotalXP),
-		NewLevel:        newLevel,
-		CanLevelUp:      canLevelUp,
-		PurseGPValue:    engine.CoinPurseGPValue(pursePurse),
-		FoundGPValue:    engine.CoinPurseGPValue(foundPurse),
-		TotalPurseCoins: engine.TotalCoins(pursePurse),
-		TotalFoundCoins: engine.TotalCoins(foundPurse),
+		Character:        ch,
+		Items:            items,
+		Companions:       companions,
+		Transactions:     transactions,
+		XPLog:            xpLog,
+		Notes:            notes,
+		AC:               engine.ACFromArmor(ch.ArmorAC, ch.DEX, ch.HasShield),
+		AttackBonus:      engine.KnightAttackBonus(ch.Level),
+		Saves:            engine.KnightSaveTargets(ch.Level),
+		Traits:           engine.KnightTraits(ch.Level),
+		Speed:            engine.SpeedFromSlots(equippedSlots, totalStowed),
+		EquippedSlots:    equippedSlots,
+		StowedSlots:      stowedSlots,
+		CoinSlotsCount:   coinSlots,
+		TotalStowedSlots: totalStowed,
+		HorseSlots:       horseSlots,
+		StowedCapacity:   stowedCap,
+		StowedContainers: stowedContainers,
+		HorseCapacity:    horseCap,
+		XPModPercent:     xpMod,
+		XPToNext:         engine.XPToNextLevel(ch.Level, ch.TotalXP),
+		NewLevel:         newLevel,
+		CanLevelUp:       canLevelUp,
+		PurseGPValue:     engine.CoinPurseGPValue(pursePurse),
+		FoundGPValue:     engine.CoinPurseGPValue(foundPurse),
+		TotalPurseCoins:  engine.TotalCoins(pursePurse),
+		TotalFoundCoins:  engine.TotalCoins(foundPurse),
+		BreedNames:       engine.BreedNames(),
 	}, nil
+}
+
+// itemSlots returns the number of gear slots occupied by an item.
+func itemSlots(item db.Item) int {
+	return engine.ItemSlots(engine.Item{
+		Name:           item.Name,
+		Quantity:       item.Quantity,
+		Location:       item.Location,
+		WeightOverride: item.WeightOverride,
+	})
 }

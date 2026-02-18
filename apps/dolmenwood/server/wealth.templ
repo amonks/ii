@@ -36,20 +36,26 @@ templ WealthSection(view *CharacterView) {
 				<summary class="text-sm text-stone-600 cursor-pointer">Transaction Log</summary>
 				<div class="mt-2 space-y-1 text-xs">
 					for _, tx := range view.Transactions {
-						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+						<div class="flex justify-between items-center text-stone-500 border-b border-stone-50 py-1">
 							<span>
 								{ fmt.Sprintf("%d", tx.Amount) } { tx.CoinType }
 								if tx.Description != "" {
 									— { tx.Description }
 								}
 							</span>
-							<span>
-								if tx.IsFoundTreasure {
-									found
-								} else {
-									purse
-								}
-							</span>
+							<div class="flex items-center gap-2">
+								<span>
+									if tx.IsFoundTreasure {
+										found
+									} else {
+										purse
+									}
+								</span>
+								<form hx-post={ fmt.Sprintf("treasure/%d/undo/", tx.ID) }
+									hx-target="#sheet-body" hx-swap="innerHTML">
+									<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
+								</form>
+							</div>
 						</div>
 					}
 				</div>

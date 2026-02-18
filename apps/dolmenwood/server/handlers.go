@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"monks.co/apps/dolmenwood/db"
 	"monks.co/apps/dolmenwood/engine"
@@ -90,15 +91,11 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	slotCost := atoi(r.FormValue("slot_cost"))
-	if slotCost == 0 {
-		slotCost = 1
-	}
+	name, qty := parseItemInput(r.FormValue("name"))
 	item := &db.Item{
 		CharacterID: ch.ID,
-		Name:        r.FormValue("name"),
-		SlotCost:    slotCost,
-		Quantity:    1,
+		Name:        name,
+		Quantity:    qty,
 		Location:    r.FormValue("location"),
 	}
 	if item.Location == "" {
@@ -162,16 +159,18 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	hpMax := atoi(r.FormValue("hp_max"))
+	breed := r.FormValue("breed")
 	comp := &db.Companion{
-		CharacterID:  ch.ID,
-		Name:         r.FormValue("name"),
-		Breed:        r.FormValue("breed"),
-		HPCurrent:    hpMax,
-		HPMax:        hpMax,
-		AC:           atoi(r.FormValue("ac")),
-		Speed:        atoi(r.FormValue("speed")),
-		LoadCapacity: atoi(r.FormValue("load_capacity")),
+		CharacterID: ch.ID,
+		Name:        r.FormValue("name"),
+		Breed:       breed,
+	}
+	if stats, ok := engine.BreedStats(breed); ok {
+		comp.AC = stats.AC
+		comp.HPMax = stats.HPMax
+		comp.HPCurrent = stats.HPMax
+		comp.Speed = stats.Speed
+		comp.LoadCapacity = stats.LoadCapacity
 	}
 	if err := s.db.CreateCompanion(comp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -181,7 +180,7 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 	s.renderCompanions(w, r, ch)
 }
 
-func (s *Server) handleUpdateCompanionHP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
 		http.Error(w, "Character not found", http.StatusNotFound)
@@ -196,11 +195,34 @@ func (s *Server) handleUpdateCompanionHP(w http.ResponseWriter, r *http.Request)
 	}
 	for _, comp := range comps {
 		if comp.ID == compID {
+			comp.Name = r.FormValue("name")
+			comp.Breed = r.FormValue("breed")
 			comp.HPCurrent = atoi(r.FormValue("hp_current"))
+			comp.HPMax = atoi(r.FormValue("hp_max"))
+			comp.AC = atoi(r.FormValue("ac"))
+			comp.Speed = atoi(r.FormValue("speed"))
+			comp.LoadCapacity = atoi(r.FormValue("load_capacity"))
+			comp.HasSaddlebags = r.FormValue("has_saddlebags") == "on"
+			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
 			break
 		}
 	}
+	s.renderCompanions(w, r, ch)
+}
+
+func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	compID := atoui(r.PathValue("compID"))
+	if err := s.db.DeleteCompanion(compID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.db.AddAuditLog(ch.ID, "companion_delete", fmt.Sprintf("companion %d", compID))
 	s.renderCompanions(w, r, ch)
 }
 
@@ -248,6 +270,51 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 	s.renderSheetBody(w, r, ch)
 }
 
+func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	txID := atoui(r.PathValue("txID"))
+	orig, err := s.db.GetTransaction(txID)
+	if err != nil {
+		http.Error(w, "Transaction not found", http.StatusNotFound)
+		return
+	}
+
+	// Create inverse transaction
+	desc := "undo"
+	if orig.Description != "" {
+		desc = "undo " + orig.Description
+	}
+	undo := &db.Transaction{
+		CharacterID:     ch.ID,
+		Amount:          -orig.Amount,
+		CoinType:        orig.CoinType,
+		Description:     desc,
+		IsFoundTreasure: orig.IsFoundTreasure,
+	}
+	if err := s.db.CreateTransaction(undo); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Reverse the coin effect
+	if orig.IsFoundTreasure {
+		addToFound(ch, -orig.Amount, orig.CoinType)
+	} else {
+		addToPurse(ch, -orig.Amount, orig.CoinType)
+	}
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.db.AddAuditLog(ch.ID, "treasure_undo", desc)
+	s.renderSheetBody(w, r, ch)
+}
+
 func (s *Server) handleReturnToSafety(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
@@ -291,6 +358,36 @@ func (s *Server) handleLevelUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.db.AddAuditLog(ch.ID, "level_up", fmt.Sprintf("Level %d → %d", oldLevel, newLevel))
+	s.renderSheetBody(w, r, ch)
+}
+
+func (s *Server) handleAddXP(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	xpAmount := atoi(r.FormValue("xp_amount"))
+	description := r.FormValue("description")
+	if xpAmount == 0 {
+		http.Error(w, "XP amount must be non-zero", http.StatusBadRequest)
+		return
+	}
+	if err := s.db.CreateXPLogEntry(&db.XPLogEntry{
+		CharacterID: ch.ID,
+		Amount:      xpAmount,
+		Description: description,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	ch.TotalXP += xpAmount
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.db.AddAuditLog(ch.ID, "xp_add", fmt.Sprintf("+%d XP (%s)", xpAmount, description))
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -411,6 +508,18 @@ func addToPurse(ch *db.Character, amount int, coinType string) {
 	case engine.PP:
 		ch.PursePP += amount
 	}
+}
+
+// parseItemInput parses "5x preserved rations" into ("preserved rations", 5)
+// or just "rope" into ("rope", 1).
+func parseItemInput(input string) (string, int) {
+	input = strings.TrimSpace(input)
+	if idx := strings.Index(strings.ToLower(input), "x "); idx > 0 {
+		if qty := atoi(input[:idx]); qty > 0 {
+			return strings.TrimSpace(input[idx+2:]), qty
+		}
+	}
+	return input, 1
 }
 
 func atoi(s string) int {

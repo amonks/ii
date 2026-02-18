@@ -83,7 +83,6 @@ func TestItems(t *testing.T) {
 	item := &Item{
 		CharacterID: ch.ID,
 		Name:        "Longsword",
-		SlotCost:    1,
 		Quantity:    1,
 		Location:    "equipped",
 		SortOrder:   0,

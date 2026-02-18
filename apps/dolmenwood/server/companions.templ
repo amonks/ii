@@ -7,79 +7,89 @@ templ CompanionsSection(view *CharacterView) {
 		<h2 class="font-bold text-stone-800">Companions</h2>
 		if len(view.Companions) > 0 {
 			for _, comp := range view.Companions {
-				<div class="bg-stone-50 rounded p-3 space-y-2">
-					<div class="flex items-center justify-between">
+				<form hx-post={ fmt.Sprintf("companions/%d/update/", comp.ID) }
+					hx-target="#companions" hx-swap="outerHTML"
+					class="bg-stone-50 rounded p-3 space-y-2">
+					<div class="grid grid-cols-2 gap-2">
+						<input type="text" name="name" value={ comp.Name }
+							class="text-sm font-semibold rounded border-stone-300"/>
+						<input type="text" name="breed" value={ comp.Breed }
+							class="text-sm text-stone-500 rounded border-stone-300"/>
+					</div>
+					<div class="grid grid-cols-4 gap-2">
 						<div>
-							<span class="font-semibold">{ comp.Name }</span>
-							<span class="text-xs text-stone-500 ml-1">{ comp.Breed }</span>
+							<label class="text-xs text-stone-500">HP</label>
+							<div class="flex gap-1 items-center">
+								<input type="number" name="hp_current"
+									value={ fmt.Sprintf("%d", comp.HPCurrent) }
+									class="w-14 text-sm text-center rounded border-stone-300"/>
+								<span class="text-stone-400">/</span>
+								<input type="number" name="hp_max"
+									value={ fmt.Sprintf("%d", comp.HPMax) }
+									class="w-14 text-sm text-center rounded border-stone-300"/>
+							</div>
 						</div>
-						<div class="text-xs text-stone-500">
-							AC { fmt.Sprintf("%d", comp.AC) } · Spd { fmt.Sprintf("%d", comp.Speed) }&apos;
+						<div>
+							<label class="text-xs text-stone-500">AC</label>
+							<input type="number" name="ac"
+								value={ fmt.Sprintf("%d", comp.AC) }
+								class="w-full text-sm rounded border-stone-300"/>
+						</div>
+						<div>
+							<label class="text-xs text-stone-500">Speed</label>
+							<input type="number" name="speed"
+								value={ fmt.Sprintf("%d", comp.Speed) }
+								class="w-full text-sm rounded border-stone-300"/>
+						</div>
+						<div>
+							<label class="text-xs text-stone-500">Load</label>
+							<input type="number" name="load_capacity"
+								value={ fmt.Sprintf("%d", comp.LoadCapacity) }
+								class="w-full text-sm rounded border-stone-300"/>
 						</div>
 					</div>
-					<div class="flex items-center gap-2 text-sm">
-						<span class="text-stone-600">HP</span>
-						<form hx-post={ fmt.Sprintf("companions/%d/hp/", comp.ID) }
-							hx-target="#companions" hx-swap="outerHTML"
-							class="flex gap-1 items-center">
-							<input type="number" name="hp_current"
-								value={ fmt.Sprintf("%d", comp.HPCurrent) }
-								class="w-14 text-sm text-center rounded border-stone-300"/>
-							<span class="text-stone-400">/{ fmt.Sprintf("%d", comp.HPMax) }</span>
-							<button type="submit" class="text-xs bg-stone-200 rounded px-2 py-1">Set</button>
-						</form>
+					<div class="flex items-center gap-4 text-sm">
+						<label class="flex items-center gap-1 text-stone-600">
+							<input type="checkbox" name="has_saddlebags"
+								if comp.HasSaddlebags {
+									checked
+								}
+							/>
+							Saddlebags
+						</label>
+						<label class="flex items-center gap-1 text-stone-600">
+							<input type="checkbox" name="has_barding"
+								if comp.HasBarding {
+									checked
+								}
+							/>
+							Barding
+						</label>
+						<div class="ml-auto flex gap-2">
+							<button type="submit" class="text-xs bg-stone-200 rounded px-2 py-1">Save</button>
+							<button type="button"
+								hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
+								hx-target="#companions" hx-swap="outerHTML"
+								class="text-xs text-red-400 hover:text-red-600">&times;</button>
+						</div>
 					</div>
-					<div class="text-xs text-stone-500">
-						Load: { fmt.Sprintf("%d", comp.LoadCapacity) } slots
-						if comp.HasSaddlebags {
-							· Saddlebags
-						}
-						if comp.HasBarding {
-							· Barding
-						}
-					</div>
-				</div>
+				</form>
 			}
 		} else {
 			<p class="text-sm text-stone-400">No companions.</p>
 		}
-		<details>
-			<summary class="text-sm text-stone-600 cursor-pointer">Add Companion</summary>
-			<form hx-post="companions/"
-				hx-target="#companions" hx-swap="outerHTML"
-				class="mt-2 space-y-2">
-				<div class="grid grid-cols-2 gap-2">
-					<input type="text" name="name" placeholder="Name" required
-						class="text-sm rounded-md border-stone-300 shadow-sm"/>
-					<input type="text" name="breed" placeholder="Breed"
-						class="text-sm rounded-md border-stone-300 shadow-sm"/>
-				</div>
-				<div class="grid grid-cols-4 gap-2">
-					<div>
-						<label class="text-xs text-stone-500">HP</label>
-						<input type="number" name="hp_max" value="10"
-							class="w-full text-sm rounded-md border-stone-300 shadow-sm"/>
-					</div>
-					<div>
-						<label class="text-xs text-stone-500">AC</label>
-						<input type="number" name="ac" value="13"
-							class="w-full text-sm rounded-md border-stone-300 shadow-sm"/>
-					</div>
-					<div>
-						<label class="text-xs text-stone-500">Speed</label>
-						<input type="number" name="speed" value="60"
-							class="w-full text-sm rounded-md border-stone-300 shadow-sm"/>
-					</div>
-					<div>
-						<label class="text-xs text-stone-500">Load</label>
-						<input type="number" name="load_capacity" value="40"
-							class="w-full text-sm rounded-md border-stone-300 shadow-sm"/>
-					</div>
-				</div>
-				<button type="submit" class="bg-stone-800 text-white rounded-md px-3 py-1 text-sm">
-					Add Companion
-				</button>
-			</form>
-		</details>
+		<form hx-post="companions/"
+			hx-target="#companions" hx-swap="outerHTML"
+			class="flex gap-2">
+			<input type="text" name="name" placeholder="Name" required
+				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+			<select name="breed" required class="text-sm rounded-md border-stone-300 shadow-sm">
+				<option value="" disabled selected>Breed</option>
+				for _, breed := range view.BreedNames {
+					<option value={ breed }>{ breed }</option>
+				}
+			</select>
+			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+		</form>
 	</div>
 }

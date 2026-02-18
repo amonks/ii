@@ -24,6 +24,14 @@ templ XPSection(view *CharacterView) {
 				Level Up to { fmt.Sprintf("%d", view.NewLevel) }!
 			</button>
 		}
+		<form hx-post="xp/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex gap-2 items-end">
+			<input type="number" name="xp_amount" placeholder="XP" required
+				class="w-20 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
+			<input type="text" name="description" placeholder="Description"
+				class="flex-1 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
+			<button type="submit"
+				class="bg-stone-700 text-white rounded-md px-3 py-1 text-sm font-medium">Add XP</button>
+		</form>
 		if len(view.XPLog) > 0 {
 			<details>
 				<summary class="text-sm text-stone-600 cursor-pointer">XP Log</summary>
