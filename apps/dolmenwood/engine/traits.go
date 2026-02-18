@@ -64,7 +64,7 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Horns", Description: "Melee horn attack; damage scales with level."},
 		}
 		if level >= 4 {
-			traits = append(traits, Trait{Name: "Gaze", Description: "Level 4: charm humans or shorthorns once per day (save vs spell)."})
+			traits = append(traits, Trait{Name: "Gaze", Description: "Level 4+: charm humans or shorthorns; uses per day by level (save vs spell)."})
 		}
 		return traits
 	default:

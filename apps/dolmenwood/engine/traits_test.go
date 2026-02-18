@@ -1,6 +1,9 @@
 package engine
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestKindredTraitsHuman(t *testing.T) {
 	traits := KindredTraits("Human", 1)
@@ -64,6 +67,22 @@ func TestKindredTraitsBreggleLevel4(t *testing.T) {
 	}
 	if traits[2].Description == "" {
 		t.Error("expected description for Gaze")
+	}
+	if !strings.Contains(traits[2].Description, "uses per day") {
+		t.Errorf("expected Gaze description to mention uses per day, got %q", traits[2].Description)
+	}
+}
+
+func TestKindredTraitsBreggleLevel6(t *testing.T) {
+	traits := KindredTraits("Breggle", 6)
+	if len(traits) != 3 {
+		t.Fatalf("expected 3 traits, got %d", len(traits))
+	}
+	if traits[2].Name != "Gaze" {
+		t.Errorf("third trait = %q, want Gaze", traits[2].Name)
+	}
+	if traits[2].Description != "Level 4+: charm humans or shorthorns; uses per day by level (save vs spell)." {
+		t.Errorf("Gaze description = %q, want per-day scaling", traits[2].Description)
 	}
 }
 
