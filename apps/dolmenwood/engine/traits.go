@@ -17,6 +17,15 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Leadership", Description: "+1 retainer loyalty."},
 			{Name: "Spirited", Description: "+10% XP."},
 		}
+	case "elf":
+		return []Trait{
+			{Name: "Elf Skills", Description: "Listen and Search target 5."},
+			{Name: "Glamours", Description: "Know one randomly determined glamour."},
+			{Name: "Immortality", Description: "Immune to non-magical disease; no natural death."},
+			{Name: "Magic Resistance", Description: "+2 magic resistance."},
+			{Name: "Unearthly Beauty", Description: "+2 CHA with mortals (max 18)."},
+			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
+		}
 	default:
 		return nil
 	}

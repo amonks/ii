@@ -15,6 +15,27 @@ func TestKindredTraitsHuman(t *testing.T) {
 	}
 }
 
+func TestKindredTraitsElf(t *testing.T) {
+	traits := KindredTraits("Elf", 1)
+	if len(traits) != 6 {
+		t.Fatalf("expected 6 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Elf Skills" {
+		t.Errorf("first trait = %q, want Elf Skills", traits[0].Name)
+	}
+	if traits[1].Name != "Glamours" {
+		t.Errorf("second trait = %q, want Glamours", traits[1].Name)
+	}
+	if traits[5].Name != "Vulnerable to Cold Iron" {
+		t.Errorf("sixth trait = %q, want Vulnerable to Cold Iron", traits[5].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestClassTraitsKnightLevel5(t *testing.T) {
 	traits := ClassTraits("Knight", 5)
 	if len(traits) != 6 {
