@@ -66,5 +66,7 @@ func promptTemplateVariables() []PromptTemplateVariable {
 		{Name: "TodoBlock", Type: "string"},
 		{Name: "FeedbackBlock", Type: "string"},
 		{Name: "CommitMessageBlock", Type: "string"},
+		{Name: "SeriesLogBlock", Type: "string"},
+		{Name: "TestCommandsBlock", Type: "string"},
 	}
 }

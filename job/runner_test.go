@@ -344,6 +344,7 @@ func TestRunReviewingStagePassesCommitMessage(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-456", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, reviewScopeStep)
@@ -405,6 +406,7 @@ func TestRunReviewingStageReadsCommitMessageFile(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-789", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	_, err = runReviewingStage(manager, created, item, repoPath, workspacePath, opts, "", reviewScopeStep)
@@ -452,10 +454,11 @@ func TestRunReviewingStageMissingCommitMessageExplainsContext(t *testing.T) {
 		UpdateStale: func(string) error {
 			return nil
 		},
-		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			calledLLM = true
 			return AgentRunResult{SessionID: "oc-123", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	_, err = runReviewingStage(manager, current, item, repoPath, workspacePath, opts, "", reviewScopeStep)
@@ -529,6 +532,7 @@ func TestRunReviewingStageInjectsCommitMessageWhenTemplateMissing(t *testing.T) 
 			}
 			return AgentRunResult{SessionID: "oc-654", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	_, err = runReviewingStage(manager, created, item, repoPath, workspacePath, opts, commitMessage, reviewScopeStep)
@@ -1103,6 +1107,7 @@ func TestRunReviewingStageUpdatesCommitReview(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-review", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	commitMessage := "feat: review"
@@ -1168,6 +1173,7 @@ func TestRunReviewingStageProjectSetsProjectReview(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-project-review", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	result, err := runReviewingStage(manager, created, item, repoPath, workspacePath, opts, "", reviewScopeProject)

@@ -51,6 +51,12 @@ before marking the todo complete.
 - This change need only resolve part of the todo. Incremental progress is the
   point. Don't try to do everything at once.
 
+Passing test commands
+
+    The following test commands were run and all passed:
+    - go test ./...
+    - go vet ./...
+
 Change description
 
     feat: snapshot text formatting

@@ -59,5 +59,5 @@ func promptSnapshotData() PromptData {
 	seriesLog := "abc123 john@example.com 5 minutes ago main\n" +
 		"Add snapshot tests for text formatting"
 
-	return newPromptData(item, feedback, message, seriesLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"))
+	return newPromptData(item, feedback, message, seriesLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"), []string{"go test ./...", "go vet ./..."})
 }

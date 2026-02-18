@@ -839,7 +839,22 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 	promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, "", nil, workspacePath))
+	cfg := opts.Config
+	if cfg == nil {
+		var err error
+		cfg, err = opts.LoadConfig(repoPath)
+		if err != nil {
+			return ReviewingStageResult{}, fmt.Errorf("load config: %w", err)
+		}
+		if cfg == nil {
+			cfg = &config.Config{}
+		}
+	}
+	testCommands := []string{}
+	if cfg != nil {
+		testCommands = cfg.Job.TestCommands
+	}
+	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, "", nil, workspacePath, testCommands))
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -1076,7 +1091,7 @@ func renderPromptTemplate(item todo.Todo, feedback, message, seriesLog string, t
 	if err != nil {
 		return "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath))
+	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath, nil))
 }
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {

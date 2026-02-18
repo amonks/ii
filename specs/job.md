@@ -356,6 +356,8 @@ All prompt templates receive the same data:
   (commits from `fork_point(@|main)` to `@-`) with descriptions and diff stats. Empty when there
   are no commits in the series. Included in `prompt-implementation.tmpl` and
   `prompt-feedback.tmpl` to give the agent context about work already completed.
+- `TestCommandsBlock` (`string`): formatted block listing the test commands that ran and passed
+  before the review stage. Empty when no test commands are provided.
 - `HabitName` (`string`): name of the habit (filename without extension). Empty for
   regular todo jobs.
 - `HabitInstructions` (`string`): full text of the habit instruction document,

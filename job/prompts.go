@@ -37,13 +37,14 @@ type PromptData struct {
 	FeedbackBlock      string
 	CommitMessageBlock string
 	SeriesLogBlock     string
+	TestCommandsBlock  string
 
 	// Habit fields (empty for regular todo jobs)
 	HabitName         string
 	HabitInstructions string
 }
 
-func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string) PromptData {
+func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string) PromptData {
 	return PromptData{
 		Todo:               item,
 		Feedback:           feedback,
@@ -55,6 +56,7 @@ func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcri
 		FeedbackBlock:      formatFeedbackBlock(feedback),
 		CommitMessageBlock: formatPromptBlock("Change description", message),
 		SeriesLogBlock:     formatSeriesLogBlock(seriesLog),
+		TestCommandsBlock:  formatTestCommandsBlock(testCommands),
 	}
 }
 
@@ -68,6 +70,7 @@ func newHabitPromptData(habitName, habitInstructions, feedback, message string, 
 		ReviewInstructions: reviewInstructionsText,
 		FeedbackBlock:      formatFeedbackBlock(feedback),
 		CommitMessageBlock: formatPromptBlock("Change description", message),
+		TestCommandsBlock:  "",
 		HabitName:          habitName,
 		HabitInstructions:  formatHabitInstructions(habitInstructions),
 	}
@@ -128,6 +131,26 @@ func formatSeriesLogBlock(seriesLog string) string {
 		return ""
 	}
 	return fmt.Sprintf("Series so far (commits in this patch series):\n\n```\n%s\n```", seriesLog)
+}
+
+func formatTestCommandsBlock(commands []string) string {
+	if len(commands) == 0 {
+		return ""
+	}
+	items := make([]string, 0, len(commands))
+	for _, command := range commands {
+		command = internalstrings.TrimSpace(command)
+		if command == "" {
+			continue
+		}
+		items = append(items, fmt.Sprintf("- %s", command))
+	}
+	if len(items) == 0 {
+		return ""
+	}
+	lines := []string{"The following test commands were run and all passed:"}
+	lines = append(lines, items...)
+	return fmt.Sprintf("Passing test commands\n\n%s\n", IndentBlock(strings.Join(lines, "\n"), documentIndent))
 }
 
 func formatPromptMarkdownBlock(label, body string) string {

@@ -528,6 +528,7 @@ func TestRunReviewingStageLogsFeedback(t *testing.T) {
 			return []AgentTranscript{{Purpose: "review", Transcript: "Review transcript line."}}, nil
 		},
 		Logger: logger,
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	_, err = runReviewingStage(manager, current, item, repoPath, workspacePath, opts, "feat: review", reviewScopeStep)

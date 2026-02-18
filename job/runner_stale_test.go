@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/todo"
 )
 
@@ -204,6 +205,7 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-456", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	item := todo.Todo{
@@ -266,6 +268,7 @@ func TestRunReviewingStageSnapshotsWorkspaceBeforeAgent(t *testing.T) {
 			}
 			return AgentRunResult{SessionID: "oc-987", ExitCode: 0}, nil
 		},
+		Config: &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
 	}
 
 	item := todo.Todo{
