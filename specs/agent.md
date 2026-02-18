@@ -225,7 +225,7 @@ This allows the model to understand what went wrong and retry with correct param
 The agent uses a dynamically generated system prompt that includes:
 
 - Current working directory
-- Current date and time
+- Current date and time (date-only, no time-of-day)
 - Available tools and their parameter schemas
 - Task tool usage guidance (when to use/not use, subagent type descriptions)
 - Code editing best practices (read before edit, use precise edits, prefer edit over write)

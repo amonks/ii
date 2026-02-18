@@ -8,7 +8,7 @@ import (
 // BuildSystemPrompt generates the system prompt for the agent with context-specific information.
 // workDir is the working directory where commands will be executed.
 func BuildSystemPrompt(workDir string) string {
-	now := time.Now().Format("Monday, January 2, 2006 3:04:05 PM MST")
+	now := time.Now().Format("Monday, January 2, 2006")
 
 	return fmt.Sprintf(`You are an AI assistant that helps users with software engineering tasks. You have access to tools that let you interact with the filesystem and execute commands.
 
