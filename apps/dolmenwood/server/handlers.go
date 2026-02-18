@@ -108,6 +108,15 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		item.Location = "" // clear legacy location when using hierarchy
 	}
 	if item.Location != "" && item.ContainerID == nil && item.CompanionID == nil {
+		if err := s.combineBundledItems(ch.ID, item); err != nil {
+			if !errors.Is(err, errBundleNotCombined) {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			s.renderInventory(w, r, ch)
+			return
+		}
 		if err := s.db.CreateItem(item); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -574,11 +583,7 @@ func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
 		if !sameID(existing.ContainerID, item.ContainerID) || !sameID(existing.CompanionID, item.CompanionID) {
 			continue
 		}
-		if existing.ContainerID == nil && existing.CompanionID == nil {
-			if existing.Location != item.Location {
-				continue
-			}
-		} else if existing.Location != "" {
+		if !bundleLocationsMatch(existing, item) {
 			continue
 		}
 		existing.Quantity += item.Quantity
@@ -594,6 +599,13 @@ func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
 		return nil
 	}
 	return errBundleNotCombined
+}
+
+func bundleLocationsMatch(existing db.Item, item *db.Item) bool {
+	if existing.ContainerID == nil && existing.CompanionID == nil {
+		return existing.Location == item.Location
+	}
+	return existing.Location == "" && item.Location == ""
 }
 
 func addToFound(ch *db.Character, amount int, coinType string) {

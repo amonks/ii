@@ -921,6 +921,43 @@ func TestAddBundledItemAutoCombines(t *testing.T) {
 	}
 }
 
+func TestAddBundledItemInLocationAutoCombines(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	existing := &db.Item{CharacterID: ch.ID, Name: "Torch", Quantity: 2, Location: "stowed"}
+	d.CreateItem(existing)
+
+	form := url.Values{}
+	form.Set("name", "Torch")
+	form.Set("location", "stowed")
+	req := httptest.NewRequest("POST", "/characters/1/items/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Quantity != 3 {
+		t.Errorf("Torch Quantity = %d, want 3", items[0].Quantity)
+	}
+	if items[0].Location != "stowed" {
+		t.Errorf("Torch Location = %q, want stowed", items[0].Location)
+	}
+}
+
 func TestAddUnbundledItemDoesNotCombine(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
