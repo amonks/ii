@@ -4,3 +4,8 @@ test-commands = ["go tool run staticcheck", "go tool run go-test", "go tool run 
 implementation-model = "gpt-5.2-codex"
 code-review-model = "gpt-5.2-codex"
 project-review-model = "gpt-5.2-codex"
+
+[workspace]
+on-create = """
+  cp $(jj workspace root --name=default)/.envrc .envrc
+"""
