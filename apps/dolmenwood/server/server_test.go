@@ -662,6 +662,57 @@ func TestMoveItemToContainer(t *testing.T) {
 	}
 }
 
+func TestMoveBundledItemAutoCombines(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	existing := &db.Item{CharacterID: ch.ID, Name: "Torch", Quantity: 2, ContainerID: &backpack.ID}
+	d.CreateItem(existing)
+
+	loose := &db.Item{CharacterID: ch.ID, Name: "Torch", Quantity: 2}
+	d.CreateItem(loose)
+
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", loose.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+	var torchCount int
+	for _, it := range items {
+		if it.Name == "Torch" {
+			torchCount++
+			if it.Quantity != 4 {
+				t.Errorf("Torch Quantity = %d, want 4", it.Quantity)
+			}
+			if it.ContainerID == nil || *it.ContainerID != backpack.ID {
+				t.Errorf("Torch ContainerID = %v, want %d", it.ContainerID, backpack.ID)
+			}
+		}
+	}
+	if torchCount != 1 {
+		t.Fatalf("got %d torch items, want 1", torchCount)
+	}
+}
+
 func TestMoveItemToCompanion(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

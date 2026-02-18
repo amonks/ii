@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -115,31 +116,14 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		s.renderInventory(w, r, ch)
 		return
 	}
-	if bundle := engine.ItemBundleSize(item.Name); bundle > 0 {
-		items, err := s.db.ListItems(ch.ID)
-		if err != nil {
+	if err := s.combineBundledItems(ch.ID, item); err != nil {
+		if !errors.Is(err, errBundleNotCombined) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		for _, existing := range items {
-			if strings.EqualFold(existing.Name, item.Name) && sameID(existing.ContainerID, item.ContainerID) && sameID(existing.CompanionID, item.CompanionID) {
-				if existing.ContainerID == nil && existing.CompanionID == nil {
-					if existing.Location != item.Location {
-						continue
-					}
-				} else if existing.Location != "" {
-					continue
-				}
-				existing.Quantity += item.Quantity
-				if err := s.db.UpdateItem(&existing); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				s.db.AddAuditLog(ch.ID, "item_add", fmt.Sprintf("%s (bundled)", item.Name))
-				s.renderInventory(w, r, ch)
-				return
-			}
-		}
+	} else {
+		s.renderInventory(w, r, ch)
+		return
 	}
 	if err := s.db.CreateItem(item); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -178,6 +162,14 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 				item.Location = "" // clear legacy location
 			}
 			s.db.UpdateItem(&item)
+			if item.ContainerID != nil || item.CompanionID != nil {
+				if err := s.combineBundledItems(ch.ID, &item); err != nil {
+					if !errors.Is(err, errBundleNotCombined) {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				}
+			}
 			break
 		}
 	}
@@ -557,6 +549,51 @@ func (s *Server) renderSheetBody(w http.ResponseWriter, r *http.Request, ch *db.
 		return
 	}
 	SheetBody(view).Render(r.Context(), w)
+}
+
+var errBundleNotCombined = errors.New("bundle not combined")
+
+func (s *Server) combineBundledItems(characterID uint, item *db.Item) error {
+	if item.ContainerID != nil || item.CompanionID != nil {
+		item.Location = ""
+	}
+	if bundle := engine.ItemBundleSize(item.Name); bundle == 0 {
+		return errBundleNotCombined
+	}
+	items, err := s.db.ListItems(characterID)
+	if err != nil {
+		return err
+	}
+	for _, existing := range items {
+		if existing.ID == item.ID {
+			continue
+		}
+		if !strings.EqualFold(existing.Name, item.Name) {
+			continue
+		}
+		if !sameID(existing.ContainerID, item.ContainerID) || !sameID(existing.CompanionID, item.CompanionID) {
+			continue
+		}
+		if existing.ContainerID == nil && existing.CompanionID == nil {
+			if existing.Location != item.Location {
+				continue
+			}
+		} else if existing.Location != "" {
+			continue
+		}
+		existing.Quantity += item.Quantity
+		if err := s.db.UpdateItem(&existing); err != nil {
+			return err
+		}
+		if item.ID != 0 {
+			if err := s.db.DeleteItem(item.ID); err != nil {
+				return err
+			}
+		}
+		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (bundled)", item.Name))
+		return nil
+	}
+	return errBundleNotCombined
 }
 
 func addToFound(ch *db.Character, amount int, coinType string) {
