@@ -380,8 +380,3 @@ func TestCompanionContainerItemsDontAffectSpeed(t *testing.T) {
 		t.Errorf("speed = %d, want 40 (companion items should not affect character speed)", speed)
 	}
 }
-
-//go:fix inline
-func uintPtr(v uint) *uint {
-	return new(v)
-}
