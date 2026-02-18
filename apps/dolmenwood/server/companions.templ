@@ -10,8 +10,7 @@ templ CompanionsSection(view *CharacterView) {
 				<div class="bg-stone-50 rounded p-3 space-y-2">
 					<div class="flex items-center justify-between">
 						<div>
-							<span class="text-sm font-semibold">{ comp.Name }</span>
-							<span class="text-xs text-stone-500 ml-1">{ comp.Breed }</span>
+							<span class="text-xs text-stone-500">{ comp.Breed }</span>
 						</div>
 						<button type="button"
 							hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
@@ -55,28 +54,38 @@ templ CompanionsSection(view *CharacterView) {
 					</div>
 					<form hx-post={ fmt.Sprintf("companions/%d/update/", comp.ID) }
 						hx-target="#companions" hx-swap="outerHTML"
-						class="flex items-center gap-4 text-sm">
+						class="flex flex-wrap items-center gap-3 text-sm">
+						<div class="flex items-center gap-1">
+							<label class="text-xs text-stone-500">Name</label>
+							<input type="text" name="name"
+								value={ comp.Name }
+								class="w-24 text-xs rounded border-stone-300"/>
+						</div>
 						<div class="flex items-center gap-1">
 							<label class="text-xs text-stone-500">HP</label>
 							<input type="number" name="hp_current"
 								value={ fmt.Sprintf("%d", comp.HPCurrent) }
 								class="w-14 text-xs text-center rounded border-stone-300"/>
+							<label class="text-xs text-stone-500">/</label>
+							<input type="number" name="hp_max"
+								value={ fmt.Sprintf("%d", comp.HPMax) }
+								class="w-14 text-xs text-center rounded border-stone-300"/>
 						</div>
-						<label class="flex items-center gap-1 text-stone-600">
-							<input type="checkbox" name="has_saddlebags"
-								if comp.HasSaddlebags {
-									checked
-								}
-							/>
-							Saddlebags
-						</label>
+						<div class="flex items-center gap-1">
+							<label class="text-xs text-stone-500">Saddle</label>
+							<select name="saddle_type" class="text-xs rounded border-stone-300">
+								<option value="" if comp.SaddleType == "" { selected }>None</option>
+								<option value="riding" if comp.SaddleType == "riding" { selected }>Riding</option>
+								<option value="pack" if comp.SaddleType == "pack" { selected }>Pack</option>
+							</select>
+						</div>
 						<label class="flex items-center gap-1 text-stone-600">
 							<input type="checkbox" name="has_barding"
 								if comp.HasBarding {
 									checked
 								}
 							/>
-							Barding
+							<span class="text-xs">Barding</span>
 						</label>
 						<button type="submit" class="ml-auto text-xs bg-stone-200 rounded px-2 py-1">Save</button>
 					</form>

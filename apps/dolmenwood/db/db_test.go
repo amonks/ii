@@ -245,6 +245,115 @@ func TestNotes(t *testing.T) {
 	}
 }
 
+func TestItemContainerHierarchy(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	// Create a backpack
+	backpack := &Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1, Location: "equipped"}
+	db.CreateItem(backpack)
+
+	// Create an item inside the backpack
+	rope := &Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	db.CreateItem(rope)
+
+	items, err := db.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+
+	// Find the rope and check its container_id
+	for _, it := range items {
+		if it.Name == "Rope" {
+			if it.ContainerID == nil {
+				t.Error("Rope ContainerID should not be nil")
+			} else if *it.ContainerID != backpack.ID {
+				t.Errorf("Rope ContainerID = %d, want %d", *it.ContainerID, backpack.ID)
+			}
+		}
+	}
+}
+
+func TestItemOnCompanion(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	comp := &Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	db.CreateCompanion(comp)
+
+	bedroll := &Item{CharacterID: ch.ID, Name: "Bedroll", Quantity: 1, CompanionID: &comp.ID}
+	db.CreateItem(bedroll)
+
+	items, _ := db.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].CompanionID == nil || *items[0].CompanionID != comp.ID {
+		t.Errorf("Bedroll CompanionID = %v, want %d", items[0].CompanionID, comp.ID)
+	}
+}
+
+func TestDeleteContainerCascade(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	backpack := &Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	db.CreateItem(backpack)
+
+	rope := &Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	db.CreateItem(rope)
+
+	// Delete the backpack - children should be reparented to nil (equipped on character)
+	if err := db.DeleteItem(backpack.ID); err != nil {
+		t.Fatalf("DeleteItem: %v", err)
+	}
+
+	items, _ := db.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1 (rope)", len(items))
+	}
+	if items[0].Name != "Rope" {
+		t.Errorf("remaining item = %q, want Rope", items[0].Name)
+	}
+	if items[0].ContainerID != nil {
+		t.Errorf("Rope ContainerID = %v, want nil (reparented)", items[0].ContainerID)
+	}
+}
+
+func TestDeleteCompanionMovesItems(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	comp := &Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	db.CreateCompanion(comp)
+
+	bedroll := &Item{CharacterID: ch.ID, Name: "Bedroll", Quantity: 1, CompanionID: &comp.ID}
+	db.CreateItem(bedroll)
+
+	if err := db.DeleteCompanion(comp.ID); err != nil {
+		t.Fatalf("DeleteCompanion: %v", err)
+	}
+
+	items, _ := db.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].CompanionID != nil {
+		t.Errorf("Bedroll CompanionID = %v, want nil", items[0].CompanionID)
+	}
+}
+
 func TestAuditLog(t *testing.T) {
 	db := newTestDB(t)
 

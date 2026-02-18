@@ -8,117 +8,158 @@ import (
 templ InventorySection(view *CharacterView) {
 	<div id="inventory" class="bg-white rounded-lg shadow p-4 space-y-3">
 		<h2 class="font-bold text-stone-800">Inventory</h2>
-		@itemList(view, "Equipped", "equipped", "green", "stowed", "Stow", "horse", "Horse")
-		@itemList(view, "Stowed", "stowed", "stone", "equipped", "Equip", "horse", "Horse")
-		@itemList(view, "Horse", "horse", "amber", "equipped", "Equip", "stowed", "Stow")
+		<div class="space-y-1">
+			<div class="text-xs font-medium text-green-700">
+				Equipped ({ fmt.Sprintf("%d / 10", view.EquippedSlots) } slots)
+			</div>
+			for _, item := range view.EquippedItems {
+				@inventoryItem(item, view.MoveTargets, 0)
+			}
+			<form hx-post="items/"
+				hx-target="#inventory" hx-swap="outerHTML"
+				class="flex gap-2">
+				<input type="hidden" name="move_to" value="equipped"/>
+				<input type="text" name="name" placeholder="5x preserved rations" required
+					class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+				<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+			</form>
+		</div>
+		for _, cg := range view.CompanionGroups {
+			<div class="space-y-1">
+				<div class="text-xs font-medium text-amber-700">
+					{ cg.Companion.Name }
+					if cg.Companion.Breed != "" {
+						({ cg.Companion.Breed })
+					}
+					({ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots)
+				</div>
+				for _, item := range cg.Items {
+					@inventoryItem(item, view.MoveTargets, 0)
+				}
+				<form hx-post="items/"
+					hx-target="#inventory" hx-swap="outerHTML"
+					class="flex gap-2">
+					<input type="hidden" name="move_to" value={ fmt.Sprintf("companion:%d", cg.Companion.ID) }/>
+					<input type="text" name="name" placeholder="5x preserved rations" required
+						class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+					<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+				</form>
+			</div>
+		}
 	</div>
 }
 
+templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
+	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100" style={ fmt.Sprintf("padding-left: %dpx", depth*16) }>
+		<div class="flex items-center gap-1">
+			<span class="font-medium">{ item.Name }</span>
+			if item.Quantity > 1 {
+				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%dx", item.Quantity) }</span>
+			}
+			if item.Slots != 1 {
+				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%d slots", item.Slots) }</span>
+			}
+			if item.Capacity > 0 {
+				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) }</span>
+			}
+			if w, ok := engine.WeaponStats(item.Name); ok {
+				<span class="text-xs text-red-600 ml-1">{ w.Damage }</span>
+			}
+			if a, ok := engine.ArmorStats(item.Name); ok {
+				<span class="text-xs text-blue-600 ml-1">AC { fmt.Sprintf("%d", a.AC) }</span>
+			}
+			if item.Notes != "" {
+				<span class="text-xs text-stone-400 ml-1">({ item.Notes })</span>
+			}
+		</div>
+		<div class="flex items-center gap-1 text-xs text-stone-500">
+			<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+				hx-target="#inventory" hx-swap="outerHTML">
+				<select name="move_to" onchange="this.form.requestSubmit()" class="text-xs bg-stone-100 rounded px-1 border-0">
+					<option value="">Move to...</option>
+					for _, target := range moveTargets {
+						<option value={ target.Value }>{ target.Label }</option>
+					}
+				</select>
+			</form>
+			<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
+				hx-target="#inventory" hx-swap="outerHTML">
+				<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
+			</form>
+		</div>
+	</div>
+	for _, child := range item.Children {
+		@inventoryItem(child, moveTargets, depth+1)
+	}
+}
+
 templ EncumbranceSection(view *CharacterView) {
-	<div class="bg-white rounded-lg shadow p-4 space-y-2">
+	<div id="encumbrance" class="bg-white rounded-lg shadow p-4 space-y-2">
 		<div class="flex items-center justify-between">
 			<h2 class="font-bold text-stone-800">Encumbrance</h2>
 			<span class="text-lg font-bold">{ fmt.Sprintf("%d", view.Speed) }&apos;</span>
 		</div>
-		<div class="space-y-1 text-sm">
-			<div class="flex justify-between">
-				<span class="text-green-700">Equipped</span>
-				<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) } slots</span>
+		<div class="space-y-2 text-sm">
+			<div>
+				<div class="flex justify-between text-xs text-stone-500 mb-0.5">
+					<span>Equipped</span>
+					<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
+				</div>
+				@speedChart(EquippedSpeedChart(view.EquippedSlots))
 			</div>
-			<div class="flex justify-between">
-				<span class="text-stone-600">Stowed</span>
-				if view.StowedCapacity > 0 {
-					<span>{ fmt.Sprintf("%d / %d", view.StowedSlots, view.StowedCapacity) } slots</span>
-				} else {
-					<span>{ fmt.Sprintf("%d", view.StowedSlots) } slots <span class="text-red-500">(no container)</span></span>
-				}
-			</div>
-			if len(view.StowedContainers) > 0 {
-				<div class="text-xs text-stone-400 pl-4">
-					for _, c := range view.StowedContainers {
-						<span class="mr-2">{ c.Name }: { fmt.Sprintf("%d", c.Slots) }</span>
-					}
-					if view.StowedCapacity < 16 {
-						<span class="text-stone-300">(max 16)</span>
+			<div>
+				<div class="flex justify-between text-xs text-stone-500 mb-0.5">
+					<span>
+						Stowed
+						if view.StowedCapacity == 0 {
+							<span class="text-red-500">(no container)</span>
+						}
+					</span>
+					if view.StowedCapacity > 0 {
+						<span>{ fmt.Sprintf("%d / %d", view.TotalStowedSlots, view.StowedCapacity) }</span>
+					} else {
+						<span>{ fmt.Sprintf("%d", view.TotalStowedSlots) }</span>
 					}
 				</div>
-			}
-			if view.CoinSlotsCount > 0 {
-				<div class="flex justify-between">
-					<span class="text-stone-600">Coins</span>
-					<span>{ fmt.Sprintf("%d", view.CoinSlotsCount) } slots</span>
-				</div>
-			}
-			<div class="flex justify-between font-medium border-t border-stone-200 pt-1">
-				<span>Total Stowed</span>
-				if view.StowedCapacity > 0 {
-					<span>{ fmt.Sprintf("%d / %d", view.TotalStowedSlots, view.StowedCapacity) } slots</span>
-				} else {
-					<span>{ fmt.Sprintf("%d", view.TotalStowedSlots) } slots</span>
+				@speedChart(StowedSpeedChart(view.TotalStowedSlots))
+				if len(view.StowedContainers) > 0 {
+					<div class="text-xs text-stone-400 mt-0.5">
+						for _, c := range view.StowedContainers {
+							<span class="mr-2">{ c.Name }: { fmt.Sprintf("%d", c.Slots) }</span>
+						}
+						if view.StowedCapacity < 16 {
+							<span class="text-stone-300">(max 16)</span>
+						}
+					</div>
+				}
+				if view.CoinSlotsCount > 0 {
+					<div class="text-xs text-stone-400 mt-0.5">
+						Coins: { fmt.Sprintf("%d", view.CoinSlotsCount) } slots
+					</div>
 				}
 			</div>
-			if view.HorseCapacity > 0 {
-				<div class="flex justify-between">
-					<span class="text-amber-700">Horse</span>
-					<span>{ fmt.Sprintf("%d / %d", view.HorseSlots, view.HorseCapacity) } slots</span>
+			<div class="flex justify-between text-xs text-stone-400 pt-1">
+				<div class="flex gap-2">
+					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-green-500"></span>40&apos;</span>
+					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-amber-400"></span>30&apos;</span>
+					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-orange-400"></span>20&apos;</span>
+					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-red-500"></span>10&apos;</span>
+				</div>
+			</div>
+			for _, cg := range view.CompanionGroups {
+				<div class="flex justify-between border-t border-stone-100 pt-1">
+					<span class="text-amber-700">{ cg.Companion.Name }</span>
+					<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
 				</div>
 			}
 		</div>
 	</div>
 }
 
-templ itemList(view *CharacterView, title string, location string, color string, moveTo1 string, moveTo1Label string, moveTo2 string, moveTo2Label string) {
-	<div class="space-y-1">
-		<div class={ "text-xs font-medium", templ.KV("text-green-700", color == "green"), templ.KV("text-stone-600", color == "stone"), templ.KV("text-amber-700", color == "amber") }>
-			{ title }
-		</div>
-		for _, item := range view.Items {
-			if item.Location == location {
-				<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
-					<div class="flex items-center gap-1">
-						<span class="font-medium">{ item.Name }</span>
-						if item.Quantity > 1 {
-							<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%dx", item.Quantity) }</span>
-						}
-						if slots := itemSlots(item); slots > 1 {
-							<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%d slots", slots) }</span>
-						}
-						if w, ok := engine.WeaponStats(item.Name); ok {
-							<span class="text-xs text-red-600 ml-1">{ w.Damage }</span>
-						}
-						if a, ok := engine.ArmorStats(item.Name); ok {
-							<span class="text-xs text-blue-600 ml-1">AC { fmt.Sprintf("%d", a.AC) }</span>
-						}
-						if item.Notes != "" {
-							<span class="text-xs text-stone-400 ml-1">({ item.Notes })</span>
-						}
-					</div>
-					<div class="flex items-center gap-1 text-xs text-stone-500">
-						<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-							hx-target="#inventory" hx-swap="outerHTML">
-							<input type="hidden" name="location" value={ moveTo1 }/>
-							<button type="submit" class="bg-stone-100 rounded px-1 hover:bg-stone-200">{ moveTo1Label }</button>
-						</form>
-						<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-							hx-target="#inventory" hx-swap="outerHTML">
-							<input type="hidden" name="location" value={ moveTo2 }/>
-							<button type="submit" class="bg-stone-100 rounded px-1 hover:bg-stone-200">{ moveTo2Label }</button>
-						</form>
-						<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
-							hx-target="#inventory" hx-swap="outerHTML">
-							<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
-						</form>
-					</div>
-				</div>
-			}
+templ speedChart(cells []SpeedChartCell) {
+	<div class="flex gap-px rounded overflow-hidden" style="height: 10px;">
+		for _, cell := range cells {
+			<div class={ SpeedCellClass(cell) } style="flex: 1;"></div>
 		}
-		<form hx-post="items/"
-			hx-target="#inventory" hx-swap="outerHTML"
-			class="flex gap-2">
-			<input type="hidden" name="location" value={ location }/>
-			<input type="text" name="name" placeholder="5x preserved rations" required
-				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
-			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
-		</form>
 	</div>
 }

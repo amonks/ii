@@ -88,3 +88,25 @@ func TestCompanionAC(t *testing.T) {
 		})
 	}
 }
+
+func TestCompanionLoadCapacity(t *testing.T) {
+	cases := []struct {
+		name          string
+		breedCapacity int
+		saddleType    string
+		want          int
+	}{
+		{"no saddle", 25, "", 0},
+		{"riding saddle", 25, "riding", 5},
+		{"pack saddle mule", 25, "pack", 25},
+		{"pack saddle dapple-doff", 50, "pack", 50},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CompanionLoadCapacity(tc.breedCapacity, tc.saddleType)
+			if got != tc.want {
+				t.Errorf("CompanionLoadCapacity(%d, %q) = %d, want %d", tc.breedCapacity, tc.saddleType, got, tc.want)
+			}
+		})
+	}
+}

@@ -2,10 +2,68 @@ package engine
 
 // Item represents an inventory item for encumbrance calculations.
 type Item struct {
+	ID             uint
 	Name           string
 	Quantity       int
-	Location       string // "equipped", "stowed", or "horse"
+	Location       string // "equipped", "stowed", or "horse" (legacy, used for backward compat)
 	WeightOverride *int   // if set, use this instead of catalog lookup (coins per unit)
+	ContainerID    *uint  // parent container item ID (nil = not in a container)
+	CompanionID    *uint  // companion ID (nil = not on a companion)
+}
+
+// IsEquippedOnCharacter returns true if the item is directly equipped on the character
+// (not inside a container and not on a companion).
+func (item Item) IsEquippedOnCharacter() bool {
+	return item.ContainerID == nil && item.CompanionID == nil
+}
+
+// FindRoot walks up the ContainerID chain to find the root item.
+func FindRoot(item Item, itemsByID map[uint]Item) Item {
+	for item.ContainerID != nil {
+		parent, ok := itemsByID[*item.ContainerID]
+		if !ok {
+			break
+		}
+		item = parent
+	}
+	return item
+}
+
+// CalculateEncumbrance computes slot usage from items with container hierarchy.
+// Returns equipped slots, stowed slots (items in equipped containers), and per-companion slot maps.
+func CalculateEncumbrance(items []Item) (equipped, stowed int, companionSlots map[uint]int) {
+	companionSlots = make(map[uint]int)
+
+	// Build lookup
+	byID := make(map[uint]Item, len(items))
+	for _, it := range items {
+		byID[it.ID] = it
+	}
+
+	for _, item := range items {
+		slots := ItemSlots(item)
+
+		if item.CompanionID != nil {
+			companionSlots[*item.CompanionID] += slots
+			continue
+		}
+
+		if item.ContainerID != nil {
+			// Walk up to root to determine where this item lives
+			root := FindRoot(item, byID)
+			if root.CompanionID != nil {
+				companionSlots[*root.CompanionID] += slots
+			} else {
+				// Root is equipped on character -> this is stowed
+				stowed += slots
+			}
+			continue
+		}
+
+		// Equipped on character
+		equipped += slots
+	}
+	return
 }
 
 // UnitWeight returns the weight in coins per unit for this item.
@@ -81,12 +139,45 @@ func WeightToSlots(weight int) int {
 }
 
 // ItemSlots returns the number of gear slots occupied by an item row.
-// Equipped containers (in use) are 0 slots.
+//
+// Resolution order:
+//  1. Equipped containers in use: 0 slots
+//  2. WeightOverride set: weight-based (escape hatch for custom items)
+//  3. Bundled items: ceil(qty / bundleSize) * slotsPerUnit
+//  4. Explicit slot category (armor, weapon, clothing, tiny, bulky): cost * qty
+//  5. Known weight in catalog: weight-based (ceil(totalWeight / 100))
+//  6. Unknown items: 1 per unit
 func ItemSlots(item Item) int {
-	if item.Location == "equipped" && IsContainer(item.Name) {
-		return 0
+	// Personal containers (backpack, sack, belt pouch) are 0 when equipped/in-use
+	if IsPersonalContainer(item.Name) {
+		if item.IsEquippedOnCharacter() || item.Location == "equipped" {
+			return 0
+		}
 	}
-	return WeightToSlots(item.TotalWeight())
+
+	// Items with WeightOverride use weight-based calculation
+	if item.WeightOverride != nil {
+		return WeightToSlots(item.TotalWeight())
+	}
+
+	// Bundled items
+	if bundle := itemBundleSize(item.Name); bundle > 0 {
+		cost := ItemSlotCost(item.Name)
+		return ((item.Quantity + bundle - 1) / bundle) * cost
+	}
+
+	// Items with explicit slot category
+	if cost, explicit := itemSlotCostExplicit(item.Name); explicit {
+		return cost * item.Quantity
+	}
+
+	// General items with known weight: weight-based
+	if w, ok := ItemWeight(item.Name); ok {
+		return WeightToSlots(w * item.Quantity)
+	}
+
+	// Unknown items: 1 slot per unit
+	return item.Quantity
 }
 
 // TotalEquippedSlots returns the total slots used by equipped items.
@@ -131,13 +222,20 @@ type ContainerInfo struct {
 
 const maxStowedSlots = 16
 
-// StowedCapacity calculates the total stowed slot capacity from equipped containers.
+// StowedCapacity calculates the total stowed slot capacity from equipped personal containers.
+// Only personal containers (backpack, sack, belt pouch) count toward stowed capacity.
 // Returns the total capacity (capped at 16) and a list of contributing containers.
 func StowedCapacity(items []Item) (int, []ContainerInfo) {
 	var containers []ContainerInfo
 	total := 0
 	for _, item := range items {
-		if item.Location != "equipped" {
+		if item.Location != "equipped" && !item.IsEquippedOnCharacter() {
+			continue
+		}
+		if item.Location != "" && item.Location != "equipped" {
+			continue
+		}
+		if !IsPersonalContainer(item.Name) {
 			continue
 		}
 		if cap, ok := ContainerCapacity(item.Name); ok {

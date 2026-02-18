@@ -50,3 +50,16 @@ func CompanionAC(baseAC int, hasBarding bool) int {
 	}
 	return baseAC
 }
+
+// CompanionLoadCapacity returns the effective load capacity based on saddle type.
+// No saddle: 0 slots. Riding: saddlebags only (5 slots). Pack: full breed capacity.
+func CompanionLoadCapacity(breedCapacity int, saddleType string) int {
+	switch saddleType {
+	case "riding":
+		return 5 // saddlebags capacity
+	case "pack":
+		return breedCapacity
+	default:
+		return 0
+	}
+}

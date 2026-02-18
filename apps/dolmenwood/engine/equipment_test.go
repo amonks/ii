@@ -63,11 +63,23 @@ func TestContainerCapacity(t *testing.T) {
 		wantSlots int
 		wantFound bool
 	}{
+		// Personal containers
 		{"Backpack", 10, true},
 		{"Sack", 10, true},
 		{"Belt Pouch", 1, true},
-		{"backpack", 10, true},  // case insensitive
-		{"Longsword", 0, false}, // not a container
+		{"backpack", 10, true}, // case insensitive
+
+		// Heavy containers
+		{"Casket (iron, large)", 8, true},
+		{"Casket (iron, small)", 3, true},
+		{"Chest (wooden, large)", 10, true},
+		{"Chest (wooden, small)", 3, true},
+		{"Scroll Case", 1, true},
+		{"Riding Saddle Bags", 5, true},
+
+		// Not containers
+		{"Longsword", 0, false},
+		{"Rope", 0, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -77,6 +89,57 @@ func TestContainerCapacity(t *testing.T) {
 			}
 			if slots != tt.wantSlots {
 				t.Errorf("slots = %d, want %d", slots, tt.wantSlots)
+			}
+		})
+	}
+}
+
+func TestIsPersonalContainer(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"Backpack", true},
+		{"Sack", true},
+		{"Belt Pouch", true},
+		{"Chest (wooden, large)", false},
+		{"Casket (iron, large)", false},
+		{"Scroll Case", false},
+		{"Riding Saddle Bags", false},
+		{"Longsword", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsPersonalContainer(tt.name)
+			if got != tt.want {
+				t.Errorf("IsPersonalContainer(%q) = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsContainer(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"Backpack", true},
+		{"Sack", true},
+		{"Belt Pouch", true},
+		{"Chest (wooden, large)", true},
+		{"Chest (wooden, small)", true},
+		{"Casket (iron, large)", true},
+		{"Casket (iron, small)", true},
+		{"Scroll Case", true},
+		{"Riding Saddle Bags", true},
+		{"Longsword", false},
+		{"Rope", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsContainer(tt.name)
+			if got != tt.want {
+				t.Errorf("IsContainer(%q) = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}
@@ -221,5 +284,117 @@ func TestEquippedWeaponsEmpty(t *testing.T) {
 	weapons := EquippedWeapons(nil)
 	if len(weapons) != 0 {
 		t.Errorf("got %d weapons, want 0", len(weapons))
+	}
+}
+
+func TestItemSlotCost(t *testing.T) {
+	tests := []struct {
+		name     string
+		wantSlot int
+	}{
+		// Armor: light=1, medium=2, heavy=3, shield=1
+		{"leather", 1},
+		{"bark", 1},
+		{"chainmail", 2},
+		{"chain mail", 2},
+		{"pinecone", 2},
+		{"plate mail", 3},
+		{"full plate", 3},
+		{"shield", 1},
+
+		// Weapons: two-handed melee=2, others=1
+		{"polearm", 2},
+		{"two-handed sword", 2},
+		{"staff", 2},
+		{"longsword", 1},
+		{"dagger", 1},
+		{"crossbow", 1},
+		{"shortbow", 1},
+		{"sling", 1},
+
+		// Clothing: 0 slots
+		{"clothes", 0},
+		{"clothes, common", 0},
+		{"clothes, extravagant", 0},
+		{"clothes, fine", 0},
+		{"habit, friar's", 0},
+		{"robes", 0},
+		{"robes, ritual", 0},
+		{"winter cloak", 0},
+
+		// Tiny items: 0 slots
+		{"bell", 0},
+		{"holy symbol", 0},
+		{"holy symbol (wooden)", 0},
+		{"holy symbol (silver)", 0},
+		{"holy symbol (gold)", 0},
+		{"paper", 0},
+		{"parchment", 0},
+		{"quill", 0},
+		{"whistle", 0},
+		{"pipeleaf", 0},
+		{"fungi", 0},
+		{"herbs", 0},
+
+		// Bulky items: 2 slots
+		{"barrel", 2},
+		{"casket (iron, large)", 2},
+		{"casket (iron, small)", 2},
+		{"chest (wooden, large)", 2},
+		{"chest (wooden, small)", 2},
+		{"pole", 2},
+		{"sledgehammer", 2},
+		{"rope ladder", 2},
+		{"firewood", 2},
+
+		// Containers: 1 slot
+		{"backpack", 1},
+		{"sack", 1},
+		{"belt pouch", 1},
+
+		// General items: 1 slot
+		{"rope", 1},
+		{"lantern", 1},
+		{"crowbar", 1},
+		{"bedroll", 1},
+		{"preserved rations", 1},
+
+		// Unknown: 1 slot
+		{"magic orb", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ItemSlotCost(tt.name)
+			if got != tt.wantSlot {
+				t.Errorf("ItemSlotCost(%q) = %d, want %d", tt.name, got, tt.wantSlot)
+			}
+		})
+	}
+}
+
+func TestArmorBulk(t *testing.T) {
+	tests := []struct {
+		name     string
+		wantBulk int
+	}{
+		{"plate mail", 3},
+		{"full plate", 3},
+		{"chainmail", 2},
+		{"chain mail", 2},
+		{"pinecone", 2},
+		{"leather", 1},
+		{"bark", 1},
+		{"shield", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a, ok := ArmorStats(tt.name)
+			if !ok {
+				t.Fatalf("ArmorStats(%q) not found", tt.name)
+			}
+			if a.Bulk != tt.wantBulk {
+				t.Errorf("Bulk = %d, want %d", a.Bulk, tt.wantBulk)
+			}
+		})
 	}
 }

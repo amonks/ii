@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -96,6 +97,13 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 	if item.Location == "" {
 		item.Location = "stowed"
 	}
+	// Support adding directly into a container or onto a companion
+	if moveTo := r.FormValue("move_to"); moveTo != "" {
+		containerID, companionID := parseMoveTarget(moveTo)
+		item.ContainerID = containerID
+		item.CompanionID = companionID
+		item.Location = "" // clear legacy location when using hierarchy
+	}
 	if err := s.db.CreateItem(item); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,6 +132,13 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			}
 			if qty := r.FormValue("quantity"); qty != "" {
 				item.Quantity = atoi(qty)
+			}
+			// Support move_to for container hierarchy
+			if moveTo := r.FormValue("move_to"); moveTo != "" {
+				containerID, companionID := parseMoveTarget(moveTo)
+				item.ContainerID = containerID
+				item.CompanionID = companionID
+				item.Location = "" // clear legacy location
 			}
 			s.db.UpdateItem(&item)
 			break
@@ -187,9 +202,14 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, comp := range comps {
 		if comp.ID == compID {
-			comp.Name = r.FormValue("name")
+			if name := r.FormValue("name"); name != "" {
+				comp.Name = name
+			}
 			comp.HPCurrent = atoi(r.FormValue("hp_current"))
-			comp.HasSaddlebags = r.FormValue("has_saddlebags") == "on"
+			if hpMax := r.FormValue("hp_max"); hpMax != "" {
+				comp.HPMax = atoi(hpMax)
+			}
+			comp.SaddleType = r.FormValue("saddle_type")
 			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
 			break
@@ -435,6 +455,11 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, ch *db.
 		return
 	}
 	InventorySection(view).Render(r.Context(), w)
+	// OOB swap: also update encumbrance section (speed, slots) when inventory changes
+	var buf bytes.Buffer
+	EncumbranceSection(view).Render(r.Context(), &buf)
+	oob := strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 }
 
 func (s *Server) renderCompanions(w http.ResponseWriter, r *http.Request, ch *db.Character) {

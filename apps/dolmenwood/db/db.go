@@ -53,25 +53,27 @@ type Character struct {
 }
 
 type Item struct {
-	ID          uint   `gorm:"primarykey"`
-	CharacterID uint   `gorm:"column:character_id"`
-	Name        string `gorm:"column:name"`
+	ID             uint   `gorm:"primarykey"`
+	CharacterID    uint   `gorm:"column:character_id"`
+	Name           string `gorm:"column:name"`
 	WeightOverride *int   `gorm:"column:weight_override"`
-	Quantity    int    `gorm:"column:quantity"`
-	Location    string `gorm:"column:location"`
-	Notes       string `gorm:"column:notes"`
-	SortOrder   int    `gorm:"column:sort_order"`
+	Quantity       int    `gorm:"column:quantity"`
+	Location       string `gorm:"column:location"`
+	Notes          string `gorm:"column:notes"`
+	SortOrder      int    `gorm:"column:sort_order"`
+	ContainerID    *uint  `gorm:"column:container_id"`
+	CompanionID    *uint  `gorm:"column:companion_id"`
 }
 
 type Companion struct {
-	ID           uint   `gorm:"primarykey"`
-	CharacterID  uint   `gorm:"column:character_id"`
-	Name         string `gorm:"column:name"`
-	Breed        string `gorm:"column:breed"`
-	HPCurrent    int    `gorm:"column:hp_current"`
-	HPMax        int    `gorm:"column:hp_max"`
-	HasBarding   bool   `gorm:"column:has_barding"`
-	HasSaddlebags bool  `gorm:"column:has_saddlebags"`
+	ID          uint   `gorm:"primarykey"`
+	CharacterID uint   `gorm:"column:character_id"`
+	Name        string `gorm:"column:name"`
+	Breed       string `gorm:"column:breed"`
+	HPCurrent   int    `gorm:"column:hp_current"`
+	HPMax       int    `gorm:"column:hp_max"`
+	HasBarding  bool   `gorm:"column:has_barding"`
+	SaddleType  string `gorm:"column:saddle_type"` // "", "riding", "pack"
 }
 
 type Transaction struct {
@@ -155,7 +157,9 @@ CREATE TABLE IF NOT EXISTS items (
 	quantity INTEGER NOT NULL DEFAULT 1,
 	location TEXT NOT NULL DEFAULT 'stowed',
 	notes TEXT NOT NULL DEFAULT '',
-	sort_order INTEGER NOT NULL DEFAULT 0
+	sort_order INTEGER NOT NULL DEFAULT 0,
+	container_id INTEGER REFERENCES items(id),
+	companion_id INTEGER REFERENCES companions(id)
 );
 CREATE INDEX IF NOT EXISTS items_by_character ON items(character_id);
 
@@ -170,7 +174,7 @@ CREATE TABLE IF NOT EXISTS companions (
 	speed INTEGER NOT NULL DEFAULT 40,
 	load_capacity INTEGER NOT NULL DEFAULT 0,
 	has_barding INTEGER NOT NULL DEFAULT 0,
-	has_saddlebags INTEGER NOT NULL DEFAULT 0
+	saddle_type TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS companions_by_character ON companions(character_id);
 
@@ -218,6 +222,15 @@ ALTER TABLE items ADD COLUMN weight_override INTEGER;
 ALTER TABLE items DROP COLUMN slot_cost;
 `
 
+const migrationContainerHierarchy = `
+ALTER TABLE items ADD COLUMN container_id INTEGER REFERENCES items(id);
+ALTER TABLE items ADD COLUMN companion_id INTEGER REFERENCES companions(id);
+`
+
+const migrationCompanionSaddleType = `
+ALTER TABLE companions ADD COLUMN saddle_type TEXT NOT NULL DEFAULT '';
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -228,6 +241,8 @@ func New() (*DB, error) {
 	}
 	// Best-effort migrations for existing DBs; ignore errors from already-applied migrations.
 	d.Exec(migrations)
+	d.Exec(migrationContainerHierarchy)
+	d.Exec(migrationCompanionSaddleType)
 	return &DB{d}, nil
 }
 
@@ -289,7 +304,25 @@ func (db *DB) UpdateItem(item *Item) error {
 	return db.Save(item).Error
 }
 
+func (db *DB) GetItem(id uint) (*Item, error) {
+	var item Item
+	if err := db.First(&item, id).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
 func (db *DB) DeleteItem(id uint) error {
+	// Cascade: move children to deleted item's parent
+	item, err := db.GetItem(id)
+	if err != nil {
+		return db.Delete(&Item{}, id).Error
+	}
+	// Reparent children to the deleted item's parent
+	db.Model(&Item{}).Where("container_id = ?", id).Updates(map[string]interface{}{
+		"container_id": item.ContainerID,
+		"companion_id": item.CompanionID,
+	})
 	return db.Delete(&Item{}, id).Error
 }
 
@@ -312,6 +345,11 @@ func (db *DB) UpdateCompanion(comp *Companion) error {
 }
 
 func (db *DB) DeleteCompanion(id uint) error {
+	// Move companion's items to equipped on character (nil container, nil companion)
+	db.Model(&Item{}).Where("companion_id = ?", id).Updates(map[string]interface{}{
+		"companion_id": nil,
+		"container_id": nil,
+	})
 	return db.Delete(&Companion{}, id).Error
 }
 

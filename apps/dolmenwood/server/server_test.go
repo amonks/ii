@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -420,7 +421,8 @@ func TestUpdateCompanion(t *testing.T) {
 	form := url.Values{}
 	form.Set("name", "Shadowfax")
 	form.Set("hp_current", "7")
-	form.Set("has_saddlebags", "on")
+	form.Set("hp_max", "12")
+	form.Set("saddle_type", "pack")
 	form.Set("has_barding", "on")
 	req := httptest.NewRequest("POST", "/characters/1/companions/1/update/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -445,8 +447,11 @@ func TestUpdateCompanion(t *testing.T) {
 	if got.HPCurrent != 7 {
 		t.Errorf("HPCurrent = %d, want 7", got.HPCurrent)
 	}
-	if !got.HasSaddlebags {
-		t.Error("HasSaddlebags should be true")
+	if got.HPMax != 12 {
+		t.Errorf("HPMax = %d, want 12", got.HPMax)
+	}
+	if got.SaddleType != "pack" {
+		t.Errorf("SaddleType = %q, want %q", got.SaddleType, "pack")
 	}
 	if !got.HasBarding {
 		t.Error("HasBarding should be true")
@@ -614,6 +619,282 @@ func TestAddItemWithQuantityPrefix(t *testing.T) {
 	}
 }
 
+func TestMoveItemToContainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Create a backpack (equipped on character)
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	// Create a rope (equipped on character)
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(rope)
+
+	// Move rope into backpack via move_to
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", rope.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, it := range items {
+		if it.Name == "Rope" {
+			if it.ContainerID == nil || *it.ContainerID != backpack.ID {
+				t.Errorf("Rope ContainerID = %v, want %d", it.ContainerID, backpack.ID)
+			}
+		}
+	}
+}
+
+func TestMoveItemToCompanion(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(rope)
+
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", rope.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if items[0].CompanionID == nil || *items[0].CompanionID != comp.ID {
+		t.Errorf("Rope CompanionID = %v, want %d", items[0].CompanionID, comp.ID)
+	}
+}
+
+func TestMoveItemToEquipped(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(rope)
+
+	// Move rope back to equipped
+	form := url.Values{}
+	form.Set("move_to", "equipped")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", rope.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, it := range items {
+		if it.Name == "Rope" {
+			if it.ContainerID != nil {
+				t.Errorf("Rope ContainerID = %v, want nil", it.ContainerID)
+			}
+			if it.CompanionID != nil {
+				t.Errorf("Rope CompanionID = %v, want nil", it.CompanionID)
+			}
+		}
+	}
+}
+
+func TestMoveItemToCompanionContainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Create a chest on the companion
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(chest)
+
+	// Create rope equipped on character
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(rope)
+
+	// Move rope into the chest (which is on the companion)
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("container:%d", chest.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", rope.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, it := range items {
+		if it.Name == "Rope" {
+			if it.ContainerID == nil || *it.ContainerID != chest.ID {
+				t.Errorf("Rope ContainerID = %v, want %d", it.ContainerID, chest.ID)
+			}
+			if it.CompanionID != nil {
+				t.Errorf("Rope CompanionID = %v, want nil (it's in a container, not directly on companion)", it.CompanionID)
+			}
+		}
+	}
+}
+
+func TestAddItemToContainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	form := url.Values{}
+	form.Set("name", "Rope")
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", "/characters/1/items/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+	for _, it := range items {
+		if it.Name == "Rope" {
+			if it.ContainerID == nil || *it.ContainerID != backpack.ID {
+				t.Errorf("Rope ContainerID = %v, want %d", it.ContainerID, backpack.ID)
+			}
+		}
+	}
+}
+
+func TestDeleteContainerCascadeServer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(rope)
+
+	// Delete backpack
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/delete/", backpack.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1 (rope remains)", len(items))
+	}
+	if items[0].Name != "Rope" {
+		t.Errorf("remaining item = %q, want Rope", items[0].Name)
+	}
+	if items[0].ContainerID != nil {
+		t.Errorf("Rope ContainerID = %v, want nil", items[0].ContainerID)
+	}
+}
+
+func TestDeleteCompanionMovesItemsServer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	bedroll := &db.Item{CharacterID: ch.ID, Name: "Bedroll", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(bedroll)
+
+	// Delete companion
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/companions/%d/delete/", comp.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Companion should be gone
+	comps, _ := d.ListCompanions(ch.ID)
+	if len(comps) != 0 {
+		t.Errorf("got %d companions, want 0", len(comps))
+	}
+
+	// Item should remain, moved to equipped on character
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].CompanionID != nil {
+		t.Errorf("Bedroll CompanionID = %v, want nil", items[0].CompanionID)
+	}
+}
+
 func TestUpdateHP(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -639,5 +920,107 @@ func TestUpdateHP(t *testing.T) {
 	got, _ := d.GetCharacter(ch.ID)
 	if got.HPCurrent != 5 {
 		t.Errorf("HPCurrent = %d, want 5", got.HPCurrent)
+	}
+}
+
+func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Backpack equipped on character
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	// Chest on the companion
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(chest)
+
+	items, _ := d.ListItems(ch.ID)
+	compViews := []CompanionView{{Companion: *comp, LoadCapacity: 25}}
+	targets := buildMoveTargets(items, compViews)
+
+	// Should have: Equipped, Backpack, Chest (Bessie), Bessie (Mule)
+	found := map[string]bool{}
+	for _, t := range targets {
+		found[t.Label] = true
+	}
+
+	if !found["Equipped"] {
+		t.Error("missing Equipped target")
+	}
+	if !found["Backpack"] {
+		t.Error("missing Backpack target")
+	}
+	if !found["Chest (wooden, large) (Bessie)"] {
+		t.Errorf("missing companion container target, got targets: %v", targets)
+	}
+	if !found["Bessie (Mule)"] {
+		t.Errorf("missing companion target, got targets: %v", targets)
+	}
+}
+
+func TestEquippedSpeedChart(t *testing.T) {
+	cells := EquippedSpeedChart(5)
+	if len(cells) != 10 {
+		t.Fatalf("got %d cells, want 10", len(cells))
+	}
+	// First 5 should be filled, rest empty
+	for i, c := range cells {
+		if i < 5 && !c.Filled {
+			t.Errorf("cell %d should be filled", i)
+		}
+		if i >= 5 && c.Filled {
+			t.Errorf("cell %d should be empty", i)
+		}
+	}
+	// Speed brackets: 0-2=40, 3-4=30, 5-6=20, 7-9=10
+	if cells[0].Speed != 40 {
+		t.Errorf("cell 0 speed = %d, want 40", cells[0].Speed)
+	}
+	if cells[3].Speed != 30 {
+		t.Errorf("cell 3 speed = %d, want 30", cells[3].Speed)
+	}
+	if cells[5].Speed != 20 {
+		t.Errorf("cell 5 speed = %d, want 20", cells[5].Speed)
+	}
+	if cells[7].Speed != 10 {
+		t.Errorf("cell 7 speed = %d, want 10", cells[7].Speed)
+	}
+}
+
+func TestStowedSpeedChart(t *testing.T) {
+	cells := StowedSpeedChart(12)
+	if len(cells) != 16 {
+		t.Fatalf("got %d cells, want 16", len(cells))
+	}
+	// First 12 filled, rest empty
+	for i, c := range cells {
+		if i < 12 && !c.Filled {
+			t.Errorf("cell %d should be filled", i)
+		}
+		if i >= 12 && c.Filled {
+			t.Errorf("cell %d should be empty", i)
+		}
+	}
+	// Speed brackets: 0-9=40, 10-11=30, 12-13=20, 14-15=10
+	if cells[0].Speed != 40 {
+		t.Errorf("cell 0 speed = %d, want 40", cells[0].Speed)
+	}
+	if cells[10].Speed != 30 {
+		t.Errorf("cell 10 speed = %d, want 30", cells[10].Speed)
+	}
+	if cells[12].Speed != 20 {
+		t.Errorf("cell 12 speed = %d, want 20", cells[12].Speed)
+	}
+	if cells[14].Speed != 10 {
+		t.Errorf("cell 14 speed = %d, want 10", cells[14].Speed)
 	}
 }

@@ -13,6 +13,7 @@ type Weapon struct {
 type Armor struct {
 	AC     int
 	Weight int // in coins
+	Bulk   int // slot cost: 1=light, 2=medium, 3=heavy
 }
 
 var weapons = map[string]Weapon{
@@ -36,14 +37,14 @@ var weapons = map[string]Weapon{
 }
 
 var armors = map[string]Armor{
-	"leather":       {AC: 12, Weight: 200},
-	"bark":          {AC: 13, Weight: 300},
-	"chainmail":     {AC: 14, Weight: 400},
-	"chain mail":    {AC: 14, Weight: 400},
-	"pinecone":      {AC: 15, Weight: 400},
-	"plate mail":    {AC: 16, Weight: 500},
-	"full plate":    {AC: 17, Weight: 700},
-	"shield":        {AC: 1, Weight: 100},
+	"leather":    {AC: 12, Weight: 200, Bulk: 1},
+	"bark":       {AC: 13, Weight: 300, Bulk: 1},
+	"chainmail":  {AC: 14, Weight: 400, Bulk: 2},
+	"chain mail": {AC: 14, Weight: 400, Bulk: 2},
+	"pinecone":   {AC: 15, Weight: 400, Bulk: 2},
+	"plate mail": {AC: 16, Weight: 500, Bulk: 3},
+	"full plate": {AC: 17, Weight: 700, Bulk: 3},
+	"shield":     {AC: 1, Weight: 100, Bulk: 1},
 }
 
 // itemWeights maps known item names to their weight in coins per unit.
@@ -120,7 +121,9 @@ var itemWeights = map[string]int{
 	"mining pick":       100,
 	"mirror":            50,
 	"mirror (small)":    50,
-	"musical instrument": 50,
+	"musical instrument":            50,
+	"musical instrument (stringed)": 50,
+	"musical instrument (wind)":     20,
 	"paper":             0,
 	"parchment":         0,
 	"pole":              70,
@@ -135,9 +138,17 @@ var itemWeights = map[string]int{
 	"whistle":           1,
 
 	// Clothing
-	"clothes":       30,
-	"winter cloak":  20,
-	"robes":         30,
+	"clothes":              30,
+	"clothes, common":      30,
+	"clothes, extravagant": 60,
+	"clothes, fine":        40,
+	"habit, friar's":       30,
+	"robes":                30,
+	"robes, ritual":        30,
+	"winter cloak":         20,
+
+	// Tiny items
+	"pipeleaf": 0,
 
 	// Horse accessories
 	"feed":                     100,
@@ -145,20 +156,38 @@ var itemWeights = map[string]int{
 	"pack saddle and bridle":   150,
 	"riding saddle and bridle": 300,
 	"riding saddle bags":       100,
+
+	// Treasure items (weight per unit)
+	"gem":       1,
+	"jewellery": 10,
+	"potion":    10,
+	"rod":       20,
+	"scroll":    1,
+	"wand":      10,
 }
 
-// Container holds the stowed slot capacity for a known container.
+// Container holds the slot capacity and type for a known container.
 type Container struct {
-	Slots int
+	Slots    int  // item capacity in slots
+	Personal bool // personal containers (backpack, sack, belt pouch) are 0 slots when equipped
 }
 
 var containers = map[string]Container{
-	"backpack":   {Slots: 10},
-	"sack":       {Slots: 10},
-	"belt pouch": {Slots: 1},
+	// Personal containers: 0 slots when equipped, provide stowed capacity
+	"backpack":   {Slots: 10, Personal: true},
+	"sack":       {Slots: 10, Personal: true},
+	"belt pouch": {Slots: 1, Personal: true},
+
+	// Heavy containers: always cost their bulky/general slot cost, but can hold items
+	"casket (iron, large)":   {Slots: 8},  // 800 coins / 100
+	"casket (iron, small)":   {Slots: 3},  // ceil(250 / 100)
+	"chest (wooden, large)":  {Slots: 10}, // 1000 coins / 100
+	"chest (wooden, small)":  {Slots: 3},  // ceil(300 / 100)
+	"scroll case":            {Slots: 1},  // 1 scroll
+	"riding saddle bags":     {Slots: 5},  // 500 coins / 100
 }
 
-// ContainerCapacity returns the stowed slot capacity for a known container (case-insensitive).
+// ContainerCapacity returns the slot capacity for a known container (case-insensitive).
 func ContainerCapacity(name string) (int, bool) {
 	c, ok := containers[strings.ToLower(name)]
 	return c.Slots, ok
@@ -168,6 +197,13 @@ func ContainerCapacity(name string) (int, bool) {
 func IsContainer(name string) bool {
 	_, ok := containers[strings.ToLower(name)]
 	return ok
+}
+
+// IsPersonalContainer returns whether the item is a personal container
+// (backpack, sack, belt pouch) that is 0 slots when equipped.
+func IsPersonalContainer(name string) bool {
+	c, ok := containers[strings.ToLower(name)]
+	return ok && c.Personal
 }
 
 // EquippedWeapon holds stats for an equipped weapon, including the display name.
@@ -191,7 +227,10 @@ func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
 	hasShield := false
 
 	for _, item := range items {
-		if item.Location != "equipped" {
+		if item.Location != "equipped" && !item.IsEquippedOnCharacter() {
+			continue
+		}
+		if item.Location != "" && item.Location != "equipped" {
 			continue
 		}
 		lower := strings.ToLower(item.Name)
@@ -218,7 +257,10 @@ func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
 func EquippedWeapons(items []Item) []EquippedWeapon {
 	var result []EquippedWeapon
 	for _, item := range items {
-		if item.Location != "equipped" {
+		if item.Location != "equipped" && !item.IsEquippedOnCharacter() {
+			continue
+		}
+		if item.Location != "" && item.Location != "equipped" {
 			continue
 		}
 		if w, ok := weapons[strings.ToLower(item.Name)]; ok {
@@ -236,6 +278,114 @@ func EquippedWeapons(items []Item) []EquippedWeapon {
 func ArmorStats(name string) (Armor, bool) {
 	a, ok := armors[strings.ToLower(name)]
 	return a, ok
+}
+
+// SlotCostInfo describes the slot cost for a category of items.
+type SlotCostInfo struct {
+	SlotsPerUnit int // 0, 1, 2, or 3
+	BundleSize   int // if >0, SlotsPerUnit applies per this many items
+}
+
+// itemSlotCosts maps item names to their slot cost info.
+// Items not in this map resolve via armor/weapon lookup or default to 1.
+var itemSlotCosts = map[string]SlotCostInfo{
+	// 0 slots: clothing
+	"clothes":              {SlotsPerUnit: 0},
+	"clothes, common":      {SlotsPerUnit: 0},
+	"clothes, extravagant": {SlotsPerUnit: 0},
+	"clothes, fine":        {SlotsPerUnit: 0},
+	"habit, friar's":       {SlotsPerUnit: 0},
+	"robes":                {SlotsPerUnit: 0},
+	"robes, ritual":        {SlotsPerUnit: 0},
+	"winter cloak":         {SlotsPerUnit: 0},
+
+	// 0 slots: tiny items
+	"bell":                  {SlotsPerUnit: 0},
+	"fungi":                 {SlotsPerUnit: 0},
+	"herbs":                 {SlotsPerUnit: 0},
+	"holy symbol":           {SlotsPerUnit: 0},
+	"holy symbol (wooden)":  {SlotsPerUnit: 0},
+	"holy symbol (silver)":  {SlotsPerUnit: 0},
+	"holy symbol (gold)":    {SlotsPerUnit: 0},
+	"paper":                 {SlotsPerUnit: 0},
+	"parchment":             {SlotsPerUnit: 0},
+	"pipeleaf":              {SlotsPerUnit: 0},
+	"quill":                 {SlotsPerUnit: 0},
+	"whistle":               {SlotsPerUnit: 0},
+
+	// 1 slot per bundle
+	"candles":      {SlotsPerUnit: 1, BundleSize: 10},
+	"torches":      {SlotsPerUnit: 1, BundleSize: 3},
+	"torch":        {SlotsPerUnit: 1, BundleSize: 3},
+	"caltrops":     {SlotsPerUnit: 1, BundleSize: 20},
+	"chalk":        {SlotsPerUnit: 1, BundleSize: 10},
+	"iron spikes":  {SlotsPerUnit: 1, BundleSize: 12},
+	"marbles":      {SlotsPerUnit: 1, BundleSize: 20},
+	"arrows":       {SlotsPerUnit: 1, BundleSize: 20},
+	"quarrels":     {SlotsPerUnit: 1, BundleSize: 20},
+	"sling stones": {SlotsPerUnit: 1, BundleSize: 20},
+
+	// 2 slots: bulky items
+	"barrel":                {SlotsPerUnit: 2},
+	"casket (iron, large)":  {SlotsPerUnit: 2},
+	"casket (iron, small)":  {SlotsPerUnit: 2},
+	"chest (wooden, large)": {SlotsPerUnit: 2},
+	"chest (wooden, small)": {SlotsPerUnit: 2},
+	"pole":                  {SlotsPerUnit: 2},
+	"sledgehammer":          {SlotsPerUnit: 2},
+	"rope ladder":           {SlotsPerUnit: 2},
+	"firewood":              {SlotsPerUnit: 2},
+}
+
+// ItemSlotCost returns the number of gear slots for one unit of the named item.
+// Checks: explicit slot cost map -> armor -> weapon -> container -> default 1.
+func ItemSlotCost(name string) int {
+	cost, _ := itemSlotCostExplicit(name)
+	return cost
+}
+
+// itemSlotCostExplicit returns the slot cost and whether it came from an explicit
+// category (clothing, tiny, bulky, bundled, armor, weapon, container).
+// Items with only a known weight return (1, false) so the caller can fall back
+// to weight-based calculation.
+func itemSlotCostExplicit(name string) (int, bool) {
+	lower := strings.ToLower(name)
+
+	// Explicit slot cost catalog (clothing, tiny, bundled, bulky)
+	if info, ok := itemSlotCosts[lower]; ok {
+		return info.SlotsPerUnit, true
+	}
+
+	// Armor
+	if a, ok := armors[lower]; ok {
+		return a.Bulk, true
+	}
+
+	// Weapon: melee + two-handed = 2 slots, otherwise 1
+	if w, ok := weapons[lower]; ok {
+		q := strings.ToLower(w.Qualities)
+		if strings.Contains(q, "melee") && strings.Contains(q, "two-handed") {
+			return 2, true
+		}
+		return 1, true
+	}
+
+	// Personal container (backpack, sack, belt pouch)
+	if c, ok := containers[lower]; ok && c.Personal {
+		return 1, true
+	}
+
+	// Default: general item = 1 slot, but not explicit
+	return 1, false
+}
+
+// itemBundleSize returns the bundle size for a named item, or 0 if not bundled.
+func itemBundleSize(name string) int {
+	lower := strings.ToLower(name)
+	if info, ok := itemSlotCosts[lower]; ok {
+		return info.BundleSize
+	}
+	return 0
 }
 
 // ItemWeight returns the weight in coins for a known item name (case-insensitive).
