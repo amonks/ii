@@ -75,6 +75,12 @@ func KindredTraits(kindred string, level int) []Trait {
 // ClassTraits returns the traits granted by a class at the given level.
 func ClassTraits(class string, level int) []Trait {
 	switch strings.ToLower(class) {
+	case "bard":
+		return []Trait{
+			{Name: "Bard Skills", Description: "Listen target 5; gains Decipher Document, Legerdemain, and Monster Lore skills."},
+			{Name: "Counter Charm", Description: "While performing, allies within 30' are immune to song magic and gain +2 saves vs fairy magic once per Turn."},
+			{Name: "Enchantment", Description: "Fascinate subjects within 30'; uses per day equal to level; expands to animals, demi-fey, and fairies with level."},
+		}
 	case "knight":
 		traits := []Trait{
 			{Name: "Chivalric Code", Description: "Uphold the code of chivalry."},

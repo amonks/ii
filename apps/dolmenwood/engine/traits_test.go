@@ -214,6 +214,27 @@ func TestClassTraitsCleric(t *testing.T) {
 	}
 }
 
+func TestClassTraitsBard(t *testing.T) {
+	traits := ClassTraits("Bard", 1)
+	if len(traits) != 3 {
+		t.Fatalf("expected 3 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Bard Skills" {
+		t.Errorf("first trait = %q, want Bard Skills", traits[0].Name)
+	}
+	if traits[1].Name != "Counter Charm" {
+		t.Errorf("second trait = %q, want Counter Charm", traits[1].Name)
+	}
+	if traits[2].Name != "Enchantment" {
+		t.Errorf("third trait = %q, want Enchantment", traits[2].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestTotalXPModifier(t *testing.T) {
 	scores := map[string]int{"str": 15}
 	primes := []string{"str"}
