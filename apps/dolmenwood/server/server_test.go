@@ -1061,6 +1061,36 @@ func TestBundledItemUsesDecrementButton(t *testing.T) {
 	}
 }
 
+func TestUnbundledItemUsesDeleteButton(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	rope := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(rope)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, fmt.Sprintf("items/%d/delete/", rope.ID)) {
+		t.Fatalf("expected delete button for unbundled item")
+	}
+	if strings.Contains(body, fmt.Sprintf("items/%d/decrement/", rope.ID)) {
+		t.Fatalf("expected unbundled item to avoid decrement button")
+	}
+}
+
 func TestDeleteContainerCascadeServer(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
