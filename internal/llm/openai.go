@@ -91,10 +91,15 @@ type openAIDelta struct {
 	ToolCalls []openAIToolCall `json:"tool_calls,omitempty"`
 }
 
+type openAIPromptTokensDetails struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
 type openAIUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	PromptTokens        int                        `json:"prompt_tokens"`
+	CompletionTokens    int                        `json:"completion_tokens"`
+	TotalTokens         int                        `json:"total_tokens"`
+	PromptTokensDetails *openAIPromptTokensDetails `json:"prompt_tokens_details,omitempty"`
 }
 
 func streamOpenAICompletions(ctx context.Context, model Model, req Request, opts StreamOptions) (*StreamHandle, error) {
@@ -357,6 +362,9 @@ func processOpenAIStream(ctx context.Context, body io.ReadCloser, model Model, e
 			partial.Usage.Input = chunk.Usage.PromptTokens
 			partial.Usage.Output = chunk.Usage.CompletionTokens
 			partial.Usage.Total = chunk.Usage.TotalTokens
+			if chunk.Usage.PromptTokensDetails != nil {
+				partial.Usage.CacheRead = chunk.Usage.PromptTokensDetails.CachedTokens
+			}
 		}
 
 		for _, choice := range chunk.Choices {
@@ -527,10 +535,15 @@ type responsesPart struct {
 	Text string `json:"text"`
 }
 
+type responsesInputTokensDetails struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
 type responsesUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
-	TotalTokens  int `json:"total_tokens"`
+	InputTokens        int                          `json:"input_tokens"`
+	OutputTokens       int                          `json:"output_tokens"`
+	TotalTokens        int                          `json:"total_tokens"`
+	InputTokensDetails *responsesInputTokensDetails `json:"input_tokens_details,omitempty"`
 }
 
 // streamOpenAIResponses implements the OpenAI Responses API streaming.
@@ -894,6 +907,9 @@ func processResponsesStream(ctx context.Context, body io.ReadCloser, model Model
 					partial.Usage.Input = event.Response.Usage.InputTokens
 					partial.Usage.Output = event.Response.Usage.OutputTokens
 					partial.Usage.Total = event.Response.Usage.TotalTokens
+					if event.Response.Usage.InputTokensDetails != nil {
+						partial.Usage.CacheRead = event.Response.Usage.InputTokensDetails.CachedTokens
+					}
 				}
 
 				// Determine stop reason

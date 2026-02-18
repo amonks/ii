@@ -15,7 +15,7 @@ The core LLM abstraction with no persistence. Provides:
 - Unified message types across providers
 - Streaming completions via channels
 - Tool definitions using Go struct tags
-- Prompt caching with TTL control
+- Prompt caching with TTL control (OpenAI reports cached tokens from responses; Anthropic requires explicit cache_control markers)
 - Thinking/reasoning mode support
 - Usage and cost tracking
 
@@ -329,7 +329,7 @@ const (
 type Usage struct {
     Input      int  // Input tokens
     Output     int  // Output tokens
-    CacheRead  int  // Tokens read from cache
+    CacheRead  int  // Tokens read from cache (OpenAI reports cached prompt tokens in response usage details)
     CacheWrite int  // Tokens written to cache
     Total      int  // Total tokens
     Cost       UsageCost

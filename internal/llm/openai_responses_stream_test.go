@@ -17,7 +17,7 @@ func TestProcessResponsesStream_FunctionCallArgumentsDeltaUsesItemID(t *testing.
 		"data: {\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"type\":\"function_call\",\"id\":\"fc_123\",\"call_id\":\"call_123\",\"name\":\"bash\",\"arguments\":\"\"}}",
 		"data: {\"type\":\"response.function_call_arguments.delta\",\"item_id\":\"fc_123\",\"output_index\":0,\"delta\":\"{\\\"command\\\":\\\"touch hello-world.txt\\\"}\"}",
 		"data: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"type\":\"function_call\",\"id\":\"fc_123\",\"call_id\":\"call_123\",\"name\":\"bash\",\"arguments\":\"{\\\"command\\\":\\\"touch hello-world.txt\\\"}\"}}",
-		"data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2}}}",
+		"data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2,\"input_tokens_details\":{\"cached_tokens\":3}}}}",
 		"",
 	}, "\n")
 
@@ -42,6 +42,9 @@ func TestProcessResponsesStream_FunctionCallArgumentsDeltaUsesItemID(t *testing.
 	}
 
 	msg := <-done
+	if msg.Usage.CacheRead != 3 {
+		t.Fatalf("Usage.CacheRead=%d, want %d", msg.Usage.CacheRead, 3)
+	}
 	if msg.StopReason != StopReasonToolUse {
 		t.Fatalf("StopReason=%q, want %q", msg.StopReason, StopReasonToolUse)
 	}
