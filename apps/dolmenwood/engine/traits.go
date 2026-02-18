@@ -115,7 +115,7 @@ func ClassTraits(class string, level int) []Trait {
 		return traits
 	case "cleric":
 		return []Trait{
-			{Name: "Restrictions", Description: "Lawful or Neutral; mortals only; holy magic armaments only."},
+			{Name: "Restrictions", Description: "Alignment: Lawful or Neutral mortals; holy magic weapons only."},
 			{Name: "Cleric Tenets", Description: "Evangelism, hierarchy, monotheism, sanctity of life."},
 			{Name: "Detect Holy Magic Items", Description: "Identify holy enchantments by touch with 1 Turn of focus."},
 			{Name: "Holy Magic", Description: "Pray for holy spells; must carry a holy symbol."},
@@ -125,6 +125,7 @@ func ClassTraits(class string, level int) []Trait {
 		}
 	case "friar":
 		return []Trait{
+			{Name: "Restrictions", Description: "Lawful/Neutral mortals only; must keep faith or lose holy magic."},
 			{Name: "Friar Tenets", Description: "Sanctity of life, monotheism, spiritual insight, and mentorship."},
 			{Name: "Armour of Faith", Description: "Divine blessing grants an AC bonus by level."},
 			{Name: "Culinary Implements", Description: "Can use frying pans and similar implements as melee weapons (1d4)."},

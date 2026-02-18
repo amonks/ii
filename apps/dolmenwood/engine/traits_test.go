@@ -176,6 +176,12 @@ func TestClassTraitsKnightLevel5(t *testing.T) {
 	if traits[5].Description == "" || traits[6].Description == "" {
 		t.Error("expected descriptions for level-gated traits")
 	}
+	if !strings.Contains(strings.ToLower(traits[0].Description), "alignment") {
+		t.Errorf("Restrictions description = %q, want mention of alignment", traits[0].Description)
+	}
+	if !strings.Contains(strings.ToLower(traits[0].Description), "weapon") {
+		t.Errorf("Restrictions description = %q, want mention of weapons", traits[0].Description)
+	}
 	foundMonster := false
 	foundKnighthood := false
 	for _, trait := range traits {
@@ -196,17 +202,20 @@ func TestClassTraitsKnightLevel5(t *testing.T) {
 
 func TestClassTraitsFriar(t *testing.T) {
 	traits := ClassTraits("Friar", 1)
-	if len(traits) != 9 {
-		t.Fatalf("expected 9 traits, got %d", len(traits))
+	if len(traits) != 10 {
+		t.Fatalf("expected 10 traits, got %d", len(traits))
 	}
-	if traits[0].Name != "Friar Tenets" {
-		t.Errorf("first trait = %q, want Friar Tenets", traits[0].Name)
+	if traits[0].Name != "Restrictions" {
+		t.Errorf("first trait = %q, want Restrictions", traits[0].Name)
 	}
-	if traits[1].Name != "Armour of Faith" {
-		t.Errorf("second trait = %q, want Armour of Faith", traits[1].Name)
+	if traits[1].Name != "Friar Tenets" {
+		t.Errorf("second trait = %q, want Friar Tenets", traits[1].Name)
 	}
-	if traits[8].Name != "Turning the Undead" {
-		t.Errorf("ninth trait = %q, want Turning the Undead", traits[8].Name)
+	if traits[2].Name != "Armour of Faith" {
+		t.Errorf("third trait = %q, want Armour of Faith", traits[2].Name)
+	}
+	if traits[9].Name != "Turning the Undead" {
+		t.Errorf("tenth trait = %q, want Turning the Undead", traits[9].Name)
 	}
 	for _, trait := range traits {
 		if trait.Description == "" {
@@ -233,6 +242,22 @@ func TestClassTraitsCleric(t *testing.T) {
 		if trait.Description == "" {
 			t.Errorf("expected description for %s", trait.Name)
 		}
+	}
+}
+
+func TestClassTraitsClericRestrictions(t *testing.T) {
+	traits := ClassTraits("Cleric", 1)
+	if !strings.Contains(strings.ToLower(traits[0].Description), "lawful") {
+		t.Errorf("Restrictions description = %q, want mention of lawful", traits[0].Description)
+	}
+	if !strings.Contains(strings.ToLower(traits[0].Description), "mortal") {
+		t.Errorf("Restrictions description = %q, want mention of mortals", traits[0].Description)
+	}
+	if !strings.Contains(strings.ToLower(traits[0].Description), "alignment") {
+		t.Errorf("Restrictions description = %q, want mention of alignment", traits[0].Description)
+	}
+	if !strings.Contains(strings.ToLower(traits[0].Description), "weapon") {
+		t.Errorf("Restrictions description = %q, want mention of weapons", traits[0].Description)
 	}
 }
 
