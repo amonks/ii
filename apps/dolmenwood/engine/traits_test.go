@@ -113,6 +113,24 @@ func TestKindredTraitsMossling(t *testing.T) {
 	}
 }
 
+func TestKindredTraitsWoodgrue(t *testing.T) {
+	traits := KindredTraits("Woodgrue", 1)
+	if len(traits) != 9 {
+		t.Fatalf("expected 9 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Armour and Weapons" {
+		t.Errorf("first trait = %q, want Armour and Weapons", traits[0].Name)
+	}
+	if traits[8].Name != "Woodgrue Skills" {
+		t.Errorf("ninth trait = %q, want Woodgrue Skills", traits[8].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestClassTraitsKnightLevel5(t *testing.T) {
 	traits := ClassTraits("Knight", 5)
 	if len(traits) != 6 {

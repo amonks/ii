@@ -46,6 +46,18 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Resilience", Description: "+4 saves vs fungal spores/poisons; +2 to other saves."},
 			{Name: "Symbiotic Flesh", Description: "Gain a random symbiotic flesh trait each level."},
 		}
+	case "woodgrue":
+		return []Trait{
+			{Name: "Armour and Weapons", Description: "Must tailor armour; cannot wield Large weapons."},
+			{Name: "Compulsive Jubilation", Description: "Must partake in celebrations or save vs spell to resist."},
+			{Name: "Defensive Bonus", Description: "+2 AC vs Large creatures in melee."},
+			{Name: "Mad Revelry", Description: "Once per day, play an enchanted melody that affects nearby creatures."},
+			{Name: "Moon Sight", Description: "See in darkness up to 60' without low-light penalties."},
+			{Name: "Musical Instruments", Description: "May use a musical instrument as a melee weapon (1d4)."},
+			{Name: "Starting Equipment", Description: "Begin play with a wind instrument."},
+			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
+			{Name: "Woodgrue Skills", Description: "Listen skill target 5."},
+		}
 	case "breggle":
 		traits := []Trait{
 			{Name: "Fur", Description: "+1 AC when unarmoured or in light armour."},
