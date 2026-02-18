@@ -1241,6 +1241,63 @@ func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
 	}
 }
 
+func TestBuildMoveTargetsIncludesNestedContainers(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Backpack equipped on character
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	// Belt pouch inside the backpack
+	beltPouch := &db.Item{CharacterID: ch.ID, Name: "Belt Pouch", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(beltPouch)
+
+	// Chest on the companion
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(chest)
+
+	// Sack inside the chest on the companion
+	sack := &db.Item{CharacterID: ch.ID, Name: "Sack", Quantity: 1, ContainerID: &chest.ID}
+	d.CreateItem(sack)
+
+	// Scroll case inside the sack inside the chest (3 levels deep)
+	scrollCase := &db.Item{CharacterID: ch.ID, Name: "Scroll Case", Quantity: 1, ContainerID: &sack.ID}
+	d.CreateItem(scrollCase)
+
+	items, _ := d.ListItems(ch.ID)
+	compViews := []CompanionView{{Companion: *comp, LoadCapacity: 25}}
+	targets := buildMoveTargets(items, compViews)
+
+	found := map[string]bool{}
+	for _, tgt := range targets {
+		found[tgt.Label] = true
+	}
+
+	// All containers at every depth should appear as move targets
+	for _, want := range []string{
+		"Equipped",
+		"Backpack",
+		"Belt Pouch",
+		"Chest (wooden, large) (Bessie)",
+		"Sack",
+		"Scroll Case",
+		"Bessie (Mule)",
+	} {
+		if !found[want] {
+			t.Errorf("missing %q target, got targets: %v", want, targets)
+		}
+	}
+}
+
 func TestEquippedSpeedChart(t *testing.T) {
 	cells := EquippedSpeedChart(5)
 	if len(cells) != 10 {

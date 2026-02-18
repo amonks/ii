@@ -344,22 +344,31 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 		{Label: "Equipped", Value: "equipped"},
 	}
 
-	// Add all top-level containers (equipped on character or directly on a companion)
+	// Index items by ID for parent lookups
+	byID := make(map[uint]db.Item, len(items))
 	for _, it := range items {
-		if it.ContainerID != nil || !engine.IsContainer(it.Name) {
+		byID[it.ID] = it
+	}
+
+	// Build companion name lookup
+	compName := make(map[uint]string, len(compViews))
+	for _, cv := range compViews {
+		compName[cv.ID] = cv.Name
+	}
+
+	// Add all containers at any nesting depth
+	for _, it := range items {
+		if !engine.IsContainer(it.Name) {
 			continue
 		}
 		label := it.Name
 		if it.Quantity > 1 {
 			label = fmt.Sprintf("%s (%d)", it.Name, it.Quantity)
 		}
-		// If on a companion, note which one
+		// If directly on a companion, note which one
 		if it.CompanionID != nil {
-			for _, cv := range compViews {
-				if cv.ID == *it.CompanionID {
-					label = fmt.Sprintf("%s (%s)", it.Name, cv.Name)
-					break
-				}
+			if name, ok := compName[*it.CompanionID]; ok {
+				label = fmt.Sprintf("%s (%s)", it.Name, name)
 			}
 		}
 		targets = append(targets, MoveTarget{
