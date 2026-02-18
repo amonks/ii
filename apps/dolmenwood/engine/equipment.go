@@ -170,10 +170,66 @@ func IsContainer(name string) bool {
 	return ok
 }
 
+// EquippedWeapon holds stats for an equipped weapon, including the display name.
+type EquippedWeapon struct {
+	Name      string
+	Damage    string
+	Qualities string
+}
+
 // WeaponStats returns stats for a weapon by name (case-insensitive).
 func WeaponStats(name string) (Weapon, bool) {
 	w, ok := weapons[strings.ToLower(name)]
 	return w, ok
+}
+
+// ACFromEquippedItems computes armor class from equipped items and DEX score.
+// Returns the AC and the name of the armor (empty string if unarmored).
+func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
+	baseAC := 10
+	armorName := ""
+	hasShield := false
+
+	for _, item := range items {
+		if item.Location != "equipped" {
+			continue
+		}
+		lower := strings.ToLower(item.Name)
+		if lower == "shield" {
+			hasShield = true
+			continue
+		}
+		if armor, ok := armors[lower]; ok {
+			if armor.AC > baseAC {
+				baseAC = armor.AC
+				armorName = item.Name
+			}
+		}
+	}
+
+	ac := baseAC + Modifier(dexScore)
+	if hasShield {
+		ac++
+	}
+	return ac, armorName
+}
+
+// EquippedWeapons returns stats for all equipped weapons.
+func EquippedWeapons(items []Item) []EquippedWeapon {
+	var result []EquippedWeapon
+	for _, item := range items {
+		if item.Location != "equipped" {
+			continue
+		}
+		if w, ok := weapons[strings.ToLower(item.Name)]; ok {
+			result = append(result, EquippedWeapon{
+				Name:      item.Name,
+				Damage:    w.Damage,
+				Qualities: w.Qualities,
+			})
+		}
+	}
+	return result
 }
 
 // ArmorStats returns stats for armor by name (case-insensitive).

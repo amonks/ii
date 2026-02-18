@@ -9,14 +9,16 @@ import (
 type CharacterView struct {
 	Character *db.Character
 	Items     []db.Item
-	Companions []db.Companion
+	Companions []CompanionView
 	Transactions []db.Transaction
 	XPLog     []db.XPLogEntry
 	Notes     []db.Note
 
 	// Computed fields
 	AC           int
+	ArmorName    string
 	AttackBonus  int
+	Weapons      []engine.EquippedWeapon
 	Saves        engine.SaveTargets
 	Traits       engine.Traits
 	Speed        int
@@ -37,6 +39,18 @@ type CharacterView struct {
 	TotalPurseCoins int
 	TotalFoundCoins int
 	BreedNames      []string
+}
+
+// CompanionView combines DB companion data with breed-derived stats.
+type CompanionView struct {
+	db.Companion
+	AC           int
+	Speed        int
+	LoadCapacity int
+	Level        int
+	Saves        engine.SaveTargets
+	Attack       string
+	Morale       int
 }
 
 func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
@@ -91,24 +105,39 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	stowedCap, stowedContainers := engine.StowedCapacity(engineItems)
 
-	// Horse capacity: sum of all companions' LoadCapacity
+	// Build companion views with breed-derived stats
+	compViews := make([]CompanionView, len(companions))
 	horseCap := 0
-	for _, comp := range companions {
-		horseCap += comp.LoadCapacity
+	for i, comp := range companions {
+		cv := CompanionView{Companion: comp}
+		if stats, ok := engine.BreedStats(comp.Breed); ok {
+			cv.AC = engine.CompanionAC(stats.AC, comp.HasBarding)
+			cv.Speed = stats.Speed
+			cv.LoadCapacity = stats.LoadCapacity
+			cv.Level = stats.Level
+			cv.Saves = stats.Saves
+			cv.Attack = stats.Attack
+			cv.Morale = stats.Morale
+		}
+		horseCap += cv.LoadCapacity
+		compViews[i] = cv
 	}
 
+	ac, armorName := engine.ACFromEquippedItems(engineItems, ch.DEX)
 	xpMod := engine.HumanTotalXPModifier(scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 
 	return &CharacterView{
 		Character:        ch,
 		Items:            items,
-		Companions:       companions,
+		Companions:       compViews,
 		Transactions:     transactions,
 		XPLog:            xpLog,
 		Notes:            notes,
-		AC:               engine.ACFromArmor(ch.ArmorAC, ch.DEX, ch.HasShield),
+		AC:               ac,
+		ArmorName:        armorName,
 		AttackBonus:      engine.KnightAttackBonus(ch.Level),
+		Weapons:          engine.EquippedWeapons(engineItems),
 		Saves:            engine.KnightSaveTargets(ch.Level),
 		Traits:           engine.KnightTraits(ch.Level),
 		Speed:            engine.SpeedFromSlots(equippedSlots, totalStowed),

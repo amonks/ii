@@ -50,8 +50,6 @@ func TestCreateCharacter(t *testing.T) {
 	form.Set("wis", "12")
 	form.Set("cha", "13")
 	form.Set("hp_max", "8")
-	form.Set("armor_name", "Chain Mail")
-	form.Set("armor_ac", "14")
 	form.Set("alignment", "Lawful")
 	form.Set("background", "Noble")
 	form.Set("liege", "Duke Maldric")
@@ -77,7 +75,7 @@ func TestGetCharacterSheet(t *testing.T) {
 	ch := &db.Character{
 		Name: "Sir Galahad", Class: "Knight", Kindred: "Human",
 		Level: 1, STR: 16, DEX: 10, CON: 14, INT: 9, WIS: 12, CHA: 13,
-		HPCurrent: 8, HPMax: 8, ArmorName: "Chain Mail", ArmorAC: 14,
+		HPCurrent: 8, HPMax: 8,
 	}
 	d.CreateCharacter(ch)
 
@@ -91,6 +89,75 @@ func TestGetCharacterSheet(t *testing.T) {
 	body := w.Body.String()
 	if !strings.Contains(body, "Sir Galahad") {
 		t.Error("response should contain character name")
+	}
+}
+
+func TestACDerivedFromEquippedItems(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, DEX: 10, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Add chainmail as equipped item
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID,
+		Name:        "Chainmail",
+		Quantity:    1,
+		Location:    "equipped",
+	})
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	// AC 14 = chainmail base AC 14 + DEX 10 modifier 0
+	if !strings.Contains(body, ">14<") {
+		t.Error("response should show AC 14 for equipped chainmail")
+	}
+	if !strings.Contains(body, "Chainmail") {
+		t.Error("response should show armor name 'Chainmail'")
+	}
+}
+
+func TestWeaponDamageInStatBlock(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, DEX: 10, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Add longsword as equipped weapon
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID,
+		Name:        "Longsword",
+		Quantity:    1,
+		Location:    "equipped",
+	})
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Longsword") {
+		t.Error("response should show equipped weapon name")
+	}
+	if !strings.Contains(body, "1d8") {
+		t.Error("response should show weapon damage 1d8")
 	}
 }
 
@@ -228,21 +295,50 @@ func TestAddCompanionByBreed(t *testing.T) {
 	if got.Breed != "Mule" {
 		t.Errorf("Breed = %q, want %q", got.Breed, "Mule")
 	}
-	// Mule stats: AC 12, HP 9, Speed 40, Load 25
-	if got.AC != 12 {
-		t.Errorf("AC = %d, want 12", got.AC)
-	}
+	// Mule: HP 9 (stored), AC/Speed/Load derived from breed
 	if got.HPMax != 9 {
 		t.Errorf("HPMax = %d, want 9", got.HPMax)
 	}
 	if got.HPCurrent != 9 {
 		t.Errorf("HPCurrent = %d, want 9", got.HPCurrent)
 	}
-	if got.Speed != 40 {
-		t.Errorf("Speed = %d, want 40", got.Speed)
+}
+
+func TestCompanionStatsDerivedFromBreed(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
 	}
-	if got.LoadCapacity != 25 {
-		t.Errorf("LoadCapacity = %d, want 25", got.LoadCapacity)
+	d.CreateCharacter(ch)
+
+	// Add a Charger companion
+	form := url.Values{}
+	form.Set("name", "Warhorse")
+	form.Set("breed", "Charger")
+	req := httptest.NewRequest("POST", "/characters/1/companions/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	// Should show breed-derived stats: AC 12, Speed 40, Load 40
+	if !strings.Contains(body, "Charger") {
+		t.Error("response should contain breed name")
+	}
+	// Should show saves
+	if !strings.Contains(body, "Death") {
+		t.Error("response should show save labels")
+	}
+	// Charger attack: "2 hooves (+2, 1d6)"
+	if !strings.Contains(body, "hooves") {
+		t.Error("response should show attack info")
 	}
 }
 
@@ -313,25 +409,17 @@ func TestUpdateCompanion(t *testing.T) {
 	d.CreateCharacter(ch)
 
 	comp := &db.Companion{
-		CharacterID:  ch.ID,
-		Name:         "Old Horse",
-		Breed:        "Pony",
-		HPCurrent:    10,
-		HPMax:        10,
-		AC:           13,
-		Speed:        60,
-		LoadCapacity: 40,
+		CharacterID: ch.ID,
+		Name:        "Old Horse",
+		Breed:       "Mule",
+		HPCurrent:   9,
+		HPMax:       9,
 	}
 	d.CreateCompanion(comp)
 
 	form := url.Values{}
 	form.Set("name", "Shadowfax")
-	form.Set("breed", "Warhorse")
 	form.Set("hp_current", "7")
-	form.Set("hp_max", "12")
-	form.Set("ac", "15")
-	form.Set("speed", "90")
-	form.Set("load_capacity", "50")
 	form.Set("has_saddlebags", "on")
 	form.Set("has_barding", "on")
 	req := httptest.NewRequest("POST", "/characters/1/companions/1/update/", strings.NewReader(form.Encode()))
@@ -354,23 +442,8 @@ func TestUpdateCompanion(t *testing.T) {
 	if got.Name != "Shadowfax" {
 		t.Errorf("Name = %q, want %q", got.Name, "Shadowfax")
 	}
-	if got.Breed != "Warhorse" {
-		t.Errorf("Breed = %q, want %q", got.Breed, "Warhorse")
-	}
 	if got.HPCurrent != 7 {
 		t.Errorf("HPCurrent = %d, want 7", got.HPCurrent)
-	}
-	if got.HPMax != 12 {
-		t.Errorf("HPMax = %d, want 12", got.HPMax)
-	}
-	if got.AC != 15 {
-		t.Errorf("AC = %d, want 15", got.AC)
-	}
-	if got.Speed != 90 {
-		t.Errorf("Speed = %d, want 90", got.Speed)
-	}
-	if got.LoadCapacity != 50 {
-		t.Errorf("LoadCapacity = %d, want 50", got.LoadCapacity)
 	}
 	if !got.HasSaddlebags {
 		t.Error("HasSaddlebags should be true")
@@ -482,14 +555,11 @@ func TestDeleteCompanion(t *testing.T) {
 	d.CreateCharacter(ch)
 
 	comp := &db.Companion{
-		CharacterID:  ch.ID,
-		Name:         "Old Nag",
-		Breed:        "Pony",
-		HPCurrent:    10,
-		HPMax:        10,
-		AC:           13,
-		Speed:        60,
-		LoadCapacity: 40,
+		CharacterID: ch.ID,
+		Name:        "Old Nag",
+		Breed:       "Mule",
+		HPCurrent:   9,
+		HPMax:       9,
 	}
 	d.CreateCompanion(comp)
 

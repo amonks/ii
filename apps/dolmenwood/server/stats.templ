@@ -39,11 +39,18 @@ templ StatsSection(view *CharacterView) {
 			<div class="bg-stone-50 rounded p-2">
 				<div class="text-xs text-stone-500">AC</div>
 				<div class="font-bold">{ fmt.Sprintf("%d", view.AC) }</div>
-				<div class="text-xs text-stone-400">{ view.Character.ArmorName }</div>
+				if view.ArmorName != "" {
+					<div class="text-xs text-stone-400">{ view.ArmorName }</div>
+				}
 			</div>
 			<div class="bg-stone-50 rounded p-2">
 				<div class="text-xs text-stone-500">Atk</div>
 				<div class="font-bold">+{ fmt.Sprintf("%d", view.AttackBonus) }</div>
+				if len(view.Weapons) > 0 {
+					for _, w := range view.Weapons {
+						<div class="text-xs text-stone-400">{ w.Name } { w.Damage }</div>
+					}
+				}
 			</div>
 			<div class="bg-stone-50 rounded p-2">
 				<div class="text-xs text-stone-500">Speed</div>

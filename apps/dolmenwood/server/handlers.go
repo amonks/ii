@@ -36,14 +36,9 @@ func (s *Server) handleCreateCharacter(w http.ResponseWriter, r *http.Request) {
 		CHA:        atoi(r.FormValue("cha")),
 		HPCurrent:  hpMax,
 		HPMax:      hpMax,
-		ArmorName:  r.FormValue("armor_name"),
-		ArmorAC:    atoi(r.FormValue("armor_ac")),
 		Alignment:  r.FormValue("alignment"),
 		Background: r.FormValue("background"),
 		Liege:      r.FormValue("liege"),
-	}
-	if ch.ArmorAC == 0 {
-		ch.ArmorAC = 10
 	}
 	if err := s.db.CreateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -166,11 +161,8 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		Breed:       breed,
 	}
 	if stats, ok := engine.BreedStats(breed); ok {
-		comp.AC = stats.AC
 		comp.HPMax = stats.HPMax
 		comp.HPCurrent = stats.HPMax
-		comp.Speed = stats.Speed
-		comp.LoadCapacity = stats.LoadCapacity
 	}
 	if err := s.db.CreateCompanion(comp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -196,12 +188,7 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 	for _, comp := range comps {
 		if comp.ID == compID {
 			comp.Name = r.FormValue("name")
-			comp.Breed = r.FormValue("breed")
 			comp.HPCurrent = atoi(r.FormValue("hp_current"))
-			comp.HPMax = atoi(r.FormValue("hp_max"))
-			comp.AC = atoi(r.FormValue("ac"))
-			comp.Speed = atoi(r.FormValue("speed"))
-			comp.LoadCapacity = atoi(r.FormValue("load_capacity"))
 			comp.HasSaddlebags = r.FormValue("has_saddlebags") == "on"
 			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)

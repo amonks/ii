@@ -110,3 +110,116 @@ func TestArmorStats(t *testing.T) {
 		})
 	}
 }
+
+func TestACFromEquippedItems(t *testing.T) {
+	cases := []struct {
+		name      string
+		items     []Item
+		dexScore  int
+		wantAC    int
+		wantArmor string
+	}{
+		{
+			name:      "unarmoured",
+			items:     nil,
+			dexScore:  10,
+			wantAC:    10,
+			wantArmor: "",
+		},
+		{
+			name: "leather equipped",
+			items: []Item{
+				{Name: "Leather", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  10,
+			wantAC:    12,
+			wantArmor: "Leather",
+		},
+		{
+			name: "chainmail with dex bonus",
+			items: []Item{
+				{Name: "Chainmail", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  14,
+			wantAC:    15,
+			wantArmor: "Chainmail",
+		},
+		{
+			name: "plate mail with shield",
+			items: []Item{
+				{Name: "Plate mail", Quantity: 1, Location: "equipped"},
+				{Name: "Shield", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  10,
+			wantAC:    17,
+			wantArmor: "Plate mail",
+		},
+		{
+			name: "shield only",
+			items: []Item{
+				{Name: "Shield", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  10,
+			wantAC:    11,
+			wantArmor: "",
+		},
+		{
+			name: "armor in stowed is ignored",
+			items: []Item{
+				{Name: "Chainmail", Quantity: 1, Location: "stowed"},
+			},
+			dexScore:  10,
+			wantAC:    10,
+			wantArmor: "",
+		},
+		{
+			name: "dex penalty",
+			items: []Item{
+				{Name: "Plate mail", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  6,
+			wantAC:    15,
+			wantArmor: "Plate mail",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ac, armorName := ACFromEquippedItems(tc.items, tc.dexScore)
+			if ac != tc.wantAC {
+				t.Errorf("AC = %d, want %d", ac, tc.wantAC)
+			}
+			if armorName != tc.wantArmor {
+				t.Errorf("armor = %q, want %q", armorName, tc.wantArmor)
+			}
+		})
+	}
+}
+
+func TestEquippedWeapons(t *testing.T) {
+	items := []Item{
+		{Name: "Longsword", Quantity: 1, Location: "equipped"},
+		{Name: "Dagger", Quantity: 1, Location: "equipped"},
+		{Name: "Rope", Quantity: 1, Location: "equipped"},
+		{Name: "Shortbow", Quantity: 1, Location: "stowed"},
+	}
+	weapons := EquippedWeapons(items)
+	if len(weapons) != 2 {
+		t.Fatalf("got %d weapons, want 2", len(weapons))
+	}
+	if weapons[0].Name != "Longsword" {
+		t.Errorf("weapons[0].Name = %q, want %q", weapons[0].Name, "Longsword")
+	}
+	if weapons[0].Damage != "1d8" {
+		t.Errorf("weapons[0].Damage = %q, want %q", weapons[0].Damage, "1d8")
+	}
+	if weapons[1].Name != "Dagger" {
+		t.Errorf("weapons[1].Name = %q, want %q", weapons[1].Name, "Dagger")
+	}
+}
+
+func TestEquippedWeaponsEmpty(t *testing.T) {
+	weapons := EquippedWeapons(nil)
+	if len(weapons) != 0 {
+		t.Errorf("got %d weapons, want 0", len(weapons))
+	}
+}

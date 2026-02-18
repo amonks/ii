@@ -27,9 +27,6 @@ type Character struct {
 	CHA        int    `gorm:"column:cha"`
 	HPCurrent  int    `gorm:"column:hp_current"`
 	HPMax      int    `gorm:"column:hp_max"`
-	ArmorName  string `gorm:"column:armor_name"`
-	ArmorAC    int    `gorm:"column:armor_base_ac"`
-	HasShield  bool   `gorm:"column:has_shield"`
 	Alignment  string `gorm:"column:alignment"`
 	Background string `gorm:"column:background"`
 	Liege      string `gorm:"column:liege"`
@@ -73,9 +70,6 @@ type Companion struct {
 	Breed        string `gorm:"column:breed"`
 	HPCurrent    int    `gorm:"column:hp_current"`
 	HPMax        int    `gorm:"column:hp_max"`
-	AC           int    `gorm:"column:ac"`
-	Speed        int    `gorm:"column:speed"`
-	LoadCapacity int    `gorm:"column:load_capacity"`
 	HasBarding   bool   `gorm:"column:has_barding"`
 	HasSaddlebags bool  `gorm:"column:has_saddlebags"`
 }

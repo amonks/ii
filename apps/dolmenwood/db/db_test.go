@@ -30,9 +30,6 @@ func TestCharacterRoundTrip(t *testing.T) {
 		CHA:        13,
 		HPCurrent:  8,
 		HPMax:      8,
-		ArmorName:  "Chain Mail",
-		ArmorAC:    14,
-		HasShield:  true,
 		Alignment:  "Lawful",
 		Background: "Noble",
 		Liege:      "Duke Maldric",
@@ -53,9 +50,6 @@ func TestCharacterRoundTrip(t *testing.T) {
 	}
 	if got.STR != 16 {
 		t.Errorf("STR = %d, want 16", got.STR)
-	}
-	if !got.HasShield {
-		t.Error("HasShield = false, want true")
 	}
 }
 
@@ -110,14 +104,11 @@ func TestCompanion(t *testing.T) {
 	db.CreateCharacter(ch)
 
 	comp := &Companion{
-		CharacterID:  ch.ID,
-		Name:         "Thunder",
-		Breed:        "Warhorse",
-		HPCurrent:    22,
-		HPMax:        22,
-		AC:           13,
-		Speed:        60,
-		LoadCapacity: 40,
+		CharacterID: ch.ID,
+		Name:        "Thunder",
+		Breed:       "Charger",
+		HPCurrent:   22,
+		HPMax:       22,
 	}
 	if err := db.CreateCompanion(comp); err != nil {
 		t.Fatalf("CreateCompanion: %v", err)
