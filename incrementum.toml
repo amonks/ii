@@ -1,5 +1,6 @@
 [job]
-test-commands = ["go tool run test"]
+test-commands = ["go test ./...", "go vet ./...", "go tool staticcheck ./...", "go tool govulncheck ./..."]
+
 implementation-model = "gpt-5.2-codex"
 code-review-model = "gpt-5.2-codex"
 project-review-model = "gpt-5.2-codex"
