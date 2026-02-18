@@ -221,7 +221,13 @@ func WeaponStats(name string) (Weapon, bool) {
 
 // ACFromEquippedItems computes armor class from equipped items and DEX score.
 // Returns the AC and the name of the armor (empty string if unarmored).
+// Deprecated: use CharacterAC to include kindred bonuses.
 func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
+	return CharacterAC("", items, dexScore)
+}
+
+// CharacterAC computes armor class from equipped items, DEX score, and kindred traits.
+func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 	baseAC := 10
 	armorName := ""
 	hasShield := false
@@ -246,10 +252,20 @@ func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
 		}
 	}
 
+	bonus := 0
+	if strings.EqualFold(kindred, "breggle") {
+		if armorName == "" {
+			bonus = 1
+		} else if armor, ok := ArmorStats(armorName); ok && armor.Bulk == 1 {
+			bonus = 1
+		}
+	}
+
 	ac := baseAC + Modifier(dexScore)
 	if hasShield {
 		ac++
 	}
+	ac += bonus
 	return ac, armorName
 }
 

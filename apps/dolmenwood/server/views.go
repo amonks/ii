@@ -208,7 +208,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		compViews[i] = cv
 	}
 
-	ac, armorName := engine.ACFromEquippedItems(engineItems, ch.DEX)
+	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 

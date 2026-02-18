@@ -183,19 +183,18 @@ func TestACFromEquippedItems(t *testing.T) {
 		wantArmor string
 	}{
 		{
-			name:      "unarmoured",
-			items:     nil,
-			dexScore:  10,
-			wantAC:    10,
-			wantArmor: "",
+			name:     "unarmoured",
+			items:    nil,
+			dexScore: 10,
+			wantAC:   10,
 		},
 		{
 			name: "leather equipped",
 			items: []Item{
 				{Name: "Leather", Quantity: 1, Location: "equipped"},
 			},
-			dexScore:  10,
-			wantAC:    12,
+			dexScore: 10,
+			wantAC:   12,
 			wantArmor: "Leather",
 		},
 		{
@@ -203,8 +202,8 @@ func TestACFromEquippedItems(t *testing.T) {
 			items: []Item{
 				{Name: "Chainmail", Quantity: 1, Location: "equipped"},
 			},
-			dexScore:  14,
-			wantAC:    15,
+			dexScore: 14,
+			wantAC:   15,
 			wantArmor: "Chainmail",
 		},
 		{
@@ -213,8 +212,8 @@ func TestACFromEquippedItems(t *testing.T) {
 				{Name: "Plate mail", Quantity: 1, Location: "equipped"},
 				{Name: "Shield", Quantity: 1, Location: "equipped"},
 			},
-			dexScore:  10,
-			wantAC:    17,
+			dexScore: 10,
+			wantAC:   17,
 			wantArmor: "Plate mail",
 		},
 		{
@@ -222,26 +221,24 @@ func TestACFromEquippedItems(t *testing.T) {
 			items: []Item{
 				{Name: "Shield", Quantity: 1, Location: "equipped"},
 			},
-			dexScore:  10,
-			wantAC:    11,
-			wantArmor: "",
+			dexScore: 10,
+			wantAC:   11,
 		},
 		{
 			name: "armor in stowed is ignored",
 			items: []Item{
 				{Name: "Chainmail", Quantity: 1, Location: "stowed"},
 			},
-			dexScore:  10,
-			wantAC:    10,
-			wantArmor: "",
+			dexScore: 10,
+			wantAC:   10,
 		},
 		{
 			name: "dex penalty",
 			items: []Item{
 				{Name: "Plate mail", Quantity: 1, Location: "equipped"},
 			},
-			dexScore:  6,
-			wantAC:    15,
+			dexScore: 6,
+			wantAC:   15,
 			wantArmor: "Plate mail",
 		},
 	}
@@ -251,8 +248,78 @@ func TestACFromEquippedItems(t *testing.T) {
 			if ac != tc.wantAC {
 				t.Errorf("AC = %d, want %d", ac, tc.wantAC)
 			}
+			if tc.wantArmor == "" {
+				if armorName != "" {
+					t.Errorf("armor = %q, want %q", armorName, "")
+				}
+				return
+			}
 			if armorName != tc.wantArmor {
 				t.Errorf("armor = %q, want %q", armorName, tc.wantArmor)
+			}
+		})
+	}
+}
+
+func TestCharacterACBreggleFur(t *testing.T) {
+	cases := []struct {
+		name      string
+		kindred   string
+		items     []Item
+		dexScore  int
+		wantAC    int
+		wantArmor string
+	}{
+		{
+			name:     "breggle unarmoured",
+			kindred:  "Breggle",
+			items:    nil,
+			dexScore: 10,
+			wantAC:   11,
+		},
+		{
+			name:    "breggle leather armour",
+			kindred: "Breggle",
+			items: []Item{
+				{Name: "Leather", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  10,
+			wantAC:    13,
+			wantArmor: "Leather",
+		},
+		{
+			name:    "breggle chainmail",
+			kindred: "Breggle",
+			items: []Item{
+				{Name: "Chainmail", Quantity: 1, Location: "equipped"},
+			},
+			dexScore:  10,
+			wantAC:    14,
+			wantArmor: "Chainmail",
+		},
+		{
+			name:     "human unarmoured",
+			kindred:  "Human",
+			items:    nil,
+			dexScore: 10,
+			wantAC:   10,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ac, armor := CharacterAC(tc.kindred, tc.items, tc.dexScore)
+			if ac != tc.wantAC {
+				t.Errorf("AC = %d, want %d", ac, tc.wantAC)
+			}
+			if tc.wantArmor == "" {
+				if armor != "" {
+					t.Errorf("armor = %q, want %q", armor, "")
+				}
+				return
+			}
+			if armor != tc.wantArmor {
+				t.Errorf("armor = %q, want %q", armor, tc.wantArmor)
 			}
 		})
 	}
