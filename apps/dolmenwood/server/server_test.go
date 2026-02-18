@@ -820,6 +820,159 @@ func TestAddItemToContainer(t *testing.T) {
 	}
 }
 
+func TestAddBundledItemAutoCombines(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	existing := &db.Item{CharacterID: ch.ID, Name: "Torch", Quantity: 2, ContainerID: &backpack.ID}
+	d.CreateItem(existing)
+
+	form := url.Values{}
+	form.Set("name", "Torch")
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", "/characters/1/items/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+
+	var found bool
+	for _, it := range items {
+		if it.Name == "Torch" {
+			found = true
+			if it.Quantity != 3 {
+				t.Errorf("Torch Quantity = %d, want 3", it.Quantity)
+			}
+			if it.ContainerID == nil || *it.ContainerID != backpack.ID {
+				t.Errorf("Torch ContainerID = %v, want %d", it.ContainerID, backpack.ID)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected torch item to remain")
+	}
+}
+
+func TestAddUnbundledItemDoesNotCombine(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	existing := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(existing)
+
+	form := url.Values{}
+	form.Set("name", "Rope")
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", "/characters/1/items/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 3 {
+		t.Fatalf("got %d items, want 3", len(items))
+	}
+	var ropes int
+	for _, it := range items {
+		if it.Name == "Rope" {
+			ropes++
+		}
+	}
+	if ropes != 2 {
+		t.Fatalf("got %d ropes, want 2", ropes)
+	}
+}
+
+func TestDecrementBundledItem(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	torches := &db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 6}
+	d.CreateItem(torches)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/decrement/", torches.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Quantity != 3 {
+		t.Errorf("Torches Quantity = %d, want 3", items[0].Quantity)
+	}
+}
+
+func TestBundledItemUsesDecrementButton(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	torches := &db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 3}
+	d.CreateItem(torches)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, fmt.Sprintf("items/%d/decrement/", torches.ID)) {
+		t.Fatalf("expected decrement button for bundled item")
+	}
+	if strings.Contains(body, fmt.Sprintf("items/%d/delete/", torches.ID)) {
+		t.Fatalf("expected bundled item to avoid delete button")
+	}
+}
+
 func TestDeleteContainerCascadeServer(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

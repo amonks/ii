@@ -106,6 +106,41 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		item.CompanionID = companionID
 		item.Location = "" // clear legacy location when using hierarchy
 	}
+	if item.Location != "" && item.ContainerID == nil && item.CompanionID == nil {
+		if err := s.db.CreateItem(item); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		s.db.AddAuditLog(ch.ID, "item_add", item.Name)
+		s.renderInventory(w, r, ch)
+		return
+	}
+	if bundle := engine.ItemBundleSize(item.Name); bundle > 0 {
+		items, err := s.db.ListItems(ch.ID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		for _, existing := range items {
+			if strings.EqualFold(existing.Name, item.Name) && sameID(existing.ContainerID, item.ContainerID) && sameID(existing.CompanionID, item.CompanionID) {
+				if existing.ContainerID == nil && existing.CompanionID == nil {
+					if existing.Location != item.Location {
+						continue
+					}
+				} else if existing.Location != "" {
+					continue
+				}
+				existing.Quantity += item.Quantity
+				if err := s.db.UpdateItem(&existing); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				s.db.AddAuditLog(ch.ID, "item_add", fmt.Sprintf("%s (bundled)", item.Name))
+				s.renderInventory(w, r, ch)
+				return
+			}
+		}
+	}
 	if err := s.db.CreateItem(item); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -161,6 +196,36 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.db.AddAuditLog(ch.ID, "item_delete", fmt.Sprintf("item %d", itemID))
+	s.renderInventory(w, r, ch)
+}
+
+func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	itemID := atoui(r.PathValue("itemID"))
+	item, err := s.db.GetItem(itemID)
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+	bundle := engine.ItemBundleSize(item.Name)
+	if bundle == 0 {
+		http.Error(w, "Item is not bundled", http.StatusBadRequest)
+		return
+	}
+	item.Quantity -= bundle
+	if item.Quantity <= 0 {
+		if err := s.db.DeleteItem(item.ID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else if err := s.db.UpdateItem(item); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	s.renderInventory(w, r, ch)
 }
 
@@ -573,6 +638,12 @@ func isKnownItemName(name string) bool {
 	return false
 }
 
+func sameID(a, b *uint) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
+}
 func atoi(s string) int {
 	n, _ := strconv.Atoi(s)
 	return n

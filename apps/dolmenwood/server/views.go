@@ -50,10 +50,11 @@ type CharacterView struct {
 // InventoryItem is a db.Item with computed slots and nested children.
 type InventoryItem struct {
 	db.Item
-	Slots     int
-	Children  []InventoryItem
-	Capacity  int // container capacity (0 if not a container)
-	UsedSlots int // sum of children's slots
+	Slots      int
+	BundleSize int
+	Children   []InventoryItem
+	Capacity   int // container capacity (0 if not a container)
+	UsedSlots  int // sum of children's slots
 }
 
 // CompanionInventory groups items under a companion.
@@ -293,8 +294,9 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 	var buildTree func(item db.Item) InventoryItem
 	buildTree = func(item db.Item) InventoryItem {
 		inv := InventoryItem{
-			Item:  item,
-			Slots: itemSlots(item),
+			Item:       item,
+			Slots:      itemSlots(item),
+			BundleSize: engine.ItemBundleSize(item.Name),
 		}
 		if cap, ok := engine.ContainerCapacity(item.Name); ok {
 			inv.Capacity = cap

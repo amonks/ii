@@ -408,6 +408,11 @@ func itemSlotCostExplicit(name string) (int, bool) {
 	return 1, false
 }
 
+// ItemBundleSize returns the bundle size for a named item, or 0 if not bundled.
+func ItemBundleSize(name string) int {
+	return itemBundleSize(name)
+}
+
 // itemBundleSize returns the bundle size for a named item, or 0 if not bundled.
 func itemBundleSize(name string) int {
 	lower := strings.ToLower(name)
