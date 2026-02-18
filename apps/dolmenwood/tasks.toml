@@ -1,0 +1,17 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = ["build"]
+  cmd = "../../bin/dolmenwood"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/dolmenwood"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
+  cmd = "go build -o ../../bin/ ."

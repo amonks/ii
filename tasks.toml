@@ -7,6 +7,7 @@
     'apps/aranet/dev',
     'apps/calendar/dev',
     'apps/directory/dev',
+    'apps/dolmenwood/dev',
     'apps/golink/dev',
     'apps/homepage/dev',
     'apps/map/dev',
@@ -26,6 +27,7 @@
     'apps/calendar/build',
     'apps/directory/build',
     'apps/dogs/build',
+    'apps/dolmenwood/build',
     'apps/golink/build',
     'apps/homepage/build',
     'apps/map/build',
@@ -50,14 +52,14 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/directory/templ',
     'apps/homepage/templ',
+    'apps/reddit/templ',
     'apps/writing/templ',
     'apps/youtube/templ',
+    'apps/directory/templ',
     'apps/dogs/templ',
     'apps/map/build-css',
-    'apps/map/build-js',
-    'apps/reddit/templ'
+    'apps/map/build-js'
   ]
 
 [[task]]
