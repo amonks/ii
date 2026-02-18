@@ -143,11 +143,14 @@ any stage -> failed (unrecoverable error)
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
     failing and include the retry attempt in the error details. Context overflow
-    errors (max tokens reached) are handled specially: retry once within the
-    stage invocation, and if the retry also fails with context overflow, stay in
-    the implementing stage with feedback instead of failing the job. This allows
-    the agent to continue from where it left off with a fresh context window;
-    the working tree is preserved with any partial progress.
+    errors are handled specially: retry once within the stage invocation, and if
+    the retry also fails with context overflow, stay in the implementing stage
+    with feedback instead of failing the job. This allows the agent to continue
+    from where it left off with a fresh context window; the working tree is
+    preserved with any partial progress. Context overflow is detected by
+    case-insensitive substring matching for: "context overflow",
+    "maximum context length", "context_length_exceeded", "prompt is too long",
+    or "request too large".
 13. Run `jj log -r @ -T empty --no-graph` to check if the current change has
     uncommitted work. Treat `true` (empty) as no work to commit, `false` (not
     empty) as work to commit. This check uses the `empty` template rather than
@@ -543,9 +546,13 @@ type AgentRunOptions struct {
 }
 
 type AgentRunResult struct {
-    SessionID string
-    ExitCode  int
-    Error     string  // Optional: error message when ExitCode is non-zero
+    SessionID     string
+    ExitCode      int
+    Error         string // Optional: error message when ExitCode is non-zero
+    InputTokens   int    // Input tokens consumed
+    OutputTokens  int    // Output tokens generated
+    TotalTokens   int    // Total tokens consumed
+    ContextWindow int    // Model's context window size, for diagnostics
 }
 ```
 
@@ -554,6 +561,12 @@ a synthetic code set to 1 when an error occurs. The term "exit code" is used
 for consistency even though the agent does not spawn a subprocess.
 
 `Error` is optional and may be empty even when `ExitCode` is non-zero.
+
+The token usage fields (`InputTokens`, `OutputTokens`, `TotalTokens`) and
+`ContextWindow` are populated by the CLI layer from the agent's `RunResult.Usage`
+and model configuration. These are logged in `job.agent.end` events for
+diagnostics—particularly to identify when agents exit because they approach the
+model's context limit.
 
 ```go
 type AgentSession struct {
@@ -579,5 +592,8 @@ type AgentTranscript struct {
 The job runner emits these job-level events:
 
 - `job.agent.start`: Records the purpose and model when an agent run starts.
-- `job.agent.end`: Records the purpose, session ID, and exit code when complete.
+- `job.agent.end`: Records the purpose, session ID, exit code, token usage
+  (input/output/total tokens), context window size, and error message (if any).
+  Rendered in logs showing context utilization (e.g., "Agent implement ended:
+  48945/128000 input tokens (38%), 160 output tokens").
 - `job.agent.error`: Records the purpose and error message when an agent run fails.

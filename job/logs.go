@@ -95,8 +95,17 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 				formatLogLabel(agentErrorLabel(data.Purpose), documentIndent),
 				formatLogBody(data.Error, subdocumentIndent, false),
 			)
-		case jobEventAgentStart, jobEventAgentEnd:
+		case jobEventAgentStart:
 			return nil
+		case jobEventAgentEnd:
+			data, err := decodeEventData[agentEndEventData](event.Data)
+			if err != nil {
+				return err
+			}
+			summary := formatAgentEndSummary(data)
+			if summary != "" {
+				writer.writeBlock(formatLogLabel(summary, documentIndent))
+			}
 		default:
 			return nil
 		}
@@ -120,6 +129,38 @@ func (writer *logSnapshotWriter) Append(event Event) error {
 
 	// Ignore unknown events
 	return nil
+}
+
+// formatAgentEndSummary formats a summary line for agent end events.
+// Always shows usage diagnostics so context utilization is visible.
+func formatAgentEndSummary(data agentEndEventData) string {
+	purpose := data.Purpose
+	if trimmed, ok := trimmedLabelValue(purpose); ok {
+		purpose = strings.ReplaceAll(trimmed, "-", " ")
+	}
+
+	var parts []string
+	if data.ExitCode != 0 {
+		parts = append(parts, fmt.Sprintf("exit code %d", data.ExitCode))
+	}
+	if data.Error != "" {
+		parts = append(parts, fmt.Sprintf("error: %s", data.Error))
+	}
+	if data.InputTokens > 0 || data.TotalTokens > 0 {
+		if data.ContextWindow > 0 {
+			pct := float64(data.InputTokens) / float64(data.ContextWindow) * 100
+			parts = append(parts, fmt.Sprintf("%d/%d input tokens (%.0f%%)", data.InputTokens, data.ContextWindow, pct))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d input tokens", data.InputTokens))
+		}
+		parts = append(parts, fmt.Sprintf("%d output tokens", data.OutputTokens))
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("Agent %s ended: %s", purpose, strings.Join(parts, ", "))
 }
 
 func agentErrorLabel(purpose string) string {

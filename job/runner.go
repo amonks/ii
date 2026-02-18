@@ -1153,9 +1153,15 @@ func buildReviewFailureMessage(purpose string, result AgentRunResult, model stri
 }
 
 // isContextOverflowError returns true if the error message indicates a context
-// overflow (max tokens reached). These errors can be retried with a fresh context.
+// overflow (max tokens reached or prompt too long). These errors can be retried
+// with a fresh context.
 func isContextOverflowError(errMsg string) bool {
-	return strings.Contains(errMsg, "context overflow")
+	lower := strings.ToLower(errMsg)
+	return strings.Contains(lower, "context overflow") ||
+		strings.Contains(lower, "maximum context length") ||
+		strings.Contains(lower, "context_length_exceeded") ||
+		strings.Contains(lower, "prompt is too long") ||
+		strings.Contains(lower, "request too large")
 }
 
 func ensureCommitMessageInPrompt(prompt, message string) string {

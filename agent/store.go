@@ -249,7 +249,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 	}
 
 	// Start event forwarding goroutine
-	go s.forwardEvents(ctx, internalHandle, events, resultCh, logFile, session)
+	go s.forwardEvents(ctx, internalHandle, events, resultCh, logFile, session, model.ContextWindow)
 
 	return handle, nil
 }
@@ -263,6 +263,7 @@ func (s *Store) forwardEvents(
 	resultCh chan<- RunResult,
 	logFile *os.File,
 	session Session,
+	contextWindow int,
 ) {
 	defer close(events)
 	defer close(resultCh)
@@ -300,10 +301,11 @@ func (s *Store) forwardEvents(
 
 	// Build result
 	result := RunResult{
-		SessionID: session.ID,
-		ExitCode:  0,
-		Messages:  internalResult.Messages,
-		Usage:     internalResult.Usage,
+		SessionID:     session.ID,
+		ExitCode:      0,
+		Messages:      internalResult.Messages,
+		Usage:         internalResult.Usage,
+		ContextWindow: contextWindow,
 	}
 
 	// Update session based on result

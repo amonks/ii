@@ -61,9 +61,13 @@ func makeRunLLMFunc(repoPath string, store *agent.Store) (func(jobpkg.AgentRunOp
 		}
 
 		return jobpkg.AgentRunResult{
-			SessionID: result.SessionID,
-			ExitCode:  result.ExitCode,
-			Error:     result.Error,
+			SessionID:     result.SessionID,
+			ExitCode:      result.ExitCode,
+			Error:         result.Error,
+			InputTokens:   result.Usage.Input,
+			OutputTokens:  result.Usage.Output,
+			TotalTokens:   result.Usage.Total,
+			ContextWindow: result.ContextWindow,
 		}, nil
 	}, nil
 }

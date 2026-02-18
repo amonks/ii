@@ -191,4 +191,7 @@ type RunResult struct {
 
 	// Usage contains aggregate token usage and costs.
 	Usage llm.Usage
+
+	// ContextWindow is the model's context window size, for diagnostics.
+	ContextWindow int
 }

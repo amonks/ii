@@ -436,11 +436,12 @@ type RunHandle struct {
 func (h *RunHandle) Wait() (RunResult, error)
 
 type RunResult struct {
-    SessionID string
-    ExitCode  int
-    Error     string  // Optional: error message when ExitCode is non-zero (best-effort)
-    Messages  []llm.Message
-    Usage     llm.Usage
+    SessionID     string
+    ExitCode      int
+    Error         string  // Optional: error message when ExitCode is non-zero (best-effort)
+    Messages      []llm.Message
+    Usage         llm.Usage
+    ContextWindow int     // Model's context window size, for diagnostics
 }
 
 func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error)

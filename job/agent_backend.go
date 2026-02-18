@@ -29,6 +29,14 @@ type AgentRunResult struct {
 	// This field is optional and may be empty even when ExitCode != 0;
 	// not all failure conditions produce a detailed error message.
 	Error string
+	// InputTokens is the number of input tokens consumed.
+	InputTokens int
+	// OutputTokens is the number of output tokens generated.
+	OutputTokens int
+	// TotalTokens is the total number of tokens consumed.
+	TotalTokens int
+	// ContextWindow is the model's context window size, for diagnostics.
+	ContextWindow int
 }
 
 func agentRunEnv() []string {
@@ -60,7 +68,16 @@ func runLLMWithEvents(opts RunOptions, runOpts AgentRunOptions, purpose string) 
 		}
 		return AgentRunResult{}, err
 	}
-	if err := appendJobEvent(opts.EventLog, jobEventAgentEnd, agentEndEventData{Purpose: purpose, SessionID: result.SessionID, ExitCode: result.ExitCode}); err != nil {
+	if err := appendJobEvent(opts.EventLog, jobEventAgentEnd, agentEndEventData{
+		Purpose:       purpose,
+		SessionID:     result.SessionID,
+		ExitCode:      result.ExitCode,
+		Error:         result.Error,
+		InputTokens:   result.InputTokens,
+		OutputTokens:  result.OutputTokens,
+		TotalTokens:   result.TotalTokens,
+		ContextWindow: result.ContextWindow,
+	}); err != nil {
 		return AgentRunResult{}, err
 	}
 	return result, nil
@@ -87,9 +104,14 @@ type agentStartEventData struct {
 }
 
 type agentEndEventData struct {
-	Purpose   string `json:"purpose"`
-	SessionID string `json:"session_id,omitempty"`
-	ExitCode  int    `json:"exit_code"`
+	Purpose       string `json:"purpose"`
+	SessionID     string `json:"session_id,omitempty"`
+	ExitCode      int    `json:"exit_code"`
+	Error         string `json:"error,omitempty"`
+	InputTokens   int    `json:"input_tokens,omitempty"`
+	OutputTokens  int    `json:"output_tokens,omitempty"`
+	TotalTokens   int    `json:"total_tokens,omitempty"`
+	ContextWindow int    `json:"context_window,omitempty"`
 }
 
 type agentErrorEventData struct {
