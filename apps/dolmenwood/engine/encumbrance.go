@@ -9,6 +9,7 @@ type Item struct {
 	WeightOverride *int   // if set, use this instead of catalog lookup (coins per unit)
 	ContainerID    *uint  // parent container item ID (nil = not in a container)
 	CompanionID    *uint  // companion ID (nil = not on a companion)
+	IsTiny         bool   // true if item should be treated as tiny regardless of catalog
 }
 
 // IsEquippedOnCharacter returns true if the item is directly equipped on the character
@@ -171,7 +172,9 @@ func ItemSlots(item Item) int {
 		return cost * item.Quantity
 	}
 
-	// General items with known weight: weight-based
+	if item.IsTiny {
+		return 0
+	}
 	if w, ok := ItemWeight(item.Name); ok {
 		return WeightToSlots(w * item.Quantity)
 	}

@@ -173,7 +173,7 @@ func TestAddTinyItem(t *testing.T) {
 	d.CreateCharacter(ch)
 
 	form := url.Values{}
-	form.Set("name", "Brass Key")
+	form.Set("name", "tiny lock of hair")
 	form.Set("location", "stowed")
 	req := httptest.NewRequest("POST", "/characters/1/items/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -191,8 +191,11 @@ func TestAddTinyItem(t *testing.T) {
 	if len(items) != 1 {
 		t.Fatalf("got %d items, want 1", len(items))
 	}
-	if items[0].Name != "Brass Key" {
-		t.Errorf("Name = %q, want %q", items[0].Name, "Brass Key")
+	if items[0].Name != "lock of hair" {
+		t.Errorf("Name = %q, want %q", items[0].Name, "lock of hair")
+	}
+	if !items[0].IsTiny {
+		t.Error("expected item to be marked tiny")
 	}
 }
 

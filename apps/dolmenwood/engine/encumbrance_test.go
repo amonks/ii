@@ -116,6 +116,7 @@ func TestItemSlots(t *testing.T) {
 		// Armor/weapon/clothing use slot-based
 		{"longsword", Item{Name: "Longsword", Quantity: 1, Location: "equipped"}, 1},
 		{"unknown defaults to 1", Item{Name: "Magic Orb", Quantity: 1, Location: "equipped"}, 1},
+		{"tiny unknown custom", Item{Name: "Lock of Hair", Quantity: 1, Location: "equipped", IsTiny: true}, 0},
 		{"plate mail = 3 slots", Item{Name: "Plate mail", Quantity: 1, Location: "equipped"}, 3},
 		{"chainmail = 2 slots", Item{Name: "Chainmail", Quantity: 1, Location: "equipped"}, 2},
 		{"leather = 1 slot", Item{Name: "Leather", Quantity: 1, Location: "equipped"}, 1},

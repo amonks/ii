@@ -88,11 +88,13 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 	}
 	r.ParseForm()
 	name, qty := parseItemInput(r.FormValue("name"))
+	isTiny, name := extractTinyFlag(name)
 	item := &db.Item{
 		CharacterID: ch.ID,
 		Name:        name,
 		Quantity:    qty,
 		Location:    r.FormValue("location"),
+		IsTiny:      isTiny,
 	}
 	if item.Location == "" {
 		item.Location = "stowed"
@@ -532,6 +534,43 @@ func parseItemInput(input string) (string, int) {
 		}
 	}
 	return input, 1
+}
+
+func extractTinyFlag(name string) (bool, string) {
+	if name == "" {
+		return false, name
+	}
+	if isKnownItemName(name) {
+		return false, name
+	}
+	words := strings.Fields(name)
+	var cleaned []string
+	found := false
+	for _, word := range words {
+		if strings.EqualFold(word, "tiny") {
+			found = true
+			continue
+		}
+		cleaned = append(cleaned, word)
+	}
+	if !found {
+		return false, name
+	}
+	cleanedName := strings.TrimSpace(strings.Join(cleaned, " "))
+	if cleanedName == "" {
+		return false, name
+	}
+	return true, cleanedName
+}
+
+func isKnownItemName(name string) bool {
+	if _, explicit := engine.ItemSlotCostExplicit(name); explicit {
+		return true
+	}
+	if _, ok := engine.ItemWeight(name); ok {
+		return true
+	}
+	return false
 }
 
 func atoi(s string) int {

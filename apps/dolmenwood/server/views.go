@@ -257,6 +257,7 @@ func dbItemToEngine(item db.Item) engine.Item {
 		WeightOverride: item.WeightOverride,
 		ContainerID:    item.ContainerID,
 		CompanionID:    item.CompanionID,
+		IsTiny:         item.IsTiny,
 	}
 }
 
@@ -326,6 +327,13 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 	}
 
 	return equipped, compGroups
+}
+
+func itemIsTiny(item InventoryItem) bool {
+	if item.IsTiny {
+		return true
+	}
+	return engine.IsTinyItem(item.Name)
 }
 
 // buildMoveTargets builds the list of destinations an item can be moved to.

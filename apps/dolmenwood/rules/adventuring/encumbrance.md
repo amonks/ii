@@ -119,7 +119,7 @@ The Item Gear Slots table lists the number of gear slots occupied by different k
 
 **General items:** Unless noted otherwise, each object a character carries occupies 1 gear slot.
 
-**Tiny items:** Some very small items only occupy a gear slot if carried in large numbers (as judged by the Referee).
+**Tiny items:** Some very small items only occupy a gear slot if carried in large numbers (as judged by the Referee). When adding custom items, descriptions that include the word "tiny" will be recorded as tiny items (the word is removed from the item name) so they are treated as 0-slot items.
 
 **Bundled items:** Some items are purchased and carried in bundles. A bundle occupies 1 gear slot.
 

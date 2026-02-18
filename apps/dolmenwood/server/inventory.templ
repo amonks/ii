@@ -56,7 +56,9 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 			if item.Quantity > 1 {
 				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%dx", item.Quantity) }</span>
 			}
-			if item.Slots != 1 {
+			if itemIsTiny(item) {
+				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">tiny</span>
+			} else if item.Slots != 1 {
 				<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ fmt.Sprintf("%d slots", item.Slots) }</span>
 			}
 			if item.Capacity > 0 {

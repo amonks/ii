@@ -337,11 +337,40 @@ var itemSlotCosts = map[string]SlotCostInfo{
 	"firewood":              {SlotsPerUnit: 2},
 }
 
+var tinyItems = map[string]struct{}{
+	"bell":                 {},
+	"fungi":                {},
+	"herbs":                {},
+	"holy symbol":          {},
+	"holy symbol (wooden)": {},
+	"holy symbol (silver)": {},
+	"holy symbol (gold)":   {},
+	"paper":                {},
+	"parchment":            {},
+	"pipeleaf":             {},
+	"quill":                {},
+	"whistle":              {},
+}
+
+// IsTinyItem returns whether the item is a known tiny item.
+func IsTinyItem(name string) bool {
+	_, ok := tinyItems[strings.ToLower(name)]
+	return ok
+}
+
 // ItemSlotCost returns the number of gear slots for one unit of the named item.
 // Checks: explicit slot cost map -> armor -> weapon -> container -> default 1.
 func ItemSlotCost(name string) int {
 	cost, _ := itemSlotCostExplicit(name)
 	return cost
+}
+
+// ItemSlotCostExplicit returns the slot cost and whether it came from an explicit
+// category (clothing, tiny, bulky, bundled, armor, weapon, container).
+// Items with only a known weight return (1, false) so the caller can fall back
+// to weight-based calculation.
+func ItemSlotCostExplicit(name string) (int, bool) {
+	return itemSlotCostExplicit(name)
 }
 
 // itemSlotCostExplicit returns the slot cost and whether it came from an explicit

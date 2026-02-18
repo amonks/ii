@@ -63,6 +63,7 @@ type Item struct {
 	SortOrder      int    `gorm:"column:sort_order"`
 	ContainerID    *uint  `gorm:"column:container_id"`
 	CompanionID    *uint  `gorm:"column:companion_id"`
+	IsTiny         bool   `gorm:"column:is_tiny"`
 }
 
 type Companion struct {
@@ -159,7 +160,8 @@ CREATE TABLE IF NOT EXISTS items (
 	notes TEXT NOT NULL DEFAULT '',
 	sort_order INTEGER NOT NULL DEFAULT 0,
 	container_id INTEGER REFERENCES items(id),
-	companion_id INTEGER REFERENCES companions(id)
+	companion_id INTEGER REFERENCES companions(id),
+	is_tiny INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS items_by_character ON items(character_id);
 
@@ -227,6 +229,10 @@ ALTER TABLE items ADD COLUMN container_id INTEGER REFERENCES items(id);
 ALTER TABLE items ADD COLUMN companion_id INTEGER REFERENCES companions(id);
 `
 
+const migrationTinyItems = `
+ALTER TABLE items ADD COLUMN is_tiny INTEGER NOT NULL DEFAULT 0;
+`
+
 const migrationCompanionSaddleType = `
 ALTER TABLE companions ADD COLUMN saddle_type TEXT NOT NULL DEFAULT '';
 `
@@ -242,6 +248,7 @@ func New() (*DB, error) {
 	// Best-effort migrations for existing DBs; ignore errors from already-applied migrations.
 	d.Exec(migrations)
 	d.Exec(migrationContainerHierarchy)
+	d.Exec(migrationTinyItems)
 	d.Exec(migrationCompanionSaddleType)
 	return &DB{d}, nil
 }
