@@ -57,6 +57,9 @@ type (
 
 	// SSEEvent represents an event in SSE format.
 	SSEEvent = internalagent.SSEEvent
+
+	// WaitingForInputEvent indicates the agent is awaiting additional user input.
+	WaitingForInputEvent = internalagent.WaitingForInputEvent
 )
 
 // Re-export functions from internal/agent
@@ -145,6 +148,10 @@ type RunOptions struct {
 
 	// Env contains additional environment variables.
 	Env []string
+
+	// InputCh receives additional user input for interactive sessions.
+	// If nil, the agent runs in single-shot mode.
+	InputCh <-chan string
 }
 
 // RunHandle provides access to a running agent session.

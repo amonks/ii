@@ -37,12 +37,18 @@ A wrapper around `internal/agent` that adds:
    b. Collect tool results
    c. Go to step 1 with tool results appended
 4. If no tool calls (natural end):
-   a. Return final message
+   a. If `InputCh` is configured, emit `WaitingForInputEvent` and wait for user input.
+      Whitespace-only lines are ignored (the agent keeps waiting for input).
+   b. If the input channel closes, return the final message.
+   c. Otherwise, append the new user message and continue.
 ```
 
 ### Termination Conditions
 
 - Model returns response with no tool calls (natural completion)
+  - If an input channel is configured, the agent waits for new user input and continues.
+  - Whitespace-only input lines are ignored (the agent keeps waiting).
+  - If the input channel is closed, the agent terminates normally.
 - Model returns `StopReasonMaxTokens` (context overflow)
 - Model returns `StopReasonError` (LLM error)
 - Context cancelled (aborted)
@@ -66,6 +72,7 @@ type AgentConfig struct {
     Permissions BashPermissions
     WorkDir     string // Working directory for tools
     Env         []string // Extra environment variables for tool execution
+    InputCh     <-chan string // Optional input channel for interactive sessions
 }
 ```
 
@@ -335,6 +342,11 @@ type MessageEndEvent struct {
     Message   llm.AssistantMessage
 }
 
+// Waiting for interactive input
+type WaitingForInputEvent struct {
+    TurnIndex int
+}
+
 // Tool execution
 type ToolExecutionStartEvent struct {
     TurnIndex  int
@@ -417,6 +429,7 @@ type RunOptions struct {
     StartedAt time.Time
     Version   string    // Version string (commit ID) included in User-Agent header
     Env       []string  // Additional environment variables passed to tool executions
+    InputCh   <-chan string // Optional input channel for interactive sessions
 }
 ```
 

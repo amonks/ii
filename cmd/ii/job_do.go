@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -408,6 +409,20 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		return interactiveSessionResult{}, err
 	}
 
+	inputCh := make(chan string)
+	doneCh := make(chan struct{})
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			select {
+			case inputCh <- scanner.Text():
+			case <-doneCh:
+				return
+			}
+		}
+		close(inputCh)
+	}()
+
 	// Set up signal handling for graceful cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -428,10 +443,14 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		StartedAt: time.Now(),
 		Version:   buildCommitID,
 		Env:       []string{todoenv.ProposerEnvVar + "=true"},
+		InputCh:   inputCh,
 	})
 	if err != nil {
 		return interactiveSessionResult{}, err
 	}
+	defer func() {
+		close(doneCh)
+	}()
 
 	// Stream events to stderr (same as agent run command)
 	streamAgentEventsToStderr(handle.Events)

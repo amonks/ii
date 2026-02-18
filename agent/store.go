@@ -212,6 +212,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		WorkDir:         opts.WorkDir,
 		GlobalConfigDir: globalConfigDir,
 		Env:             opts.Env,
+		InputCh:         opts.InputCh,
 		SessionID:       sessionID,
 		Version:         opts.Version,
 	}

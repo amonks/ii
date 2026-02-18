@@ -370,6 +370,11 @@ Shared templates:
 
 ### `ii job do [todo-id... | creation-flags | --habit [name]]`
 
+Design todos run interactive agent sessions. The CLI streams agent output to stderr and waits
+for user input when the agent reaches a natural stop. Entering text sends a new user message;
+whitespace-only lines are ignored (the agent keeps waiting). EOF (Ctrl+D) closes the input
+channel and ends the session cleanly.
+
 Create and run a job to completion (blocking).
 
 - If one or more todo-ids provided: run each existing todo in sequence.

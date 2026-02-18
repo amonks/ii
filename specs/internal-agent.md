@@ -32,6 +32,7 @@ type AgentConfig struct {
     Permissions BashPermissions
     WorkDir     string
     Env         []string
+    InputCh     <-chan string // Optional interactive input channel
 }
 
 type RunHandle struct {
@@ -41,4 +42,6 @@ type RunHandle struct {
 func (h *RunHandle) Wait() (RunResult, error)
 ```
 
+When `InputCh` is non-nil, the agent emits `WaitingForInputEvent` on natural
+completion and waits for additional user input, ignoring whitespace-only lines.
 See [agent.md](./agent.md) for event and result type definitions.

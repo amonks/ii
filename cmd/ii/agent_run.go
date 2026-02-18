@@ -157,6 +157,9 @@ func streamAgentEventsToStderr(events <-chan agent.Event) {
 				}
 			}
 
+		case agent.WaitingForInputEvent:
+			fmt.Fprint(os.Stderr, "\n> ")
+
 		case agent.AgentEndEvent:
 			fmt.Fprintf(os.Stderr, "\n--- Agent finished (tokens: %d, cost: $%.4f) ---\n",
 				e.Usage.Total, e.Usage.Cost.Total)

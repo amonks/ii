@@ -35,6 +35,10 @@ type AgentConfig struct {
 
 	// Version is the version string (commit ID) to include in the User-Agent header.
 	Version string
+
+	// InputCh receives additional user input for interactive sessions.
+	// If nil, the agent runs in single-shot mode.
+	InputCh <-chan string
 }
 
 // BashPermissions controls which bash commands are allowed.
@@ -167,6 +171,13 @@ type ToolExecutionEndEvent struct {
 }
 
 func (ToolExecutionEndEvent) agentEvent() {}
+
+// WaitingForInputEvent indicates the agent is waiting for additional user input.
+type WaitingForInputEvent struct {
+	TurnIndex int
+}
+
+func (WaitingForInputEvent) agentEvent() {}
 
 // SSEEvent represents an event in SSE format.
 type SSEEvent struct {

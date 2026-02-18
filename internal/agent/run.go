@@ -5,10 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/amonks/incrementum/internal/llm"
 )
+
+type streamWithRetryFunc func(ctx context.Context, model llm.Model, req llm.Request, opts llm.StreamOptions, config llm.RetryConfig) (*llm.StreamHandle, error)
+
+var streamWithRetry streamWithRetryFunc = llm.StreamWithRetry
+
+func setStreamWithRetry(fn streamWithRetryFunc) func() {
+	prev := streamWithRetry
+	streamWithRetry = fn
+	return func() {
+		streamWithRetry = prev
+	}
+}
 
 // Run starts an agent run with the given prompt and configuration.
 // It returns a RunHandle that provides access to events and the final result.
@@ -95,8 +108,10 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 			Tools:        builtInToolsWithTask(true),
 		}
 
-		// Stream completion from LLM with retry for transient errors
-		streamHandle, err := llm.StreamWithRetry(ctx, config.Model, req, llm.StreamOptions{
+		// Send message start event (we'll update it as we receive deltas)
+		started := false
+
+		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
 			SessionID: config.SessionID,
 			UserAgent: UserAgent(workDir, config.Version),
 		}, llm.DefaultRetryConfig())
@@ -112,9 +127,6 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 		// Process stream events
 		var assistantMsg llm.AssistantMessage
 		var streamErr error
-
-		// Send message start event (we'll update it as we receive deltas)
-		started := false
 
 		for streamEvent := range streamHandle.Events {
 			switch e := streamEvent.(type) {
@@ -225,6 +237,38 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 				Message:     assistantMsg,
 				ToolResults: nil,
 			}
+			if config.InputCh != nil {
+				events <- WaitingForInputEvent{TurnIndex: turnIndex}
+				for {
+					select {
+					case input, ok := <-config.InputCh:
+						if !ok {
+							goto finishRun
+						}
+						raw := input
+						if strings.TrimSpace(raw) == "" {
+							continue
+						}
+						messages = append(messages, llm.UserMessage{
+							Role: "user",
+							Content: []llm.ContentBlock{
+								llm.TextContent{Type: "text", Text: raw},
+							},
+							Timestamp: time.Now(),
+						})
+						turnIndex++
+						goto continueRun
+					case <-ctx.Done():
+						result <- RunResult{
+							Messages: messages,
+							Usage:    totalUsage,
+							Error:    ctx.Err(),
+						}
+						return
+					}
+				}
+			}
+		finishRun:
 			events <- AgentEndEvent{
 				Messages: messages,
 				Usage:    totalUsage,
@@ -234,6 +278,8 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 				Usage:    totalUsage,
 			}
 			return
+		continueRun:
+			continue
 
 		case llm.StopReasonToolUse:
 			// Execute tool calls
@@ -348,7 +394,7 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 		}
 
 		// Stream completion from LLM with retry for transient errors
-		streamHandle, err := llm.StreamWithRetry(ctx, config.Model, req, llm.StreamOptions{
+		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
 			SessionID: config.SessionID,
 			UserAgent: UserAgent(workDir, config.Version),
 		}, llm.DefaultRetryConfig())
@@ -478,6 +524,9 @@ func EventToSSE(event Event) SSEEvent {
 		data = e
 	case ToolExecutionEndEvent:
 		name = "tool.end"
+		data = e
+	case WaitingForInputEvent:
+		name = "agent.waiting_for_input"
 		data = e
 	default:
 		name = "unknown"
