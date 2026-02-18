@@ -50,10 +50,8 @@ func TestKindredTraitsBreggleLevel1(t *testing.T) {
 	if traits[1].Name != "Horns" {
 		t.Errorf("second trait = %q, want Horns", traits[1].Name)
 	}
-	for _, trait := range traits {
-		if trait.Description == "" {
-			t.Errorf("expected description for %s", trait.Name)
-		}
+	if traits[1].Description != "Melee horn attack; damage 1d4." {
+		t.Errorf("Horns description = %q, want damage 1d4", traits[1].Description)
 	}
 }
 
@@ -64,6 +62,9 @@ func TestKindredTraitsBreggleLevel4(t *testing.T) {
 	}
 	if traits[2].Name != "Gaze" {
 		t.Errorf("third trait = %q, want Gaze", traits[2].Name)
+	}
+	if traits[1].Description != "Melee horn attack; damage 1d4+1." {
+		t.Errorf("Horns description = %q, want damage 1d4+1", traits[1].Description)
 	}
 	if traits[2].Description == "" {
 		t.Error("expected description for Gaze")
@@ -80,6 +81,9 @@ func TestKindredTraitsBreggleLevel6(t *testing.T) {
 	}
 	if traits[2].Name != "Gaze" {
 		t.Errorf("third trait = %q, want Gaze", traits[2].Name)
+	}
+	if traits[1].Description != "Melee horn attack; damage 1d6." {
+		t.Errorf("Horns description = %q, want damage 1d6", traits[1].Description)
 	}
 	if traits[2].Description != "Level 4+: charm humans or shorthorns; uses per day by level (2/day; save vs spell)." {
 		t.Errorf("Gaze description = %q, want per-day scaling", traits[2].Description)

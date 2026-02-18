@@ -64,7 +64,7 @@ func KindredTraits(kindred string, level int) []Trait {
 	case "breggle":
 		traits := []Trait{
 			{Name: "Fur", Description: "+1 AC when unarmoured or in light armour."},
-			{Name: "Horns", Description: "Melee horn attack; damage scales with level."},
+			{Name: "Horns", Description: "Melee horn attack; damage " + BreggleHornDamage(level) + "."},
 		}
 		if level >= 4 {
 			uses := BreggleGazeUses(level)

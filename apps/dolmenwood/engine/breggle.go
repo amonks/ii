@@ -16,3 +16,19 @@ func BreggleGazeUses(level int) int {
 	}
 	return 4
 }
+
+// BreggleHornDamage returns the horn attack damage for a breggle at a level.
+func BreggleHornDamage(level int) string {
+	switch {
+	case level < 3:
+		return "1d4"
+	case level < 6:
+		return "1d4+1"
+	case level < 9:
+		return "1d6"
+	case level < 10:
+		return "1d6+1"
+	default:
+		return "1d6+2"
+	}
+}
