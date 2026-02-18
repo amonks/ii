@@ -42,9 +42,9 @@ type CharacterView struct {
 	BreedNames       []string
 
 	// Inventory tree
-	EquippedItems    []InventoryItem
-	CompanionGroups  []CompanionInventory
-	MoveTargets      []MoveTarget
+	EquippedItems   []InventoryItem
+	CompanionGroups []CompanionInventory
+	MoveTargets     []MoveTarget
 }
 
 // InventoryItem is a db.Item with computed slots and nested children.
@@ -58,9 +58,9 @@ type InventoryItem struct {
 
 // CompanionInventory groups items under a companion.
 type CompanionInventory struct {
-	Companion    CompanionView
-	Items        []InventoryItem
-	UsedSlots    int
+	Companion CompanionView
+	Items     []InventoryItem
+	UsedSlots int
 }
 
 // MoveTarget represents a destination for moving an item.
@@ -274,8 +274,8 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 	}
 
 	// Group children by parent
-	childrenOf := make(map[uint][]db.Item)    // container_id -> children
-	compItems := make(map[uint][]db.Item)      // companion_id -> items
+	childrenOf := make(map[uint][]db.Item) // container_id -> children
+	compItems := make(map[uint][]db.Item)  // companion_id -> items
 	var equippedRoots []db.Item
 
 	for _, it := range items {
@@ -378,12 +378,12 @@ func parseMoveTarget(value string) (containerID *uint, companionID *uint) {
 	if value == "equipped" || value == "" {
 		return nil, nil
 	}
-	if strings.HasPrefix(value, "container:") {
-		id := atoui(strings.TrimPrefix(value, "container:"))
+	if after, ok := strings.CutPrefix(value, "container:"); ok {
+		id := atoui(after)
 		return &id, nil
 	}
-	if strings.HasPrefix(value, "companion:") {
-		id := atoui(strings.TrimPrefix(value, "companion:"))
+	if after, ok := strings.CutPrefix(value, "companion:"); ok {
+		id := atoui(after)
 		return nil, &id
 	}
 	return nil, nil

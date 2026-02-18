@@ -287,14 +287,14 @@ func TestCalculateEncumbrance(t *testing.T) {
 	companionID := uint(20)
 	items := []Item{
 		// Equipped on character
-		{ID: 10, Name: "Backpack", Quantity: 1},                      // equipped container: 0 slots
-		{ID: 11, Name: "Plate mail", Quantity: 1},                    // 3 slots
-		{ID: 12, Name: "Longsword", Quantity: 1},                     // 1 slot
+		{ID: 10, Name: "Backpack", Quantity: 1},   // equipped container: 0 slots
+		{ID: 11, Name: "Plate mail", Quantity: 1}, // 3 slots
+		{ID: 12, Name: "Longsword", Quantity: 1},  // 1 slot
 		// Stowed in backpack
-		{ID: 13, Name: "Rope", Quantity: 1, ContainerID: &backpackID},           // 100cn = 1 slot
-		{ID: 14, Name: "Torches", Quantity: 6, ContainerID: &backpackID},        // 2 slots (6/3 = 2 bundles)
+		{ID: 13, Name: "Rope", Quantity: 1, ContainerID: &backpackID},    // 100cn = 1 slot
+		{ID: 14, Name: "Torches", Quantity: 6, ContainerID: &backpackID}, // 2 slots (6/3 = 2 bundles)
 		// On companion
-		{ID: 15, Name: "Bedroll", Quantity: 1, CompanionID: &companionID},       // 70cn = 1 slot
+		{ID: 15, Name: "Bedroll", Quantity: 1, CompanionID: &companionID},           // 70cn = 1 slot
 		{ID: 16, Name: "Preserved Rations", Quantity: 3, CompanionID: &companionID}, // 3*20cn=60cn = 1 slot
 	}
 
@@ -317,13 +317,13 @@ func TestCompanionItemsDontAffectSpeed(t *testing.T) {
 	// Character with light equipment (3 equipped slots → speed 40)
 	// and many heavy items on companion
 	items := []Item{
-		{ID: 1, Name: "Longsword", Quantity: 1},   // 1 equipped slot
-		{ID: 2, Name: "Shield", Quantity: 1},       // 1 equipped slot
-		{ID: 3, Name: "Leather", Quantity: 1},      // 1 equipped slot
+		{ID: 1, Name: "Longsword", Quantity: 1}, // 1 equipped slot
+		{ID: 2, Name: "Shield", Quantity: 1},    // 1 equipped slot
+		{ID: 3, Name: "Leather", Quantity: 1},   // 1 equipped slot
 		// Companion has tons of stuff
-		{ID: 10, Name: "Plate mail", Quantity: 1, CompanionID: &companionID},        // 3 slots
+		{ID: 10, Name: "Plate mail", Quantity: 1, CompanionID: &companionID},         // 3 slots
 		{ID: 11, Name: "Preserved Rations", Quantity: 20, CompanionID: &companionID}, // 4 slots
-		{ID: 12, Name: "Rope", Quantity: 5, CompanionID: &companionID},              // 5 slots
+		{ID: 12, Name: "Rope", Quantity: 5, CompanionID: &companionID},               // 5 slots
 		{ID: 13, Name: "Bedroll", Quantity: 3, CompanionID: &companionID},            // 3 slots
 	}
 
@@ -381,6 +381,7 @@ func TestCompanionContainerItemsDontAffectSpeed(t *testing.T) {
 	}
 }
 
+//go:fix inline
 func uintPtr(v uint) *uint {
-	return &v
+	return new(v)
 }

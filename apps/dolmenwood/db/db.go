@@ -319,7 +319,7 @@ func (db *DB) DeleteItem(id uint) error {
 		return db.Delete(&Item{}, id).Error
 	}
 	// Reparent children to the deleted item's parent
-	db.Model(&Item{}).Where("container_id = ?", id).Updates(map[string]interface{}{
+	db.Model(&Item{}).Where("container_id = ?", id).Updates(map[string]any{
 		"container_id": item.ContainerID,
 		"companion_id": item.CompanionID,
 	})
@@ -346,7 +346,7 @@ func (db *DB) UpdateCompanion(comp *Companion) error {
 
 func (db *DB) DeleteCompanion(id uint) error {
 	// Move companion's items to equipped on character (nil container, nil companion)
-	db.Model(&Item{}).Where("companion_id = ?", id).Updates(map[string]interface{}{
+	db.Model(&Item{}).Where("companion_id = ?", id).Updates(map[string]any{
 		"companion_id": nil,
 		"container_id": nil,
 	})
