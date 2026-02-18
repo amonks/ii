@@ -55,10 +55,10 @@ templ TVShow(show *db.TVShow) {
 		class="tv-show"
 		data-id={ fmt.Sprintf("%d", show.ID) }
 	>
-		<a href={ templ.SafeURL(fmt.Sprintf("/movies/tv/show/?id=%d", show.ID)) } class="block">
+		<a href={ templ.SafeURL(fmt.Sprintf("tv/show/?id=%d", show.ID)) } class="block">
 			if show.PosterPath != "" {
 				<div class="group aspect-h-7 aspect-w-10 block w-full overflow-hidden rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
-					<img src={ fmt.Sprintf("/movies/tv/poster/?id=%d", show.ID) } alt={ show.Name } class="pointer-events-none object-cover group-hover:opacity-75"/>
+					<img src={ fmt.Sprintf("tv/poster/?id=%d", show.ID) } alt={ show.Name } class="pointer-events-none object-cover group-hover:opacity-75"/>
 				</div>
 			} else {
 				<div class="group aspect-h-7 aspect-w-10 flex items-center justify-center w-full overflow-hidden rounded-lg bg-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
@@ -157,12 +157,12 @@ templ TVShowDetails(data *TVShowData) {
 				<nav class="flex" aria-label="Breadcrumb">
 					<ol class="inline-flex items-center space-x-1 md:space-x-3">
 						<li class="inline-flex items-center">
-							<a href="/movies/" class="text-sm text-blue-600 hover:text-blue-800">Movies</a>
+							<a href="./" class="text-sm text-blue-600 hover:text-blue-800">Movies</a>
 						</li>
 						<li>
 							<div class="flex items-center">
 								<span class="mx-2 text-gray-400">/</span>
-								<a href="/movies/tv/" class="text-sm text-blue-600 hover:text-blue-800">TV Shows</a>
+								<a href="tv/" class="text-sm text-blue-600 hover:text-blue-800">TV Shows</a>
 							</div>
 						</li>
 						<li aria-current="page">
@@ -180,7 +180,7 @@ templ TVShowDetails(data *TVShowData) {
 					<div class="flex flex-col md:flex-row">
 						<div class="md:w-1/4 mb-6 md:mb-0 md:mr-6">
 							if data.Show.PosterPath != "" {
-								<img src={ fmt.Sprintf("/movies/tv/poster/?id=%d", data.Show.ID) } class="w-full rounded-lg shadow-md" alt={ data.Show.Name }/>
+								<img src={ fmt.Sprintf("tv/poster/?id=%d", data.Show.ID) } class="w-full rounded-lg shadow-md" alt={ data.Show.Name }/>
 							} else {
 								<div class="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg">
 									<span class="text-gray-500">No Poster</span>
@@ -255,7 +255,7 @@ templ TVShowDetails(data *TVShowData) {
 								<div class="px-4 py-4 sm:px-6">
 									<div>
 										<h4 class="text-md font-semibold text-gray-900">
-											<a href={ templ.SafeURL(fmt.Sprintf("/movies/tv/season/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber)) } class="text-blue-600 hover:text-blue-800">
+											<a href={ templ.SafeURL(fmt.Sprintf("tv/season/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber)) } class="text-blue-600 hover:text-blue-800">
 												if season.Name != "" {
 													{ season.Name }
 												} else {
@@ -298,18 +298,18 @@ templ TVSeasonDetails(data *TVSeasonData) {
 				<nav class="flex" aria-label="Breadcrumb">
 					<ol class="inline-flex items-center space-x-1 md:space-x-3">
 						<li class="inline-flex items-center">
-							<a href="/movies/" class="text-sm text-blue-600 hover:text-blue-800">Movies</a>
+							<a href="./" class="text-sm text-blue-600 hover:text-blue-800">Movies</a>
 						</li>
 						<li>
 							<div class="flex items-center">
 								<span class="mx-2 text-gray-400">/</span>
-								<a href="/movies/tv/" class="text-sm text-blue-600 hover:text-blue-800">TV Shows</a>
+								<a href="tv/" class="text-sm text-blue-600 hover:text-blue-800">TV Shows</a>
 							</div>
 						</li>
 						<li>
 							<div class="flex items-center">
 								<span class="mx-2 text-gray-400">/</span>
-								<a href={ templ.SafeURL(fmt.Sprintf("/movies/tv/show/?id=%d", data.Show.ID)) } class="text-sm text-blue-600 hover:text-blue-800">{ data.Show.Name }</a>
+								<a href={ templ.SafeURL(fmt.Sprintf("tv/show/?id=%d", data.Show.ID)) } class="text-sm text-blue-600 hover:text-blue-800">{ data.Show.Name }</a>
 							</div>
 						</li>
 						<li aria-current="page">
@@ -395,7 +395,7 @@ templ TVSeasonDetails(data *TVSeasonData) {
 											}
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											<form action="/movies/tv/play/" method="POST">
+											<form action="tv/play/" method="POST">
 												<input type="hidden" name="show_id" value={ fmt.Sprintf("%d", episode.ShowID) } />
 												<input type="hidden" name="season" value={ fmt.Sprintf("%d", episode.SeasonNumber) } />
 												<input type="hidden" name="episode" value={ fmt.Sprintf("%d", episode.EpisodeNumber) } />

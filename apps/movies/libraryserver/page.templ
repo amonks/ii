@@ -1,10 +1,13 @@
 package libraryserver
 
+import "monks.co/pkg/serve"
+
 templ Page(title string) {
 	<!DOCTYPE html>
 	<html>
 		<head>
 			<meta charset="utf-8"/>
+			<base href={ serve.BasePathFromContext(ctx) }/>
 			<title>
 				{ title }
 			</title>
@@ -19,11 +22,11 @@ templ Page(title string) {
 							<div class="flex items-center space-x-8">
 								<h1 class="text-xl font-semibold text-gray-900">Movies</h1>
 								<div class="flex space-x-4">
-									<a href="/movies/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Library</a>
-									<a href="/movies/tv/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">TV Shows</a>
+									<a href="./" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Library</a>
+									<a href="tv/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">TV Shows</a>
 									if CanManageLibrary(ctx) {
-										<a href="/movies/import/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Import</a>
-										<a href="/movies/ignores/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Ignores</a>
+										<a href="import/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Import</a>
+										<a href="ignores/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Ignores</a>
 									}
 								</div>
 							</div>

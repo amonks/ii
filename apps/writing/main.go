@@ -54,7 +54,7 @@ func run() error {
 	// 	h.ServeHTTP(w, req)
 	// })
 	mux.HandleFunc("GET /{slug}", func(w http.ResponseWriter, req *http.Request) {
-		http.Redirect(w, req, fmt.Sprintf("/writing/%s/", req.PathValue("slug")), http.StatusMovedPermanently)
+		http.Redirect(w, req, fmt.Sprintf("/%s/", req.PathValue("slug")), http.StatusMovedPermanently)
 	})
 	mux.HandleFunc("GET /{slug}/{$}", func(w http.ResponseWriter, req *http.Request) {
 		slug := req.PathValue("slug")

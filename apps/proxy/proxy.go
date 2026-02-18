@@ -123,10 +123,19 @@ func (p *proxy) proxyRequest(prefix string, backend string, w http.ResponseWrite
 			pr.Out.URL.Host = backend
 			pr.Out.URL.Path = strings.TrimPrefix(pr.Out.URL.Path, "/"+prefix)
 			pr.Out.Host = backend
+			pr.Out.Header.Set("X-Forwarded-Prefix", "/"+prefix)
 			// Forward request ID to downstream.
 			if id := reqlog.RequestID(pr.In.Context()); id != "" {
 				pr.Out.Header.Set(reqlog.RequestIDHeader, id)
 			}
+		},
+		ModifyResponse: func(resp *http.Response) error {
+			if loc := resp.Header.Get("Location"); loc != "" {
+				if strings.HasPrefix(loc, "/") && !strings.HasPrefix(loc, "//") {
+					resp.Header.Set("Location", "/"+prefix+loc)
+				}
+			}
+			return nil
 		},
 	}
 	startAt := time.Now()

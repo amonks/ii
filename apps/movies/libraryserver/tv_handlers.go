@@ -372,7 +372,7 @@ func (app *LibraryServer) serveTVSearch(w http.ResponseWriter, req *http.Request
 	}
 
 	// Redirect to TV tab
-	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+	http.Redirect(w, req, "/import/?tab=tv", http.StatusSeeOther)
 }
 
 // serveTVIdentify handles the /tv/identify route to identify a TV show
@@ -540,13 +540,13 @@ func (app *LibraryServer) serveTVIdentify(w http.ResponseWriter, req *http.Reque
 	}
 
 	// Redirect to TV tab
-	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+	http.Redirect(w, req, "/import/?tab=tv", http.StatusSeeOther)
 }
 
 // We don't need the serveTVIdentifyAll function anymore since we're now handling shows at the show level
 // This function can be removed, but we're keeping the signature as a no-op for compatibility
 func (app *LibraryServer) serveTVIdentifyAll(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+	http.Redirect(w, req, "/import/?tab=tv", http.StatusSeeOther)
 }
 
 // serveTVIgnoreShow ignores a TV show
@@ -590,7 +590,7 @@ func (app *LibraryServer) serveTVIgnoreShow(w http.ResponseWriter, req *http.Req
 	}
 
 	// Redirect to TV tab
-	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+	http.Redirect(w, req, "/import/?tab=tv", http.StatusSeeOther)
 }
 
 // serveTVIgnoreEpisodes ignores specific episodes from a TV show stub
@@ -636,7 +636,7 @@ func (app *LibraryServer) serveTVIgnoreEpisodes(w http.ResponseWriter, req *http
 	}
 
 	// Redirect to TV tab
-	http.Redirect(w, req, "/movies/import/?tab=tv", http.StatusSeeOther)
+	http.Redirect(w, req, "/import/?tab=tv", http.StatusSeeOther)
 }
 
 // Helper function to extract season and episode numbers from a file path

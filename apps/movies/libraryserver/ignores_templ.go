@@ -95,7 +95,7 @@ func Ignores(data *IgnoresPageData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, ">Movies</option></select></div><div class=\"flex gap-2\"><button type=\"submit\" class=\"px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700\">Filter</button> <a href=\"/movies/ignores/\" class=\"px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700\">Clear</a></div></div></form><!-- Results --><div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, ">Movies</option></select></div><div class=\"flex gap-2\"><button type=\"submit\" class=\"px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700\">Filter</button> <a href=\"ignores/\" class=\"px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700\">Clear</a></div></div></form><!-- Results --><div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -166,7 +166,7 @@ func Ignores(data *IgnoresPageData) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></td><td class=\"px-6 py-4 whitespace-nowrap text-sm\"><form method=\"post\" action=\"/movies/delete-ignore/\" class=\"inline\" onsubmit=\"return confirm('Are you sure you want to remove this ignore? This will allow the item to be processed again.');\"><input type=\"hidden\" name=\"path\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></td><td class=\"px-6 py-4 whitespace-nowrap text-sm\"><form method=\"post\" action=\"delete-ignore/\" class=\"inline\" onsubmit=\"return confirm('Are you sure you want to remove this ignore? This will allow the item to be processed again.');\"><input type=\"hidden\" name=\"path\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

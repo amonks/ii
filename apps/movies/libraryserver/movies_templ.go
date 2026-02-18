@@ -79,7 +79,7 @@ func Movies(data *MoviesPageData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul></div></div><script>\n\t\t\t(function() {\n\t\t\t\tconst movies = document.querySelectorAll('.movie');\n\t\t\t\tfor (const el of movies) {\n\t\t\t\t\tconst id = el.attributes.getNamedItem(\"data-id\").value;\n\n\t\t\t\t\tfor (const button of el.querySelectorAll(\".click-to-enqueue\")) {\n\t\t\t\t\t\tbutton.addEventListener(\"click\", ev => {\n\t\t\t\t\t\t\tconsole.log(\"Δ enqueue\");\n\t\t\t\t\t\t\tvoid fetch(\"/movies/enqueue/?id=\"+id);\n\t\t\t\t\t\t})\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul></div></div><script>\n\t\t\t(function() {\n\t\t\t\tconst movies = document.querySelectorAll('.movie');\n\t\t\t\tfor (const el of movies) {\n\t\t\t\t\tconst id = el.attributes.getNamedItem(\"data-id\").value;\n\n\t\t\t\t\tfor (const button of el.querySelectorAll(\".click-to-enqueue\")) {\n\t\t\t\t\t\tbutton.addEventListener(\"click\", ev => {\n\t\t\t\t\t\t\tconsole.log(\"Δ enqueue\");\n\t\t\t\t\t\t\tvoid fetch(\"enqueue/?id=\"+id);\n\t\t\t\t\t\t})\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

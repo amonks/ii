@@ -55,10 +55,10 @@ templ Import(data *ImportPageData) {
 	@Page(fmt.Sprintf("%d import tasks", len(data.MetacriticValidations) + countMovieStubsNeedingAttention(data.Stubs) + countTVStubsNeedingAttention(data.TVStubsInfo))) {
 		<div class="tabs">
 			<div class="tab-nav">
-				<a href="/movies/import/?tab=movies" class={ "tab-link", templ.KV("active", data.ActiveTab == "movies" || data.ActiveTab == "") }>
+				<a href="import/?tab=movies" class={ "tab-link", templ.KV("active", data.ActiveTab == "movies" || data.ActiveTab == "") }>
 					Movies ({ fmt.Sprintf("%d need attention", countMovieStubsNeedingAttention(data.Stubs) + len(data.MetacriticValidations)) })
 				</a>
-				<a href="/movies/import/?tab=tv" class={ "tab-link", templ.KV("active", data.ActiveTab == "tv") }>
+				<a href="import/?tab=tv" class={ "tab-link", templ.KV("active", data.ActiveTab == "tv") }>
 					TV Shows ({ fmt.Sprintf("%d need attention", countTVStubsNeedingAttention(data.TVStubsInfo)) })
 				</a>
 			</div>
@@ -171,7 +171,7 @@ templ TVShowStubs(stubsInfo []*TVStubInfo) {
 											<p>First Aired: { info.ExistingShow.FirstAirDate }</p>
 										}
 									</div>
-									<form method="POST" action="/movies/tv/identify/">
+									<form method="POST" action="tv/identify/">
 										<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
 										<input type="hidden" name="id" value={ fmt.Sprintf("%d", info.ExistingShow.ID) }/>
 										<div class="form-group">
@@ -194,7 +194,7 @@ templ TVShowStubs(stubsInfo []*TVStubInfo) {
 						if info.Stub.SeasonNumber > 0 {
 							<p>Detected Season: <strong>{ fmt.Sprintf("%d", info.Stub.SeasonNumber) }</strong></p>
 						}
-						<form method="POST" action="/movies/tv/search/">
+						<form method="POST" action="tv/search/">
 							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
 							<div class="form-group">
 								<label for="query">Search for TV Show</label>
@@ -218,7 +218,7 @@ templ TVShowStubs(stubsInfo []*TVStubInfo) {
 													<p>First Aired: { result.FirstAirDate }</p>
 												}
 											</div>
-											<form method="POST" action="/movies/tv/identify/">
+											<form method="POST" action="tv/identify/">
 												<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
 												<input type="hidden" name="id" value={ fmt.Sprintf("%d", result.ID) }/>
 												// Add season number input
@@ -253,11 +253,11 @@ templ TVShowStubs(stubsInfo []*TVStubInfo) {
 						</div>
 					}
 					<div class="ignore-buttons">
-						<form method="POST" action="/movies/tv/ignore-show/">
+						<form method="POST" action="tv/ignore-show/">
 							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
 							<button type="submit" class="ignore-button">Ignore Show</button>
 						</form>
-						<form method="POST" action="/movies/tv/ignore-episodes/">
+						<form method="POST" action="tv/ignore-episodes/">
 							<input type="hidden" name="path" value={ info.Stub.ImportedFromPath }/>
 							<button type="submit" class="ignore-button ignore-episodes-button">Ignore These Episodes</button>
 						</form>

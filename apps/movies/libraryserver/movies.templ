@@ -43,7 +43,7 @@ templ Movies(data *MoviesPageData) {
 					for (const button of el.querySelectorAll(".click-to-enqueue")) {
 						button.addEventListener("click", ev => {
 							console.log("Δ enqueue");
-							void fetch("/movies/enqueue/?id="+id);
+							void fetch("enqueue/?id="+id);
 						})
 					}
 				}

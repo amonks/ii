@@ -16,10 +16,10 @@ templ Authors(data *AuthorsData) {
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 				<h1>Authors</h1>
 				<div style="display: flex; gap: 10px;">
-					<a href="/reddit/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="./" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Posts
 					</a>
-					<a href="/reddit/subreddits/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="subreddits/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Subreddits
 					</a>
 				</div>
@@ -38,7 +38,7 @@ templ Authors(data *AuthorsData) {
 							<tr style="background-color: #f7f7f7;">
 								<td style="padding: 10px;">
 									<a 
-										href={ templ.SafeURL(fmt.Sprintf("/reddit/?author=%s", author.Author)) } 
+										href={ templ.SafeURL(fmt.Sprintf("./?author=%s", author.Author)) } 
 										style="text-decoration: none; color: #0366d6;"
 									>
 										{ author.Author }
@@ -52,7 +52,7 @@ templ Authors(data *AuthorsData) {
 							<tr>
 								<td style="padding: 10px;">
 									<a 
-										href={ templ.SafeURL(fmt.Sprintf("/reddit/?author=%s", author.Author)) } 
+										href={ templ.SafeURL(fmt.Sprintf("./?author=%s", author.Author)) } 
 										style="text-decoration: none; color: #0366d6;"
 									>
 										{ author.Author }

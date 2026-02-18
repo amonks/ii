@@ -50,7 +50,15 @@ func (s *server) ListPeople(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := templates["list.gohtml"].Execute(w, people); err != nil {
+	data := struct {
+		People   []AnnotatedPerson
+		BasePath string
+	}{
+		People:   people,
+		BasePath: serve.BasePath(req),
+	}
+
+	if err := templates["list.gohtml"].Execute(w, data); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
 	}
@@ -70,11 +78,13 @@ func (s *server) ShowPerson(w http.ResponseWriter, req *http.Request) {
 		IsActive          bool
 		IsLongestUnpinged bool
 		Pings             []Ping
+		BasePath          string
 	}{
 		Slug:              slug,
 		IsActive:          person.IsActive,
 		IsLongestUnpinged: person.IsLongestUnpinged,
 		Pings:             pings,
+		BasePath:          serve.BasePath(req),
 	}
 
 	if err := templates["show.gohtml"].Execute(w, data); err != nil {
@@ -104,7 +114,7 @@ func (s *server) AddPerson(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	http.Redirect(w, req, "/ping", http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (s *server) UpdatePerson(w http.ResponseWriter, req *http.Request) {
@@ -121,7 +131,7 @@ func (s *server) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, fmt.Sprintf("/ping/person?slug=%s", slug), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/person/?slug=%s", slug), http.StatusFound)
 }
 
 func (s *server) Bump(w http.ResponseWriter, req *http.Request) {
@@ -130,7 +140,7 @@ func (s *server) Bump(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/ping", http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (s *server) PingPerson(w http.ResponseWriter, req *http.Request) {
@@ -160,5 +170,5 @@ func (s *server) PingPerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, fmt.Sprintf("/ping/person/?slug=%s", slug), http.StatusFound)
+	http.Redirect(w, req, fmt.Sprintf("/person/?slug=%s", slug), http.StatusFound)
 }

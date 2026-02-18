@@ -16,10 +16,10 @@ templ Subreddits(data *SubredditsData) {
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 				<h1>Subreddits</h1>
 				<div style="display: flex; gap: 10px;">
-					<a href="/reddit/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="./" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Posts
 					</a>
-					<a href="/reddit/authors/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="authors/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Authors
 					</a>
 				</div>
@@ -38,7 +38,7 @@ templ Subreddits(data *SubredditsData) {
 							<tr style="background-color: #f7f7f7;">
 								<td style="padding: 10px;">
 									<a 
-										href={ templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", subreddit.Subreddit)) } 
+										href={ templ.SafeURL(fmt.Sprintf("./?subreddit=%s", subreddit.Subreddit)) } 
 										style="text-decoration: none; color: #0366d6;"
 									>
 										r/{ subreddit.Subreddit }
@@ -52,7 +52,7 @@ templ Subreddits(data *SubredditsData) {
 							<tr>
 								<td style="padding: 10px;">
 									<a 
-										href={ templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", subreddit.Subreddit)) } 
+										href={ templ.SafeURL(fmt.Sprintf("./?subreddit=%s", subreddit.Subreddit)) } 
 										style="text-decoration: none; color: #0366d6;"
 									>
 										r/{ subreddit.Subreddit }

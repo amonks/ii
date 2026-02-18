@@ -61,13 +61,13 @@ templ PostPage(data *PageData) {
 				<div style="display: flex; gap: 20px; color: #666; margin-bottom: 15px; flex-wrap: wrap;">
 					<div>
 						<strong>Author:</strong>
-						<a href={ templ.SafeURL(fmt.Sprintf("/reddit/?author=%s", data.Post.Author)) } style="color: inherit;">
+						<a href={ templ.SafeURL(fmt.Sprintf("./?author=%s", data.Post.Author)) } style="color: inherit;">
 							{ data.Post.Author }
 						</a>
 					</div>
 					<div>
 						<strong>Subreddit:</strong>
-						<a href={ templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", data.Post.Subreddit)) } style="color: inherit;">
+						<a href={ templ.SafeURL(fmt.Sprintf("./?subreddit=%s", data.Post.Subreddit)) } style="color: inherit;">
 							r/{ data.Post.Subreddit }
 						</a>
 					</div>
@@ -94,9 +94,9 @@ templ PostPage(data *PageData) {
 					<span style="margin: 0 10px;">|</span>
 					<a href={ templ.SafeURL(buildListURL(data.Subreddit, data.Author)) }>View List</a>
 					<span style="margin: 0 10px;">|</span>
-					<a href="/reddit/subreddits/">Subreddits</a>
+					<a href="subreddits/">Subreddits</a>
 					<span style="margin: 0 10px;">|</span>
-					<a href="/reddit/authors/">Authors</a>
+					<a href="authors/">Authors</a>
 				</div>
 			</div>
 
@@ -220,7 +220,7 @@ templ PostPage(data *PageData) {
 		</div>
 		<script>
 			function toggleStar(postName) {
-				fetch('/reddit/star/' + postName + '/', {
+				fetch('star/' + postName + '/', {
 					method: 'POST'
 				}).then(response => {
 					if (response.ok) {
@@ -234,7 +234,7 @@ templ PostPage(data *PageData) {
 
 // buildURLWithParams creates a URL with the necessary filter parameters
 func buildURLWithParams(n int, subreddit, author, starred string) string {
-	url := fmt.Sprintf("/reddit/post/%d/", n)
+	url := fmt.Sprintf("post/%d/", n)
 	params := []string{}
 	if subreddit != "" {
 		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
@@ -254,7 +254,7 @@ func buildURLWithParams(n int, subreddit, author, starred string) string {
 
 // buildListURL creates a URL for the list page with filter parameters
 func buildListURL(subreddit, author string) string {
-	url := "/reddit/"
+	url := "./"
 
 	params := []string{}
 	if subreddit != "" {

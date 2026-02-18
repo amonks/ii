@@ -45,7 +45,10 @@ func (s *server) handleList(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	v := struct{ Shortlinks []Shortening }{Shortlinks: urls}
+	v := struct {
+		Shortlinks []Shortening
+		BasePath   string
+	}{Shortlinks: urls, BasePath: serve.BasePath(req)}
 	if err := templates["index.gohtml"].Execute(w, v); err != nil {
 		serve.InternalServerError(w, req, err)
 		return
@@ -72,11 +75,11 @@ func (s *server) handlePost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/golink", http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (s *server) handleDelete(w http.ResponseWriter, req *http.Request) {
-	key := strings.TrimPrefix(req.URL.Path, "/golink/")
+	key := strings.TrimPrefix(req.URL.Path, "/")
 
 	if err := s.model.Delete(key); err != nil {
 		serve.InternalServerError(w, req, err)

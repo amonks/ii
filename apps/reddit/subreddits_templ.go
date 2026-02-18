@@ -51,7 +51,7 @@ func Subreddits(data *SubredditsData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"width: 100%; max-width: 1000px; margin: 0 auto; padding: 20px;\"><div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;\"><h1>Subreddits</h1><div style=\"display: flex; gap: 10px;\"><a href=\"/reddit/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Posts</a> <a href=\"/reddit/authors/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Authors</a></div></div><table style=\"width: 100%; border-collapse: collapse;\"><thead><tr style=\"border-bottom: 2px solid #ddd; text-align: left;\"><th style=\"padding: 10px;\">Subreddit</th><th style=\"padding: 10px; text-align: right;\">Post Count</th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"width: 100%; max-width: 1000px; margin: 0 auto; padding: 20px;\"><div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;\"><h1>Subreddits</h1><div style=\"display: flex; gap: 10px;\"><a href=\"./\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Posts</a> <a href=\"authors/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Authors</a></div></div><table style=\"width: 100%; border-collapse: collapse;\"><thead><tr style=\"border-bottom: 2px solid #ddd; text-align: left;\"><th style=\"padding: 10px;\">Subreddit</th><th style=\"padding: 10px; text-align: right;\">Post Count</th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -62,9 +62,9 @@ func Subreddits(data *SubredditsData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var3 templ.SafeURL
-					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", subreddit.Subreddit)))
+					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("./?subreddit=%s", subreddit.Subreddit)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/subreddits.templ`, Line: 41, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/subreddits.templ`, Line: 41, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 					if templ_7745c5c3_Err != nil {
@@ -106,9 +106,9 @@ func Subreddits(data *SubredditsData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var6 templ.SafeURL
-					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", subreddit.Subreddit)))
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("./?subreddit=%s", subreddit.Subreddit)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/subreddits.templ`, Line: 55, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/subreddits.templ`, Line: 55, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {

@@ -148,9 +148,9 @@ func TVShow(show *db.TVShow) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 templ.SafeURL
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/movies/tv/show/?id=%d", show.ID)))
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("tv/show/?id=%d", show.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 58, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 58, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -166,9 +166,9 @@ func TVShow(show *db.TVShow) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/movies/tv/poster/?id=%d", show.ID))
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("tv/poster/?id=%d", show.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 61, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 61, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func TVShow(show *db.TVShow) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(show.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 61, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 61, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -448,7 +448,7 @@ func TVShowDetails(data *TVShowData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"px-6 sm:px-8\"><div class=\"mb-6\"><nav class=\"flex\" aria-label=\"Breadcrumb\"><ol class=\"inline-flex items-center space-x-1 md:space-x-3\"><li class=\"inline-flex items-center\"><a href=\"/movies/\" class=\"text-sm text-blue-600 hover:text-blue-800\">Movies</a></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"/movies/tv/\" class=\"text-sm text-blue-600 hover:text-blue-800\">TV Shows</a></div></li><li aria-current=\"page\"><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <span class=\"text-sm text-gray-500\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"px-6 sm:px-8\"><div class=\"mb-6\"><nav class=\"flex\" aria-label=\"Breadcrumb\"><ol class=\"inline-flex items-center space-x-1 md:space-x-3\"><li class=\"inline-flex items-center\"><a href=\"./\" class=\"text-sm text-blue-600 hover:text-blue-800\">Movies</a></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"tv/\" class=\"text-sm text-blue-600 hover:text-blue-800\">TV Shows</a></div></li><li aria-current=\"page\"><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <span class=\"text-sm text-gray-500\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -471,9 +471,9 @@ func TVShowDetails(data *TVShowData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var20 string
-				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/movies/tv/poster/?id=%d", data.Show.ID))
+				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("tv/poster/?id=%d", data.Show.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 183, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 183, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -486,7 +486,7 @@ func TVShowDetails(data *TVShowData) templ.Component {
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(data.Show.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 183, Col: 131}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 183, Col: 123}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -662,9 +662,9 @@ func TVShowDetails(data *TVShowData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var29 templ.SafeURL
-					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/movies/tv/season/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber)))
+					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("tv/season/?show_id=%d&season=%d", data.Show.ID, season.SeasonNumber)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 258, Col: 125}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 258, Col: 117}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -816,14 +816,14 @@ func TVSeasonDetails(data *TVSeasonData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"px-6 sm:px-8\"><div class=\"mb-6\"><nav class=\"flex\" aria-label=\"Breadcrumb\"><ol class=\"inline-flex items-center space-x-1 md:space-x-3\"><li class=\"inline-flex items-center\"><a href=\"/movies/\" class=\"text-sm text-blue-600 hover:text-blue-800\">Movies</a></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"/movies/tv/\" class=\"text-sm text-blue-600 hover:text-blue-800\">TV Shows</a></div></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"px-6 sm:px-8\"><div class=\"mb-6\"><nav class=\"flex\" aria-label=\"Breadcrumb\"><ol class=\"inline-flex items-center space-x-1 md:space-x-3\"><li class=\"inline-flex items-center\"><a href=\"./\" class=\"text-sm text-blue-600 hover:text-blue-800\">Movies</a></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"tv/\" class=\"text-sm text-blue-600 hover:text-blue-800\">TV Shows</a></div></li><li><div class=\"flex items-center\"><span class=\"mx-2 text-gray-400\">/</span> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var37 templ.SafeURL
-			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/movies/tv/show/?id=%d", data.Show.ID)))
+			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("tv/show/?id=%d", data.Show.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 312, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 312, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -836,7 +836,7 @@ func TVSeasonDetails(data *TVSeasonData) templ.Component {
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(data.Show.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 312, Col: 153}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/tvshows.templ`, Line: 312, Col: 145}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -1023,7 +1023,7 @@ func TVSeasonDetails(data *TVSeasonData) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-500\"><form action=\"/movies/tv/play/\" method=\"POST\"><input type=\"hidden\" name=\"show_id\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-500\"><form action=\"tv/play/\" method=\"POST\"><input type=\"hidden\" name=\"show_id\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

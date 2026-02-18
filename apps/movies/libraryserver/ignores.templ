@@ -37,7 +37,7 @@ templ Ignores(data *IgnoresPageData) {
 					</div>
 					<div class="flex gap-2">
 						<button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Filter</button>
-						<a href="/movies/ignores/" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Clear</a>
+						<a href="ignores/" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Clear</a>
 					</div>
 				</div>
 			</form>
@@ -80,7 +80,7 @@ templ Ignores(data *IgnoresPageData) {
 											</span>
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm">
-											<form method="post" action="/movies/delete-ignore/" class="inline" onsubmit="return confirm('Are you sure you want to remove this ignore? This will allow the item to be processed again.');">
+											<form method="post" action="delete-ignore/" class="inline" onsubmit="return confirm('Are you sure you want to remove this ignore? This will allow the item to be processed again.');">
 												<input type="hidden" name="path" value={ ignore.ImportedFromPath }/>
 												<input type="hidden" name="type" value={ strconv.Itoa(int(ignore.Type)) }/>
 												<button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">

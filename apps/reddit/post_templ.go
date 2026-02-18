@@ -90,9 +90,9 @@ func PostPage(data *PageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/reddit/?author=%s", data.Post.Author)))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("./?author=%s", data.Post.Author)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/post.templ`, Line: 64, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/post.templ`, Line: 64, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -116,9 +116,9 @@ func PostPage(data *PageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 templ.SafeURL
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/reddit/?subreddit=%s", data.Post.Subreddit)))
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("./?subreddit=%s", data.Post.Subreddit)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/post.templ`, Line: 70, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/reddit/post.templ`, Line: 70, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -217,7 +217,7 @@ func PostPage(data *PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">View List</a> <span style=\"margin: 0 10px;\">|</span> <a href=\"/reddit/subreddits/\">Subreddits</a> <span style=\"margin: 0 10px;\">|</span> <a href=\"/reddit/authors/\">Authors</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">View List</a> <span style=\"margin: 0 10px;\">|</span> <a href=\"subreddits/\">Subreddits</a> <span style=\"margin: 0 10px;\">|</span> <a href=\"authors/\">Authors</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -329,7 +329,7 @@ func PostPage(data *PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\">Next →</a></div><!-- Keyboard navigation script --><script>\n\t\t\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\t\t\tlet inactivityTimer;\n\t\t\t\t\tconst INACTIVITY_DELAY = 2 * 60 * 1000; // 2 minutes\n\t\t\t\t\tconst bossOverlay = document.getElementById('boss-mode-overlay');\n\t\t\t\t\tconst exitButton = document.getElementById('boss-mode-exit');\n\n\t\t\t\t\tfunction showBossMode() {\n\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '0';\n\t\t\t\t\t\tbossOverlay.style.opacity = '1';\n\t\t\t\t\t\tbossOverlay.style.visibility = 'visible';\n\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'active');\n\t\t\t\t\t}\n\n\t\t\t\t\t// Make showBossMode globally available\n\t\t\t\t\twindow.showBossMode = showBossMode;\n\n\t\t\t\t\tfunction hideBossMode() {\n\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '1';\n\t\t\t\t\t\tbossOverlay.style.opacity = '0';\n\t\t\t\t\t\tbossOverlay.style.visibility = 'hidden';\n\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'inactive');\n\t\t\t\t\t\tresetInactivityTimer();\n\t\t\t\t\t}\n\n\t\t\t\t\tfunction resetInactivityTimer() {\n\t\t\t\t\t\tclearTimeout(inactivityTimer);\n\t\t\t\t\t\tconst currentState = localStorage.getItem('bossMode');\n\t\t\t\t\t\tif (currentState !== 'active') {\n\t\t\t\t\t\t\tinactivityTimer = setTimeout(showBossMode, INACTIVITY_DELAY);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize boss mode state from localStorage\n\t\t\t\t\tfunction initializeBossMode() {\n\t\t\t\t\t\tconst savedState = localStorage.getItem('bossMode');\n\t\t\t\t\t\tif (savedState === 'inactive') {\n\t\t\t\t\t\t\t// Only show content if user previously exited boss mode\n\t\t\t\t\t\t\tresetInactivityTimer();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t// Default to boss mode active for fresh sessions\n\t\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '0';\n\t\t\t\t\t\t\tbossOverlay.style.opacity = '1';\n\t\t\t\t\t\t\tbossOverlay.style.visibility = 'visible';\n\t\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'active');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Only reset timer on actual user interaction, not just mouse movement\n\t\t\t\t\tdocument.addEventListener('click', resetInactivityTimer);\n\t\t\t\t\tdocument.addEventListener('keydown', resetInactivityTimer);\n\t\t\t\t\tdocument.addEventListener('scroll', resetInactivityTimer);\n\n\t\t\t\t\t// Boss mode exit button\n\t\t\t\t\texitButton.addEventListener('click', hideBossMode);\n\n\t\t\t\t\t// Initialize boss mode state\n\t\t\t\t\tinitializeBossMode();\n\n\t\t\t\t\t// Handle keyboard navigation\n\t\t\t\t\tdocument.addEventListener('keydown', function(e) {\n\t\t\t\t\t\t// Left arrow key - Go to previous post\n\t\t\t\t\t\tif (e.key === 'ArrowLeft') {\n\t\t\t\t\t\t\tconst prevLink = document.getElementById('prev-post-link');\n\t\t\t\t\t\t\tif (prevLink) {\n\t\t\t\t\t\t\t\twindow.location.href = prevLink.href;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\t// Right arrow key - Go to next post\n\t\t\t\t\t\telse if (e.key === 'ArrowRight') {\n\t\t\t\t\t\t\tconst nextLink = document.getElementById('next-post-link');\n\t\t\t\t\t\t\tif (nextLink) {\n\t\t\t\t\t\t\t\twindow.location.href = nextLink.href;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t</script></div><script>\n\t\t\tfunction toggleStar(postName) {\n\t\t\t\tfetch('/reddit/star/' + postName + '/', {\n\t\t\t\t\tmethod: 'POST'\n\t\t\t\t}).then(response => {\n\t\t\t\t\tif (response.ok) {\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\">Next →</a></div><!-- Keyboard navigation script --><script>\n\t\t\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\t\t\tlet inactivityTimer;\n\t\t\t\t\tconst INACTIVITY_DELAY = 2 * 60 * 1000; // 2 minutes\n\t\t\t\t\tconst bossOverlay = document.getElementById('boss-mode-overlay');\n\t\t\t\t\tconst exitButton = document.getElementById('boss-mode-exit');\n\n\t\t\t\t\tfunction showBossMode() {\n\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '0';\n\t\t\t\t\t\tbossOverlay.style.opacity = '1';\n\t\t\t\t\t\tbossOverlay.style.visibility = 'visible';\n\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'active');\n\t\t\t\t\t}\n\n\t\t\t\t\t// Make showBossMode globally available\n\t\t\t\t\twindow.showBossMode = showBossMode;\n\n\t\t\t\t\tfunction hideBossMode() {\n\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '1';\n\t\t\t\t\t\tbossOverlay.style.opacity = '0';\n\t\t\t\t\t\tbossOverlay.style.visibility = 'hidden';\n\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'inactive');\n\t\t\t\t\t\tresetInactivityTimer();\n\t\t\t\t\t}\n\n\t\t\t\t\tfunction resetInactivityTimer() {\n\t\t\t\t\t\tclearTimeout(inactivityTimer);\n\t\t\t\t\t\tconst currentState = localStorage.getItem('bossMode');\n\t\t\t\t\t\tif (currentState !== 'active') {\n\t\t\t\t\t\t\tinactivityTimer = setTimeout(showBossMode, INACTIVITY_DELAY);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Initialize boss mode state from localStorage\n\t\t\t\t\tfunction initializeBossMode() {\n\t\t\t\t\t\tconst savedState = localStorage.getItem('bossMode');\n\t\t\t\t\t\tif (savedState === 'inactive') {\n\t\t\t\t\t\t\t// Only show content if user previously exited boss mode\n\t\t\t\t\t\t\tresetInactivityTimer();\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t// Default to boss mode active for fresh sessions\n\t\t\t\t\t\t\tdocument.getElementById('main-content').style.opacity = '0';\n\t\t\t\t\t\t\tbossOverlay.style.opacity = '1';\n\t\t\t\t\t\t\tbossOverlay.style.visibility = 'visible';\n\t\t\t\t\t\t\tlocalStorage.setItem('bossMode', 'active');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Only reset timer on actual user interaction, not just mouse movement\n\t\t\t\t\tdocument.addEventListener('click', resetInactivityTimer);\n\t\t\t\t\tdocument.addEventListener('keydown', resetInactivityTimer);\n\t\t\t\t\tdocument.addEventListener('scroll', resetInactivityTimer);\n\n\t\t\t\t\t// Boss mode exit button\n\t\t\t\t\texitButton.addEventListener('click', hideBossMode);\n\n\t\t\t\t\t// Initialize boss mode state\n\t\t\t\t\tinitializeBossMode();\n\n\t\t\t\t\t// Handle keyboard navigation\n\t\t\t\t\tdocument.addEventListener('keydown', function(e) {\n\t\t\t\t\t\t// Left arrow key - Go to previous post\n\t\t\t\t\t\tif (e.key === 'ArrowLeft') {\n\t\t\t\t\t\t\tconst prevLink = document.getElementById('prev-post-link');\n\t\t\t\t\t\t\tif (prevLink) {\n\t\t\t\t\t\t\t\twindow.location.href = prevLink.href;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\t// Right arrow key - Go to next post\n\t\t\t\t\t\telse if (e.key === 'ArrowRight') {\n\t\t\t\t\t\t\tconst nextLink = document.getElementById('next-post-link');\n\t\t\t\t\t\t\tif (nextLink) {\n\t\t\t\t\t\t\t\twindow.location.href = nextLink.href;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t</script></div><script>\n\t\t\tfunction toggleStar(postName) {\n\t\t\t\tfetch('star/' + postName + '/', {\n\t\t\t\t\tmethod: 'POST'\n\t\t\t\t}).then(response => {\n\t\t\t\t\tif (response.ok) {\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -345,7 +345,7 @@ func PostPage(data *PageData) templ.Component {
 
 // buildURLWithParams creates a URL with the necessary filter parameters
 func buildURLWithParams(n int, subreddit, author, starred string) string {
-	url := fmt.Sprintf("/reddit/post/%d/", n)
+	url := fmt.Sprintf("post/%d/", n)
 	params := []string{}
 	if subreddit != "" {
 		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
@@ -365,7 +365,7 @@ func buildURLWithParams(n int, subreddit, author, starred string) string {
 
 // buildListURL creates a URL for the list page with filter parameters
 func buildListURL(subreddit, author string) string {
-	url := "/reddit/"
+	url := "./"
 
 	params := []string{}
 	if subreddit != "" {

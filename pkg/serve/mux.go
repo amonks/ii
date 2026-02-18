@@ -13,6 +13,9 @@ func NewMux() *Mux {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	bp := BasePath(req)
+	ctx := WithBasePath(req.Context(), bp)
+	req = req.WithContext(ctx)
 	m.ServeMux.ServeHTTP(&smuggler{w, false, req}, req)
 }
 

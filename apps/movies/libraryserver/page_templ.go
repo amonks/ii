@@ -8,6 +8,8 @@ package libraryserver
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "monks.co/pkg/serve"
+
 func Page(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -29,43 +31,56 @@ func Page(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><meta charset=\"utf-8\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><meta charset=\"utf-8\"><base href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(serve.BasePathFromContext(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 9, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 10, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.8\" integrity=\"sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr\" crossorigin=\"anonymous\"></script></head><body><div class=\"bg-slate-100 min-h-screen\"><nav class=\"bg-white shadow-sm border-b\"><div class=\"px-6 sm:px-8\"><div class=\"flex justify-between items-center h-16\"><div class=\"flex items-center space-x-8\"><h1 class=\"text-xl font-semibold text-gray-900\">Movies</h1><div class=\"flex space-x-4\"><a href=\"/movies/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Library</a> <a href=\"/movies/tv/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">TV Shows</a> ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if CanManageLibrary(ctx) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<a href=\"/movies/import/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Import</a> <a href=\"/movies/ignores/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Ignores</a>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></div></div></nav><div><main class=\"py-4\"><h1 class=\"px-6 sm:px-8 text-4xl mb-6 pb-2 sm:pt-6 font-bold border-b-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 35, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 12, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h1>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.8\" integrity=\"sha384-rgjA7mptc2ETQqXoYC3/zJvkU7K/aP44Y+z7xQuJiVnB/422P/Ak+F/AqFR7E4Wr\" crossorigin=\"anonymous\"></script></head><body><div class=\"bg-slate-100 min-h-screen\"><nav class=\"bg-white shadow-sm border-b\"><div class=\"px-6 sm:px-8\"><div class=\"flex justify-between items-center h-16\"><div class=\"flex items-center space-x-8\"><h1 class=\"text-xl font-semibold text-gray-900\">Movies</h1><div class=\"flex space-x-4\"><a href=\"./\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Library</a> <a href=\"tv/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">TV Shows</a> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if CanManageLibrary(ctx) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<a href=\"import/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Import</a> <a href=\"ignores/\" class=\"text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium\">Ignores</a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div></div></nav><div><main class=\"py-4\"><h1 class=\"px-6 sm:px-8 text-4xl mb-6 pb-2 sm:pt-6 font-bold border-b-2\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/movies/libraryserver/page.templ`, Line: 38, Col: 86}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</h1>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -73,7 +88,7 @@ func Page(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</main></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</main></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

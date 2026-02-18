@@ -32,7 +32,7 @@ templ Stubs(stubs []*db.Stub) {
 					params.append("year", year);
 					params.append("path", path);
 					console.log("search", {query, year, path});
-					await fetch(`/movies/search/?`+params.toString(), {method: "POST"});
+					await fetch(`search/?`+params.toString(), {method: "POST"});
 					location.reload();
 				});
 
@@ -48,7 +48,7 @@ templ Stubs(stubs []*db.Stub) {
 						params.append("id", id);
 						params.append("path", path);
 						console.log("identify", {path, id});
-						await fetch(`/movies/identify/?`+params.toString(), { method: "POST" });
+						await fetch(`identify/?`+params.toString(), { method: "POST" });
 						location.reload();
 					})
 				}
@@ -58,7 +58,7 @@ templ Stubs(stubs []*db.Stub) {
 					const params = new URLSearchParams();
 					params.append("path", path);
 					console.log("ignore", {path});
-					await fetch(`/movies/ignore/?`+params.toString(), { method: "POST" });
+					await fetch(`ignore/?`+params.toString(), { method: "POST" });
 					location.reload();
 				})
 			}

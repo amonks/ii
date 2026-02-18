@@ -12,6 +12,22 @@ Use `apps/template/main.go` as a starting point. All apps follow the same
 boilerplate: `main()` calls `run()`, which sets up logging, creates a mux,
 waits for tailnet, and calls `tailnet.ListenAndServe`.
 
+Apps are reachable both directly on the tailnet (e.g.
+`https://monks-$name-$machine/`) and through the proxy (e.g.
+`https://monks.co/$name/`). The proxy strips the path prefix on inbound
+requests and sets the `X-Forwarded-Prefix` header (e.g. `/map`). It also
+rewrites `Location` headers on responses so app-root-relative redirects
+(`/path`) get the prefix prepended automatically.
+
+In templates, use `serve.BasePath(r)` (or `serve.BasePathFromContext(ctx)` in
+templ components) in a `<base href>` tag so relative URLs resolve correctly
+regardless of mount point. Apps using `serve.Mux` get the BasePath set in
+context automatically.
+
+Use app-root-relative paths (`/path`) in `http.Redirect` calls -- the proxy
+rewrites these. Use relative URLs (no leading `/`) in templates so they resolve
+from the `<base>` tag.
+
 ### 3. Create `apps/$name/tasks.toml`
 
 Use `apps/template/tasks.toml` as a starting point. Every app needs at least

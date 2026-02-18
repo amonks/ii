@@ -14,7 +14,7 @@ templ List(data *ListData) {
 				<h1>Reddit Archive</h1>
 				<div style="display: flex; gap: 10px;">
 					if data.Subreddit != "" || data.Author != "" || data.Starred != "" {
-						<a href="/reddit/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+						<a href="./" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 							Clear Filters
 						</a>
 					}
@@ -24,10 +24,10 @@ templ List(data *ListData) {
 					<a href={ templ.SafeURL(addStarredFilterURL("false", data.Subreddit, data.Author, data.Starred)) } style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Not Starred
 					</a>
-					<a href="/reddit/subreddits/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="subreddits/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Subreddits
 					</a>
-					<a href="/reddit/authors/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
+					<a href="authors/" style="text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;">
 						Authors
 					</a>
 				</div>
@@ -130,7 +130,7 @@ templ List(data *ListData) {
 		</div>
 		<script>
 			function toggleStar(postName) {
-				fetch('/reddit/star/' + postName + '/', {
+				fetch('star/' + postName + '/', {
 					method: 'POST'
 				}).then(response => {
 					if (response.ok) {
@@ -143,7 +143,7 @@ templ List(data *ListData) {
 }
 
 func buildPostURL(n int, subreddit, author, starred string) string {
-	base := fmt.Sprintf("/reddit/post/%d/", n)  // Added trailing slash
+	base := fmt.Sprintf("post/%d/", n)
 	params := []string{}
 	if subreddit != "" {
 		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
@@ -170,7 +170,7 @@ func trStyle(i int) string {
 
 // removeFilterURL creates a URL that removes a specific filter while keeping other filters
 func removeFilterURL(filterToRemove, subreddit, author, starred string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Keep all filters except the one we're removing
@@ -193,7 +193,7 @@ func removeFilterURL(filterToRemove, subreddit, author, starred string) string {
 
 // addFilterURL creates a URL that adds or replaces a filter while keeping other filters
 func addFilterURL(filterType, filterValue, currentSubreddit, currentAuthor string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Add or replace the specified filter
@@ -220,7 +220,7 @@ func addFilterURL(filterType, filterValue, currentSubreddit, currentAuthor strin
 
 // addStarredFilterURL creates a URL that adds or replaces the starred filter
 func addStarredFilterURL(starredValue, currentSubreddit, currentAuthor, currentStarred string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Keep existing filters

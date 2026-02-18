@@ -53,7 +53,7 @@ func List(data *ListData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if data.Subreddit != "" || data.Author != "" || data.Starred != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a href=\"/reddit/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Clear Filters</a> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a href=\"./\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Clear Filters</a> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -84,7 +84,7 @@ func List(data *ListData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Not Starred</a> <a href=\"/reddit/subreddits/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Subreddits</a> <a href=\"/reddit/authors/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Authors</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Not Starred</a> <a href=\"subreddits/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Subreddits</a> <a href=\"authors/\" style=\"text-decoration: none; padding: 8px 16px; background: #f0f0f0; border-radius: 4px;\">Authors</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -341,7 +341,7 @@ func List(data *ListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</tbody></table></div><script>\n\t\t\tfunction toggleStar(postName) {\n\t\t\t\tfetch('/reddit/star/' + postName + '/', {\n\t\t\t\t\tmethod: 'POST'\n\t\t\t\t}).then(response => {\n\t\t\t\t\tif (response.ok) {\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</tbody></table></div><script>\n\t\t\tfunction toggleStar(postName) {\n\t\t\t\tfetch('star/' + postName + '/', {\n\t\t\t\t\tmethod: 'POST'\n\t\t\t\t}).then(response => {\n\t\t\t\t\tif (response.ok) {\n\t\t\t\t\t\tlocation.reload();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -356,7 +356,7 @@ func List(data *ListData) templ.Component {
 }
 
 func buildPostURL(n int, subreddit, author, starred string) string {
-	base := fmt.Sprintf("/reddit/post/%d/", n) // Added trailing slash
+	base := fmt.Sprintf("post/%d/", n)
 	params := []string{}
 	if subreddit != "" {
 		params = append(params, fmt.Sprintf("subreddit=%s", subreddit))
@@ -383,7 +383,7 @@ func trStyle(i int) string {
 
 // removeFilterURL creates a URL that removes a specific filter while keeping other filters
 func removeFilterURL(filterToRemove, subreddit, author, starred string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Keep all filters except the one we're removing
@@ -406,7 +406,7 @@ func removeFilterURL(filterToRemove, subreddit, author, starred string) string {
 
 // addFilterURL creates a URL that adds or replaces a filter while keeping other filters
 func addFilterURL(filterType, filterValue, currentSubreddit, currentAuthor string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Add or replace the specified filter
@@ -433,7 +433,7 @@ func addFilterURL(filterType, filterValue, currentSubreddit, currentAuthor strin
 
 // addStarredFilterURL creates a URL that adds or replaces the starred filter
 func addStarredFilterURL(starredValue, currentSubreddit, currentAuthor, currentStarred string) string {
-	url := "/reddit/"
+	url := "./"
 	params := []string{}
 
 	// Keep existing filters

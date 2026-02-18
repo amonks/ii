@@ -164,7 +164,7 @@ func MetacriticValidation(id string, movie *db.Movie) templ.Component {
 					templ_7745c5c3_Err = templib.ButtonPrimary(&templib.ButtonOptions{
 						Class:  "mc--submit",
 						Label:  "Submit",
-						HxPost: "/movies/validate-metacritic/",
+						HxPost: "validate-metacritic/",
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

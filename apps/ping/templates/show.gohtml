@@ -2,11 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <base href="{{ .BasePath }}" />
     <title>ping {{ .Slug }}</title>
   </head>
 
   <body>
-    <a href="/ping">← people</a>
+    <a href="./">← people</a>
 
     <h1>{{ .Slug }}</h1>
     <ul>
@@ -15,7 +16,7 @@
       {{ end }}
     </ul>
 
-    <form method="post" action="/ping/commands/update-person">
+    <form method="post" action="commands/update-person/">
       <h2>update</h2>
       <input name="slug" type="hidden" value="{{ .Slug }}" />
 
@@ -30,7 +31,7 @@
       <button type="submit">save</button>
     </form>
 
-    <form method="post" action="/ping/commands/ping-person">
+    <form method="post" action="commands/ping-person/">
       <h2>add ping</h2>
       <input name="slug" type="hidden" value="{{ .Slug }}" />
       <textarea name="notes" placeholder="notes"></textarea><br />

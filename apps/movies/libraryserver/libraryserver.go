@@ -690,7 +690,7 @@ func (app *LibraryServer) serveDeleteIgnore(w http.ResponseWriter, req *http.Req
 	}
 
 	// Redirect back to ignores page with same filters
-	redirectURL := "/movies/ignores/"
+	redirectURL := "/ignores/"
 	if query := req.URL.Query(); len(query) > 0 {
 		redirectURL += "?" + query.Encode()
 	}
