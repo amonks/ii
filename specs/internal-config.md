@@ -51,5 +51,5 @@ cache-retention = "short"
 - TOML decoding errors are surfaced with context.
 - `RunScript` executes hook scripts in a target directory.
 - Scripts honor a shebang line; otherwise `/bin/bash` is used.
-- Script content is passed via stdin, with stdout/stderr forwarded to the caller.
+- Script content is passed via stdin, with both stdout and stderr forwarded to the caller's stderr.
 - Job workflows require `job.test-commands` to be present and non-empty.

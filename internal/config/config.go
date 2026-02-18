@@ -280,7 +280,7 @@ func RunScript(dir, script string) error {
 	cmd := exec.Command(parts[0], parts[1:]...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(scriptBody)
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
