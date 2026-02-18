@@ -193,6 +193,27 @@ func TestClassTraitsFriar(t *testing.T) {
 	}
 }
 
+func TestClassTraitsCleric(t *testing.T) {
+	traits := ClassTraits("Cleric", 1)
+	if len(traits) != 7 {
+		t.Fatalf("expected 7 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Restrictions" {
+		t.Errorf("first trait = %q, want Restrictions", traits[0].Name)
+	}
+	if traits[1].Name != "Cleric Tenets" {
+		t.Errorf("second trait = %q, want Cleric Tenets", traits[1].Name)
+	}
+	if traits[6].Name != "Turning the Undead" {
+		t.Errorf("seventh trait = %q, want Turning the Undead", traits[6].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestTotalXPModifier(t *testing.T) {
 	scores := map[string]int{"str": 15}
 	primes := []string{"str"}

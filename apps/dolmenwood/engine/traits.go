@@ -89,6 +89,16 @@ func ClassTraits(class string, level int) []Trait {
 			traits = append(traits, Trait{Name: "Monster Slayer", Description: "+2 attack/damage vs Large creatures."})
 		}
 		return traits
+	case "cleric":
+		return []Trait{
+			{Name: "Restrictions", Description: "Lawful or Neutral; mortals only; holy magic armaments only."},
+			{Name: "Cleric Tenets", Description: "Evangelism, hierarchy, monotheism, sanctity of life."},
+			{Name: "Detect Holy Magic Items", Description: "Identify holy enchantments by touch with 1 Turn of focus."},
+			{Name: "Holy Magic", Description: "Pray for holy spells; must carry a holy symbol."},
+			{Name: "Holy Order", Description: "Level 2: choose a holy order and gain its power."},
+			{Name: "Languages", Description: "Speaks Liturgic in addition to native languages."},
+			{Name: "Turning the Undead", Description: "May drive off undead by presenting a holy symbol once per turn."},
+		}
 	case "friar":
 		return []Trait{
 			{Name: "Friar Tenets", Description: "Sanctity of life, monotheism, spiritual insight, and mentorship."},
