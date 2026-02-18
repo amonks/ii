@@ -256,6 +256,19 @@ func TestClassTraitsEnchanter(t *testing.T) {
 	}
 }
 
+func TestClassTraitsFighter(t *testing.T) {
+	traits := ClassTraits("Fighter", 1)
+	if len(traits) != 1 {
+		t.Fatalf("expected 1 trait, got %d", len(traits))
+	}
+	if traits[0].Name != "Combat Talents" {
+		t.Errorf("first trait = %q, want Combat Talents", traits[0].Name)
+	}
+	if traits[0].Description == "" {
+		t.Error("expected description for Combat Talents")
+	}
+}
+
 func TestTotalXPModifier(t *testing.T) {
 	scores := map[string]int{"str": 15}
 	primes := []string{"str"}
