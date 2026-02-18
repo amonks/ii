@@ -300,6 +300,9 @@ func TestLoad_UsesGlobalWhenProjectMissing(t *testing.T) {
 	}
 
 	configContent := `
+[agent]
+cache-retention = "long"
+
 [workspace]
 on-create = "global create"
 
@@ -337,6 +340,9 @@ test-commands = ["go test ./..."]
 	if cfg.Job.ProjectReviewModel != "global-project" {
 		t.Errorf("ProjectReviewModel = %q, expected %q", cfg.Job.ProjectReviewModel, "global-project")
 	}
+	if cfg.Agent.CacheRetention != "long" {
+		t.Errorf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "long")
+	}
 	if len(cfg.Job.TestCommands) != 1 || cfg.Job.TestCommands[0] != "go test ./..." {
 		t.Fatalf("expected global test commands to load")
 	}
@@ -350,6 +356,9 @@ func TestLoad_ProjectOverridesGlobal(t *testing.T) {
 	}
 
 	globalContent := `
+[agent]
+cache-retention = "short"
+
 [workspace]
 on-create = "global create"
 
@@ -366,6 +375,9 @@ test-commands = ["global command"]
 	}
 
 	projectContent := `
+[agent]
+cache-retention = "long"
+
 [workspace]
 on-acquire = "project acquire"
 
@@ -408,6 +420,9 @@ test-commands = ["project command"]
 	if len(cfg.Job.TestCommands) != 1 || cfg.Job.TestCommands[0] != "project command" {
 		t.Fatalf("expected project test commands to override global")
 	}
+	if cfg.Agent.CacheRetention != "long" {
+		t.Fatalf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "long")
+	}
 }
 
 func TestLoad_ProjectEmptyOverridesGlobal(t *testing.T) {
@@ -418,6 +433,9 @@ func TestLoad_ProjectEmptyOverridesGlobal(t *testing.T) {
 	}
 
 	globalContent := `
+[agent]
+cache-retention = "long"
+
 [workspace]
 on-create = "global create"
 on-acquire = "global acquire"
@@ -435,6 +453,9 @@ test-commands = ["global command"]
 	}
 
 	projectContent := `
+[agent]
+cache-retention = ""
+
 [workspace]
 on-create = ""
 on-acquire = ""
@@ -477,6 +498,9 @@ test-commands = []
 	}
 	if len(cfg.Job.TestCommands) != 0 {
 		t.Fatalf("expected empty test commands, got %d", len(cfg.Job.TestCommands))
+	}
+	if cfg.Agent.CacheRetention != "" {
+		t.Fatalf("CacheRetention = %q, expected empty string", cfg.Agent.CacheRetention)
 	}
 }
 

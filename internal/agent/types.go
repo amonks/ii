@@ -39,6 +39,9 @@ type AgentConfig struct {
 	// InputCh receives additional user input for interactive sessions.
 	// If nil, the agent runs in single-shot mode.
 	InputCh <-chan string
+
+	// CacheRetention controls prompt caching for providers that support it.
+	CacheRetention llm.CacheRetention
 }
 
 // BashPermissions controls which bash commands are allowed.

@@ -466,6 +466,7 @@ func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (st
 		WorkDir:         e.workDir,
 		GlobalConfigDir: e.config.GlobalConfigDir,
 		Env:             e.env,
+		CacheRetention:  e.config.CacheRetention,
 		SessionID:       e.config.SessionID, // Share session ID for observability
 		Version:         e.config.Version,
 	}

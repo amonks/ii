@@ -73,6 +73,7 @@ type AgentConfig struct {
     WorkDir     string // Working directory for tools
     Env         []string // Extra environment variables for tool execution
     InputCh     <-chan string // Optional input channel for interactive sessions
+    CacheRetention llm.CacheRetention // Prompt caching preference (default: unset/none)
 }
 ```
 

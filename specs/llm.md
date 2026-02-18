@@ -15,7 +15,7 @@ The core LLM abstraction with no persistence. Provides:
 - Unified message types across providers
 - Streaming completions via channels
 - Tool definitions using Go struct tags
-- Prompt caching with TTL control (OpenAI reports cached tokens from responses; Anthropic requires explicit cache_control markers)
+- Prompt caching with TTL control (OpenAI caches automatically and reports cached tokens in responses; Anthropic requires explicit cache_control markers and a beta header)
 - Thinking/reasoning mode support
 - Usage and cost tracking
 
@@ -299,7 +299,7 @@ type Request struct {
 type StreamOptions struct {
     Temperature    *float64
     MaxTokens      *int
-    CacheRetention CacheRetention // "none", "short", "long"
+    CacheRetention CacheRetention // "none", "short", "long" (default: unset/none; Anthropic adds cache_control markers; OpenAI caching is automatic)
     ThinkingLevel  ThinkingLevel  // "off", "minimal", "low", "medium", "high", "xhigh"
 }
 
@@ -311,6 +311,13 @@ const (
     CacheLong  CacheRetention = "long"  // ~1 hour
 )
 
+### Caching Behavior
+
+- OpenAI caching is automatic; cached tokens are reported in response usage details.
+- Anthropic requires the prompt-caching-2024-07-31 beta header and cache_control markers on
+  the system prompt, tool definitions, and the last user message content block.
+
+```go
 type ThinkingLevel string
 
 const (

@@ -215,6 +215,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		InputCh:         opts.InputCh,
 		SessionID:       sessionID,
 		Version:         opts.Version,
+		CacheRetention:  llm.CacheRetention(s.config.Agent.CacheRetention),
 	}
 
 	// Start internal agent

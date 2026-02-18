@@ -26,7 +26,6 @@ func setStreamWithRetry(fn streamWithRetryFunc) func() {
 // Run starts an agent run with the given prompt and configuration.
 // It returns a RunHandle that provides access to events and the final result.
 func Run(ctx context.Context, prompt string, config AgentConfig) (*RunHandle, error) {
-	// Resolve working directory
 	workDir := config.WorkDir
 	if workDir == "" {
 		var err error
@@ -112,8 +111,9 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 		started := false
 
 		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
-			SessionID: config.SessionID,
-			UserAgent: UserAgent(workDir, config.Version),
+			CacheRetention: config.CacheRetention,
+			SessionID:      config.SessionID,
+			UserAgent:      UserAgent(workDir, config.Version),
 		}, llm.DefaultRetryConfig())
 		if err != nil {
 			result <- RunResult{
@@ -395,8 +395,9 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 
 		// Stream completion from LLM with retry for transient errors
 		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
-			SessionID: config.SessionID,
-			UserAgent: UserAgent(workDir, config.Version),
+			CacheRetention: config.CacheRetention,
+			SessionID:      config.SessionID,
+			UserAgent:      UserAgent(workDir, config.Version),
 		}, llm.DefaultRetryConfig())
 		if err != nil {
 			return RunResult{

@@ -4,10 +4,11 @@
 The config package loads project and global configuration files and runs hook scripts.
 
 ## Configuration Model
-- `Config` holds workspace, job, and LLM configuration.
+- `Config` holds workspace, job, agent, and LLM configuration.
 - `Workspace` defines `on-create` and `on-acquire` scripts.
 - `Job` defines `test-commands`, the optional default `model`, and optional per-stage
   models (`implementation-model`, `code-review-model`, `project-review-model`).
+- `Agent` defines agent defaults like the model and prompt cache retention (`cache-retention`).
 - `LLM` defines LLM providers available for use.
 
 ### LLM Configuration
@@ -28,11 +29,24 @@ Each provider has:
 - `api-key-command`: Command to run to get API key (optional; if empty, no auth is used)
 - `models`: List of model IDs available through this provider
 
+## Agent Configuration
+
+```toml
+[agent]
+model = "claude-haiku-4-5"
+cache-retention = "short"
+```
+
+- `model` selects the default agent model when no task-specific model is set.
+- `cache-retention` controls prompt caching for agent runs ("none", "short", "long").
+
 ## Behavior
+
 - `Load` reads either `incrementum.toml` or `.incrementum/config.toml` from the repo root and `~/.config/incrementum/config.toml`, then merges them.
 - `LoadGlobal` reads only the global config file (useful when no repo context is available).
 - If both `incrementum.toml` and `.incrementum/config.toml` exist, `Load` returns an error.
 - Project values override global values, including explicitly empty strings or lists; missing configs return an empty config.
+- Agent `cache-retention` values merge the same way as other agent fields (project overrides global, even when empty).
 - LLM providers are merged: project providers with the same name override global providers; providers are returned with project providers first, then remaining global providers.
 - TOML decoding errors are surfaced with context.
 - `RunScript` executes hook scripts in a target directory.

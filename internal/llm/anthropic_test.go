@@ -1,9 +1,46 @@
 package llm
 
 import (
+	"context"
+	"io"
+	"strings"
 	"testing"
 	"time"
 )
+
+func TestProcessAnthropicStream_ReportsCacheUsage(t *testing.T) {
+	stream := strings.Join([]string{
+		"data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":10,\"output_tokens\":2,\"cache_creation_input_tokens\":4,\"cache_read_input_tokens\":6}}}",
+		"data: {\"type\":\"message_stop\"}",
+		"",
+	}, "\n")
+
+	body := io.NopCloser(strings.NewReader(stream))
+	model := Model{ID: "claude", API: APIAnthropicMessages, Provider: "test"}
+
+	events := make(chan StreamEvent, 100)
+	done := make(chan AssistantMessage, 1)
+	errCh := make(chan error, 1)
+
+	processAnthropicStream(context.Background(), body, model, events, done, errCh)
+
+	for range events {
+	}
+
+	select {
+	case err := <-errCh:
+		t.Fatalf("unexpected error: %v", err)
+	default:
+	}
+
+	msg := <-done
+	if msg.Usage.CacheRead != 6 {
+		t.Fatalf("Usage.CacheRead=%d, want %d", msg.Usage.CacheRead, 6)
+	}
+	if msg.Usage.CacheWrite != 4 {
+		t.Fatalf("Usage.CacheWrite=%d, want %d", msg.Usage.CacheWrite, 4)
+	}
+}
 
 func TestConvertMessagesToAnthropic_MergesToolResults(t *testing.T) {
 	// Simulate a conversation with parallel tool calls:
@@ -194,4 +231,77 @@ func TestConvertMessagesToAnthropic_EmptyAssistantMessageExcluded(t *testing.T) 
 	if result[0].Role != "user" {
 		t.Errorf("expected role 'user', got %q", result[0].Role)
 	}
+}
+
+func TestConvertToAnthropicRequest_AddsCacheControlMarkers(t *testing.T) {
+	req := Request{
+		SystemPrompt: "system prompt",
+		Messages: []Message{
+			UserMessage{
+				Role: "user",
+				Content: []ContentBlock{
+					TextContent{Type: "text", Text: "hello"},
+				},
+				Timestamp: time.Now(),
+			},
+		},
+		Tools: []Tool{
+			{
+				Name:        "read",
+				Description: "read file",
+				Parameters: struct {
+					Path string `json:"path"`
+				}{},
+			},
+		},
+	}
+
+	t.Run("cache retention", func(t *testing.T) {
+		anthropicReq := convertToAnthropicRequest(Model{ID: "claude"}, req, StreamOptions{CacheRetention: CacheShort})
+
+		if len(anthropicReq.System) == 0 || anthropicReq.System[len(anthropicReq.System)-1].CacheControl == nil {
+			t.Fatalf("expected cache_control on system prompt")
+		}
+		if len(anthropicReq.Tools) == 0 || anthropicReq.Tools[len(anthropicReq.Tools)-1].CacheControl == nil {
+			t.Fatalf("expected cache_control on tool definitions")
+		}
+
+		foundUser := false
+		for _, msg := range anthropicReq.Messages {
+			if msg.Role != "user" {
+				continue
+			}
+			if len(msg.Content) == 0 {
+				continue
+			}
+			foundUser = true
+			if msg.Content[len(msg.Content)-1].CacheControl == nil {
+				t.Fatalf("expected cache_control on last user message content")
+			}
+			break
+		}
+		if !foundUser {
+			t.Fatal("expected a user message to receive cache_control")
+		}
+	})
+
+	t.Run("default retention", func(t *testing.T) {
+		anthropicReq := convertToAnthropicRequest(Model{ID: "claude"}, req, StreamOptions{})
+
+		if len(anthropicReq.System) > 0 && anthropicReq.System[len(anthropicReq.System)-1].CacheControl != nil {
+			t.Fatal("expected no cache_control on system prompt")
+		}
+		if len(anthropicReq.Tools) > 0 && anthropicReq.Tools[len(anthropicReq.Tools)-1].CacheControl != nil {
+			t.Fatal("expected no cache_control on tool definitions")
+		}
+		for _, msg := range anthropicReq.Messages {
+			if msg.Role != "user" || len(msg.Content) == 0 {
+				continue
+			}
+			if msg.Content[len(msg.Content)-1].CacheControl != nil {
+				t.Fatal("expected no cache_control on user message content")
+			}
+			break
+		}
+	})
 }

@@ -33,6 +33,7 @@ type AgentConfig struct {
     WorkDir     string
     Env         []string
     InputCh     <-chan string // Optional interactive input channel
+    CacheRetention llm.CacheRetention // Prompt caching preference (default: unset/none)
 }
 
 type RunHandle struct {

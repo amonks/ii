@@ -177,10 +177,9 @@ type Tool struct {
 
 // CacheRetention controls prompt caching behavior.
 //
-// TODO: Not yet implemented. Implementing this requires:
-//   - Anthropic: Add anthropic-beta header (prompt-caching-2024-07-31) and
-//     cache_control markers in the request body
-//   - OpenAI: Does not currently support prompt caching via API
+// Anthropic uses cache_control markers plus the prompt-caching-2024-07-31 beta
+// header. OpenAI caching is automatic; we only parse cached token counts from
+// response usage details.
 type CacheRetention string
 
 const (

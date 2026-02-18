@@ -19,7 +19,7 @@ type anthropicRequest struct {
 	Model       string             `json:"model"`
 	MaxTokens   int                `json:"max_tokens"`
 	Messages    []anthropicMessage `json:"messages"`
-	System      string             `json:"system,omitempty"`
+	System      []anthropicContent `json:"system,omitempty"`
 	Stream      bool               `json:"stream"`
 	Tools       []anthropicTool    `json:"tools,omitempty"`
 	Temperature *float64           `json:"temperature,omitempty"`
@@ -37,16 +37,21 @@ type anthropicMessage struct {
 }
 
 type anthropicContent struct {
-	Type      string           `json:"type"`
-	Text      string           `json:"text,omitempty"`
-	Thinking  string           `json:"thinking,omitempty"`
-	Source    *anthropicSource `json:"source,omitempty"`
-	ID        string           `json:"id,omitempty"`
-	Name      string           `json:"name,omitempty"`
-	Input     map[string]any   `json:"input,omitempty"`
-	ToolUseID string           `json:"tool_use_id,omitempty"`
-	Content   string           `json:"content,omitempty"`
-	IsError   bool             `json:"is_error,omitempty"`
+	Type         string                 `json:"type"`
+	Text         string                 `json:"text,omitempty"`
+	Thinking     string                 `json:"thinking,omitempty"`
+	Source       *anthropicSource       `json:"source,omitempty"`
+	ID           string                 `json:"id,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Input        map[string]any         `json:"input,omitempty"`
+	ToolUseID    string                 `json:"tool_use_id,omitempty"`
+	Content      string                 `json:"content,omitempty"`
+	IsError      bool                   `json:"is_error,omitempty"`
+	CacheControl *anthropicCacheControl `json:"cache_control,omitempty"`
+}
+
+type anthropicCacheControl struct {
+	Type string `json:"type"`
 }
 
 type anthropicSource struct {
@@ -56,9 +61,10 @@ type anthropicSource struct {
 }
 
 type anthropicTool struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description,omitempty"`
-	InputSchema *Schema `json:"input_schema"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description,omitempty"`
+	InputSchema  *Schema                `json:"input_schema"`
+	CacheControl *anthropicCacheControl `json:"cache_control,omitempty"`
 }
 
 // Anthropic SSE event types
@@ -126,6 +132,9 @@ func streamAnthropic(ctx context.Context, model Model, req Request, opts StreamO
 	if opts.SessionID != "" {
 		httpReq.Header.Set("session_id", opts.SessionID)
 	}
+	if shouldEnableAnthropicCaching(opts.CacheRetention) {
+		httpReq.Header.Set("anthropic-beta", "prompt-caching-2024-07-31")
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(httpReq)
@@ -161,7 +170,17 @@ func convertToAnthropicRequest(model Model, req Request, opts StreamOptions) ant
 	anthropicReq := anthropicRequest{
 		Model:  model.ID,
 		Stream: true,
-		System: req.SystemPrompt,
+		System: []anthropicContent{
+			{
+				Type: "text",
+				Text: req.SystemPrompt,
+			},
+		},
+		Tools: make([]anthropicTool, 0, len(req.Tools)),
+	}
+
+	if req.SystemPrompt == "" {
+		anthropicReq.System = nil
 	}
 
 	// Set max tokens
@@ -202,7 +221,41 @@ func convertToAnthropicRequest(model Model, req Request, opts StreamOptions) ant
 		})
 	}
 
+	applyAnthropicCaching(&anthropicReq, opts.CacheRetention)
+
 	return anthropicReq
+}
+
+func applyAnthropicCaching(req *anthropicRequest, retention CacheRetention) {
+	if !shouldEnableAnthropicCaching(retention) {
+		return
+	}
+
+	cacheControl := &anthropicCacheControl{Type: "ephemeral"}
+	if len(req.System) > 0 {
+		req.System[len(req.System)-1].CacheControl = cacheControl
+	}
+	if len(req.Tools) > 0 {
+		req.Tools[len(req.Tools)-1].CacheControl = cacheControl
+	}
+
+	for i := len(req.Messages) - 1; i >= 0; i-- {
+		msg := &req.Messages[i]
+		if msg.Role != "user" || len(msg.Content) == 0 {
+			continue
+		}
+		msg.Content[len(msg.Content)-1].CacheControl = cacheControl
+		break
+	}
+}
+
+func shouldEnableAnthropicCaching(retention CacheRetention) bool {
+	switch retention {
+	case CacheShort, CacheLong:
+		return true
+	default:
+		return false
+	}
 }
 
 func thinkingBudget(level ThinkingLevel) int {
@@ -374,8 +427,10 @@ func processAnthropicStream(ctx context.Context, body io.ReadCloser, model Model
 
 		switch event.Type {
 		case "message_start":
-			if event.Message != nil && event.Message.Usage.InputTokens > 0 {
+			if event.Message != nil {
 				partial.Usage.Input = event.Message.Usage.InputTokens
+				partial.Usage.CacheRead = event.Message.Usage.CacheReadInputTokens
+				partial.Usage.CacheWrite = event.Message.Usage.CacheCreationInputTokens
 			}
 			events <- StartEvent{Partial: partial}
 
@@ -456,7 +511,7 @@ func processAnthropicStream(ctx context.Context, body io.ReadCloser, model Model
 	}
 
 	// If we get here without a message_stop, send what we have
-	partial.Usage.Total = partial.Usage.Input + partial.Usage.Output
+	partial.Usage.Total = partial.Usage.Input + partial.Usage.Output + partial.Usage.CacheRead + partial.Usage.CacheWrite
 	partial.Usage.Cost = calculateCost(partial.Usage, model.Cost)
 	if partial.StopReason == "" {
 		partial.StopReason = StopReasonEnd

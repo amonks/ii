@@ -33,6 +33,9 @@ type LLM struct {
 type Agent struct {
 	// Model is the default model ID for agent runs when no task-specific model is set.
 	Model string `toml:"model"`
+
+	// CacheRetention controls prompt caching for agent runs. Defaults to unset (no caching).
+	CacheRetention string `toml:"cache-retention"`
 }
 
 // LLMProvider configures a single LLM provider.
@@ -200,6 +203,7 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 
 	// Merge Agent config
 	merged.Agent.Model = mergeString(projectMeta.IsDefined("agent", "model"), projectCfg.Agent.Model, globalCfg.Agent.Model)
+	merged.Agent.CacheRetention = mergeString(projectMeta.IsDefined("agent", "cache-retention"), projectCfg.Agent.CacheRetention, globalCfg.Agent.CacheRetention)
 
 	return &merged
 }
