@@ -32,6 +32,8 @@ type CharacterView struct {
 	StowedCapacity   int
 	StowedContainers []engine.ContainerInfo
 	XPModPercent     int
+	KindredTraits    []engine.Trait
+	ClassTraits      []engine.Trait
 	XPToNext         int
 	NewLevel         int
 	CanLevelUp       bool
@@ -207,7 +209,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	}
 
 	ac, armorName := engine.ACFromEquippedItems(engineItems, ch.DEX)
-	xpMod := engine.HumanTotalXPModifier(scores, primes)
+	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 
 	// Build inventory tree
@@ -235,6 +237,8 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		StowedCapacity:   stowedCap,
 		StowedContainers: stowedContainers,
 		XPModPercent:     xpMod,
+		KindredTraits:    engine.KindredTraits(ch.Kindred, ch.Level),
+		ClassTraits:      engine.ClassTraits(ch.Class, ch.Level),
 		XPToNext:         engine.XPToNextLevel(ch.Level, ch.TotalXP),
 		NewLevel:         newLevel,
 		CanLevelUp:       canLevelUp,

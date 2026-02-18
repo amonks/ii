@@ -1,0 +1,38 @@
+package server
+
+import "monks.co/apps/dolmenwood/engine"
+
+templ TraitsSection(view *CharacterView) {
+	<div id="traits" class="bg-white rounded-lg shadow p-4 space-y-3">
+		<h2 class="font-bold text-stone-800">Traits</h2>
+		<div class="grid gap-4 md:grid-cols-2">
+			<div class="space-y-1">
+				<div class="text-xs uppercase text-stone-400">Kindred Traits</div>
+				@traitList(view.KindredTraits)
+				if len(view.KindredTraits) == 0 {
+					<div class="text-xs text-stone-400">None</div>
+				}
+			</div>
+			<div class="space-y-1">
+				<div class="text-xs uppercase text-stone-400">Class Traits</div>
+				@traitList(view.ClassTraits)
+				if len(view.ClassTraits) == 0 {
+					<div class="text-xs text-stone-400">None</div>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ traitList(traits []engine.Trait) {
+	<ul class="space-y-1 text-sm">
+		for _, trait := range traits {
+			<li>
+				<span class="font-medium text-stone-700">{ trait.Name }</span>
+				if trait.Description != "" {
+					<span class="text-xs text-stone-500">{ " " + trait.Description }</span>
+				}
+			</li>
+		}
+	</ul>
+}

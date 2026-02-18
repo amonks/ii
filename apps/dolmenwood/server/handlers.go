@@ -401,7 +401,7 @@ func (s *Server) handleReturnToSafety(w http.ResponseWriter, r *http.Request) {
 		"str": ch.STR, "dex": ch.DEX, "con": ch.CON,
 		"int": ch.INT, "wis": ch.WIS, "cha": ch.CHA,
 	}
-	xpMod := engine.HumanTotalXPModifier(scores, []string{"str"})
+	xpMod := engine.TotalXPModifier(ch.Kindred, scores, []string{"str"})
 
 	if err := s.db.ReturnToSafety(ch.ID, xpMod); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

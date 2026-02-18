@@ -93,6 +93,39 @@ func TestGetCharacterSheet(t *testing.T) {
 	}
 }
 
+func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Trait Test", Class: "Knight", Kindred: "Human",
+		Level: 5, STR: 16, DEX: 10, CON: 12, INT: 10, WIS: 10, CHA: 13,
+		HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Traits") {
+		t.Error("response should contain traits section")
+	}
+	if !strings.Contains(body, "Spirited") {
+		t.Error("response should contain human trait 'Spirited'")
+	}
+	if !strings.Contains(body, "+10% XP") {
+		t.Error("response should describe the human XP bonus")
+	}
+	if !strings.Contains(body, "Horsemanship") {
+		t.Error("response should contain knight trait 'Horsemanship'")
+	}
+}
+
 func TestACDerivedFromEquippedItems(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
