@@ -133,6 +133,27 @@ func TestClassTraitsKnightLevel5(t *testing.T) {
 	}
 }
 
+func TestClassTraitsFriar(t *testing.T) {
+	traits := ClassTraits("Friar", 1)
+	if len(traits) != 9 {
+		t.Fatalf("expected 9 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Friar Tenets" {
+		t.Errorf("first trait = %q, want Friar Tenets", traits[0].Name)
+	}
+	if traits[1].Name != "Armour of Faith" {
+		t.Errorf("second trait = %q, want Armour of Faith", traits[1].Name)
+	}
+	if traits[8].Name != "Turning the Undead" {
+		t.Errorf("ninth trait = %q, want Turning the Undead", traits[8].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestTotalXPModifier(t *testing.T) {
 	scores := map[string]int{"str": 15}
 	primes := []string{"str"}
