@@ -163,6 +163,11 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			if qty := r.FormValue("quantity"); qty != "" {
 				item.Quantity = atoi(qty)
 			}
+			if notes := r.FormValue("notes"); notes != "" {
+				item.Notes = notes
+			} else if r.FormValue("has_notes") != "" {
+				item.Notes = ""
+			}
 			// Support move_to for container hierarchy
 			if moveTo := r.FormValue("move_to"); moveTo != "" {
 				containerID, companionID := parseMoveTarget(moveTo)
@@ -299,6 +304,24 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 	}
 	s.db.AddAuditLog(ch.ID, "companion_delete", fmt.Sprintf("companion %d", compID))
 	s.renderCompanions(w, r, ch)
+}
+
+func (s *Server) handleMoveCoins(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	moveTo := r.FormValue("move_to")
+	containerID, companionID := parseMoveTarget(moveTo)
+	ch.CoinContainerID = containerID
+	ch.CoinCompanionID = companionID
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.renderInventory(w, r, ch)
 }
 
 func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {

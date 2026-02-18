@@ -45,6 +45,10 @@ type Character struct {
 	PurseGP int `gorm:"column:purse_gp"`
 	PursePP int `gorm:"column:purse_pp"`
 
+	// Coin location (where the virtual "Coins" item lives)
+	CoinCompanionID *uint `gorm:"column:coin_companion_id"`
+	CoinContainerID *uint `gorm:"column:coin_container_id"`
+
 	// XP
 	TotalXP int `gorm:"column:total_xp"`
 
@@ -145,6 +149,8 @@ CREATE TABLE IF NOT EXISTS characters (
 	purse_ep INTEGER NOT NULL DEFAULT 0,
 	purse_gp INTEGER NOT NULL DEFAULT 0,
 	purse_pp INTEGER NOT NULL DEFAULT 0,
+	coin_companion_id INTEGER REFERENCES companions(id),
+	coin_container_id INTEGER REFERENCES items(id),
 	total_xp INTEGER NOT NULL DEFAULT 0,
 	created_at DATETIME,
 	updated_at DATETIME
@@ -237,6 +243,11 @@ const migrationCompanionSaddleType = `
 ALTER TABLE companions ADD COLUMN saddle_type TEXT NOT NULL DEFAULT '';
 `
 
+const migrationCoinLocation = `
+ALTER TABLE characters ADD COLUMN coin_companion_id INTEGER REFERENCES companions(id);
+ALTER TABLE characters ADD COLUMN coin_container_id INTEGER REFERENCES items(id);
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -250,6 +261,7 @@ func New() (*DB, error) {
 	d.Exec(migrationContainerHierarchy)
 	d.Exec(migrationTinyItems)
 	d.Exec(migrationCompanionSaddleType)
+	d.Exec(migrationCoinLocation)
 	return &DB{d}, nil
 }
 
@@ -330,6 +342,11 @@ func (db *DB) DeleteItem(id uint) error {
 		"container_id": item.ContainerID,
 		"companion_id": item.CompanionID,
 	})
+	// Reset coin location if coins were in this container
+	db.Model(&Character{}).Where("coin_container_id = ?", id).Updates(map[string]any{
+		"coin_container_id": item.ContainerID,
+		"coin_companion_id": item.CompanionID,
+	})
 	return db.Delete(&Item{}, id).Error
 }
 
@@ -356,6 +373,11 @@ func (db *DB) DeleteCompanion(id uint) error {
 	db.Model(&Item{}).Where("companion_id = ?", id).Updates(map[string]any{
 		"companion_id": nil,
 		"container_id": nil,
+	})
+	// Reset coin location if coins were on this companion
+	db.Model(&Character{}).Where("coin_companion_id = ?", id).Updates(map[string]any{
+		"coin_companion_id": nil,
+		"coin_container_id": nil,
 	})
 	return db.Delete(&Companion{}, id).Error
 }

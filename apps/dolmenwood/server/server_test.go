@@ -1388,3 +1388,476 @@ func TestStowedSpeedChart(t *testing.T) {
 		t.Errorf("cell 14 speed = %d, want 10", cells[14].Speed)
 	}
 }
+
+func TestCoinItemAppearsInInventory(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 50, PurseSP: 20,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	// The virtual coin item should appear with move form
+	if !strings.Contains(body, "coins/move/") {
+		t.Error("inventory should contain coin move form")
+	}
+	// Should show quantity badge (70 total coins)
+	if !strings.Contains(body, "70x") {
+		t.Error("Coins item should show 70x quantity")
+	}
+	// Coins should appear in encumbrance section, not in equipped section
+	if !strings.Contains(body, "Coins") {
+		t.Error("inventory should contain virtual Coins item")
+	}
+}
+
+func TestCoinItemNotShownWhenNoCoins(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if strings.Contains(body, "coins/move") {
+		t.Error("should not show coin move form when there are no coins")
+	}
+}
+
+func TestCoinSlotsOnCharacterStowed(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 150, // 150 coins = 2 slots
+	}
+	d.CreateCharacter(ch)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Coins on character should add to stowed
+	if view.CoinSlotsCount != 2 {
+		t.Errorf("CoinSlotsCount = %d, want 2", view.CoinSlotsCount)
+	}
+	if view.TotalStowedSlots != 2 {
+		t.Errorf("TotalStowedSlots = %d, want 2 (only coins)", view.TotalStowedSlots)
+	}
+}
+
+func TestMoveCoinToCompanion(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 150, // 150 coins = 2 slots
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Move coins to companion
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
+	req := httptest.NewRequest("POST", "/characters/1/coins/move/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Reload character
+	ch, _ = d.GetCharacter(ch.ID)
+	if ch.CoinCompanionID == nil || *ch.CoinCompanionID != comp.ID {
+		t.Errorf("CoinCompanionID = %v, want %d", ch.CoinCompanionID, comp.ID)
+	}
+
+	// Verify encumbrance: coins should NOT count toward character stowed
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+	if view.TotalStowedSlots != 0 {
+		t.Errorf("TotalStowedSlots = %d, want 0 (coins on companion)", view.TotalStowedSlots)
+	}
+
+	// Companion should show the coin slots
+	if len(view.CompanionGroups) != 1 {
+		t.Fatalf("got %d companion groups, want 1", len(view.CompanionGroups))
+	}
+	if view.CompanionGroups[0].UsedSlots != 2 {
+		t.Errorf("companion UsedSlots = %d, want 2 (150 coins)", view.CompanionGroups[0].UsedSlots)
+	}
+}
+
+func TestMoveCoinBackToCharacter(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	compID := uint(1)
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP:         150,
+		CoinCompanionID: &compID,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Move coins back to equipped (character)
+	form := url.Values{}
+	form.Set("move_to", "equipped")
+	req := httptest.NewRequest("POST", "/characters/1/coins/move/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	ch, _ = d.GetCharacter(ch.ID)
+	if ch.CoinCompanionID != nil {
+		t.Errorf("CoinCompanionID = %v, want nil", ch.CoinCompanionID)
+	}
+	if ch.CoinContainerID != nil {
+		t.Errorf("CoinContainerID = %v, want nil", ch.CoinContainerID)
+	}
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+	if view.TotalStowedSlots != 2 {
+		t.Errorf("TotalStowedSlots = %d, want 2 (coins back on character)", view.TotalStowedSlots)
+	}
+}
+
+func TestDeleteCompanionWithCoinsResetsLocation(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 150,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Move coins to companion
+	ch.CoinCompanionID = &comp.ID
+	d.UpdateCharacter(ch)
+
+	// Delete the companion
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/companions/%d/delete/", comp.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Coins should be back on character
+	ch, _ = d.GetCharacter(ch.ID)
+	if ch.CoinCompanionID != nil {
+		t.Errorf("CoinCompanionID = %v, want nil after companion deleted", ch.CoinCompanionID)
+	}
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+	if view.TotalStowedSlots != 2 {
+		t.Errorf("TotalStowedSlots = %d, want 2 (coins back on character)", view.TotalStowedSlots)
+	}
+}
+
+func TestMoveCoinToContainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 150,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Chest on the companion
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(chest)
+
+	// Move coins into the chest (which is on the companion)
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("container:%d", chest.ID))
+	req := httptest.NewRequest("POST", "/characters/1/coins/move/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	ch, _ = d.GetCharacter(ch.ID)
+	if ch.CoinContainerID == nil || *ch.CoinContainerID != chest.ID {
+		t.Errorf("CoinContainerID = %v, want %d", ch.CoinContainerID, chest.ID)
+	}
+
+	// Coins should not count toward character stowed (they're in a chest on a companion)
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+	if view.TotalStowedSlots != 0 {
+		t.Errorf("TotalStowedSlots = %d, want 0 (coins in chest on companion)", view.TotalStowedSlots)
+	}
+}
+
+func TestSetItemNotes(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1}
+	d.CreateItem(chest)
+
+	// Set notes
+	form := url.Values{}
+	form.Set("notes", "locked")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", chest.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	item, _ := d.GetItem(chest.ID)
+	if item.Notes != "locked" {
+		t.Errorf("Notes = %q, want %q", item.Notes, "locked")
+	}
+
+	// Verify it renders
+	body := w.Body.String()
+	if !strings.Contains(body, "locked") {
+		t.Error("response should contain notes text")
+	}
+}
+
+func TestClearItemNotes(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, Notes: "locked"}
+	d.CreateItem(chest)
+
+	// Clear notes by sending empty string with has_notes marker
+	form := url.Values{}
+	form.Set("notes", "")
+	form.Set("has_notes", "1")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", chest.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	item, _ := d.GetItem(chest.ID)
+	if item.Notes != "" {
+		t.Errorf("Notes = %q, want empty", item.Notes)
+	}
+}
+
+func TestNestedContainerContentsBubbleUp(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Backpack equipped on character (capacity 10)
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	// Sack inside the backpack
+	sack := &db.Item{CharacterID: ch.ID, Name: "Sack", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(sack)
+
+	// Rope directly in backpack (1 slot)
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID})
+
+	// 6 torches in the sack (2 slots: 6/3 = 2 bundles)
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 6, ContainerID: &sack.ID})
+
+	// 5 preserved rations in the sack (1 slot: 5*20cn=100cn)
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Preserved Rations", Quantity: 5, ContainerID: &sack.ID})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Find the backpack in the equipped tree
+	var bp *InventoryItem
+	for i := range view.EquippedItems {
+		if view.EquippedItems[i].Name == "Backpack" {
+			bp = &view.EquippedItems[i]
+			break
+		}
+	}
+	if bp == nil {
+		t.Fatal("Backpack not found in equipped items")
+	}
+
+	// Find the sack inside the backpack
+	var sk *InventoryItem
+	for i := range bp.Children {
+		if bp.Children[i].Name == "Sack" {
+			sk = &bp.Children[i]
+			break
+		}
+	}
+	if sk == nil {
+		t.Fatal("Sack not found in backpack children")
+	}
+
+	// Sack's own UsedSlots: 2 (torches) + 1 (rations) = 3
+	if sk.UsedSlots != 3 {
+		t.Errorf("Sack UsedSlots = %d, want 3", sk.UsedSlots)
+	}
+
+	// Backpack should include: sack slots + rope slots + sack's contents
+	// Sack (stowed in backpack, not equipped) has a slot cost.
+	// Rope = 1 slot. Sack contents = 3 slots.
+	// So backpack UsedSlots = sack.Slots + 1 + 3
+	sackSlots := sk.Slots
+	wantBPUsed := sackSlots + 1 + 3 // sack + rope + sack contents
+	if bp.UsedSlots != wantBPUsed {
+		t.Errorf("Backpack UsedSlots = %d, want %d (sack %d slots + rope 1 + sack contents 3)", bp.UsedSlots, wantBPUsed, sackSlots)
+	}
+}
+
+func TestCoinsBubbleUpThroughContainers(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 200, // 200 coins = 2 slots
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	// Chest on companion
+	chest := &db.Item{CharacterID: ch.ID, Name: "Chest (wooden, large)", Quantity: 1, CompanionID: &comp.ID}
+	d.CreateItem(chest)
+
+	// Sack inside chest
+	sack := &db.Item{CharacterID: ch.ID, Name: "Sack", Quantity: 1, ContainerID: &chest.ID}
+	d.CreateItem(sack)
+
+	// Put coins in the sack
+	ch.CoinContainerID = &sack.ID
+	d.UpdateCharacter(ch)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Find the chest in the companion group
+	if len(view.CompanionGroups) != 1 {
+		t.Fatalf("got %d companion groups, want 1", len(view.CompanionGroups))
+	}
+	cg := view.CompanionGroups[0]
+
+	var chestItem *InventoryItem
+	for i := range cg.Items {
+		if cg.Items[i].Name == "Chest (wooden, large)" {
+			chestItem = &cg.Items[i]
+			break
+		}
+	}
+	if chestItem == nil {
+		t.Fatal("Chest not found in companion items")
+	}
+
+	// Find the sack inside the chest
+	var sackItem *InventoryItem
+	for i := range chestItem.Children {
+		if chestItem.Children[i].Name == "Sack" {
+			sackItem = &chestItem.Children[i]
+			break
+		}
+	}
+	if sackItem == nil {
+		t.Fatal("Sack not found in chest children")
+	}
+
+	// Sack should show coins' 2 slots
+	if sackItem.UsedSlots != 2 {
+		t.Errorf("Sack UsedSlots = %d, want 2 (coins)", sackItem.UsedSlots)
+	}
+
+	// Chest should include: sack slots + sack contents (coins 2 slots)
+	wantChestUsed := sackItem.Slots + 2
+	if chestItem.UsedSlots != wantChestUsed {
+		t.Errorf("Chest UsedSlots = %d, want %d (sack %d + coins 2)", chestItem.UsedSlots, wantChestUsed, sackItem.Slots)
+	}
+}
