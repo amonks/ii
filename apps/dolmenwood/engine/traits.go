@@ -38,6 +38,14 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Shape-Shifting", Description: "Shift between estray, chester, and wilder forms."},
 			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
 		}
+	case "mossling":
+		return []Trait{
+			{Name: "Armour and Weapons", Description: "Must tailor armour; cannot wield Large weapons."},
+			{Name: "Knacks", Description: "Know one mossling knack."},
+			{Name: "Mossling Skills", Description: "Survival skill target 5 when foraging."},
+			{Name: "Resilience", Description: "+4 saves vs fungal spores/poisons; +2 to other saves."},
+			{Name: "Symbiotic Flesh", Description: "Gain a random symbiotic flesh trait each level."},
+		}
 	case "breggle":
 		traits := []Trait{
 			{Name: "Fur", Description: "+1 AC when unarmoured or in light armour."},
