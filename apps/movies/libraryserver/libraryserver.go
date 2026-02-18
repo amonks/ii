@@ -27,6 +27,33 @@ type LibraryServer struct {
 	db   *db.DB
 }
 
+type canManageKey struct{}
+
+// CanManageLibrary returns whether the current request has write access
+// to library management features (import, ignore, identify, etc).
+func CanManageLibrary(ctx context.Context) bool {
+	v, _ := ctx.Value(canManageKey{}).(bool)
+	return v
+}
+
+func canManageMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		canManage := r.Header.Get("Tailscale-Cap-Movies-Write") != ""
+		ctx := context.WithValue(r.Context(), canManageKey{}, canManage)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func requireManage(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !CanManageLibrary(r.Context()) {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		h(w, r)
+	}
+}
+
 type Genre struct {
 	Name       string
 	IsSelected bool
@@ -43,16 +70,16 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux := serve.NewMux()
 	// Movie routes
 	mux.HandleFunc("GET /{$}", app.serveIndex)
-	mux.HandleFunc("GET /import/{$}", app.serveImport)
-	mux.HandleFunc("GET /ignores/{$}", app.serveIgnores)
+	mux.HandleFunc("GET /import/{$}", requireManage(app.serveImport))
+	mux.HandleFunc("GET /ignores/{$}", requireManage(app.serveIgnores))
 	mux.HandleFunc("GET /poster/{$}", app.servePoster)
 	mux.HandleFunc("POST /play/{$}", app.servePlayButton)
 	mux.HandleFunc("POST /enqueue/{$}", app.serveEnqueueButton)
-	mux.HandleFunc("POST /search/{$}", app.serveSearch)
-	mux.HandleFunc("POST /identify/{$}", app.serveIdentify)
-	mux.HandleFunc("POST /ignore/{$}", app.serveIgnore)
-	mux.HandleFunc("POST /validate-metacritic/{$}", app.serveValidateMetacritic)
-	mux.HandleFunc("POST /delete-ignore/{$}", app.serveDeleteIgnore)
+	mux.HandleFunc("POST /search/{$}", requireManage(app.serveSearch))
+	mux.HandleFunc("POST /identify/{$}", requireManage(app.serveIdentify))
+	mux.HandleFunc("POST /ignore/{$}", requireManage(app.serveIgnore))
+	mux.HandleFunc("POST /validate-metacritic/{$}", requireManage(app.serveValidateMetacritic))
+	mux.HandleFunc("POST /delete-ignore/{$}", requireManage(app.serveDeleteIgnore))
 
 	// TV show routes
 	mux.HandleFunc("GET /tv/{$}", app.serveTVIndex)
@@ -61,13 +88,13 @@ func (app *LibraryServer) Run(ctx context.Context) error {
 	mux.HandleFunc("GET /tv/poster/{$}", app.serveTVPoster)
 	mux.HandleFunc("GET /tv/season/poster/{$}", app.serveTVSeasonPoster)
 	mux.HandleFunc("POST /tv/play/{$}", app.serveTVPlayButton)
-	mux.HandleFunc("POST /tv/search/{$}", app.serveTVSearch)
-	mux.HandleFunc("POST /tv/identify/{$}", app.serveTVIdentify)
-	mux.HandleFunc("POST /tv/identify-all/{$}", app.serveTVIdentifyAll)
-	mux.HandleFunc("POST /tv/ignore-show/{$}", app.serveTVIgnoreShow)
-	mux.HandleFunc("POST /tv/ignore-episodes/{$}", app.serveTVIgnoreEpisodes)
+	mux.HandleFunc("POST /tv/search/{$}", requireManage(app.serveTVSearch))
+	mux.HandleFunc("POST /tv/identify/{$}", requireManage(app.serveTVIdentify))
+	mux.HandleFunc("POST /tv/identify-all/{$}", requireManage(app.serveTVIdentifyAll))
+	mux.HandleFunc("POST /tv/ignore-show/{$}", requireManage(app.serveTVIgnoreShow))
+	mux.HandleFunc("POST /tv/ignore-episodes/{$}", requireManage(app.serveTVIgnoreEpisodes))
 
-	return tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux)))
+	return tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(canManageMiddleware(mux))))
 }
 
 func (app *LibraryServer) serveIndex(w http.ResponseWriter, req *http.Request) {

@@ -21,8 +21,10 @@ templ Page(title string) {
 								<div class="flex space-x-4">
 									<a href="/movies/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Library</a>
 									<a href="/movies/tv/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">TV Shows</a>
-									<a href="/movies/import/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Import</a>
-									<a href="/movies/ignores/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Ignores</a>
+									if CanManageLibrary(ctx) {
+										<a href="/movies/import/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Import</a>
+										<a href="/movies/ignores/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Ignores</a>
+									}
 								</div>
 							</div>
 						</div>
