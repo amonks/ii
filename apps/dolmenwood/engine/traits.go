@@ -96,6 +96,7 @@ func ClassTraits(class string, level int) []Trait {
 		}
 	case "knight":
 		traits := []Trait{
+			{Name: "Restrictions", Description: "Alignment, kindred, weapon, and armour restrictions for knights."},
 			{Name: "Chivalric Code", Description: "Uphold the code of chivalry."},
 			{Name: "Horsemanship", Description: "Assess steeds; from level 5, urge speed once per day."},
 			{Name: "Mounted Combat", Description: "+1 attack when mounted."},

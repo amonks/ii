@@ -133,25 +133,28 @@ func TestKindredTraitsWoodgrue(t *testing.T) {
 
 func TestClassTraitsKnightLevel5(t *testing.T) {
 	traits := ClassTraits("Knight", 5)
-	if len(traits) != 6 {
-		t.Fatalf("expected 6 traits, got %d", len(traits))
+	if len(traits) != 7 {
+		t.Fatalf("expected 7 traits, got %d", len(traits))
 	}
-	if traits[0].Name != "Chivalric Code" {
-		t.Errorf("first trait = %q, want Chivalric Code", traits[0].Name)
+	if traits[0].Name != "Restrictions" {
+		t.Errorf("first trait = %q, want Restrictions", traits[0].Name)
 	}
-	if traits[1].Name != "Horsemanship" {
-		t.Errorf("second trait = %q, want Horsemanship", traits[1].Name)
+	if traits[1].Name != "Chivalric Code" {
+		t.Errorf("second trait = %q, want Chivalric Code", traits[1].Name)
 	}
-	if traits[1].Description == "" {
+	if traits[2].Name != "Horsemanship" {
+		t.Errorf("third trait = %q, want Horsemanship", traits[2].Name)
+	}
+	if traits[2].Description == "" {
 		t.Error("expected description for Horsemanship")
 	}
-	if traits[4].Name != "Knighthood" {
-		t.Errorf("fifth trait = %q, want Knighthood", traits[4].Name)
+	if traits[5].Name != "Knighthood" {
+		t.Errorf("sixth trait = %q, want Knighthood", traits[5].Name)
 	}
-	if traits[5].Name != "Monster Slayer" {
-		t.Errorf("sixth trait = %q, want Monster Slayer", traits[5].Name)
+	if traits[6].Name != "Monster Slayer" {
+		t.Errorf("seventh trait = %q, want Monster Slayer", traits[6].Name)
 	}
-	if traits[4].Description == "" || traits[5].Description == "" {
+	if traits[5].Description == "" || traits[6].Description == "" {
 		t.Error("expected descriptions for level-gated traits")
 	}
 	foundMonster := false
