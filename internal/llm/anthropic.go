@@ -429,6 +429,7 @@ func processAnthropicStream(ctx context.Context, body io.ReadCloser, model Model
 		case "message_start":
 			if event.Message != nil {
 				partial.Usage.Input = event.Message.Usage.InputTokens
+			partial.Usage.Output = event.Message.Usage.OutputTokens
 				partial.Usage.CacheRead = event.Message.Usage.CacheReadInputTokens
 				partial.Usage.CacheWrite = event.Message.Usage.CacheCreationInputTokens
 			}
@@ -502,7 +503,7 @@ func processAnthropicStream(ctx context.Context, body io.ReadCloser, model Model
 
 		case "message_stop":
 			// Final message - compute costs
-			partial.Usage.Total = partial.Usage.Input + partial.Usage.Output + partial.Usage.CacheRead + partial.Usage.CacheWrite
+			partial.Usage.Total = partial.Usage.Input + partial.Usage.Output
 			partial.Usage.Cost = calculateCost(partial.Usage, model.Cost)
 			events <- DoneEvent{Reason: partial.StopReason, Message: partial}
 			done <- partial
@@ -511,7 +512,7 @@ func processAnthropicStream(ctx context.Context, body io.ReadCloser, model Model
 	}
 
 	// If we get here without a message_stop, send what we have
-	partial.Usage.Total = partial.Usage.Input + partial.Usage.Output + partial.Usage.CacheRead + partial.Usage.CacheWrite
+	partial.Usage.Total = partial.Usage.Input + partial.Usage.Output
 	partial.Usage.Cost = calculateCost(partial.Usage, model.Cost)
 	if partial.StopReason == "" {
 		partial.StopReason = StopReasonEnd

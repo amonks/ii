@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,6 +27,10 @@ func TestRunAgent_InteractiveInputContinues(t *testing.T) {
 
 	callCount := 0
 	restore := setStreamWithRetry(func(ctx context.Context, model llm.Model, req llm.Request, opts llm.StreamOptions, config llm.RetryConfig) (*llm.StreamHandle, error) {
+		expectedCacheRetention := llm.CacheShort
+		if opts.CacheRetention != expectedCacheRetention {
+			return nil, fmt.Errorf("expected CacheRetention %q, got %q", expectedCacheRetention, opts.CacheRetention)
+		}
 		callCount++
 		if callCount == 1 {
 			return newFakeStreamHandle(llm.AssistantMessage{
@@ -88,6 +93,10 @@ func TestRunAgent_InteractiveInputClosedEnds(t *testing.T) {
 
 	callCount := 0
 	restore := setStreamWithRetry(func(ctx context.Context, model llm.Model, req llm.Request, opts llm.StreamOptions, config llm.RetryConfig) (*llm.StreamHandle, error) {
+		expectedCacheRetention := llm.CacheShort
+		if opts.CacheRetention != expectedCacheRetention {
+			return nil, fmt.Errorf("expected CacheRetention %q, got %q", expectedCacheRetention, opts.CacheRetention)
+		}
 		callCount++
 		return newFakeStreamHandle(llm.AssistantMessage{
 			Role:       "assistant",

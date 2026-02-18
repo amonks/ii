@@ -40,6 +40,9 @@ func TestProcessAnthropicStream_ReportsCacheUsage(t *testing.T) {
 	if msg.Usage.CacheWrite != 4 {
 		t.Fatalf("Usage.CacheWrite=%d, want %d", msg.Usage.CacheWrite, 4)
 	}
+	if msg.Usage.Total != 12 {
+		t.Fatalf("Usage.Total=%d, want %d", msg.Usage.Total, 12)
+	}
 }
 
 func TestConvertMessagesToAnthropic_MergesToolResults(t *testing.T) {

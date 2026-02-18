@@ -41,6 +41,7 @@ type AgentConfig struct {
 	InputCh <-chan string
 
 	// CacheRetention controls prompt caching for providers that support it.
+	// Defaults to CacheShort when unset.
 	CacheRetention llm.CacheRetention
 }
 

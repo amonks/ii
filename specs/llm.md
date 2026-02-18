@@ -299,7 +299,7 @@ type Request struct {
 type StreamOptions struct {
     Temperature    *float64
     MaxTokens      *int
-    CacheRetention CacheRetention // "none", "short", "long" (default: unset/none; Anthropic adds cache_control markers; OpenAI caching is automatic)
+    CacheRetention CacheRetention // "none", "short", "long" (default: "short"; Anthropic adds cache_control markers; OpenAI caching is automatic)
     ThinkingLevel  ThinkingLevel  // "off", "minimal", "low", "medium", "high", "xhigh"
 }
 
@@ -338,7 +338,7 @@ type Usage struct {
     Output     int  // Output tokens
     CacheRead  int  // Tokens read from cache (OpenAI reports cached prompt tokens in response usage details)
     CacheWrite int  // Tokens written to cache
-    Total      int  // Total tokens
+    Total      int  // Total tokens (provider-reported input + output)
     Cost       UsageCost
 }
 

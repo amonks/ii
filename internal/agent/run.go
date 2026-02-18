@@ -26,6 +26,9 @@ func setStreamWithRetry(fn streamWithRetryFunc) func() {
 // Run starts an agent run with the given prompt and configuration.
 // It returns a RunHandle that provides access to events and the final result.
 func Run(ctx context.Context, prompt string, config AgentConfig) (*RunHandle, error) {
+	if config.CacheRetention == "" {
+		config.CacheRetention = llm.CacheShort
+	}
 	workDir := config.WorkDir
 	if workDir == "" {
 		var err error
@@ -340,6 +343,9 @@ func extractToolCalls(msg llm.AssistantMessage) []llm.ToolCall {
 // Unlike runAgent, this blocks until completion and returns the result directly.
 // It does not emit events (subagent activity is internal to the parent).
 func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools []llm.Tool) (RunResult, error) {
+	if config.CacheRetention == "" {
+		config.CacheRetention = llm.CacheShort
+	}
 	workDir := config.WorkDir
 	if workDir == "" {
 		var err error

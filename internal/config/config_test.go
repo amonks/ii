@@ -499,8 +499,8 @@ test-commands = []
 	if len(cfg.Job.TestCommands) != 0 {
 		t.Fatalf("expected empty test commands, got %d", len(cfg.Job.TestCommands))
 	}
-	if cfg.Agent.CacheRetention != "" {
-		t.Fatalf("CacheRetention = %q, expected empty string", cfg.Agent.CacheRetention)
+	if cfg.Agent.CacheRetention != "short" {
+		t.Fatalf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "short")
 	}
 }
 

@@ -34,7 +34,7 @@ type Agent struct {
 	// Model is the default model ID for agent runs when no task-specific model is set.
 	Model string `toml:"model"`
 
-	// CacheRetention controls prompt caching for agent runs. Defaults to unset (no caching).
+	// CacheRetention controls prompt caching for agent runs. Defaults to "short" when unset.
 	CacheRetention string `toml:"cache-retention"`
 }
 
@@ -204,6 +204,9 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 	// Merge Agent config
 	merged.Agent.Model = mergeString(projectMeta.IsDefined("agent", "model"), projectCfg.Agent.Model, globalCfg.Agent.Model)
 	merged.Agent.CacheRetention = mergeString(projectMeta.IsDefined("agent", "cache-retention"), projectCfg.Agent.CacheRetention, globalCfg.Agent.CacheRetention)
+	if merged.Agent.CacheRetention == "" {
+		merged.Agent.CacheRetention = "short"
+	}
 
 	return &merged
 }
