@@ -230,8 +230,8 @@ func TestClassTraitsFriar(t *testing.T) {
 
 func TestClassTraitsCleric(t *testing.T) {
 	traits := ClassTraits("Cleric", 1)
-	if len(traits) != 7 {
-		t.Fatalf("expected 7 traits, got %d", len(traits))
+	if len(traits) != 6 {
+		t.Fatalf("expected 6 traits, got %d", len(traits))
 	}
 	if traits[0].Name != "Restrictions" {
 		t.Errorf("first trait = %q, want Restrictions", traits[0].Name)
@@ -239,8 +239,8 @@ func TestClassTraitsCleric(t *testing.T) {
 	if traits[1].Name != "Cleric Tenets" {
 		t.Errorf("second trait = %q, want Cleric Tenets", traits[1].Name)
 	}
-	if traits[6].Name != "Turning the Undead" {
-		t.Errorf("seventh trait = %q, want Turning the Undead", traits[6].Name)
+	if traits[5].Name != "Turning the Undead" {
+		t.Errorf("sixth trait = %q, want Turning the Undead", traits[5].Name)
 	}
 	for _, trait := range traits {
 		if trait.Description == "" {
@@ -265,6 +265,25 @@ func TestClassTraitsClericRestrictions(t *testing.T) {
 	}
 }
 
+func TestClassTraitsClericLevel2(t *testing.T) {
+	traits := ClassTraits("Cleric", 2)
+	if len(traits) != 7 {
+		t.Fatalf("expected 7 traits, got %d", len(traits))
+	}
+	if traits[4].Name != "Holy Order" {
+		t.Errorf("fifth trait = %q, want Holy Order", traits[4].Name)
+	}
+	if traits[5].Name != "Languages" {
+		t.Errorf("sixth trait = %q, want Languages", traits[5].Name)
+	}
+	if traits[6].Name != "Turning the Undead" {
+		t.Errorf("seventh trait = %q, want Turning the Undead", traits[6].Name)
+	}
+	if !strings.Contains(strings.ToLower(traits[4].Description), "level 2") {
+		t.Errorf("Holy Order description = %q, want mention of level 2", traits[4].Description)
+	}
+}
+
 func TestClassTraitsBard(t *testing.T) {
 	traits := ClassTraits("Bard", 1)
 	if len(traits) != 3 {
@@ -285,6 +304,7 @@ func TestClassTraitsBard(t *testing.T) {
 		}
 	}
 }
+
 
 func TestClassTraitsEnchanter(t *testing.T) {
 	traits := ClassTraits("Enchanter", 1)

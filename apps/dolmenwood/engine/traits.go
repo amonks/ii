@@ -114,15 +114,20 @@ func ClassTraits(class string, level int) []Trait {
 		}
 		return traits
 	case "cleric":
-		return []Trait{
+		traits := []Trait{
 			{Name: "Restrictions", Description: "Alignment: Lawful or Neutral mortals; holy magic weapons only."},
 			{Name: "Cleric Tenets", Description: "Evangelism, hierarchy, monotheism, sanctity of life."},
 			{Name: "Detect Holy Magic Items", Description: "Identify holy enchantments by touch with 1 Turn of focus."},
 			{Name: "Holy Magic", Description: "Pray for holy spells; must carry a holy symbol."},
-			{Name: "Holy Order", Description: "Level 2: choose a holy order and gain its power."},
-			{Name: "Languages", Description: "Speaks Liturgic in addition to native languages."},
-			{Name: "Turning the Undead", Description: "May drive off undead by presenting a holy symbol once per turn."},
 		}
+		if level >= 2 {
+			traits = append(traits, Trait{Name: "Holy Order", Description: "Level 2: choose a holy order and gain its power."})
+		}
+		traits = append(traits,
+			Trait{Name: "Languages", Description: "Speaks Liturgic in addition to native languages."},
+			Trait{Name: "Turning the Undead", Description: "May drive off undead by presenting a holy symbol once per turn."},
+		)
+		return traits
 	case "friar":
 		return []Trait{
 			{Name: "Restrictions", Description: "Lawful/Neutral mortals only; must keep faith or lose holy magic."},
