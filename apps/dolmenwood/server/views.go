@@ -16,6 +16,7 @@ type CharacterView struct {
 	Transactions []db.Transaction
 	XPLog        []db.XPLogEntry
 	Notes        []db.Note
+	AuditLog     []db.AuditLogEntry
 
 	// Computed fields
 	AC               int
@@ -170,6 +171,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	if err != nil {
 		return nil, err
 	}
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Convert items for engine calculations
 	engineItems := make([]engine.Item, len(items))
@@ -266,6 +271,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		Transactions:     transactions,
 		XPLog:            xpLog,
 		Notes:            notes,
+		AuditLog:         auditLog,
 		AC:               ac,
 		ArmorName:        armorName,
 		AttackBonus:      engine.KnightAttackBonus(ch.Level),
@@ -296,6 +302,20 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		CompanionGroups:  compGroups,
 		MoveTargets:      moveTargets,
 	}, nil
+}
+
+func filterAuditLog(entries []db.AuditLogEntry, actions ...string) []db.AuditLogEntry {
+	set := make(map[string]bool, len(actions))
+	for _, a := range actions {
+		set[a] = true
+	}
+	var out []db.AuditLogEntry
+	for _, e := range entries {
+		if set[e.Action] {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 func dbItemToEngine(item db.Item) engine.Item {

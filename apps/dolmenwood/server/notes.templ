@@ -25,5 +25,18 @@ templ NotesSection(view *CharacterView) {
 				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
 			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
 		</form>
+		if entries := filterAuditLog(view.AuditLog, "note_add", "note_delete"); len(entries) > 0 {
+			<details>
+				<summary class="text-sm text-stone-600 cursor-pointer">Notes Log</summary>
+				<div class="mt-2 space-y-1 text-xs">
+					for _, entry := range entries {
+						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+							<span>{ entry.Detail }</span>
+							<span class="text-stone-400">{ entry.CreatedAt.Format("Jan 2") }</span>
+						</div>
+					}
+				</div>
+			</details>
+		}
 	</div>
 }

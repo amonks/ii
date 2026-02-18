@@ -176,6 +176,7 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 				item.Location = "" // clear legacy location
 			}
 			s.db.UpdateItem(&item)
+			s.db.AddAuditLog(ch.ID, "item_update", fmt.Sprintf("%s: qty %d", item.Name, item.Quantity))
 			if item.ContainerID != nil || item.CompanionID != nil {
 				if err := s.combineBundledItems(ch.ID, &item); err != nil {
 					if !errors.Is(err, errBundleNotCombined) {
@@ -222,6 +223,7 @@ func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Item is not bundled", http.StatusBadRequest)
 		return
 	}
+	oldQty := item.Quantity
 	item.Quantity -= bundle
 	if item.Quantity <= 0 {
 		if err := s.db.DeleteItem(item.ID); err != nil {
@@ -232,6 +234,7 @@ func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	s.db.AddAuditLog(ch.ID, "item_decrement", fmt.Sprintf("%s -%d (%d → %d)", item.Name, bundle, oldQty, item.Quantity))
 	s.renderInventory(w, r, ch)
 }
 
@@ -275,6 +278,7 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, comp := range comps {
 		if comp.ID == compID {
+			oldHP := comp.HPCurrent
 			if name := r.FormValue("name"); name != "" {
 				comp.Name = name
 			}
@@ -285,6 +289,7 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			comp.SaddleType = r.FormValue("saddle_type")
 			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
+			s.db.AddAuditLog(ch.ID, "companion_update", fmt.Sprintf("%s: HP %d → %d", comp.Name, oldHP, comp.HPCurrent))
 			break
 		}
 	}
@@ -321,6 +326,7 @@ func (s *Server) handleMoveCoins(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	s.db.AddAuditLog(ch.ID, "coins_move", fmt.Sprintf("Coins → %s", moveTo))
 	s.renderInventory(w, r, ch)
 }
 
@@ -504,6 +510,7 @@ func (s *Server) handleAddNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	s.db.AddAuditLog(ch.ID, "note_add", note.Content)
 	s.renderNotes(w, r, ch)
 }
 
@@ -518,6 +525,7 @@ func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	s.db.AddAuditLog(ch.ID, "note_delete", fmt.Sprintf("note %d", noteID))
 	s.renderNotes(w, r, ch)
 }
 

@@ -98,6 +98,19 @@ templ StatsSection(view *CharacterView) {
 				}
 			</div>
 		}
+		if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
+			<details>
+				<summary class="text-sm text-stone-600 cursor-pointer">Activity Log</summary>
+				<div class="mt-2 space-y-1 text-xs">
+					for _, entry := range entries {
+						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+							<span>{ entry.Detail }</span>
+							<span class="text-stone-400">{ entry.CreatedAt.Format("Jan 2") }</span>
+						</div>
+					}
+				</div>
+			</details>
+		}
 	</div>
 }
 

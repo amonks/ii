@@ -1274,6 +1274,268 @@ func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
 	}
 }
 
+func TestUpdateItemCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	item := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1, Location: "stowed"}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("quantity", "3")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", item.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "item_update" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "item_update")
+	}
+}
+
+func TestDecrementItemCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	torches := &db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 6}
+	d.CreateItem(torches)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/decrement/", torches.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "item_decrement" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "item_decrement")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Torches") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain 'Torches'", auditLog[0].Detail)
+	}
+}
+
+func TestUpdateCompanionCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID, Name: "Bessie", Breed: "Mule",
+		HPCurrent: 9, HPMax: 9,
+	}
+	d.CreateCompanion(comp)
+
+	form := url.Values{}
+	form.Set("name", "Bessie")
+	form.Set("hp_current", "7")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/companions/%d/update/", comp.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "companion_update" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "companion_update")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Bessie") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain 'Bessie'", auditLog[0].Detail)
+	}
+}
+
+func TestMoveCoinsCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		PurseGP: 50,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
+	req := httptest.NewRequest("POST", "/characters/1/coins/move/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "coins_move" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "coins_move")
+	}
+}
+
+func TestAddNoteCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("content", "Remember to buy torches")
+	req := httptest.NewRequest("POST", "/characters/1/notes/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "note_add" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "note_add")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Remember to buy torches") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain note content", auditLog[0].Detail)
+	}
+}
+
+func TestDeleteNoteCreatesAuditLog(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	note := &db.Note{CharacterID: ch.ID, Content: "Old note"}
+	d.CreateNote(note)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/notes/%d/delete/", note.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "note_delete" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "note_delete")
+	}
+}
+
+func TestAuditLogViewerRenderedOnCards(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Create audit log entries for different action types
+	d.AddAuditLog(ch.ID, "hp_change", "HP 8 → 5")
+	d.AddAuditLog(ch.ID, "item_add", "Rope")
+	d.AddAuditLog(ch.ID, "companion_add", "Bessie")
+	d.AddAuditLog(ch.ID, "note_add", "Remember torches")
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+
+	// Each card should have a details/summary log viewer
+	if !strings.Contains(body, "Activity Log") {
+		t.Error("stats card should contain 'Activity Log' viewer")
+	}
+	if !strings.Contains(body, "Item Log") {
+		t.Error("inventory card should contain 'Item Log' viewer")
+	}
+	if !strings.Contains(body, "Companion Log") {
+		t.Error("companions card should contain 'Companion Log' viewer")
+	}
+	if !strings.Contains(body, "Notes Log") {
+		t.Error("notes card should contain 'Notes Log' viewer")
+	}
+}
+
 func TestBuildMoveTargetsIncludesNestedContainers(t *testing.T) {
 	_, d := setupTest(t)
 
