@@ -269,6 +269,48 @@ func TestClassTraitsFighter(t *testing.T) {
 	}
 }
 
+func TestClassTraitsMagician(t *testing.T) {
+	traits := ClassTraits("Magician", 1)
+	if len(traits) != 4 {
+		t.Fatalf("expected 4 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Arcane Magic" {
+		t.Errorf("first trait = %q, want Arcane Magic", traits[0].Name)
+	}
+	if traits[1].Name != "Detect Magic" {
+		t.Errorf("second trait = %q, want Detect Magic", traits[1].Name)
+	}
+	if traits[3].Name != "Spell Books" {
+		t.Errorf("fourth trait = %q, want Spell Books", traits[3].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
+func TestClassTraitsThief(t *testing.T) {
+	traits := ClassTraits("Thief", 1)
+	if len(traits) != 3 {
+		t.Fatalf("expected 3 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Back-Stab" {
+		t.Errorf("first trait = %q, want Back-Stab", traits[0].Name)
+	}
+	if traits[1].Name != "Thief Skills" {
+		t.Errorf("second trait = %q, want Thief Skills", traits[1].Name)
+	}
+	if traits[2].Name != "Thieves' Cant" {
+		t.Errorf("third trait = %q, want Thieves' Cant", traits[2].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestClassTraitsHunter(t *testing.T) {
 	traits := ClassTraits("Hunter", 1)
 	if len(traits) != 5 {
@@ -298,3 +340,4 @@ func TestTotalXPModifier(t *testing.T) {
 		t.Errorf("TotalXPModifier = %d, want 15", got)
 	}
 }
+

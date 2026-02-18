@@ -130,6 +130,19 @@ func ClassTraits(class string, level int) []Trait {
 			{Name: "Poverty", Description: "Limited possessions; excess wealth donated to worthy causes."},
 			{Name: "Turning the Undead", Description: "May drive off undead by presenting a holy symbol once per turn."},
 		}
+	case "magician":
+		return []Trait{
+			{Name: "Arcane Magic", Description: "Memorise and cast arcane spells by level."},
+			{Name: "Detect Magic", Description: "Detect magic skill; see magician skill targets."},
+			{Name: "Magic Items", Description: "May use arcane spell-caster items (wands, scrolls, etc.)."},
+			{Name: "Spell Books", Description: "Begin play with a spell book and its spells."},
+		}
+	case "thief":
+		return []Trait{
+			{Name: "Back-Stab", Description: "Strike from behind with a dagger for +4 attack and 3d4 damage."},
+			{Name: "Thief Skills", Description: "Listen/Search improvements plus specialised skills by level."},
+			{Name: "Thieves' Cant", Description: "Secret language of gestures and code words."},
+		}
 	case "hunter":
 		return []Trait{
 			{Name: "Animal Companion", Description: "May bond with a single animal companion up to the hunter's level."},
