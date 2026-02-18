@@ -114,7 +114,9 @@ func Stream(ctx context.Context, model Model, req Request, opts StreamOptions) (
 	if opts.UserAgent == "" {
 		opts.UserAgent = "incrementum [unknown] unknown"
 	}
-
+	if opts.CacheRetention == "" {
+		opts.CacheRetention = CacheShort
+	}
 	switch model.API {
 	case APIAnthropicMessages:
 		return streamAnthropic(ctx, model, req, opts)
