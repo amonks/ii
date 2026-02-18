@@ -36,6 +36,37 @@ func TestKindredTraitsElf(t *testing.T) {
 	}
 }
 
+func TestKindredTraitsBreggleLevel1(t *testing.T) {
+	traits := KindredTraits("Breggle", 1)
+	if len(traits) != 2 {
+		t.Fatalf("expected 2 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Fur" {
+		t.Errorf("first trait = %q, want Fur", traits[0].Name)
+	}
+	if traits[1].Name != "Horns" {
+		t.Errorf("second trait = %q, want Horns", traits[1].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
+func TestKindredTraitsBreggleLevel4(t *testing.T) {
+	traits := KindredTraits("Breggle", 4)
+	if len(traits) != 3 {
+		t.Fatalf("expected 3 traits, got %d", len(traits))
+	}
+	if traits[2].Name != "Gaze" {
+		t.Errorf("third trait = %q, want Gaze", traits[2].Name)
+	}
+	if traits[2].Description == "" {
+		t.Error("expected description for Gaze")
+	}
+}
+
 func TestClassTraitsKnightLevel5(t *testing.T) {
 	traits := ClassTraits("Knight", 5)
 	if len(traits) != 6 {

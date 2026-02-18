@@ -26,6 +26,15 @@ func KindredTraits(kindred string, level int) []Trait {
 			{Name: "Unearthly Beauty", Description: "+2 CHA with mortals (max 18)."},
 			{Name: "Vulnerable to Cold Iron", Description: "Cold iron weapons deal +1 damage."},
 		}
+	case "breggle":
+		traits := []Trait{
+			{Name: "Fur", Description: "+1 AC when unarmoured or in light armour."},
+			{Name: "Horns", Description: "Melee horn attack; damage scales with level."},
+		}
+		if level >= 4 {
+			traits = append(traits, Trait{Name: "Gaze", Description: "Level 4: charm humans or shorthorns once per day (save vs spell)."})
+		}
+		return traits
 	default:
 		return nil
 	}
