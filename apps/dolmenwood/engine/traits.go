@@ -81,6 +81,15 @@ func ClassTraits(class string, level int) []Trait {
 			{Name: "Counter Charm", Description: "While performing, allies within 30' are immune to song magic and gain +2 saves vs fairy magic once per Turn."},
 			{Name: "Enchantment", Description: "Fascinate subjects within 30'; uses per day equal to level; expands to animals, demi-fey, and fairies with level."},
 		}
+	case "enchanter":
+		return []Trait{
+			{Name: "Restrictions", Description: "Typically fairies/demi-fey; mortal enchanters are rare."},
+			{Name: "Enchanter Skills", Description: "Detect magic skill; see enchanter skill targets."},
+			{Name: "Fairy Runes", Description: "Level 1: know one randomly selected lesser rune; chance for more each level."},
+			{Name: "Glamours", Description: "Glamours known by level; kindred glamours are additional."},
+			{Name: "Magic Items", Description: "May use arcane spell-caster items (wands, scrolls, etc.)."},
+			{Name: "Resistance to Divine Aid", Description: "2-in-6 chance beneficial holy spells have no effect."},
+		}
 	case "knight":
 		traits := []Trait{
 			{Name: "Chivalric Code", Description: "Uphold the code of chivalry."},
