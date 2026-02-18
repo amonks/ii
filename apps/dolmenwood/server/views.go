@@ -22,6 +22,7 @@ type CharacterView struct {
 	ArmorName        string
 	AttackBonus      int
 	Weapons          []engine.EquippedWeapon
+	MagicResistance int
 	Saves            engine.SaveTargets
 	Traits           engine.Traits
 	Speed            int
@@ -227,6 +228,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ArmorName:        armorName,
 		AttackBonus:      engine.KnightAttackBonus(ch.Level),
 		Weapons:          engine.EquippedWeapons(engineItems),
+		MagicResistance: engine.MagicResistance(ch.Kindred, ch.WIS),
 		Saves:            engine.KnightSaveTargets(ch.Level),
 		Traits:           engine.KnightTraits(ch.Level),
 		Speed:            engine.SpeedFromSlots(equipped, totalStowed),

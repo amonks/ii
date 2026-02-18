@@ -57,13 +57,24 @@ templ StatsSection(view *CharacterView) {
 				<div class="font-bold">{ fmt.Sprintf("%d", view.Speed) }&apos;</div>
 			</div>
 		</div>
-		<div class="grid grid-cols-5 gap-1 text-center text-xs">
-			@saveBox("Death", view.Saves.Death)
-			@saveBox("Wands", view.Saves.Wands)
-			@saveBox("Para", view.Saves.Paralysis)
-			@saveBox("Breath", view.Saves.Breath)
-			@saveBox("Spells", view.Saves.Spells)
-		</div>
+		if view.MagicResistance != 0 {
+			<div class="grid grid-cols-6 gap-1 text-center text-xs">
+				@saveBox("Death", view.Saves.Death)
+				@saveBox("Wands", view.Saves.Wands)
+				@saveBox("Para", view.Saves.Paralysis)
+				@saveBox("Breath", view.Saves.Breath)
+				@saveBox("Spells", view.Saves.Spells)
+				@statBox("MR", view.MagicResistance)
+			</div>
+		} else {
+			<div class="grid grid-cols-5 gap-1 text-center text-xs">
+				@saveBox("Death", view.Saves.Death)
+				@saveBox("Wands", view.Saves.Wands)
+				@saveBox("Para", view.Saves.Paralysis)
+				@saveBox("Breath", view.Saves.Breath)
+				@saveBox("Spells", view.Saves.Spells)
+			</div>
+		}
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
 			<div class="text-xs text-stone-600">
 				if view.Traits.Knighthood {
@@ -104,5 +115,12 @@ templ saveBox(label string, target int) {
 	<div class="bg-stone-50 rounded p-1">
 		<div class="text-stone-500">{ label }</div>
 		<div class="font-bold">{ fmt.Sprintf("%d", target) }+</div>
+	</div>
+}
+
+templ statBox(label string, value int) {
+	<div class="bg-stone-50 rounded p-1">
+		<div class="text-stone-500">{ label }</div>
+		<div class="font-bold">{ formatMod(value) }</div>
 	</div>
 }
