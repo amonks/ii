@@ -1,0 +1,60 @@
+package server
+
+import "fmt"
+
+templ InventorySection(view *CharacterView) {
+	<div id="inventory" class="bg-white rounded-lg shadow p-4 space-y-3">
+		<div class="flex items-center justify-between">
+			<h2 class="font-bold text-stone-800">Inventory</h2>
+			<span class="text-xs text-stone-500">
+				Eq { fmt.Sprintf("%d", view.EquippedSlots) } / Stow { fmt.Sprintf("%d", view.StowedSlots) }
+				if view.CoinSlotsCount > 0 {
+					+ { fmt.Sprintf("%d", view.CoinSlotsCount) } coins
+				}
+			</span>
+		</div>
+		if len(view.Items) > 0 {
+			<div class="space-y-1">
+				for _, item := range view.Items {
+					<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
+						<div>
+							<span class="font-medium">{ item.Name }</span>
+							if item.Quantity > 1 {
+								<span class="text-stone-400">x{ fmt.Sprintf("%d", item.Quantity) }</span>
+							}
+							if item.Notes != "" {
+								<span class="text-xs text-stone-400 ml-1">({ item.Notes })</span>
+							}
+						</div>
+						<div class="flex items-center gap-2 text-xs text-stone-500">
+							<span>{ fmt.Sprintf("%d", item.SlotCost) }s</span>
+							<span class={
+								templ.KV("text-green-600", item.Location == "equipped"),
+								templ.KV("text-stone-400", item.Location == "stowed"),
+							}>
+								{ item.Location }
+							</span>
+							<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
+							</form>
+						</div>
+					</div>
+				}
+			</div>
+		}
+		<form hx-post="items/"
+			hx-target="#inventory" hx-swap="outerHTML"
+			class="flex gap-2">
+			<input type="text" name="name" placeholder="Item name" required
+				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+			<input type="number" name="slot_cost" value="1" min="0"
+				class="w-12 text-sm rounded-md border-stone-300 shadow-sm text-center"/>
+			<select name="location" class="text-sm rounded-md border-stone-300 shadow-sm">
+				<option value="stowed">Stow</option>
+				<option value="equipped">Equip</option>
+			</select>
+			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+		</form>
+	</div>
+}

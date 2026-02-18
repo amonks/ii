@@ -1,0 +1,44 @@
+package server
+
+import "fmt"
+
+templ CharacterSheet(view *CharacterView) {
+	@Layout(view.Character.Name, "../../") {
+		<div id="sheet-body" class="space-y-4">
+			@SheetBody(view)
+		</div>
+	}
+}
+
+templ SheetBody(view *CharacterView) {
+	@StatsSection(view)
+	@InventorySection(view)
+	@CompanionsSection(view)
+	@WealthSection(view)
+	@XPSection(view)
+	@NotesSection(view)
+}
+
+func formatMod(mod int) string {
+	if mod > 0 {
+		return fmt.Sprintf("+%d", mod)
+	}
+	return fmt.Sprintf("%d", mod)
+}
+
+func xpBarWidth(view *CharacterView) string {
+	total := view.Character.TotalXP
+	toNext := view.XPToNext
+	if toNext == 0 {
+		return "width: 100%"
+	}
+	threshold := total + toNext
+	if threshold == 0 {
+		return "width: 0%"
+	}
+	pct := total * 100 / threshold
+	if pct > 100 {
+		pct = 100
+	}
+	return fmt.Sprintf("width: %d%%", pct)
+}

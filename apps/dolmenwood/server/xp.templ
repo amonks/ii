@@ -1,0 +1,41 @@
+package server
+
+import "fmt"
+
+templ XPSection(view *CharacterView) {
+	<div id="xp" class="bg-white rounded-lg shadow p-4 space-y-3">
+		<div class="flex items-center justify-between">
+			<h2 class="font-bold text-stone-800">Experience</h2>
+			<span class="text-sm text-stone-500">
+				{ fmt.Sprintf("%d", view.Character.TotalXP) } XP (mod { formatMod(view.XPModPercent) }%)
+			</span>
+		</div>
+		<div class="w-full bg-stone-200 rounded-full h-3">
+			<div class="bg-stone-700 h-3 rounded-full" style={ xpBarWidth(view) }></div>
+		</div>
+		<div class="text-xs text-stone-500 text-center">
+			{ fmt.Sprintf("%d", view.XPToNext) } XP to level { fmt.Sprintf("%d", view.Character.Level+1) }
+		</div>
+		if view.CanLevelUp {
+			<button hx-post="level-up/"
+				hx-target="#sheet-body" hx-swap="innerHTML"
+				hx-confirm={ fmt.Sprintf("Level up to level %d?", view.NewLevel) }
+				class="w-full bg-amber-600 text-white rounded-md py-2 text-sm font-bold animate-pulse">
+				Level Up to { fmt.Sprintf("%d", view.NewLevel) }!
+			</button>
+		}
+		if len(view.XPLog) > 0 {
+			<details>
+				<summary class="text-sm text-stone-600 cursor-pointer">XP Log</summary>
+				<div class="mt-2 space-y-1 text-xs">
+					for _, entry := range view.XPLog {
+						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+							<span>{ entry.Description }</span>
+							<span class="font-medium">+{ fmt.Sprintf("%d", entry.Amount) }</span>
+						</div>
+					}
+				</div>
+			</details>
+		}
+	</div>
+}
