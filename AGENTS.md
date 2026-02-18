@@ -1,3 +1,5 @@
+@specs/README.md
+
 - keep the specifications up to date as you make changes
 - never run 'go build' without specifying some output directory in /tmp or similar-- it polutes the working directory. remember that 'go test' _internally_ runs 'go build', and so tests whether a build would succeed.
 - if you see issues unrelated to your current task, don't work on them but do `ii todo create --title="" --description=""` todos for them, writing a high-quality multiline description
