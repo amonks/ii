@@ -8,4 +8,6 @@ project-review-model = "gpt-5.2-codex"
 [workspace]
 on-create = """
   cp $(jj workspace root --name=default)/.envrc .envrc
+  direnv allow
+  go tool run apps/map/build
 """
