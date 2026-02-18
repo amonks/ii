@@ -251,9 +251,9 @@ func TestIsEquippedOnCharacter(t *testing.T) {
 		want bool
 	}{
 		{"both nil", Item{Name: "Rope"}, true},
-		{"in container", Item{Name: "Rope", ContainerID: uintPtr(1)}, false},
-		{"on companion", Item{Name: "Rope", CompanionID: uintPtr(2)}, false},
-		{"both set", Item{Name: "Rope", ContainerID: uintPtr(1), CompanionID: uintPtr(2)}, false},
+		{"in container", Item{Name: "Rope", ContainerID: new(uint(1))}, false},
+		{"on companion", Item{Name: "Rope", CompanionID: new(uint(2))}, false},
+		{"both set", Item{Name: "Rope", ContainerID: new(uint(1)), CompanionID: new(uint(2))}, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -269,8 +269,8 @@ func TestFindRoot(t *testing.T) {
 	// Chain: item3 -> item2 -> item1 (equipped)
 	items := []Item{
 		{ID: 1, Name: "Backpack"},
-		{ID: 2, Name: "Sack", ContainerID: uintPtr(1)},
-		{ID: 3, Name: "Rope", ContainerID: uintPtr(2)},
+		{ID: 2, Name: "Sack", ContainerID: new(uint(1))},
+		{ID: 3, Name: "Rope", ContainerID: new(uint(2))},
 	}
 	byID := make(map[uint]Item)
 	for _, it := range items {
