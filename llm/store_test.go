@@ -1,6 +1,7 @@
 package llm_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -303,25 +304,13 @@ models = ["custom-model-v1"]
 		t.Fatalf("failed to write config: %v", err)
 	}
 
-	store, err := llm.Open()
-	if err != nil {
-		t.Fatalf("Open failed: %v", err)
+	// Unknown models should cause an error at store open time
+	_, err := llm.Open()
+	if err == nil {
+		t.Fatal("expected error for unknown model, got nil")
 	}
-
-	model, err := store.GetModel("custom-model-v1")
-	if err != nil {
-		t.Fatalf("GetModel failed: %v", err)
-	}
-
-	// Unknown models should have reasonable defaults
-	if model.Name != "custom-model-v1" {
-		t.Errorf("expected Name 'custom-model-v1', got %q", model.Name)
-	}
-	if model.ContextWindow != 128000 {
-		t.Errorf("expected default ContextWindow 128000, got %d", model.ContextWindow)
-	}
-	if model.MaxTokens != 4096 {
-		t.Errorf("expected default MaxTokens 4096, got %d", model.MaxTokens)
+	if !errors.Is(err, llm.ErrUnknownModel) {
+		t.Errorf("expected ErrUnknownModel, got: %v", err)
 	}
 }
 
@@ -393,7 +382,7 @@ name = "test-provider"
 api = "anthropic-messages"
 base-url = "https://test.example.com"
 api-key-command = "echo secret-api-key"
-models = ["test-model"]
+models = ["claude-sonnet-4-5-20250929"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -404,7 +393,7 @@ models = ["test-model"]
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	model, err := store.GetModel("test-model")
+	model, err := store.GetModel("claude-sonnet-4-5-20250929")
 	if err != nil {
 		t.Fatalf("GetModel failed: %v", err)
 	}
@@ -490,7 +479,7 @@ func TestGPT5Models(t *testing.T) {
 name = "openai"
 api = "openai-completions"
 base-url = "https://api.openai.com/v1"
-models = ["gpt-5.2", "gpt-5.2-pro", "gpt-5", "gpt-5-mini", "gpt-5-nano"]
+models = ["gpt-5.2", "gpt-5.2-codex", "gpt-5.2-pro", "gpt-5.1", "gpt-5", "gpt-5-mini", "gpt-5-nano"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -510,7 +499,9 @@ models = ["gpt-5.2", "gpt-5.2-pro", "gpt-5", "gpt-5-mini", "gpt-5-nano"]
 		contextWindow int
 	}{
 		{"gpt-5.2", "GPT-5.2", 1.75, 14.0, 0.175, 1047576},
+		{"gpt-5.2-codex", "GPT-5.2 Codex", 1.75, 14.0, 0.175, 400000},
 		{"gpt-5.2-pro", "GPT-5.2 Pro", 21.0, 168.0, 0.0, 1047576},
+		{"gpt-5.1", "GPT-5.1", 1.25, 10.0, 0.125, 400000},
 		{"gpt-5", "GPT-5", 1.25, 10.0, 0.125, 1047576},
 		{"gpt-5-mini", "GPT-5 Mini", 0.25, 2.0, 0.025, 1047576},
 		{"gpt-5-nano", "GPT-5 Nano", 0.05, 0.40, 0.005, 1047576},
@@ -556,7 +547,7 @@ func TestAPIKeyResolution_NoCommand(t *testing.T) {
 name = "no-auth-provider"
 api = "openai-completions"
 base-url = "https://no-auth.example.com"
-models = ["no-auth-model"]
+models = ["gpt-4o"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -567,7 +558,7 @@ models = ["no-auth-model"]
 		t.Fatalf("Open failed: %v", err)
 	}
 
-	model, err := store.GetModel("no-auth-model")
+	model, err := store.GetModel("gpt-4o")
 	if err != nil {
 		t.Fatalf("GetModel failed: %v", err)
 	}
@@ -590,7 +581,7 @@ func TestOpenAIReasoningModels_UseMaxCompletionTokens(t *testing.T) {
 name = "openai"
 api = "openai-completions"
 base-url = "https://api.openai.com/v1"
-models = ["o1", "o1-2024-12-17", "o1-mini", "o1-mini-2024-09-12", "o3", "o3-2025-04-16", "o3-mini", "o3-mini-2025-01-31", "o4-mini", "o4-mini-2025-04-16", "gpt-4o", "gpt-4o-mini", "gpt-5.2", "gpt-5.2-pro", "gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1"]
+models = ["o1", "o1-2024-12-17", "o1-mini", "o1-mini-2024-09-12", "o3", "o3-2025-04-16", "o3-mini", "o3-mini-2025-01-31", "o4-mini", "o4-mini-2025-04-16", "gpt-4o", "gpt-4o-mini", "gpt-5.2", "gpt-5.2-codex", "gpt-5.2-pro", "gpt-5.1", "gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1"]
 `
 	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(configContent), 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
@@ -610,7 +601,7 @@ models = ["o1", "o1-2024-12-17", "o1-mini", "o1-mini-2024-09-12", "o3", "o3-2025
 		"o3-mini", "o3-mini-2025-01-31",
 		"o4-mini", "o4-mini-2025-04-16",
 		// GPT-5 series (frontier models that use max_completion_tokens)
-		"gpt-5.2", "gpt-5.2-pro", "gpt-5", "gpt-5-mini", "gpt-5-nano",
+		"gpt-5.2", "gpt-5.2-codex", "gpt-5.2-pro", "gpt-5.1", "gpt-5", "gpt-5-mini", "gpt-5-nano",
 	}
 
 	for _, modelID := range reasoningModels {

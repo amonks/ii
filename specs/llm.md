@@ -394,11 +394,17 @@ type Options struct {
 The package includes built-in knowledge of well-known models. When a model ID
 matches a known model, its capabilities and pricing are automatically populated:
 
-- Claude models: claude-sonnet-4-20250514, claude-haiku-4-20250514, claude-3-5-sonnet-20241022, etc.
-- GPT-4o models: gpt-4o, gpt-4o-mini, etc.
-- Reasoning models: o1, o1-mini, o3-mini
+- Claude 4.5 models: claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001, claude-opus-4-5-20251101 (and undated aliases)
+- Claude 4 models: claude-sonnet-4-20250514, claude-haiku-4-20250514
+- Claude 3.5 models: claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022, claude-3-opus-20240229
+- GPT-5 series: gpt-5.2, gpt-5.2-codex, gpt-5.2-pro, gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano
+- GPT-4 series: gpt-4.1, gpt-4o, gpt-4o-mini
+- Reasoning models: o1, o3, o3-mini, o4-mini (and dated variants)
 
-Unknown models receive conservative defaults (128k context, 4k max tokens, text-only).
+Unknown models cause an error at store initialization. All models used in
+configuration must be present in the well-known models list (`llm/models.go`).
+This prevents subtle failures from incorrect defaults (e.g., a 4096 max_tokens
+default applied to a model that supports 128k).
 
 ### Completion History
 

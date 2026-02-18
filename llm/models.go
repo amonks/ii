@@ -69,6 +69,46 @@ var wellKnownModels = map[string]modelInfo{
 			CacheWrite: 6.25,
 		},
 	},
+	// Claude 4.5 undated aliases (point to the same model as dated versions)
+	"claude-sonnet-4-5": {
+		Name:          "Claude Sonnet 4.5",
+		ContextWindow: 200000,
+		MaxTokens:     64000,
+		Reasoning:     true,
+		InputTypes:    []string{"text", "image"},
+		Cost: Cost{
+			Input:      3.0,
+			Output:     15.0,
+			CacheRead:  0.30,
+			CacheWrite: 3.75,
+		},
+	},
+	"claude-haiku-4-5": {
+		Name:          "Claude Haiku 4.5",
+		ContextWindow: 200000,
+		MaxTokens:     64000,
+		Reasoning:     true,
+		InputTypes:    []string{"text", "image"},
+		Cost: Cost{
+			Input:      1.0,
+			Output:     5.0,
+			CacheRead:  0.10,
+			CacheWrite: 1.25,
+		},
+	},
+	"claude-opus-4-5": {
+		Name:          "Claude Opus 4.5",
+		ContextWindow: 200000,
+		MaxTokens:     64000,
+		Reasoning:     true,
+		InputTypes:    []string{"text", "image"},
+		Cost: Cost{
+			Input:      5.0,
+			Output:     25.0,
+			CacheRead:  0.50,
+			CacheWrite: 6.25,
+		},
+	},
 	// Claude 4 models
 	"claude-sonnet-4-20250514": {
 		Name:          "Claude Sonnet 4",
@@ -153,6 +193,20 @@ var wellKnownModels = map[string]modelInfo{
 			CacheWrite: 1.75,
 		},
 	},
+	"gpt-5.2-codex": {
+		Name:                   "GPT-5.2 Codex",
+		ContextWindow:          400000,
+		MaxTokens:              128000,
+		Reasoning:              true,
+		UseMaxCompletionTokens: true,
+		InputTypes:             []string{"text", "image"},
+		Cost: Cost{
+			Input:      1.75,
+			Output:     14.0,
+			CacheRead:  0.175,
+			CacheWrite: 1.75,
+		},
+	},
 	"gpt-5.2-pro": {
 		Name:                   "GPT-5.2 Pro",
 		ContextWindow:          1047576,
@@ -164,6 +218,20 @@ var wellKnownModels = map[string]modelInfo{
 		Cost: Cost{
 			Input:  21.0,
 			Output: 168.0,
+		},
+	},
+	"gpt-5.1": {
+		Name:                   "GPT-5.1",
+		ContextWindow:          400000,
+		MaxTokens:              128000,
+		Reasoning:              true,
+		UseMaxCompletionTokens: true,
+		InputTypes:             []string{"text", "image"},
+		Cost: Cost{
+			Input:      1.25,
+			Output:     10.0,
+			CacheRead:  0.125,
+			CacheWrite: 1.25,
 		},
 	},
 	"gpt-5": {
@@ -502,25 +570,17 @@ type modelInfo struct {
 	Cost                   Cost
 }
 
+// ErrUnknownModel is returned when a model ID is not in the well-known models list.
+var ErrUnknownModel = fmt.Errorf("unknown model: not in well-known models list (add it to llm/models.go)")
+
 // applyWellKnownInfo applies well-known model information to a model.
-// If the model ID is not recognized, only the ID and provider info are set.
-func applyWellKnownInfo(model *Model) {
+// Returns an error if the model ID is not recognized, since unknown models
+// receive conservative defaults that may cause subtle failures (e.g., a
+// 4096 max_tokens default on a model that supports 128k).
+func applyWellKnownInfo(model *Model) error {
 	info, ok := wellKnownModels[model.ID]
 	if !ok {
-		// Unknown model - set reasonable defaults
-		if model.Name == "" {
-			model.Name = model.ID
-		}
-		if model.ContextWindow == 0 {
-			model.ContextWindow = 128000 // Conservative default
-		}
-		if model.MaxTokens == 0 {
-			model.MaxTokens = 4096 // Conservative default
-		}
-		if len(model.InputTypes) == 0 {
-			model.InputTypes = []string{"text"}
-		}
-		return
+		return fmt.Errorf("%w: %s", ErrUnknownModel, model.ID)
 	}
 
 	// Apply well-known information
@@ -544,6 +604,7 @@ func applyWellKnownInfo(model *Model) {
 	if info.RequiresResponsesAPI && model.API == APIOpenAICompletions {
 		model.API = APIOpenAIResponses
 	}
+	return nil
 }
 
 // ErrModelNotFound is returned when a model ID cannot be resolved.

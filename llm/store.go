@@ -145,7 +145,10 @@ func OpenWithOptions(opts Options) (*Store, error) {
 	}
 
 	// Build models from config
-	models, modelIndex, providerConfigs := buildModelsFromConfig(cfg)
+	models, modelIndex, providerConfigs, err := buildModelsFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Store{
 		stateDir:        stateDir,
@@ -167,7 +170,7 @@ func defaultHistoryDir() (string, error) {
 }
 
 // buildModelsFromConfig builds the model list from configuration.
-func buildModelsFromConfig(cfg *config.Config) ([]Model, map[string]int, map[string]config.LLMProvider) {
+func buildModelsFromConfig(cfg *config.Config) ([]Model, map[string]int, map[string]config.LLMProvider, error) {
 	var models []Model
 	modelIndex := make(map[string]int)
 	providerConfigs := make(map[string]config.LLMProvider)
@@ -194,7 +197,9 @@ func buildModelsFromConfig(cfg *config.Config) ([]Model, map[string]int, map[str
 			}
 
 			// Apply well-known model information
-			applyWellKnownInfo(&model)
+			if err := applyWellKnownInfo(&model); err != nil {
+				return nil, nil, nil, err
+			}
 
 			modelIndex[modelID] = len(models)
 			models = append(models, model)
@@ -202,7 +207,7 @@ func buildModelsFromConfig(cfg *config.Config) ([]Model, map[string]int, map[str
 		}
 	}
 
-	return models, modelIndex, providerConfigs
+	return models, modelIndex, providerConfigs, nil
 }
 
 // parseAPI parses an API string into the API type.
