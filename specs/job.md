@@ -99,7 +99,9 @@ If the file doesn't exist after review, treat as `ACCEPT` with no comments.
 
 The agent writes the generated commit message to `.incrementum-commit-message` in the
 job workspace root (`WorkspacePath`) during the implementing stage. The commit
-message should describe the entire working tree diff created in that stage.
+message should describe the entire working tree diff created in that stage. When
+responding to review feedback, the agent must update the message to describe the
+whole change as it stands, not just the most recent feedback edits.
 
 ## State Machine
 

@@ -3,7 +3,7 @@ change. The todo may take a series of changes to resolve.
 {{template "workflow_context"}}
 {{.FeedbackBlock}}
 {{if .Message}}
-Change description from the previous iteration:
+Draft change description (update to reflect your changes):
 {{.CommitMessageBlock}}
 {{end}}
 
@@ -12,7 +12,9 @@ Changes are reviewed according to these questions:
 {{template "review_questions"}}
 
 When you make changes, write a change description to `./.incrementum-commit-message`.
-Update it as necessary. Describe the what _and_ the why.
+Update it so it describes the entire change as it stands, not just the
+modifications from this round of feedback. This is the commit message for the
+whole change. Describe the what _and_ the why.
 
 {{.TodoBlock}}
 {{if .SeriesLogBlock}}
