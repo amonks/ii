@@ -134,7 +134,7 @@ func ClassTraits(class string, level int) []Trait {
 	case "magician":
 		return []Trait{
 			{Name: "Arcane Magic", Description: "Memorise and cast arcane spells by level."},
-			{Name: "Detect Magic", Description: "Detect magic skill; see magician skill targets."},
+			{Name: "Magician Skills", Description: "Detect magic skill with level-based targets."},
 			{Name: "Magic Items", Description: "May use arcane spell-caster items (wands, scrolls, etc.)."},
 			{Name: "Spell Books", Description: "Begin play with a spell book and its spells."},
 		}

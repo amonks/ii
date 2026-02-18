@@ -299,8 +299,11 @@ func TestClassTraitsMagician(t *testing.T) {
 	if traits[0].Name != "Arcane Magic" {
 		t.Errorf("first trait = %q, want Arcane Magic", traits[0].Name)
 	}
-	if traits[1].Name != "Detect Magic" {
-		t.Errorf("second trait = %q, want Detect Magic", traits[1].Name)
+	if traits[1].Name != "Magician Skills" {
+		t.Errorf("second trait = %q, want Magician Skills", traits[1].Name)
+	}
+	if !strings.Contains(strings.ToLower(traits[1].Description), "detect magic") {
+		t.Errorf("expected Magician Skills description to mention detect magic, got %q", traits[1].Description)
 	}
 	if traits[3].Name != "Spell Books" {
 		t.Errorf("fourth trait = %q, want Spell Books", traits[3].Name)
