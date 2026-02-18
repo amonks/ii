@@ -3,6 +3,24 @@
 The CLI architecture and testing expectations are defined in the Architecture section of `specs/README.md`.
 Use this document for additional CLI-specific guidance when it is not already covered there.
 
+## Init Command
+
+- `ii init` writes `incrementum.toml` in the current jj repo root.
+- If `incrementum.toml` or `.incrementum/config.toml` already exists, the command fails with an error.
+- The generated file sets `job.test-commands` when a test command is detected.
+- If no test command is detected, the file contains a commented `job.test-commands` hint instead.
+
+### Test Command Heuristic
+
+`ii init` checks for test commands in order:
+
+1. `tasks.toml` and `go.mod` present -> `go tool run test`
+2. `tasks.toml` present -> `run test`
+3. `./bin/test` (or `.sh`, `.bash`, `.fish`, `.zsh`) present -> `./bin/test`
+4. `go.mod` present -> `go test ./...`
+5. `package.json` present -> `npm test`
+6. none -> leave `job.test-commands` unset
+
 ## Version Flag
 
 - `ii -version` prints the build identifiers instead of a semantic version.
@@ -27,7 +45,7 @@ go run -ldflags "$ldflags" ./cmd/ii "$@"
 
 Two scripts embed build metadata:
 
-- `./bin/ii` — runs the CLI during development with metadata from the current jujutsu revision
-- `./bin/install` — installs the CLI to `$GOPATH/bin` with metadata from the current jujutsu revision
+- `./bin/ii` -> runs the CLI during development with metadata from the current jujutsu revision
+- `./bin/install` -> installs the CLI to `$GOPATH/bin` with metadata from the current jujutsu revision
 
 Both scripts use `jj log -r @ -T change_id` and `jj log -r @ -T commit_id` to fetch the current revision identifiers, then truncate each to the first 6 characters using bash substring expansion (`${var:0:6}`).
