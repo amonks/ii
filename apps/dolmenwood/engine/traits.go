@@ -130,6 +130,14 @@ func ClassTraits(class string, level int) []Trait {
 			{Name: "Poverty", Description: "Limited possessions; excess wealth donated to worthy causes."},
 			{Name: "Turning the Undead", Description: "May drive off undead by presenting a holy symbol once per turn."},
 		}
+	case "hunter":
+		return []Trait{
+			{Name: "Animal Companion", Description: "May bond with a single animal companion up to the hunter's level."},
+			{Name: "Hunter Skills", Description: "Survival plus Alertness, Stalking, and Tracking skill targets by level."},
+			{Name: "Missile Attacks", Description: "+1 attack bonus with missile weapons."},
+			{Name: "Trophies", Description: "Trophies grant +1 attack vs the creature type and +1 saves vs special attacks."},
+			{Name: "Wayfinding", Description: "3-in-6 chance to find the path again when the party is lost."},
+		}
 	default:
 		return nil
 	}

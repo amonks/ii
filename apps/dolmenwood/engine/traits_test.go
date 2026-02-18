@@ -269,6 +269,27 @@ func TestClassTraitsFighter(t *testing.T) {
 	}
 }
 
+func TestClassTraitsHunter(t *testing.T) {
+	traits := ClassTraits("Hunter", 1)
+	if len(traits) != 5 {
+		t.Fatalf("expected 5 traits, got %d", len(traits))
+	}
+	if traits[0].Name != "Animal Companion" {
+		t.Errorf("first trait = %q, want Animal Companion", traits[0].Name)
+	}
+	if traits[1].Name != "Hunter Skills" {
+		t.Errorf("second trait = %q, want Hunter Skills", traits[1].Name)
+	}
+	if traits[4].Name != "Wayfinding" {
+		t.Errorf("fifth trait = %q, want Wayfinding", traits[4].Name)
+	}
+	for _, trait := range traits {
+		if trait.Description == "" {
+			t.Errorf("expected description for %s", trait.Name)
+		}
+	}
+}
+
 func TestTotalXPModifier(t *testing.T) {
 	scores := map[string]int{"str": 15}
 	primes := []string{"str"}
