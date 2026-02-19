@@ -148,6 +148,14 @@ func TestGetCharacterSheet(t *testing.T) {
 	if !strings.Contains(body, "1d8") {
 		t.Error("response should contain advancement table values")
 	}
+	advancementIndex := strings.Index(body, "Knight Advancement")
+	notesIndex := strings.Index(body, "Notes")
+	if advancementIndex == -1 || notesIndex == -1 {
+		t.Fatalf("expected advancement and notes sections for ordering check")
+	}
+	if !(notesIndex < advancementIndex) {
+		t.Errorf("expected notes before advancement, got notes=%d advancement=%d", notesIndex, advancementIndex)
+	}
 }
 
 func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
