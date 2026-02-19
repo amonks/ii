@@ -1,0 +1,60 @@
+package server
+
+import "fmt"
+
+templ StoreSection(view *CharacterView) {
+	<div id="store" class="bg-white rounded-lg shadow p-4 space-y-3">
+		<h2 class="font-bold text-stone-800">Store</h2>
+		for _, group := range view.StoreGroups {
+			<div class="space-y-2">
+				<div class="text-xs uppercase text-stone-400">{ group.Title }</div>
+				<div class="space-y-1">
+					for _, item := range group.Items {
+						<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
+							<div class="min-w-0">
+								<div class="font-medium text-stone-700">{ item.Name }</div>
+								<div class="text-xs text-stone-400 flex flex-wrap gap-2">
+									if item.CostCP > 0 {
+										<span>{ item.CostCoinLabel }</span>
+									}
+									if item.Weight > 0 {
+										<span>{ fmt.Sprintf("%d cn", item.Weight) }</span>
+									}
+									if item.Bulk > 0 {
+										<span>{ fmt.Sprintf("%d slots", item.Bulk) }</span>
+									}
+									if item.AC > 0 {
+										<span>AC { fmt.Sprintf("%d", item.AC) }</span>
+									}
+									if item.Damage != "" {
+										<span>{ item.Damage }</span>
+									}
+									if item.Qualities != "" {
+										<span>{ item.Qualities }</span>
+									}
+								</div>
+							</div>
+							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML" class="flex items-center gap-2">
+								<input type="hidden" name="item_id" value={ item.ID }/>
+								<button type="submit" class="text-xs bg-stone-800 text-white rounded px-2 py-1">Buy</button>
+							</form>
+						</div>
+					}
+				</div>
+			</div>
+		}
+		if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
+			<details>
+				<summary class="text-sm text-stone-600 cursor-pointer">Store Log</summary>
+				<div class="mt-2 space-y-1 text-xs">
+					for _, entry := range entries {
+						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						</div>
+					}
+				</div>
+			</details>
+		}
+	</div>
+}

@@ -26,6 +26,7 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{id}/items/{itemID}/split/{$}", s.handleSplitItem)
 	mux.HandleFunc("POST /characters/{id}/items/{itemID}/decrement/{$}", s.handleDecrementItem)
 	mux.HandleFunc("POST /characters/{id}/items/{itemID}/delete/{$}", s.handleDeleteItem)
+	mux.HandleFunc("POST /characters/{id}/store/buy/{$}", s.handleStoreBuy)
 	mux.HandleFunc("POST /characters/{id}/companions/{$}", s.handleAddCompanion)
 	mux.HandleFunc("POST /characters/{id}/companions/{compID}/update/{$}", s.handleUpdateCompanion)
 	mux.HandleFunc("POST /characters/{id}/companions/{compID}/delete/{$}", s.handleDeleteCompanion)

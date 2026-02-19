@@ -60,6 +60,9 @@ type CharacterView struct {
 	CompanionGroups []CompanionInventory
 	MoveTargets     []MoveTarget
 
+	// Store
+	StoreGroups []StoreGroup
+
 	// Bank
 	GameDay      int
 	CalendarDate engine.CalendarDisplay
@@ -75,7 +78,23 @@ type BankDepositView struct {
 	GPValue         int
 }
 
-// InventoryItem is a db.Item with computed slots and nested children.
+type StoreGroup struct {
+	Title string
+	Items []StoreItem
+}
+
+type StoreItem struct {
+	ID            string
+	Name          string
+	CostCP        int
+	CostCoinLabel string
+	Weight        int
+	Bulk          int
+	Damage        string
+	AC            int
+	Qualities     string
+}
+
 type InventoryItem struct {
 	db.Item
 	Slots      int
@@ -317,6 +336,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	// Build inventory tree
 	equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
 	moveTargets := buildMoveTargets(items, compViews)
+	storeGroups := buildStoreGroups()
 
 	// Compute speed breakdowns
 	speed := engine.SpeedFromSlots(equipped, totalStowed)
@@ -372,11 +392,154 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		EquippedItems:           equippedTree,
 		CompanionGroups:         compGroups,
 		MoveTargets:             moveTargets,
+		StoreGroups:             storeGroups,
 		GameDay:                 ch.CurrentDay,
 		CalendarDate:            calendarDate,
 		BankDeposits:            bankDepositViews,
 		BankTotalCP:             bankTotalCP,
 	}, nil
+}
+
+func buildStoreGroups() []StoreGroup {
+	groups := []StoreGroup{
+		{
+			Title: "Adventuring Gear",
+			Items: []StoreItem{
+				storeItem("Rope", 100, "1gp"),
+				storeItem("Backpack", 400, "4gp"),
+				storeItem("Bedroll", 200, "2gp"),
+				storeItem("Tinder box", 300, "3gp"),
+				storeItem("Torches", 100, "1gp"),
+			},
+		},
+		{
+			Title: "Weapons",
+			Items: []StoreItem{
+				storeItem("Longsword", 1000, "10gp"),
+				storeItem("Shortsword", 700, "7gp"),
+				storeItem("Dagger", 300, "3gp"),
+				storeItem("Spear", 300, "3gp"),
+				storeItem("Shortbow", 2500, "25gp"),
+				storeItem("Arrows", 500, "5gp"),
+			},
+		},
+		{
+			Title: "Armour",
+			Items: []StoreItem{
+				storeItem("Leather", 2000, "20gp"),
+				storeItem("Chainmail", 4000, "40gp"),
+				storeItem("Plate mail", 6000, "60gp"),
+				storeItem("Shield", 1000, "10gp"),
+			},
+		},
+		{
+			Title: "Horses and Vehicles",
+			Items: []StoreItem{
+				storeItem("Mule", 3000, "30gp"),
+				storeItem("Pack saddle and bridle", 1000, "10gp"),
+				storeItem("Riding saddle and bridle", 2500, "25gp"),
+				storeItem("Riding saddle bags", 500, "5gp"),
+				storeItem("Cart", 10000, "100gp"),
+				storeItem("Wagon", 20000, "200gp"),
+			},
+		},
+	}
+
+	for gi := range groups {
+		for ii := range groups[gi].Items {
+			item := &groups[gi].Items[ii]
+			item.ID = storeItemID(item.Name, item.CostCP)
+			item.CostCoinLabel = itemCostLabel(item.CostCP, item.CostCoinLabel)
+			item.Weight = storeItemWeight(item.Name, item.CostCP)
+			item.Bulk = storeItemSlots(item.Name, item.CostCP)
+			item.Damage = itemDamage(item.Name)
+			item.AC = itemArmorClass(item.Name)
+			item.Qualities = itemQualities(item.Name)
+		}
+	}
+
+	return groups
+}
+
+func storeItem(name string, costCP int, label string) StoreItem {
+	return StoreItem{Name: name, CostCP: costCP, CostCoinLabel: label}
+}
+
+func storeItemID(name string, costCP int) string {
+	return fmt.Sprintf("%s|%d", name, costCP)
+}
+
+func itemCostLabel(costCP int, label string) string {
+	if label != "" {
+		return label
+	}
+	if costCP%100 == 0 {
+		return fmt.Sprintf("%dgp", costCP/100)
+	}
+	return fmt.Sprintf("%dcp", costCP)
+}
+
+func storeItemWeight(name string, costCP int) int {
+	if w, ok := engine.ItemWeight(name); ok {
+		if bundle := storeBundleSize(costCP, name); bundle > 0 {
+			return w * bundle
+		}
+		return w
+	}
+	return 0
+}
+
+func storeItemSlots(name string, costCP int) int {
+	if bundle := storeBundleSize(costCP, name); bundle > 0 {
+		return engine.ItemSlots(engine.Item{Name: name, Quantity: bundle, Location: "stowed"})
+	}
+	if bulk, ok := engine.ItemSlotCostExplicit(name); ok {
+		return bulk
+	}
+	return 0
+}
+
+func storeBundleSize(costCP int, name string) int {
+	bundle := engine.ItemBundleSize(name)
+	if bundle == 0 {
+		return 0
+	}
+	if expected := storeBundleCostCP(name); expected != 0 && expected != costCP {
+		return 0
+	}
+	return bundle
+}
+
+func storeBundleCostCP(name string) int {
+	switch strings.ToLower(name) {
+	case "torches":
+		return 100
+	case "arrows":
+		return 500
+	default:
+		return 0
+	}
+}
+
+func itemDamage(name string) string {
+	if weapon, ok := engine.WeaponStats(name); ok {
+		return weapon.Damage
+	}
+	return ""
+}
+
+func itemQualities(name string) string {
+	if weapon, ok := engine.WeaponStats(name); ok {
+		return weapon.Qualities
+	}
+	return ""
+}
+
+func itemArmorClass(name string) int {
+	if armor, ok := engine.ArmorStats(name); ok {
+		return armor.AC
+	}
+	return 0
 }
 
 func filterAuditLog(entries []db.AuditLogEntry, actions ...string) []db.AuditLogEntry {

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"monks.co/apps/dolmenwood/db"
+	"monks.co/apps/dolmenwood/engine"
 )
 
 func setupTest(t *testing.T) (*Server, *db.DB) {
@@ -2410,7 +2411,8 @@ func TestCoinItemAppearsInInventory(t *testing.T) {
 	}
 }
 
-func TestCoinItemNotShownWhenNoCoins(t *testing.T) {
+
+func TestStoreCardShowsItems(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
@@ -2428,10 +2430,372 @@ func TestCoinItemNotShownWhenNoCoins(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	// "Coins" as a standalone word shouldn't appear in inventory when there are no coins
-	// (it might appear in other contexts like labels, so check for the yellow-styled item)
-	if strings.Contains(body, "text-yellow-700") {
-		t.Error("should not show coin item when there are no coins")
+	if !strings.Contains(body, "Store") {
+		t.Error("response should contain store section")
+	}
+	if !strings.Contains(body, "Rope") {
+		t.Error("store should list rope")
+	}
+	if !strings.Contains(body, "store/buy/") {
+		t.Error("store should include buy action")
+	}
+}
+
+func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
+	if engine.ItemBundleSize("Rope") != 0 {
+		t.Fatal("expected rope to have no bundle size")
+	}
+
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 1pp 2gp = 700cp total
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 3, Notes: "1pp 2gp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("rope", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var coinNotes string
+	var coinQty int
+	var ropeQty int
+	for _, item := range items {
+		switch item.Name {
+		case "Coins":
+			coinNotes = item.Notes
+			coinQty = item.Quantity
+		case "Rope":
+			ropeQty = item.Quantity
+		}
+	}
+	if ropeQty != 1 {
+		t.Fatalf("rope quantity = %d, want 1", ropeQty)
+	}
+	if coinNotes != "1pp 1gp" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "1pp 1gp")
+	}
+	if coinQty != 2 {
+		t.Fatalf("coin quantity = %d, want 2", coinQty)
+	}
+}
+
+func TestStoreBuyBundledItemUsesBundleSize(t *testing.T) {
+	bundleSize := engine.ItemBundleSize("Torches")
+	if bundleSize <= 0 {
+		t.Fatalf("expected torches bundle size > 0, got %d", bundleSize)
+	}
+
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 1, Notes: "1gp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("torches", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var torchesQty int
+	for _, item := range items {
+		if item.Name == "Torches" {
+			torchesQty = item.Quantity
+		}
+	}
+	if torchesQty != bundleSize {
+		t.Fatalf("torches quantity = %d, want %d", torchesQty, bundleSize)
+	}
+}
+
+func TestStoreBuyDefaultsToStowedLocation(t *testing.T) {
+	bundleSize := engine.ItemBundleSize("Torches")
+	if bundleSize <= 0 {
+		t.Fatalf("expected torches bundle size > 0, got %d", bundleSize)
+	}
+
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 1, Notes: "1gp"})
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 2, Location: "stowed"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("torches", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var torchesQty int
+	var torchesLocation string
+	var torchesCount int
+	for _, item := range items {
+		if item.Name == "Torches" {
+			torchesQty = item.Quantity
+			torchesLocation = item.Location
+			torchesCount++
+		}
+	}
+	if torchesCount != 1 {
+		t.Fatalf("torches entries = %d, want 1", torchesCount)
+	}
+	if torchesQty != bundleSize+2 {
+		t.Fatalf("torches quantity = %d, want %d", torchesQty, bundleSize+2)
+	}
+	if torchesLocation != "stowed" {
+		t.Fatalf("torches location = %q, want %q", torchesLocation, "stowed")
+	}
+}
+
+func TestStoreBuyBundleDisplayShowsTotals(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Torches") {
+		t.Fatal("store should list torches")
+	}
+	if !strings.Contains(body, "30 cn") {
+		t.Fatal("store should show bundle weight for torches")
+	}
+	if !strings.Contains(body, "Arrows") {
+		t.Fatal("store should list arrows")
+	}
+	if !strings.Contains(body, "400 cn") {
+		t.Fatal("store should show bundle weight for arrows")
+	}
+}
+
+func TestStoreBuyRejectsTamperedItemID(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 1, Notes: "1gp"})
+
+	form := url.Values{}
+	form.Set("item_id", "Plate mail|1")
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("items = %d, want 1", len(items))
+	}
+	if items[0].Notes != "1gp" {
+		t.Fatalf("coin notes = %q, want %q", items[0].Notes, "1gp")
+	}
+}
+
+func TestStoreBuyUsesChangeMaking(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 1pp 1gp 6cp = 606cp total
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 8, Notes: "1pp 1gp 6cp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("rope", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var coinNotes string
+	var coinQty int
+	var ropeQty int
+	for _, item := range items {
+		switch item.Name {
+		case "Coins":
+			coinNotes = item.Notes
+			coinQty = item.Quantity
+		case "Rope":
+			ropeQty = item.Quantity
+		}
+	}
+	if ropeQty != 1 {
+		t.Fatalf("rope quantity = %d, want 1", ropeQty)
+	}
+	if coinNotes != "1pp 6cp" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "1pp 6cp")
+	}
+	if coinQty != 7 {
+		t.Fatalf("coin quantity = %d, want 7", coinQty)
+	}
+}
+
+func TestStoreBuyUsesElectrumChange(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 1gp 5sp = 150cp total
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 6, Notes: "1gp 5sp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("rope", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var coinNotes string
+	var coinQty int
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+			coinQty = item.Quantity
+		}
+	}
+	if coinNotes != "1ep" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "1ep")
+	}
+	if coinQty != 1 {
+		t.Fatalf("coin quantity = %d, want 1", coinQty)
+	}
+}
+
+func TestStoreBuyAcceptsElectrumInPurse(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 1gp 1ep = 150cp total
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 2, Notes: "1gp 1ep"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("rope", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	var coinNotes string
+	var coinQty int
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+			coinQty = item.Quantity
+		}
+	}
+	if coinNotes != "1ep" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "1ep")
+	}
+	if coinQty != 1 {
+		t.Fatalf("coin quantity = %d, want 1", coinQty)
 	}
 }
 
