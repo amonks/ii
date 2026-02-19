@@ -1,6 +1,9 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+	"monks.co/apps/dolmenwood/db"
+)
 
 templ CharacterSheet(view *CharacterView) {
 	@Layout(view.Character.Name, "../../") {
@@ -11,14 +14,38 @@ templ CharacterSheet(view *CharacterView) {
 }
 
 templ SheetBody(view *CharacterView) {
+	@DayCounter(view)
 	@StatsSection(view)
 	@TraitsSection(view)
 	@InventorySection(view)
 	@EncumbranceSection(view)
 	@CompanionsSection(view)
 	@WealthSection(view)
+	@BankSection(view)
 	@XPSection(view)
 	@NotesSection(view)
+}
+
+templ DayCounter(view *CharacterView) {
+	<div id="day-counter" class="bg-white rounded-lg shadow p-3 flex items-center justify-between">
+		<span class="font-bold text-stone-800">Day { fmt.Sprintf("%d", view.GameDay) }</span>
+		<form hx-post="advance-day/" hx-target="#sheet-body" hx-swap="innerHTML">
+			<button type="submit"
+				class="bg-stone-800 text-white rounded-md px-3 py-1 text-sm hover:bg-stone-700">
+				Next Day
+			</button>
+		</form>
+	</div>
+}
+
+templ auditDate(entry db.AuditLogEntry) {
+	<span class="text-stone-400">
+		if entry.GameDay > 0 {
+			Day { fmt.Sprintf("%d", entry.GameDay) }
+		} else {
+			{ entry.CreatedAt.Format("Jan 2") }
+		}
+	</span>
 }
 
 func formatMod(mod int) string {

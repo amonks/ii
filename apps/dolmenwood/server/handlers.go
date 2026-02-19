@@ -77,7 +77,7 @@ func (s *Server) handleUpdateHP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "hp_change", fmt.Sprintf("HP %d → %d", oldHP, ch.HPCurrent))
+	s.addAuditLog(ch, "hp_change", fmt.Sprintf("HP %d → %d", oldHP, ch.HPCurrent))
 	s.renderStats(w, r, ch)
 }
 
@@ -114,7 +114,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			item.CompanionID = companionID
 			item.Location = ""
 		}
-		if err := s.combineStackableItems(ch.ID, item); err != nil {
+		if err := s.combineStackableItems(ch.ID, item, ch.CurrentDay); err != nil {
 			if !errors.Is(err, errNotCombined) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -123,7 +123,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			s.db.AddAuditLog(ch.ID, "item_add", fmt.Sprintf("Coins (%s)", item.Notes))
+			s.addAuditLog(ch, "item_add", fmt.Sprintf("Coins (%s)", item.Notes))
 		}
 		s.renderInventory(w, r, ch)
 		return
@@ -149,7 +149,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		item.Location = "" // clear legacy location when using hierarchy
 	}
 	if item.Location != "" && item.ContainerID == nil && item.CompanionID == nil {
-		if err := s.combineStackableItems(ch.ID, item); err != nil {
+		if err := s.combineStackableItems(ch.ID, item, ch.CurrentDay); err != nil {
 			if !errors.Is(err, errNotCombined) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -162,11 +162,11 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		s.db.AddAuditLog(ch.ID, "item_add", item.Name)
+		s.addAuditLog(ch, "item_add", item.Name)
 		s.renderInventory(w, r, ch)
 		return
 	}
-	if err := s.combineStackableItems(ch.ID, item); err != nil {
+	if err := s.combineStackableItems(ch.ID, item, ch.CurrentDay); err != nil {
 		if !errors.Is(err, errNotCombined) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -179,7 +179,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "item_add", item.Name)
+	s.addAuditLog(ch, "item_add", item.Name)
 	s.renderInventory(w, r, ch)
 }
 
@@ -211,15 +211,55 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			}
 			// Support move_to for container hierarchy
 			if moveTo := r.FormValue("move_to"); moveTo != "" {
+				// Bank deposit: convert coin item to a bank deposit
+				if moveTo == "bank" && strings.EqualFold(item.Name, engine.CoinItemNameStr) {
+					// Parse coin notes and reject PP/EP
+					parsed := engine.ParseCoinNotes(item.Notes)
+					for ct := range parsed {
+						if ct == engine.PP {
+							http.Error(w, "Banks don't deal in fairy silver (pp)", http.StatusBadRequest)
+							return
+						}
+						if ct == engine.EP {
+							http.Error(w, "Electrum pieces don't exist in Dolmenwood", http.StatusBadRequest)
+							return
+						}
+					}
+
+					cpValue := engine.CoinNotesCPValue(item.Notes)
+
+					// Delete the coin item
+					if err := s.db.DeleteItem(item.ID); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+
+					// Create bank deposit
+					dep := &db.BankDeposit{
+						CharacterID: ch.ID,
+						CoinNotes:   item.Notes,
+						CPValue:     cpValue,
+						DepositDay:  ch.CurrentDay,
+					}
+					if err := s.db.CreateBankDeposit(dep); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+
+					s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("Deposited %s (%d cp)", item.Notes, cpValue))
+					s.renderSheetBody(w, r, ch)
+					return
+				}
+
 				containerID, companionID := parseMoveTarget(moveTo)
 				item.ContainerID = containerID
 				item.CompanionID = companionID
 				item.Location = "" // clear legacy location
 			}
 			s.db.UpdateItem(&item)
-			s.db.AddAuditLog(ch.ID, "item_update", fmt.Sprintf("%s: qty %d", item.Name, item.Quantity))
+			s.addAuditLog(ch, "item_update", fmt.Sprintf("%s: qty %d", item.Name, item.Quantity))
 			if item.ContainerID != nil || item.CompanionID != nil {
-				if err := s.combineStackableItems(ch.ID, &item); err != nil {
+				if err := s.combineStackableItems(ch.ID, &item, ch.CurrentDay); err != nil {
 					if !errors.Is(err, errNotCombined) {
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
@@ -243,7 +283,7 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "item_delete", fmt.Sprintf("item %d", itemID))
+	s.addAuditLog(ch, "item_delete", fmt.Sprintf("item %d", itemID))
 	s.renderInventory(w, r, ch)
 }
 
@@ -288,6 +328,54 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 		}
 		splitNotes := engine.FormatCoinNotes(splitMap)
 
+		// Bank deposit: convert coins to a bank deposit instead of moving
+		if moveTo == "bank" {
+			// Reject PP and EP
+			for _, a := range amounts {
+				if a.CoinType == engine.PP {
+					http.Error(w, "Banks don't deal in fairy silver (pp)", http.StatusBadRequest)
+					return
+				}
+				if a.CoinType == engine.EP {
+					http.Error(w, "Electrum pieces don't exist in Dolmenwood", http.StatusBadRequest)
+					return
+				}
+			}
+
+			cpValue := engine.CoinNotesCPValue(splitNotes)
+
+			// Update or delete source item
+			if newTotal == 0 {
+				if err := s.db.DeleteItem(source.ID); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				source.Notes = newNotes
+				source.Quantity = newTotal
+				if err := s.db.UpdateItem(source); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+
+			// Create bank deposit
+			dep := &db.BankDeposit{
+				CharacterID: ch.ID,
+				CoinNotes:   splitNotes,
+				CPValue:     cpValue,
+				DepositDay:  ch.CurrentDay,
+			}
+			if err := s.db.CreateBankDeposit(dep); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("Deposited %s (%d cp)", splitNotes, cpValue))
+			s.renderSheetBody(w, r, ch)
+			return
+		}
+
 		if newTotal == 0 {
 			// Moving all coins: just move the source item
 			source.Notes = splitNotes
@@ -300,7 +388,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Try to merge at destination
-			s.combineStackableItems(ch.ID, source)
+			s.combineStackableItems(ch.ID, source, ch.CurrentDay)
 		} else {
 			// Update source with remaining
 			source.Notes = newNotes
@@ -318,7 +406,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				ContainerID: containerID,
 				CompanionID: companionID,
 			}
-			if err := s.combineStackableItems(ch.ID, newItem); err != nil {
+			if err := s.combineStackableItems(ch.ID, newItem, ch.CurrentDay); err != nil {
 				if !errors.Is(err, errNotCombined) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -329,7 +417,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		s.db.AddAuditLog(ch.ID, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, moveTo))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, moveTo))
 	} else {
 		// Non-coin split: parse quantity as integer
 		qty := atoi(qtyStr)
@@ -350,7 +438,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			if err := s.combineStackableItems(ch.ID, source); err != nil {
+			if err := s.combineStackableItems(ch.ID, source, ch.CurrentDay); err != nil {
 				if !errors.Is(err, errNotCombined) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -374,14 +462,14 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			if err := s.combineStackableItems(ch.ID, newItem); err != nil {
+			if err := s.combineStackableItems(ch.ID, newItem, ch.CurrentDay); err != nil {
 				if !errors.Is(err, errNotCombined) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			}
 		}
-		s.db.AddAuditLog(ch.ID, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, moveTo))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, moveTo))
 	}
 
 	s.renderInventory(w, r, ch)
@@ -415,7 +503,7 @@ func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "item_decrement", fmt.Sprintf("%s -%d (%d → %d)", item.Name, bundle, oldQty, item.Quantity))
+	s.addAuditLog(ch, "item_decrement", fmt.Sprintf("%s -%d (%d → %d)", item.Name, bundle, oldQty, item.Quantity))
 	s.renderInventory(w, r, ch)
 }
 
@@ -440,7 +528,7 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "companion_add", comp.Name)
+	s.addAuditLog(ch, "companion_add", comp.Name)
 	s.renderCompanions(w, r, ch)
 }
 
@@ -470,7 +558,7 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			comp.SaddleType = r.FormValue("saddle_type")
 			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
-			s.db.AddAuditLog(ch.ID, "companion_update", fmt.Sprintf("%s: HP %d → %d", comp.Name, oldHP, comp.HPCurrent))
+			s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: HP %d → %d", comp.Name, oldHP, comp.HPCurrent))
 			break
 		}
 	}
@@ -488,7 +576,7 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "companion_delete", fmt.Sprintf("companion %d", compID))
+	s.addAuditLog(ch, "companion_delete", fmt.Sprintf("companion %d", compID))
 	s.renderCompanions(w, r, ch)
 }
 
@@ -540,7 +628,7 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 		Quantity:    amount,
 		Notes:       coinNotes,
 	}
-	if err := s.combineStackableItems(ch.ID, coinItem); err != nil {
+	if err := s.combineStackableItems(ch.ID, coinItem, ch.CurrentDay); err != nil {
 		if !errors.Is(err, errNotCombined) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -551,7 +639,7 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.db.AddAuditLog(ch.ID, "treasure_add", fmt.Sprintf("%d %s %s (%s)", amount, coinType, desc, txType))
+	s.addAuditLog(ch, "treasure_add", fmt.Sprintf("%d %s %s (%s)", amount, coinType, desc, txType))
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -645,7 +733,7 @@ func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.db.AddAuditLog(ch.ID, "treasure_undo", desc)
+	s.addAuditLog(ch, "treasure_undo", desc)
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -662,7 +750,7 @@ func (s *Server) handleReturnToSafety(w http.ResponseWriter, r *http.Request) {
 	}
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, []string{"str"})
 
-	if err := s.db.ReturnToSafety(ch.ID, xpMod); err != nil {
+	if err := s.db.ReturnToSafety(ch.ID, xpMod, ch.CurrentDay); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -691,7 +779,7 @@ func (s *Server) handleLevelUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "level_up", fmt.Sprintf("Level %d → %d", oldLevel, newLevel))
+	s.addAuditLog(ch, "level_up", fmt.Sprintf("Level %d → %d", oldLevel, newLevel))
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -721,7 +809,7 @@ func (s *Server) handleAddXP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "xp_add", fmt.Sprintf("+%d XP (%s)", xpAmount, description))
+	s.addAuditLog(ch, "xp_add", fmt.Sprintf("+%d XP (%s)", xpAmount, description))
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -740,7 +828,7 @@ func (s *Server) handleAddNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "note_add", note.Content)
+	s.addAuditLog(ch, "note_add", note.Content)
 	s.renderNotes(w, r, ch)
 }
 
@@ -755,11 +843,108 @@ func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.db.AddAuditLog(ch.ID, "note_delete", fmt.Sprintf("note %d", noteID))
+	s.addAuditLog(ch, "note_delete", fmt.Sprintf("note %d", noteID))
 	s.renderNotes(w, r, ch)
 }
 
+// --- Bank / Day handlers ---
+
+func (s *Server) handleAdvanceDay(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	oldDay := ch.CurrentDay
+	ch.CurrentDay++
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "day_advance", fmt.Sprintf("Day %d → %d", oldDay, ch.CurrentDay))
+	s.renderSheetBody(w, r, ch)
+}
+
+func (s *Server) handleBankWithdraw(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	coinExpr := r.FormValue("coins")
+	amounts, err := engine.ParseCoinExpression(coinExpr)
+	if err != nil {
+		http.Error(w, "Invalid coin expression", http.StatusBadRequest)
+		return
+	}
+
+	// Convert requested amount to CP
+	requestedCP := 0
+	for _, a := range amounts {
+		switch a.CoinType {
+		case engine.CP:
+			requestedCP += a.Amount
+		case engine.SP:
+			requestedCP += a.Amount * 10
+		case engine.GP:
+			requestedCP += a.Amount * 100
+		}
+	}
+
+	// Load bank deposits and plan withdrawal
+	deposits, err := s.db.ListBankDeposits(ch.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	lots := make([]engine.BankLot, len(deposits))
+	for i, dep := range deposits {
+		lots[i] = engine.BankLot{ID: dep.ID, CPValue: dep.CPValue, DepositDay: dep.DepositDay}
+	}
+	result, err := engine.PlanWithdrawal(lots, requestedCP, ch.CurrentDay)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Execute: delete consumed lots, update partial lots
+	for _, id := range result.ConsumedLots {
+		s.db.DeleteBankDeposit(id)
+	}
+	for id, newValue := range result.UpdatedLots {
+		for i := range deposits {
+			if deposits[i].ID == id {
+				deposits[i].CPValue = newValue
+				s.db.UpdateBankDeposit(&deposits[i])
+				break
+			}
+		}
+	}
+
+	// Add coins to purse using MinCoins (bank gives change in gp/sp/cp)
+	coins := engine.MinCoins(result.NetCP)
+	ch.PurseGP += coins.GP
+	ch.PurseSP += coins.SP
+	ch.PurseCP += coins.CP
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	feeDetail := ""
+	if result.FeeCP > 0 {
+		feeDetail = fmt.Sprintf(" (fee: %d cp)", result.FeeCP)
+	}
+	s.addAuditLog(ch, "bank_withdraw", fmt.Sprintf("Withdrew %s%s", coinExpr, feeDetail))
+	s.renderSheetBody(w, r, ch)
+}
+
 // --- Helpers ---
+
+func (s *Server) addAuditLog(ch *db.Character, action, detail string) {
+	s.db.AddAuditLog(ch.ID, action, detail, ch.CurrentDay)
+}
 
 func (s *Server) getCharacter(r *http.Request) (*db.Character, error) {
 	id := atoui(r.PathValue("id"))
@@ -823,7 +1008,11 @@ func (s *Server) renderSheetBody(w http.ResponseWriter, r *http.Request, ch *db.
 
 var errNotCombined = errors.New("not combined")
 
-func (s *Server) combineStackableItems(characterID uint, item *db.Item) error {
+func (s *Server) combineStackableItems(characterID uint, item *db.Item, gameDay ...int) error {
+	day := 0
+	if len(gameDay) > 0 {
+		day = gameDay[0]
+	}
 	if item.ContainerID != nil || item.CompanionID != nil {
 		item.Location = ""
 	}
@@ -870,7 +1059,7 @@ func (s *Server) combineStackableItems(characterID uint, item *db.Item) error {
 				return err
 			}
 		}
-		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (combined)", item.Name))
+		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (combined)", item.Name), day)
 		return nil
 	}
 	return errNotCombined

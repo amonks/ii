@@ -53,7 +53,7 @@ templ InventorySection(view *CharacterView) {
 					for _, entry := range entries {
 						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
 							<span>{ entry.Detail }</span>
-							<span class="text-stone-400">{ entry.CreatedAt.Format("Jan 2") }</span>
+							@auditDate(entry)
 						</div>
 					}
 				</div>

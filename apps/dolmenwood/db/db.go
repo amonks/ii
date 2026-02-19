@@ -52,6 +52,9 @@ type Character struct {
 	// XP
 	TotalXP int `gorm:"column:total_xp"`
 
+	// Game day counter (per character)
+	CurrentDay int `gorm:"column:current_day"`
+
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
@@ -113,6 +116,16 @@ type AuditLogEntry struct {
 	CharacterID uint      `gorm:"column:character_id"`
 	Action      string    `gorm:"column:action"`
 	Detail      string    `gorm:"column:detail"`
+	GameDay     int       `gorm:"column:game_day"`
+	CreatedAt   time.Time `gorm:"column:created_at"`
+}
+
+type BankDeposit struct {
+	ID          uint      `gorm:"primarykey"`
+	CharacterID uint      `gorm:"column:character_id"`
+	CoinNotes   string    `gorm:"column:coin_notes"`
+	CPValue     int       `gorm:"column:cp_value"`
+	DepositDay  int       `gorm:"column:deposit_day"`
 	CreatedAt   time.Time `gorm:"column:created_at"`
 }
 
@@ -153,6 +166,7 @@ CREATE TABLE IF NOT EXISTS characters (
 	coin_container_id INTEGER REFERENCES items(id),
 	coins_migrated INTEGER NOT NULL DEFAULT 0,
 	total_xp INTEGER NOT NULL DEFAULT 0,
+	current_day INTEGER NOT NULL DEFAULT 1,
 	created_at DATETIME,
 	updated_at DATETIME
 );
@@ -220,9 +234,20 @@ CREATE TABLE IF NOT EXISTS audit_log (
 	character_id INTEGER NOT NULL REFERENCES characters(id),
 	action TEXT NOT NULL,
 	detail TEXT NOT NULL DEFAULT '',
+	game_day INTEGER NOT NULL DEFAULT 0,
 	created_at DATETIME
 );
 CREATE INDEX IF NOT EXISTS audit_log_by_character ON audit_log(character_id);
+
+CREATE TABLE IF NOT EXISTS bank_deposits (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	coin_notes TEXT NOT NULL DEFAULT '',
+	cp_value INTEGER NOT NULL DEFAULT 0,
+	deposit_day INTEGER NOT NULL DEFAULT 0,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS bank_deposits_by_character ON bank_deposits(character_id);
 `
 
 const migrations = `
@@ -253,6 +278,26 @@ const migrationCoinsMigrated = `
 ALTER TABLE characters ADD COLUMN coins_migrated INTEGER NOT NULL DEFAULT 0;
 `
 
+const migrationCurrentDay = `
+ALTER TABLE characters ADD COLUMN current_day INTEGER NOT NULL DEFAULT 1;
+`
+
+const migrationAuditLogGameDay = `
+ALTER TABLE audit_log ADD COLUMN game_day INTEGER NOT NULL DEFAULT 0;
+`
+
+const migrationBankDeposits = `
+CREATE TABLE IF NOT EXISTS bank_deposits (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	coin_notes TEXT NOT NULL DEFAULT '',
+	cp_value INTEGER NOT NULL DEFAULT 0,
+	deposit_day INTEGER NOT NULL DEFAULT 0,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS bank_deposits_by_character ON bank_deposits(character_id);
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -268,6 +313,9 @@ func New() (*DB, error) {
 	d.Exec(migrationCompanionSaddleType)
 	d.Exec(migrationCoinLocation)
 	d.Exec(migrationCoinsMigrated)
+	d.Exec(migrationCurrentDay)
+	d.Exec(migrationAuditLogGameDay)
+	d.Exec(migrationBankDeposits)
 	return &DB{d}, nil
 }
 
@@ -453,11 +501,12 @@ func (db *DB) DeleteNote(id uint) error {
 
 // --- Audit Log ---
 
-func (db *DB) AddAuditLog(characterID uint, action, detail string) error {
+func (db *DB) AddAuditLog(characterID uint, action, detail string, gameDay int) error {
 	entry := &AuditLogEntry{
 		CharacterID: characterID,
 		Action:      action,
 		Detail:      detail,
+		GameDay:     gameDay,
 		CreatedAt:   time.Now(),
 	}
 	return db.Create(entry).Error
@@ -471,11 +520,36 @@ func (db *DB) ListAuditLog(characterID uint) ([]AuditLogEntry, error) {
 	return entries, nil
 }
 
+// --- Bank Deposits ---
+
+func (db *DB) CreateBankDeposit(dep *BankDeposit) error {
+	if dep.CreatedAt.IsZero() {
+		dep.CreatedAt = time.Now()
+	}
+	return db.Create(dep).Error
+}
+
+func (db *DB) ListBankDeposits(characterID uint) ([]BankDeposit, error) {
+	var deps []BankDeposit
+	if err := db.Where("character_id = ?", characterID).Order("deposit_day asc, id asc").Find(&deps).Error; err != nil {
+		return nil, err
+	}
+	return deps, nil
+}
+
+func (db *DB) UpdateBankDeposit(dep *BankDeposit) error {
+	return db.Save(dep).Error
+}
+
+func (db *DB) DeleteBankDeposit(id uint) error {
+	return db.Delete(&BankDeposit{}, id).Error
+}
+
 // --- Return to Safety ---
 
 // ReturnToSafety converts found treasure to XP and moves it to the purse.
 // xpModPercent is the total XP modifier (human bonus + prime ability modifier).
-func (db *DB) ReturnToSafety(characterID uint, xpModPercent int) error {
+func (db *DB) ReturnToSafety(characterID uint, xpModPercent int, gameDay int) error {
 	ch, err := db.GetCharacter(characterID)
 	if err != nil {
 		return fmt.Errorf("get character: %w", err)
@@ -526,7 +600,7 @@ func (db *DB) ReturnToSafety(characterID uint, xpModPercent int) error {
 
 	// Audit log
 	if err := db.AddAuditLog(characterID, "return_to_safety",
-		fmt.Sprintf("Treasure %d GP value → %d XP", gpValue, xpGained)); err != nil {
+		fmt.Sprintf("Treasure %d GP value → %d XP", gpValue, xpGained), gameDay); err != nil {
 		return fmt.Errorf("audit log: %w", err)
 	}
 

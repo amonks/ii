@@ -48,6 +48,19 @@ type CharacterView struct {
 	EquippedItems   []InventoryItem
 	CompanionGroups []CompanionInventory
 	MoveTargets     []MoveTarget
+
+	// Bank
+	GameDay      int
+	BankDeposits []BankDepositView
+	BankTotalCP  int
+}
+
+// BankDepositView wraps a bank deposit with computed maturity info.
+type BankDepositView struct {
+	db.BankDeposit
+	IsMature        bool
+	DaysUntilMature int
+	GPValue         int
 }
 
 // InventoryItem is a db.Item with computed slots and nested children.
@@ -172,6 +185,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	if err != nil {
 		return nil, err
 	}
+	bankDeposits, err := d.ListBankDeposits(ch.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Convert items for engine calculations
 	engineItems := make([]engine.Item, len(items))
@@ -234,6 +251,23 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
 
+	// Build bank deposit views
+	var bankDepositViews []BankDepositView
+	bankTotalCP := 0
+	for _, dep := range bankDeposits {
+		daysUntil := 30 - (ch.CurrentDay - dep.DepositDay)
+		if daysUntil < 0 {
+			daysUntil = 0
+		}
+		bankDepositViews = append(bankDepositViews, BankDepositView{
+			BankDeposit:     dep,
+			IsMature:        engine.IsMature(dep.DepositDay, ch.CurrentDay),
+			DaysUntilMature: daysUntil,
+			GPValue:         dep.CPValue / 100,
+		})
+		bankTotalCP += dep.CPValue
+	}
+
 	// Build inventory tree
 	equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
 	moveTargets := buildMoveTargets(items, compViews)
@@ -273,6 +307,9 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		EquippedItems:    equippedTree,
 		CompanionGroups:  compGroups,
 		MoveTargets:      moveTargets,
+		GameDay:          ch.CurrentDay,
+		BankDeposits:     bankDepositViews,
+		BankTotalCP:      bankTotalCP,
 	}, nil
 }
 
@@ -418,6 +455,9 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 			Value: fmt.Sprintf("container:%d", it.ID),
 		})
 	}
+
+	// Add bank as a move target for coin deposits
+	targets = append(targets, MoveTarget{Label: "Bank", Value: "bank"})
 
 	// Add companions
 	for _, cv := range compViews {

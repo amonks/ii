@@ -183,7 +183,7 @@ func TestReturnToSafety(t *testing.T) {
 	// 3. Create XP log entry
 	// 4. Zero out found treasure
 	// 5. Create audit log
-	if err := db.ReturnToSafety(ch.ID, 15); err != nil {
+	if err := db.ReturnToSafety(ch.ID, 15, 0); err != nil {
 		t.Fatalf("ReturnToSafety: %v", err)
 	}
 
@@ -360,7 +360,7 @@ func TestAuditLog(t *testing.T) {
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
 	db.CreateCharacter(ch)
 
-	if err := db.AddAuditLog(ch.ID, "hp_change", "HP 8 -> 5"); err != nil {
+	if err := db.AddAuditLog(ch.ID, "hp_change", "HP 8 -> 5", 0); err != nil {
 		t.Fatalf("AddAuditLog: %v", err)
 	}
 
@@ -373,6 +373,98 @@ func TestAuditLog(t *testing.T) {
 	}
 	if logs[0].Action != "hp_change" {
 		t.Errorf("Action = %q, want %q", logs[0].Action, "hp_change")
+	}
+}
+
+func TestAuditLogGameDay(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	if err := db.AddAuditLog(ch.ID, "hp_change", "HP 8 -> 5", 3); err != nil {
+		t.Fatalf("AddAuditLog: %v", err)
+	}
+
+	logs, _ := db.ListAuditLog(ch.ID)
+	if len(logs) != 1 {
+		t.Fatalf("len = %d, want 1", len(logs))
+	}
+	if logs[0].GameDay != 3 {
+		t.Errorf("GameDay = %d, want 3", logs[0].GameDay)
+	}
+}
+
+func TestCharacterCurrentDay(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1, CurrentDay: 1}
+	db.CreateCharacter(ch)
+
+	got, _ := db.GetCharacter(ch.ID)
+	if got.CurrentDay != 1 {
+		t.Errorf("CurrentDay = %d, want 1", got.CurrentDay)
+	}
+
+	got.CurrentDay = 5
+	db.UpdateCharacter(got)
+
+	got, _ = db.GetCharacter(ch.ID)
+	if got.CurrentDay != 5 {
+		t.Errorf("CurrentDay = %d, want 5", got.CurrentDay)
+	}
+}
+
+func TestBankDeposits(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
+	db.CreateCharacter(ch)
+
+	dep := &BankDeposit{
+		CharacterID: ch.ID,
+		CoinNotes:   "50gp",
+		CPValue:     5000,
+		DepositDay:  1,
+	}
+	if err := db.CreateBankDeposit(dep); err != nil {
+		t.Fatalf("CreateBankDeposit: %v", err)
+	}
+	if dep.ID == 0 {
+		t.Fatal("expected ID to be set")
+	}
+
+	deps, err := db.ListBankDeposits(ch.ID)
+	if err != nil {
+		t.Fatalf("ListBankDeposits: %v", err)
+	}
+	if len(deps) != 1 {
+		t.Fatalf("len = %d, want 1", len(deps))
+	}
+	if deps[0].CPValue != 5000 {
+		t.Errorf("CPValue = %d, want 5000", deps[0].CPValue)
+	}
+	if deps[0].CoinNotes != "50gp" {
+		t.Errorf("CoinNotes = %q, want %q", deps[0].CoinNotes, "50gp")
+	}
+
+	// Update
+	deps[0].CPValue = 4000
+	if err := db.UpdateBankDeposit(&deps[0]); err != nil {
+		t.Fatalf("UpdateBankDeposit: %v", err)
+	}
+	deps, _ = db.ListBankDeposits(ch.ID)
+	if deps[0].CPValue != 4000 {
+		t.Errorf("after update CPValue = %d, want 4000", deps[0].CPValue)
+	}
+
+	// Delete
+	if err := db.DeleteBankDeposit(dep.ID); err != nil {
+		t.Fatalf("DeleteBankDeposit: %v", err)
+	}
+	deps, _ = db.ListBankDeposits(ch.ID)
+	if len(deps) != 0 {
+		t.Errorf("after delete len = %d, want 0", len(deps))
 	}
 }
 

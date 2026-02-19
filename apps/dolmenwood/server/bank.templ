@@ -1,0 +1,54 @@
+package server
+
+import "fmt"
+
+templ BankSection(view *CharacterView) {
+	<div id="bank" class="bg-white rounded-lg shadow p-4 space-y-3">
+		<div class="flex items-center justify-between">
+			<h2 class="font-bold text-stone-800">Bank</h2>
+			<span class="text-sm text-stone-500">~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited</span>
+		</div>
+		if len(view.BankDeposits) > 0 {
+			<div class="space-y-1">
+				for _, dep := range view.BankDeposits {
+					<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
+						<span class="text-stone-700">
+							{ dep.CoinNotes }
+							<span class="text-stone-400 text-xs ml-1">(day { fmt.Sprintf("%d", dep.DepositDay) })</span>
+						</span>
+						<span>
+							if dep.IsMature {
+								<span class="text-xs bg-green-100 text-green-700 rounded px-1">mature</span>
+							} else {
+								<span class="text-xs bg-amber-100 text-amber-700 rounded px-1">{ fmt.Sprintf("%d", dep.DaysUntilMature) }d left</span>
+							}
+						</span>
+					</div>
+				}
+			</div>
+		} else {
+			<p class="text-sm text-stone-400">No deposits</p>
+		}
+		<form hx-post="bank/withdraw/"
+			hx-target="#sheet-body" hx-swap="innerHTML"
+			class="flex gap-2">
+			<input type="text" name="coins" placeholder="5gp" required
+				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+			<button type="submit"
+				class="bg-amber-600 text-white rounded-md px-3 text-sm">Withdraw</button>
+		</form>
+		if entries := filterAuditLog(view.AuditLog, "bank_deposit", "bank_withdraw"); len(entries) > 0 {
+			<details>
+				<summary class="text-sm text-stone-600 cursor-pointer">Bank Log</summary>
+				<div class="mt-2 space-y-1 text-xs">
+					for _, entry := range entries {
+						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						</div>
+					}
+				</div>
+			</details>
+		}
+	</div>
+}

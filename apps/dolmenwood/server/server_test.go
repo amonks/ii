@@ -1920,10 +1920,10 @@ func TestAuditLogViewerRenderedOnCards(t *testing.T) {
 	d.CreateCharacter(ch)
 
 	// Create audit log entries for different action types
-	d.AddAuditLog(ch.ID, "hp_change", "HP 8 → 5")
-	d.AddAuditLog(ch.ID, "item_add", "Rope")
-	d.AddAuditLog(ch.ID, "companion_add", "Bessie")
-	d.AddAuditLog(ch.ID, "note_add", "Remember torches")
+	d.AddAuditLog(ch.ID, "hp_change", "HP 8 → 5", 0)
+	d.AddAuditLog(ch.ID, "item_add", "Rope", 0)
+	d.AddAuditLog(ch.ID, "companion_add", "Bessie", 0)
+	d.AddAuditLog(ch.ID, "note_add", "Remember torches", 0)
 
 	req := httptest.NewRequest("GET", "/characters/1/", nil)
 	w := httptest.NewRecorder()
@@ -2519,5 +2519,252 @@ func TestCoinsBubbleUpThroughContainers(t *testing.T) {
 	wantChestUsed := sackItem.Slots + 2
 	if chestItem.UsedSlots != wantChestUsed {
 		t.Errorf("Chest UsedSlots = %d, want %d (sack %d + coins 2)", chestItem.UsedSlots, wantChestUsed, sackItem.Slots)
+	}
+}
+
+func TestAdvanceDay(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 1,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("POST", "/characters/1/advance-day/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	got, _ := d.GetCharacter(ch.ID)
+	if got.CurrentDay != 2 {
+		t.Errorf("CurrentDay = %d, want 2", got.CurrentDay)
+	}
+
+	// Audit log should record the day advance
+	logs, _ := d.ListAuditLog(ch.ID)
+	if len(logs) == 0 {
+		t.Fatal("expected audit log entry for day advance")
+	}
+	if logs[0].Action != "day_advance" {
+		t.Errorf("audit action = %q, want %q", logs[0].Action, "day_advance")
+	}
+}
+
+func TestBankDeposit(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 5,
+	}
+	d.CreateCharacter(ch)
+
+	// Create coin item to deposit from
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 15, Notes: "10gp 5sp"}
+	d.CreateItem(coins)
+
+	// Split coins to bank
+	form := url.Values{}
+	form.Set("quantity", "10gp 5sp")
+	form.Set("move_to", "bank")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Coin item should be deleted (all coins deposited)
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (coin item should be removed)", len(items))
+	}
+
+	// Check bank deposit created
+	deps, _ := d.ListBankDeposits(ch.ID)
+	if len(deps) != 1 {
+		t.Fatalf("bank deposits = %d, want 1", len(deps))
+	}
+	// 10gp=1000cp, 5sp=50cp, total=1050cp
+	if deps[0].CPValue != 1050 {
+		t.Errorf("CPValue = %d, want 1050", deps[0].CPValue)
+	}
+	if deps[0].DepositDay != 5 {
+		t.Errorf("DepositDay = %d, want 5", deps[0].DepositDay)
+	}
+}
+
+func TestBankDepositRejectsPP(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 1,
+	}
+	d.CreateCharacter(ch)
+
+	// Create coin item with PP
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 5, Notes: "5pp"}
+	d.CreateItem(coins)
+
+	form := url.Values{}
+	form.Set("quantity", "5pp")
+	form.Set("move_to", "bank")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d (PP not allowed)", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestMoveCoinItemToBank(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 10,
+	}
+	d.CreateCharacter(ch)
+
+	// Create coin item
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 50, Notes: "50gp"}
+	d.CreateItem(coins)
+
+	// Move entire coin item to bank via update endpoint
+	form := url.Values{}
+	form.Set("move_to", "bank")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", coins.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Coin item should be deleted
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (coin item deposited to bank)", len(items))
+	}
+
+	// Bank deposit should be created
+	deps, _ := d.ListBankDeposits(ch.ID)
+	if len(deps) != 1 {
+		t.Fatalf("bank deposits = %d, want 1", len(deps))
+	}
+	if deps[0].CPValue != 5000 {
+		t.Errorf("CPValue = %d, want 5000", deps[0].CPValue)
+	}
+	if deps[0].DepositDay != 10 {
+		t.Errorf("DepositDay = %d, want 10", deps[0].DepositDay)
+	}
+}
+
+func TestBankWithdrawMature(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 35,
+	}
+	d.CreateCharacter(ch)
+
+	// Create a mature deposit (deposited on day 1, current day 35 = 34 days)
+	dep := &db.BankDeposit{
+		CharacterID: ch.ID,
+		CoinNotes:   "10gp",
+		CPValue:     1000,
+		DepositDay:  1,
+	}
+	d.CreateBankDeposit(dep)
+
+	form := url.Values{}
+	form.Set("coins", "5gp")
+	req := httptest.NewRequest("POST", "/characters/1/bank/withdraw/",
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Check purse gained 5gp
+	got, _ := d.GetCharacter(ch.ID)
+	if got.PurseGP != 5 {
+		t.Errorf("PurseGP = %d, want 5", got.PurseGP)
+	}
+
+	// Deposit should be reduced: 1000 - 500 = 500
+	deps, _ := d.ListBankDeposits(ch.ID)
+	if len(deps) != 1 {
+		t.Fatalf("deposits = %d, want 1", len(deps))
+	}
+	if deps[0].CPValue != 500 {
+		t.Errorf("deposit CPValue = %d, want 500", deps[0].CPValue)
+	}
+}
+
+func TestBankWithdrawImmature(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 2,
+	}
+	d.CreateCharacter(ch)
+
+	// Immature deposit: 1000cp on day 1, current day 2
+	dep := &db.BankDeposit{
+		CharacterID: ch.ID,
+		CoinNotes:   "10gp",
+		CPValue:     1000,
+		DepositDay:  1,
+	}
+	d.CreateBankDeposit(dep)
+
+	// Withdraw 9gp (900cp). With fee: gross = 900 + 900/9 = 1000. Fee = 100.
+	form := url.Values{}
+	form.Set("coins", "9gp")
+	req := httptest.NewRequest("POST", "/characters/1/bank/withdraw/",
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Check purse gained 9gp
+	got, _ := d.GetCharacter(ch.ID)
+	if got.PurseGP != 9 {
+		t.Errorf("PurseGP = %d, want 9", got.PurseGP)
+	}
+
+	// Deposit fully consumed (gross = 1000 = deposit value)
+	deps, _ := d.ListBankDeposits(ch.ID)
+	if len(deps) != 0 {
+		t.Errorf("deposits = %d, want 0 (fully consumed)", len(deps))
 	}
 }
