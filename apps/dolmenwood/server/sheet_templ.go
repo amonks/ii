@@ -167,7 +167,7 @@ func DayCounter(view *CharacterView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span><form hx-post=\"advance-day/\" hx-target=\"#sheet-body\" hx-swap=\"innerHTML\"><button type=\"submit\" class=\"bg-stone-800 text-white rounded-md px-3 py-1 text-sm hover:bg-stone-700\">Next Day</button></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span><form hx-post=\"advance-day/\" hx-target=\"#sheet-body\" hx-swap=\"innerHTML\" class=\"flex items-center gap-2\"><input type=\"number\" name=\"day_delta\" value=\"1\" class=\"w-16 rounded-md border border-stone-300 px-2 py-1 text-sm\" /><button type=\"submit\" class=\"bg-stone-800 text-white rounded-md px-3 py-1 text-sm hover:bg-stone-700\">Advance</button></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

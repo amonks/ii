@@ -2610,36 +2610,95 @@ func TestCoinsBubbleUpThroughContainers(t *testing.T) {
 }
 
 func TestAdvanceDay(t *testing.T) {
-	srv, d := setupTest(t)
-	mux := srv.Mux()
+	t.Run("advances one day", func(t *testing.T) {
+		srv, d := setupTest(t)
+		mux := srv.Mux()
 
-	ch := &db.Character{
-		Name: "Test", Class: "Knight", Kindred: "Human",
-		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 1,
-	}
-	d.CreateCharacter(ch)
+		ch := &db.Character{
+			Name: "Test", Class: "Knight", Kindred: "Human",
+			Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 1,
+		}
+		d.CreateCharacter(ch)
 
-	req := httptest.NewRequest("POST", "/characters/1/advance-day/", nil)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
+		form := url.Values{}
+		form.Set("day_delta", "1")
+		req := httptest.NewRequest("POST", "/characters/1/advance-day/", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
-	}
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+		}
 
-	got, _ := d.GetCharacter(ch.ID)
-	if got.CurrentDay != 2 {
-		t.Errorf("CurrentDay = %d, want 2", got.CurrentDay)
-	}
+		got, _ := d.GetCharacter(ch.ID)
+		if got.CurrentDay != 2 {
+			t.Errorf("CurrentDay = %d, want 2", got.CurrentDay)
+		}
 
-	// Audit log should record the day advance
-	logs, _ := d.ListAuditLog(ch.ID)
-	if len(logs) == 0 {
-		t.Fatal("expected audit log entry for day advance")
-	}
-	if logs[0].Action != "day_advance" {
-		t.Errorf("audit action = %q, want %q", logs[0].Action, "day_advance")
-	}
+		// Audit log should record the day advance
+		logs, _ := d.ListAuditLog(ch.ID)
+		if len(logs) == 0 {
+			t.Fatal("expected audit log entry for day advance")
+		}
+		if logs[0].Action != "day_advance" {
+			t.Errorf("audit action = %q, want %q", logs[0].Action, "day_advance")
+		}
+	})
+
+	t.Run("advances by delta", func(t *testing.T) {
+		srv, d := setupTest(t)
+		mux := srv.Mux()
+
+		ch := &db.Character{
+			Name: "Test", Class: "Knight", Kindred: "Human",
+			Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 3,
+		}
+		d.CreateCharacter(ch)
+
+		form := url.Values{}
+		form.Set("day_delta", "7")
+		req := httptest.NewRequest("POST", "/characters/1/advance-day/", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+		}
+
+		got, _ := d.GetCharacter(ch.ID)
+		if got.CurrentDay != 10 {
+			t.Errorf("CurrentDay = %d, want 10", got.CurrentDay)
+		}
+	})
+
+	t.Run("clamps to day one", func(t *testing.T) {
+		srv, d := setupTest(t)
+		mux := srv.Mux()
+
+		ch := &db.Character{
+			Name: "Test", Class: "Knight", Kindred: "Human",
+			Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 2,
+		}
+		d.CreateCharacter(ch)
+
+		form := url.Values{}
+		form.Set("day_delta", "-5")
+		req := httptest.NewRequest("POST", "/characters/1/advance-day/", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+		}
+
+		got, _ := d.GetCharacter(ch.ID)
+		if got.CurrentDay != 1 {
+			t.Errorf("CurrentDay = %d, want 1", got.CurrentDay)
+		}
+	})
 }
 
 func TestBankDeposit(t *testing.T) {

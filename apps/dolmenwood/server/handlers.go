@@ -875,8 +875,21 @@ func (s *Server) handleAdvanceDay(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Character not found", http.StatusNotFound)
 		return
 	}
+	r.ParseForm()
+	delta := 1
+	if deltaText := r.FormValue("day_delta"); deltaText != "" {
+		parsed, err := strconv.Atoi(deltaText)
+		if err != nil {
+			http.Error(w, "Invalid day change", http.StatusBadRequest)
+			return
+		}
+		delta = parsed
+	}
 	oldDay := ch.CurrentDay
-	ch.CurrentDay++
+	ch.CurrentDay += delta
+	if ch.CurrentDay < 1 {
+		ch.CurrentDay = 1
+	}
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

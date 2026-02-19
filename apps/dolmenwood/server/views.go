@@ -23,7 +23,7 @@ type CharacterView struct {
 	ArmorName        string
 	AttackBonus      int
 	Weapons          []engine.EquippedWeapon
-	MagicResistance int
+	MagicResistance  int
 	Saves            engine.SaveTargets
 	Traits           engine.Traits
 	Speed            int
@@ -265,10 +265,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	var bankDepositViews []BankDepositView
 	bankTotalCP := 0
 	for _, dep := range bankDeposits {
-		daysUntil := 30 - (ch.CurrentDay - dep.DepositDay)
-		if daysUntil < 0 {
-			daysUntil = 0
-		}
+		daysUntil := max(30-(ch.CurrentDay-dep.DepositDay), 0)
 		bankDepositViews = append(bankDepositViews, BankDepositView{
 			BankDeposit:     dep,
 			IsMature:        engine.IsMature(dep.DepositDay, ch.CurrentDay),
@@ -294,7 +291,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ArmorName:        armorName,
 		AttackBonus:      engine.KnightAttackBonus(ch.Level),
 		Weapons:          engine.EquippedWeapons(engineItems),
-		MagicResistance: engine.MagicResistance(ch.Kindred, ch.WIS),
+		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),
 		Saves:            engine.KnightSaveTargets(ch.Level),
 		Traits:           engine.KnightTraits(ch.Level),
 		Speed:            engine.SpeedFromSlots(equipped, totalStowed),

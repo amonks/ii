@@ -85,10 +85,7 @@ func PlanWithdrawal(lots []BankLot, requestedCP int, currentDay int) (*WithdrawR
 		if remaining <= 0 {
 			break
 		}
-		take := lot.CPValue
-		if take > remaining {
-			take = remaining
-		}
+		take := min(lot.CPValue, remaining)
 		result.GrossCP += take
 		remaining -= take
 		if take == lot.CPValue {
@@ -110,10 +107,7 @@ func PlanWithdrawal(lots []BankLot, requestedCP int, currentDay int) (*WithdrawR
 		if grossNeeded-grossNeeded/10 < remaining {
 			grossNeeded++
 		}
-		take := lot.CPValue
-		if take > grossNeeded {
-			take = grossNeeded
-		}
+		take := min(lot.CPValue, grossNeeded)
 		result.GrossCP += take
 		// fee = floor(10% of gross taken); net = gross - fee
 		fee := take / 10
