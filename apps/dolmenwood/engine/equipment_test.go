@@ -325,6 +325,50 @@ func TestCharacterACBreggleFur(t *testing.T) {
 	}
 }
 
+func TestArmorContributors(t *testing.T) {
+	cases := []struct {
+		name       string
+		items      []Item
+		wantArmor  string
+		wantShield bool
+	}{
+		{
+			name: "armor and shield",
+			items: []Item{
+				{Name: "Chainmail", Quantity: 1, Location: "equipped"},
+				{Name: "Shield", Quantity: 1, Location: "equipped"},
+			},
+			wantArmor:  "Chainmail",
+			wantShield: true,
+		},
+		{
+			name: "shield only",
+			items: []Item{
+				{Name: "Shield", Quantity: 1, Location: "equipped"},
+			},
+			wantShield: true,
+		},
+		{
+			name: "no armor",
+			items: []Item{
+				{Name: "Rope", Quantity: 1, Location: "equipped"},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			armor, hasShield := ArmorContributors(tc.items)
+			if armor != tc.wantArmor {
+				t.Errorf("armor = %q, want %q", armor, tc.wantArmor)
+			}
+			if hasShield != tc.wantShield {
+				t.Errorf("hasShield = %v, want %v", hasShield, tc.wantShield)
+			}
+		})
+	}
+}
+
 func TestEquippedWeapons(t *testing.T) {
 	items := []Item{
 		{Name: "Longsword", Quantity: 1, Location: "equipped"},

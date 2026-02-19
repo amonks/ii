@@ -60,6 +60,9 @@ templ StatsSection(view *CharacterView) {
 				if view.ArmorName != "" {
 					<div class="text-xs text-stone-400">{ view.ArmorName }</div>
 				}
+				if view.ShieldName != "" {
+					<div class="text-xs text-stone-400">{ view.ShieldName }</div>
+				}
 			</div>
 			<div class="bg-stone-50 rounded p-2">
 				<div class="text-xs text-stone-500">Atk</div>

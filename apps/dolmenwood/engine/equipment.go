@@ -238,7 +238,36 @@ func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
 func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 	baseAC := 10
 	armorName := ""
+	armorName, hasShield := ArmorContributors(items)
+
+	if armorName != "" {
+		if armor, ok := ArmorStats(armorName); ok {
+			baseAC = armor.AC
+		}
+	}
+
+	bonus := 0
+	if strings.EqualFold(kindred, "breggle") {
+		if armorName == "" {
+			bonus = 1
+		} else if armor, ok := ArmorStats(armorName); ok && armor.Bulk == 1 {
+			bonus = 1
+		}
+	}
+
+	ac := baseAC + Modifier(dexScore)
+	if hasShield {
+		ac++
+	}
+	ac += bonus
+	return ac, armorName
+}
+
+// ArmorContributors returns the equipped armor name and whether a shield is equipped.
+func ArmorContributors(items []Item) (string, bool) {
+	armorName := ""
 	hasShield := false
+	baseAC := 10
 
 	for _, item := range items {
 		if item.Location != "equipped" && !item.IsEquippedOnCharacter() {
@@ -260,21 +289,7 @@ func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 		}
 	}
 
-	bonus := 0
-	if strings.EqualFold(kindred, "breggle") {
-		if armorName == "" {
-			bonus = 1
-		} else if armor, ok := ArmorStats(armorName); ok && armor.Bulk == 1 {
-			bonus = 1
-		}
-	}
-
-	ac := baseAC + Modifier(dexScore)
-	if hasShield {
-		ac++
-	}
-	ac += bonus
-	return ac, armorName
+	return armorName, hasShield
 }
 
 // EquippedWeapons returns stats for all equipped weapons.

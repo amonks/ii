@@ -300,10 +300,15 @@ func TestACDerivedFromEquippedItems(t *testing.T) {
 	}
 	d.CreateCharacter(ch)
 
-	// Add chainmail as equipped item
 	d.CreateItem(&db.Item{
 		CharacterID: ch.ID,
 		Name:        "Chainmail",
+		Quantity:    1,
+		Location:    "equipped",
+	})
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID,
+		Name:        "Shield",
 		Quantity:    1,
 		Location:    "equipped",
 	})
@@ -316,12 +321,14 @@ func TestACDerivedFromEquippedItems(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	// AC 14 = chainmail base AC 14 + DEX 10 modifier 0
-	if !strings.Contains(body, ">14<") {
-		t.Error("response should show AC 14 for equipped chainmail")
+	if !strings.Contains(body, ">15<") {
+		t.Error("response should show AC 15 for chainmail + shield")
 	}
 	if !strings.Contains(body, "Chainmail") {
 		t.Error("response should show armor name 'Chainmail'")
+	}
+	if !strings.Contains(body, "Shield") {
+		t.Error("response should show shield name 'Shield'")
 	}
 }
 
