@@ -29,7 +29,16 @@ func (s *Server) handleStoreBuy(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid store item", http.StatusBadRequest)
 		return
 	}
-	if costCP <= 0 {
+	if costCP == 0 {
+		if err := s.buyFreeStoreItem(ch, name); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.addAuditLog(ch, "store_buy", fmt.Sprintf("Bought %s for %s", name, itemCostLabel(costCP, "")))
+		s.renderInventory(w, r, ch)
+		return
+	}
+	if costCP < 0 {
 		http.Error(w, "Invalid store price", http.StatusBadRequest)
 		return
 	}
@@ -54,6 +63,9 @@ func parseStoreItemID(itemID string) (string, int, error) {
 	if err != nil {
 		return "", 0, fmt.Errorf("invalid store item cost")
 	}
+	if costCP < 0 {
+		return "", 0, fmt.Errorf("invalid store item cost")
+	}
 
 	item, ok := storeCatalogItem(name)
 	if !ok {
@@ -75,6 +87,26 @@ func storeCatalogItem(name string) (StoreItem, bool) {
 		}
 	}
 	return StoreItem{}, false
+}
+
+func (s *Server) buyFreeStoreItem(ch *db.Character, name string) error {
+	if name == "" {
+		return fmt.Errorf("invalid store item")
+	}
+	purchasedQty := 1
+	if bundle := engine.ItemBundleSize(name); bundle > 0 {
+		purchasedQty = bundle
+	}
+	purchased := &db.Item{CharacterID: ch.ID, Name: name, Quantity: purchasedQty, Location: "stowed"}
+	if err := s.combineStackableItems(ch.ID, purchased, ch.CurrentDay); err != nil {
+		if !errors.Is(err, errNotCombined) {
+			return err
+		}
+		if err := s.db.CreateItem(purchased); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Server) buyStoreItem(ch *db.Character, name string, costCP int) error {

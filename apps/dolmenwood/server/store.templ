@@ -14,7 +14,7 @@ templ StoreSection(view *CharacterView) {
 							<div class="min-w-0">
 								<div class="font-medium text-stone-700">{ item.Name }</div>
 								<div class="text-xs text-stone-400 flex flex-wrap gap-2">
-									if item.CostCP > 0 {
+									if item.CostCoinLabel != "" {
 										<span>{ item.CostCoinLabel }</span>
 									}
 									if item.Weight > 0 {

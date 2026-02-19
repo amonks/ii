@@ -110,8 +110,9 @@ var itemWeights = map[string]int{
 	"crowbar":           50,
 	"grappling hook":    40,
 	"hammer":            30,
-	"hammer (small)":    30,
-	"sledgehammer":      100,
+	"hammer (small)":        30,
+	"hammer (sledgehammer)": 100,
+	"sledgehammer":          100,
 	"ink":               5,
 	"iron spikes":       5,  // per spike
 	"lock":              10,
@@ -372,6 +373,7 @@ var itemSlotCosts = map[string]SlotCostInfo{
 	"chest (wooden, small)": {SlotsPerUnit: 2},
 	"pole":                  {SlotsPerUnit: 2},
 	"sledgehammer":          {SlotsPerUnit: 2},
+	"hammer (sledgehammer)": {SlotsPerUnit: 2},
 	"rope ladder":           {SlotsPerUnit: 2},
 	"firewood":              {SlotsPerUnit: 2},
 }

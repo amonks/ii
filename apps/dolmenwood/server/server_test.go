@@ -2441,6 +2441,39 @@ func TestStoreCardShowsItems(t *testing.T) {
 	}
 }
 
+
+func TestStoreCardListsAdventuringGear(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Lantern (hooded)") {
+		t.Error("store should list lantern (hooded)")
+	}
+	if !strings.Contains(body, "Caltrops") {
+		t.Error("store should list caltrops")
+	}
+	if !strings.Contains(body, "Holy symbol (silver)") {
+		t.Error("store should list holy symbol (silver)")
+	}
+	if !strings.Contains(body, "Winter cloak") {
+		t.Error("store should list winter cloak")
+	}
+}
+
 func TestStoreCardListsHorseSupplies(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -2472,6 +2505,7 @@ func TestStoreCardListsHorseSupplies(t *testing.T) {
 		t.Error("store should show feed cost in copper")
 	}
 }
+
 
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {
@@ -2654,6 +2688,51 @@ func TestStoreBuyBundleDisplayShowsTotals(t *testing.T) {
 	}
 	if !strings.Contains(body, "400 cn") {
 		t.Fatal("store should show bundle weight for arrows")
+	}
+	if !strings.Contains(body, "Sling stones") {
+		t.Fatal("store should list sling stones")
+	}
+	if !strings.Contains(body, "Free") {
+		t.Fatal("store should label sling stones as free")
+	}
+}
+
+func TestStoreBuyFreeItem(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("Sling stones", 0))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("items = %d, want 1", len(items))
+	}
+	if items[0].Name != "Sling stones" {
+		t.Fatalf("item name = %q, want %q", items[0].Name, "Sling stones")
+	}
+	if items[0].Quantity != 20 {
+		t.Fatalf("item quantity = %d, want %d", items[0].Quantity, 20)
+	}
+	if items[0].Location != "stowed" {
+		t.Fatalf("item location = %q, want %q", items[0].Location, "stowed")
 	}
 }
 
