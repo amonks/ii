@@ -21,12 +21,32 @@ import (
 func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 	t.Helper()
 
+	// Save the real home before overriding HOME.
+	realHome, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("get home dir: %v", err)
+	}
+
 	homeDir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create state dir: %v", err)
 	}
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "share", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create share dir: %v", err)
+	}
+
+	// Copy the real global config (which has LLM provider definitions) into
+	// the test HOME so the store can resolve models.
+	configDir := filepath.Join(homeDir, ".config", "incrementum")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("create config dir: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(realHome, ".config", "incrementum", "config.toml"))
+	if err != nil {
+		t.Fatalf("read global config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), data, 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
 	}
 
 	t.Setenv("HOME", homeDir)
@@ -38,7 +58,7 @@ func requireModelFromRepoConfig(t *testing.T, modelID string) llm.Model {
 	}
 	model, err := publicstore.GetModel(modelID)
 	if err != nil {
-		t.Fatalf("test requires model %q to be configured in %s/incrementum.toml: %v", modelID, repoRoot, err)
+		t.Fatalf("test requires model %q to be configured: %v", modelID, err)
 	}
 	return llm.Model(model)
 }
@@ -66,6 +86,12 @@ func findRepoRoot(t *testing.T) string {
 func requireOpenAIReasoningModelFromRepoConfig(t *testing.T) llm.Model {
 	t.Helper()
 
+	// Save the real home before overriding HOME.
+	realHome, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("get home dir: %v", err)
+	}
+
 	homeDir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create state dir: %v", err)
@@ -73,6 +99,20 @@ func requireOpenAIReasoningModelFromRepoConfig(t *testing.T) llm.Model {
 	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "share", "incrementum"), 0o755); err != nil {
 		t.Fatalf("create share dir: %v", err)
 	}
+
+	// Copy the real global config into the test HOME.
+	configDir := filepath.Join(homeDir, ".config", "incrementum")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("create config dir: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(realHome, ".config", "incrementum", "config.toml"))
+	if err != nil {
+		t.Fatalf("read global config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), data, 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
 	t.Setenv("HOME", homeDir)
 
 	repoRoot := findRepoRoot(t)
@@ -95,7 +135,7 @@ func requireOpenAIReasoningModelFromRepoConfig(t *testing.T) llm.Model {
 		return llm.Model(model)
 	}
 
-	t.Fatalf("test requires at least one OpenAI reasoning model (UseMaxCompletionTokens=true) to be configured in %s/incrementum.toml", repoRoot)
+	t.Fatalf("test requires at least one OpenAI reasoning model (UseMaxCompletionTokens=true) to be configured")
 	return llm.Model{}
 }
 

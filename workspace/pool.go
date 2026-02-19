@@ -84,6 +84,11 @@ type AcquireOptions struct {
 	// NewChangeMessage is an optional description to apply when a new change
 	// is created because the requested revision is immutable.
 	NewChangeMessage string
+
+	// SkipHooks suppresses on-create hook execution and provisioning marking.
+	// Use this when the workspace content will differ from the main tree
+	// (e.g. the todo store edits to an orphan bookmark immediately after acquire).
+	SkipHooks bool
 }
 
 // ValidateAcquirePurpose ensures the purpose is present and single-line.
@@ -242,28 +247,30 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 		}
 	}
 
-	// Load config and run hooks
-	cfg, err := config.Load(repoPath)
-	if err != nil {
-		return "", fmt.Errorf("load config: %w", err)
-	}
+	// Load config and run hooks (skipped for non-main-tree acquires like todo store)
+	if !opts.SkipHooks {
+		cfg, err := config.Load(repoPath)
+		if err != nil {
+			return "", fmt.Errorf("load config: %w", err)
+		}
 
-	// Run on-create script for every acquire
-	if err := config.RunScript(wsPath, cfg.Workspace.OnCreate); err != nil {
-		p.Release(wsPath)
-		return "", fmt.Errorf("on-create script: %w", err)
-	}
+		// Run on-create script for every acquire
+		if err := config.RunScript(wsPath, cfg.Workspace.OnCreate); err != nil {
+			p.Release(wsPath)
+			return "", fmt.Errorf("on-create script: %w", err)
+		}
 
-	// Mark as provisioned if needed
-	if needsProvision {
-		p.stateStore.Update(func(st *statestore.State) error {
-			wsKey := repoName + "/" + wsName
-			if ws, ok := st.Workspaces[wsKey]; ok {
-				ws.Provisioned = true
-				st.Workspaces[wsKey] = ws
-			}
-			return nil
-		})
+		// Mark as provisioned if needed
+		if needsProvision {
+			p.stateStore.Update(func(st *statestore.State) error {
+				wsKey := repoName + "/" + wsName
+				if ws, ok := st.Workspaces[wsKey]; ok {
+					ws.Provisioned = true
+					st.Workspaces[wsKey] = ws
+				}
+				return nil
+			})
+		}
 	}
 
 	return wsPath, nil

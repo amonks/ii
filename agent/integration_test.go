@@ -19,29 +19,39 @@ import (
 func setupTestConfigFromRepoConfig(t *testing.T, requiredModels ...string) string {
 	t.Helper()
 
+	// Read the real global config before SetupTestHome overrides HOME.
+	realHome, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %v", err)
+	}
+	globalConfig, err := os.ReadFile(filepath.Join(realHome, ".config", "incrementum", "config.toml"))
+	if err != nil {
+		t.Fatalf("failed to read global config: %v", err)
+	}
+
 	homeDir := testsupport.SetupTestHome(t)
+
+	// Copy the real global config (which has LLM provider definitions) into
+	// the test HOME so the store can resolve models.
 	configDir := filepath.Join(homeDir, ".config", "incrementum")
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		t.Fatalf("failed to create config dir: %v", err)
 	}
-
-	// Write the repo config into the test HOME so stores load it as global config.
-	data, err := os.ReadFile(filepath.Join("..", "incrementum.toml"))
-	if err != nil {
-		t.Fatalf("failed to read ./incrementum.toml: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), data, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(configDir, "config.toml"), globalConfig, 0o644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
 	}
 
 	// Validate required models against the copied config.
-	modelStore, err := llm.OpenWithOptions(llm.Options{StateDir: filepath.Join(homeDir, ".local", "state", "incrementum")})
+	modelStore, err := llm.OpenWithOptions(llm.Options{
+		StateDir: filepath.Join(homeDir, ".local", "state", "incrementum"),
+		RepoPath: filepath.Join("..", ""),
+	})
 	if err != nil {
 		t.Fatalf("failed to open llm store: %v", err)
 	}
 	for _, modelID := range requiredModels {
 		if _, err := modelStore.GetModel(modelID); err != nil {
-			t.Fatalf("test requires model %q to be configured in ./incrementum.toml: %v", modelID, err)
+			t.Fatalf("test requires model %q to be configured: %v", modelID, err)
 		}
 	}
 

@@ -28,6 +28,7 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 - If the requested revision is missing and looks like a change ID, the pool retries with `@` (resolved in the source repo) as the parent.
 - When `NewChangeMessage` is provided, it is used as the description for that newly created change.
 - `incrementum.toml` or `.incrementum/config.toml` is loaded from the source repo (merged with global config) and the workspace `on-create` hook runs for every acquire (including reuse).
+- When `SkipHooks` is set, hook execution and provisioning marking are suppressed entirely. This is used by the todo store, which immediately edits to an orphan bookmark where main-tree hooks would fail.
 - A workspace is marked `Provisioned` once the hooks run successfully.
 
 ### Release

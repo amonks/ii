@@ -42,16 +42,28 @@ func TestAgentScripts(t *testing.T) {
 		}
 	}
 	if !hasHaiku {
-		t.Fatal("incrementum.toml does not have a provider configured with claude-haiku-4-5")
+		t.Fatal("config does not have a provider configured with claude-haiku-4-5 (check global config)")
 	}
 	if !hasGPT52 {
-		t.Fatal("incrementum.toml does not have a provider configured with gpt-5.2")
+		t.Fatal("config does not have a provider configured with gpt-5.2 (check global config)")
 	}
 
-	// Read the config file content to pass to tests
+	// Read the project config file content to pass to tests
 	configContent, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("failed to read incrementum.toml: %v", err)
+	}
+
+	// Read the global config so testscript environments (which use a temp HOME)
+	// can still resolve LLM providers.
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home directory: %v", err)
+	}
+	globalConfigPath := filepath.Join(homeDir, ".config", "incrementum", "config.toml")
+	globalConfigContent, err := os.ReadFile(globalConfigPath)
+	if err != nil {
+		t.Fatalf("failed to read global config at %s: %v", globalConfigPath, err)
 	}
 
 	testscript.Run(t, testscript.Params{
@@ -62,9 +74,19 @@ func TestAgentScripts(t *testing.T) {
 			}
 			// Avoid any external environment overrides changing model selection.
 			env.Setenv("INCREMENTUM_AGENT_MODEL", "")
-			// Write the real config to a file that tests can copy
+			// Write the real project config to a file that tests can copy
 			configFile := filepath.Join(env.WorkDir, "incrementum.toml")
 			if err := os.WriteFile(configFile, configContent, 0644); err != nil {
+				return err
+			}
+			// Write the global config into the testscript's HOME so the ii
+			// binary can resolve LLM providers.
+			testHome := env.Getenv("HOME")
+			globalDir := filepath.Join(testHome, ".config", "incrementum")
+			if err := os.MkdirAll(globalDir, 0755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(filepath.Join(globalDir, "config.toml"), globalConfigContent, 0644); err != nil {
 				return err
 			}
 			return nil
