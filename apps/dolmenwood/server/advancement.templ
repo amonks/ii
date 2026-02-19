@@ -4,9 +4,9 @@ import "fmt"
 
 templ AdvancementSection(view *CharacterView) {
 	if view.AdvancementTable != nil {
-		<div id="advancement" class="bg-white rounded-lg shadow p-4 space-y-3">
-			<h2 class="font-bold text-stone-800">Advancement</h2>
-			<div class="text-xs text-stone-500">{ view.AdvancementTable.Title }</div>
+		@Card("advancement") {
+			@CardHeader("Advancement")
+			<div class={ classSubtext }>{ view.AdvancementTable.Title }</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs text-stone-600 border-collapse">
 					<thead>
@@ -27,7 +27,7 @@ templ AdvancementSection(view *CharacterView) {
 					</tbody>
 				</table>
 			</div>
-		</div>
+		}
 	}
 }
 

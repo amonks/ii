@@ -1,0 +1,106 @@
+package server
+
+// Card — white rounded box, the primary container.
+templ Card(id string) {
+	<div id={ id } class="bg-white rounded-lg shadow p-4 space-y-3">
+		{ children... }
+	</div>
+}
+
+// CardHeader — bold title row.
+templ CardHeader(title string) {
+	<h2 class="font-bold text-stone-800">{ title }</h2>
+}
+
+// CardHeaderRow — title with right-aligned content.
+templ CardHeaderRow(title string) {
+	<div class="flex items-center justify-between">
+		<h2 class="font-bold text-stone-800">{ title }</h2>
+		{ children... }
+	</div>
+}
+
+// SectionLabel — uppercase label for subsections within a card.
+templ SectionLabel(text string) {
+	<div class="text-xs font-semibold text-stone-500 uppercase">{ text }</div>
+}
+
+// StatBox — small bg-stone-50 box with label and value.
+templ StatBox(label string, value string) {
+	<div class="bg-stone-50 rounded p-1">
+		<div class="text-xs text-stone-500">{ label }</div>
+		<div class="font-bold">{ value }</div>
+	</div>
+}
+
+// InfoBox — larger stone-50 box for grouped content.
+templ InfoBox() {
+	<div class="bg-stone-50 rounded p-3">
+		{ children... }
+	</div>
+}
+
+// BtnPrimary — dark stone button (most common action).
+templ BtnPrimary(text string) {
+	<button type="submit" class="bg-stone-800 text-white rounded-md px-3 py-1 text-sm hover:bg-stone-700">
+		{ text }
+	</button>
+}
+
+// BtnSecondary — light stone button (minor actions like "Set", "Save").
+templ BtnSecondary(text string) {
+	<button type="submit" class="bg-stone-200 text-stone-700 rounded px-2 py-1 text-xs">
+		{ text }
+	</button>
+}
+
+// BtnDelete — red x for removing items.
+templ BtnDelete() {
+	<button type="submit" class="text-red-400 hover:text-red-600">&times;</button>
+}
+
+// Badge — neutral pill (quantity, slots, etc.).
+templ Badge(text string) {
+	<span class="text-xs bg-stone-100 text-stone-500 rounded-full px-1.5">{ text }</span>
+}
+
+// BadgeSuccess — green pill (bank mature, etc.).
+templ BadgeSuccess(text string) {
+	<span class="text-xs bg-green-100 text-green-700 rounded-full px-1.5">{ text }</span>
+}
+
+// BadgeWarning — amber pill (bank pending, etc.).
+templ BadgeWarning(text string) {
+	<span class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5">{ text }</span>
+}
+
+// BadgeDanger — red pill (over capacity, etc.).
+templ BadgeDanger(text string) {
+	<span class="text-xs bg-red-100 text-red-600 rounded-full px-1.5">{ text }</span>
+}
+
+// LogToggle — collapsible audit/transaction log.
+templ LogToggle(label string) {
+	<details>
+		<summary class="text-sm text-stone-600 cursor-pointer">{ label }</summary>
+		<div class="mt-2 space-y-1 text-xs">
+			{ children... }
+		</div>
+	</details>
+}
+
+// LogEntry — single row in a log.
+templ LogEntry() {
+	<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
+		{ children... }
+	</div>
+}
+
+// Form input class constants.
+const classFormInput = "flex-1 text-sm rounded-md border-stone-300 shadow-sm"
+const classFormInputSmall = "text-xs rounded border-stone-300"
+
+// Text helper class constants.
+const classMutedText = "text-sm text-stone-500"
+const classEmptyText = "text-sm text-stone-400"
+const classSubtext = "text-xs text-stone-500"

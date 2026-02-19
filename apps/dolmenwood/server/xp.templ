@@ -3,17 +3,16 @@ package server
 import "fmt"
 
 templ XPSection(view *CharacterView) {
-	<div id="xp" class="bg-white rounded-lg shadow p-4 space-y-3">
-		<div class="flex items-center justify-between">
-			<h2 class="font-bold text-stone-800">Experience</h2>
-			<span class="text-sm text-stone-500">
+	@Card("xp") {
+		@CardHeaderRow("Experience") {
+			<span class={ classMutedText }>
 				{ fmt.Sprintf("%d", view.Character.TotalXP) } XP (mod { formatMod(view.XPModPercent) }%)
 			</span>
-		</div>
+		}
 		<div class="w-full bg-stone-200 rounded-full h-3">
 			<div class="bg-stone-700 h-3 rounded-full" style={ xpBarWidth(view) }></div>
 		</div>
-		<div class="text-xs text-stone-500 text-center">
+		<div class={ classSubtext + " text-center" }>
 			{ fmt.Sprintf("%d", view.XPToNext) } XP to level { fmt.Sprintf("%d", view.Character.Level+1) }
 		</div>
 		if view.CanLevelUp {
@@ -29,21 +28,17 @@ templ XPSection(view *CharacterView) {
 				class="w-20 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
 			<input type="text" name="description" placeholder="Description"
 				class="flex-1 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
-			<button type="submit"
-				class="bg-stone-700 text-white rounded-md px-3 py-1 text-sm font-medium">Add XP</button>
+			@BtnPrimary("Add XP")
 		</form>
 		if len(view.XPLog) > 0 {
-			<details>
-				<summary class="text-sm text-stone-600 cursor-pointer">XP Log</summary>
-				<div class="mt-2 space-y-1 text-xs">
-					for _, entry := range view.XPLog {
-						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
-							<span>{ entry.Description }</span>
-							<span class="font-medium">+{ fmt.Sprintf("%d", entry.Amount) }</span>
-						</div>
+			@LogToggle("XP Log") {
+				for _, entry := range view.XPLog {
+					@LogEntry() {
+						<span>{ entry.Description }</span>
+						<span class="font-medium">+{ fmt.Sprintf("%d", entry.Amount) }</span>
 					}
-				</div>
-			</details>
+				}
+			}
 		}
-	</div>
+	}
 }

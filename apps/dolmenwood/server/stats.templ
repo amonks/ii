@@ -6,15 +6,14 @@ import (
 )
 
 templ StatsSection(view *CharacterView) {
-	<div id="stats" class="bg-white rounded-lg shadow p-4 space-y-3">
-		<div class="flex items-center justify-between">
-			<h2 class="font-bold text-stone-800">{ view.Character.Name }</h2>
-			<span class="text-sm text-stone-500">
+	@Card("stats") {
+		@CardHeaderRow(view.Character.Name) {
+			<span class={ classMutedText }>
 				Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
 			</span>
-		</div>
+		}
 		if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
-			<div class="text-xs text-stone-500 space-x-2">
+			<div class={ classSubtext + " space-x-2" }>
 				if view.Character.Alignment != "" {
 					<span>{ view.Character.Alignment }</span>
 				}
@@ -26,7 +25,7 @@ templ StatsSection(view *CharacterView) {
 				}
 			</div>
 		}
-		<div class="text-xs font-semibold text-stone-500 uppercase">Scores</div>
+		@SectionLabel("Scores")
 		<div class="grid grid-cols-6 gap-1 text-center">
 			@abilityBox("STR", view.Character.STR)
 			@abilityBox("DEX", view.Character.DEX)
@@ -37,7 +36,7 @@ templ StatsSection(view *CharacterView) {
 		</div>
 		<div class="grid grid-cols-3 gap-2 text-center text-sm">
 			<div class="bg-stone-50 rounded p-2">
-				<div class="text-xs text-stone-500">HP</div>
+				<div class={ classSubtext }>HP</div>
 				<div class="font-bold">
 					<span id="hp-display">{ fmt.Sprintf("%d", view.Character.HPCurrent) }</span>/{ fmt.Sprintf("%d", view.Character.HPMax) }
 				</div>
@@ -46,13 +45,13 @@ templ StatsSection(view *CharacterView) {
 					class="flex gap-1 mt-1 items-center">
 					<input type="number" name="hp_current"
 						value={ fmt.Sprintf("%d", view.Character.HPCurrent) }
-						class="w-12 text-xs text-center rounded border-stone-300"/>
-					<span class="text-xs text-stone-500">/</span>
-					<button type="submit" class="text-xs bg-stone-200 rounded px-1">Set</button>
+						class={ "w-12 text-center " + classFormInputSmall }/>
+					<span class={ classSubtext }>/</span>
+					@BtnSecondary("Set")
 				</form>
 			</div>
 			<div class="bg-stone-50 rounded p-2">
-				<div class="text-xs text-stone-500">AC</div>
+				<div class={ classSubtext }>AC</div>
 				<div class="font-bold">{ fmt.Sprintf("%d", view.AC) }</div>
 				if view.ArmorName != "" {
 					<div class="text-xs text-stone-400">{ view.ArmorName }</div>
@@ -62,7 +61,7 @@ templ StatsSection(view *CharacterView) {
 				}
 			</div>
 			<div class="bg-stone-50 rounded p-2">
-				<div class="text-xs text-stone-500">Atk</div>
+				<div class={ classSubtext }>Atk</div>
 				<div class="font-bold">+{ fmt.Sprintf("%d", view.AttackBonus) }</div>
 				if len(view.Weapons) > 0 {
 					for _, w := range view.Weapons {
@@ -73,21 +72,21 @@ templ StatsSection(view *CharacterView) {
 		</div>
 		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex flex-wrap items-center gap-2 text-xs text-stone-600">
 			<span class="text-stone-500">Birthday</span>
-			<select name="birthday_month" class="rounded border-stone-300 px-2 py-1 text-xs">
+			<select name="birthday_month" class={ classFormInputSmall + " px-2 py-1" }>
 				<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
 				for _, month := range view.BirthdayMonths {
 					<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
 				}
 			</select>
-			<select name="birthday_day" class="rounded border-stone-300 px-2 py-1 text-xs">
+			<select name="birthday_day" class={ classFormInputSmall + " px-2 py-1" }>
 				<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
 				for _, day := range view.BirthdayDays {
 					<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
 				}
 			</select>
-			<button type="submit" class="rounded bg-stone-200 px-2 py-1 text-xs text-stone-700">Set</button>
+			@BtnSecondary("Set")
 		</form>
-		<div class="text-xs font-semibold text-stone-500 uppercase">Saves</div>
+		@SectionLabel("Saves")
 		if view.MagicResistance != 0 {
 			<div class="grid grid-cols-6 gap-1 text-center text-xs">
 				@saveBox("Death", view.Saves.Death)
@@ -95,7 +94,7 @@ templ StatsSection(view *CharacterView) {
 				@saveBox("Para", view.Saves.Paralysis)
 				@saveBox("Breath", view.Saves.Breath)
 				@saveBox("Spells", view.Saves.Spells)
-				@statBox("MR", view.MagicResistance)
+				@StatBox("MR", formatMod(view.MagicResistance))
 			</div>
 		} else {
 			<div class="grid grid-cols-5 gap-1 text-center text-xs">
@@ -106,13 +105,13 @@ templ StatsSection(view *CharacterView) {
 				@saveBox("Spells", view.Saves.Spells)
 			</div>
 		}
-		<div class="text-xs font-semibold text-stone-500 uppercase">Speed</div>
+		@SectionLabel("Speed")
 		<div class="grid grid-cols-5 gap-1 text-center text-xs">
-			@speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
-			@speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
-			@speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
-			@speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
-			@speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
+			@StatBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
+			@StatBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
+			@StatBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
+			@StatBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
+			@StatBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
 		</div>
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
 			<div class="text-xs text-stone-600">
@@ -125,24 +124,21 @@ templ StatsSection(view *CharacterView) {
 			</div>
 		}
 		if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
-			<details>
-				<summary class="text-sm text-stone-600 cursor-pointer">Activity Log</summary>
-				<div class="mt-2 space-y-1 text-xs">
-					for _, entry := range entries {
-						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
-						</div>
+			@LogToggle("Activity Log") {
+				for _, entry := range entries {
+					@LogEntry() {
+						<span>{ entry.Detail }</span>
+						@auditDate(entry)
 					}
-				</div>
-			</details>
+				}
+			}
 		}
-	</div>
+	}
 }
 
 templ abilityBox(label string, score int) {
 	<div class="bg-stone-50 rounded p-1">
-		<div class="text-xs text-stone-500">{ label }</div>
+		<div class={ classSubtext }>{ label }</div>
 		<div class="font-bold text-sm">{ fmt.Sprintf("%d", score) }</div>
 		<div class="text-xs text-stone-400">
 			{ formatMod(engine.Modifier(score)) }
@@ -154,19 +150,5 @@ templ saveBox(label string, target int) {
 	<div class="bg-stone-50 rounded p-1">
 		<div class="text-stone-500">{ label }</div>
 		<div class="font-bold">{ fmt.Sprintf("%d", target) }+</div>
-	</div>
-}
-
-templ statBox(label string, value int) {
-	<div class="bg-stone-50 rounded p-1">
-		<div class="text-stone-500">{ label }</div>
-		<div class="font-bold">{ formatMod(value) }</div>
-	</div>
-}
-
-templ speedBox(label string, value string) {
-	<div class="bg-stone-50 rounded p-1">
-		<div class="text-stone-500">{ label }</div>
-		<div class="font-bold">{ value }</div>
 	</div>
 }

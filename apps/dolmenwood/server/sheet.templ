@@ -29,10 +29,10 @@ templ SheetBody(view *CharacterView) {
 }
 
 templ DayCounter(view *CharacterView) {
-	<div id="day-counter" class="bg-white rounded-lg shadow p-3 space-y-2">
+	@Card("day-counter") {
 		<div class="flex items-center justify-between">
 			<span class="font-bold text-stone-800">Day { fmt.Sprintf("%d", view.GameDay) }</span>
-			<div class="text-xs text-stone-500">
+			<div class={ classSubtext }>
 				if view.CalendarDate.IsWysenday {
 					{ view.CalendarDate.Wysenday }
 				} else {
@@ -42,11 +42,8 @@ templ DayCounter(view *CharacterView) {
 				<span class="ml-1">Year { fmt.Sprintf("%d", view.CalendarDate.Date.Year) }</span>
 			</div>
 			<form hx-post="advance-day/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex items-center gap-2">
-				<input type="number" name="day_delta" value="1" class="w-16 rounded-md border border-stone-300 px-2 py-1 text-sm" />
-				<button type="submit"
-					class="bg-stone-800 text-white rounded-md px-3 py-1 text-sm hover:bg-stone-700">
-					Advance
-				</button>
+				<input type="number" name="day_delta" value="1" class="w-16 rounded-md border border-stone-300 px-2 py-1 text-sm"/>
+				@BtnPrimary("Advance")
 			</form>
 		</div>
 		<form hx-post="calendar/" hx-target="#sheet-body" hx-swap="innerHTML"
@@ -57,11 +54,11 @@ templ DayCounter(view *CharacterView) {
 				<input type="number" name="calendar_day"
 					value={ fmt.Sprintf("%d", view.CalendarDate.Date.Day) }
 					min="1" max="31"
-					class="w-12 text-center rounded border-stone-300" />
+					class={ "w-12 text-center " + classFormInputSmall }/>
 			</div>
 			<div class="flex items-center gap-1">
 				<label class="text-stone-500">Month</label>
-				<select name="calendar_month" class="rounded border-stone-300">
+				<select name="calendar_month" class={ classFormInputSmall }>
 					<option value="1" if view.CalendarDate.Date.Month == 1 { selected }>Grimvold</option>
 					<option value="2" if view.CalendarDate.Date.Month == 2 { selected }>Lymewald</option>
 					<option value="3" if view.CalendarDate.Date.Month == 3 { selected }>Haggryme</option>
@@ -76,9 +73,9 @@ templ DayCounter(view *CharacterView) {
 					<option value="12" if view.CalendarDate.Date.Month == 12 { selected }>Braghold</option>
 				</select>
 			</div>
-			<button type="submit" class="bg-stone-200 rounded px-2 py-1">Set</button>
+			@BtnSecondary("Set")
 		</form>
-	</div>
+	}
 }
 
 templ auditDate(entry db.AuditLogEntry) {

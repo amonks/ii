@@ -3,8 +3,8 @@ package server
 import "fmt"
 
 templ NotesSection(view *CharacterView) {
-	<div id="notes" class="bg-white rounded-lg shadow p-4 space-y-3">
-		<h2 class="font-bold text-stone-800">Notes</h2>
+	@Card("notes") {
+		@CardHeader("Notes")
 		if len(view.Notes) > 0 {
 			<div class="space-y-1">
 				for _, note := range view.Notes {
@@ -22,21 +22,18 @@ templ NotesSection(view *CharacterView) {
 			hx-target="#notes" hx-swap="outerHTML"
 			class="flex gap-2">
 			<input type="text" name="content" placeholder="Add a note..." required
-				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
+				class={ classFormInput }/>
 			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
 		</form>
 		if entries := filterAuditLog(view.AuditLog, "note_add", "note_delete"); len(entries) > 0 {
-			<details>
-				<summary class="text-sm text-stone-600 cursor-pointer">Notes Log</summary>
-				<div class="mt-2 space-y-1 text-xs">
-					for _, entry := range entries {
-						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
-						</div>
+			@LogToggle("Notes Log") {
+				for _, entry := range entries {
+					@LogEntry() {
+						<span>{ entry.Detail }</span>
+						@auditDate(entry)
 					}
-				</div>
-			</details>
+				}
+			}
 		}
-	</div>
+	}
 }

@@ -24,8 +24,8 @@ templ CharacterList(characters []db.Character) {
 			} else {
 				<p class="text-stone-500">No characters yet.</p>
 			}
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="font-semibold text-stone-800 mb-3">New Character</h2>
+			@Card("new-character") {
+				@CardHeader("New Character")
 				<form method="POST" action="characters/" class="space-y-3">
 					<div>
 						<label class="block text-sm font-medium text-stone-700">Name</label>
@@ -91,7 +91,7 @@ templ CharacterList(characters []db.Character) {
 						Create Character
 					</button>
 				</form>
-			</div>
+			}
 		</div>
 	}
 }

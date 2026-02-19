@@ -3,103 +3,107 @@ package server
 import "fmt"
 
 templ CompanionsSection(view *CharacterView) {
-	<div id="companions" class="bg-white rounded-lg shadow p-4 space-y-3">
-		<h2 class="font-bold text-stone-800">Companions</h2>
+	@Card("companions") {
+		@CardHeader("Companions")
 		if len(view.Companions) > 0 {
 			for _, comp := range view.Companions {
-				<div class="bg-stone-50 rounded p-3 space-y-2">
-					<div class="flex items-center justify-between">
-						<div>
-							<span class="text-xs text-stone-500">{ comp.Breed }</span>
+				@InfoBox() {
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<div>
+								<span class={ classSubtext }>{ comp.Breed }</span>
+							</div>
+							<button type="button"
+								hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
+								hx-target="#companions" hx-swap="outerHTML"
+								class="text-xs text-red-400 hover:text-red-600">&times;</button>
 						</div>
-						<button type="button"
-							hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
-							hx-target="#companions" hx-swap="outerHTML"
-							class="text-xs text-red-400 hover:text-red-600">&times;</button>
-					</div>
-					<div class="grid grid-cols-4 gap-2 text-center text-sm">
-						<div class="bg-white rounded p-1">
-							<div class="text-xs text-stone-500">HP</div>
-							<div class="font-bold">
-								{ fmt.Sprintf("%d", comp.HPCurrent) }/{ fmt.Sprintf("%d", comp.HPMax) }
+						<div class="grid grid-cols-4 gap-2 text-center text-sm">
+							<div class="bg-white rounded p-1">
+								<div class={ classSubtext }>HP</div>
+								<div class="font-bold">
+									{ fmt.Sprintf("%d", comp.HPCurrent) }/{ fmt.Sprintf("%d", comp.HPMax) }
+								</div>
+							</div>
+							<div class="bg-white rounded p-1">
+								<div class={ classSubtext }>AC</div>
+								<div class="font-bold">{ fmt.Sprintf("%d", comp.AC) }</div>
+							</div>
+							<div class="bg-white rounded p-1">
+								<div class={ classSubtext }>Speed</div>
+								<div class="font-bold">{ fmt.Sprintf("%d", comp.Speed) }&apos;</div>
+							</div>
+							<div class="bg-white rounded p-1">
+								<div class={ classSubtext }>Load</div>
+								<div class="font-bold">{ fmt.Sprintf("%d", comp.LoadCapacity) }</div>
 							</div>
 						</div>
-						<div class="bg-white rounded p-1">
-							<div class="text-xs text-stone-500">AC</div>
-							<div class="font-bold">{ fmt.Sprintf("%d", comp.AC) }</div>
+						if comp.Attack != "" && comp.Attack != "None" {
+							<div class="text-xs text-stone-600">
+								<span class="text-stone-500">Atk:</span> { comp.Attack }
+							</div>
+						}
+						<div class="grid grid-cols-5 gap-1 text-center text-xs">
+							@saveBox("Death", comp.Saves.Death)
+							@saveBox("Wands", comp.Saves.Wands)
+							@saveBox("Para", comp.Saves.Paralysis)
+							@saveBox("Breath", comp.Saves.Breath)
+							@saveBox("Spells", comp.Saves.Spells)
 						</div>
-						<div class="bg-white rounded p-1">
-							<div class="text-xs text-stone-500">Speed</div>
-							<div class="font-bold">{ fmt.Sprintf("%d", comp.Speed) }&apos;</div>
+						<div class={ classSubtext }>
+							Morale { fmt.Sprintf("%d", comp.Morale) }
 						</div>
-						<div class="bg-white rounded p-1">
-							<div class="text-xs text-stone-500">Load</div>
-							<div class="font-bold">{ fmt.Sprintf("%d", comp.LoadCapacity) }</div>
-						</div>
+						<form hx-post={ fmt.Sprintf("companions/%d/update/", comp.ID) }
+							hx-target="#companions" hx-swap="outerHTML"
+							class="flex flex-wrap items-center gap-3 text-sm">
+							<div class="flex items-center gap-1">
+								<label class={ classSubtext }>Name</label>
+								<input type="text" name="name"
+									value={ comp.Name }
+									class={ "w-24 " + classFormInputSmall }/>
+							</div>
+							<div class="flex items-center gap-1">
+								<label class={ classSubtext }>HP</label>
+								<input type="number" name="hp_current"
+									value={ fmt.Sprintf("%d", comp.HPCurrent) }
+									class={ "w-14 text-center " + classFormInputSmall }/>
+								<label class={ classSubtext }>/</label>
+								<input type="number" name="hp_max"
+									value={ fmt.Sprintf("%d", comp.HPMax) }
+									class={ "w-14 text-center " + classFormInputSmall }/>
+							</div>
+							<div class="flex items-center gap-1">
+								<label class={ classSubtext }>Saddle</label>
+								<select name="saddle_type" class={ classFormInputSmall }>
+									<option value="" if comp.SaddleType == "" { selected }>None</option>
+									<option value="riding" if comp.SaddleType == "riding" { selected }>Riding</option>
+									<option value="pack" if comp.SaddleType == "pack" { selected }>Pack</option>
+								</select>
+							</div>
+							<label class="flex items-center gap-1 text-stone-600">
+								<input type="checkbox" name="has_barding"
+									if comp.HasBarding {
+										checked
+									}
+								/>
+								<span class="text-xs">Barding</span>
+							</label>
+							<div class="ml-auto">
+								@BtnSecondary("Save")
+							</div>
+						</form>
 					</div>
-					if comp.Attack != "" && comp.Attack != "None" {
-						<div class="text-xs text-stone-600">
-							<span class="text-stone-500">Atk:</span> { comp.Attack }
-						</div>
-					}
-					<div class="grid grid-cols-5 gap-1 text-center text-xs">
-						@saveBox("Death", comp.Saves.Death)
-						@saveBox("Wands", comp.Saves.Wands)
-						@saveBox("Para", comp.Saves.Paralysis)
-						@saveBox("Breath", comp.Saves.Breath)
-						@saveBox("Spells", comp.Saves.Spells)
-					</div>
-					<div class="text-xs text-stone-500">
-						Morale { fmt.Sprintf("%d", comp.Morale) }
-					</div>
-					<form hx-post={ fmt.Sprintf("companions/%d/update/", comp.ID) }
-						hx-target="#companions" hx-swap="outerHTML"
-						class="flex flex-wrap items-center gap-3 text-sm">
-						<div class="flex items-center gap-1">
-							<label class="text-xs text-stone-500">Name</label>
-							<input type="text" name="name"
-								value={ comp.Name }
-								class="w-24 text-xs rounded border-stone-300"/>
-						</div>
-						<div class="flex items-center gap-1">
-							<label class="text-xs text-stone-500">HP</label>
-							<input type="number" name="hp_current"
-								value={ fmt.Sprintf("%d", comp.HPCurrent) }
-								class="w-14 text-xs text-center rounded border-stone-300"/>
-							<label class="text-xs text-stone-500">/</label>
-							<input type="number" name="hp_max"
-								value={ fmt.Sprintf("%d", comp.HPMax) }
-								class="w-14 text-xs text-center rounded border-stone-300"/>
-						</div>
-						<div class="flex items-center gap-1">
-							<label class="text-xs text-stone-500">Saddle</label>
-							<select name="saddle_type" class="text-xs rounded border-stone-300">
-								<option value="" if comp.SaddleType == "" { selected }>None</option>
-								<option value="riding" if comp.SaddleType == "riding" { selected }>Riding</option>
-								<option value="pack" if comp.SaddleType == "pack" { selected }>Pack</option>
-							</select>
-						</div>
-						<label class="flex items-center gap-1 text-stone-600">
-							<input type="checkbox" name="has_barding"
-								if comp.HasBarding {
-									checked
-								}
-							/>
-							<span class="text-xs">Barding</span>
-						</label>
-						<button type="submit" class="ml-auto text-xs bg-stone-200 rounded px-2 py-1">Save</button>
-					</form>
-				</div>
+				}
 			}
 		} else {
-			<p class="text-sm text-stone-400">No companions.</p>
+			<p class={ classEmptyText }>No companions.</p>
 		}
 		<form hx-post="companions/"
 			hx-target="#companions" hx-swap="outerHTML"
 			class="flex gap-2">
 			<input type="text" name="name" placeholder="Name" required
-				class="flex-1 text-sm rounded-md border-stone-300 shadow-sm"/>
-			<select name="breed" required class="text-sm rounded-md border-stone-300 shadow-sm">
+				class={ classFormInput }/>
+			<select name="breed" required class={ classFormInput }>
 				<option value="" disabled selected>Breed</option>
 				for _, breed := range view.BreedNames {
 					<option value={ breed }>{ breed }</option>
@@ -108,17 +112,14 @@ templ CompanionsSection(view *CharacterView) {
 			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
 		</form>
 		if entries := filterAuditLog(view.AuditLog, "companion_add", "companion_delete", "companion_update"); len(entries) > 0 {
-			<details>
-				<summary class="text-sm text-stone-600 cursor-pointer">Companion Log</summary>
-				<div class="mt-2 space-y-1 text-xs">
-					for _, entry := range entries {
-						<div class="flex justify-between text-stone-500 border-b border-stone-50 py-1">
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
-						</div>
+			@LogToggle("Companion Log") {
+				for _, entry := range entries {
+					@LogEntry() {
+						<span>{ entry.Detail }</span>
+						@auditDate(entry)
 					}
-				</div>
-			</details>
+				}
+			}
 		}
-	</div>
+	}
 }

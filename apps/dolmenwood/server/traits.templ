@@ -3,32 +3,36 @@ package server
 import "monks.co/apps/dolmenwood/engine"
 
 templ TraitsSection(view *CharacterView) {
-	<div id="traits" class="bg-white rounded-lg shadow p-4 space-y-3">
-		<h2 class="font-bold text-stone-800">Traits</h2>
+	@Card("traits") {
+		@CardHeader("Traits")
 		<div class="grid gap-4 md:grid-cols-2">
 			<div class="space-y-1">
-				<div class="text-xs uppercase text-stone-400">Kindred Traits</div>
+				@SectionLabel("Kindred Traits")
 				@traitList(view.KindredTraits)
 				if len(view.KindredTraits) == 0 {
-					<div class="text-xs text-stone-400">None</div>
+					<div class={ classEmptyText + " text-xs" }>None</div>
 				}
 			</div>
 			<div class="space-y-1">
-				<div class="text-xs uppercase text-stone-400">Class Traits</div>
+				@SectionLabel("Class Traits")
 				@traitList(view.ClassTraits)
 				if len(view.ClassTraits) == 0 {
-					<div class="text-xs text-stone-400">None</div>
+					<div class={ classEmptyText + " text-xs" }>None</div>
 				}
 			</div>
 			if view.MoonSign != nil {
-				<div class="mt-3 rounded bg-stone-50 p-3 text-xs text-stone-600 md:col-span-2">
-					<div class="font-semibold text-stone-700">Moon Sign</div>
-					<div>{ view.MoonSign.Moon } ({ view.MoonSign.Phase })</div>
-					<div class="text-stone-500">{ view.MoonSign.Effect }</div>
+				<div class="md:col-span-2">
+					@InfoBox() {
+						<div class="text-xs text-stone-600">
+							<div class="font-semibold text-stone-700">Moon Sign</div>
+							<div>{ view.MoonSign.Moon } ({ view.MoonSign.Phase })</div>
+							<div class="text-stone-500">{ view.MoonSign.Effect }</div>
+						</div>
+					}
 				</div>
 			}
 		</div>
-	</div>
+	}
 }
 
 templ traitList(traits []engine.Trait) {
@@ -37,7 +41,7 @@ templ traitList(traits []engine.Trait) {
 			<li>
 				<span class="font-medium text-stone-700">{ trait.Name }</span>
 				if trait.Description != "" {
-					<span class="text-xs text-stone-500">{ " " + trait.Description }</span>
+					<span class={ classSubtext }>{ " " + trait.Description }</span>
 				}
 			</li>
 		}
