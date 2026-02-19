@@ -58,6 +58,10 @@ type Character struct {
 	// Calendar start day-of-year (day-of-year that corresponds to game day 1)
 	CalendarStartDay int `gorm:"column:calendar_start_day"`
 
+	// Birthday
+	BirthdayMonth string `gorm:"column:birthday_month"`
+	BirthdayDay   int    `gorm:"column:birthday_day"`
+
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
@@ -171,6 +175,8 @@ CREATE TABLE IF NOT EXISTS characters (
 	total_xp INTEGER NOT NULL DEFAULT 0,
 	current_day INTEGER NOT NULL DEFAULT 1,
 	calendar_start_day INTEGER NOT NULL DEFAULT 1,
+	birthday_month TEXT NOT NULL DEFAULT '',
+	birthday_day INTEGER NOT NULL DEFAULT 0,
 	created_at DATETIME,
 	updated_at DATETIME
 );
@@ -306,6 +312,11 @@ CREATE TABLE IF NOT EXISTS bank_deposits (
 CREATE INDEX IF NOT EXISTS bank_deposits_by_character ON bank_deposits(character_id);
 `
 
+const migrationBirthday = `
+ALTER TABLE characters ADD COLUMN birthday_month TEXT NOT NULL DEFAULT '';
+ALTER TABLE characters ADD COLUMN birthday_day INTEGER NOT NULL DEFAULT 0;
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -325,6 +336,7 @@ func New() (*DB, error) {
 	d.Exec(migrationCalendarStartDay)
 	d.Exec(migrationAuditLogGameDay)
 	d.Exec(migrationBankDeposits)
+	d.Exec(migrationBirthday)
 	return &DB{d}, nil
 }
 

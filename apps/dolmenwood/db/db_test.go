@@ -30,9 +30,11 @@ func TestCharacterRoundTrip(t *testing.T) {
 		CHA:        13,
 		HPCurrent:  8,
 		HPMax:      8,
-		Alignment:  "Lawful",
-		Background: "Noble",
-		Liege:      "Duke Maldric",
+		Alignment:     "Lawful",
+		Background:    "Noble",
+		Liege:         "Duke Maldric",
+		BirthdayMonth: "Grimvold",
+		BirthdayDay:   19,
 	}
 	if err := db.CreateCharacter(ch); err != nil {
 		t.Fatalf("CreateCharacter: %v", err)
@@ -50,6 +52,12 @@ func TestCharacterRoundTrip(t *testing.T) {
 	}
 	if got.STR != 16 {
 		t.Errorf("STR = %d, want 16", got.STR)
+	}
+	if got.BirthdayMonth != "Grimvold" {
+		t.Errorf("BirthdayMonth = %q, want %q", got.BirthdayMonth, "Grimvold")
+	}
+	if got.BirthdayDay != 19 {
+		t.Errorf("BirthdayDay = %d, want 19", got.BirthdayDay)
 	}
 }
 
