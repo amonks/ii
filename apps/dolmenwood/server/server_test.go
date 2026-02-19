@@ -2170,13 +2170,13 @@ func TestInventorySpacing(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	if !strings.Contains(body, "bg-white rounded-lg shadow p-4 space-y-8") {
+	if !strings.Contains(body, "bg-white rounded-lg shadow p-4 space-y-12") {
 		t.Error("inventory should use larger spacing between inventory lists")
 	}
-	if !strings.Contains(body, "class=\"space-y-3\"") {
+	if !strings.Contains(body, "class=\"space-y-5\"") {
 		t.Error("inventory lists should have more space between title and items")
 	}
-	if !strings.Contains(body, "text-xs font-medium text-green-700 mb-3") {
+	if !strings.Contains(body, "text-xs font-medium text-green-700 mb-4") {
 		t.Error("inventory list title should have more spacing before items")
 	}
 }

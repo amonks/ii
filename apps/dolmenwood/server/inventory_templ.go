@@ -34,7 +34,7 @@ func InventorySection(view *CharacterView) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"inventory\" class=\"bg-white rounded-lg shadow p-4 space-y-8\"><h2 class=\"font-bold text-stone-800\">Inventory</h2><div class=\"space-y-3\"><div class=\"text-xs font-medium text-green-700 mb-3\">Equipped (")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"inventory\" class=\"bg-white rounded-lg shadow p-4 space-y-12\"><h2 class=\"font-bold text-stone-800\">Inventory</h2><div class=\"space-y-5\"><div class=\"text-xs font-medium text-green-700 mb-4\">Equipped (")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +62,7 @@ func InventorySection(view *CharacterView) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, cg := range view.CompanionGroups {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"space-y-3\"><div class=\"text-xs font-medium text-amber-700 mb-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"space-y-5\"><div class=\"text-xs font-medium text-amber-700 mb-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
