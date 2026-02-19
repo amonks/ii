@@ -64,7 +64,7 @@ templ InventorySection(view *CharacterView) {
 
 templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100" style={ fmt.Sprintf("padding-left: %dpx", depth*16) }>
-		<div class="flex items-center gap-1">
+		<div class="flex items-center gap-1 flex-wrap min-w-0">
 			if engine.IsCoinItem(item.Name) {
 				<span class="font-medium text-yellow-700">{ item.Name }</span>
 				if item.Notes != "" {
@@ -104,7 +104,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 					class="text-xs text-stone-400 bg-transparent border-0 border-b border-dashed border-stone-200 focus:border-stone-400 px-0.5 w-16 focus:w-24 transition-all outline-none"/>
 			</form>
 		</div>
-		<div class="flex items-center gap-1 text-xs text-stone-500">
+		<div class="flex items-center gap-1 text-xs text-stone-500 flex-shrink-0">
 			if item.Quantity > 1 {
 				<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
 					hx-target="#inventory" hx-swap="outerHTML"
