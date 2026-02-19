@@ -26,7 +26,7 @@ type CharacterView struct {
 	MagicResistance  int
 	Saves            engine.SaveTargets
 	Traits           engine.Traits
-	Speed            int
+	Speed                   int
 	SpeedEncounter          int
 	SpeedExplorationUnknown int
 	SpeedExplorationMapped  int
@@ -40,6 +40,9 @@ type CharacterView struct {
 	XPModPercent            int
 	KindredTraits           []engine.Trait
 	ClassTraits             []engine.Trait
+	BirthdayMonths          []engine.Month
+	BirthdayDays            []int
+	MoonSign                *engine.MoonSign
 	XPToNext                int
 	NewLevel                int
 	CanLevelUp              bool
@@ -268,6 +271,21 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		engine.PP: inventoryCoins[engine.PP] - ch.FoundPP,
 	}
 
+	birthdayDays := make([]int, 0, 31)
+	for day := 1; day <= 31; day++ {
+		birthdayDays = append(birthdayDays, day)
+	}
+	if maxDay, ok := engine.DaysInMonth(ch.BirthdayMonth); ok {
+		birthdayDays = birthdayDays[:0]
+		for day := 1; day <= maxDay; day++ {
+			birthdayDays = append(birthdayDays, day)
+		}
+	}
+	var moonSign *engine.MoonSign
+	if sign, ok := engine.MoonSignFromBirthday(ch.BirthdayMonth, ch.BirthdayDay); ok {
+		moonSign = &sign
+	}
+
 	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
@@ -327,6 +345,9 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		XPModPercent:            xpMod,
 		KindredTraits:           engine.KindredTraits(ch.Kindred, ch.Level),
 		ClassTraits:             engine.ClassTraits(ch.Class, ch.Level),
+		BirthdayMonths:          engine.Months(),
+		BirthdayDays:            birthdayDays,
+		MoonSign:                moonSign,
 		XPToNext:                engine.XPToNextLevel(ch.Level, ch.TotalXP),
 		NewLevel:                newLevel,
 		CanLevelUp:              canLevelUp,

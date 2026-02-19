@@ -20,6 +20,7 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{$}", s.handleCreateCharacter)
 	mux.HandleFunc("GET /characters/{id}/{$}", s.handleCharacterSheet)
 	mux.HandleFunc("POST /characters/{id}/hp/{$}", s.handleUpdateHP)
+	mux.HandleFunc("POST /characters/{id}/birthday/{$}", s.handleUpdateBirthday)
 	mux.HandleFunc("POST /characters/{id}/items/{$}", s.handleAddItem)
 	mux.HandleFunc("POST /characters/{id}/items/{itemID}/update/{$}", s.handleUpdateItem)
 	mux.HandleFunc("POST /characters/{id}/items/{itemID}/split/{$}", s.handleSplitItem)

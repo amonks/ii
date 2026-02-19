@@ -54,6 +54,22 @@ templ StatsSection(view *CharacterView) {
 				}
 			</div>
 		</div>
+		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex flex-wrap items-center gap-2 text-xs text-stone-600">
+			<span class="text-stone-500">Birthday</span>
+			<select name="birthday_month" class="rounded border-stone-300 px-2 py-1 text-xs">
+				<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
+				for _, month := range view.BirthdayMonths {
+					<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
+				}
+			</select>
+			<select name="birthday_day" class="rounded border-stone-300 px-2 py-1 text-xs">
+				<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
+				for _, day := range view.BirthdayDays {
+					<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
+				}
+			</select>
+			<button type="submit" class="rounded bg-stone-200 px-2 py-1 text-xs text-stone-700">Set</button>
+		</form>
 		<div class="text-xs font-semibold text-stone-500 uppercase">Saves</div>
 		if view.MagicResistance != 0 {
 			<div class="grid grid-cols-6 gap-1 text-center text-xs">

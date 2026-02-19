@@ -81,6 +81,30 @@ func (s *Server) handleUpdateHP(w http.ResponseWriter, r *http.Request) {
 	s.renderStats(w, r, ch)
 }
 
+func (s *Server) handleUpdateBirthday(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	ch.BirthdayMonth = strings.TrimSpace(r.FormValue("birthday_month"))
+	ch.BirthdayDay = atoi(r.FormValue("birthday_day"))
+	if maxDay, ok := engine.DaysInMonth(ch.BirthdayMonth); ok {
+		if ch.BirthdayDay > maxDay {
+			ch.BirthdayDay = maxDay
+		}
+	} else {
+		ch.BirthdayMonth = ""
+		ch.BirthdayDay = 0
+	}
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.renderSheetBody(w, r, ch)
+}
+
 func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {

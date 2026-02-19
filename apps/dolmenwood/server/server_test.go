@@ -223,6 +223,73 @@ func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 }
 
 
+func TestCharacterSheetShowsBirthdayAndMoonSign(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Birthday Test", Class: "Knight", Kindred: "Human",
+		Level: 1, STR: 12, DEX: 10, CON: 12, INT: 10, WIS: 10, CHA: 10,
+		HPCurrent: 8, HPMax: 8,
+		BirthdayMonth: "Grimvold",
+		BirthdayDay:   18,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "birthday_month") {
+		t.Error("response should include birthday month selector")
+	}
+	if !strings.Contains(body, "birthday_day") {
+		t.Error("response should include birthday day selector")
+	}
+	if !strings.Contains(body, "Moon Sign") {
+		t.Error("response should include moon sign section")
+	}
+	if !strings.Contains(body, "Grinning moon") {
+		t.Error("response should include moon sign name")
+	}
+}
+
+func TestUpdateBirthday(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Birthday Update", Class: "Knight", Kindred: "Human",
+		Level: 1, STR: 12, DEX: 10, CON: 12, INT: 10, WIS: 10, CHA: 10,
+		HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("birthday_month", "Grimvold")
+	form.Set("birthday_day", "18")
+
+	req := httptest.NewRequest("POST", "/characters/1/birthday/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	got, _ := d.GetCharacter(ch.ID)
+	if got.BirthdayMonth != "Grimvold" {
+		t.Errorf("BirthdayMonth = %q, want %q", got.BirthdayMonth, "Grimvold")
+	}
+	if got.BirthdayDay != 18 {
+		t.Errorf("BirthdayDay = %d, want %d", got.BirthdayDay, 18)
+	}
+}
+
 func TestACDerivedFromEquippedItems(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
