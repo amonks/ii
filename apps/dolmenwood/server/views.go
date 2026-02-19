@@ -644,17 +644,28 @@ func storeBundleCostCP(name string) int {
 }
 
 func itemDamage(name string) string {
-	if weapon, ok := engine.WeaponStats(name); ok {
+	if weapon, ok := engine.WeaponStats(storeWeaponName(name)); ok {
 		return weapon.Damage
 	}
 	return ""
 }
 
 func itemQualities(name string) string {
-	if weapon, ok := engine.WeaponStats(name); ok {
+	if weapon, ok := engine.WeaponStats(storeWeaponName(name)); ok {
 		return weapon.Qualities
 	}
 	return ""
+}
+
+func storeWeaponName(name string) string {
+	switch strings.ToLower(name) {
+	case "holy water":
+		return "holy water vial"
+	case "oil":
+		return "oil flask (burning)"
+	default:
+		return name
+	}
 }
 
 func itemArmorClass(name string) int {

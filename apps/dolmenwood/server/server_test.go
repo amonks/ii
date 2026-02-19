@@ -2532,6 +2532,42 @@ func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 	}
 }
 
+func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	start := strings.Index(body, "Holy water")
+	if start == -1 {
+		t.Fatal("store should list holy water")
+	}
+	segment := body[start:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected to find buy button after holy water")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "1d8") {
+		t.Error("holy water should show damage")
+	}
+	if !strings.Contains(segment, "Splash") {
+		t.Error("holy water should show splash quality")
+	}
+}
+
 
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {
