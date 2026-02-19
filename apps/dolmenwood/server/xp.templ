@@ -4,38 +4,42 @@ import "fmt"
 
 templ XPSection(view *CharacterView) {
 	@Card("xp") {
-		@CardHeaderRow("Experience") {
-			<span class={ classItemLabel }>
+		@Header() {
+			@Heading() { Experience }
+			@Label() {
 				{ fmt.Sprintf("%d", view.Character.TotalXP) } XP (mod { formatMod(view.XPModPercent) }%)
-			</span>
+			}
 		}
-		<div class="w-full bg-stone-200 rounded-full h-3">
-			<div class="bg-stone-700 h-3 rounded-full" style={ xpBarWidth(view) }></div>
-		</div>
-		<div class={ classItemLabel + " text-center" }>
+		@ProgressBar(xpBarWidth(view))
+		@ProgressLabel() {
 			{ fmt.Sprintf("%d", view.XPToNext) } XP to level { fmt.Sprintf("%d", view.Character.Level+1) }
-		</div>
-		if view.CanLevelUp {
-			<button hx-post="level-up/"
-				hx-target="#sheet-body" hx-swap="innerHTML"
-				hx-confirm={ fmt.Sprintf("Level up to level %d?", view.NewLevel) }
-				class="w-full bg-amber-600 text-white rounded-md py-2 text-sm font-bold animate-pulse">
-				Level Up to { fmt.Sprintf("%d", view.NewLevel) }!
-			</button>
 		}
-		<form hx-post="xp/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex gap-2 items-end">
-			<input type="number" name="xp_amount" placeholder="XP" required
-				class={ "w-20 " + classFormInput }/>
-			<input type="text" name="description" placeholder="Description"
-				class={ classFormInput }/>
-			@BtnPrimary("Add XP")
+		if view.CanLevelUp {
+			@BtnWide("pulse", templ.Attributes{
+				"hx-post": "level-up/",
+				"hx-target": "#sheet-body",
+				"hx-swap": "innerHTML",
+				"hx-confirm": fmt.Sprintf("Level up to level %d?", view.NewLevel),
+			}) {
+				Level Up to { fmt.Sprintf("%d", view.NewLevel) }!
+			}
+		}
+		<form hx-post="xp/" hx-target="#sheet-body" hx-swap="innerHTML">
+			@FormRowAligned() {
+				@FormInputNumberNarrow(templ.Attributes{"name": "xp_amount", "placeholder": "XP", "required": true})
+				@FormInput(templ.Attributes{"name": "description", "placeholder": "Description"})
+				@BtnPrimary() { Add XP }
+			}
 		</form>
 		if len(view.XPLog) > 0 {
-			@LogToggle("XP Log") {
-				for _, entry := range view.XPLog {
-					@LogEntry() {
-						<span>{ entry.Description }</span>
-						<span class="font-medium">+{ fmt.Sprintf("%d", entry.Amount) }</span>
+			@Details() {
+				@Summary() { XP Log }
+				@DetailsBody() {
+					for _, entry := range view.XPLog {
+						@LogEntry() {
+							<span>{ entry.Description }</span>
+							@Accent("medium") { +{ fmt.Sprintf("%d", entry.Amount) } }
+						}
 					}
 				}
 			}

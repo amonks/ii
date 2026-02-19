@@ -2529,7 +2529,7 @@ func TestStoreCardShowsHorseBardingAC(t *testing.T) {
 		t.Fatal("store should list horse barding")
 	}
 	segment := body[start:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected buy button after horse barding")
 	}
@@ -2562,7 +2562,7 @@ func TestStoreCardShowsHorseBardingWeight(t *testing.T) {
 		t.Fatal("store should list horse barding")
 	}
 	segment := body[start:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected buy button after horse barding")
 	}
@@ -2595,7 +2595,7 @@ func TestStoreCardShowsCanoeWeight(t *testing.T) {
 		t.Fatal("store should list canoe")
 	}
 	segment := body[start:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected buy button after canoe")
 	}
@@ -2631,7 +2631,7 @@ func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 		t.Fatal("store should list cart")
 	}
 	segment := body[cartStart:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected buy button after cart")
 	}
@@ -2668,7 +2668,7 @@ func TestStoreCardShowsContainerCapacity(t *testing.T) {
 		t.Fatal("store should list backpack")
 	}
 	segment := body[start:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected buy button after backpack")
 	}
@@ -2710,7 +2710,7 @@ func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
 		t.Fatal("store should list holy water under adventuring gear")
 	}
 	segment := adventuringSegment[waterStart:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected to find buy button after holy water")
 	}
@@ -2758,7 +2758,7 @@ func TestStoreCardShowsTorchCombatStats(t *testing.T) {
 		t.Fatal("store should list torches")
 	}
 	segment := weaponSegment[torchStart:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected to find buy button after torches")
 	}
@@ -2803,7 +2803,7 @@ func TestStoreCardShowsCrossbowRanges(t *testing.T) {
 		t.Fatal("store should list crossbow")
 	}
 	segment := weaponSegment[crossbowStart:]
-	end := strings.Index(segment, "Buy</button>")
+	end := strings.Index(segment, "Buy </button>")
 	if end == -1 {
 		t.Fatal("expected to find buy button after crossbow")
 	}

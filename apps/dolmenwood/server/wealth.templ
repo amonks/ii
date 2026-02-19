@@ -4,60 +4,62 @@ import "fmt"
 
 templ WealthSection(view *CharacterView) {
 	@Card("wealth") {
-		@CardHeader("Wealth")
+		@Heading() { Wealth }
 		@InfoBox() {
-			<div class={ classItemLabel + " mb-1" }>Total Coins (~{ fmt.Sprintf("%d", view.InventoryGPValue) } GP)</div>
+			@LabelBlockMb() { Total Coins (~{ fmt.Sprintf("%d", view.InventoryGPValue) } GP) }
 			@coinDisplay(view.InventoryCoins["cp"], view.InventoryCoins["sp"], view.InventoryCoins["ep"], view.InventoryCoins["gp"], view.InventoryCoins["pp"])
 		}
-		<div class="grid grid-cols-2 gap-3">
+		@Grid(2) {
 			@InfoBox() {
-				<div class={ classItemLabel + " mb-1" }>Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP)</div>
+				@LabelBlockMb() { Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP) }
 				@coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"])
 			}
-			<div class="bg-amber-50 rounded p-3">
-				<div class={ classItemLabel + " mb-1" }>Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP)</div>
+			@WarningBox() {
+				@LabelBlockMb() { Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP) }
 				@coinDisplay(view.Character.FoundCP, view.Character.FoundSP, view.Character.FoundEP, view.Character.FoundGP, view.Character.FoundPP)
-			</div>
-		</div>
-		<form hx-post="treasure/"
-			hx-target="#sheet-body" hx-swap="innerHTML"
-			class="flex gap-2">
-			<input type="text" name="entry" placeholder="50g dragon hoard" required
-				class={ classFormInput }/>
-			<button type="submit" name="type" value="found"
-				class="bg-amber-600 text-white rounded-md px-3 text-sm">Found</button>
-			<button type="submit" name="type" value="purse"
-				class="bg-stone-600 text-white rounded-md px-3 text-sm">Purse</button>
+			}
+		}
+		<form hx-post="treasure/" hx-target="#sheet-body" hx-swap="innerHTML">
+			@FormRow() {
+				@FormInput(templ.Attributes{"name": "entry", "placeholder": "50g dragon hoard", "required": true})
+				@BtnAction("found", templ.Attributes{"name": "type", "value": "found"}) { Found }
+				@BtnAction("purse", templ.Attributes{"name": "type", "value": "purse"}) { Purse }
+			}
 		</form>
-		<button hx-post="return-to-safety/"
-			hx-target="#sheet-body" hx-swap="innerHTML"
-			hx-confirm="Return to safety? This will convert all found treasure to XP and move coins to your purse."
-			class="w-full bg-green-700 text-white rounded-md py-2 text-sm font-medium hover:bg-green-600">
+		@BtnWide("success", templ.Attributes{
+			"hx-post": "return-to-safety/",
+			"hx-target": "#sheet-body",
+			"hx-swap": "innerHTML",
+			"hx-confirm": "Return to safety? This will convert all found treasure to XP and move coins to your purse.",
+		}) {
 			Return to Safety
-		</button>
+		}
 		if len(view.Transactions) > 0 {
-			@LogToggle("Transaction Log") {
-				for _, tx := range view.Transactions {
-					@LogEntry() {
-						<span>
-							{ fmt.Sprintf("%d", tx.Amount) } { tx.CoinType }
-							if tx.Description != "" {
-								— { tx.Description }
-							}
-						</span>
-						<div class="flex items-center gap-2">
+			@Details() {
+				@Summary() { Transaction Log }
+				@DetailsBody() {
+					for _, tx := range view.Transactions {
+						@LogEntry() {
 							<span>
-								if tx.IsFoundTreasure {
-									found
-								} else {
-									purse
+								{ fmt.Sprintf("%d", tx.Amount) } { tx.CoinType }
+								if tx.Description != "" {
+									— { tx.Description }
 								}
 							</span>
-							<form hx-post={ fmt.Sprintf("treasure/%d/undo/", tx.ID) }
-								hx-target="#sheet-body" hx-swap="innerHTML">
-								@BtnDelete()
-							</form>
-						</div>
+							@Cluster() {
+								<span>
+									if tx.IsFoundTreasure {
+										found
+									} else {
+										purse
+									}
+								</span>
+								<form hx-post={ fmt.Sprintf("treasure/%d/undo/", tx.ID) }
+									hx-target="#sheet-body" hx-swap="innerHTML">
+									@BtnDelete()
+								</form>
+							}
+						}
 					}
 				}
 			}
@@ -66,24 +68,24 @@ templ WealthSection(view *CharacterView) {
 }
 
 templ coinDisplay(cp, sp, ep, gp, pp int) {
-	<div class="text-sm space-x-1">
+	@CoinDisplay() {
 		if pp > 0 {
-			<span class="text-purple-600">{ fmt.Sprintf("%d", pp) }pp</span>
+			@Accent("purple") { { fmt.Sprintf("%d", pp) }pp }
 		}
 		if gp > 0 {
-			<span class="text-yellow-600">{ fmt.Sprintf("%d", gp) }gp</span>
+			@Accent("gold") { { fmt.Sprintf("%d", gp) }gp }
 		}
 		if ep > 0 {
-			<span class="text-blue-600">{ fmt.Sprintf("%d", ep) }ep</span>
+			@Accent("info") { { fmt.Sprintf("%d", ep) }ep }
 		}
 		if sp > 0 {
-			<span class="text-stone-500">{ fmt.Sprintf("%d", sp) }sp</span>
+			@Accent("muted") { { fmt.Sprintf("%d", sp) }sp }
 		}
 		if cp > 0 {
-			<span class="text-amber-700">{ fmt.Sprintf("%d", cp) }cp</span>
+			@Accent("amber") { { fmt.Sprintf("%d", cp) }cp }
 		}
 		if pp == 0 && gp == 0 && ep == 0 && sp == 0 && cp == 0 {
-			<span class={ classItemLabel }>empty</span>
+			@Label() { empty }
 		}
-	</div>
+	}
 }

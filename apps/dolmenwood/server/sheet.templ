@@ -7,14 +7,15 @@ import (
 
 templ CharacterSheet(view *CharacterView) {
 	@Layout(view.Character.Name, "../../") {
-		<div id="sheet-body" class="space-y-4">
+		<div id="sheet-body">
 			@SheetBody(view)
 		</div>
 	}
 }
 
 templ SheetBody(view *CharacterView) {
-	@DayCounter(view)
+	@VStack() {
+		@DayCounter(view)
 	@StatsSection(view)
 	@TraitsSection(view)
 	@InventorySection(view)
@@ -26,66 +27,73 @@ templ SheetBody(view *CharacterView) {
 	@NotesSection(view)
 	@AdvancementSection(view)
 	@StoreSection(view)
+	}
 }
 
 templ DayCounter(view *CharacterView) {
 	@Card("day-counter") {
-		<div class="flex items-center justify-between">
-			@CardHeader(fmt.Sprintf("Day %d", view.GameDay))
-			<div class={ classItemLabel }>
+		@Header() {
+			@Heading() { Day { fmt.Sprintf("%d", view.GameDay) } }
+			@LabelBlock() {
 				if view.CalendarDate.IsWysenday {
 					{ view.CalendarDate.Wysenday }
 				} else {
 					{ view.CalendarDate.Weekday }
 				}
 				, { view.CalendarDate.MonthName } { fmt.Sprintf("%d", view.CalendarDate.Date.Day) }
-				<span class="ml-1">Year { fmt.Sprintf("%d", view.CalendarDate.Date.Year) }</span>
-			</div>
-			<form hx-post="advance-day/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex items-center gap-2">
-				<input type="number" name="day_delta" value="1" class="w-16 rounded-md border border-stone-300 px-2 py-1 text-sm"/>
-				@BtnPrimary("Advance")
+				<span>Year { fmt.Sprintf("%d", view.CalendarDate.Date.Year) }</span>
+			}
+			<form hx-post="advance-day/" hx-target="#sheet-body" hx-swap="innerHTML">
+				@InlineFormActions() {
+					@FormInputDayAdvance(templ.Attributes{"name": "day_delta", "value": "1"})
+					@BtnPrimary() { Advance }
+				}
 			</form>
-		</div>
-		<form hx-post="calendar/" hx-target="#sheet-body" hx-swap="innerHTML"
-			class={ "flex flex-wrap items-center gap-2 " + classItemLabel }>
-			<span class={ classItem }>Calendar</span>
-			<div class="flex items-center gap-1">
-				<label>Day</label>
-				<input type="number" name="calendar_day"
-					value={ fmt.Sprintf("%d", view.CalendarDate.Date.Day) }
-					min="1" max="31"
-					class={ "w-12 text-center " + classFormInputSmall }/>
-			</div>
-			<div class="flex items-center gap-1">
-				<label>Month</label>
-				<select name="calendar_month" class={ classFormInputSmall }>
-					<option value="1" if view.CalendarDate.Date.Month == 1 { selected }>Grimvold</option>
-					<option value="2" if view.CalendarDate.Date.Month == 2 { selected }>Lymewald</option>
-					<option value="3" if view.CalendarDate.Date.Month == 3 { selected }>Haggryme</option>
-					<option value="4" if view.CalendarDate.Date.Month == 4 { selected }>Symswald</option>
-					<option value="5" if view.CalendarDate.Date.Month == 5 { selected }>Harchment</option>
-					<option value="6" if view.CalendarDate.Date.Month == 6 { selected }>Iggwyld</option>
-					<option value="7" if view.CalendarDate.Date.Month == 7 { selected }>Chysting</option>
-					<option value="8" if view.CalendarDate.Date.Month == 8 { selected }>Lillipythe</option>
-					<option value="9" if view.CalendarDate.Date.Month == 9 { selected }>Haelhold</option>
-					<option value="10" if view.CalendarDate.Date.Month == 10 { selected }>Reedwryme</option>
-					<option value="11" if view.CalendarDate.Date.Month == 11 { selected }>Obthryme</option>
-					<option value="12" if view.CalendarDate.Date.Month == 12 { selected }>Braghold</option>
-				</select>
-			</div>
-			@BtnSecondary("Set")
+		}
+		<form hx-post="calendar/" hx-target="#sheet-body" hx-swap="innerHTML">
+			@FormRowWrap() {
+				@Text() { Calendar }
+				@InlineFormActions() {
+					<label>Day</label>
+					@FormInputSmallCenterWide(templ.Attributes{
+						"type": "number",
+						"name": "calendar_day",
+						"value": fmt.Sprintf("%d", view.CalendarDate.Date.Day),
+						"min": "1",
+						"max": "31",
+					})
+				}
+				@InlineFormActions() {
+					<label>Month</label>
+					@FormSelectSmall(templ.Attributes{"name": "calendar_month"}) {
+						<option value="1" if view.CalendarDate.Date.Month == 1 { selected }>Grimvold</option>
+						<option value="2" if view.CalendarDate.Date.Month == 2 { selected }>Lymewald</option>
+						<option value="3" if view.CalendarDate.Date.Month == 3 { selected }>Haggryme</option>
+						<option value="4" if view.CalendarDate.Date.Month == 4 { selected }>Symswald</option>
+						<option value="5" if view.CalendarDate.Date.Month == 5 { selected }>Harchment</option>
+						<option value="6" if view.CalendarDate.Date.Month == 6 { selected }>Iggwyld</option>
+						<option value="7" if view.CalendarDate.Date.Month == 7 { selected }>Chysting</option>
+						<option value="8" if view.CalendarDate.Date.Month == 8 { selected }>Lillipythe</option>
+						<option value="9" if view.CalendarDate.Date.Month == 9 { selected }>Haelhold</option>
+						<option value="10" if view.CalendarDate.Date.Month == 10 { selected }>Reedwryme</option>
+						<option value="11" if view.CalendarDate.Date.Month == 11 { selected }>Obthryme</option>
+						<option value="12" if view.CalendarDate.Date.Month == 12 { selected }>Braghold</option>
+					}
+				}
+				@BtnSecondary() { Set }
+			}
 		</form>
 	}
 }
 
 templ auditDate(entry db.AuditLogEntry) {
-	<span class={ classItemLabel }>
+	@Label() {
 		if entry.GameDay > 0 {
 			Day { fmt.Sprintf("%d", entry.GameDay) }
 		} else {
 			{ entry.CreatedAt.Format("Jan 2") }
 		}
-	</span>
+	}
 }
 
 func formatMod(mod int) string {

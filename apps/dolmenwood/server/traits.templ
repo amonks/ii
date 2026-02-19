@@ -4,40 +4,40 @@ import "monks.co/apps/dolmenwood/engine"
 
 templ TraitsSection(view *CharacterView) {
 	@Card("traits") {
-		@CardHeader("Traits")
-		<div class="grid gap-4 md:grid-cols-2">
-			<div class="space-y-1">
-				@SectionLabel("Kindred Traits")
+		@Heading() { Traits }
+		@GridMd2() {
+			@Spacer() {
+				@SectionHeader() { Kindred Traits }
 				@traitList(view.KindredTraits)
 				if len(view.KindredTraits) == 0 {
-					<div class={ classItemLabel }>None</div>
+					@LabelBlock() { None }
 				}
-			</div>
-			<div class="space-y-1">
-				@SectionLabel("Class Traits")
+			}
+			@Spacer() {
+				@SectionHeader() { Class Traits }
 				@traitList(view.ClassTraits)
 				if len(view.ClassTraits) == 0 {
-					<div class={ classItemLabel }>None</div>
+					@LabelBlock() { None }
 				}
-			</div>
-			if view.MoonSign != nil {
-				<div class="md:col-span-2 space-y-1">
-					@SectionLabel("Moon Sign")
-					<div class={ classItem }>{ view.MoonSign.Moon } ({ view.MoonSign.Phase })</div>
-					<div class={ classItemLabel }>{ view.MoonSign.Effect }</div>
-				</div>
 			}
-		</div>
+			if view.MoonSign != nil {
+				@GridMd2Span() {
+					@SectionHeader() { Moon Sign }
+					@TextBlock() { { view.MoonSign.Moon } ({ view.MoonSign.Phase }) }
+					@LabelBlock() { { view.MoonSign.Effect } }
+				}
+			}
+		}
 	}
 }
 
 templ traitList(traits []engine.Trait) {
-	<ul class="space-y-1 text-sm">
+	<ul>
 		for _, trait := range traits {
 			<li>
-				<span class={ classItem }>{ trait.Name }</span>
+				@Text() { { trait.Name } }
 				if trait.Description != "" {
-					<span class={ classItemLabel }>{ " " + trait.Description }</span>
+					@Label() { { " " + trait.Description } }
 				}
 			</li>
 		}

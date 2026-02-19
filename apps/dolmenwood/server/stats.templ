@@ -7,13 +7,14 @@ import (
 
 templ StatsSection(view *CharacterView) {
 	@Card("stats") {
-		@CardHeaderRow(view.Character.Name) {
-			<span class={ classItemLabel }>
+		@Header() {
+			@Heading() { { view.Character.Name } }
+			@Label() {
 				Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
-			</span>
+			}
 		}
 		if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
-			<div class={ classItemLabel + " space-x-2" }>
+			@LabelSpaced() {
 				if view.Character.Alignment != "" {
 					<span>{ view.Character.Alignment }</span>
 				}
@@ -23,112 +24,137 @@ templ StatsSection(view *CharacterView) {
 				if view.Character.Liege != "" {
 					<span>Liege: { view.Character.Liege }</span>
 				}
-			</div>
+			}
 		}
-		@SectionLabel("Scores")
-		<div class="grid grid-cols-6 gap-1 text-center">
+		@SectionHeader() { Scores }
+		@Grid(6) {
 			@abilityBox("STR", view.Character.STR)
 			@abilityBox("DEX", view.Character.DEX)
 			@abilityBox("CON", view.Character.CON)
 			@abilityBox("INT", view.Character.INT)
 			@abilityBox("WIS", view.Character.WIS)
 			@abilityBox("CHA", view.Character.CHA)
-		</div>
-		<div class="grid grid-cols-3 gap-2 text-center text-sm">
-			<div class="bg-stone-50 rounded p-2">
-				<div class={ classItemLabel }>HP</div>
-				<div class="font-bold">
+		}
+		@Grid(3) {
+			@BillboardLg() {
+				@LabelBlock() { HP }
+				@ValueText() {
 					<span id="hp-display">{ fmt.Sprintf("%d", view.Character.HPCurrent) }</span>/{ fmt.Sprintf("%d", view.Character.HPMax) }
-				</div>
-				<form hx-post="hp/"
-					hx-target="#stats" hx-swap="outerHTML"
-					class="flex gap-1 mt-1 items-center">
-					<input type="number" name="hp_current"
-						value={ fmt.Sprintf("%d", view.Character.HPCurrent) }
-						class={ "w-12 text-center " + classFormInputSmall }/>
-					<span class={ classItemLabel }>/</span>
-					@BtnSecondary("Set")
+				}
+				<form hx-post="hp/" hx-target="#stats" hx-swap="outerHTML">
+					@InlineFormActions() {
+						@FormInputSmallCenterWide(templ.Attributes{
+							"type": "number",
+							"name": "hp_current",
+							"value": fmt.Sprintf("%d", view.Character.HPCurrent),
+						})
+						@Label() { / }
+						@BtnSecondary() { Set }
+					}
 				</form>
-			</div>
-			<div class="bg-stone-50 rounded p-2">
-				<div class={ classItemLabel }>AC</div>
-				<div class="font-bold">{ fmt.Sprintf("%d", view.AC) }</div>
+			}
+			@BillboardLg() {
+				@LabelBlock() { AC }
+				@ValueText() { { fmt.Sprintf("%d", view.AC) } }
 				if view.ArmorName != "" {
-					<div class={ classItemLabel }>{ view.ArmorName }</div>
+					@LabelBlock() { { view.ArmorName } }
 				}
 				if view.ShieldName != "" {
-					<div class={ classItemLabel }>{ view.ShieldName }</div>
+					@LabelBlock() { { view.ShieldName } }
 				}
-			</div>
-			<div class="bg-stone-50 rounded p-2">
-				<div class={ classItemLabel }>Atk</div>
-				<div class="font-bold">+{ fmt.Sprintf("%d", view.AttackBonus) }</div>
+			}
+			@BillboardLg() {
+				@LabelBlock() { Atk }
+				@ValueText() { +{ fmt.Sprintf("%d", view.AttackBonus) } }
 				if len(view.Weapons) > 0 {
 					for _, w := range view.Weapons {
-						<div class={ classItemLabel }>{ w.Name } { w.Damage }</div>
+						@LabelBlock() { { w.Name } { w.Damage } }
 					}
 				}
-			</div>
-		</div>
-		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML" class={ "flex flex-wrap items-center gap-2 " + classItemLabel }>
-			<span>Birthday</span>
-			<select name="birthday_month" class={ classFormInputSmall + " px-2 py-1" }>
-				<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
-				for _, month := range view.BirthdayMonths {
-					<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
-				}
-			</select>
-			<select name="birthday_day" class={ classFormInputSmall + " px-2 py-1" }>
-				<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
-				for _, day := range view.BirthdayDays {
-					<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
-				}
-			</select>
-			@BtnSecondary("Set")
-		</form>
-		@SectionLabel("Saves")
-		if view.MagicResistance != 0 {
-			<div class="grid grid-cols-6 gap-1 text-center text-xs">
-				@saveBox("Death", view.Saves.Death)
-				@saveBox("Wands", view.Saves.Wands)
-				@saveBox("Para", view.Saves.Paralysis)
-				@saveBox("Breath", view.Saves.Breath)
-				@saveBox("Spells", view.Saves.Spells)
-				@StatBox("MR", formatMod(view.MagicResistance))
-			</div>
-		} else {
-			<div class="grid grid-cols-5 gap-1 text-center text-xs">
-				@saveBox("Death", view.Saves.Death)
-				@saveBox("Wands", view.Saves.Wands)
-				@saveBox("Para", view.Saves.Paralysis)
-				@saveBox("Breath", view.Saves.Breath)
-				@saveBox("Spells", view.Saves.Spells)
-			</div>
+			}
 		}
-		@SectionLabel("Speed")
-		<div class="grid grid-cols-5 gap-1 text-center text-xs">
-			@StatBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
-			@StatBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
-			@StatBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
-			@StatBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
-			@StatBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
-		</div>
+		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML">
+			@FormRowWrap() {
+				<span>Birthday</span>
+				@FormSelectSmallPadded(templ.Attributes{"name": "birthday_month"}) {
+					<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
+					for _, month := range view.BirthdayMonths {
+						<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
+					}
+				}
+				@FormSelectSmallPadded(templ.Attributes{"name": "birthday_day"}) {
+					<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
+					for _, day := range view.BirthdayDays {
+						<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
+					}
+				}
+				@BtnSecondary() { Set }
+			}
+		</form>
+		@SectionHeader() { Saves }
+		if view.MagicResistance != 0 {
+			@Grid(6) {
+				@saveBox("Death", view.Saves.Death)
+				@saveBox("Wands", view.Saves.Wands)
+				@saveBox("Para", view.Saves.Paralysis)
+				@saveBox("Breath", view.Saves.Breath)
+				@saveBox("Spells", view.Saves.Spells)
+				@Billboard() {
+					@LabelBlock() { MR }
+					@ValueText() { { formatMod(view.MagicResistance) } }
+				}
+			}
+		} else {
+			@Grid(5) {
+				@saveBox("Death", view.Saves.Death)
+				@saveBox("Wands", view.Saves.Wands)
+				@saveBox("Para", view.Saves.Paralysis)
+				@saveBox("Breath", view.Saves.Breath)
+				@saveBox("Spells", view.Saves.Spells)
+			}
+		}
+		@SectionHeader() { Speed }
+		@Grid(5) {
+			@Billboard() {
+				@LabelBlock() { Encounter }
+				@ValueText() { { fmt.Sprintf("%d'", view.SpeedEncounter) } }
+			}
+			@Billboard() {
+				@LabelBlock() { Exploration (unknown) }
+				@ValueText() { { fmt.Sprintf("%d'", view.SpeedExplorationUnknown) } }
+			}
+			@Billboard() {
+				@LabelBlock() { Exploration (mapped) }
+				@ValueText() { { fmt.Sprintf("%d'", view.SpeedExplorationMapped) } }
+			}
+			@Billboard() {
+				@LabelBlock() { Running }
+				@ValueText() { { fmt.Sprintf("%d'", view.SpeedRunning) } }
+			}
+			@Billboard() {
+				@LabelBlock() { Overland }
+				@ValueText() { { fmt.Sprintf("%d tp/day", view.SpeedOverland) } }
+			}
+		}
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
-			<div class="flex gap-1">
+			@Cluster() {
 				if view.Traits.Knighthood {
-					@BadgeWarning("Knighthood")
+					@BadgeWarning() { Knighthood }
 				}
 				if view.Traits.MonsterSlayer {
-					@BadgeDanger("Monster Slayer")
+					@BadgeDanger() { Monster Slayer }
 				}
-			</div>
+			}
 		}
 		if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
-			@LogToggle("Activity Log") {
-				for _, entry := range entries {
-					@LogEntry() {
-						<span>{ entry.Detail }</span>
-						@auditDate(entry)
+			@Details() {
+				@Summary() { Activity Log }
+				@DetailsBody() {
+					for _, entry := range entries {
+						@LogEntry() {
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						}
 					}
 				}
 			}
@@ -137,18 +163,18 @@ templ StatsSection(view *CharacterView) {
 }
 
 templ abilityBox(label string, score int) {
-	<div class="bg-stone-50 rounded p-1">
-		<div class={ classItemLabel }>{ label }</div>
-		<div class="font-bold text-sm">{ fmt.Sprintf("%d", score) }</div>
-		<div class={ classItemLabel }>
+	@Billboard() {
+		@LabelBlock() { { label } }
+		@ValueTextSm() { { fmt.Sprintf("%d", score) } }
+		@LabelBlock() {
 			{ formatMod(engine.Modifier(score)) }
-		</div>
-	</div>
+		}
+	}
 }
 
 templ saveBox(label string, target int) {
-	<div class="bg-stone-50 rounded p-1">
-		<div class={ classItemLabel }>{ label }</div>
-		<div class="font-bold">{ fmt.Sprintf("%d", target) }+</div>
-	</div>
+	@Billboard() {
+		@LabelBlock() { { label } }
+		@ValueText() { { fmt.Sprintf("%d", target) }+ }
+	}
 }

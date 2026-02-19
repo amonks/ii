@@ -4,60 +4,63 @@ import "fmt"
 
 templ StoreSection(view *CharacterView) {
 	@Card("store") {
-		@CardHeader("Store")
+		@Heading() { Store }
 		for _, group := range view.StoreGroups {
-			<div class="space-y-2">
-				@SectionLabel(group.Title)
-				<div class="space-y-1">
+			@SpacerLg() {
+				@SectionHeader() { { group.Title } }
+				@Spacer() {
 					for _, item := range group.Items {
-						@ItemRow() {
-							<div class="min-w-0">
-								<div class={ classItem }>{ item.Name }</div>
-								<div class={ classItemLabel + " flex flex-wrap gap-2" }>
+						@Row() {
+							<div>
+								@TextBlock() { { item.Name } }
+								@Cluster() {
 									if item.CostCoinLabel != "" {
-										<span>{ item.CostCoinLabel }</span>
+										@Label() { { item.CostCoinLabel } }
 									}
 									if item.Weight > 0 {
-										<span>{ fmt.Sprintf("%d cn", item.Weight) }</span>
+										@Label() { { fmt.Sprintf("%d cn", item.Weight) } }
 									}
 									if item.Bulk > 0 {
-										<span>{ fmt.Sprintf("%d slots", item.Bulk) }</span>
+										@Label() { { fmt.Sprintf("%d slots", item.Bulk) } }
 									}
 									if item.AC > 0 {
-										<span>AC { fmt.Sprintf("%d", item.AC) }</span>
+										@Label() { AC { fmt.Sprintf("%d", item.AC) } }
 									}
 									if item.Damage != "" {
-										<span>{ item.Damage }</span>
+										@Label() { { item.Damage } }
 									}
 									if item.Qualities != "" {
-										<span>{ item.Qualities }</span>
+										@Label() { { item.Qualities } }
 									}
 									if item.Load > 0 {
-										<span>{ fmt.Sprintf("Load %d cn", item.Load) }</span>
+										@Label() { { fmt.Sprintf("Load %d cn", item.Load) } }
 									}
 									if item.Cargo > 0 {
-										<span>{ fmt.Sprintf("Cargo %d cn", item.Cargo) }</span>
+										@Label() { { fmt.Sprintf("Cargo %d cn", item.Cargo) } }
 									}
 									if item.Capacity > 0 {
-										<span>{ fmt.Sprintf("Capacity %d slots", item.Capacity) }</span>
+										@Label() { { fmt.Sprintf("Capacity %d slots", item.Capacity) } }
 									}
-								</div>
+								}
 							</div>
-							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML" class="flex items-center gap-2">
+							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML">
 								<input type="hidden" name="item_id" value={ item.ID }/>
-								@BtnPrimary("Buy")
+								@BtnPrimary() { Buy }
 							</form>
 						}
 					}
-				</div>
-			</div>
+				}
+			}
 		}
 		if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
-			@LogToggle("Store Log") {
-				for _, entry := range entries {
-					@LogEntry() {
-						<span>{ entry.Detail }</span>
-						@auditDate(entry)
+			@Details() {
+				@Summary() { Store Log }
+				@DetailsBody() {
+					for _, entry := range entries {
+						@LogEntry() {
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						}
 					}
 				}
 			}

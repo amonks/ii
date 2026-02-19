@@ -7,43 +7,44 @@ import (
 
 templ InventorySection(view *CharacterView) {
 	@Card("inventory") {
-		@CardHeader("Inventory")
-		<div class="space-y-5">
-			@SectionLabel(fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots))
+		@Heading() { Inventory }
+		@SpacerXl() {
+			@SectionHeader() { { fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots) } }
 			for _, item := range view.EquippedItems {
 				@inventoryItem(item, view.MoveTargets, 0)
 			}
-			<form hx-post="items/"
-				hx-target="#inventory" hx-swap="outerHTML"
-				class="flex gap-2">
-				<input type="hidden" name="move_to" value="equipped"/>
-				<input type="text" name="name" placeholder="5x preserved rations" required
-					class={ classFormInput }/>
-				@BtnPrimary("+")
+			<form hx-post="items/" hx-target="#inventory" hx-swap="outerHTML">
+				@FormRow() {
+					<input type="hidden" name="move_to" value="equipped"/>
+					@FormInput(templ.Attributes{"name": "name", "placeholder": "5x preserved rations", "required": true})
+					@BtnPrimary() { + }
+				}
 			</form>
-		</div>
+		}
 		for _, cg := range view.CompanionGroups {
-			<div class="space-y-5">
-				@SectionLabel(companionInventoryLabel(cg))
+			@SpacerXl() {
+				@SectionHeader() { { companionInventoryLabel(cg) } }
 				for _, item := range cg.Items {
 					@inventoryItem(item, view.MoveTargets, 0)
 				}
-				<form hx-post="items/"
-					hx-target="#inventory" hx-swap="outerHTML"
-					class="flex gap-2">
-					<input type="hidden" name="move_to" value={ fmt.Sprintf("companion:%d", cg.Companion.ID) }/>
-					<input type="text" name="name" placeholder="5x preserved rations" required
-						class={ classFormInput }/>
-					@BtnPrimary("+")
+				<form hx-post="items/" hx-target="#inventory" hx-swap="outerHTML">
+					@FormRow() {
+						<input type="hidden" name="move_to" value={ fmt.Sprintf("companion:%d", cg.Companion.ID) }/>
+						@FormInput(templ.Attributes{"name": "name", "placeholder": "5x preserved rations", "required": true})
+						@BtnPrimary() { + }
+					}
 				</form>
-			</div>
+			}
 		}
 		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "item_split"); len(entries) > 0 {
-			@LogToggle("Item Log") {
-				for _, entry := range entries {
-					@LogEntry() {
-						<span>{ entry.Detail }</span>
-						@auditDate(entry)
+			@Details() {
+				@Summary() { Item Log }
+				@DetailsBody() {
+					for _, entry := range entries {
+						@LogEntry() {
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						}
 					}
 				}
 			}
@@ -52,94 +53,102 @@ templ InventorySection(view *CharacterView) {
 }
 
 templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
-	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100" style={ fmt.Sprintf("padding-left: %dpx", depth*16) }>
-		<div class="flex items-center gap-1 flex-wrap min-w-0">
-			if engine.IsCoinItem(item.Name) {
-				<span class="font-medium text-yellow-700">{ item.Name }</span>
-				if item.Notes != "" {
-					<span class="text-xs bg-yellow-50 text-yellow-700 rounded-full px-1.5">{ item.Notes }</span>
-				}
-			} else {
-				<span class={ classItem }>{ item.Name }</span>
-			}
-			if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
-				@Badge(fmt.Sprintf("%dx", item.Quantity))
-			}
-			if itemIsTiny(item) {
-				@Badge("tiny")
-			} else if item.Slots != 1 {
-				@Badge(fmt.Sprintf("%d slots", item.Slots))
-			}
-			if item.Capacity > 0 {
-				if item.UsedSlots > item.Capacity {
-					@BadgeDanger(fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity))
-				} else {
-					@Badge(fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity))
-				}
-			}
-			if w, ok := engine.WeaponStats(item.Name); ok {
-				<span class="text-xs text-red-600 ml-1">{ w.Damage }</span>
-			}
-			if a, ok := engine.ArmorStats(item.Name); ok {
-				<span class="text-xs text-blue-600 ml-1">AC { fmt.Sprintf("%d", a.AC) }</span>
-			}
-			<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-				hx-target="#inventory" hx-swap="outerHTML"
-				class="inline">
-				<input type="hidden" name="has_notes" value="1"/>
-				<input type="text" name="notes" value={ item.Notes }
-					placeholder="note"
-					onchange="this.form.requestSubmit()"
-					class="text-xs text-stone-400 bg-transparent border-0 border-b border-dashed border-stone-200 focus:border-stone-400 px-0.5 w-16 focus:w-24 transition-all outline-none"/>
-			</form>
-		</div>
-		<div class="flex items-center gap-1 text-xs text-stone-500 flex-shrink-0">
-			if item.Quantity > 1 {
-				<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
-					hx-target="#inventory" hx-swap="outerHTML"
-					class="flex items-center gap-1">
-					if engine.IsCoinItem(item.Name) {
-						<input type="text" name="quantity"
-							placeholder="50gp 10sp"
-							class="text-xs bg-stone-100 rounded px-1 border-0 w-20"/>
-					} else {
-						<input type="number" name="quantity"
-							placeholder={ fmt.Sprintf("%d", item.Quantity) }
-							min="1" max={ fmt.Sprintf("%d", item.Quantity) }
-							value={ fmt.Sprintf("%d", item.Quantity) }
-							class="text-xs bg-stone-100 rounded px-1 border-0 w-12"/>
+	@Indent(depth) {
+		@Row() {
+			@ClusterMin() {
+				if engine.IsCoinItem(item.Name) {
+					@Accent("goldItem") { { item.Name } }
+					if item.Notes != "" {
+						@BadgeGold() { { item.Notes } }
 					}
-					<select name="move_to" onchange="this.form.requestSubmit()" class="text-xs bg-stone-100 rounded px-1 border-0">
-						<option value="">Move to...</option>
-						for _, target := range moveTargets {
-							<option value={ target.Value }>{ target.Label }</option>
-						}
-					</select>
-				</form>
-			} else {
+				} else {
+					@Text() { { item.Name } }
+				}
+				if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
+					@Badge() { { fmt.Sprintf("%dx", item.Quantity) } }
+				}
+				if itemIsTiny(item) {
+					@Badge() { tiny }
+				} else if item.Slots != 1 {
+					@Badge() { { fmt.Sprintf("%d slots", item.Slots) } }
+				}
+				if item.Capacity > 0 {
+					if item.UsedSlots > item.Capacity {
+						@BadgeDanger() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
+					} else {
+						@Badge() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
+					}
+				}
+				if w, ok := engine.WeaponStats(item.Name); ok {
+					@Accent("weapon") { { w.Damage } }
+				}
+				if a, ok := engine.ArmorStats(item.Name); ok {
+					@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
+				}
 				<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
 					hx-target="#inventory" hx-swap="outerHTML">
-					<select name="move_to" onchange="this.form.requestSubmit()" class="text-xs bg-stone-100 rounded px-1 border-0">
-						<option value="">Move to...</option>
-						for _, target := range moveTargets {
-							<option value={ target.Value }>{ target.Label }</option>
+					<input type="hidden" name="has_notes" value="1"/>
+					@InlineNoteInput(templ.Attributes{
+						"name": "notes",
+						"value": item.Notes,
+						"placeholder": "note",
+						"onchange": "this.form.requestSubmit()",
+					})
+				</form>
+			}
+			@InlineActions() {
+				if item.Quantity > 1 {
+					<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						@InlineFormActions() {
+							if engine.IsCoinItem(item.Name) {
+								@SplitInputWide(templ.Attributes{
+									"name": "quantity",
+									"placeholder": "50gp 10sp",
+								})
+							} else {
+								@SplitInput(templ.Attributes{
+									"type": "number",
+									"name": "quantity",
+									"placeholder": fmt.Sprintf("%d", item.Quantity),
+									"min": "1",
+									"max": fmt.Sprintf("%d", item.Quantity),
+									"value": fmt.Sprintf("%d", item.Quantity),
+								})
+							}
+							@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
+								<option value="">Move to...</option>
+								for _, target := range moveTargets {
+									<option value={ target.Value }>{ target.Label }</option>
+								}
+							}
 						}
-					</select>
-				</form>
+					</form>
+				} else {
+					<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
+							<option value="">Move to...</option>
+							for _, target := range moveTargets {
+								<option value={ target.Value }>{ target.Label }</option>
+							}
+						}
+					</form>
+				}
+				if item.BundleSize > 0 && item.Quantity > 1 {
+					<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						@BtnDecrement()
+					</form>
+				} else {
+					<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						@BtnDelete()
+					</form>
+				}
 			}
-			if item.BundleSize > 0 && item.Quantity > 1 {
-				<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
-					hx-target="#inventory" hx-swap="outerHTML">
-					<button type="submit" class="text-red-400 hover:text-red-600">-</button>
-				</form>
-			} else {
-				<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
-					hx-target="#inventory" hx-swap="outerHTML">
-					@BtnDelete()
-				</form>
-			}
-		</div>
-	</div>
+		}
+	}
 	for _, child := range item.Children {
 		@inventoryItem(child, moveTargets, depth+1)
 	}
@@ -147,23 +156,24 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 
 templ EncumbranceSection(view *CharacterView) {
 	@Card("encumbrance") {
-		@CardHeaderRow("Encumbrance") {
-			<span class="text-lg font-bold">{ fmt.Sprintf("%d", view.Speed) }&apos;</span>
+		@Header() {
+			@Heading() { Encumbrance }
+			@HeadingValue() { { fmt.Sprintf("%d", view.Speed) }&apos; }
 		}
-		<div class="space-y-2 text-sm">
+		@SpacerLg() {
 			<div>
-				<div class={ "flex justify-between mb-0.5 " + classItemLabel }>
+				@SpeedRow() {
 					<span>Equipped</span>
 					<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
-				</div>
+				}
 				@speedChart(EquippedSpeedChart(view.EquippedSlots))
 			</div>
 			<div>
-				<div class={ "flex justify-between mb-0.5 " + classItemLabel }>
+				@SpeedRow() {
 					<span>
 						Stowed
 						if view.StowedCapacity == 0 {
-							<span class="text-red-500">(no container)</span>
+							@Accent("redMuted") { (no container) }
 						}
 					</span>
 					if view.StowedCapacity > 0 {
@@ -171,34 +181,32 @@ templ EncumbranceSection(view *CharacterView) {
 					} else {
 						<span>{ fmt.Sprintf("%d", view.TotalStowedSlots) }</span>
 					}
-				</div>
+				}
 				@speedChart(StowedSpeedChart(view.TotalStowedSlots))
 				if len(view.StowedContainers) > 0 {
-					<div class={ classItemLabel + " mt-0.5" }>
+					@SpeedContainerInfo() {
 						for _, c := range view.StowedContainers {
-							<span class="mr-2">{ c.Name }: { fmt.Sprintf("%d", c.Slots) }</span>
+							<span>{ c.Name }: { fmt.Sprintf("%d", c.Slots) } </span>
 						}
 						if view.StowedCapacity < 16 {
-							<span class={ classItemLabel }>(max 16)</span>
+							@Label() { (max 16) }
 						}
-					</div>
+					}
 				}
 			</div>
-			<div class={ "flex justify-between pt-1 " + classItemLabel }>
-				<div class="flex gap-2">
-					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-green-500"></span>40&apos;</span>
-					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-amber-400"></span>30&apos;</span>
-					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-orange-400"></span>20&apos;</span>
-					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-red-500"></span>10&apos;</span>
-				</div>
-			</div>
-			for _, cg := range view.CompanionGroups {
-				<div class="flex justify-between border-t border-stone-100 pt-1">
-					<span class={ classItemLabel }>{ cg.Companion.Name }</span>
-					<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
-				</div>
+			@SpeedLegend() {
+				@LegendSwatch("bg-green-500") { 40&apos; }
+				@LegendSwatch("bg-amber-400") { 30&apos; }
+				@LegendSwatch("bg-orange-400") { 20&apos; }
+				@LegendSwatch("bg-red-500") { 10&apos; }
 			}
-		</div>
+			for _, cg := range view.CompanionGroups {
+				@CompanionSlotsLabel() {
+					@Label() { { cg.Companion.Name } }
+					<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
+				}
+			}
+		}
 	}
 }
 
@@ -212,9 +220,9 @@ func companionInventoryLabel(cg CompanionInventory) string {
 }
 
 templ speedChart(cells []SpeedChartCell) {
-	<div class="flex gap-px rounded overflow-hidden" style="height: 10px;">
+	@SpeedChart() {
 		for _, cell := range cells {
-			<div class={ SpeedCellClass(cell) } style="flex: 1;"></div>
+			@SpeedCell(SpeedCellClass(cell))
 		}
-	</div>
+	}
 }
