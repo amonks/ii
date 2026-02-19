@@ -35,6 +35,7 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{id}/level-up/{$}", s.handleLevelUp)
 	mux.HandleFunc("POST /characters/{id}/notes/{$}", s.handleAddNote)
 	mux.HandleFunc("POST /characters/{id}/notes/{noteID}/delete/{$}", s.handleDeleteNote)
+	mux.HandleFunc("POST /characters/{id}/calendar/{$}", s.handleUpdateCalendar)
 	mux.HandleFunc("POST /characters/{id}/advance-day/{$}", s.handleAdvanceDay)
 	mux.HandleFunc("POST /characters/{id}/bank/withdraw/{$}", s.handleBankWithdraw)
 	return mux

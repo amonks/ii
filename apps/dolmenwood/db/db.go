@@ -55,6 +55,9 @@ type Character struct {
 	// Game day counter (per character)
 	CurrentDay int `gorm:"column:current_day"`
 
+	// Calendar start day-of-year (day-of-year that corresponds to game day 1)
+	CalendarStartDay int `gorm:"column:calendar_start_day"`
+
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
@@ -167,6 +170,7 @@ CREATE TABLE IF NOT EXISTS characters (
 	coins_migrated INTEGER NOT NULL DEFAULT 0,
 	total_xp INTEGER NOT NULL DEFAULT 0,
 	current_day INTEGER NOT NULL DEFAULT 1,
+	calendar_start_day INTEGER NOT NULL DEFAULT 1,
 	created_at DATETIME,
 	updated_at DATETIME
 );
@@ -282,6 +286,10 @@ const migrationCurrentDay = `
 ALTER TABLE characters ADD COLUMN current_day INTEGER NOT NULL DEFAULT 1;
 `
 
+const migrationCalendarStartDay = `
+ALTER TABLE characters ADD COLUMN calendar_start_day INTEGER NOT NULL DEFAULT 1;
+`
+
 const migrationAuditLogGameDay = `
 ALTER TABLE audit_log ADD COLUMN game_day INTEGER NOT NULL DEFAULT 0;
 `
@@ -314,6 +322,7 @@ func New() (*DB, error) {
 	d.Exec(migrationCoinLocation)
 	d.Exec(migrationCoinsMigrated)
 	d.Exec(migrationCurrentDay)
+	d.Exec(migrationCalendarStartDay)
 	d.Exec(migrationAuditLogGameDay)
 	d.Exec(migrationBankDeposits)
 	return &DB{d}, nil
@@ -335,6 +344,12 @@ func NewMemory() (*DB, error) {
 func (db *DB) CreateCharacter(ch *Character) error {
 	ch.CreatedAt = time.Now()
 	ch.UpdatedAt = ch.CreatedAt
+	if ch.CurrentDay == 0 {
+		ch.CurrentDay = 1
+	}
+	if ch.CalendarStartDay == 0 {
+		ch.CalendarStartDay = 1
+	}
 	return db.Create(ch).Error
 }
 

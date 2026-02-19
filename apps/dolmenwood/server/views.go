@@ -57,6 +57,7 @@ type CharacterView struct {
 
 	// Bank
 	GameDay      int
+	CalendarDate engine.CalendarDate
 	BankDeposits []BankDepositView
 	BankTotalCP  int
 }
@@ -192,6 +193,11 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		return nil, err
 	}
 	bankDeposits, err := d.ListBankDeposits(ch.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	calendarDate, err := engine.CalendarDateForGameDay(ch.CalendarStartDay, ch.CurrentDay)
 	if err != nil {
 		return nil, err
 	}
@@ -334,6 +340,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		CompanionGroups:         compGroups,
 		MoveTargets:             moveTargets,
 		GameDay:                 ch.CurrentDay,
+		CalendarDate:            calendarDate,
 		BankDeposits:            bankDepositViews,
 		BankTotalCP:             bankTotalCP,
 	}, nil

@@ -2827,6 +2827,45 @@ func TestAdvanceDay(t *testing.T) {
 	})
 }
 
+func TestCalendarUpdate(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 10, CalendarStartDay: 1,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("calendar_day", "5")
+	form.Set("calendar_month", "2")
+	req := httptest.NewRequest("POST", "/characters/1/calendar/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	got, _ := d.GetCharacter(ch.ID)
+	if got.CalendarStartDay != 26 {
+		t.Errorf("CalendarStartDay = %d, want 26", got.CalendarStartDay)
+	}
+
+	logs, _ := d.ListAuditLog(ch.ID)
+	if len(logs) == 0 {
+		t.Fatal("expected audit log entry for calendar update")
+	}
+	if logs[0].Action != "calendar_update" {
+		t.Errorf("audit action = %q, want %q", logs[0].Action, "calendar_update")
+	}
+	if logs[0].Detail != "Calendar set to Lymewald 5" {
+		t.Errorf("audit detail = %q, want %q", logs[0].Detail, "Calendar set to Lymewald 5")
+	}
+}
+
 func TestBankDeposit(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

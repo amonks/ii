@@ -898,6 +898,39 @@ func (s *Server) handleAdvanceDay(w http.ResponseWriter, r *http.Request) {
 	s.renderSheetBody(w, r, ch)
 }
 
+func (s *Server) handleUpdateCalendar(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	day := atoi(r.FormValue("calendar_day"))
+	month := atoi(r.FormValue("calendar_month"))
+	startDay, err := engine.StartDayOfYearForGameDay(ch.CurrentDay, month, day)
+	if err != nil {
+		http.Error(w, "Invalid calendar date", http.StatusBadRequest)
+		return
+	}
+	ch.CalendarStartDay = startDay
+	if err := s.db.UpdateCharacter(ch); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	date, err := engine.CalendarDateForGameDay(ch.CalendarStartDay, ch.CurrentDay)
+	if err != nil {
+		http.Error(w, "Invalid calendar date", http.StatusBadRequest)
+		return
+	}
+	monthName, err := engine.MonthName(date.Month)
+	if err != nil {
+		http.Error(w, "Invalid calendar date", http.StatusBadRequest)
+		return
+	}
+	s.addAuditLog(ch, "calendar_update", fmt.Sprintf("Calendar set to %s %d", monthName, day))
+	s.renderSheetBody(w, r, ch)
+}
+
 func (s *Server) handleBankWithdraw(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
