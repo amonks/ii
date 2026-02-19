@@ -2637,6 +2637,51 @@ func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
 	}
 }
 
+func TestStoreCardShowsCrossbowRanges(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	weaponsStart := strings.Index(body, "Weapons")
+	if weaponsStart == -1 {
+		t.Fatal("store should list weapons")
+	}
+	ammoStart := strings.Index(body, "Ammunition")
+	if ammoStart == -1 {
+		t.Fatal("store should list ammunition")
+	}
+	weaponSegment := body[weaponsStart:ammoStart]
+	crossbowStart := strings.Index(weaponSegment, "Crossbow")
+	if crossbowStart == -1 {
+		t.Fatal("store should list crossbow")
+	}
+	segment := weaponSegment[crossbowStart:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected to find buy button after crossbow")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "Armour piercing") {
+		t.Error("crossbow should show armour piercing quality")
+	}
+	if !strings.Contains(segment, "Missile (80′ / 160′ / 240′)") {
+		t.Error("crossbow should show missile ranges")
+	}
+}
+
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {
 		t.Fatal("expected rope to have no bundle size")

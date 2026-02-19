@@ -665,6 +665,16 @@ func storeWeaponName(name string) string {
 		return "oil flask (burning)"
 	case "torches":
 		return "torch (flaming)"
+	case "crossbow":
+		return "crossbow (ranged)"
+	case "longbow":
+		return "longbow (ranged)"
+	case "shortbow":
+		return "shortbow (ranged)"
+	case "sling":
+		return "sling (ranged)"
+	case "spear":
+		return "spear (ranged)"
 	default:
 		return name
 	}
