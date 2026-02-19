@@ -74,7 +74,7 @@ A modifier applied to Saving Throws against effects of magical origin, determine
 
 ## Speed
 
-The speed at which a character can move when exploring, travelling, or during combat. See [Time and Movement](time_and_movement).
+The speed at which a character can move when exploring, travelling, or during combat. See [Time and Movement](time_and_movement). Character statistics record the derived encounter, exploration (unknown and mapped), running, and overland speeds from the base Speed.
 
 **Encounter:** Speed per Round in feet during encounters or combat.
 

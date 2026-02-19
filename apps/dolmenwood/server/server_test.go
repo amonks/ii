@@ -202,8 +202,20 @@ func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 			t.Errorf("response should contain %q", label)
 		}
 	}
+	scoresIndex := strings.Index(body, "Scores")
+	savesIndex := strings.Index(body, "Saves")
+	speedIndex := strings.Index(body, "Speed")
+	if scoresIndex == -1 || savesIndex == -1 || speedIndex == -1 {
+		t.Fatalf("expected labels to be present for ordering check")
+	}
+	if !(scoresIndex < savesIndex && savesIndex < speedIndex) {
+		t.Errorf("expected ordering Scores -> Saves -> Speed, got indexes scores=%d saves=%d speed=%d", scoresIndex, savesIndex, speedIndex)
+	}
 	values := parseStatSpeedValues(t, body)
-	for label, value := range map[string]string{"Encounter": "40", "Exploration (unknown)": "120", "Exploration (mapped)": "400", "Overland": "8 tp/day"} {
+	if len(values) == 0 {
+		t.Fatalf("expected speed values to be parsed")
+	}
+	for label, value := range map[string]string{"Encounter": "40", "Exploration (unknown)": "120", "Exploration (mapped)": "400", "Running": "120", "Overland": "8 tp/day"} {
 		if values[label] != value {
 			t.Errorf("speed %s = %q, want %q", label, values[label], value)
 		}

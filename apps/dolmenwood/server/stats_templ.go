@@ -240,30 +240,6 @@ func StatsSection(view *CharacterView) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div><div class=\"text-xs font-semibold text-stone-500 uppercase\">Speed</div><div class=\"grid grid-cols-5 gap-1 text-center text-xs\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div><div class=\"text-xs font-semibold text-stone-500 uppercase\">Saves</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -330,6 +306,30 @@ func StatsSection(view *CharacterView) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div><div class=\"text-xs font-semibold text-stone-500 uppercase\">Speed</div><div class=\"grid grid-cols-5 gap-1 text-center text-xs\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"text-xs text-stone-600\">")

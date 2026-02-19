@@ -54,14 +54,6 @@ templ StatsSection(view *CharacterView) {
 				}
 			</div>
 		</div>
-		<div class="text-xs font-semibold text-stone-500 uppercase">Speed</div>
-		<div class="grid grid-cols-5 gap-1 text-center text-xs">
-			@speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
-			@speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
-			@speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
-			@speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
-			@speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
-		</div>
 		<div class="text-xs font-semibold text-stone-500 uppercase">Saves</div>
 		if view.MagicResistance != 0 {
 			<div class="grid grid-cols-6 gap-1 text-center text-xs">
@@ -81,6 +73,14 @@ templ StatsSection(view *CharacterView) {
 				@saveBox("Spells", view.Saves.Spells)
 			</div>
 		}
+		<div class="text-xs font-semibold text-stone-500 uppercase">Speed</div>
+		<div class="grid grid-cols-5 gap-1 text-center text-xs">
+			@speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
+			@speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
+			@speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
+			@speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
+			@speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
+		</div>
 		if view.Traits.Knighthood || view.Traits.MonsterSlayer {
 			<div class="text-xs text-stone-600">
 				if view.Traits.Knighthood {
