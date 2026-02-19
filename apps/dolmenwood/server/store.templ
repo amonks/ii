@@ -32,6 +32,12 @@ templ StoreSection(view *CharacterView) {
 									if item.Qualities != "" {
 										<span>{ item.Qualities }</span>
 									}
+									if item.Load > 0 {
+										<span>{ fmt.Sprintf("Load %d cn", item.Load) }</span>
+									}
+									if item.Cargo > 0 {
+										<span>{ fmt.Sprintf("Cargo %d cn", item.Cargo) }</span>
+									}
 								</div>
 							</div>
 							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML" class="flex items-center gap-2">

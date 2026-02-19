@@ -93,6 +93,8 @@ type StoreItem struct {
 	Damage        string
 	AC            int
 	Qualities     string
+	Load          int
+	Cargo         int
 }
 
 type InventoryItem struct {
@@ -551,10 +553,31 @@ func buildStoreGroups() []StoreGroup {
 			item.Damage = itemDamage(item.Name)
 			item.AC = itemArmorClass(item.Name)
 			item.Qualities = itemQualities(item.Name)
+			item.Load = storeItemLoad(item.Name)
+			item.Cargo = storeItemCargo(item.Name)
 		}
 	}
 
 	return groups
+}
+
+var storeHorseLoads = map[string]int{
+	"charger":          4000,
+	"dapple-doff":      5000,
+	"hop-clopper":      5000,
+	"mule":             2500,
+	"prigwort prancer": 3000,
+	"yellow-flank":     3500,
+}
+
+var storeVehicleCargo = map[string]int{
+	"cart":         10000,
+	"wagon":        20000,
+	"barge":        160000,
+	"canoe":        5000,
+	"fishing boat": 25000,
+	"raft":         500,
+	"rowing boat":  5000,
 }
 
 func storeItem(name string, costCP int, label string) StoreItem {
@@ -637,6 +660,20 @@ func itemQualities(name string) string {
 func itemArmorClass(name string) int {
 	if armor, ok := engine.ArmorStats(name); ok {
 		return armor.AC
+	}
+	return 0
+}
+
+func storeItemLoad(name string) int {
+	if load, ok := storeHorseLoads[strings.ToLower(name)]; ok {
+		return load
+	}
+	return 0
+}
+
+func storeItemCargo(name string) int {
+	if cargo, ok := storeVehicleCargo[strings.ToLower(name)]; ok {
+		return cargo
 	}
 	return 0
 }

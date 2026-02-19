@@ -2506,6 +2506,32 @@ func TestStoreCardListsHorseSupplies(t *testing.T) {
 	}
 }
 
+func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Load 4000 cn") {
+		t.Error("store should show charger load capacity")
+	}
+	if !strings.Contains(body, "Cargo 10000 cn") {
+		t.Error("store should show cart cargo capacity")
+	}
+}
+
 
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {
