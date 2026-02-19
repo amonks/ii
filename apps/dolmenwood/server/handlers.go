@@ -74,9 +74,6 @@ func (s *Server) handleUpdateHP(w http.ResponseWriter, r *http.Request) {
 	oldHPCurrent := ch.HPCurrent
 	oldHPMax := ch.HPMax
 	ch.HPCurrent = atoi(r.FormValue("hp_current"))
-	if hpMax := r.FormValue("hp_max"); hpMax != "" {
-		ch.HPMax = atoi(hpMax)
-	}
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

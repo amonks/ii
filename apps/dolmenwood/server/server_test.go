@@ -1879,7 +1879,6 @@ func TestUpdateHP(t *testing.T) {
 
 	form := url.Values{}
 	form.Set("hp_current", "5")
-	form.Set("hp_max", "12")
 	req := httptest.NewRequest("POST", "/characters/1/hp/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
@@ -1894,8 +1893,8 @@ func TestUpdateHP(t *testing.T) {
 	if got.HPCurrent != 5 {
 		t.Errorf("HPCurrent = %d, want 5", got.HPCurrent)
 	}
-	if got.HPMax != 12 {
-		t.Errorf("HPMax = %d, want 12", got.HPMax)
+	if got.HPMax != 8 {
+		t.Errorf("HPMax = %d, want 8", got.HPMax)
 	}
 }
 
