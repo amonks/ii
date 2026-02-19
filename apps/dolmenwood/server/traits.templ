@@ -10,23 +10,23 @@ templ TraitsSection(view *CharacterView) {
 				@SectionLabel("Kindred Traits")
 				@traitList(view.KindredTraits)
 				if len(view.KindredTraits) == 0 {
-					<div class={ classEmptyText + " text-xs" }>None</div>
+					<div class={ classSubtext }>None</div>
 				}
 			</div>
 			<div class="space-y-1">
 				@SectionLabel("Class Traits")
 				@traitList(view.ClassTraits)
 				if len(view.ClassTraits) == 0 {
-					<div class={ classEmptyText + " text-xs" }>None</div>
+					<div class={ classSubtext }>None</div>
 				}
 			</div>
 			if view.MoonSign != nil {
 				<div class="md:col-span-2">
 					@InfoBox() {
-						<div class="text-xs text-stone-600">
+						<div class={ classSubtext }>
 							<div class="font-semibold text-stone-700">Moon Sign</div>
 							<div>{ view.MoonSign.Moon } ({ view.MoonSign.Phase })</div>
-							<div class="text-stone-500">{ view.MoonSign.Effect }</div>
+							<div>{ view.MoonSign.Effect }</div>
 						</div>
 					}
 				</div>
@@ -39,7 +39,7 @@ templ traitList(traits []engine.Trait) {
 	<ul class="space-y-1 text-sm">
 		for _, trait := range traits {
 			<li>
-				<span class="font-medium text-stone-700">{ trait.Name }</span>
+				<span class={ classItemName }>{ trait.Name }</span>
 				if trait.Description != "" {
 					<span class={ classSubtext }>{ " " + trait.Description }</span>
 				}

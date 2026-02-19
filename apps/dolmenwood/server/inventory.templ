@@ -21,7 +21,7 @@ templ InventorySection(view *CharacterView) {
 				<input type="hidden" name="move_to" value="equipped"/>
 				<input type="text" name="name" placeholder="5x preserved rations" required
 					class={ classFormInput }/>
-				<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+				@BtnPrimary("+")
 			</form>
 		</div>
 		for _, cg := range view.CompanionGroups {
@@ -42,7 +42,7 @@ templ InventorySection(view *CharacterView) {
 					<input type="hidden" name="move_to" value={ fmt.Sprintf("companion:%d", cg.Companion.ID) }/>
 					<input type="text" name="name" placeholder="5x preserved rations" required
 						class={ classFormInput }/>
-					<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+					@BtnPrimary("+")
 				</form>
 			</div>
 		}
@@ -68,7 +68,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 					<span class="text-xs bg-yellow-50 text-yellow-700 rounded-full px-1.5">{ item.Notes }</span>
 				}
 			} else {
-				<span class="font-medium">{ item.Name }</span>
+				<span class={ classItemName }>{ item.Name }</span>
 			}
 			if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
 				@Badge(fmt.Sprintf("%dx", item.Quantity))
@@ -160,14 +160,14 @@ templ EncumbranceSection(view *CharacterView) {
 		}
 		<div class="space-y-2 text-sm">
 			<div>
-				<div class="flex justify-between text-xs text-stone-500 mb-0.5">
+				<div class={ "flex justify-between mb-0.5 " + classSubtext }>
 					<span>Equipped</span>
 					<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
 				</div>
 				@speedChart(EquippedSpeedChart(view.EquippedSlots))
 			</div>
 			<div>
-				<div class="flex justify-between text-xs text-stone-500 mb-0.5">
+				<div class={ "flex justify-between mb-0.5 " + classSubtext }>
 					<span>
 						Stowed
 						if view.StowedCapacity == 0 {
@@ -182,17 +182,17 @@ templ EncumbranceSection(view *CharacterView) {
 				</div>
 				@speedChart(StowedSpeedChart(view.TotalStowedSlots))
 				if len(view.StowedContainers) > 0 {
-					<div class="text-xs text-stone-400 mt-0.5">
+					<div class={ classSubtext + " mt-0.5" }>
 						for _, c := range view.StowedContainers {
 							<span class="mr-2">{ c.Name }: { fmt.Sprintf("%d", c.Slots) }</span>
 						}
 						if view.StowedCapacity < 16 {
-							<span class="text-stone-300">(max 16)</span>
+							<span class={ classSubtext }>(max 16)</span>
 						}
 					</div>
 				}
 			</div>
-			<div class="flex justify-between text-xs text-stone-400 pt-1">
+			<div class={ "flex justify-between pt-1 " + classSubtext }>
 				<div class="flex gap-2">
 					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-green-500"></span>40&apos;</span>
 					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-amber-400"></span>30&apos;</span>

@@ -10,10 +10,10 @@ templ BankSection(view *CharacterView) {
 		if len(view.BankDeposits) > 0 {
 			<div class="space-y-1">
 				for _, dep := range view.BankDeposits {
-					<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
-						<span class="text-stone-700">
+					@ItemRow() {
+						<span class={ classItemName }>
 							{ dep.CoinNotes }
-							<span class="text-stone-400 text-xs ml-1">(day { fmt.Sprintf("%d", dep.DepositDay) })</span>
+							<span class={ classSubtext + " ml-1" }>(day { fmt.Sprintf("%d", dep.DepositDay) })</span>
 						</span>
 						<span>
 							if dep.IsMature {
@@ -22,7 +22,7 @@ templ BankSection(view *CharacterView) {
 								@BadgeWarning(fmt.Sprintf("%dd left", dep.DaysUntilMature))
 							}
 						</span>
-					</div>
+					}
 				}
 			</div>
 		} else {

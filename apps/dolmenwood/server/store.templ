@@ -10,10 +10,10 @@ templ StoreSection(view *CharacterView) {
 				@SectionLabel(group.Title)
 				<div class="space-y-1">
 					for _, item := range group.Items {
-						<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
+						@ItemRow() {
 							<div class="min-w-0">
-								<div class="font-medium text-stone-700">{ item.Name }</div>
-								<div class="text-xs text-stone-400 flex flex-wrap gap-2">
+								<div class={ classItemName }>{ item.Name }</div>
+								<div class={ classSubtext + " flex flex-wrap gap-2" }>
 									if item.CostCoinLabel != "" {
 										<span>{ item.CostCoinLabel }</span>
 									}
@@ -45,9 +45,9 @@ templ StoreSection(view *CharacterView) {
 							</div>
 							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML" class="flex items-center gap-2">
 								<input type="hidden" name="item_id" value={ item.ID }/>
-								<button type="submit" class="text-xs bg-stone-800 text-white rounded px-2 py-1">Buy</button>
+								@BtnPrimary("Buy")
 							</form>
-						</div>
+						}
 					}
 				</div>
 			</div>

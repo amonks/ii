@@ -25,9 +25,9 @@ templ XPSection(view *CharacterView) {
 		}
 		<form hx-post="xp/" hx-target="#sheet-body" hx-swap="innerHTML" class="flex gap-2 items-end">
 			<input type="number" name="xp_amount" placeholder="XP" required
-				class="w-20 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
+				class={ "w-20 " + classFormInput }/>
 			<input type="text" name="description" placeholder="Description"
-				class="flex-1 border border-stone-300 rounded-md px-2 py-1 text-sm"/>
+				class={ classFormInput }/>
 			@BtnPrimary("Add XP")
 		</form>
 		if len(view.XPLog) > 0 {

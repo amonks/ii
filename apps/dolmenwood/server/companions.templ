@@ -16,7 +16,7 @@ templ CompanionsSection(view *CharacterView) {
 							<button type="button"
 								hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
 								hx-target="#companions" hx-swap="outerHTML"
-								class="text-xs text-red-400 hover:text-red-600">&times;</button>
+								class="text-red-400 hover:text-red-600">&times;</button>
 						</div>
 						<div class="grid grid-cols-4 gap-2 text-center text-sm">
 							<div class="bg-white rounded p-1">
@@ -39,8 +39,8 @@ templ CompanionsSection(view *CharacterView) {
 							</div>
 						</div>
 						if comp.Attack != "" && comp.Attack != "None" {
-							<div class="text-xs text-stone-600">
-								<span class="text-stone-500">Atk:</span> { comp.Attack }
+							<div class={ classSubtext }>
+								<span>Atk:</span> { comp.Attack }
 							</div>
 						}
 						<div class="grid grid-cols-5 gap-1 text-center text-xs">
@@ -57,23 +57,23 @@ templ CompanionsSection(view *CharacterView) {
 							hx-target="#companions" hx-swap="outerHTML"
 							class="flex flex-wrap items-center gap-3 text-sm">
 							<div class="flex items-center gap-1">
-								<label class={ classSubtext }>Name</label>
+								<label class={ classFormLabelSmall }>Name</label>
 								<input type="text" name="name"
 									value={ comp.Name }
 									class={ "w-24 " + classFormInputSmall }/>
 							</div>
 							<div class="flex items-center gap-1">
-								<label class={ classSubtext }>HP</label>
+								<label class={ classFormLabelSmall }>HP</label>
 								<input type="number" name="hp_current"
 									value={ fmt.Sprintf("%d", comp.HPCurrent) }
 									class={ "w-14 text-center " + classFormInputSmall }/>
-								<label class={ classSubtext }>/</label>
+								<label class={ classFormLabelSmall }>/</label>
 								<input type="number" name="hp_max"
 									value={ fmt.Sprintf("%d", comp.HPMax) }
 									class={ "w-14 text-center " + classFormInputSmall }/>
 							</div>
 							<div class="flex items-center gap-1">
-								<label class={ classSubtext }>Saddle</label>
+								<label class={ classFormLabelSmall }>Saddle</label>
 								<select name="saddle_type" class={ classFormInputSmall }>
 									<option value="" if comp.SaddleType == "" { selected }>None</option>
 									<option value="riding" if comp.SaddleType == "riding" { selected }>Riding</option>
@@ -109,7 +109,7 @@ templ CompanionsSection(view *CharacterView) {
 					<option value={ breed }>{ breed }</option>
 				}
 			</select>
-			<button type="submit" class="bg-stone-800 text-white rounded-md px-3 text-sm">+</button>
+			@BtnPrimary("+")
 		</form>
 		if entries := filterAuditLog(view.AuditLog, "companion_add", "companion_delete", "companion_update"); len(entries) > 0 {
 			@LogToggle("Companion Log") {
