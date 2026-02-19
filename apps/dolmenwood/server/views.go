@@ -681,6 +681,13 @@ func storeWeaponName(name string) string {
 }
 
 func itemArmorClass(name string) int {
+	itemArmorClassOverrides := map[string]int{
+		"horse barding": 2,
+		"shield":        1,
+	}
+	if ac, ok := itemArmorClassOverrides[strings.ToLower(name)]; ok {
+		return ac
+	}
 	if armor, ok := engine.ArmorStats(name); ok {
 		return armor.AC
 	}

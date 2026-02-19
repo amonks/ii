@@ -2506,6 +2506,39 @@ func TestStoreCardListsHorseSupplies(t *testing.T) {
 	}
 }
 
+func TestStoreCardShowsHorseBardingAC(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	start := strings.Index(body, "Horse barding")
+	if start == -1 {
+		t.Fatal("store should list horse barding")
+	}
+	segment := body[start:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected buy button after horse barding")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "AC 2") {
+		t.Error("horse barding should show AC 2")
+	}
+}
+
 func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
