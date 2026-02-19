@@ -845,8 +845,10 @@ func releaseTodoLock(file *os.File, path string) error {
 	closeErr := file.Close()
 	// Remove the lock file to avoid accumulating stale lock files,
 	// especially when tests use temporary directories with unique paths.
-	removeErr := os.Remove(path)
-	return errors.Join(unlockErr, closeErr, removeErr)
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return errors.Join(unlockErr, closeErr, err)
+	}
+	return errors.Join(unlockErr, closeErr)
 }
 
 func isStaleWorkspaceError(err error) bool {
