@@ -628,15 +628,13 @@ func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update character coins (accounting)
+	// Update found treasure accounting (purse is computed from inventory)
 	if isFound {
 		addToFound(ch, amount, coinType)
-	} else {
-		addToPurse(ch, amount, coinType)
-	}
-	if err := s.db.UpdateCharacter(ch); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if err := s.db.UpdateCharacter(ch); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Create or merge consolidated coin inventory item
@@ -692,15 +690,13 @@ func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reverse the coin effect (accounting)
+	// Reverse found treasure accounting (purse is computed from inventory)
 	if orig.IsFoundTreasure {
 		addToFound(ch, -orig.Amount, orig.CoinType)
-	} else {
-		addToPurse(ch, -orig.Amount, orig.CoinType)
-	}
-	if err := s.db.UpdateCharacter(ch); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if err := s.db.UpdateCharacter(ch); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Remove coins from consolidated inventory items
@@ -946,14 +942,39 @@ func (s *Server) handleBankWithdraw(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Add coins to purse using MinCoins (bank gives change in gp/sp/cp)
+	// Add withdrawn coins to inventory (purse is computed from inventory)
 	coins := engine.MinCoins(result.NetCP)
-	ch.PurseGP += coins.GP
-	ch.PurseSP += coins.SP
-	ch.PurseCP += coins.CP
-	if err := s.db.UpdateCharacter(ch); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	coinMap := make(map[engine.CoinType]int)
+	totalCoins := 0
+	if coins.GP > 0 {
+		coinMap[engine.GP] = coins.GP
+		totalCoins += coins.GP
+	}
+	if coins.SP > 0 {
+		coinMap[engine.SP] = coins.SP
+		totalCoins += coins.SP
+	}
+	if coins.CP > 0 {
+		coinMap[engine.CP] = coins.CP
+		totalCoins += coins.CP
+	}
+	if totalCoins > 0 {
+		coinItem := &db.Item{
+			CharacterID: ch.ID,
+			Name:        engine.CoinItemNameStr,
+			Quantity:    totalCoins,
+			Notes:       engine.FormatCoinNotes(coinMap),
+		}
+		if err := s.combineStackableItems(ch.ID, coinItem, ch.CurrentDay); err != nil {
+			if !errors.Is(err, errNotCombined) {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := s.db.CreateItem(coinItem); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 	}
 
 	feeDetail := ""
@@ -1132,21 +1153,6 @@ func addToFound(ch *db.Character, amount int, coinType string) {
 		ch.FoundGP += amount
 	case engine.PP:
 		ch.FoundPP += amount
-	}
-}
-
-func addToPurse(ch *db.Character, amount int, coinType string) {
-	switch coinType {
-	case engine.CP:
-		ch.PurseCP += amount
-	case engine.SP:
-		ch.PurseSP += amount
-	case engine.EP:
-		ch.PurseEP += amount
-	case engine.GP:
-		ch.PurseGP += amount
-	case engine.PP:
-		ch.PursePP += amount
 	}
 }
 

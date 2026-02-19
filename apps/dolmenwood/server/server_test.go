@@ -501,9 +501,11 @@ func TestUndoTransaction(t *testing.T) {
 	ch := &db.Character{
 		Name: "Test", Class: "Knight", Kindred: "Human",
 		Level: 1, HPCurrent: 8, HPMax: 8,
-		PurseGP: 50,
 	}
 	d.CreateCharacter(ch)
+
+	// Create inventory coin item (purse transaction added 50gp)
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 50, Notes: "50gp"})
 
 	// Create a transaction to undo
 	tx := &db.Transaction{
@@ -544,10 +546,10 @@ func TestUndoTransaction(t *testing.T) {
 		t.Errorf("undo Description = %q, want %q", undo.Description, "undo dragon hoard")
 	}
 
-	// Verify coins were reversed
-	got, _ := d.GetCharacter(ch.ID)
-	if got.PurseGP != 0 {
-		t.Errorf("PurseGP = %d, want 0", got.PurseGP)
+	// Verify coins were removed from inventory
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (coins should be removed)", len(items))
 	}
 }
 
@@ -667,7 +669,6 @@ func TestUndoTreasureRemovesCoinItem(t *testing.T) {
 	ch := &db.Character{
 		Name: "Test", Class: "Knight", Kindred: "Human",
 		Level: 1, HPCurrent: 8, HPMax: 8,
-		PurseGP: 50,
 	}
 	d.CreateCharacter(ch)
 
@@ -2840,10 +2841,13 @@ func TestBankWithdrawMature(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
-	// Check purse gained 5gp
-	got, _ := d.GetCharacter(ch.ID)
-	if got.PurseGP != 5 {
-		t.Errorf("PurseGP = %d, want 5", got.PurseGP)
+	// Check inventory gained 5gp coin item
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Notes != "5gp" {
+		t.Errorf("item Notes = %q, want %q", items[0].Notes, "5gp")
 	}
 
 	// Deposit should be reduced: 1000 - 500 = 500
@@ -2888,10 +2892,13 @@ func TestBankWithdrawImmature(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
-	// Check purse gained 9gp
-	got, _ := d.GetCharacter(ch.ID)
-	if got.PurseGP != 9 {
-		t.Errorf("PurseGP = %d, want 9", got.PurseGP)
+	// Check inventory gained 9gp coin item
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Notes != "9gp" {
+		t.Errorf("item Notes = %q, want %q", items[0].Notes, "9gp")
 	}
 
 	// Deposit fully consumed (gross = 1000 = deposit value)

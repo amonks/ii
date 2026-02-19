@@ -69,7 +69,7 @@ func WealthSection(view *CharacterView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = coinDisplay(view.Character.PurseCP, view.Character.PurseSP, view.Character.PurseEP, view.Character.PurseGP, view.Character.PursePP).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -12,7 +12,7 @@ func TestWealthViewAggregatesCoinItems(t *testing.T) {
 	ch := &db.Character{
 		Name: "Test", Class: "Knight", Kindred: "Human",
 		Level: 1, HPCurrent: 8, HPMax: 8,
-		PurseGP: 100, FoundGP: 50,
+		FoundGP: 50,
 	}
 	d.CreateCharacter(ch)
 
@@ -41,12 +41,20 @@ func TestWealthViewAggregatesCoinItems(t *testing.T) {
 		t.Errorf("InventoryGPValue = %d, want 170", view.InventoryGPValue)
 	}
 
-	// Purse/Found accounting should still be intact
-	if view.PurseGPValue != 100 {
-		t.Errorf("PurseGPValue = %d, want 100", view.PurseGPValue)
+	// Purse = inventory - found: 170 - 50 = 120 GP
+	if view.PurseGPValue != 120 {
+		t.Errorf("PurseGPValue = %d, want 120 (inventory 170 - found 50)", view.PurseGPValue)
 	}
 	if view.FoundGPValue != 50 {
 		t.Errorf("FoundGPValue = %d, want 50", view.FoundGPValue)
+	}
+
+	// Per-denomination purse should be inventory minus found
+	if view.PurseCoins["gp"] != 100 {
+		t.Errorf("PurseCoins[gp] = %d, want 100 (150 - 50 found)", view.PurseCoins["gp"])
+	}
+	if view.PurseCoins["sp"] != 200 {
+		t.Errorf("PurseCoins[sp] = %d, want 200 (200 - 0 found)", view.PurseCoins["sp"])
 	}
 }
 

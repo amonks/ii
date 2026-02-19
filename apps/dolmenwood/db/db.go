@@ -593,14 +593,8 @@ func (db *DB) ReturnToSafety(characterID uint, xpModPercent int, gameDay int) er
 		return fmt.Errorf("xp log: %w", err)
 	}
 
-	// Move found treasure to purse
-	ch.PurseCP += ch.FoundCP
-	ch.PurseSP += ch.FoundSP
-	ch.PurseEP += ch.FoundEP
-	ch.PurseGP += ch.FoundGP
-	ch.PursePP += ch.FoundPP
+	// Zero found treasure (coins stay in inventory; purse is computed)
 
-	// Zero found treasure
 	ch.FoundCP = 0
 	ch.FoundSP = 0
 	ch.FoundEP = 0

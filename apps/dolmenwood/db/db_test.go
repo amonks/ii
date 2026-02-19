@@ -173,7 +173,6 @@ func TestReturnToSafety(t *testing.T) {
 		STR:      13, // prime ability
 		FoundGP:  50,
 		FoundSP:  100,
-		PurseGP:  10,
 	}
 	db.CreateCharacter(ch)
 
@@ -192,14 +191,6 @@ func TestReturnToSafety(t *testing.T) {
 	if got.FoundGP != 0 || got.FoundSP != 0 {
 		t.Errorf("found treasure not zeroed: GP=%d SP=%d", got.FoundGP, got.FoundSP)
 	}
-	// Purse updated
-	if got.PurseGP != 60 {
-		t.Errorf("PurseGP = %d, want 60 (10 + 50)", got.PurseGP)
-	}
-	if got.PurseSP != 100 {
-		t.Errorf("PurseSP = %d, want 100", got.PurseSP)
-	}
-
 	// XP log entry created
 	xpLogs, _ := db.ListXPLog(ch.ID)
 	if len(xpLogs) != 1 {

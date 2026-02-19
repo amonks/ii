@@ -38,7 +38,8 @@ type CharacterView struct {
 	XPToNext         int
 	NewLevel         int
 	CanLevelUp       bool
-	PurseGPValue     int
+	PurseCoins       map[string]int // computed: inventory coins minus found treasure
+	PurseGPValue     int            // computed: inventory GP value minus found GP value
 	FoundGPValue     int
 	InventoryCoins   map[string]int // coin counts from inventory items, keyed by CoinType
 	InventoryGPValue int            // total GP value of all inventory coin items
@@ -205,7 +206,6 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	// Use hierarchy-based encumbrance
 	equipped, stowed, companionSlots := engine.CalculateEncumbrance(engineItems)
 
-	pursePurse := engine.CoinPurse{CP: ch.PurseCP, SP: ch.PurseSP, EP: ch.PurseEP, GP: ch.PurseGP, PP: ch.PursePP}
 	foundPurse := engine.CoinPurse{CP: ch.FoundCP, SP: ch.FoundSP, EP: ch.FoundEP, GP: ch.FoundGP, PP: ch.FoundPP}
 
 	totalStowed := stowed
@@ -246,6 +246,16 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		PP: inventoryCoins[engine.PP],
 	}
 	inventoryGPValue := engine.CoinPurseGPValue(inventoryCoinPurse)
+	foundGPValue := engine.CoinPurseGPValue(foundPurse)
+
+	// Purse = inventory coins minus found treasure
+	purseCoins := map[string]int{
+		engine.CP: inventoryCoins[engine.CP] - ch.FoundCP,
+		engine.SP: inventoryCoins[engine.SP] - ch.FoundSP,
+		engine.EP: inventoryCoins[engine.EP] - ch.FoundEP,
+		engine.GP: inventoryCoins[engine.GP] - ch.FoundGP,
+		engine.PP: inventoryCoins[engine.PP] - ch.FoundPP,
+	}
 
 	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
@@ -299,8 +309,9 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		XPToNext:         engine.XPToNextLevel(ch.Level, ch.TotalXP),
 		NewLevel:         newLevel,
 		CanLevelUp:       canLevelUp,
-		PurseGPValue:     engine.CoinPurseGPValue(pursePurse),
-		FoundGPValue:     engine.CoinPurseGPValue(foundPurse),
+		PurseCoins:       purseCoins,
+		PurseGPValue:     inventoryGPValue - foundGPValue,
+		FoundGPValue:     foundGPValue,
 		InventoryCoins:   inventoryCoins,
 		InventoryGPValue: inventoryGPValue,
 		BreedNames:       engine.BreedNames(),

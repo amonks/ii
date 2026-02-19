@@ -12,7 +12,7 @@ templ WealthSection(view *CharacterView) {
 		<div class="grid grid-cols-2 gap-3">
 			<div class="bg-stone-50 rounded p-3">
 				<div class="text-xs text-stone-500 mb-1">Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP)</div>
-				@coinDisplay(view.Character.PurseCP, view.Character.PurseSP, view.Character.PurseEP, view.Character.PurseGP, view.Character.PursePP)
+				@coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"])
 			</div>
 			<div class="bg-amber-50 rounded p-3">
 				<div class="text-xs text-amber-700 mb-1">Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP)</div>
