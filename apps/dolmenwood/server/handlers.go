@@ -305,6 +305,15 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 	containerID, companionID := parseMoveTarget(moveTo)
 	qtyStr := strings.TrimSpace(r.FormValue("quantity"))
 
+	// Empty quantity means "move all"
+	if qtyStr == "" {
+		if strings.EqualFold(source.Name, engine.CoinItemNameStr) {
+			qtyStr = source.Notes
+		} else {
+			qtyStr = strconv.Itoa(source.Quantity)
+		}
+	}
+
 	if strings.EqualFold(source.Name, engine.CoinItemNameStr) {
 		// Consolidated coin split: parse as coin expression, subtract from source notes
 		amounts, err := engine.ParseCoinExpression(qtyStr)

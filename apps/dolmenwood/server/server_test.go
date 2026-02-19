@@ -1441,6 +1441,92 @@ func TestSplitAllBecomesMove(t *testing.T) {
 	}
 }
 
+func TestSplitEmptyQuantityMovesAll(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	torches := &db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 6}
+	d.CreateItem(torches)
+
+	// Split with empty quantity — should move all
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", torches.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var torchCount int
+	for _, it := range items {
+		if it.Name == "Torches" {
+			torchCount++
+			if it.ContainerID == nil || *it.ContainerID != backpack.ID {
+				t.Errorf("Torches should be in backpack, ContainerID = %v", it.ContainerID)
+			}
+			if it.Quantity != 6 {
+				t.Errorf("Torches Quantity = %d, want 6", it.Quantity)
+			}
+		}
+	}
+	if torchCount != 1 {
+		t.Errorf("got %d torch items, want 1", torchCount)
+	}
+}
+
+func TestSplitEmptyQuantityMovesAllCoins(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 80, Notes: "50gp 30sp"}
+	d.CreateItem(coins)
+
+	// Split with empty quantity — should move all coins
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].CompanionID == nil || *items[0].CompanionID != comp.ID {
+		t.Errorf("Coins CompanionID = %v, want %d", items[0].CompanionID, comp.ID)
+	}
+	if items[0].Quantity != 80 {
+		t.Errorf("Coins Quantity = %d, want 80", items[0].Quantity)
+	}
+}
+
 func TestDecrementBundledItem(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -2674,6 +2760,52 @@ func TestMoveCoinItemToBank(t *testing.T) {
 	}
 	if deps[0].DepositDay != 10 {
 		t.Errorf("DepositDay = %d, want 10", deps[0].DepositDay)
+	}
+}
+
+func TestBankDepositEmptyQuantityMovesAll(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, CurrentDay: 7,
+	}
+	d.CreateCharacter(ch)
+
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 30, Notes: "20gp 10sp"}
+	d.CreateItem(coins)
+
+	// Split to bank with empty quantity — should deposit all coins
+	form := url.Values{}
+	form.Set("move_to", "bank")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Coin item should be deleted
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0", len(items))
+	}
+
+	// Bank deposit should be created with full value
+	deps, _ := d.ListBankDeposits(ch.ID)
+	if len(deps) != 1 {
+		t.Fatalf("bank deposits = %d, want 1", len(deps))
+	}
+	// 20gp=2000cp, 10sp=100cp = 2100cp
+	if deps[0].CPValue != 2100 {
+		t.Errorf("CPValue = %d, want 2100", deps[0].CPValue)
+	}
+	if deps[0].DepositDay != 7 {
+		t.Errorf("DepositDay = %d, want 7", deps[0].DepositDay)
 	}
 }
 
