@@ -95,6 +95,7 @@ type StoreItem struct {
 	Qualities     string
 	Load          int
 	Cargo         int
+	Capacity      int
 }
 
 type InventoryItem struct {
@@ -555,6 +556,7 @@ func buildStoreGroups() []StoreGroup {
 			item.Qualities = itemQualities(item.Name)
 			item.Load = storeItemLoad(item.Name)
 			item.Cargo = storeItemCargo(item.Name)
+			item.Capacity = storeItemCapacity(item.Name)
 		}
 	}
 
@@ -704,6 +706,13 @@ func storeItemLoad(name string) int {
 func storeItemCargo(name string) int {
 	if cargo, ok := storeVehicleCargo[strings.ToLower(name)]; ok {
 		return cargo
+	}
+	return 0
+}
+
+func storeItemCapacity(name string) int {
+	if capacity, ok := engine.ContainerCapacity(name); ok {
+		return capacity
 	}
 	return 0
 }
