@@ -48,7 +48,7 @@ func NotesSection(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var2 string
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(note.Content)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/notes.templ`, Line: 12, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/notes.templ`, Line: 12, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -61,7 +61,7 @@ func NotesSection(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("notes/%d/delete/", note.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/notes.templ`, Line: 13, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/notes.templ`, Line: 13, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -94,7 +94,7 @@ func NotesSection(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/notes.templ`, Line: 34, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/notes.templ`, Line: 34, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {

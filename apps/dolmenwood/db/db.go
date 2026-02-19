@@ -422,6 +422,14 @@ func (db *DB) UpdateCompanion(comp *Companion) error {
 	return db.Save(comp).Error
 }
 
+func (db *DB) GetCompanion(id uint) (*Companion, error) {
+	var comp Companion
+	if err := db.First(&comp, id).Error; err != nil {
+		return nil, err
+	}
+	return &comp, nil
+}
+
 func (db *DB) DeleteCompanion(id uint) error {
 	// Move companion's items to equipped on character (nil container, nil companion)
 	db.Model(&Item{}).Where("companion_id = ?", id).Updates(map[string]any{
@@ -493,6 +501,14 @@ func (db *DB) ListNotes(characterID uint) ([]Note, error) {
 		return nil, err
 	}
 	return notes, nil
+}
+
+func (db *DB) GetNote(id uint) (*Note, error) {
+	var note Note
+	if err := db.First(&note, id).Error; err != nil {
+		return nil, err
+	}
+	return &note, nil
 }
 
 func (db *DB) DeleteNote(id uint) error {

@@ -2900,3 +2900,222 @@ func TestBankWithdrawImmature(t *testing.T) {
 		t.Errorf("deposits = %d, want 0 (fully consumed)", len(deps))
 	}
 }
+
+func TestDeleteItemAuditLogUsesName(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	item := &db.Item{CharacterID: ch.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(item)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/delete/", item.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "item_delete" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "item_delete")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Rope") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain item name 'Rope'", auditLog[0].Detail)
+	}
+	if strings.Contains(auditLog[0].Detail, fmt.Sprintf("%d", item.ID)) {
+		t.Errorf("AuditLog.Detail = %q, should not contain numeric item ID", auditLog[0].Detail)
+	}
+}
+
+func TestDeleteCompanionAuditLogUsesName(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID,
+		Name:        "Bessie",
+		Breed:       "Mule",
+		HPCurrent:   9,
+		HPMax:       9,
+	}
+	d.CreateCompanion(comp)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/companions/%d/delete/", comp.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "companion_delete" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "companion_delete")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Bessie") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain companion name 'Bessie'", auditLog[0].Detail)
+	}
+}
+
+func TestDeleteNoteAuditLogUsesContent(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	note := &db.Note{CharacterID: ch.ID, Content: "Remember to buy torches"}
+	d.CreateNote(note)
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/notes/%d/delete/", note.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(auditLog) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	}
+	if auditLog[0].Action != "note_delete" {
+		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "note_delete")
+	}
+	if !strings.Contains(auditLog[0].Detail, "Remember to buy torches") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain note content", auditLog[0].Detail)
+	}
+}
+
+func TestSplitItemAuditLogUsesHumanReadableDestination(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	backpack := &db.Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
+	d.CreateItem(backpack)
+
+	torches := &db.Item{CharacterID: ch.ID, Name: "Torches", Quantity: 6}
+	d.CreateItem(torches)
+
+	form := url.Values{}
+	form.Set("quantity", "3")
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", torches.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	var splitEntry *db.AuditLogEntry
+	for _, entry := range auditLog {
+		if entry.Action == "item_split" {
+			splitEntry = &entry
+			break
+		}
+	}
+	if splitEntry == nil {
+		t.Fatal("expected audit log entry with action 'item_split'")
+	}
+	if !strings.Contains(splitEntry.Detail, "Backpack") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain destination name 'Backpack'", splitEntry.Detail)
+	}
+	if strings.Contains(splitEntry.Detail, fmt.Sprintf("container:%d", backpack.ID)) {
+		t.Errorf("AuditLog.Detail = %q, should not contain raw 'container:ID' format", splitEntry.Detail)
+	}
+}
+
+func TestSplitCoinsAuditLogUsesHumanReadableDestination(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 50, Notes: "50gp"}
+	d.CreateItem(coins)
+
+	form := url.Values{}
+	form.Set("quantity", "25gp")
+	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID),
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	auditLog, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	var splitEntry *db.AuditLogEntry
+	for _, entry := range auditLog {
+		if entry.Action == "item_split" {
+			splitEntry = &entry
+			break
+		}
+	}
+	if splitEntry == nil {
+		t.Fatal("expected audit log entry with action 'item_split'")
+	}
+	if !strings.Contains(splitEntry.Detail, "Bessie") {
+		t.Errorf("AuditLog.Detail = %q, want it to contain destination name 'Bessie'", splitEntry.Detail)
+	}
+	if strings.Contains(splitEntry.Detail, fmt.Sprintf("companion:%d", comp.ID)) {
+		t.Errorf("AuditLog.Detail = %q, should not contain raw 'companion:ID' format", splitEntry.Detail)
+	}
+}

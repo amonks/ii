@@ -279,11 +279,16 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	itemID := atoui(r.PathValue("itemID"))
+	item, _ := s.db.GetItem(itemID)
 	if err := s.db.DeleteItem(itemID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "item_delete", fmt.Sprintf("item %d", itemID))
+	detail := "deleted item"
+	if item != nil {
+		detail = item.Name
+	}
+	s.addAuditLog(ch, "item_delete", detail)
 	s.renderInventory(w, r, ch)
 }
 
@@ -426,7 +431,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		s.addAuditLog(ch, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, moveTo))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, s.resolveMoveTargetLabel(moveTo)))
 	} else {
 		// Non-coin split: parse quantity as integer
 		qty := atoi(qtyStr)
@@ -478,7 +483,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		s.addAuditLog(ch, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, moveTo))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, s.resolveMoveTargetLabel(moveTo)))
 	}
 
 	s.renderInventory(w, r, ch)
@@ -581,11 +586,16 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	compID := atoui(r.PathValue("compID"))
+	comp, _ := s.db.GetCompanion(compID)
 	if err := s.db.DeleteCompanion(compID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "companion_delete", fmt.Sprintf("companion %d", compID))
+	detail := "deleted companion"
+	if comp != nil {
+		detail = comp.Name
+	}
+	s.addAuditLog(ch, "companion_delete", detail)
 	s.renderCompanions(w, r, ch)
 }
 
@@ -848,11 +858,16 @@ func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	noteID := atoui(r.PathValue("noteID"))
+	note, _ := s.db.GetNote(noteID)
 	if err := s.db.DeleteNote(noteID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "note_delete", fmt.Sprintf("note %d", noteID))
+	detail := "deleted note"
+	if note != nil {
+		detail = note.Content
+	}
+	s.addAuditLog(ch, "note_delete", detail)
 	s.renderNotes(w, r, ch)
 }
 
@@ -950,6 +965,30 @@ func (s *Server) handleBankWithdraw(w http.ResponseWriter, r *http.Request) {
 }
 
 // --- Helpers ---
+
+// resolveMoveTargetLabel resolves a move_to form value like "container:42"
+// or "companion:7" into a human-readable name like "Backpack" or "Bessie".
+func (s *Server) resolveMoveTargetLabel(moveTo string) string {
+	if moveTo == "equipped" || moveTo == "" {
+		return "Equipped"
+	}
+	if moveTo == "bank" {
+		return "Bank"
+	}
+	if after, ok := strings.CutPrefix(moveTo, "container:"); ok {
+		id := atoui(after)
+		if item, err := s.db.GetItem(id); err == nil {
+			return item.Name
+		}
+	}
+	if after, ok := strings.CutPrefix(moveTo, "companion:"); ok {
+		id := atoui(after)
+		if comp, err := s.db.GetCompanion(id); err == nil {
+			return comp.Name
+		}
+	}
+	return moveTo
+}
 
 func (s *Server) addAuditLog(ch *db.Character, action, detail string) {
 	s.db.AddAuditLog(ch.ID, action, detail, ch.CurrentDay)
