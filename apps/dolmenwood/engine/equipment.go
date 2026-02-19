@@ -162,6 +162,7 @@ var itemWeights = map[string]int{
 	// Horse accessories
 	"feed":                     100,
 	"horse barding":            600,
+	"canoe":                    500,
 	"pack saddle and bridle":   150,
 	"riding saddle and bridle": 300,
 	"riding saddle bags":       100,

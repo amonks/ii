@@ -2539,6 +2539,72 @@ func TestStoreCardShowsHorseBardingAC(t *testing.T) {
 	}
 }
 
+func TestStoreCardShowsHorseBardingWeight(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	start := strings.Index(body, "Horse barding")
+	if start == -1 {
+		t.Fatal("store should list horse barding")
+	}
+	segment := body[start:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected buy button after horse barding")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "600 cn") {
+		t.Error("horse barding should show weight")
+	}
+}
+
+func TestStoreCardShowsCanoeWeight(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	start := strings.Index(body, "Canoe")
+	if start == -1 {
+		t.Fatal("store should list canoe")
+	}
+	segment := body[start:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected buy button after canoe")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "500 cn") {
+		t.Error("canoe should show weight")
+	}
+}
+
 func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -2560,8 +2626,21 @@ func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 	if !strings.Contains(body, "Load 4000 cn") {
 		t.Error("store should show charger load capacity")
 	}
-	if !strings.Contains(body, "Cargo 10000 cn") {
+	cartStart := strings.Index(body, "Cart")
+	if cartStart == -1 {
+		t.Fatal("store should list cart")
+	}
+	segment := body[cartStart:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected buy button after cart")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "Cargo 10000 cn") {
 		t.Error("store should show cart cargo capacity")
+	}
+	if strings.Contains(segment, "<span>10000 cn</span>") {
+		t.Error("cart should not show weight when only cargo is defined")
 	}
 }
 
