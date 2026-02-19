@@ -57,7 +57,7 @@ type CharacterView struct {
 
 	// Bank
 	GameDay      int
-	CalendarDate engine.CalendarDate
+	CalendarDate engine.CalendarDisplay
 	BankDeposits []BankDepositView
 	BankTotalCP  int
 }
@@ -197,7 +197,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		return nil, err
 	}
 
-	calendarDate, err := engine.CalendarDateForGameDay(ch.CalendarStartDay, ch.CurrentDay)
+	calendarDate, err := engine.CalendarDisplayForGameDay(ch.CalendarStartDay, ch.CurrentDay)
 	if err != nil {
 		return nil, err
 	}

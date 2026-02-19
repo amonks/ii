@@ -80,28 +80,152 @@ func TestDateFromDayOfYearRejectsInvalidDay(t *testing.T) {
 }
 
 func TestCalendarDateForGameDay(t *testing.T) {
-	date, err := CalendarDateForGameDay(1, 1)
+	date, err := CalendarDisplayForGameDay(1, 1)
 	if err != nil {
-		t.Fatalf("CalendarDateForGameDay: %v", err)
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
 	}
-	if date.Month != 1 || date.Day != 1 || date.Year != 1 {
-		t.Errorf("date = %+v, want month 1 day 1 year 1", date)
+	if date.Date.Month != 1 || date.Date.Day != 1 || date.Date.Year != 1 {
+		t.Errorf("date = %+v, want month 1 day 1 year 1", date.Date)
+	}
+	if date.IsWysenday {
+		t.Errorf("expected non-wysenday for game day 1")
+	}
+	if date.Weekday != "Colly" {
+		t.Errorf("weekday = %q, want Colly", date.Weekday)
 	}
 
-	date, err = CalendarDateForGameDay(1, 31)
+	date, err = CalendarDisplayForGameDay(1, 29)
 	if err != nil {
-		t.Fatalf("CalendarDateForGameDay: %v", err)
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
 	}
-	if date.Month != 2 || date.Day != 1 || date.Year != 1 {
-		t.Errorf("date = %+v, want month 2 day 1 year 1", date)
+	if !date.IsWysenday {
+		t.Fatalf("expected wysenday for game day 29")
+	}
+	if date.Wysenday != "Hanglemas" {
+		t.Errorf("wysenday name = %q, want Hanglemas", date.Wysenday)
+	}
+	if date.Weekday != "Sunning" {
+		t.Errorf("weekday = %q, want Sunning", date.Weekday)
 	}
 
-	date, err = CalendarDateForGameDay(300, 60)
+	date, err = CalendarDisplayForGameDay(1, 30)
 	if err != nil {
-		t.Fatalf("CalendarDateForGameDay: %v", err)
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
 	}
-	if date.Year != 2 {
-		t.Errorf("date.Year = %d, want 2", date.Year)
+	if !date.IsWysenday {
+		t.Fatalf("expected wysenday for game day 30")
+	}
+	if date.Wysenday != "Dyboll's Day" {
+		t.Errorf("wysenday name = %q, want Dyboll's Day", date.Wysenday)
+	}
+	if date.Weekday != "Sunning" {
+		t.Errorf("weekday = %q, want Sunning", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 31)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Date.Month != 2 || date.Date.Day != 1 || date.Date.Year != 1 {
+		t.Errorf("date = %+v, want month 2 day 1 year 1", date.Date)
+	}
+	if date.Weekday != "Colly" {
+		t.Errorf("weekday = %q, want Colly", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 32)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Chime" {
+		t.Errorf("weekday = %q, want Chime", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 33)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Hayme" {
+		t.Errorf("weekday = %q, want Hayme", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 34)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Moot" {
+		t.Errorf("weekday = %q, want Moot", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 35)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Frisk" {
+		t.Errorf("weekday = %q, want Frisk", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 36)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Eggfast" {
+		t.Errorf("weekday = %q, want Eggfast", date.Weekday)
+	}
+	date, err = CalendarDisplayForGameDay(1, 37)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Sunning" {
+		t.Errorf("weekday = %q, want Sunning", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 38)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Colly" {
+		t.Errorf("weekday = %q, want Colly", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 39)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Chime" {
+		t.Errorf("weekday = %q, want Chime", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 40)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Hayme" {
+		t.Errorf("weekday = %q, want Hayme", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 41)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Moot" {
+		t.Errorf("weekday = %q, want Moot", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(1, 42)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Weekday != "Frisk" {
+		t.Errorf("weekday = %q, want Frisk", date.Weekday)
+	}
+
+	date, err = CalendarDisplayForGameDay(300, 60)
+	if err != nil {
+		t.Fatalf("CalendarDisplayForGameDay: %v", err)
+	}
+	if date.Date.Year != 2 {
+		t.Errorf("date.Year = %d, want 2", date.Date.Year)
 	}
 }
 

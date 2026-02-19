@@ -917,17 +917,16 @@ func (s *Server) handleUpdateCalendar(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	date, err := engine.CalendarDateForGameDay(ch.CalendarStartDay, ch.CurrentDay)
+	date, err := engine.CalendarDisplayForGameDay(ch.CalendarStartDay, ch.CurrentDay)
 	if err != nil {
 		http.Error(w, "Invalid calendar date", http.StatusBadRequest)
 		return
 	}
-	monthName, err := engine.MonthName(date.Month)
-	if err != nil {
-		http.Error(w, "Invalid calendar date", http.StatusBadRequest)
-		return
+	if date.IsWysenday {
+		s.addAuditLog(ch, "calendar_update", fmt.Sprintf("Calendar set to %s", date.Wysenday))
+	} else {
+		s.addAuditLog(ch, "calendar_update", fmt.Sprintf("Calendar set to %s %d", date.MonthName, day))
 	}
-	s.addAuditLog(ch, "calendar_update", fmt.Sprintf("Calendar set to %s %d", monthName, day))
 	s.renderSheetBody(w, r, ch)
 }
 
