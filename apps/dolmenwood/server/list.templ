@@ -14,8 +14,8 @@ templ CharacterList(characters []db.Character) {
 					for _, ch := range characters {
 						<a href={ templ.SafeURL(fmt.Sprintf("characters/%d/", ch.ID)) }
 							class="block bg-white rounded-lg shadow p-4 hover:bg-stone-50">
-							<div class="font-semibold text-stone-800">{ ch.Name }</div>
-							<div class={ classMutedText }>
+							<div class={ classItem }>{ ch.Name }</div>
+							<div class={ classItemLabel }>
 								Level { fmt.Sprintf("%d", ch.Level) } { ch.Kindred } { ch.Class }
 							</div>
 						</a>
@@ -28,61 +28,61 @@ templ CharacterList(characters []db.Character) {
 				@CardHeader("New Character")
 				<form method="POST" action="characters/" class="space-y-3">
 					<div>
-						<label class={ classFormLabel }>Name</label>
+						<label class={ "block " + classItem }>Name</label>
 						<input type="text" name="name" required
 							class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 					</div>
 					<div class="grid grid-cols-3 gap-2">
 						<div>
-							<label class={ classFormLabelSmall }>STR</label>
+							<label class={ "block " + classItemLabel }>STR</label>
 							<input type="number" name="str" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabelSmall }>DEX</label>
+							<label class={ "block " + classItemLabel }>DEX</label>
 							<input type="number" name="dex" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabelSmall }>CON</label>
+							<label class={ "block " + classItemLabel }>CON</label>
 							<input type="number" name="con" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabelSmall }>INT</label>
+							<label class={ "block " + classItemLabel }>INT</label>
 							<input type="number" name="int" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabelSmall }>WIS</label>
+							<label class={ "block " + classItemLabel }>WIS</label>
 							<input type="number" name="wis" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabelSmall }>CHA</label>
+							<label class={ "block " + classItemLabel }>CHA</label>
 							<input type="number" name="cha" value="10" min="3" max="18"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 					</div>
 					<div>
-						<label class={ classFormLabel }>Max HP</label>
+						<label class={ "block " + classItem }>Max HP</label>
 						<input type="number" name="hp_max" value="8" min="1"
 							class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 					</div>
 					<div class="grid grid-cols-2 gap-2">
 						<div>
-							<label class={ classFormLabel }>Alignment</label>
+							<label class={ "block " + classItem }>Alignment</label>
 							<input type="text" name="alignment" placeholder="Lawful"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 						<div>
-							<label class={ classFormLabel }>Background</label>
+							<label class={ "block " + classItem }>Background</label>
 							<input type="text" name="background"
 								class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 						</div>
 					</div>
 					<div>
-						<label class={ classFormLabel }>Liege</label>
+						<label class={ "block " + classItem }>Liege</label>
 						<input type="text" name="liege"
 							class="mt-1 block w-full rounded-md border-stone-300 shadow-sm text-sm"/>
 					</div>

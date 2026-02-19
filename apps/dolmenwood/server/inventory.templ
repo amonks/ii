@@ -6,12 +6,10 @@ import (
 )
 
 templ InventorySection(view *CharacterView) {
-	<div id="inventory" class="bg-white rounded-lg shadow p-4 space-y-12">
+	@Card("inventory") {
 		@CardHeader("Inventory")
 		<div class="space-y-5">
-			<div class="text-xs font-medium text-green-700 mb-4">
-				Equipped ({ fmt.Sprintf("%d / 10", view.EquippedSlots) } slots)
-			</div>
+			@SectionLabel(fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots))
 			for _, item := range view.EquippedItems {
 				@inventoryItem(item, view.MoveTargets, 0)
 			}
@@ -26,13 +24,7 @@ templ InventorySection(view *CharacterView) {
 		</div>
 		for _, cg := range view.CompanionGroups {
 			<div class="space-y-5">
-				<div class="text-xs font-medium text-amber-700 mb-4">
-					{ cg.Companion.Name }
-					if cg.Companion.Breed != "" {
-						({ cg.Companion.Breed })
-					}
-					({ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots)
-				</div>
+				@SectionLabel(companionInventoryLabel(cg))
 				for _, item := range cg.Items {
 					@inventoryItem(item, view.MoveTargets, 0)
 				}
@@ -56,7 +48,7 @@ templ InventorySection(view *CharacterView) {
 				}
 			}
 		}
-	</div>
+	}
 }
 
 templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
@@ -68,7 +60,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 					<span class="text-xs bg-yellow-50 text-yellow-700 rounded-full px-1.5">{ item.Notes }</span>
 				}
 			} else {
-				<span class={ classItemName }>{ item.Name }</span>
+				<span class={ classItem }>{ item.Name }</span>
 			}
 			if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
 				@Badge(fmt.Sprintf("%dx", item.Quantity))
@@ -160,14 +152,14 @@ templ EncumbranceSection(view *CharacterView) {
 		}
 		<div class="space-y-2 text-sm">
 			<div>
-				<div class={ "flex justify-between mb-0.5 " + classSubtext }>
+				<div class={ "flex justify-between mb-0.5 " + classItemLabel }>
 					<span>Equipped</span>
 					<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
 				</div>
 				@speedChart(EquippedSpeedChart(view.EquippedSlots))
 			</div>
 			<div>
-				<div class={ "flex justify-between mb-0.5 " + classSubtext }>
+				<div class={ "flex justify-between mb-0.5 " + classItemLabel }>
 					<span>
 						Stowed
 						if view.StowedCapacity == 0 {
@@ -182,17 +174,17 @@ templ EncumbranceSection(view *CharacterView) {
 				</div>
 				@speedChart(StowedSpeedChart(view.TotalStowedSlots))
 				if len(view.StowedContainers) > 0 {
-					<div class={ classSubtext + " mt-0.5" }>
+					<div class={ classItemLabel + " mt-0.5" }>
 						for _, c := range view.StowedContainers {
 							<span class="mr-2">{ c.Name }: { fmt.Sprintf("%d", c.Slots) }</span>
 						}
 						if view.StowedCapacity < 16 {
-							<span class={ classSubtext }>(max 16)</span>
+							<span class={ classItemLabel }>(max 16)</span>
 						}
 					</div>
 				}
 			</div>
-			<div class={ "flex justify-between pt-1 " + classSubtext }>
+			<div class={ "flex justify-between pt-1 " + classItemLabel }>
 				<div class="flex gap-2">
 					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-green-500"></span>40&apos;</span>
 					<span class="flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm bg-amber-400"></span>30&apos;</span>
@@ -202,12 +194,21 @@ templ EncumbranceSection(view *CharacterView) {
 			</div>
 			for _, cg := range view.CompanionGroups {
 				<div class="flex justify-between border-t border-stone-100 pt-1">
-					<span class="text-amber-700">{ cg.Companion.Name }</span>
+					<span class={ classItemLabel }>{ cg.Companion.Name }</span>
 					<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
 				</div>
 			}
 		</div>
 	}
+}
+
+func companionInventoryLabel(cg CompanionInventory) string {
+	label := cg.Companion.Name
+	if cg.Companion.Breed != "" {
+		label += " (" + cg.Companion.Breed + ")"
+	}
+	label += fmt.Sprintf(" (%d / %d slots)", cg.UsedSlots, cg.Companion.LoadCapacity)
+	return label
 }
 
 templ speedChart(cells []SpeedChartCell) {

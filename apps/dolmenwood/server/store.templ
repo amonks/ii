@@ -12,8 +12,8 @@ templ StoreSection(view *CharacterView) {
 					for _, item := range group.Items {
 						@ItemRow() {
 							<div class="min-w-0">
-								<div class={ classItemName }>{ item.Name }</div>
-								<div class={ classSubtext + " flex flex-wrap gap-2" }>
+								<div class={ classItem }>{ item.Name }</div>
+								<div class={ classItemLabel + " flex flex-wrap gap-2" }>
 									if item.CostCoinLabel != "" {
 										<span>{ item.CostCoinLabel }</span>
 									}

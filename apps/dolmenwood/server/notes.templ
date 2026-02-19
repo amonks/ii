@@ -9,7 +9,7 @@ templ NotesSection(view *CharacterView) {
 			<div class="space-y-1">
 				for _, note := range view.Notes {
 					<div class="flex items-start justify-between text-sm py-1 border-b border-stone-100">
-						<span class={ classItemName }>{ note.Content }</span>
+						<span class={ classItem }>{ note.Content }</span>
 						<form hx-post={ fmt.Sprintf("notes/%d/delete/", note.ID) }
 							hx-target="#notes" hx-swap="outerHTML"
 							class="ml-2">

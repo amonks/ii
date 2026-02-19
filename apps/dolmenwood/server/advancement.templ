@@ -6,7 +6,7 @@ templ AdvancementSection(view *CharacterView) {
 	if view.AdvancementTable != nil {
 		@Card("advancement") {
 			@CardHeader("Advancement")
-			<div class={ classSubtext }>{ view.AdvancementTable.Title }</div>
+			<div class={ classItemLabel }>{ view.AdvancementTable.Title }</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs text-stone-600 border-collapse">
 					<thead>

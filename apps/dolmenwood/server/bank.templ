@@ -5,15 +5,15 @@ import "fmt"
 templ BankSection(view *CharacterView) {
 	@Card("bank") {
 		@CardHeaderRow("Bank") {
-			<span class={ classMutedText }>~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited</span>
+			<span class={ classItemLabel }>~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited</span>
 		}
 		if len(view.BankDeposits) > 0 {
 			<div class="space-y-1">
 				for _, dep := range view.BankDeposits {
 					@ItemRow() {
-						<span class={ classItemName }>
+						<span class={ classItem }>
 							{ dep.CoinNotes }
-							<span class={ classSubtext + " ml-1" }>(day { fmt.Sprintf("%d", dep.DepositDay) })</span>
+							<span class={ classItemLabel + " ml-1" }>(day { fmt.Sprintf("%d", dep.DepositDay) })</span>
 						</span>
 						<span>
 							if dep.IsMature {
@@ -26,7 +26,7 @@ templ BankSection(view *CharacterView) {
 				}
 			</div>
 		} else {
-			<p class={ classEmptyText }>No deposits</p>
+			<p class={ classItemLabel }>No deposits</p>
 		}
 		<form hx-post="bank/withdraw/"
 			hx-target="#sheet-body" hx-swap="innerHTML"

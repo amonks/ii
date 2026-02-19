@@ -8,12 +8,12 @@ import (
 templ StatsSection(view *CharacterView) {
 	@Card("stats") {
 		@CardHeaderRow(view.Character.Name) {
-			<span class={ classMutedText }>
+			<span class={ classItemLabel }>
 				Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
 			</span>
 		}
 		if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
-			<div class={ classSubtext + " space-x-2" }>
+			<div class={ classItemLabel + " space-x-2" }>
 				if view.Character.Alignment != "" {
 					<span>{ view.Character.Alignment }</span>
 				}
@@ -36,7 +36,7 @@ templ StatsSection(view *CharacterView) {
 		</div>
 		<div class="grid grid-cols-3 gap-2 text-center text-sm">
 			<div class="bg-stone-50 rounded p-2">
-				<div class={ classSubtext }>HP</div>
+				<div class={ classItemLabel }>HP</div>
 				<div class="font-bold">
 					<span id="hp-display">{ fmt.Sprintf("%d", view.Character.HPCurrent) }</span>/{ fmt.Sprintf("%d", view.Character.HPMax) }
 				</div>
@@ -46,31 +46,31 @@ templ StatsSection(view *CharacterView) {
 					<input type="number" name="hp_current"
 						value={ fmt.Sprintf("%d", view.Character.HPCurrent) }
 						class={ "w-12 text-center " + classFormInputSmall }/>
-					<span class={ classSubtext }>/</span>
+					<span class={ classItemLabel }>/</span>
 					@BtnSecondary("Set")
 				</form>
 			</div>
 			<div class="bg-stone-50 rounded p-2">
-				<div class={ classSubtext }>AC</div>
+				<div class={ classItemLabel }>AC</div>
 				<div class="font-bold">{ fmt.Sprintf("%d", view.AC) }</div>
 				if view.ArmorName != "" {
-					<div class={ classSubtext }>{ view.ArmorName }</div>
+					<div class={ classItemLabel }>{ view.ArmorName }</div>
 				}
 				if view.ShieldName != "" {
-					<div class={ classSubtext }>{ view.ShieldName }</div>
+					<div class={ classItemLabel }>{ view.ShieldName }</div>
 				}
 			</div>
 			<div class="bg-stone-50 rounded p-2">
-				<div class={ classSubtext }>Atk</div>
+				<div class={ classItemLabel }>Atk</div>
 				<div class="font-bold">+{ fmt.Sprintf("%d", view.AttackBonus) }</div>
 				if len(view.Weapons) > 0 {
 					for _, w := range view.Weapons {
-						<div class={ classSubtext }>{ w.Name } { w.Damage }</div>
+						<div class={ classItemLabel }>{ w.Name } { w.Damage }</div>
 					}
 				}
 			</div>
 		</div>
-		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML" class={ "flex flex-wrap items-center gap-2 " + classSubtext }>
+		<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML" class={ "flex flex-wrap items-center gap-2 " + classItemLabel }>
 			<span>Birthday</span>
 			<select name="birthday_month" class={ classFormInputSmall + " px-2 py-1" }>
 				<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
@@ -138,9 +138,9 @@ templ StatsSection(view *CharacterView) {
 
 templ abilityBox(label string, score int) {
 	<div class="bg-stone-50 rounded p-1">
-		<div class={ classSubtext }>{ label }</div>
+		<div class={ classItemLabel }>{ label }</div>
 		<div class="font-bold text-sm">{ fmt.Sprintf("%d", score) }</div>
-		<div class={ classSubtext }>
+		<div class={ classItemLabel }>
 			{ formatMod(engine.Modifier(score)) }
 		</div>
 	</div>
@@ -148,7 +148,7 @@ templ abilityBox(label string, score int) {
 
 templ saveBox(label string, target int) {
 	<div class="bg-stone-50 rounded p-1">
-		<div class={ classSubtext }>{ label }</div>
+		<div class={ classItemLabel }>{ label }</div>
 		<div class="font-bold">{ fmt.Sprintf("%d", target) }+</div>
 	</div>
 }
