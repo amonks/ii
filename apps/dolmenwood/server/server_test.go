@@ -2833,6 +2833,45 @@ func TestStoreBuyRejectsTamperedItemID(t *testing.T) {
 	}
 }
 
+func TestStoreBuyUsesPurseOnly(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		FoundGP: 1,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 1, Notes: "1gp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("rope", 100))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+
+	items, err := d.ListItems(ch.ID)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("items = %d, want 1", len(items))
+	}
+	if items[0].Name != "Coins" {
+		t.Fatalf("item name = %q, want %q", items[0].Name, "Coins")
+	}
+	if items[0].Notes != "1gp" {
+		t.Fatalf("coin notes = %q, want %q", items[0].Notes, "1gp")
+	}
+}
+
 func TestStoreBuyUsesChangeMaking(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

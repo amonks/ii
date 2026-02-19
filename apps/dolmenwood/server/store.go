@@ -119,12 +119,14 @@ func (s *Server) buyStoreItem(ch *db.Character, name string, costCP int) error {
 		return fmt.Errorf("no coins available")
 	}
 	coinNotes := engine.ParseCoinNotes(coinItem.Notes)
-	purseCP := coinPurseCPValue(coinNotes)
+	inventoryCP := coinPurseCPValue(coinNotes)
+	foundCP := foundTreasureCP(ch)
+	purseCP := inventoryCP - foundCP
 	if purseCP < costCP {
 		return fmt.Errorf("insufficient coins")
 	}
-	remainingCP := purseCP - costCP
-	remainingCoins := minCoinCounts(remainingCP)
+	remainingInventoryCP := inventoryCP - costCP
+	remainingCoins := minCoinCounts(remainingInventoryCP)
 	newNotes := engine.FormatCoinNotes(map[engine.CoinType]int{
 		engine.PP: remainingCoins.PP,
 		engine.GP: remainingCoins.GP,
@@ -158,6 +160,9 @@ func (s *Server) buyStoreItem(ch *db.Character, name string, costCP int) error {
 	return nil
 }
 
+func foundTreasureCP(ch *db.Character) int {
+	return ch.FoundCP + ch.FoundSP*10 + ch.FoundEP*50 + ch.FoundGP*100 + ch.FoundPP*500
+}
 
 func coinPurseCPValue(coins map[engine.CoinType]int) int {
 	cp := coins[engine.CP]
