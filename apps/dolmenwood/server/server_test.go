@@ -2441,6 +2441,38 @@ func TestStoreCardShowsItems(t *testing.T) {
 	}
 }
 
+func TestStoreCardListsHorseSupplies(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Charger") {
+		t.Error("store should list charger horse")
+	}
+	if !strings.Contains(body, "Horse barding") {
+		t.Error("store should list horse barding")
+	}
+	if !strings.Contains(body, "Feed") {
+		t.Error("store should list feed")
+	}
+	if !strings.Contains(body, "5cp") {
+		t.Error("store should show feed cost in copper")
+	}
+}
+
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {
 		t.Fatal("expected rope to have no bundle size")

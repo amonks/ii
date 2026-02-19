@@ -435,7 +435,14 @@ func buildStoreGroups() []StoreGroup {
 		{
 			Title: "Horses and Vehicles",
 			Items: []StoreItem{
+				storeItem("Charger", 25000, "250gp"),
+				storeItem("Dapple-doff", 4000, "40gp"),
+				storeItem("Hop-clopper", 8000, "80gp"),
 				storeItem("Mule", 3000, "30gp"),
+				storeItem("Prigwort prancer", 7500, "75gp"),
+				storeItem("Yellow-flank", 25000, "250gp"),
+				storeItem("Feed", 5, "5cp"),
+				storeItem("Horse barding", 15000, "150gp"),
 				storeItem("Pack saddle and bridle", 1000, "10gp"),
 				storeItem("Riding saddle and bridle", 2500, "25gp"),
 				storeItem("Riding saddle bags", 500, "5gp"),
