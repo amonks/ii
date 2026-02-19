@@ -80,8 +80,7 @@ type Store struct {
 	client       *jj.Client
 	readOnly     bool
 	wsRelease    func() error
-	lockFile     *os.File
-	lockFilePath string
+	lockFile *os.File
 }
 
 // Snapshotter records workspace changes.
@@ -189,14 +188,14 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		}, nil
 	}
 
-	lockFile, lockFilePath, err := acquireTodoLock(repoPath)
+	lockFile, err := acquireTodoLock(repoPath)
 	if err != nil {
 		return nil, err
 	}
 
 	pool, err := workspace.Open()
 	if err != nil {
-		releaseTodoLock(lockFile, lockFilePath)
+		releaseTodoLock(lockFile)
 		return nil, fmt.Errorf("open workspace pool: %w", err)
 	}
 
@@ -204,7 +203,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	// the store in this workspace, then edit to it.
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: purpose, SkipHooks: true})
 	if err != nil {
-		releaseTodoLock(lockFile, lockFilePath)
+		releaseTodoLock(lockFile)
 		return nil, fmt.Errorf("acquire workspace: %w", err)
 	}
 
@@ -212,7 +211,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	if !hasBookmark {
 		if err := createTodoStore(client, wsPath); err != nil {
 			pool.Release(wsPath)
-			releaseTodoLock(lockFile, lockFilePath)
+			releaseTodoLock(lockFile)
 			return nil, fmt.Errorf("create todo store: %w", err)
 		}
 	}
@@ -220,7 +219,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 	// Edit to the bookmark
 	if err := client.Edit(wsPath, BookmarkName); err != nil {
 		pool.Release(wsPath)
-		releaseTodoLock(lockFile, lockFilePath)
+		releaseTodoLock(lockFile)
 		return nil, fmt.Errorf("edit to todo store: %w", err)
 	}
 
@@ -241,8 +240,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		wsRelease: func() error {
 			return pool.Release(wsPath)
 		},
-		lockFile:     lockFile,
-		lockFilePath: lockFilePath,
+		lockFile: lockFile,
 	}, nil
 }
 
@@ -251,10 +249,10 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 func (s *Store) Release() error {
 	if s.wsRelease != nil {
 		releaseErr := s.wsRelease()
-		lockErr := releaseTodoLock(s.lockFile, s.lockFilePath)
+		lockErr := releaseTodoLock(s.lockFile)
 		return errors.Join(releaseErr, lockErr)
 	}
-	return releaseTodoLock(s.lockFile, s.lockFilePath)
+	return releaseTodoLock(s.lockFile)
 }
 
 // createTodoStore creates the orphan change and bookmark for the todo store.
@@ -816,38 +814,37 @@ func snapshotStore(store *Store) error {
 	return store.snapshot.Snapshot(store.wsPath)
 }
 
-func acquireTodoLock(repoPath string) (*os.File, string, error) {
+func acquireTodoLock(repoPath string) (*os.File, error) {
 	stateDir, err := paths.DefaultStateDir()
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	if err := os.MkdirAll(stateDir, 0o755); err != nil {
-		return nil, "", fmt.Errorf("create todo lock dir: %w", err)
+		return nil, fmt.Errorf("create todo lock dir: %w", err)
 	}
 	lockName := fmt.Sprintf("todo-%s.lock", statestore.SanitizeRepoName(repoPath))
 	lockPath := filepath.Join(stateDir, lockName)
 	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
-		return nil, "", fmt.Errorf("open todo lock file: %w", err)
+		return nil, fmt.Errorf("open todo lock file: %w", err)
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
 		_ = file.Close()
-		return nil, "", fmt.Errorf("lock todo store: %w", err)
+		return nil, fmt.Errorf("lock todo store: %w", err)
 	}
-	return file, lockPath, nil
+	return file, nil
 }
 
-func releaseTodoLock(file *os.File, path string) error {
+func releaseTodoLock(file *os.File) error {
 	if file == nil {
 		return nil
 	}
 	unlockErr := syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 	closeErr := file.Close()
-	// Remove the lock file to avoid accumulating stale lock files,
-	// especially when tests use temporary directories with unique paths.
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return errors.Join(unlockErr, closeErr, err)
-	}
+	// Do NOT remove the lock file. Flock operates on inodes, not paths.
+	// Removing the path allows a new opener to create a different inode
+	// and acquire a "lock" that doesn't conflict with any existing holder,
+	// breaking mutual exclusion.
 	return errors.Join(unlockErr, closeErr)
 }
 
