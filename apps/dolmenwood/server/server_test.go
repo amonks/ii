@@ -21,6 +21,51 @@ func setupTest(t *testing.T) (*Server, *db.DB) {
 	return srv, d
 }
 
+
+func parseStatSpeedValues(t *testing.T, body string) map[string]string {
+	t.Helper()
+	segments := strings.Split(body, "bg-stone-50 rounded p-1")
+	if len(segments) < 2 {
+		t.Fatalf("expected speed boxes in stats card, got %d segments", len(segments))
+	}
+	values := map[string]string{}
+	for _, seg := range segments {
+		labelIdx := strings.Index(seg, "text-stone-500")
+		if labelIdx == -1 {
+			continue
+		}
+		labelStart := strings.Index(seg[labelIdx:], ">")
+		if labelStart == -1 {
+			continue
+		}
+		labelStart += labelIdx + 1
+		labelEnd := strings.Index(seg[labelStart:], "<")
+		if labelEnd == -1 {
+			continue
+		}
+		label := strings.TrimSpace(seg[labelStart : labelStart+labelEnd])
+		valueIdx := strings.Index(seg, "font-bold")
+		if valueIdx == -1 {
+			continue
+		}
+		valueStart := strings.Index(seg[valueIdx:], ">")
+		if valueStart == -1 {
+			continue
+		}
+		valueStart += valueIdx + 1
+		valueEnd := strings.Index(seg[valueStart:], "<")
+		if valueEnd == -1 {
+			continue
+		}
+		value := strings.TrimSpace(seg[valueStart : valueStart+valueEnd])
+		value = strings.TrimSuffix(value, "&#39;")
+		if label != "" {
+			values[label] = value
+		}
+	}
+	return values
+}
+
 func TestGetIndex(t *testing.T) {
 	srv, _ := setupTest(t)
 	mux := srv.Mux()
@@ -93,14 +138,13 @@ func TestGetCharacterSheet(t *testing.T) {
 	}
 }
 
-func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
+func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
 	ch := &db.Character{
-		Name: "Trait Test", Class: "Knight", Kindred: "Human",
-		Level: 5, STR: 16, DEX: 10, CON: 12, INT: 10, WIS: 10, CHA: 13,
-		HPCurrent: 8, HPMax: 8,
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
 	}
 	d.CreateCharacter(ch)
 
@@ -111,20 +155,30 @@ func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
+
 	body := w.Body.String()
-	if !strings.Contains(body, "Traits") {
-		t.Error("response should contain traits section")
+	for _, label := range []string{
+		"Scores",
+		"Saves",
+		"Speed",
+		"Encounter",
+		"Exploration (unknown)",
+		"Exploration (mapped)",
+		"Running",
+		"Overland",
+	} {
+		if !strings.Contains(body, label) {
+			t.Errorf("response should contain %q", label)
+		}
 	}
-	if !strings.Contains(body, "Spirited") {
-		t.Error("response should contain human trait 'Spirited'")
-	}
-	if !strings.Contains(body, "+10% XP") {
-		t.Error("response should describe the human XP bonus")
-	}
-	if !strings.Contains(body, "Horsemanship") {
-		t.Error("response should contain knight trait 'Horsemanship'")
+	values := parseStatSpeedValues(t, body)
+	for label, value := range map[string]string{"Encounter": "40", "Exploration (unknown)": "120", "Exploration (mapped)": "400", "Overland": "8 tp/day"} {
+		if values[label] != value {
+			t.Errorf("speed %s = %q, want %q", label, values[label], value)
+		}
 	}
 }
+
 
 func TestACDerivedFromEquippedItems(t *testing.T) {
 	srv, d := setupTest(t)

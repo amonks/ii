@@ -76,6 +76,16 @@ A modifier applied to Saving Throws against effects of magical origin, determine
 
 The speed at which a character can move when exploring, travelling, or during combat. See [Time and Movement](time_and_movement).
 
+**Encounter:** Speed per Round in feet during encounters or combat.
+
+**Exploration (unknown):** Speed × 3 per Turn in unknown areas.
+
+**Exploration (mapped):** Speed × 10 per Turn in familiar, mapped areas.
+
+**Running:** Speed × 3 per Round when fleeing or pursuing.
+
+**Overland:** Speed ÷ 5 Travel Points per day when moving overland.
+
 **Default Speed:** The default Speed for characters is 40. This may be adjusted by the amount of gear and treasure a character is carrying. See [Encumbrance](encumbrance).
 
 ## Skills

@@ -13,6 +13,7 @@ templ StatsSection(view *CharacterView) {
 				Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
 			</span>
 		</div>
+		<div class="text-xs font-semibold text-stone-500 uppercase">Scores</div>
 		<div class="grid grid-cols-6 gap-1 text-center">
 			@abilityBox("STR", view.Character.STR)
 			@abilityBox("DEX", view.Character.DEX)
@@ -21,7 +22,7 @@ templ StatsSection(view *CharacterView) {
 			@abilityBox("WIS", view.Character.WIS)
 			@abilityBox("CHA", view.Character.CHA)
 		</div>
-		<div class="grid grid-cols-4 gap-2 text-center text-sm">
+		<div class="grid grid-cols-3 gap-2 text-center text-sm">
 			<div class="bg-stone-50 rounded p-2">
 				<div class="text-xs text-stone-500">HP</div>
 				<div class="font-bold">
@@ -52,11 +53,16 @@ templ StatsSection(view *CharacterView) {
 					}
 				}
 			</div>
-			<div class="bg-stone-50 rounded p-2">
-				<div class="text-xs text-stone-500">Speed</div>
-				<div class="font-bold">{ fmt.Sprintf("%d", view.Speed) }&apos;</div>
-			</div>
 		</div>
+		<div class="text-xs font-semibold text-stone-500 uppercase">Speed</div>
+		<div class="grid grid-cols-5 gap-1 text-center text-xs">
+			@speedBox("Encounter", fmt.Sprintf("%d'", view.SpeedEncounter))
+			@speedBox("Exploration (unknown)", fmt.Sprintf("%d'", view.SpeedExplorationUnknown))
+			@speedBox("Exploration (mapped)", fmt.Sprintf("%d'", view.SpeedExplorationMapped))
+			@speedBox("Running", fmt.Sprintf("%d'", view.SpeedRunning))
+			@speedBox("Overland", fmt.Sprintf("%d tp/day", view.SpeedOverland))
+		</div>
+		<div class="text-xs font-semibold text-stone-500 uppercase">Saves</div>
 		if view.MagicResistance != 0 {
 			<div class="grid grid-cols-6 gap-1 text-center text-xs">
 				@saveBox("Death", view.Saves.Death)
@@ -135,5 +141,12 @@ templ statBox(label string, value int) {
 	<div class="bg-stone-50 rounded p-1">
 		<div class="text-stone-500">{ label }</div>
 		<div class="font-bold">{ formatMod(value) }</div>
+	</div>
+}
+
+templ speedBox(label string, value string) {
+	<div class="bg-stone-50 rounded p-1">
+		<div class="text-stone-500">{ label }</div>
+		<div class="font-bold">{ value }</div>
 	</div>
 }

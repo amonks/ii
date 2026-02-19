@@ -27,23 +27,28 @@ type CharacterView struct {
 	Saves            engine.SaveTargets
 	Traits           engine.Traits
 	Speed            int
-	EquippedSlots    int
-	StowedSlots      int
-	TotalStowedSlots int
-	StowedCapacity   int
-	StowedContainers []engine.ContainerInfo
-	XPModPercent     int
-	KindredTraits    []engine.Trait
-	ClassTraits      []engine.Trait
-	XPToNext         int
-	NewLevel         int
-	CanLevelUp       bool
-	PurseCoins       map[string]int // computed: inventory coins minus found treasure
-	PurseGPValue     int            // computed: inventory GP value minus found GP value
-	FoundGPValue     int
-	InventoryCoins   map[string]int // coin counts from inventory items, keyed by CoinType
-	InventoryGPValue int            // total GP value of all inventory coin items
-	BreedNames       []string
+	SpeedEncounter          int
+	SpeedExplorationUnknown int
+	SpeedExplorationMapped  int
+	SpeedRunning            int
+	SpeedOverland           int
+	EquippedSlots           int
+	StowedSlots             int
+	TotalStowedSlots        int
+	StowedCapacity          int
+	StowedContainers        []engine.ContainerInfo
+	XPModPercent            int
+	KindredTraits           []engine.Trait
+	ClassTraits             []engine.Trait
+	XPToNext                int
+	NewLevel                int
+	CanLevelUp              bool
+	PurseCoins              map[string]int // computed: inventory coins minus found treasure
+	PurseGPValue            int            // computed: inventory GP value minus found GP value
+	FoundGPValue            int
+	InventoryCoins          map[string]int // coin counts from inventory items, keyed by CoinType
+	InventoryGPValue        int            // total GP value of all inventory coin items
+	BreedNames              []string
 
 	// Inventory tree
 	EquippedItems   []InventoryItem
@@ -279,6 +284,14 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
 	moveTargets := buildMoveTargets(items, compViews)
 
+	// Compute speed breakdowns
+	speed := engine.SpeedFromSlots(equipped, totalStowed)
+	speedEncounter := speed
+	speedExplorationUnknown := speed * 3
+	speedExplorationMapped := speed * 10
+	speedRunning := speed * 3
+	speedOverland := speed / 5
+
 	return &CharacterView{
 		Character:        ch,
 		Items:            items,
@@ -294,30 +307,35 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),
 		Saves:            engine.KnightSaveTargets(ch.Level),
 		Traits:           engine.KnightTraits(ch.Level),
-		Speed:            engine.SpeedFromSlots(equipped, totalStowed),
-		EquippedSlots:    equipped,
-		StowedSlots:      stowed,
-		TotalStowedSlots: totalStowed,
-		StowedCapacity:   stowedCap,
-		StowedContainers: stowedContainers,
-		XPModPercent:     xpMod,
-		KindredTraits:    engine.KindredTraits(ch.Kindred, ch.Level),
-		ClassTraits:      engine.ClassTraits(ch.Class, ch.Level),
-		XPToNext:         engine.XPToNextLevel(ch.Level, ch.TotalXP),
-		NewLevel:         newLevel,
-		CanLevelUp:       canLevelUp,
-		PurseCoins:       purseCoins,
-		PurseGPValue:     inventoryGPValue - foundGPValue,
-		FoundGPValue:     foundGPValue,
-		InventoryCoins:   inventoryCoins,
-		InventoryGPValue: inventoryGPValue,
-		BreedNames:       engine.BreedNames(),
-		EquippedItems:    equippedTree,
-		CompanionGroups:  compGroups,
-		MoveTargets:      moveTargets,
-		GameDay:          ch.CurrentDay,
-		BankDeposits:     bankDepositViews,
-		BankTotalCP:      bankTotalCP,
+		Speed:                   speed,
+		SpeedEncounter:          speedEncounter,
+		SpeedExplorationUnknown: speedExplorationUnknown,
+		SpeedExplorationMapped:  speedExplorationMapped,
+		SpeedRunning:            speedRunning,
+		SpeedOverland:           speedOverland,
+		EquippedSlots:           equipped,
+		StowedSlots:             stowed,
+		TotalStowedSlots:        totalStowed,
+		StowedCapacity:          stowedCap,
+		StowedContainers:        stowedContainers,
+		XPModPercent:            xpMod,
+		KindredTraits:           engine.KindredTraits(ch.Kindred, ch.Level),
+		ClassTraits:             engine.ClassTraits(ch.Class, ch.Level),
+		XPToNext:                engine.XPToNextLevel(ch.Level, ch.TotalXP),
+		NewLevel:                newLevel,
+		CanLevelUp:              canLevelUp,
+		PurseCoins:              purseCoins,
+		PurseGPValue:            inventoryGPValue - foundGPValue,
+		FoundGPValue:            foundGPValue,
+		InventoryCoins:          inventoryCoins,
+		InventoryGPValue:        inventoryGPValue,
+		BreedNames:              engine.BreedNames(),
+		EquippedItems:           equippedTree,
+		CompanionGroups:         compGroups,
+		MoveTargets:             moveTargets,
+		GameDay:                 ch.CurrentDay,
+		BankDeposits:            bankDepositViews,
+		BankTotalCP:             bankTotalCP,
 	}, nil
 }
 
