@@ -71,13 +71,17 @@ func (s *Server) handleUpdateHP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	oldHP := ch.HPCurrent
+	oldHPCurrent := ch.HPCurrent
+	oldHPMax := ch.HPMax
 	ch.HPCurrent = atoi(r.FormValue("hp_current"))
+	if hpMax := r.FormValue("hp_max"); hpMax != "" {
+		ch.HPMax = atoi(hpMax)
+	}
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "hp_change", fmt.Sprintf("HP %d → %d", oldHP, ch.HPCurrent))
+	s.addAuditLog(ch, "hp_change", fmt.Sprintf("HP %d/%d → %d/%d", oldHPCurrent, oldHPMax, ch.HPCurrent, ch.HPMax))
 	s.renderStats(w, r, ch)
 }
 

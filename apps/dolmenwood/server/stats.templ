@@ -43,9 +43,13 @@ templ StatsSection(view *CharacterView) {
 				</div>
 				<form hx-post="hp/"
 					hx-target="#stats" hx-swap="outerHTML"
-					class="flex gap-1 mt-1">
+					class="flex gap-1 mt-1 items-center">
 					<input type="number" name="hp_current"
 						value={ fmt.Sprintf("%d", view.Character.HPCurrent) }
+						class="w-12 text-xs text-center rounded border-stone-300"/>
+					<span class="text-xs text-stone-500">/</span>
+					<input type="number" name="hp_max"
+						value={ fmt.Sprintf("%d", view.Character.HPMax) }
 						class="w-12 text-xs text-center rounded border-stone-300"/>
 					<button type="submit" class="text-xs bg-stone-200 rounded px-1">Set</button>
 				</form>
