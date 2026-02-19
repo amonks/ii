@@ -21,7 +21,9 @@ type CharacterView struct {
 	// Computed fields
 	AC               int
 	ArmorName        string
+	ArmorAC          int
 	ShieldName       string
+	ShieldAC         int
 	AttackBonus      int
 	Weapons          []engine.EquippedWeapon
 	MagicResistance  int
@@ -311,9 +313,17 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	}
 
 	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
+	armorAC := 0
+	if armorName != "" {
+		if armor, ok := engine.ArmorStats(armorName); ok {
+			armorAC = armor.AC
+		}
+	}
 	shieldName := ""
+	shieldAC := 0
 	if _, hasShield := engine.ArmorContributors(engineItems); hasShield {
 		shieldName = "Shield"
+		shieldAC = 1
 	}
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
@@ -359,7 +369,9 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		AuditLog:         auditLog,
 		AC:               ac,
 		ArmorName:        armorName,
+		ArmorAC:          armorAC,
 		ShieldName:       shieldName,
+		ShieldAC:         shieldAC,
 		AttackBonus:      engine.KnightAttackBonus(ch.Level),
 		Weapons:          engine.EquippedWeapons(engineItems),
 		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),

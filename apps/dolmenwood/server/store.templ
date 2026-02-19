@@ -6,60 +6,61 @@ templ StoreSection(view *CharacterView) {
 	@Card("store") {
 		@Heading() { Store }
 		for _, group := range view.StoreGroups {
-			@SpacerLg() {
+			@CardSection() {
 				@SectionHeader() { { group.Title } }
-				@Spacer() {
-					for _, item := range group.Items {
-						@Row() {
-							<div>
-								@TextBlock() { { item.Name } }
-								@Cluster() {
-									if item.CostCoinLabel != "" {
-										@Label() { { item.CostCoinLabel } }
-									}
-									if item.Weight > 0 {
-										@Label() { { fmt.Sprintf("%d cn", item.Weight) } }
-									}
-									if item.Bulk > 0 {
-										@Label() { { fmt.Sprintf("%d slots", item.Bulk) } }
-									}
-									if item.AC > 0 {
-										@Label() { AC { fmt.Sprintf("%d", item.AC) } }
-									}
-									if item.Damage != "" {
-										@Label() { { item.Damage } }
-									}
-									if item.Qualities != "" {
-										@Label() { { item.Qualities } }
-									}
-									if item.Load > 0 {
-										@Label() { { fmt.Sprintf("Load %d cn", item.Load) } }
-									}
-									if item.Cargo > 0 {
-										@Label() { { fmt.Sprintf("Cargo %d cn", item.Cargo) } }
-									}
-									if item.Capacity > 0 {
-										@Label() { { fmt.Sprintf("Capacity %d slots", item.Capacity) } }
-									}
+				for _, item := range group.Items {
+					@Row() {
+						<div>
+							@TextBlock() { { item.Name } }
+							@Cluster() {
+								if item.CostCoinLabel != "" {
+									@Label() { { item.CostCoinLabel } }
 								}
-							</div>
-							<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML">
-								<input type="hidden" name="item_id" value={ item.ID }/>
-								@BtnPrimary() { Buy }
-							</form>
-						}
+								if item.Weight > 0 {
+									@Label() { { fmt.Sprintf("%d cn", item.Weight) } }
+								}
+								if item.Bulk > 0 {
+									@Label() { { fmt.Sprintf("%d slots", item.Bulk) } }
+								}
+								if item.AC > 0 {
+									@Label() { AC { fmt.Sprintf("%d", item.AC) } }
+								}
+								if item.Damage != "" {
+									@Label() { { item.Damage } }
+								}
+								if item.Qualities != "" {
+									@Label() { { item.Qualities } }
+								}
+								if item.Load > 0 {
+									@Label() { { fmt.Sprintf("Load %d cn", item.Load) } }
+								}
+								if item.Cargo > 0 {
+									@Label() { { fmt.Sprintf("Cargo %d cn", item.Cargo) } }
+								}
+								if item.Capacity > 0 {
+									@Label() { { fmt.Sprintf("Capacity %d slots", item.Capacity) } }
+								}
+							}
+						</div>
+						<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML">
+							<input type="hidden" name="item_id" value={ item.ID }/>
+							@BtnPrimary() { Buy }
+						</form>
 					}
 				}
 			}
 		}
 		if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
-			@Details() {
-				@Summary() { Store Log }
-				@DetailsBody() {
-					for _, entry := range entries {
-						@LogEntry() {
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
+			@CardSection() {
+				@SectionHeader() { Store Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
 						}
 					}
 				}

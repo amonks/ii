@@ -16,17 +16,17 @@ templ CharacterSheet(view *CharacterView) {
 templ SheetBody(view *CharacterView) {
 	@VStack() {
 		@DayCounter(view)
-	@StatsSection(view)
-	@TraitsSection(view)
-	@InventorySection(view)
-	@EncumbranceSection(view)
-	@CompanionsSection(view)
-	@WealthSection(view)
-	@BankSection(view)
-	@XPSection(view)
-	@NotesSection(view)
-	@AdvancementSection(view)
-	@StoreSection(view)
+		@StatsSection(view)
+		@TraitsSection(view)
+		@InventorySection(view)
+		@EncumbranceSection(view)
+		@CompanionsSection(view)
+		@WealthSection(view)
+		@BankSection(view)
+		@XPSection(view)
+		@NotesSection(view)
+		@AdvancementSection(view)
+		@StoreSection(view)
 	}
 }
 
@@ -50,39 +50,41 @@ templ DayCounter(view *CharacterView) {
 				}
 			</form>
 		}
-		<form hx-post="calendar/" hx-target="#sheet-body" hx-swap="innerHTML">
-			@FormRowWrap() {
-				@Text() { Calendar }
-				@InlineFormActions() {
-					<label>Day</label>
-					@FormInputSmallCenterWide(templ.Attributes{
-						"type": "number",
-						"name": "calendar_day",
-						"value": fmt.Sprintf("%d", view.CalendarDate.Date.Day),
-						"min": "1",
-						"max": "31",
-					})
-				}
-				@InlineFormActions() {
-					<label>Month</label>
-					@FormSelectSmall(templ.Attributes{"name": "calendar_month"}) {
-						<option value="1" if view.CalendarDate.Date.Month == 1 { selected }>Grimvold</option>
-						<option value="2" if view.CalendarDate.Date.Month == 2 { selected }>Lymewald</option>
-						<option value="3" if view.CalendarDate.Date.Month == 3 { selected }>Haggryme</option>
-						<option value="4" if view.CalendarDate.Date.Month == 4 { selected }>Symswald</option>
-						<option value="5" if view.CalendarDate.Date.Month == 5 { selected }>Harchment</option>
-						<option value="6" if view.CalendarDate.Date.Month == 6 { selected }>Iggwyld</option>
-						<option value="7" if view.CalendarDate.Date.Month == 7 { selected }>Chysting</option>
-						<option value="8" if view.CalendarDate.Date.Month == 8 { selected }>Lillipythe</option>
-						<option value="9" if view.CalendarDate.Date.Month == 9 { selected }>Haelhold</option>
-						<option value="10" if view.CalendarDate.Date.Month == 10 { selected }>Reedwryme</option>
-						<option value="11" if view.CalendarDate.Date.Month == 11 { selected }>Obthryme</option>
-						<option value="12" if view.CalendarDate.Date.Month == 12 { selected }>Braghold</option>
+		@CardSection() {
+			@SectionHeader() { Calendar }
+			<form hx-post="calendar/" hx-target="#sheet-body" hx-swap="innerHTML">
+				@FormRowWrap() {
+					@InlineFormActions() {
+						<label>Day</label>
+						@FormInputSmallCenterWide(templ.Attributes{
+							"type": "number",
+							"name": "calendar_day",
+							"value": fmt.Sprintf("%d", view.CalendarDate.Date.Day),
+							"min": "1",
+							"max": "31",
+						})
 					}
+					@InlineFormActions() {
+						<label>Month</label>
+						@FormSelectSmall(templ.Attributes{"name": "calendar_month"}) {
+							<option value="1" if view.CalendarDate.Date.Month == 1 { selected }>Grimvold</option>
+							<option value="2" if view.CalendarDate.Date.Month == 2 { selected }>Lymewald</option>
+							<option value="3" if view.CalendarDate.Date.Month == 3 { selected }>Haggryme</option>
+							<option value="4" if view.CalendarDate.Date.Month == 4 { selected }>Symswald</option>
+							<option value="5" if view.CalendarDate.Date.Month == 5 { selected }>Harchment</option>
+							<option value="6" if view.CalendarDate.Date.Month == 6 { selected }>Iggwyld</option>
+							<option value="7" if view.CalendarDate.Date.Month == 7 { selected }>Chysting</option>
+							<option value="8" if view.CalendarDate.Date.Month == 8 { selected }>Lillipythe</option>
+							<option value="9" if view.CalendarDate.Date.Month == 9 { selected }>Haelhold</option>
+							<option value="10" if view.CalendarDate.Date.Month == 10 { selected }>Reedwryme</option>
+							<option value="11" if view.CalendarDate.Date.Month == 11 { selected }>Obthryme</option>
+							<option value="12" if view.CalendarDate.Date.Month == 12 { selected }>Braghold</option>
+						}
+					}
+					@BtnSecondary() { Set }
 				}
-				@BtnSecondary() { Set }
-			}
-		</form>
+			</form>
+		}
 	}
 }
 

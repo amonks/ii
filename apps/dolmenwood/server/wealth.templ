@@ -5,59 +5,68 @@ import "fmt"
 templ WealthSection(view *CharacterView) {
 	@Card("wealth") {
 		@Heading() { Wealth }
-		@InfoBox() {
-			@LabelBlockMb() { Total Coins (~{ fmt.Sprintf("%d", view.InventoryGPValue) } GP) }
-			@coinDisplay(view.InventoryCoins["cp"], view.InventoryCoins["sp"], view.InventoryCoins["ep"], view.InventoryCoins["gp"], view.InventoryCoins["pp"])
-		}
-		@Grid(2) {
+		@CardSection() {
+			@SectionHeader() { Overview }
 			@InfoBox() {
-				@LabelBlockMb() { Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP) }
-				@coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"])
+				@LabelBlockMb() { Total Coins (~{ fmt.Sprintf("%d", view.InventoryGPValue) } GP) }
+				@coinDisplay(view.InventoryCoins["cp"], view.InventoryCoins["sp"], view.InventoryCoins["ep"], view.InventoryCoins["gp"], view.InventoryCoins["pp"])
 			}
-			@WarningBox() {
-				@LabelBlockMb() { Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP) }
-				@coinDisplay(view.Character.FoundCP, view.Character.FoundSP, view.Character.FoundEP, view.Character.FoundGP, view.Character.FoundPP)
+			@Grid(2) {
+				@InfoBox() {
+					@LabelBlockMb() { Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP) }
+					@coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"])
+				}
+				@WarningBox() {
+					@LabelBlockMb() { Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP) }
+					@coinDisplay(view.Character.FoundCP, view.Character.FoundSP, view.Character.FoundEP, view.Character.FoundGP, view.Character.FoundPP)
+				}
 			}
 		}
-		<form hx-post="treasure/" hx-target="#sheet-body" hx-swap="innerHTML">
-			@FormRow() {
-				@FormInput(templ.Attributes{"name": "entry", "placeholder": "50g dragon hoard", "required": true})
-				@BtnAction("found", templ.Attributes{"name": "type", "value": "found"}) { Found }
-				@BtnAction("purse", templ.Attributes{"name": "type", "value": "purse"}) { Purse }
+		@CardSection() {
+			@SectionHeader() { Treasure }
+			<form hx-post="treasure/" hx-target="#sheet-body" hx-swap="innerHTML">
+				@FormRow() {
+					@FormInput(templ.Attributes{"name": "entry", "placeholder": "50g dragon hoard", "required": true})
+					@BtnAction("found", templ.Attributes{"name": "type", "value": "found"}) { Found }
+					@BtnAction("purse", templ.Attributes{"name": "type", "value": "purse"}) { Purse }
+				}
+			</form>
+			@BtnWide("success", templ.Attributes{
+				"hx-post": "return-to-safety/",
+				"hx-target": "#sheet-body",
+				"hx-swap": "innerHTML",
+				"hx-confirm": "Return to safety? This will convert all found treasure to XP and move coins to your purse.",
+			}) {
+				Return to Safety
 			}
-		</form>
-		@BtnWide("success", templ.Attributes{
-			"hx-post": "return-to-safety/",
-			"hx-target": "#sheet-body",
-			"hx-swap": "innerHTML",
-			"hx-confirm": "Return to safety? This will convert all found treasure to XP and move coins to your purse.",
-		}) {
-			Return to Safety
 		}
 		if len(view.Transactions) > 0 {
-			@Details() {
-				@Summary() { Transaction Log }
-				@DetailsBody() {
-					for _, tx := range view.Transactions {
-						@LogEntry() {
-							<span>
-								{ fmt.Sprintf("%d", tx.Amount) } { tx.CoinType }
-								if tx.Description != "" {
-									— { tx.Description }
-								}
-							</span>
-							@Cluster() {
+			@CardSection() {
+				@SectionHeader() { Transaction Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, tx := range view.Transactions {
+							@LogEntry() {
 								<span>
-									if tx.IsFoundTreasure {
-										found
-									} else {
-										purse
+									{ fmt.Sprintf("%d", tx.Amount) } { tx.CoinType }
+									if tx.Description != "" {
+										— { tx.Description }
 									}
 								</span>
-								<form hx-post={ fmt.Sprintf("treasure/%d/undo/", tx.ID) }
-									hx-target="#sheet-body" hx-swap="innerHTML">
-									@BtnDelete()
-								</form>
+								@Cluster() {
+									<span>
+										if tx.IsFoundTreasure {
+											found
+										} else {
+											purse
+										}
+									</span>
+									<form hx-post={ fmt.Sprintf("treasure/%d/undo/", tx.ID) }
+										hx-target="#sheet-body" hx-swap="innerHTML">
+										@BtnDelete()
+									</form>
+								}
 							}
 						}
 					}

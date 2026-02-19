@@ -348,8 +348,14 @@ func TestACDerivedFromEquippedItems(t *testing.T) {
 	if !strings.Contains(body, "Chainmail") {
 		t.Error("response should show armor name 'Chainmail'")
 	}
+	if !strings.Contains(body, "(+14)") {
+		t.Error("response should show chainmail AC contribution (+14)")
+	}
 	if !strings.Contains(body, "Shield") {
 		t.Error("response should show shield name 'Shield'")
+	}
+	if !strings.Contains(body, "(+1)") {
+		t.Error("response should show shield AC contribution (+1)")
 	}
 }
 
@@ -2368,8 +2374,8 @@ func TestInventorySpacing(t *testing.T) {
 	if !strings.Contains(body, "bg-white rounded-lg shadow p-4 space-y-3") {
 		t.Error("inventory should use Card component")
 	}
-	if !strings.Contains(body, "class=\"space-y-5\"") {
-		t.Error("inventory lists should have more space between title and items")
+	if !strings.Contains(body, "pt-10 space-y-2") {
+		t.Error("inventory lists should use CardSection for separation")
 	}
 	if !strings.Contains(body, "text-xs font-semibold text-stone-500 uppercase") {
 		t.Error("inventory list title should use SectionLabel")

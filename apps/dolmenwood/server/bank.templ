@@ -8,8 +8,9 @@ templ BankSection(view *CharacterView) {
 			@Heading() { Bank }
 			@Label() { ~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited }
 		}
-		if len(view.BankDeposits) > 0 {
-			@Spacer() {
+		@CardSection() {
+			@SectionHeader() { Deposits }
+			if len(view.BankDeposits) > 0 {
 				for _, dep := range view.BankDeposits {
 					@Row() {
 						<span>
@@ -25,24 +26,30 @@ templ BankSection(view *CharacterView) {
 						</span>
 					}
 				}
+			} else {
+				@LabelMuted() { No deposits }
 			}
-		} else {
-			@LabelMuted() { No deposits }
 		}
-		<form hx-post="bank/withdraw/" hx-target="#sheet-body" hx-swap="innerHTML">
-			@FormRow() {
-				@FormInput(templ.Attributes{"name": "coins", "placeholder": "5gp", "required": true})
-				@BtnAction("withdraw", templ.Attributes{}) { Withdraw }
-			}
-		</form>
+		@CardSection() {
+			@SectionHeader() { Withdraw }
+			<form hx-post="bank/withdraw/" hx-target="#sheet-body" hx-swap="innerHTML">
+				@FormRow() {
+					@FormInput(templ.Attributes{"name": "coins", "placeholder": "5gp", "required": true})
+					@BtnAction("withdraw", templ.Attributes{}) { Withdraw }
+				}
+			</form>
+		}
 		if entries := filterAuditLog(view.AuditLog, "bank_deposit", "bank_withdraw"); len(entries) > 0 {
-			@Details() {
-				@Summary() { Bank Log }
-				@DetailsBody() {
-					for _, entry := range entries {
-						@LogEntry() {
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
+			@CardSection() {
+				@SectionHeader() { Bank Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
 						}
 					}
 				}

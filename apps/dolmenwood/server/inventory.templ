@@ -8,7 +8,7 @@ import (
 templ InventorySection(view *CharacterView) {
 	@Card("inventory") {
 		@Heading() { Inventory }
-		@SpacerXl() {
+		@CardSection() {
 			@SectionHeader() { { fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots) } }
 			for _, item := range view.EquippedItems {
 				@inventoryItem(item, view.MoveTargets, 0)
@@ -22,7 +22,7 @@ templ InventorySection(view *CharacterView) {
 			</form>
 		}
 		for _, cg := range view.CompanionGroups {
-			@SpacerXl() {
+			@CardSection() {
 				@SectionHeader() { { companionInventoryLabel(cg) } }
 				for _, item := range cg.Items {
 					@inventoryItem(item, view.MoveTargets, 0)
@@ -37,13 +37,16 @@ templ InventorySection(view *CharacterView) {
 			}
 		}
 		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "item_split"); len(entries) > 0 {
-			@Details() {
-				@Summary() { Item Log }
-				@DetailsBody() {
-					for _, entry := range entries {
-						@LogEntry() {
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
+			@CardSection() {
+				@SectionHeader() { Item Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
 						}
 					}
 				}
@@ -160,40 +163,43 @@ templ EncumbranceSection(view *CharacterView) {
 			@Heading() { Encumbrance }
 			@HeadingValue() { { fmt.Sprintf("%d", view.Speed) }&apos; }
 		}
-		@SpacerLg() {
-			<div>
-				@SpeedRow() {
-					<span>Equipped</span>
-					<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
+		@CardSection() {
+			@SectionHeader() { Equipped }
+			@SpeedRow() {
+				<span>Slots</span>
+				<span>{ fmt.Sprintf("%d / 10", view.EquippedSlots) }</span>
+			}
+			@speedChart(EquippedSpeedChart(view.EquippedSlots))
+		}
+		@CardSection() {
+			@SectionHeader() { Stowed }
+			@SpeedRow() {
+				<span>
+					Slots
+					if view.StowedCapacity == 0 {
+						@Accent("redMuted") { (no container) }
+					}
+				</span>
+				if view.StowedCapacity > 0 {
+					<span>{ fmt.Sprintf("%d / %d", view.TotalStowedSlots, view.StowedCapacity) }</span>
+				} else {
+					<span>{ fmt.Sprintf("%d", view.TotalStowedSlots) }</span>
 				}
-				@speedChart(EquippedSpeedChart(view.EquippedSlots))
-			</div>
-			<div>
-				@SpeedRow() {
-					<span>
-						Stowed
-						if view.StowedCapacity == 0 {
-							@Accent("redMuted") { (no container) }
-						}
-					</span>
-					if view.StowedCapacity > 0 {
-						<span>{ fmt.Sprintf("%d / %d", view.TotalStowedSlots, view.StowedCapacity) }</span>
-					} else {
-						<span>{ fmt.Sprintf("%d", view.TotalStowedSlots) }</span>
+			}
+			@speedChart(StowedSpeedChart(view.TotalStowedSlots))
+			if len(view.StowedContainers) > 0 {
+				@SpeedContainerInfo() {
+					for _, c := range view.StowedContainers {
+						<span>{ c.Name }: { fmt.Sprintf("%d", c.Slots) } </span>
+					}
+					if view.StowedCapacity < 16 {
+						@Label() { (max 16) }
 					}
 				}
-				@speedChart(StowedSpeedChart(view.TotalStowedSlots))
-				if len(view.StowedContainers) > 0 {
-					@SpeedContainerInfo() {
-						for _, c := range view.StowedContainers {
-							<span>{ c.Name }: { fmt.Sprintf("%d", c.Slots) } </span>
-						}
-						if view.StowedCapacity < 16 {
-							@Label() { (max 16) }
-						}
-					}
-				}
-			</div>
+			}
+		}
+		@CardSection() {
+			@SectionHeader() { Legend }
 			@SpeedLegend() {
 				@LegendSwatch("bg-green-500") { 40&apos; }
 				@LegendSwatch("bg-amber-400") { 30&apos; }

@@ -6,7 +6,8 @@ templ NotesSection(view *CharacterView) {
 	@Card("notes") {
 		@Heading() { Notes }
 		if len(view.Notes) > 0 {
-			@Spacer() {
+			@CardSection() {
+				@SectionHeader() { All Notes }
 				for _, note := range view.Notes {
 					@RowStart() {
 						@Text() { { note.Content } }
@@ -18,20 +19,26 @@ templ NotesSection(view *CharacterView) {
 				}
 			}
 		}
-		<form hx-post="notes/" hx-target="#notes" hx-swap="outerHTML">
-			@FormRow() {
-				@FormInput(templ.Attributes{"name": "content", "placeholder": "Add a note...", "required": true})
-				@BtnPrimary() { + }
-			}
-		</form>
+		@CardSection() {
+			@SectionHeader() { Add Note }
+			<form hx-post="notes/" hx-target="#notes" hx-swap="outerHTML">
+				@FormRow() {
+					@FormInput(templ.Attributes{"name": "content", "placeholder": "Add a note...", "required": true})
+					@BtnPrimary() { + }
+				}
+			</form>
+		}
 		if entries := filterAuditLog(view.AuditLog, "note_add", "note_delete"); len(entries) > 0 {
-			@Details() {
-				@Summary() { Notes Log }
-				@DetailsBody() {
-					for _, entry := range entries {
-						@LogEntry() {
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
+			@CardSection() {
+				@SectionHeader() { Notes Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
 						}
 					}
 				}

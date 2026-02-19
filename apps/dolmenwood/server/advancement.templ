@@ -6,27 +6,29 @@ templ AdvancementSection(view *CharacterView) {
 	if view.AdvancementTable != nil {
 		@Card("advancement") {
 			@Heading() { Advancement }
-			@LabelBlock() { { view.AdvancementTable.Title } }
-			@DataTable() {
-				@StyledTable() {
-					<thead>
-						@THeadRow() {
-							for _, header := range view.AdvancementTable.Headers {
-								@THeadCell() { { header } }
+			@CardSection() {
+				@SectionHeader() { { view.AdvancementTable.Title } }
+				@DataTable() {
+					@StyledTable() {
+						<thead>
+							@THeadRow() {
+								for _, header := range view.AdvancementTable.Headers {
+									@THeadCell() { { header } }
+								}
 							}
-						}
-					</thead>
-					<tbody>
-						for _, row := range view.AdvancementTable.Rows {
-							@TRow(row[0] == fmt.Sprintf("%d", view.Character.Level)) {
-								for _, cell := range row {
-									@TCell(row[0] == fmt.Sprintf("%d", view.Character.Level)) {
-										{ cell }
+						</thead>
+						<tbody>
+							for _, row := range view.AdvancementTable.Rows {
+								@TRow(row[0] == fmt.Sprintf("%d", view.Character.Level)) {
+									for _, cell := range row {
+										@TCell(row[0] == fmt.Sprintf("%d", view.Character.Level)) {
+											{ cell }
+										}
 									}
 								}
 							}
-						}
-					</tbody>
+						</tbody>
+					}
 				}
 			}
 		}

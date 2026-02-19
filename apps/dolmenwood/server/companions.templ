@@ -7,7 +7,7 @@ templ CompanionsSection(view *CharacterView) {
 		@Heading() { Companions }
 		if len(view.Companions) > 0 {
 			for _, comp := range view.Companions {
-				@SpacerLg() {
+				@CardSection() {
 					@Header() {
 						@SectionHeader() { { comp.Breed } }
 						<form hx-post={ fmt.Sprintf("companions/%d/delete/", comp.ID) }
@@ -97,26 +97,32 @@ templ CompanionsSection(view *CharacterView) {
 		} else {
 			@LabelMuted() { No companions. }
 		}
-		<form hx-post="companions/" hx-target="#companions" hx-swap="outerHTML">
-			@FormRow() {
-				@FormInput(templ.Attributes{"name": "name", "placeholder": "Name", "required": true})
-				@FormSelect(templ.Attributes{"name": "breed", "required": true}) {
-					<option value="" disabled selected>Breed</option>
-					for _, breed := range view.BreedNames {
-						<option value={ breed }>{ breed }</option>
+		@CardSection() {
+			@SectionHeader() { Add Companion }
+			<form hx-post="companions/" hx-target="#companions" hx-swap="outerHTML">
+				@FormRow() {
+					@FormInput(templ.Attributes{"name": "name", "placeholder": "Name", "required": true})
+					@FormSelect(templ.Attributes{"name": "breed", "required": true}) {
+						<option value="" disabled selected>Breed</option>
+						for _, breed := range view.BreedNames {
+							<option value={ breed }>{ breed }</option>
+						}
 					}
+					@BtnPrimary() { + }
 				}
-				@BtnPrimary() { + }
-			}
-		</form>
+			</form>
+		}
 		if entries := filterAuditLog(view.AuditLog, "companion_add", "companion_delete", "companion_update"); len(entries) > 0 {
-			@Details() {
-				@Summary() { Companion Log }
-				@DetailsBody() {
-					for _, entry := range entries {
-						@LogEntry() {
-							<span>{ entry.Detail }</span>
-							@auditDate(entry)
+			@CardSection() {
+				@SectionHeader() { Companion Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
 						}
 					}
 				}

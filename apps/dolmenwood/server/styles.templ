@@ -20,6 +20,13 @@ templ Section() {
 	</div>
 }
 
+// CardSection — major subsection within a card, separated by generous whitespace.
+templ CardSection() {
+	<div class="pt-10 space-y-2 first:pt-4">
+		{ children... }
+	</div>
+}
+
 // InfoBox — stone-50 secondary container.
 templ InfoBox() {
 	<div class="bg-stone-50 rounded p-3">
@@ -296,9 +303,9 @@ templ LabelMutedLg() {
 	</p>
 }
 
-// SectionHeader — uppercase divider label.
+// SectionHeader — uppercase divider label (used as first child of CardSection).
 templ SectionHeader() {
-	<div class="text-xs font-semibold text-stone-500 uppercase">
+	<div class="text-xs font-semibold text-stone-500 uppercase tracking-wide pb-3">
 		{ children... }
 	</div>
 }
