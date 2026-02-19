@@ -1,0 +1,51 @@
+package server
+
+import "fmt"
+
+templ AdvancementSection(view *CharacterView) {
+	if view.AdvancementTable != nil {
+		<div id="advancement" class="bg-white rounded-lg shadow p-4 space-y-3">
+			<h2 class="font-bold text-stone-800">Advancement</h2>
+			<div class="text-xs text-stone-500">{ view.AdvancementTable.Title }</div>
+			<div class="overflow-x-auto">
+				<table class="w-full text-xs text-stone-600 border-collapse">
+					<thead>
+						<tr class="border-b border-stone-200">
+							for _, header := range view.AdvancementTable.Headers {
+								<th class="text-left font-semibold py-1 pr-2 text-stone-700">{ header }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range view.AdvancementTable.Rows {
+							<tr class={ advancementRowClass(view.Character.Level, row) }>
+								for i, cell := range row {
+									<td class={ advancementCellClass(view.Character.Level, row, i) }>{ cell }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
+}
+
+func advancementRowClass(level int, row []string) string {
+	class := "border-b border-stone-100"
+	if row[0] == fmt.Sprintf("%d", level) {
+		class += " bg-stone-50"
+	}
+	return class
+}
+
+func advancementCellClass(level int, row []string, index int) string {
+	class := "py-1 pr-2"
+	if row[0] == fmt.Sprintf("%d", level) {
+		class += " font-semibold text-stone-800"
+	}
+	if index == 0 {
+		class += " text-stone-700"
+	}
+	return class
+}

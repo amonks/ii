@@ -136,6 +136,18 @@ func TestGetCharacterSheet(t *testing.T) {
 	if !strings.Contains(body, "Sir Galahad") {
 		t.Error("response should contain character name")
 	}
+	if !strings.Contains(body, "Advancement") {
+		t.Error("response should contain advancement card")
+	}
+	if !strings.Contains(body, "Knight Advancement") {
+		t.Error("response should contain advancement table title")
+	}
+	if !strings.Contains(body, "Level") {
+		t.Error("response should contain advancement headers")
+	}
+	if !strings.Contains(body, "1d8") {
+		t.Error("response should contain advancement table values")
+	}
 }
 
 func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {

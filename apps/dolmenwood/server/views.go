@@ -27,6 +27,7 @@ type CharacterView struct {
 	MagicResistance  int
 	Saves            engine.SaveTargets
 	Traits           engine.Traits
+	AdvancementTable *engine.AdvancementTable
 	Speed                   int
 	SpeedEncounter          int
 	SpeedExplorationUnknown int
@@ -294,6 +295,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	}
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
 	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
+	var advancementTable *engine.AdvancementTable
+	if table, ok := engine.AdvancementTableForClass(ch.Class); ok {
+		advancementTable = &table
+	}
 
 	// Build bank deposit views
 	var bankDepositViews []BankDepositView
@@ -337,6 +342,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),
 		Saves:            engine.KnightSaveTargets(ch.Level),
 		Traits:           engine.KnightTraits(ch.Level),
+		AdvancementTable: advancementTable,
 		Speed:                   speed,
 		SpeedEncounter:          speedEncounter,
 		SpeedExplorationUnknown: speedExplorationUnknown,
