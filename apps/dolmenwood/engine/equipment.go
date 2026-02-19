@@ -34,7 +34,8 @@ var weapons = map[string]Weapon{
 	"sling":            {Damage: "1d4", Qualities: "Missile", Weight: 10},
 	"spear":            {Damage: "1d6", Qualities: "Brace, Melee, Missile", Weight: 30},
 	"staff":            {Damage: "1d4", Qualities: "Melee, Two-handed", Weight: 40},
-	"two-handed sword": {Damage: "1d10", Qualities: "Melee, Two-handed", Weight: 140},
+	"torch (flaming)":     {Damage: "1d4", Qualities: "Melee", Weight: 10},
+	"two-handed sword":    {Damage: "1d10", Qualities: "Melee, Two-handed", Weight: 140},
 	"war hammer":       {Damage: "1d6", Qualities: "Melee", Weight: 40},
 }
 

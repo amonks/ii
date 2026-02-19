@@ -2532,6 +2532,63 @@ func TestStoreCardShowsHorseAndVehicleStats(t *testing.T) {
 	}
 }
 
+
+func TestStoreCardShowsTorchCombatStats(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	adventuringStart := strings.Index(body, "Adventuring Gear")
+	if adventuringStart == -1 {
+		t.Fatal("store should list adventuring gear")
+	}
+	weaponsStart := strings.Index(body, "Weapons")
+	if weaponsStart == -1 {
+		t.Fatal("store should list weapons")
+	}
+	if weaponsStart < adventuringStart {
+		t.Fatal("expected weapons to appear after adventuring gear")
+	}
+	ammoStart := strings.Index(body, "Ammunition")
+	if ammoStart == -1 {
+		t.Fatal("store should list ammunition")
+	}
+	adventuringSegment := body[adventuringStart:weaponsStart]
+	if strings.Contains(adventuringSegment, "Torches") {
+		t.Fatal("torches should not be listed under adventuring gear")
+	}
+	weaponSegment := body[weaponsStart:ammoStart]
+	torchStart := strings.Index(weaponSegment, "Torches")
+	if torchStart == -1 {
+		t.Fatal("store should list torches under weapons")
+	}
+	segment := weaponSegment[torchStart:]
+	end := strings.Index(segment, "Buy</button>")
+	if end == -1 {
+		t.Fatal("expected to find buy button after torches")
+	}
+	segment = segment[:end]
+	if !strings.Contains(segment, "1d4") {
+		t.Error("torches should show damage")
+	}
+	if !strings.Contains(segment, "Melee") {
+		t.Error("torches should show melee quality")
+	}
+}
+
 func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -2550,11 +2607,20 @@ func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	start := strings.Index(body, "Holy water")
-	if start == -1 {
-		t.Fatal("store should list holy water")
+	adventuringStart := strings.Index(body, "Adventuring Gear")
+	if adventuringStart == -1 {
+		t.Fatal("store should list adventuring gear")
 	}
-	segment := body[start:]
+	weaponsStart := strings.Index(body, "Weapons")
+	if weaponsStart == -1 {
+		t.Fatal("store should list weapons")
+	}
+	adventuringSegment := body[adventuringStart:weaponsStart]
+	waterStart := strings.Index(adventuringSegment, "Holy water")
+	if waterStart == -1 {
+		t.Fatal("store should list holy water under adventuring gear")
+	}
+	segment := adventuringSegment[waterStart:]
 	end := strings.Index(segment, "Buy</button>")
 	if end == -1 {
 		t.Fatal("expected to find buy button after holy water")
@@ -2563,11 +2629,13 @@ func TestStoreCardShowsHolyWaterCombatStats(t *testing.T) {
 	if !strings.Contains(segment, "1d8") {
 		t.Error("holy water should show damage")
 	}
+	if !strings.Contains(segment, "Missile") {
+		t.Error("holy water should show missile quality")
+	}
 	if !strings.Contains(segment, "Splash") {
 		t.Error("holy water should show splash quality")
 	}
 }
-
 
 func TestStoreBuyDeductsCoinsAndAddsItem(t *testing.T) {
 	if engine.ItemBundleSize("Rope") != 0 {

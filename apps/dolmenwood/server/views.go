@@ -424,7 +424,6 @@ func buildStoreGroups() []StoreGroup {
 				storeItem("Lantern (bullseye)", 1000, "10gp"),
 				storeItem("Oil", 100, "1gp"),
 				storeItem("Tinder box", 300, "3gp"),
-				storeItem("Torches", 100, "1gp"),
 				storeItem("Bedroll", 200, "2gp"),
 				storeItem("Cooking pots", 300, "3gp"),
 				storeItem("Firewood", 100, "1gp"),
@@ -494,6 +493,7 @@ func buildStoreGroups() []StoreGroup {
 				storeItem("Sling", 200, "2gp"),
 				storeItem("Spear", 300, "3gp"),
 				storeItem("Staff", 200, "2gp"),
+				storeItem("Torches", 100, "1gp"),
 				storeItem("Two-handed sword", 1500, "15gp"),
 				storeItem("War hammer", 500, "5gp"),
 			},
@@ -663,6 +663,8 @@ func storeWeaponName(name string) string {
 		return "holy water vial"
 	case "oil":
 		return "oil flask (burning)"
+	case "torches":
+		return "torch (flaming)"
 	default:
 		return name
 	}
