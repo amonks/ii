@@ -2492,6 +2492,12 @@ func TestStoreCardCollapsedAndOrderedBelowInventory(t *testing.T) {
 	if strings.Contains(storeSegment, "<details open") {
 		t.Error("store card should be collapsed by default")
 	}
+	if !strings.Contains(storeSegment, "Rope") {
+		t.Error("store card should list rope")
+	}
+	if !strings.Contains(storeSegment, "Buy </button>") {
+		t.Error("store card should include buy actions")
+	}
 }
 
 func TestStoreCardListsAdventuringGear(t *testing.T) {
