@@ -236,7 +236,7 @@ func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 	if len(values) == 0 {
 		t.Fatalf("expected speed values to be parsed")
 	}
-	for label, value := range map[string]string{"Encounter": "40", "Exploration (unknown)": "120", "Exploration (mapped)": "400", "Running": "120", "Overland": "8 tp/day"} {
+	for label, value := range map[string]string{"Encounter": "40&#39; / rnd", "Exploration (unknown)": "120&#39; / turn", "Exploration (mapped)": "400&#39; / turn", "Running": "120&#39; / rnd", "Overland": "8 tp/day"} {
 		if values[label] != value {
 			t.Errorf("speed %s = %q, want %q", label, values[label], value)
 		}

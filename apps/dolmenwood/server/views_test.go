@@ -58,6 +58,57 @@ func TestWealthViewAggregatesCoinItems(t *testing.T) {
 	}
 }
 
+func TestSaveBonusesInView(t *testing.T) {
+	_, d := setupTest(t)
+
+	// Mossling Knight born under Maiden's moon Full should have save bonuses from
+	// kindred (Resilience), class (Strength of Will), and moon sign.
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Mossling",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		BirthdayMonth: "Chysting", BirthdayDay: 18, // Maiden's moon Full
+	}
+	d.CreateCharacter(ch)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	sources := map[string]bool{}
+	for _, b := range view.SaveBonuses {
+		sources[b.Source] = true
+	}
+	if !sources["Resilience"] {
+		t.Error("expected Resilience save bonus for Mossling")
+	}
+	if !sources["Strength of Will"] {
+		t.Error("expected Strength of Will save bonus for Knight")
+	}
+	if !sources["Moon Sign"] {
+		t.Error("expected Moon Sign save bonus for Maiden's moon Full")
+	}
+}
+
+func TestSaveBonusesInViewNoBirthday(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Fighter", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.SaveBonuses) != 0 {
+		t.Errorf("expected no save bonuses for Human Fighter with no birthday, got %d", len(view.SaveBonuses))
+	}
+}
+
 func TestItemIsTiny(t *testing.T) {
 	tests := []struct {
 		name string

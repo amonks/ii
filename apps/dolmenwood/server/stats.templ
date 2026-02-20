@@ -121,25 +121,35 @@ templ StatsSection(view *CharacterView) {
 					@saveBox("Spells", view.Saves.Spells)
 				}
 			}
+			if len(view.SaveBonuses) > 0 {
+				<ul>
+					for _, b := range view.SaveBonuses {
+						<li>
+							@Text() { { b.Source } }
+							@Label() { { " " + b.Description } }
+						</li>
+					}
+				</ul>
+			}
 		}
 		@CardSection() {
 			@SectionHeader() { Speed }
 			@Grid(5) {
 				@Billboard() {
 					@LabelBlock() { Encounter }
-					@ValueText() { { fmt.Sprintf("%d'", view.SpeedEncounter) } }
+					@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedEncounter) } }
 				}
 				@Billboard() {
 					@LabelBlock() { Exploration (unknown) }
-					@ValueText() { { fmt.Sprintf("%d'", view.SpeedExplorationUnknown) } }
+					@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationUnknown) } }
 				}
 				@Billboard() {
 					@LabelBlock() { Exploration (mapped) }
-					@ValueText() { { fmt.Sprintf("%d'", view.SpeedExplorationMapped) } }
+					@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationMapped) } }
 				}
 				@Billboard() {
 					@LabelBlock() { Running }
-					@ValueText() { { fmt.Sprintf("%d'", view.SpeedRunning) } }
+					@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedRunning) } }
 				}
 				@Billboard() {
 					@LabelBlock() { Overland }

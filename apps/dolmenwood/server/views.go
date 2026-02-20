@@ -44,6 +44,7 @@ type CharacterView struct {
 	XPModPercent            int
 	KindredTraits           []engine.Trait
 	ClassTraits             []engine.Trait
+	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
 	MoonSign                *engine.MoonSign
@@ -392,6 +393,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		XPModPercent:            xpMod,
 		KindredTraits:           engine.KindredTraits(ch.Kindred, ch.Level),
 		ClassTraits:             engine.ClassTraits(ch.Class, ch.Level),
+		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
 		BirthdayMonths:          engine.Months(),
 		BirthdayDays:            birthdayDays,
 		MoonSign:                moonSign,
