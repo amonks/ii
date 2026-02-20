@@ -7,10 +7,45 @@ templ Layout(title string, homePath string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } — Dolmenwood</title>
+			<style>
+				@font-face {
+					font-family: 'Kyrios';
+					src: url('/dolmenwood/fonts/ATKyriosStandard-Medium.woff2') format('woff2');
+					font-weight: 500;
+					font-style: normal;
+					font-display: swap;
+				}
+				@font-face {
+					font-family: 'Martina Plantijn';
+					src: url('/dolmenwood/fonts/martina-plantijn-regular.woff2') format('woff2');
+					font-weight: 400;
+					font-style: normal;
+					font-display: swap;
+				}
+				@font-face {
+					font-family: 'Martina Plantijn';
+					src: url('/dolmenwood/fonts/martina-plantijn-bold.woff2') format('woff2');
+					font-weight: 700;
+					font-style: normal;
+					font-display: swap;
+				}
+				@font-face {
+					font-family: 'At Textual';
+					src: url('/dolmenwood/fonts/AtTextual-Retina.woff2') format('woff2');
+					font-weight: 400;
+					font-style: normal;
+					font-display: swap;
+				}
+				</style>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+			<style>
+				input, textarea {
+					font-family: 'At Textual', sans-serif !important;
+				}
+			</style>
 		</head>
-		<body class="bg-stone-100 min-h-screen">
+		<body class="bg-stone-100 min-h-screen" style="font-family: 'Martina Plantijn', serif;">
 			<nav class="bg-stone-800 text-stone-100 px-4 py-3">
 				<div class="max-w-lg mx-auto flex items-center justify-between">
 					<a href={ templ.SafeURL(homePath) } class="font-bold text-lg">Dolmenwood</a>

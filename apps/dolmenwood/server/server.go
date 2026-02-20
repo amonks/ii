@@ -40,5 +40,9 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{id}/calendar/{$}", s.handleUpdateCalendar)
 	mux.HandleFunc("POST /characters/{id}/advance-day/{$}", s.handleAdvanceDay)
 	mux.HandleFunc("POST /characters/{id}/bank/withdraw/{$}", s.handleBankWithdraw)
+	mux.HandleFunc("GET /fonts/ATKyriosStandard-Medium.woff2", s.handleFontKyrios)
+	mux.HandleFunc("GET /fonts/martina-plantijn-bold.woff2", s.handleFontMartinaBold)
+	mux.HandleFunc("GET /fonts/martina-plantijn-regular.woff2", s.handleFontMartinaRegular)
+	mux.HandleFunc("GET /fonts/AtTextual-Retina.woff2", s.handleFontAtTextual)
 	return mux
 }

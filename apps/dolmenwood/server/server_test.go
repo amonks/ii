@@ -2377,7 +2377,7 @@ func TestInventorySpacing(t *testing.T) {
 	if !strings.Contains(body, "pt-10 space-y-2") {
 		t.Error("inventory lists should use CardSection for separation")
 	}
-	if !strings.Contains(body, "text-xs font-semibold text-stone-500 uppercase") {
+	if !strings.Contains(body, "text-sm text-stone-700 uppercase") {
 		t.Error("inventory list title should use SectionLabel")
 	}
 }

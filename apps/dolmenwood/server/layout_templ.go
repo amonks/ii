@@ -42,14 +42,14 @@ func Layout(title string, homePath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Dolmenwood</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script></head><body class=\"bg-stone-100 min-h-screen\"><nav class=\"bg-stone-800 text-stone-100 px-4 py-3\"><div class=\"max-w-lg mx-auto flex items-center justify-between\"><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Dolmenwood</title><style>\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Kyrios';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/ATKyriosStandard-Medium.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-regular.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-bold.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 700;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'At Textual';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/AtTextual-Retina.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t</style><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>\n\t\t\t\tinput, textarea {\n\t\t\t\t\tfont-family: 'At Textual', sans-serif !important;\n\t\t\t\t}\n\t\t\t</style></head><body class=\"bg-stone-100 min-h-screen\" style=\"font-family: 'Martina Plantijn', serif;\"><nav class=\"bg-stone-800 text-stone-100 px-4 py-3\"><div class=\"max-w-lg mx-auto flex items-center justify-between\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(homePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/layout.templ`, Line: 16, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/layout.templ`, Line: 51, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
