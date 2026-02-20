@@ -88,16 +88,18 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 				if a, ok := engine.ArmorStats(item.Name); ok {
 					@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
 				}
-				<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-					hx-target="#inventory" hx-swap="outerHTML">
-					<input type="hidden" name="has_notes" value="1"/>
-					@InlineNoteInput(templ.Attributes{
-						"name": "notes",
-						"value": item.Notes,
-						"placeholder": "note",
-						"onchange": "this.form.requestSubmit()",
-					})
-				</form>
+				if !engine.IsCoinItem(item.Name) {
+					<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						<input type="hidden" name="has_notes" value="1"/>
+						@InlineNoteInput(templ.Attributes{
+							"name": "notes",
+							"value": item.Notes,
+							"placeholder": "note",
+							"onchange": "this.form.requestSubmit()",
+						})
+					</form>
+				}
 			}
 			@InlineActions() {
 				if item.Quantity > 1 {

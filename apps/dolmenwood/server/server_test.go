@@ -2438,6 +2438,10 @@ func TestCoinItemAppearsInInventory(t *testing.T) {
 	if !strings.Contains(body, "50gp") {
 		t.Error("Coins item should show denomination breakdown")
 	}
+	// Should not render editable notes input for coins
+	if strings.Contains(body, "name=\"notes\"") {
+		t.Error("Coins item should not include notes input")
+	}
 	// Should have split form
 	if !strings.Contains(body, "/split/") {
 		t.Error("inventory should contain split form for coin items")
