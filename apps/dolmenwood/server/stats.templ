@@ -6,13 +6,9 @@ import (
 )
 
 templ StatsSection(view *CharacterView) {
-	@Card("stats") {
-		@Header() {
-			@Heading() { { view.Character.Name } }
-			@Label() {
-				Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
-			}
-		}
+	@CardDisclosure("stats") {
+		@StatsSummary(view)
+
 		if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
 			@LabelSpaced() {
 				if view.Character.Alignment != "" {
@@ -182,6 +178,15 @@ templ StatsSection(view *CharacterView) {
 					}
 				}
 			}
+		}
+	}
+}
+
+templ StatsSummary(view *CharacterView) {
+	@Header() {
+		@Heading() { { view.Character.Name } }
+		@Label() {
+			Lvl { fmt.Sprintf("%d", view.Character.Level) } { view.Character.Kindred } { view.Character.Class }
 		}
 	}
 }

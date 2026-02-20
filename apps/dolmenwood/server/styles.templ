@@ -1,6 +1,8 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ---------------------------------------------------------------------------
 // Hierarchy
@@ -11,6 +13,24 @@ templ Card(id string) {
 	<div id={ id } class="bg-white rounded-lg shadow p-4 space-y-3">
 		{ children... }
 	</div>
+}
+
+// CardDisclosure — collapsible card container with summary header.
+templ CardDisclosure(id string) {
+	<details id={ id } class="card-disclosure group bg-white shadow" open>
+		<summary class="card-disclosure-summary block cursor-pointer">
+			<div class="card-disclosure-summary-body p-4 space-y-3">
+				{ children... }
+			</div>
+			<div class="card-disclosure-toggle flex items-center justify-center gap-2 bg-stone-100 text-xs uppercase tracking-wider text-stone-500 py-2 border-t border-stone-200">
+				<span class="group-open:hidden">Show</span>
+				<span class="hidden group-open:inline">Hide</span>
+			</div>
+		</summary>
+		<div class="card-disclosure-body p-4 pt-0 space-y-3">
+			{ children... }
+		</div>
+	</details>
 }
 
 // Section — vertical stack within a card.

@@ -43,45 +43,12 @@ func StoreSection(view *CharacterView) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "Store ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = Heading().Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = StoreSummary(view).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			for _, group := range view.StoreGroups {
+				templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 					if !templ_7745c5c3_IsBuffer {
@@ -93,34 +60,35 @@ func StoreSection(view *CharacterView) templ.Component {
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "Show ")
+					templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						var templ_7745c5c3_Var5 string
+						templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(group.Title)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 11, Col: 36}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = SectionHeader().Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					return nil
-				})
-				templ_7745c5c3_Err = Summary().Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-					if !templ_7745c5c3_IsBuffer {
-						defer func() {
-							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err == nil {
-								templ_7745c5c3_Err = templ_7745c5c3_BufErr
-							}
-						}()
-					}
-					ctx = templ.InitializeContext(ctx)
-					for _, group := range view.StoreGroups {
-						templ_7745c5c3_Var7 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					for _, item := range group.Items {
+						templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 							if !templ_7745c5c3_IsBuffer {
@@ -132,7 +100,11 @@ func StoreSection(view *CharacterView) templ.Component {
 								}()
 							}
 							ctx = templ.InitializeContext(ctx)
-							templ_7745c5c3_Var8 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Var7 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 								templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 								templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 								if !templ_7745c5c3_IsBuffer {
@@ -144,39 +116,35 @@ func StoreSection(view *CharacterView) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								var templ_7745c5c3_Var9 string
-								templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(group.Title)
+								var templ_7745c5c3_Var8 string
+								templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 13, Col: 38}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 15, Col: 33}
 								}
-								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								return nil
 							})
-							templ_7745c5c3_Err = SectionHeader().Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = TextBlock().Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							for _, item := range group.Items {
-								templ_7745c5c3_Var10 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-									templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-									templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-									if !templ_7745c5c3_IsBuffer {
-										defer func() {
-											templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err == nil {
-												templ_7745c5c3_Err = templ_7745c5c3_BufErr
-											}
-										}()
-									}
-									ctx = templ.InitializeContext(ctx)
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div>")
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Var11 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							templ_7745c5c3_Var9 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+								templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+								templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+								if !templ_7745c5c3_IsBuffer {
+									defer func() {
+										templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+										if templ_7745c5c3_Err == nil {
+											templ_7745c5c3_Err = templ_7745c5c3_BufErr
+										}
+									}()
+								}
+								ctx = templ.InitializeContext(ctx)
+								if item.CostCoinLabel != "" {
+									templ_7745c5c3_Var10 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 										if !templ_7745c5c3_IsBuffer {
@@ -188,398 +156,434 @@ func StoreSection(view *CharacterView) templ.Component {
 											}()
 										}
 										ctx = templ.InitializeContext(ctx)
-										var templ_7745c5c3_Var12 string
-										templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
+										var templ_7745c5c3_Var11 string
+										templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.CostCoinLabel)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 17, Col: 35}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 18, Col: 40}
 										}
-										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										return nil
-									})
-									templ_7745c5c3_Err = TextBlock().Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Var13 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-										if !templ_7745c5c3_IsBuffer {
-											defer func() {
-												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-												if templ_7745c5c3_Err == nil {
-													templ_7745c5c3_Err = templ_7745c5c3_BufErr
-												}
-											}()
-										}
-										ctx = templ.InitializeContext(ctx)
-										if item.CostCoinLabel != "" {
-											templ_7745c5c3_Var14 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var15 string
-												templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(item.CostCoinLabel)
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 20, Col: 42}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var14), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Weight > 0 {
-											templ_7745c5c3_Var16 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var17 string
-												templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cn", item.Weight))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 23, Col: 57}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var16), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Bulk > 0 {
-											templ_7745c5c3_Var18 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var19 string
-												templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d slots", item.Bulk))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 26, Col: 58}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.AC > 0 {
-											templ_7745c5c3_Var20 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "AC ")
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												var templ_7745c5c3_Var21 string
-												templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.AC))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 29, Col: 53}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Damage != "" {
-											templ_7745c5c3_Var22 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var23 string
-												templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(item.Damage)
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 32, Col: 35}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var22), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Qualities != "" {
-											templ_7745c5c3_Var24 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var25 string
-												templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(item.Qualities)
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 35, Col: 38}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var24), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Load > 0 {
-											templ_7745c5c3_Var26 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var27 string
-												templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Load %d cn", item.Load))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 38, Col: 60}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var26), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Cargo > 0 {
-											templ_7745c5c3_Var28 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var29 string
-												templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Cargo %d cn", item.Cargo))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 41, Col: 62}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var28), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " ")
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-										if item.Capacity > 0 {
-											templ_7745c5c3_Var30 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-												templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-												templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-												if !templ_7745c5c3_IsBuffer {
-													defer func() {
-														templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-														if templ_7745c5c3_Err == nil {
-															templ_7745c5c3_Err = templ_7745c5c3_BufErr
-														}
-													}()
-												}
-												ctx = templ.InitializeContext(ctx)
-												var templ_7745c5c3_Var31 string
-												templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Capacity %d slots", item.Capacity))
-												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 44, Col: 71}
-												}
-												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-												if templ_7745c5c3_Err != nil {
-													return templ_7745c5c3_Err
-												}
-												return nil
-											})
-											templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var30), templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-										}
-										return nil
-									})
-									templ_7745c5c3_Err = Cluster().Render(templ.WithChildren(ctx, templ_7745c5c3_Var13), templ_7745c5c3_Buffer)
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><form hx-post=\"store/buy/\" hx-target=\"#inventory\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"item_id\" value=\"")
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									var templ_7745c5c3_Var32 string
-									templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
-									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 49, Col: 60}
-									}
-									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Var33 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-										if !templ_7745c5c3_IsBuffer {
-											defer func() {
-												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-												if templ_7745c5c3_Err == nil {
-													templ_7745c5c3_Err = templ_7745c5c3_BufErr
-												}
-											}()
-										}
-										ctx = templ.InitializeContext(ctx)
-										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "Buy ")
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 										if templ_7745c5c3_Err != nil {
 											return templ_7745c5c3_Err
 										}
 										return nil
 									})
-									templ_7745c5c3_Err = BtnPrimary().Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</form>")
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									return nil
-								})
-								templ_7745c5c3_Err = Row().Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
+								if item.Weight > 0 {
+									templ_7745c5c3_Var12 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var13 string
+										templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cn", item.Weight))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 21, Col: 55}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var12), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Bulk > 0 {
+									templ_7745c5c3_Var14 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var15 string
+										templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d slots", item.Bulk))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 24, Col: 56}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var14), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.AC > 0 {
+									templ_7745c5c3_Var16 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "AC ")
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										var templ_7745c5c3_Var17 string
+										templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.AC))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 27, Col: 51}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var16), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Damage != "" {
+									templ_7745c5c3_Var18 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var19 string
+										templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(item.Damage)
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 30, Col: 33}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Qualities != "" {
+									templ_7745c5c3_Var20 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var21 string
+										templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(item.Qualities)
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 33, Col: 36}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Load > 0 {
+									templ_7745c5c3_Var22 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var23 string
+										templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Load %d cn", item.Load))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 36, Col: 58}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var22), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Cargo > 0 {
+									templ_7745c5c3_Var24 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var25 string
+										templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Cargo %d cn", item.Cargo))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 39, Col: 60}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var24), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								if item.Capacity > 0 {
+									templ_7745c5c3_Var26 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+										if !templ_7745c5c3_IsBuffer {
+											defer func() {
+												templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+												if templ_7745c5c3_Err == nil {
+													templ_7745c5c3_Err = templ_7745c5c3_BufErr
+												}
+											}()
+										}
+										ctx = templ.InitializeContext(ctx)
+										var templ_7745c5c3_Var27 string
+										templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Capacity %d slots", item.Capacity))
+										if templ_7745c5c3_Err != nil {
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 42, Col: 69}
+										}
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+										if templ_7745c5c3_Err != nil {
+											return templ_7745c5c3_Err
+										}
+										return nil
+									})
+									templ_7745c5c3_Err = Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var26), templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+								}
+								return nil
+							})
+							templ_7745c5c3_Err = Cluster().Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><form hx-post=\"store/buy/\" hx-target=\"#inventory\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"item_id\" value=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var28 string
+							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 47, Col: 58}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Var29 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+								templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+								templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+								if !templ_7745c5c3_IsBuffer {
+									defer func() {
+										templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+										if templ_7745c5c3_Err == nil {
+											templ_7745c5c3_Err = templ_7745c5c3_BufErr
+										}
+									}()
+								}
+								ctx = templ.InitializeContext(ctx)
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "Buy ")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								return nil
+							})
+							templ_7745c5c3_Err = BtnPrimary().Render(templ.WithChildren(ctx, templ_7745c5c3_Var29), templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</form>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
 							}
 							return nil
 						})
-						templ_7745c5c3_Err = CardSection().Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = Row().Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " ")
+					return nil
+				})
+				templ_7745c5c3_Err = CardSection().Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
+				templ_7745c5c3_Var30 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Var31 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "Store Log ")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = SectionHeader().Render(templ.WithChildren(ctx, templ_7745c5c3_Var31), templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Var32 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Var33 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+							if !templ_7745c5c3_IsBuffer {
+								defer func() {
+									templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err == nil {
+										templ_7745c5c3_Err = templ_7745c5c3_BufErr
+									}
+								}()
+							}
+							ctx = templ.InitializeContext(ctx)
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "Show ")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							return nil
+						})
+						templ_7745c5c3_Err = Summary().Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " ")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
 						templ_7745c5c3_Var34 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -592,45 +596,8 @@ func StoreSection(view *CharacterView) templ.Component {
 								}()
 							}
 							ctx = templ.InitializeContext(ctx)
-							templ_7745c5c3_Var35 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-								templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-								templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-								if !templ_7745c5c3_IsBuffer {
-									defer func() {
-										templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-										if templ_7745c5c3_Err == nil {
-											templ_7745c5c3_Err = templ_7745c5c3_BufErr
-										}
-									}()
-								}
-								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "Store Log ")
-								if templ_7745c5c3_Err != nil {
-									return templ_7745c5c3_Err
-								}
-								return nil
-							})
-							templ_7745c5c3_Err = SectionHeader().Render(templ.WithChildren(ctx, templ_7745c5c3_Var35), templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " ")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Var36 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-								templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-								templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-								if !templ_7745c5c3_IsBuffer {
-									defer func() {
-										templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-										if templ_7745c5c3_Err == nil {
-											templ_7745c5c3_Err = templ_7745c5c3_BufErr
-										}
-									}()
-								}
-								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Var37 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							for _, entry := range entries {
+								templ_7745c5c3_Var35 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 									templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 									templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 									if !templ_7745c5c3_IsBuffer {
@@ -642,107 +609,103 @@ func StoreSection(view *CharacterView) templ.Component {
 										}()
 									}
 									ctx = templ.InitializeContext(ctx)
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "Show ")
+									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span>")
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+									var templ_7745c5c3_Var36 string
+									templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
+									if templ_7745c5c3_Err != nil {
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 62, Col: 28}
+									}
+									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span>")
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+									templ_7745c5c3_Err = auditDate(entry).Render(ctx, templ_7745c5c3_Buffer)
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
 									return nil
 								})
-								templ_7745c5c3_Err = Summary().Render(templ.WithChildren(ctx, templ_7745c5c3_Var37), templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = LogEntry().Render(templ.WithChildren(ctx, templ_7745c5c3_Var35), templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " ")
-								if templ_7745c5c3_Err != nil {
-									return templ_7745c5c3_Err
-								}
-								templ_7745c5c3_Var38 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-									templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-									templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-									if !templ_7745c5c3_IsBuffer {
-										defer func() {
-											templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err == nil {
-												templ_7745c5c3_Err = templ_7745c5c3_BufErr
-											}
-										}()
-									}
-									ctx = templ.InitializeContext(ctx)
-									for _, entry := range entries {
-										templ_7745c5c3_Var39 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-											templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-											templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-											if !templ_7745c5c3_IsBuffer {
-												defer func() {
-													templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-													if templ_7745c5c3_Err == nil {
-														templ_7745c5c3_Err = templ_7745c5c3_BufErr
-													}
-												}()
-											}
-											ctx = templ.InitializeContext(ctx)
-											templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span>")
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-											var templ_7745c5c3_Var40 string
-											templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
-											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 64, Col: 30}
-											}
-											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-											templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span>")
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-											templ_7745c5c3_Err = auditDate(entry).Render(ctx, templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err != nil {
-												return templ_7745c5c3_Err
-											}
-											return nil
-										})
-										templ_7745c5c3_Err = LogEntry().Render(templ.WithChildren(ctx, templ_7745c5c3_Var39), templ_7745c5c3_Buffer)
-										if templ_7745c5c3_Err != nil {
-											return templ_7745c5c3_Err
-										}
-									}
-									return nil
-								})
-								templ_7745c5c3_Err = DetailsBody().Render(templ.WithChildren(ctx, templ_7745c5c3_Var38), templ_7745c5c3_Buffer)
-								if templ_7745c5c3_Err != nil {
-									return templ_7745c5c3_Err
-								}
-								return nil
-							})
-							templ_7745c5c3_Err = Details().Render(templ.WithChildren(ctx, templ_7745c5c3_Var36), templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
 							}
 							return nil
 						})
-						templ_7745c5c3_Err = CardSection().Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = DetailsBody().Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
+						return nil
+					})
+					templ_7745c5c3_Err = Details().Render(templ.WithChildren(ctx, templ_7745c5c3_Var32), templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
 					}
 					return nil
 				})
-				templ_7745c5c3_Err = DetailsBody().Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = CardSection().Render(templ.WithChildren(ctx, templ_7745c5c3_Var30), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return nil
-			})
-			templ_7745c5c3_Err = Details().Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = CardDisclosure("store").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func StoreSummary(view *CharacterView) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var37 == nil {
+			templ_7745c5c3_Var37 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var38 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "Store ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Card("store").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Heading().Render(templ.WithChildren(ctx, templ_7745c5c3_Var38), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

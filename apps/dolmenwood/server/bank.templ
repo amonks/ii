@@ -3,11 +3,9 @@ package server
 import "fmt"
 
 templ BankSection(view *CharacterView) {
-	@Card("bank") {
-		@Header() {
-			@Heading() { Bank }
-			@Label() { ~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited }
-		}
+	@CardDisclosure("bank") {
+		@BankSummary(view)
+
 		@CardSection() {
 			@SectionHeader() { Deposits }
 			if len(view.BankDeposits) > 0 {
@@ -55,5 +53,13 @@ templ BankSection(view *CharacterView) {
 				}
 			}
 		}
+	}
+}
+
+
+templ BankSummary(view *CharacterView) {
+	@Header() {
+		@Heading() { Bank }
+		@Label() { ~{ fmt.Sprintf("%d", view.BankTotalCP / 100) } GP deposited }
 	}
 }

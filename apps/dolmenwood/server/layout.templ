@@ -40,9 +40,42 @@ templ Layout(title string, homePath string) {
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 			<style>
-				input, textarea {
-					font-family: 'At Textual', sans-serif !important;
-				}
+					input, textarea {
+						font-family: 'At Textual', sans-serif !important;
+					}
+					.card-disclosure {
+						border-radius: 0.5rem;
+						background: white;
+					}
+					.card-disclosure-summary::-webkit-details-marker {
+						display: none;
+					}
+					.card-disclosure-summary {
+						list-style: none;
+					}
+					.card-disclosure-toggle {
+						border-bottom-left-radius: 0.5rem;
+						border-bottom-right-radius: 0.5rem;
+					}
+					.card-disclosure[open] .card-disclosure-toggle {
+						border-bottom-left-radius: 0;
+						border-bottom-right-radius: 0;
+					}
+					.card-disclosure[open] .card-disclosure-body {
+						border-bottom-left-radius: 0.5rem;
+						border-bottom-right-radius: 0.5rem;
+						border-top: 1px solid #e7e5e4;
+					}
+					.card-disclosure:not([open]) .card-disclosure-summary-body {
+						padding-bottom: 0;
+					}
+					.card-disclosure:not([open]) .card-disclosure-toggle {
+						border-top-left-radius: 0;
+						border-top-right-radius: 0;
+					}
+					.card-disclosure:not([open]) .card-disclosure-body {
+						display: none;
+					}
 			</style>
 		</head>
 		<body class="bg-stone-100 min-h-screen" style="font-family: 'Martina Plantijn', serif;">

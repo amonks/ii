@@ -3,8 +3,9 @@ package server
 import "monks.co/apps/dolmenwood/engine"
 
 templ TraitsSection(view *CharacterView) {
-	@Card("traits") {
-		@Heading() { Traits }
+	@CardDisclosure("traits") {
+		@TraitsSummary(view)
+
 		@CardSection() {
 			@SectionHeader() { Kindred Traits }
 			@traitList(view.KindredTraits)
@@ -27,6 +28,11 @@ templ TraitsSection(view *CharacterView) {
 			}
 		}
 	}
+}
+
+
+templ TraitsSummary(view *CharacterView) {
+	@Heading() { Traits }
 }
 
 templ traitList(traits []engine.Trait) {

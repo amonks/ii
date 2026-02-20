@@ -3,8 +3,9 @@ package server
 import "fmt"
 
 templ NotesSection(view *CharacterView) {
-	@Card("notes") {
-		@Heading() { Notes }
+	@CardDisclosure("notes") {
+		@NotesSummary(view)
+
 		if len(view.Notes) > 0 {
 			@CardSection() {
 				@SectionHeader() { All Notes }
@@ -45,4 +46,9 @@ templ NotesSection(view *CharacterView) {
 			}
 		}
 	}
+}
+
+
+templ NotesSummary(view *CharacterView) {
+	@Heading() { Notes }
 }

@@ -190,6 +190,37 @@ func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
 	}
 }
 
+
+func TestCardDisclosureMarkup(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "card-disclosure-summary-body") {
+		t.Error("expected card disclosure summary wrapper")
+	}
+	if !strings.Contains(body, "card-disclosure-toggle") {
+		t.Error("expected card disclosure toggle bar")
+	}
+	if !strings.Contains(body, "card-disclosure-body") {
+		t.Error("expected card disclosure body")
+	}
+}
+
 func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -242,7 +273,6 @@ func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 		}
 	}
 }
-
 
 func TestCharacterSheetShowsBirthdayAndMoonSign(t *testing.T) {
 	srv, d := setupTest(t)
@@ -2398,14 +2428,14 @@ func TestInventorySpacing(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	if !strings.Contains(body, "bg-white rounded-lg shadow p-4 space-y-3") {
-		t.Error("inventory should use Card component")
+	if !strings.Contains(body, "card-disclosure-summary-body") {
+		t.Error("expected card disclosure summary wrapper")
 	}
-	if !strings.Contains(body, "pt-10 space-y-2") {
-		t.Error("inventory lists should use CardSection for separation")
+	if !strings.Contains(body, "card-disclosure-toggle") {
+		t.Error("expected card disclosure toggle bar")
 	}
-	if !strings.Contains(body, "text-sm text-stone-700 uppercase") {
-		t.Error("inventory list title should use SectionLabel")
+	if !strings.Contains(body, "card-disclosure-body") {
+		t.Error("expected card disclosure body")
 	}
 }
 

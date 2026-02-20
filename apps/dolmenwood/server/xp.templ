@@ -3,13 +3,9 @@ package server
 import "fmt"
 
 templ XPSection(view *CharacterView) {
-	@Card("xp") {
-		@Header() {
-			@Heading() { Experience }
-			@Label() {
-				{ fmt.Sprintf("%d", view.Character.TotalXP) } XP (mod { formatMod(view.XPModPercent) }%)
-			}
-		}
+	@CardDisclosure("xp") {
+		@XPSummary(view)
+
 		@CardSection() {
 			@SectionHeader() { Progress }
 			@ProgressBar(xpBarWidth(view))
@@ -52,6 +48,16 @@ templ XPSection(view *CharacterView) {
 					}
 				}
 			}
+		}
+	}
+}
+
+
+templ XPSummary(view *CharacterView) {
+	@Header() {
+		@Heading() { Experience }
+		@Label() {
+			{ fmt.Sprintf("%d", view.Character.TotalXP) } XP (mod { formatMod(view.XPModPercent) }%)
 		}
 	}
 }

@@ -3,8 +3,9 @@ package server
 import "fmt"
 
 templ WealthSection(view *CharacterView) {
-	@Card("wealth") {
-		@Heading() { Wealth }
+	@CardDisclosure("wealth") {
+		@WealthSummary(view)
+
 		@CardSection() {
 			@SectionHeader() { Overview }
 			@InfoBox() {
@@ -74,6 +75,11 @@ templ WealthSection(view *CharacterView) {
 			}
 		}
 	}
+}
+
+
+templ WealthSummary(view *CharacterView) {
+	@Heading() { Wealth }
 }
 
 templ coinDisplay(cp, sp, ep, gp, pp int) {

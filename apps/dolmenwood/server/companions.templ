@@ -3,8 +3,9 @@ package server
 import "fmt"
 
 templ CompanionsSection(view *CharacterView) {
-	@Card("companions") {
-		@Heading() { Companions }
+	@CardDisclosure("companions") {
+		@CompanionsSummary(view)
+
 		if len(view.Companions) > 0 {
 			for _, comp := range view.Companions {
 				@CardSection() {
@@ -129,4 +130,9 @@ templ CompanionsSection(view *CharacterView) {
 			}
 		}
 	}
+}
+
+
+templ CompanionsSummary(view *CharacterView) {
+	@Heading() { Companions }
 }

@@ -6,8 +6,9 @@ import (
 )
 
 templ InventorySection(view *CharacterView) {
-	@Card("inventory") {
-		@Heading() { Inventory }
+	@CardDisclosure("inventory") {
+		@InventorySummary(view)
+
 		@CardSection() {
 			@SectionHeader() { { fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots) } }
 			for _, item := range view.EquippedItems {
@@ -160,11 +161,9 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 }
 
 templ EncumbranceSection(view *CharacterView) {
-	@Card("encumbrance") {
-		@Header() {
-			@Heading() { Encumbrance }
-			@HeadingValue() { { fmt.Sprintf("%d", view.Speed) }&apos; }
-		}
+	@CardDisclosure("encumbrance") {
+		@EncumbranceSummary(view)
+
 		@CardSection() {
 			@SectionHeader() { Equipped }
 			@SpeedRow() {
@@ -231,6 +230,20 @@ func companionInventoryLabel(cg CompanionInventory) string {
 	label += fmt.Sprintf(" (%d / %d slots)", cg.UsedSlots, cg.Companion.LoadCapacity)
 	return label
 }
+
+
+templ EncumbranceSummary(view *CharacterView) {
+	@Header() {
+		@Heading() { Encumbrance }
+		@HeadingValue() { { fmt.Sprintf("%d", view.Speed) }&apos; }
+	}
+}
+
+
+templ InventorySummary(view *CharacterView) {
+	@Heading() { Inventory }
+}
+
 
 templ speedChart(cells []SpeedChartCell) {
 	@SpeedChart() {
