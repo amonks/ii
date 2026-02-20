@@ -77,8 +77,8 @@ func moonSignSaveBonus(effect string) (SaveBonus, bool) {
 func extractSavePart(effect string) string {
 	// Handle compound effects joined by ", but " or "; "
 	// e.g. "+1 reaction bonus ..., but suffer a -1 penalty to all saving throws against fairy magic."
-	if idx := strings.Index(effect, "suffer a "); idx >= 0 {
-		part := effect[idx+len("suffer a "):]
+	if _, after, ok := strings.Cut(effect, "suffer a "); ok {
+		part := after
 		// Capitalize and return
 		return part
 	}

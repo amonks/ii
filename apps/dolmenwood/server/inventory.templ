@@ -206,10 +206,15 @@ templ EncumbranceSection(view *CharacterView) {
 				@LegendSwatch("bg-orange-400") { 20&apos; }
 				@LegendSwatch("bg-red-500") { 10&apos; }
 			}
-			for _, cg := range view.CompanionGroups {
-				@CompanionSlotsLabel() {
-					@Label() { { cg.Companion.Name } }
-					<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
+		}
+		if len(view.CompanionGroups) > 0 {
+			@CardSection() {
+				@SectionHeader() { COMPANIONS }
+				for _, cg := range view.CompanionGroups {
+					@CompanionSlotsLabel() {
+						@Label() { { cg.Companion.Name } }
+						<span>{ fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity) } slots</span>
+					}
 				}
 			}
 		}

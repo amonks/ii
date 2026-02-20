@@ -2238,6 +2238,33 @@ func TestAuditLogViewerRenderedOnCards(t *testing.T) {
 	}
 }
 
+func TestEncumbranceCompanionsSection(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(comp)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "COMPANIONS") {
+		t.Error("encumbrance card should contain 'COMPANIONS' section header")
+	}
+}
+
 func TestBuildMoveTargetsIncludesNestedContainers(t *testing.T) {
 	_, d := setupTest(t)
 
