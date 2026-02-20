@@ -847,10 +847,56 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 		byID[it.ID] = it
 	}
 
+	companionLabel := func(name, breed string) string {
+		label := name
+		if breed != "" {
+			label = fmt.Sprintf("%s (%s)", name, breed)
+		}
+		return label
+	}
+
 	// Build companion name lookup
 	compName := make(map[uint]string, len(compViews))
 	for _, cv := range compViews {
-		compName[cv.ID] = cv.Name
+		compName[cv.ID] = companionLabel(cv.Name, cv.Breed)
+	}
+
+	containerItemLabel := func(item db.Item) string {
+		label := item.Name
+		if item.Quantity > 1 {
+			label = fmt.Sprintf("%s (%d)", item.Name, item.Quantity)
+		}
+		return label
+	}
+
+	containerHierarchyLabel := func(item db.Item) string {
+		parts := []string{}
+		var companionID *uint
+		cur := item
+		for {
+			parts = append(parts, containerItemLabel(cur))
+			if cur.CompanionID != nil {
+				companionID = cur.CompanionID
+			}
+			if cur.ContainerID == nil {
+				break
+			}
+			parent, ok := byID[*cur.ContainerID]
+			if !ok {
+				break
+			}
+			cur = parent
+		}
+		for i, j := 0, len(parts)-1; i < j; i, j = i+1, j-1 {
+			parts[i], parts[j] = parts[j], parts[i]
+		}
+		rootLabel := "Equipped"
+		if companionID != nil {
+			if name, ok := compName[*companionID]; ok {
+				rootLabel = name
+			}
+		}
+		return strings.Join(append([]string{rootLabel}, parts...), " > ")
 	}
 
 	// Add all containers at any nesting depth
@@ -858,16 +904,7 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 		if !engine.IsContainer(it.Name) {
 			continue
 		}
-		label := it.Name
-		if it.Quantity > 1 {
-			label = fmt.Sprintf("%s (%d)", it.Name, it.Quantity)
-		}
-		// If directly on a companion, note which one
-		if it.CompanionID != nil {
-			if name, ok := compName[*it.CompanionID]; ok {
-				label = fmt.Sprintf("%s (%s)", it.Name, name)
-			}
-		}
+		label := containerHierarchyLabel(it)
 		targets = append(targets, MoveTarget{
 			Label: label,
 			Value: fmt.Sprintf("container:%d", it.ID),
@@ -879,10 +916,7 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 
 	// Add companions
 	for _, cv := range compViews {
-		label := cv.Name
-		if cv.Breed != "" {
-			label = fmt.Sprintf("%s (%s)", cv.Name, cv.Breed)
-		}
+		label := companionLabel(cv.Name, cv.Breed)
 		targets = append(targets, MoveTarget{
 			Label: label,
 			Value: fmt.Sprintf("companion:%d", cv.ID),

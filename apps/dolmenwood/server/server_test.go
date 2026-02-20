@@ -1949,7 +1949,7 @@ func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
 	compViews := []CompanionView{{Companion: *comp, LoadCapacity: 25}}
 	targets := buildMoveTargets(items, compViews)
 
-	// Should have: Equipped, Backpack, Chest (Bessie), Bessie (Mule)
+	// Should have: Equipped, Equipped > Backpack, Bessie (Mule) > Chest (wooden, large), Bessie (Mule)
 	found := map[string]bool{}
 	for _, t := range targets {
 		found[t.Label] = true
@@ -1958,10 +1958,10 @@ func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
 	if !found["Equipped"] {
 		t.Error("missing Equipped target")
 	}
-	if !found["Backpack"] {
-		t.Error("missing Backpack target")
+	if !found["Equipped > Backpack"] {
+		t.Error("missing Equipped > Backpack target")
 	}
-	if !found["Chest (wooden, large) (Bessie)"] {
+	if !found["Bessie (Mule) > Chest (wooden, large)"] {
 		t.Errorf("missing companion container target, got targets: %v", targets)
 	}
 	if !found["Bessie (Mule)"] {
@@ -2309,11 +2309,11 @@ func TestBuildMoveTargetsIncludesNestedContainers(t *testing.T) {
 	// All containers at every depth should appear as move targets
 	for _, want := range []string{
 		"Equipped",
-		"Backpack",
-		"Belt Pouch",
-		"Chest (wooden, large) (Bessie)",
-		"Sack",
-		"Scroll Case",
+		"Equipped > Backpack",
+		"Equipped > Backpack > Belt Pouch",
+		"Bessie (Mule) > Chest (wooden, large)",
+		"Bessie (Mule) > Chest (wooden, large) > Sack",
+		"Bessie (Mule) > Chest (wooden, large) > Sack > Scroll Case",
 		"Bessie (Mule)",
 	} {
 		if !found[want] {
