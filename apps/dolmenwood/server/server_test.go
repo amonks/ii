@@ -2449,7 +2449,8 @@ func TestCoinItemAppearsInInventory(t *testing.T) {
 }
 
 
-func TestStoreCardShowsItems(t *testing.T) {
+
+func TestStoreGroupsUseDetailsSummary(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
@@ -2467,17 +2468,23 @@ func TestStoreCardShowsItems(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	if !strings.Contains(body, "Store") {
-		t.Error("response should contain store section")
+	adventuringIdx := strings.Index(body, "Adventuring Gear")
+	if adventuringIdx == -1 {
+		t.Fatal("expected adventuring gear header")
 	}
-	if !strings.Contains(body, "Rope") {
-		t.Error("store should list rope")
+	sectionBody := body[adventuringIdx:]
+	summaryIdx := strings.Index(sectionBody, "<summary")
+	if summaryIdx == -1 {
+		t.Fatal("expected store group to include summary")
 	}
-	if !strings.Contains(body, "store/buy/") {
-		t.Error("store should include buy action")
+	ropeIdx := strings.Index(sectionBody, "Rope")
+	if ropeIdx == -1 {
+		t.Fatal("expected store group to include rope")
+	}
+	if summaryIdx > ropeIdx {
+		t.Errorf("expected summary before items, got summary=%d rope=%d", summaryIdx, ropeIdx)
 	}
 }
-
 
 func TestStoreCardListsAdventuringGear(t *testing.T) {
 	srv, d := setupTest(t)
