@@ -60,6 +60,9 @@ A wrapper around `internal/agent` that adds:
 - **Transient LLM API errors**: Automatically retried with exponential backoff using
   `llm.StreamWithRetry`. Retryable errors include rate limits (429), server errors
   (500, 502, 503, 504), and network failures.
+- **Stream EOFs**: If a stream ends with an unexpected EOF, the agent retries the
+  LLM request up to two additional times before treating it as a fatal stream
+  error.
 - **Non-transient errors**: Terminate the agent with an error result.
 
 ## Configuration

@@ -571,6 +571,70 @@ func TestRunImplementingStageRetriesOnContextOverflow(t *testing.T) {
 	}
 }
 
+
+func TestRunImplementingStageRetriesUnexpectedEOF(t *testing.T) {
+	repoPath := t.TempDir()
+	stateDir := t.TempDir()
+
+	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	now := time.Date(2026, time.January, 2, 3, 4, 8, 0, time.UTC)
+	current, err := manager.Create("todo-eof", now, CreateOptions{})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	item := todo.Todo{
+		ID:       "todo-eof",
+		Title:    "Example",
+		Type:     todo.TypeTask,
+		Priority: todo.PriorityLow,
+	}
+
+	runCalls := 0
+	restoreCalls := 0
+	opts := RunOptions{
+		Now: func() time.Time { return now },
+		CurrentCommitID: func(string) (string, error) {
+			return "same-commit", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-eof", nil
+		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil
+		},
+		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
+			runCalls++
+			if runCalls < 3 {
+				return AgentRunResult{SessionID: "ses-eof", ExitCode: 1, Error: "stream error: unexpected EOF"}, nil
+			}
+			return AgentRunResult{SessionID: "ses-eof-ok", ExitCode: 0}, nil
+		},
+		RestoreWorkspace: func(string, string) error {
+			restoreCalls++
+			return nil
+		},
+	}
+
+	result, err := runImplementingStage(manager, current, item, repoPath, repoPath, opts, "")
+	if err != nil {
+		t.Fatalf("expected retry to succeed, got %v", err)
+	}
+	if runCalls != 3 {
+		t.Fatalf("expected 3 LLM calls, got %d", runCalls)
+	}
+	if restoreCalls != 0 {
+		t.Fatalf("expected no workspace restore for EOF retry, got %d", restoreCalls)
+	}
+	if result.Changed {
+		t.Fatalf("expected no change after retry")
+	}
+}
+
 func TestRunImplementingStageContextOverflowStaysInImplementingAfterRetry(t *testing.T) {
 	// This test verifies that if both attempts hit context overflow, the job
 	// stays in the implementing stage with feedback instead of failing.

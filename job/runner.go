@@ -640,7 +640,16 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 	}
 
 	retryCount := 0
+	eofRetryCount := 0
 	for llmResult.ExitCode != 0 {
+		if isModelEOFError(llmResult.Error) && eofRetryCount < 2 {
+			eofRetryCount++
+			llmResult, err = runAttempt()
+			if err != nil {
+				return ImplementingStageResult{}, err
+			}
+			continue
+		}
 		afterCommitID := ""
 		var afterCommitErr error
 		if opts.CurrentCommitID != nil && !internalstrings.IsBlank(workspacePath) {
@@ -1177,6 +1186,11 @@ func isContextOverflowError(errMsg string) bool {
 		strings.Contains(lower, "context_length_exceeded") ||
 		strings.Contains(lower, "prompt is too long") ||
 		strings.Contains(lower, "request too large")
+}
+
+func isModelEOFError(errMsg string) bool {
+	lower := strings.ToLower(errMsg)
+	return strings.Contains(lower, "unexpected eof")
 }
 
 func ensureCommitMessageInPrompt(prompt, message string) string {

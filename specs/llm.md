@@ -361,6 +361,7 @@ type UsageCost struct {
 - Retries are capped at a configurable maximum delay
 - Context cancellation stops retries and returns `StopReasonAborted`
 - Unrecoverable errors return `StopReasonError` with `ErrorMessage` populated
+- Unexpected EOFs during streaming are retried up to two additional attempts by the agent loop
 
 ## Provider Implementations
 

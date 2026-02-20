@@ -141,7 +141,9 @@ any stage -> failed (unrecoverable error)
     event with the purpose and error message, then mark the job `failed`.
 12. If agent fails (nonzero exit): mark job `failed` with an error that
     includes the exit code, error reason (if available), session id, model, prompt
-    template, repo/workspace paths, and before/after commit ids. If the exit code is negative and the working
+    template, repo/workspace paths, and before/after commit ids. If the error
+    reason contains an unexpected EOF, retry the agent run up to three total
+    attempts before applying other retry rules. If the exit code is negative and the working
     copy commit changed, best-effort restore the workspace to the pre-agent
     commit and retry once. If the retry still fails, best-effort restore before
     failing and include the retry attempt in the error details. Context overflow

@@ -403,7 +403,16 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		}
 
 		retryCount := 0
+		eofRetryCount := 0
 		for llmResult.ExitCode != 0 {
+			if isModelEOFError(llmResult.Error) && eofRetryCount < 2 {
+				eofRetryCount++
+				llmResult, err = runAttempt()
+				if err != nil {
+					return Job{}, err
+				}
+				continue
+			}
 			afterCommitID := ""
 			var afterCommitErr error
 			if ctx.opts.CurrentCommitID != nil && !internalstrings.IsBlank(ctx.workspacePath) {

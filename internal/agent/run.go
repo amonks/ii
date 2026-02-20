@@ -3,7 +3,9 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -21,6 +23,16 @@ func setStreamWithRetry(fn streamWithRetryFunc) func() {
 	return func() {
 		streamWithRetry = prev
 	}
+}
+
+func isRetryableStreamError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "unexpected eof")
 }
 
 // Run starts an agent run with the given prompt and configuration.
@@ -110,89 +122,102 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 			Tools:        builtInToolsWithTask(true),
 		}
 
-		// Send message start event (we'll update it as we receive deltas)
-		started := false
-
-		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
-			CacheRetention: config.CacheRetention,
-			SessionID:      config.SessionID,
-			UserAgent:      UserAgent(workDir, config.Version),
-		}, llm.DefaultRetryConfig())
-		if err != nil {
-			result <- RunResult{
-				Messages: messages,
-				Usage:    totalUsage,
-				Error:    fmt.Errorf("start stream: %w", err),
-			}
-			return
-		}
-
-		// Process stream events
+		streamErrRetries := 0
 		var assistantMsg llm.AssistantMessage
-		var streamErr error
+		for {
+			// Send message start event (we'll update it as we receive deltas)
+			started := false
 
-		for streamEvent := range streamHandle.Events {
-			switch e := streamEvent.(type) {
-			case llm.StartEvent:
-				if !started {
-					events <- MessageStartEvent{
-						TurnIndex: turnIndex,
-						Partial:   e.Partial,
+			streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
+				CacheRetention: config.CacheRetention,
+				SessionID:      config.SessionID,
+				UserAgent:      UserAgent(workDir, config.Version),
+			}, llm.DefaultRetryConfig())
+			if err != nil {
+				if isRetryableStreamError(err) && streamErrRetries < 2 {
+					streamErrRetries++
+					continue
+				}
+				result <- RunResult{
+					Messages: messages,
+					Usage:    totalUsage,
+					Error:    fmt.Errorf("start stream: %w", err),
+				}
+				return
+			}
+
+			// Process stream events
+			var streamErr error
+
+			for streamEvent := range streamHandle.Events {
+				switch e := streamEvent.(type) {
+				case llm.StartEvent:
+					if !started {
+						events <- MessageStartEvent{
+							TurnIndex: turnIndex,
+							Partial:   e.Partial,
+						}
+						started = true
 					}
-					started = true
+
+				case llm.TextDeltaEvent:
+					events <- MessageUpdateEvent{
+						TurnIndex:   turnIndex,
+						StreamEvent: e,
+						Partial:     e.Partial,
+					}
+
+				case llm.ThinkingDeltaEvent:
+					events <- MessageUpdateEvent{
+						TurnIndex:   turnIndex,
+						StreamEvent: e,
+						Partial:     e.Partial,
+					}
+
+				case llm.ToolCallDeltaEvent:
+					events <- MessageUpdateEvent{
+						TurnIndex:   turnIndex,
+						StreamEvent: e,
+						Partial:     e.Partial,
+					}
+
+				case llm.ToolCallEndEvent:
+					events <- MessageUpdateEvent{
+						TurnIndex:   turnIndex,
+						StreamEvent: e,
+						Partial:     e.Partial,
+					}
+
+				case llm.DoneEvent:
+					assistantMsg = e.Message
+
+				case llm.ErrorEvent:
+					assistantMsg = e.Message
 				}
-
-			case llm.TextDeltaEvent:
-				events <- MessageUpdateEvent{
-					TurnIndex:   turnIndex,
-					StreamEvent: e,
-					Partial:     e.Partial,
-				}
-
-			case llm.ThinkingDeltaEvent:
-				events <- MessageUpdateEvent{
-					TurnIndex:   turnIndex,
-					StreamEvent: e,
-					Partial:     e.Partial,
-				}
-
-			case llm.ToolCallDeltaEvent:
-				events <- MessageUpdateEvent{
-					TurnIndex:   turnIndex,
-					StreamEvent: e,
-					Partial:     e.Partial,
-				}
-
-			case llm.ToolCallEndEvent:
-				events <- MessageUpdateEvent{
-					TurnIndex:   turnIndex,
-					StreamEvent: e,
-					Partial:     e.Partial,
-				}
-
-			case llm.DoneEvent:
-				assistantMsg = e.Message
-
-			case llm.ErrorEvent:
-				assistantMsg = e.Message
 			}
-		}
 
-		// Wait for stream completion and get final message
-		finalMsg, err := streamHandle.Wait()
-		if err != nil {
-			streamErr = err
-		} else {
-			assistantMsg = finalMsg
-		}
-
-		if streamErr != nil {
-			result <- RunResult{
-				Messages: messages,
-				Usage:    totalUsage,
-				Error:    fmt.Errorf("stream error: %w", streamErr),
+			// Wait for stream completion and get final message
+			finalMsg, err := streamHandle.Wait()
+			if err != nil {
+				streamErr = err
+			} else {
+				assistantMsg = finalMsg
 			}
-			return
+
+			if streamErr != nil {
+				if isRetryableStreamError(streamErr) && streamErrRetries < 2 {
+					streamErrRetries++
+					continue
+				}
+				result <- RunResult{
+					Messages: messages,
+					Usage:    totalUsage,
+					Error:    fmt.Errorf("stream error: %w", streamErr),
+				}
+				return
+			}
+
+			break
 		}
 
 		// Send message end event
@@ -399,32 +424,44 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 			Tools:        tools,
 		}
 
-		// Stream completion from LLM with retry for transient errors
-		streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
-			CacheRetention: config.CacheRetention,
-			SessionID:      config.SessionID,
-			UserAgent:      UserAgent(workDir, config.Version),
-		}, llm.DefaultRetryConfig())
-		if err != nil {
-			return RunResult{
-				Messages: messages,
-				Usage:    totalUsage,
-				Error:    fmt.Errorf("start stream: %w", err),
-			}, err
-		}
+		streamErrRetries := 0
+		var assistantMsg llm.AssistantMessage
+		for {
+			streamHandle, err := streamWithRetry(ctx, config.Model, req, llm.StreamOptions{
+				CacheRetention: config.CacheRetention,
+				SessionID:      config.SessionID,
+				UserAgent:      UserAgent(workDir, config.Version),
+			}, llm.DefaultRetryConfig())
+			if err != nil {
+				if isRetryableStreamError(err) && streamErrRetries < 2 {
+					streamErrRetries++
+					continue
+				}
+				return RunResult{
+					Messages: messages,
+					Usage:    totalUsage,
+					Error:    fmt.Errorf("start stream: %w", err),
+				}, err
+			}
 
-		// Drain stream events (we don't emit them for subagents)
-		for range streamHandle.Events {
-		}
+			// Drain stream events (we don't emit them for subagents)
+			for range streamHandle.Events {
+			}
 
-		// Wait for stream completion and get final message
-		assistantMsg, err := streamHandle.Wait()
-		if err != nil {
-			return RunResult{
-				Messages: messages,
-				Usage:    totalUsage,
-				Error:    fmt.Errorf("stream error: %w", err),
-			}, err
+			// Wait for stream completion and get final message
+			assistantMsg, err = streamHandle.Wait()
+			if err != nil {
+				if isRetryableStreamError(err) && streamErrRetries < 2 {
+					streamErrRetries++
+					continue
+				}
+				return RunResult{
+					Messages: messages,
+					Usage:    totalUsage,
+					Error:    fmt.Errorf("stream error: %w", err),
+				}, err
+			}
+			break
 		}
 
 		// Update total usage

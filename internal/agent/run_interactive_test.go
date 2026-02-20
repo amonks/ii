@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -123,5 +124,40 @@ func TestRunAgent_InteractiveInputClosedEnds(t *testing.T) {
 	}
 	if callCount != 1 {
 		t.Fatalf("expected 1 stream call, got %d", callCount)
+	}
+}
+
+func TestRunAgent_RetriesUnexpectedEOF(t *testing.T) {
+	callCount := 0
+	restore := setStreamWithRetry(func(ctx context.Context, model llm.Model, req llm.Request, opts llm.StreamOptions, config llm.RetryConfig) (*llm.StreamHandle, error) {
+		callCount++
+		if callCount < 3 {
+			return nil, io.ErrUnexpectedEOF
+		}
+		return newFakeStreamHandle(llm.AssistantMessage{
+			Role:       "assistant",
+			StopReason: llm.StopReasonEnd,
+			Timestamp:  time.Now(),
+		}), nil
+	})
+	defer restore()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	handle, err := Run(ctx, "first prompt", AgentConfig{})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	for range handle.Events {
+	}
+
+	_, err = handle.Wait()
+	if err != nil {
+		t.Fatalf("Wait failed: %v", err)
+	}
+	if callCount != 3 {
+		t.Fatalf("expected 3 stream attempts, got %d", callCount)
 	}
 }
