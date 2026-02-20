@@ -46,6 +46,7 @@ func (s *Server) handleCreateCharacter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	s.addAuditLog(ch, "character_create", fmt.Sprintf("created %s, Level %d %s %s", ch.Name, ch.Level, ch.Kindred, ch.Class))
 	w.Header().Set("Location", fmt.Sprintf("%d/", ch.ID))
 	w.WriteHeader(http.StatusSeeOther)
 }
@@ -89,6 +90,7 @@ func (s *Server) handleUpdateBirthday(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
+	oldMonth, oldDay := ch.BirthdayMonth, ch.BirthdayDay
 	ch.BirthdayMonth = strings.TrimSpace(r.FormValue("birthday_month"))
 	ch.BirthdayDay = atoi(r.FormValue("birthday_day"))
 	if maxDay, ok := engine.DaysInMonth(ch.BirthdayMonth); ok {
@@ -102,6 +104,17 @@ func (s *Server) handleUpdateBirthday(w http.ResponseWriter, r *http.Request) {
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if oldMonth != "" || ch.BirthdayMonth != "" {
+		oldLabel := "unset"
+		if oldMonth != "" {
+			oldLabel = fmt.Sprintf("%s %d", oldMonth, oldDay)
+		}
+		newLabel := "unset"
+		if ch.BirthdayMonth != "" {
+			newLabel = fmt.Sprintf("%s %d", ch.BirthdayMonth, ch.BirthdayDay)
+		}
+		s.addAuditLog(ch, "birthday_update", fmt.Sprintf("birthday %s → %s", oldLabel, newLabel))
 	}
 	s.renderSheetBody(w, r, ch)
 }
@@ -148,7 +161,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			s.addAuditLog(ch, "item_add", fmt.Sprintf("Coins (%s)", item.Notes))
+			s.addAuditLog(ch, "item_add", fmt.Sprintf("add Coins (%s) in %s", item.Notes, s.itemLocationLabel(item)))
 		}
 		s.renderInventory(w, r, ch)
 		return
@@ -187,7 +200,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		s.addAuditLog(ch, "item_add", item.Name)
+		s.addAuditLog(ch, "item_add", fmt.Sprintf("add %s, qty %d in %s", item.Name, item.Quantity, s.itemLocationLabel(item)))
 		s.renderInventory(w, r, ch)
 		return
 	}
@@ -204,7 +217,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "item_add", item.Name)
+	s.addAuditLog(ch, "item_add", fmt.Sprintf("add %s, qty %d in %s", item.Name, item.Quantity, s.itemLocationLabel(item)))
 	s.renderInventory(w, r, ch)
 }
 
@@ -223,6 +236,10 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, item := range items {
 		if item.ID == itemID {
+			oldQty := item.Quantity
+			oldNotes := item.Notes
+			oldLocation := s.itemLocationLabel(&item)
+
 			if loc := r.FormValue("location"); loc != "" {
 				item.Location = loc
 			}
@@ -271,7 +288,7 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 
-					s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("Deposited %s (%d cp)", item.Notes, cpValue))
+					s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("deposit %s (%d cp) from %s to bank", item.Notes, cpValue, oldLocation))
 					s.renderSheetBody(w, r, ch)
 					return
 				}
@@ -282,7 +299,27 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 				item.Location = "" // clear legacy location
 			}
 			s.db.UpdateItem(&item)
-			s.addAuditLog(ch, "item_update", fmt.Sprintf("%s: qty %d", item.Name, item.Quantity))
+
+			// Build audit log based on what actually changed
+			newLocation := s.itemLocationLabel(&item)
+			var changes []string
+			if newLocation != oldLocation {
+				changes = append(changes, fmt.Sprintf("moved from %s to %s", oldLocation, newLocation))
+			}
+			if item.Quantity != oldQty {
+				changes = append(changes, fmt.Sprintf("qty %d → %d", oldQty, item.Quantity))
+			}
+			if item.Notes != oldNotes {
+				if item.Notes == "" {
+					changes = append(changes, "notes cleared")
+				} else {
+					changes = append(changes, fmt.Sprintf("notes: %s", item.Notes))
+				}
+			}
+			if len(changes) > 0 {
+				s.addAuditLog(ch, "item_update", fmt.Sprintf("%s: %s", item.Name, strings.Join(changes, ", ")))
+			}
+
 			if item.ContainerID != nil || item.CompanionID != nil {
 				if err := s.combineStackableItems(ch.ID, &item, ch.CurrentDay); err != nil {
 					if !errors.Is(err, errNotCombined) {
@@ -311,7 +348,7 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 	detail := "deleted item"
 	if item != nil {
-		detail = item.Name
+		detail = fmt.Sprintf("delete %s, qty %d from %s", item.Name, item.Quantity, s.itemLocationLabel(item))
 	}
 	s.addAuditLog(ch, "item_delete", detail)
 	s.renderInventory(w, r, ch)
@@ -330,6 +367,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Item not found", http.StatusNotFound)
 		return
 	}
+	sourceLabel := s.itemLocationLabel(source)
 
 	moveTo := r.FormValue("move_to")
 	containerID, companionID := parseMoveTarget(moveTo)
@@ -410,7 +448,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("Deposited %s (%d cp)", splitNotes, cpValue))
+			s.addAuditLog(ch, "bank_deposit", fmt.Sprintf("deposit %s (%d cp) from %s to bank", splitNotes, cpValue, sourceLabel))
 			s.renderSheetBody(w, r, ch)
 			return
 		}
@@ -456,7 +494,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		s.addAuditLog(ch, "item_split", fmt.Sprintf("coins: %s → %s", qtyStr, s.resolveMoveTargetLabel(moveTo)))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("move Coins %s from %s to %s", qtyStr, sourceLabel, s.resolveMoveTargetLabel(moveTo)))
 	} else {
 		// Non-coin split: parse quantity as integer
 		qty := atoi(qtyStr)
@@ -508,7 +546,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		s.addAuditLog(ch, "item_split", fmt.Sprintf("%s: %d → %s", source.Name, qty, s.resolveMoveTargetLabel(moveTo)))
+		s.addAuditLog(ch, "item_split", fmt.Sprintf("move %s qty %d from %s to %s", source.Name, qty, sourceLabel, s.resolveMoveTargetLabel(moveTo)))
 	}
 
 	s.renderInventory(w, r, ch)
@@ -567,7 +605,7 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "companion_add", comp.Name)
+	s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
 	s.renderCompanions(w, r, ch)
 }
 
@@ -586,7 +624,12 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, comp := range comps {
 		if comp.ID == compID {
+			oldName := comp.Name
 			oldHP := comp.HPCurrent
+			oldHPMax := comp.HPMax
+			oldSaddle := comp.SaddleType
+			oldBarding := comp.HasBarding
+
 			if name := r.FormValue("name"); name != "" {
 				comp.Name = name
 			}
@@ -597,7 +640,27 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			comp.SaddleType = r.FormValue("saddle_type")
 			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
-			s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: HP %d → %d", comp.Name, oldHP, comp.HPCurrent))
+
+			var changes []string
+			if comp.Name != oldName {
+				changes = append(changes, fmt.Sprintf("name %s → %s", oldName, comp.Name))
+			}
+			if comp.HPCurrent != oldHP || comp.HPMax != oldHPMax {
+				changes = append(changes, fmt.Sprintf("HP %d/%d → %d/%d", oldHP, oldHPMax, comp.HPCurrent, comp.HPMax))
+			}
+			if comp.SaddleType != oldSaddle {
+				changes = append(changes, fmt.Sprintf("saddle %s → %s", oldSaddle, comp.SaddleType))
+			}
+			if comp.HasBarding != oldBarding {
+				if comp.HasBarding {
+					changes = append(changes, "barding added")
+				} else {
+					changes = append(changes, "barding removed")
+				}
+			}
+			if len(changes) > 0 {
+				s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: %s", comp.Name, strings.Join(changes, ", ")))
+			}
 			break
 		}
 	}
@@ -618,7 +681,7 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 	}
 	detail := "deleted companion"
 	if comp != nil {
-		detail = comp.Name
+		detail = fmt.Sprintf("deleted %s the %s", comp.Name, comp.Breed)
 	}
 	s.addAuditLog(ch, "companion_delete", detail)
 	s.renderCompanions(w, r, ch)
@@ -773,7 +836,11 @@ func (s *Server) handleUndoTransaction(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.addAuditLog(ch, "treasure_undo", desc)
+	txTypeLabel := "earned"
+	if orig.IsFoundTreasure {
+		txTypeLabel = "found"
+	}
+	s.addAuditLog(ch, "treasure_undo", fmt.Sprintf("undo %d %s %s (%s)", orig.Amount, orig.CoinType, orig.Description, txTypeLabel))
 	s.renderSheetBody(w, r, ch)
 }
 
@@ -1085,6 +1152,26 @@ func (s *Server) addAuditLog(ch *db.Character, action, detail string) {
 	s.db.AddAuditLog(ch.ID, action, detail, ch.CurrentDay)
 }
 
+// itemLocationLabel resolves an item's current location to a human-readable label.
+func (s *Server) itemLocationLabel(item *db.Item) string {
+	if item.CompanionID != nil {
+		if comp, err := s.db.GetCompanion(*item.CompanionID); err == nil {
+			return comp.Name
+		}
+		return "companion"
+	}
+	if item.ContainerID != nil {
+		if container, err := s.db.GetItem(*item.ContainerID); err == nil {
+			return container.Name
+		}
+		return "container"
+	}
+	if item.Location != "" {
+		return item.Location
+	}
+	return "inventory"
+}
+
 func (s *Server) getCharacter(r *http.Request) (*db.Character, error) {
 	id := atoui(r.PathValue("id"))
 	return s.db.GetCharacter(id)
@@ -1198,7 +1285,7 @@ func (s *Server) combineStackableItems(characterID uint, item *db.Item, gameDay 
 				return err
 			}
 		}
-		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("%s (combined)", item.Name), day)
+		s.db.AddAuditLog(characterID, "item_add", fmt.Sprintf("add %s, qty %d (combined) in %s", item.Name, item.Quantity, s.itemLocationLabel(item)), day)
 		return nil
 	}
 	return errNotCombined

@@ -221,7 +221,7 @@ templ InlineFormActions() {
 
 // Heading — bold card title.
 templ Heading() {
-	<h2 class="text-stone-800 text-3xl" style="font-family: 'Kyrios', serif;">
+	<h2 class="text-stone-800 text-3xl font-medium" style="font-family: 'Kyrios', serif;">
 		{ children... }
 	</h2>
 }
@@ -242,14 +242,14 @@ templ HeadingValue() {
 
 // Text — content-level text.
 templ Text() {
-	<span class="text-sm font-medium text-stone-700">
+	<span class="text-sm text-stone-700">
 		{ children... }
 	</span>
 }
 
 // TextBlock — block-level content text.
 templ TextBlock() {
-	<div class="text-sm font-medium text-stone-700">
+	<div class="text-sm text-stone-700">
 		{ children... }
 	</div>
 }
@@ -305,7 +305,7 @@ templ LabelMutedLg() {
 
 // SectionHeader — uppercase divider label (used as first child of CardSection).
 templ SectionHeader() {
-	<div class="text-sm text-stone-700 uppercase tracking-wide pb-3" style="font-family: 'Martina Plantijn', serif;">
+	<div class="text-sm text-stone-700 uppercase tracking-wide pb-3 font-bold" style="font-family: 'Martina Plantijn', serif;">
 		{ children... }
 	</div>
 }
@@ -340,7 +340,7 @@ templ Accent(color string) {
 		case "amber":
 			<span class="text-amber-700">{ children... }</span>
 		case "goldItem":
-			<span class="font-medium text-yellow-700">{ children... }</span>
+			<span class="font-bold text-yellow-700">{ children... }</span>
 		case "weapon":
 			<span class="text-xs text-red-600 ml-1">{ children... }</span>
 		case "armor":
@@ -348,7 +348,7 @@ templ Accent(color string) {
 		case "redMuted":
 			<span class="text-red-500">{ children... }</span>
 		case "medium":
-			<span class="font-medium">{ children... }</span>
+			<span class="font-bold">{ children... }</span>
 		default:
 			<span>{ children... }</span>
 	}
@@ -449,7 +449,7 @@ templ THeadRow() {
 
 // THeadCell — styled header cell.
 templ THeadCell() {
-	<th class="text-left font-semibold py-1 pr-2 text-stone-700">
+	<th class="text-left font-bold py-1 pr-2 text-stone-700">
 		{ children... }
 	</th>
 }
@@ -470,7 +470,7 @@ templ TRow(highlight bool) {
 // TCell — table cell with optional emphasis.
 templ TCell(emphasis bool) {
 	if emphasis {
-		<td class="py-1 pr-2 font-semibold text-stone-800">
+		<td class="py-1 pr-2 font-bold text-stone-800">
 			{ children... }
 		</td>
 	} else {
@@ -551,11 +551,11 @@ templ BtnDecrement() {
 templ BtnWide(variant string, attrs templ.Attributes) {
 	switch variant {
 		case "primary":
-			<button type="submit" { attrs... } class="w-full bg-stone-800 text-white rounded-md py-2 text-sm font-medium hover:bg-stone-700">
+			<button type="submit" { attrs... } class="w-full bg-stone-800 text-white rounded-md py-2 text-sm font-bold hover:bg-stone-700">
 				{ children... }
 			</button>
 		case "success":
-			<button type="submit" { attrs... } class="w-full bg-green-700 text-white rounded-md py-2 text-sm font-medium hover:bg-green-600">
+			<button type="submit" { attrs... } class="w-full bg-green-700 text-white rounded-md py-2 text-sm font-bold hover:bg-green-600">
 				{ children... }
 			</button>
 		case "pulse":
@@ -563,7 +563,7 @@ templ BtnWide(variant string, attrs templ.Attributes) {
 				{ children... }
 			</button>
 		default:
-			<button type="submit" { attrs... } class="w-full bg-stone-800 text-white rounded-md py-2 text-sm font-medium hover:bg-stone-700">
+			<button type="submit" { attrs... } class="w-full bg-stone-800 text-white rounded-md py-2 text-sm font-bold hover:bg-stone-700">
 				{ children... }
 			</button>
 	}
@@ -726,7 +726,7 @@ templ Details() {
 
 // Summary — styled summary trigger.
 templ Summary() {
-	<summary class="text-sm font-medium text-stone-700 cursor-pointer">
+	<summary class="text-sm font-bold text-stone-700 cursor-pointer">
 		{ children... }
 	</summary>
 }
@@ -765,7 +765,7 @@ templ LabelInline() {
 
 // LabelBlockText — block label with text styling.
 templ LabelBlockText() {
-	<label class="block text-sm font-medium text-stone-700">
+	<label class="block text-sm text-stone-700">
 		{ children... }
 	</label>
 }

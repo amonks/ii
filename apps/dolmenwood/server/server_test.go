@@ -4092,8 +4092,9 @@ func TestDeleteItemAuditLogUsesName(t *testing.T) {
 	if !strings.Contains(auditLog[0].Detail, "Rope") {
 		t.Errorf("AuditLog.Detail = %q, want it to contain item name 'Rope'", auditLog[0].Detail)
 	}
-	if strings.Contains(auditLog[0].Detail, fmt.Sprintf("%d", item.ID)) {
-		t.Errorf("AuditLog.Detail = %q, should not contain numeric item ID", auditLog[0].Detail)
+	want := "delete Rope, qty 1 from inventory"
+	if auditLog[0].Detail != want {
+		t.Errorf("AuditLog.Detail = %q, want %q", auditLog[0].Detail, want)
 	}
 }
 

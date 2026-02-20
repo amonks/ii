@@ -29,12 +29,16 @@ func (s *Server) handleStoreBuy(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid store item", http.StatusBadRequest)
 		return
 	}
+	purchasedQty := 1
+	if bundle := engine.ItemBundleSize(name); bundle > 0 {
+		purchasedQty = bundle
+	}
 	if costCP == 0 {
 		if err := s.buyFreeStoreItem(ch, name); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		s.addAuditLog(ch, "store_buy", fmt.Sprintf("Bought %s for %s", name, itemCostLabel(costCP, "")))
+		s.addAuditLog(ch, "store_buy", fmt.Sprintf("bought %s, qty %d for %s", name, purchasedQty, itemCostLabel(costCP, "")))
 		s.renderInventory(w, r, ch)
 		return
 	}
@@ -46,7 +50,7 @@ func (s *Server) handleStoreBuy(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.addAuditLog(ch, "store_buy", fmt.Sprintf("Bought %s for %s", name, itemCostLabel(costCP, "")))
+	s.addAuditLog(ch, "store_buy", fmt.Sprintf("bought %s, qty %d for %s", name, purchasedQty, itemCostLabel(costCP, "")))
 	s.renderInventory(w, r, ch)
 }
 
