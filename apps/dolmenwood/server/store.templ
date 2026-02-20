@@ -5,12 +5,12 @@ import "fmt"
 templ StoreSection(view *CharacterView) {
 	@Card("store") {
 		@Heading() { Store }
-		for _, group := range view.StoreGroups {
-			@CardSection() {
-				@SectionHeader() { { group.Title } }
-				@Details() {
-					@Summary() { Show }
-					@DetailsBody() {
+		@Details() {
+			@Summary() { Show }
+			@DetailsBody() {
+				for _, group := range view.StoreGroups {
+					@CardSection() {
+						@SectionHeader() { { group.Title } }
 						for _, item := range group.Items {
 							@Row() {
 								<div>
@@ -53,18 +53,18 @@ templ StoreSection(view *CharacterView) {
 						}
 					}
 				}
-			}
-		}
-		if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
-			@CardSection() {
-				@SectionHeader() { Store Log }
-				@Details() {
-					@Summary() { Show }
-					@DetailsBody() {
-						for _, entry := range entries {
-							@LogEntry() {
-								<span>{ entry.Detail }</span>
-								@auditDate(entry)
+				if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
+					@CardSection() {
+						@SectionHeader() { Store Log }
+						@Details() {
+							@Summary() { Show }
+							@DetailsBody() {
+								for _, entry := range entries {
+									@LogEntry() {
+										<span>{ entry.Detail }</span>
+										@auditDate(entry)
+									}
+								}
 							}
 						}
 					}

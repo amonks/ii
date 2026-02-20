@@ -2448,9 +2448,7 @@ func TestCoinItemAppearsInInventory(t *testing.T) {
 	}
 }
 
-
-
-func TestStoreGroupsUseDetailsSummary(t *testing.T) {
+func TestStoreCardCollapsedAndOrderedBelowInventory(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
@@ -2468,21 +2466,31 @@ func TestStoreGroupsUseDetailsSummary(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	adventuringIdx := strings.Index(body, "Adventuring Gear")
-	if adventuringIdx == -1 {
-		t.Fatal("expected adventuring gear header")
+	inventoryIdx := strings.Index(body, "id=\"inventory\"")
+	if inventoryIdx == -1 {
+		t.Fatal("expected inventory card in response")
 	}
-	sectionBody := body[adventuringIdx:]
-	summaryIdx := strings.Index(sectionBody, "<summary")
-	if summaryIdx == -1 {
-		t.Fatal("expected store group to include summary")
+	storeIdx := strings.Index(body, "id=\"store\"")
+	if storeIdx == -1 {
+		t.Fatal("expected store card in response")
 	}
-	ropeIdx := strings.Index(sectionBody, "Rope")
-	if ropeIdx == -1 {
-		t.Fatal("expected store group to include rope")
+	encumbranceIdx := strings.Index(body, "id=\"encumbrance\"")
+	if encumbranceIdx == -1 {
+		t.Fatal("expected encumbrance card in response")
 	}
-	if summaryIdx > ropeIdx {
-		t.Errorf("expected summary before items, got summary=%d rope=%d", summaryIdx, ropeIdx)
+	if !(inventoryIdx < storeIdx && storeIdx < encumbranceIdx) {
+		t.Errorf("expected store card after inventory and before encumbrance")
+	}
+	end := len(body)
+	if encumbranceIdx > storeIdx {
+		end = encumbranceIdx
+	}
+	storeSegment := body[storeIdx:end]
+	if !strings.Contains(storeSegment, "<details") {
+		t.Error("store card should use a details element for collapse")
+	}
+	if strings.Contains(storeSegment, "<details open") {
+		t.Error("store card should be collapsed by default")
 	}
 }
 
