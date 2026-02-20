@@ -93,7 +93,7 @@ func StoreSection(view *CharacterView) templ.Component {
 						var templ_7745c5c3_Var6 string
 						templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(group.Title)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 10, Col: 36}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 10, Col: 36}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 						if templ_7745c5c3_Err != nil {
@@ -191,7 +191,7 @@ func StoreSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var12 string
 										templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 17, Col: 35}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 17, Col: 35}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 										if templ_7745c5c3_Err != nil {
@@ -231,7 +231,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var15 string
 												templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(item.CostCoinLabel)
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 20, Col: 42}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 20, Col: 42}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 												if templ_7745c5c3_Err != nil {
@@ -264,7 +264,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var17 string
 												templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cn", item.Weight))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 23, Col: 57}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 23, Col: 57}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 												if templ_7745c5c3_Err != nil {
@@ -297,7 +297,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var19 string
 												templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d slots", item.Bulk))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 26, Col: 58}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 26, Col: 58}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 												if templ_7745c5c3_Err != nil {
@@ -334,7 +334,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var21 string
 												templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.AC))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 29, Col: 53}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 29, Col: 53}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 												if templ_7745c5c3_Err != nil {
@@ -367,7 +367,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var23 string
 												templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(item.Damage)
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 32, Col: 35}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 32, Col: 35}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 												if templ_7745c5c3_Err != nil {
@@ -400,7 +400,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var25 string
 												templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(item.Qualities)
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 35, Col: 38}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 35, Col: 38}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 												if templ_7745c5c3_Err != nil {
@@ -433,7 +433,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var27 string
 												templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Load %d cn", item.Load))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 38, Col: 60}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 38, Col: 60}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 												if templ_7745c5c3_Err != nil {
@@ -466,7 +466,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var29 string
 												templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Cargo %d cn", item.Cargo))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 41, Col: 62}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 41, Col: 62}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 												if templ_7745c5c3_Err != nil {
@@ -499,7 +499,7 @@ func StoreSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var31 string
 												templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Capacity %d slots", item.Capacity))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 44, Col: 71}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 44, Col: 71}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 												if templ_7745c5c3_Err != nil {
@@ -525,7 +525,7 @@ func StoreSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var32 string
 									templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 49, Col: 60}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 49, Col: 60}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 									if templ_7745c5c3_Err != nil {
@@ -700,7 +700,7 @@ func StoreSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var40 string
 									templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/store.templ`, Line: 66, Col: 28}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/store.templ`, Line: 66, Col: 28}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 									if templ_7745c5c3_Err != nil {
