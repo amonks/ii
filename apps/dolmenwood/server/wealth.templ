@@ -3,7 +3,7 @@ package server
 import "fmt"
 
 templ WealthSection(view *CharacterView) {
-	@CardDisclosure("wealth") {
+	@CardDisclosure("wealth", true) {
 		@CardDisclosureHeader() {
 			@WealthSummary(view)
 		}

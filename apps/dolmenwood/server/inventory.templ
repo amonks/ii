@@ -6,7 +6,7 @@ import (
 )
 
 templ InventorySection(view *CharacterView) {
-	@CardDisclosure("inventory") {
+	@CardDisclosure("inventory", true) {
 		@CardDisclosureHeader() {
 			@InventorySummary(view)
 		}
@@ -164,7 +164,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 }
 
 templ EncumbranceSection(view *CharacterView) {
-	@CardDisclosure("encumbrance") {
+	@CardDisclosure("encumbrance", true) {
 		@CardDisclosureHeader() {
 			@EncumbranceSummary(view)
 		}

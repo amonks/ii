@@ -3,7 +3,7 @@ package server
 import "fmt"
 
 templ StoreSection(view *CharacterView) {
-	@CardDisclosure("store") {
+	@CardDisclosure("store", false) {
 		@CardDisclosureHeader() {
 			@StoreSummary(view)
 		}

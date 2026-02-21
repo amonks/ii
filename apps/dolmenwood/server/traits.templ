@@ -3,7 +3,7 @@ package server
 import "monks.co/apps/dolmenwood/engine"
 
 templ TraitsSection(view *CharacterView) {
-	@CardDisclosure("traits") {
+	@CardDisclosure("traits", true) {
 		@CardDisclosureHeader() {
 			@TraitsSummary(view)
 		}

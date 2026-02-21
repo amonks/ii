@@ -6,7 +6,7 @@ import (
 )
 
 templ StatsSection(view *CharacterView) {
-	@CardDisclosure("stats") {
+	@CardDisclosure("stats", true) {
 		@CardDisclosureHeader() {
 			@StatsSummary(view)
 		}

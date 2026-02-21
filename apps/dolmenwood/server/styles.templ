@@ -17,8 +17,8 @@ templ Card(id string) {
 
 // CardDisclosure — collapsible card container with summary header.
 // Use with CardDisclosureHeader and CardDisclosureBody.
-templ CardDisclosure(id string) {
-	<details id={ id } class="card-disclosure group bg-white shadow" open>
+templ CardDisclosure(id string, open bool) {
+	<details id={ id } class="card-disclosure group bg-white shadow" open?={ open }>
 		{ children... }
 	</details>
 }

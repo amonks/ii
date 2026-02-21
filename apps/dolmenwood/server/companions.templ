@@ -3,7 +3,7 @@ package server
 import "fmt"
 
 templ CompanionsSection(view *CharacterView) {
-	@CardDisclosure("companions") {
+	@CardDisclosure("companions", true) {
 		@CardDisclosureHeader() {
 			@CompanionsSummary(view)
 		}
