@@ -247,7 +247,10 @@ func TestStatsCardShowsAlignmentSection(t *testing.T) {
 	}
 
 	body := w.Body.String()
-	for _, text := range []string{"Alignment", "Background", "Liege", "Lawful", "Noble", "Duke Maldric"} {
+	if !strings.Contains(body, "Background & Alignment") {
+		t.Error("response should include background + alignment section header")
+	}
+	for _, text := range []string{"Alignment", "Background", "Allegiance", "Lawful", "Noble", "Duke Maldric"} {
 		if !strings.Contains(body, text) {
 			t.Errorf("response should contain %q", text)
 		}
@@ -2581,20 +2584,25 @@ func TestStoreCardSectionsAreCollapsible(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	adventuringStart := strings.Index(body, "Adventuring Gear")
-	if adventuringStart == -1 {
-		t.Fatal("store should list adventuring gear")
+	storeIdx := strings.Index(body, "id=\"store\"")
+	if storeIdx == -1 {
+		t.Fatal("expected store card in response")
 	}
-	weaponsStart := strings.Index(body, "Weapons")
-	if weaponsStart == -1 {
-		t.Fatal("store should list weapons")
+	end := len(body)
+	encumbranceIdx := strings.Index(body, "id=\"encumbrance\"")
+	if encumbranceIdx > storeIdx {
+		end = encumbranceIdx
 	}
-	adventuringSegment := body[adventuringStart:weaponsStart]
-	if !strings.Contains(adventuringSegment, "<details") {
-		t.Error("store section should use details element for collapse")
+	storeSegment := body[storeIdx:end]
+	for _, title := range []string{"Adventuring Gear", "Weapons", "Ammunition", "Armour", "Horses and Vehicles"} {
+		if !strings.Contains(storeSegment, title) {
+			t.Errorf("store card should contain %q section", title)
+		}
 	}
-	if !strings.Contains(adventuringSegment, "<summary") {
-		t.Error("store section should include a summary trigger")
+	summaryCount := strings.Count(storeSegment, "text-sm font-bold text-stone-700 cursor-pointer")
+	const want = 5
+	if summaryCount != want {
+		t.Errorf("expected %d store group summaries, got %d", want, summaryCount)
 	}
 }
 

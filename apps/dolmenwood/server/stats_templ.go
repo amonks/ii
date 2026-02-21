@@ -109,7 +109,7 @@ func StatsSection(view *CharacterView) templ.Component {
 								}()
 							}
 							ctx = templ.InitializeContext(ctx)
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "Alignment ")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "Background & Alignment ")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -162,7 +162,7 @@ func StatsSection(view *CharacterView) templ.Component {
 							}
 						}
 						if view.Character.Liege != "" {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dt class=\"text-xs uppercase tracking-wide text-stone-500\">Liege</dt><dd>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dt class=\"text-xs uppercase tracking-wide text-stone-500\">Allegiance</dt><dd>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
