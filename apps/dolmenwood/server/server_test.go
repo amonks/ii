@@ -221,6 +221,39 @@ func TestCardDisclosureMarkup(t *testing.T) {
 	}
 }
 
+func TestStatsCardShowsAlignmentSection(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name:       "Test",
+		Class:      "Knight",
+		Kindred:    "Human",
+		Level:      1,
+		HPCurrent:  8,
+		HPMax:      8,
+		Alignment:  "Lawful",
+		Background: "Noble",
+		Liege:      "Duke Maldric",
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	for _, text := range []string{"Alignment", "Background", "Liege", "Lawful", "Noble", "Duke Maldric"} {
+		if !strings.Contains(body, text) {
+			t.Errorf("response should contain %q", text)
+		}
+	}
+}
+
 func TestStatsCardShowsSpeedBreakdown(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

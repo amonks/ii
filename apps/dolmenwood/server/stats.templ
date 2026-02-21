@@ -11,176 +11,182 @@ templ StatsSection(view *CharacterView) {
 			@StatsSummary(view)
 		}
 		@CardDisclosureBody() {
-		if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
-			@LabelSpaced() {
-				if view.Character.Alignment != "" {
-					<span>{ view.Character.Alignment }</span>
-				}
-				if view.Character.Background != "" {
-					<span>{ view.Character.Background }</span>
-				}
-				if view.Character.Liege != "" {
-					<span>Liege: { view.Character.Liege }</span>
-				}
-			}
-		}
-		@CardSection() {
-			@SectionHeader() { Scores }
-			@Grid(6) {
-				@abilityBox("STR", view.Character.STR)
-				@abilityBox("DEX", view.Character.DEX)
-				@abilityBox("CON", view.Character.CON)
-				@abilityBox("INT", view.Character.INT)
-				@abilityBox("WIS", view.Character.WIS)
-				@abilityBox("CHA", view.Character.CHA)
-			}
-		}
-		@CardSection() {
-			@SectionHeader() { Combat }
-			@Grid(3) {
-				@BillboardLg() {
-					@LabelBlock() { HP }
-					@ValueText() {
-						<span id="hp-display">{ fmt.Sprintf("%d", view.Character.HPCurrent) }</span>/{ fmt.Sprintf("%d", view.Character.HPMax) }
-					}
-					<form hx-post="hp/" hx-target="#stats" hx-swap="outerHTML">
-						@InlineFormActions() {
-							@FormInputSmallCenterWide(templ.Attributes{
-								"type": "number",
-								"name": "hp_current",
-								"value": fmt.Sprintf("%d", view.Character.HPCurrent),
-							})
-							@Label() { / }
-							@BtnSecondary() { Set }
+			if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
+				@CardSection() {
+					@SectionHeader() { Alignment }
+					<dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm text-stone-700">
+						if view.Character.Alignment != "" {
+							<dt class="text-xs uppercase tracking-wide text-stone-500">Alignment</dt>
+							<dd>{ view.Character.Alignment }</dd>
 						}
-					</form>
-				}
-				@BillboardLg() {
-					@LabelBlock() { AC }
-					@ValueText() { { fmt.Sprintf("%d", view.AC) } }
-					if view.ArmorName != "" {
-						@LabelBlock() { { view.ArmorName } (+{ fmt.Sprintf("%d", view.ArmorAC) }) }
-					}
-					if view.ShieldName != "" {
-						@LabelBlock() { { view.ShieldName } (+{ fmt.Sprintf("%d", view.ShieldAC) }) }
-					}
-				}
-				@BillboardLg() {
-					@LabelBlock() { Atk }
-					@ValueText() { +{ fmt.Sprintf("%d", view.AttackBonus) } }
-					if len(view.Weapons) > 0 {
-						for _, w := range view.Weapons {
-							@LabelBlock() { { w.Name } { w.Damage } }
+						if view.Character.Background != "" {
+							<dt class="text-xs uppercase tracking-wide text-stone-500">Background</dt>
+							<dd>{ view.Character.Background }</dd>
 						}
-					}
-				}
-			}
-		}
-		@CardSection() {
-			@SectionHeader() { Birthday }
-			<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML">
-				@FormRowWrap() {
-					@FormSelectSmallPadded(templ.Attributes{"name": "birthday_month"}) {
-						<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
-						for _, month := range view.BirthdayMonths {
-							<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
+						if view.Character.Liege != "" {
+							<dt class="text-xs uppercase tracking-wide text-stone-500">Liege</dt>
+							<dd>{ view.Character.Liege }</dd>
 						}
-					}
-					@FormSelectSmallPadded(templ.Attributes{"name": "birthday_day"}) {
-						<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
-						for _, day := range view.BirthdayDays {
-							<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
-						}
-					}
-					@BtnSecondary() { Set }
-				}
-			</form>
-		}
-		@CardSection() {
-			@SectionHeader() { Saves }
-			if view.MagicResistance != 0 {
-				@Grid(6) {
-					@saveBox("Death", view.Saves.Death)
-					@saveBox("Wands", view.Saves.Wands)
-					@saveBox("Para", view.Saves.Paralysis)
-					@saveBox("Breath", view.Saves.Breath)
-					@saveBox("Spells", view.Saves.Spells)
-					@Billboard() {
-						@LabelBlock() { MR }
-						@ValueText() { { formatMod(view.MagicResistance) } }
-					}
-				}
-			} else {
-				@Grid(5) {
-					@saveBox("Death", view.Saves.Death)
-					@saveBox("Wands", view.Saves.Wands)
-					@saveBox("Para", view.Saves.Paralysis)
-					@saveBox("Breath", view.Saves.Breath)
-					@saveBox("Spells", view.Saves.Spells)
+					</dl>
 				}
 			}
-			if len(view.SaveBonuses) > 0 {
-				<ul>
-					for _, b := range view.SaveBonuses {
-						<li>
-							@Text() { { b.Source } }
-							@Label() { { " " + b.Description } }
-						</li>
-					}
-				</ul>
-			}
-		}
-		@CardSection() {
-			@SectionHeader() { Speed }
-			@Grid(5) {
-				@Billboard() {
-					@LabelBlock() { Encounter }
-					@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedEncounter) } }
-				}
-				@Billboard() {
-					@LabelBlock() { Exploration (unknown) }
-					@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationUnknown) } }
-				}
-				@Billboard() {
-					@LabelBlock() { Exploration (mapped) }
-					@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationMapped) } }
-				}
-				@Billboard() {
-					@LabelBlock() { Running }
-					@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedRunning) } }
-				}
-				@Billboard() {
-					@LabelBlock() { Overland }
-					@ValueText() { { fmt.Sprintf("%d tp/day", view.SpeedOverland) } }
-				}
-			}
-			if view.Traits.Knighthood || view.Traits.MonsterSlayer {
-				@Cluster() {
-					if view.Traits.Knighthood {
-						@BadgeWarning() { Knighthood }
-					}
-					if view.Traits.MonsterSlayer {
-						@BadgeDanger() { Monster Slayer }
-					}
-				}
-			}
-		}
-		if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
 			@CardSection() {
-				@SectionHeader() { Activity Log }
-				@Details() {
-					@Summary() { Show }
-					@DetailsBody() {
-						for _, entry := range entries {
-							@LogEntry() {
-								<span>{ entry.Detail }</span>
-								@auditDate(entry)
+				@SectionHeader() { Scores }
+				@Grid(6) {
+					@abilityBox("STR", view.Character.STR)
+					@abilityBox("DEX", view.Character.DEX)
+					@abilityBox("CON", view.Character.CON)
+					@abilityBox("INT", view.Character.INT)
+					@abilityBox("WIS", view.Character.WIS)
+					@abilityBox("CHA", view.Character.CHA)
+				}
+			}
+			@CardSection() {
+				@SectionHeader() { Combat }
+				@Grid(3) {
+					@BillboardLg() {
+						@LabelBlock() { HP }
+						@ValueText() {
+							<span id="hp-display">{ fmt.Sprintf("%d", view.Character.HPCurrent) }</span>/{ fmt.Sprintf("%d", view.Character.HPMax) }
+						}
+						<form hx-post="hp/" hx-target="#stats" hx-swap="outerHTML">
+							@InlineFormActions() {
+								@FormInputSmallCenterWide(templ.Attributes{
+									"type": "number",
+									"name": "hp_current",
+									"value": fmt.Sprintf("%d", view.Character.HPCurrent),
+								})
+								@Label() { / }
+								@BtnSecondary() { Set }
+							}
+						</form>
+					}
+					@BillboardLg() {
+						@LabelBlock() { AC }
+						@ValueText() { { fmt.Sprintf("%d", view.AC) } }
+						if view.ArmorName != "" {
+							@LabelBlock() { { view.ArmorName } (+{ fmt.Sprintf("%d", view.ArmorAC) }) }
+						}
+						if view.ShieldName != "" {
+							@LabelBlock() { { view.ShieldName } (+{ fmt.Sprintf("%d", view.ShieldAC) }) }
+						}
+					}
+					@BillboardLg() {
+						@LabelBlock() { Atk }
+						@ValueText() { +{ fmt.Sprintf("%d", view.AttackBonus) } }
+						if len(view.Weapons) > 0 {
+							for _, w := range view.Weapons {
+								@LabelBlock() { { w.Name } { w.Damage } }
 							}
 						}
 					}
 				}
 			}
-		}
+			@CardSection() {
+				@SectionHeader() { Birthday }
+				<form hx-post="birthday/" hx-target="#sheet-body" hx-swap="innerHTML">
+					@FormRowWrap() {
+						@FormSelectSmallPadded(templ.Attributes{"name": "birthday_month"}) {
+							<option value="" if view.Character.BirthdayMonth == "" { selected } disabled>Month</option>
+							for _, month := range view.BirthdayMonths {
+								<option value={ month.Name } if month.Name == view.Character.BirthdayMonth { selected }>{ month.Name }</option>
+							}
+						}
+						@FormSelectSmallPadded(templ.Attributes{"name": "birthday_day"}) {
+							<option value="" if view.Character.BirthdayDay == 0 { selected } disabled>Day</option>
+							for _, day := range view.BirthdayDays {
+								<option value={ fmt.Sprintf("%d", day) } if day == view.Character.BirthdayDay { selected }>{ fmt.Sprintf("%d", day) }</option>
+							}
+						}
+						@BtnSecondary() { Set }
+					}
+				</form>
+			}
+			@CardSection() {
+				@SectionHeader() { Saves }
+				if view.MagicResistance != 0 {
+					@Grid(6) {
+						@saveBox("Death", view.Saves.Death)
+						@saveBox("Wands", view.Saves.Wands)
+						@saveBox("Para", view.Saves.Paralysis)
+						@saveBox("Breath", view.Saves.Breath)
+						@saveBox("Spells", view.Saves.Spells)
+						@Billboard() {
+							@LabelBlock() { MR }
+							@ValueText() { { formatMod(view.MagicResistance) } }
+						}
+					}
+				} else {
+					@Grid(5) {
+						@saveBox("Death", view.Saves.Death)
+						@saveBox("Wands", view.Saves.Wands)
+						@saveBox("Para", view.Saves.Paralysis)
+						@saveBox("Breath", view.Saves.Breath)
+						@saveBox("Spells", view.Saves.Spells)
+					}
+				}
+				if len(view.SaveBonuses) > 0 {
+					<ul>
+						for _, b := range view.SaveBonuses {
+							<li>
+								@Text() { { b.Source } }
+								@Label() { { " " + b.Description } }
+							</li>
+						}
+					</ul>
+				}
+			}
+			@CardSection() {
+				@SectionHeader() { Speed }
+				@Grid(5) {
+					@Billboard() {
+						@LabelBlock() { Encounter }
+						@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedEncounter) } }
+					}
+					@Billboard() {
+						@LabelBlock() { Exploration (unknown) }
+						@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationUnknown) } }
+					}
+					@Billboard() {
+						@LabelBlock() { Exploration (mapped) }
+						@ValueText() { { fmt.Sprintf("%d' / turn", view.SpeedExplorationMapped) } }
+					}
+					@Billboard() {
+						@LabelBlock() { Running }
+						@ValueText() { { fmt.Sprintf("%d' / rnd", view.SpeedRunning) } }
+					}
+					@Billboard() {
+						@LabelBlock() { Overland }
+						@ValueText() { { fmt.Sprintf("%d tp/day", view.SpeedOverland) } }
+					}
+				}
+				if view.Traits.Knighthood || view.Traits.MonsterSlayer {
+					@Cluster() {
+						if view.Traits.Knighthood {
+							@BadgeWarning() { Knighthood }
+						}
+						if view.Traits.MonsterSlayer {
+							@BadgeDanger() { Monster Slayer }
+						}
+					}
+				}
+			}
+			if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
+				@CardSection() {
+					@SectionHeader() { Activity Log }
+					@Details() {
+						@Summary() { Show }
+						@DetailsBody() {
+							for _, entry := range entries {
+								@LogEntry() {
+									<span>{ entry.Detail }</span>
+									@auditDate(entry)
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
