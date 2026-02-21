@@ -4,8 +4,10 @@ import "fmt"
 
 templ BankSection(view *CharacterView) {
 	@CardDisclosure("bank") {
-		@BankSummary(view)
-
+		@CardDisclosureHeader() {
+			@BankSummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { Deposits }
 			if len(view.BankDeposits) > 0 {
@@ -52,6 +54,7 @@ templ BankSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }

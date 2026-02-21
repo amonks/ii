@@ -4,8 +4,10 @@ import "fmt"
 
 templ XPSection(view *CharacterView) {
 	@CardDisclosure("xp") {
-		@XPSummary(view)
-
+		@CardDisclosureHeader() {
+			@XPSummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { Progress }
 			@ProgressBar(xpBarWidth(view))
@@ -48,6 +50,7 @@ templ XPSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }

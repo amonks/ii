@@ -4,8 +4,10 @@ import "monks.co/apps/dolmenwood/engine"
 
 templ TraitsSection(view *CharacterView) {
 	@CardDisclosure("traits") {
-		@TraitsSummary(view)
-
+		@CardDisclosureHeader() {
+			@TraitsSummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { Kindred Traits }
 			@traitList(view.KindredTraits)
@@ -26,6 +28,7 @@ templ TraitsSection(view *CharacterView) {
 				@TextBlock() { { view.MoonSign.Moon } ({ view.MoonSign.Phase }) }
 				@LabelBlock() { { view.MoonSign.Effect } }
 			}
+		}
 		}
 	}
 }

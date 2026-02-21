@@ -5,8 +5,10 @@ import "fmt"
 templ AdvancementSection(view *CharacterView) {
 	if view.AdvancementTable != nil {
 		@CardDisclosure("advancement") {
-			@AdvancementSummary(view)
-
+			@CardDisclosureHeader() {
+				@AdvancementSummary(view)
+			}
+			@CardDisclosureBody() {
 			@CardSection() {
 				@SectionHeader() { { view.AdvancementTable.Title } }
 				@DataTable() {
@@ -31,6 +33,7 @@ templ AdvancementSection(view *CharacterView) {
 						</tbody>
 					}
 				}
+			}
 			}
 		}
 	}

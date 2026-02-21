@@ -4,8 +4,10 @@ import "fmt"
 
 templ WealthSection(view *CharacterView) {
 	@CardDisclosure("wealth") {
-		@WealthSummary(view)
-
+		@CardDisclosureHeader() {
+			@WealthSummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { Overview }
 			@InfoBox() {
@@ -73,6 +75,7 @@ templ WealthSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }

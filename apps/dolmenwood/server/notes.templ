@@ -4,8 +4,10 @@ import "fmt"
 
 templ NotesSection(view *CharacterView) {
 	@CardDisclosure("notes") {
-		@NotesSummary(view)
-
+		@CardDisclosureHeader() {
+			@NotesSummary(view)
+		}
+		@CardDisclosureBody() {
 		if len(view.Notes) > 0 {
 			@CardSection() {
 				@SectionHeader() { All Notes }
@@ -44,6 +46,7 @@ templ NotesSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }

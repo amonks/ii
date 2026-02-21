@@ -4,8 +4,10 @@ import "fmt"
 
 templ CompanionsSection(view *CharacterView) {
 	@CardDisclosure("companions") {
-		@CompanionsSummary(view)
-
+		@CardDisclosureHeader() {
+			@CompanionsSummary(view)
+		}
+		@CardDisclosureBody() {
 		if len(view.Companions) > 0 {
 			for _, comp := range view.Companions {
 				@CardSection() {
@@ -128,6 +130,7 @@ templ CompanionsSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }

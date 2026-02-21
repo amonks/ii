@@ -7,8 +7,10 @@ import (
 
 templ InventorySection(view *CharacterView) {
 	@CardDisclosure("inventory") {
-		@InventorySummary(view)
-
+		@CardDisclosureHeader() {
+			@InventorySummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { { fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots) } }
 			for _, item := range view.EquippedItems {
@@ -52,6 +54,7 @@ templ InventorySection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }
@@ -162,8 +165,10 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 
 templ EncumbranceSection(view *CharacterView) {
 	@CardDisclosure("encumbrance") {
-		@EncumbranceSummary(view)
-
+		@CardDisclosureHeader() {
+			@EncumbranceSummary(view)
+		}
+		@CardDisclosureBody() {
 		@CardSection() {
 			@SectionHeader() { Equipped }
 			@SpeedRow() {
@@ -218,6 +223,7 @@ templ EncumbranceSection(view *CharacterView) {
 					}
 				}
 			}
+		}
 		}
 	}
 }
