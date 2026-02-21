@@ -119,19 +119,19 @@ func StatsSection(view *CharacterView) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " <dl class=\"grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm text-stone-700\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " <dl class=\"grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if view.Character.Alignment != "" {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dt class=\"text-xs uppercase tracking-wide text-stone-500\">Alignment</dt><dd>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dt class=\"text-stone-500\">Alignment</dt><dd class=\"text-stone-700\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var7 string
 							templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(view.Character.Alignment)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 20, Col: 37}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 20, Col: 60}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 							if templ_7745c5c3_Err != nil {
@@ -143,14 +143,14 @@ func StatsSection(view *CharacterView) templ.Component {
 							}
 						}
 						if view.Character.Background != "" {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<dt class=\"text-xs uppercase tracking-wide text-stone-500\">Background</dt><dd>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<dt class=\"text-stone-500\">Background</dt><dd class=\"text-stone-700\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var8 string
 							templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(view.Character.Background)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 24, Col: 38}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 24, Col: 61}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 							if templ_7745c5c3_Err != nil {
@@ -162,14 +162,14 @@ func StatsSection(view *CharacterView) templ.Component {
 							}
 						}
 						if view.Character.Liege != "" {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dt class=\"text-xs uppercase tracking-wide text-stone-500\">Allegiance</dt><dd>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<dt class=\"text-stone-500\">Allegiance</dt><dd class=\"text-stone-700\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var9 string
 							templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(view.Character.Liege)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 28, Col: 33}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/stats.templ`, Line: 28, Col: 56}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 							if templ_7745c5c3_Err != nil {

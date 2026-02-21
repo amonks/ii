@@ -283,7 +283,7 @@ func AdvancementSection(view *CharacterView) templ.Component {
 				}
 				return nil
 			})
-			templ_7745c5c3_Err = CardDisclosure("advancement", true).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = CardDisclosure("advancement", false).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

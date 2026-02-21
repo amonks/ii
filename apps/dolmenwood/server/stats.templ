@@ -14,18 +14,18 @@ templ StatsSection(view *CharacterView) {
 			if view.Character.Alignment != "" || view.Character.Background != "" || view.Character.Liege != "" {
 				@CardSection() {
 					@SectionHeader() { Background & Alignment }
-					<dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm text-stone-700">
+					<dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm">
 						if view.Character.Alignment != "" {
-							<dt class="text-xs uppercase tracking-wide text-stone-500">Alignment</dt>
-							<dd>{ view.Character.Alignment }</dd>
+							<dt class="text-stone-500">Alignment</dt>
+							<dd class="text-stone-700">{ view.Character.Alignment }</dd>
 						}
 						if view.Character.Background != "" {
-							<dt class="text-xs uppercase tracking-wide text-stone-500">Background</dt>
-							<dd>{ view.Character.Background }</dd>
+							<dt class="text-stone-500">Background</dt>
+							<dd class="text-stone-700">{ view.Character.Background }</dd>
 						}
 						if view.Character.Liege != "" {
-							<dt class="text-xs uppercase tracking-wide text-stone-500">Allegiance</dt>
-							<dd>{ view.Character.Liege }</dd>
+							<dt class="text-stone-500">Allegiance</dt>
+							<dd class="text-stone-700">{ view.Character.Liege }</dd>
 						}
 					</dl>
 				}
