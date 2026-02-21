@@ -2530,6 +2530,41 @@ func TestStoreCardCollapsedAndOrderedBelowInventory(t *testing.T) {
 	}
 }
 
+func TestStoreCardSectionsAreCollapsible(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	adventuringStart := strings.Index(body, "Adventuring Gear")
+	if adventuringStart == -1 {
+		t.Fatal("store should list adventuring gear")
+	}
+	weaponsStart := strings.Index(body, "Weapons")
+	if weaponsStart == -1 {
+		t.Fatal("store should list weapons")
+	}
+	adventuringSegment := body[adventuringStart:weaponsStart]
+	if !strings.Contains(adventuringSegment, "<details") {
+		t.Error("store section should use details element for collapse")
+	}
+	if !strings.Contains(adventuringSegment, "<summary") {
+		t.Error("store section should include a summary trigger")
+	}
+}
+
 func TestStoreCardListsAdventuringGear(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

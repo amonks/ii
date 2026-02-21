@@ -11,45 +11,50 @@ templ StoreSection(view *CharacterView) {
 		for _, group := range view.StoreGroups {
 			@CardSection() {
 				@SectionHeader() { { group.Title } }
-				for _, item := range group.Items {
-					@Row() {
-						<div>
-							@TextBlock() { { item.Name } }
-							@Cluster() {
-								if item.CostCoinLabel != "" {
-									@Label() { { item.CostCoinLabel } }
-								}
-								if item.Weight > 0 {
-									@Label() { { fmt.Sprintf("%d cn", item.Weight) } }
-								}
-								if item.Bulk > 0 {
-									@Label() { { fmt.Sprintf("%d slots", item.Bulk) } }
-								}
-								if item.AC > 0 {
-									@Label() { AC { fmt.Sprintf("%d", item.AC) } }
-								}
-								if item.Damage != "" {
-									@Label() { { item.Damage } }
-								}
-								if item.Qualities != "" {
-									@Label() { { item.Qualities } }
-								}
-								if item.Load > 0 {
-									@Label() { { fmt.Sprintf("Load %d cn", item.Load) } }
-								}
-								if item.Cargo > 0 {
-									@Label() { { fmt.Sprintf("Cargo %d cn", item.Cargo) } }
-								}
-								if item.Capacity > 0 {
-									@Label() { { fmt.Sprintf("Capacity %d slots", item.Capacity) } }
-								}
+				@Details() {
+					@Summary() { Show }
+					<div class="mt-2 space-y-1">
+						for _, item := range group.Items {
+							@Row() {
+								<div>
+									@TextBlock() { { item.Name } }
+									@Cluster() {
+										if item.CostCoinLabel != "" {
+											@Label() { { item.CostCoinLabel } }
+										}
+										if item.Weight > 0 {
+											@Label() { { fmt.Sprintf("%d cn", item.Weight) } }
+										}
+										if item.Bulk > 0 {
+											@Label() { { fmt.Sprintf("%d slots", item.Bulk) } }
+										}
+										if item.AC > 0 {
+											@Label() { AC { fmt.Sprintf("%d", item.AC) } }
+										}
+										if item.Damage != "" {
+											@Label() { { item.Damage } }
+										}
+										if item.Qualities != "" {
+											@Label() { { item.Qualities } }
+										}
+										if item.Load > 0 {
+											@Label() { { fmt.Sprintf("Load %d cn", item.Load) } }
+										}
+										if item.Cargo > 0 {
+											@Label() { { fmt.Sprintf("Cargo %d cn", item.Cargo) } }
+										}
+										if item.Capacity > 0 {
+											@Label() { { fmt.Sprintf("Capacity %d slots", item.Capacity) } }
+										}
+									}
+								</div>
+								<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML">
+									<input type="hidden" name="item_id" value={ item.ID }/>
+									@BtnPrimary() { Buy }
+								</form>
 							}
-						</div>
-						<form hx-post="store/buy/" hx-target="#inventory" hx-swap="outerHTML">
-							<input type="hidden" name="item_id" value={ item.ID }/>
-							@BtnPrimary() { Buy }
-						</form>
-					}
+						}
+					</div>
 				}
 			}
 		}
