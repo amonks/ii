@@ -181,7 +181,7 @@ func SheetBody(view *CharacterView) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = AdvancementSection(view).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = NotesSection(view).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -189,7 +189,7 @@ func SheetBody(view *CharacterView) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = NotesSection(view).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = AdvancementSection(view).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -381,7 +381,7 @@ func CharacterList(characters []db.Character) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "DEX ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "INT ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -391,7 +391,7 @@ func CharacterList(characters []db.Character) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "dex", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "int", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -411,7 +411,7 @@ func CharacterList(characters []db.Character) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "CON ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "WIS ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -421,7 +421,7 @@ func CharacterList(characters []db.Character) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "con", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "wis", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -441,7 +441,7 @@ func CharacterList(characters []db.Character) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "INT ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "DEX ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -451,7 +451,7 @@ func CharacterList(characters []db.Character) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "int", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "dex", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
@@ -471,7 +471,7 @@ func CharacterList(characters []db.Character) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "WIS ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "CON ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -481,7 +481,7 @@ func CharacterList(characters []db.Character) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "wis", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = FormInputBlock(templ.Attributes{"type": "number", "name": "con", "value": "10", "min": "3", "max": "18"}).Render(ctx, templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
