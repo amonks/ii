@@ -76,6 +76,22 @@ templ WealthSection(view *CharacterView) {
 				}
 			}
 		}
+		if entries := filterAuditLog(view.AuditLog, "treasure_add", "treasure_undo", "return_to_safety"); len(entries) > 0 {
+			@CardSection() {
+				@SectionHeader() { Wealth Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
+						}
+					}
+				}
+			}
+		}
 		}
 	}
 }

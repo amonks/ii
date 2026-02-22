@@ -34,6 +34,22 @@ templ AdvancementSection(view *CharacterView) {
 					}
 				}
 			}
+			if entries := filterAuditLog(view.AuditLog, "level_up"); len(entries) > 0 {
+				@CardSection() {
+					@SectionHeader() { Advancement Log }
+					@Details() {
+						@Summary() { Show }
+						@DetailsBody() {
+							for _, entry := range entries {
+								@LogEntry() {
+									<span>{ entry.Detail }</span>
+									@auditDate(entry)
+								}
+							}
+						}
+					}
+				}
+			}
 			}
 		}
 	}

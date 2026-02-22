@@ -171,7 +171,7 @@ templ StatsSection(view *CharacterView) {
 					}
 				}
 			}
-			if entries := filterAuditLog(view.AuditLog, "hp_change", "level_up"); len(entries) > 0 {
+			if entries := filterAuditLog(view.AuditLog, "character_create", "hp_change", "birthday_update", "level_up"); len(entries) > 0 {
 				@CardSection() {
 					@SectionHeader() { Activity Log }
 					@Details() {

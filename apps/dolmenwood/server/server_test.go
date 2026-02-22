@@ -154,8 +154,8 @@ func TestGetCharacterSheet(t *testing.T) {
 	if advancementIndex == -1 || notesIndex == -1 {
 		t.Fatalf("expected advancement and notes sections for ordering check")
 	}
-	if !(notesIndex < advancementIndex) {
-		t.Errorf("expected notes before advancement, got notes=%d advancement=%d", notesIndex, advancementIndex)
+	if !(advancementIndex < notesIndex) {
+		t.Errorf("expected advancement before notes, got advancement=%d notes=%d", advancementIndex, notesIndex)
 	}
 }
 

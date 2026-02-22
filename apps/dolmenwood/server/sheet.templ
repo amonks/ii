@@ -25,8 +25,9 @@ templ SheetBody(view *CharacterView) {
 		@WealthSection(view)
 		@BankSection(view)
 		@XPSection(view)
-		@NotesSection(view)
 		@AdvancementSection(view)
+		@NotesSection(view)
+		@FullLogSection(view)
 	}
 }
 
@@ -85,6 +86,22 @@ templ DayCounter(view *CharacterView) {
 				}
 			</form>
 		}
+		if entries := filterAuditLog(view.AuditLog, "day_advance", "calendar_update"); len(entries) > 0 {
+			@CardSection() {
+				@SectionHeader() { Day Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -120,4 +137,23 @@ func xpBarWidth(view *CharacterView) string {
 		pct = 100
 	}
 	return fmt.Sprintf("width: %d%%", pct)
+}
+
+templ FullLogSection(view *CharacterView) {
+	if len(view.AuditLog) > 0 {
+		@Card("full-log") {
+			@Heading() { Log }
+			@Details() {
+				@Summary() { Show }
+				@DetailsBody() {
+					for _, entry := range view.AuditLog {
+						@LogEntry() {
+							<span>{ entry.Detail }</span>
+							@auditDate(entry)
+						}
+					}
+				}
+			}
+		}
+	}
 }

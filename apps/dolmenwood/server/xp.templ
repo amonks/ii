@@ -51,6 +51,22 @@ templ XPSection(view *CharacterView) {
 				}
 			}
 		}
+		if entries := filterAuditLog(view.AuditLog, "xp_add", "return_to_safety"); len(entries) > 0 {
+			@CardSection() {
+				@SectionHeader() { XP Audit Log }
+				@Details() {
+					@Summary() { Show }
+					@DetailsBody() {
+						for _, entry := range entries {
+							@LogEntry() {
+								<span>{ entry.Detail }</span>
+								@auditDate(entry)
+							}
+						}
+					}
+				}
+			}
+		}
 		}
 	}
 }
