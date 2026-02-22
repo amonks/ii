@@ -42,6 +42,11 @@ func CalculateEncumbrance(items []Item) (equipped, stowed int, companionSlots ma
 	}
 
 	for _, item := range items {
+		// Companion gear (saddles, barding) enables capacity, doesn't consume it
+		if item.CompanionID != nil && IsCompanionGear(item.Name) {
+			continue
+		}
+
 		slots := ItemSlots(item)
 
 		if item.CompanionID != nil {

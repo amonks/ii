@@ -58,7 +58,7 @@ templ StoreSection(view *CharacterView) {
 				}
 			}
 		}
-		if entries := filterAuditLog(view.AuditLog, "store_buy"); len(entries) > 0 {
+		if entries := filterAuditLog(view.AuditLog, "store_buy", "store_sell"); len(entries) > 0 {
 			@CardSection() {
 				@SectionHeader() { Store Log }
 				@Details() {

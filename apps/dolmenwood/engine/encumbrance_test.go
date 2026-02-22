@@ -377,6 +377,25 @@ func TestCoinItemSlots(t *testing.T) {
 	}
 }
 
+func TestCompanionGearDoesNotConsumeSlots(t *testing.T) {
+	companionID := uint(1)
+
+	items := []Item{
+		// Companion gear: saddle and barding enable capacity, don't consume it
+		{ID: 10, Name: "Pack saddle and bridle", Quantity: 1, CompanionID: &companionID},
+		{ID: 11, Name: "Horse barding", Quantity: 1, CompanionID: &companionID},
+		// Regular item on companion does consume slots
+		{ID: 12, Name: "Rope", Quantity: 1, CompanionID: &companionID}, // 100cn = 1 slot
+	}
+
+	_, _, companionSlots := CalculateEncumbrance(items)
+
+	// Only the rope should count (1 slot). Saddle and barding should be skipped.
+	if companionSlots[companionID] != 1 {
+		t.Errorf("companion slots = %d, want 1 (gear should not consume slots)", companionSlots[companionID])
+	}
+}
+
 func TestCompanionContainerItemsDontAffectSpeed(t *testing.T) {
 	companionID := uint(1)
 	chestID := uint(10)

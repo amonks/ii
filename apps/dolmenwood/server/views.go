@@ -103,11 +103,12 @@ type StoreItem struct {
 
 type InventoryItem struct {
 	db.Item
-	Slots      int
-	BundleSize int
-	Children   []InventoryItem
-	Capacity   int // container capacity (0 if not a container)
-	UsedSlots  int // sum of children's slots
+	Slots       int
+	BundleSize  int
+	Children    []InventoryItem
+	Capacity    int // container capacity (0 if not a container)
+	UsedSlots   int // sum of children's slots
+	SellPriceCP int // sell price in CP (half of store buy price), 0 if not sellable
 }
 
 // CompanionInventory groups items under a companion.
@@ -253,14 +254,25 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	stowedCap, stowedContainers := engine.StowedCapacity(engineItems)
 
-	// Build companion views with breed-derived stats
+	// Group items by companion ID for gear derivation
+	companionItems := make(map[uint][]engine.Item)
+	for _, item := range items {
+		if item.CompanionID != nil {
+			companionItems[*item.CompanionID] = append(companionItems[*item.CompanionID], dbItemToEngine(item))
+		}
+	}
+
+	// Build companion views with breed-derived stats; saddle/barding from items
 	compViews := make([]CompanionView, len(companions))
 	for i, comp := range companions {
 		cv := CompanionView{Companion: comp}
 		if stats, ok := engine.BreedStats(comp.Breed); ok {
-			cv.AC = engine.CompanionAC(stats.AC, comp.HasBarding)
+			compItems := companionItems[comp.ID]
+			saddleType := engine.CompanionSaddleTypeFromItems(compItems)
+			hasBarding := engine.CompanionHasBardingFromItems(compItems)
+			cv.AC = engine.CompanionAC(stats.AC, hasBarding)
 			cv.Speed = stats.Speed
-			cv.LoadCapacity = engine.CompanionLoadCapacity(stats.LoadCapacity, comp.SaddleType)
+			cv.LoadCapacity = engine.CompanionLoadCapacity(stats.LoadCapacity, saddleType)
 			cv.Level = stats.Level
 			cv.Saves = stats.Saves
 			cv.Attack = stats.Attack
@@ -794,6 +806,9 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 			Item:       item,
 			Slots:      itemSlots(item),
 			BundleSize: engine.ItemBundleSize(item.Name),
+		}
+		if sellCP, ok := storeSellPriceCP(item.Name); ok {
+			inv.SellPriceCP = sellCP
 		}
 		if cap, ok := engine.ContainerCapacity(item.Name); ok {
 			inv.Capacity = cap

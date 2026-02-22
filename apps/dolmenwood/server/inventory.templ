@@ -144,6 +144,12 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 						}
 					</form>
 				}
+				if item.SellPriceCP > 0 {
+					<form hx-post={ fmt.Sprintf("items/%d/sell/", item.ID) }
+						hx-target="#inventory" hx-swap="outerHTML">
+						@BtnSell(itemCostLabel(item.SellPriceCP, ""))
+					</form>
+				}
 				if item.BundleSize > 0 && item.Quantity > 1 {
 					<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
 						hx-target="#inventory" hx-swap="outerHTML">

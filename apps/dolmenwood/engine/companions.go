@@ -1,5 +1,7 @@
 package engine
 
+import "strings"
+
 // CompanionStats holds the full stats for a horse/mule breed.
 type CompanionStats struct {
 	AC           int
@@ -40,6 +42,51 @@ func BreedStats(breed string) (CompanionStats, bool) {
 // BreedNames returns all known breed names in display order.
 func BreedNames() []string {
 	return breedOrder
+}
+
+// IsCompanionBreed returns true if the name matches a known horse/mule breed.
+func IsCompanionBreed(name string) bool {
+	for breed := range breeds {
+		if strings.EqualFold(breed, name) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsCompanionGear returns true if the item is companion gear (saddle/bridle/barding)
+// that enables companion capacity rather than consuming it.
+func IsCompanionGear(name string) bool {
+	lower := strings.ToLower(name)
+	switch lower {
+	case "pack saddle and bridle", "riding saddle and bridle", "horse barding":
+		return true
+	}
+	return false
+}
+
+// CompanionSaddleTypeFromItems scans items for a saddle and returns "pack", "riding", or "".
+func CompanionSaddleTypeFromItems(items []Item) string {
+	for _, item := range items {
+		lower := strings.ToLower(item.Name)
+		switch lower {
+		case "pack saddle and bridle":
+			return "pack"
+		case "riding saddle and bridle":
+			return "riding"
+		}
+	}
+	return ""
+}
+
+// CompanionHasBardingFromItems scans items for horse barding.
+func CompanionHasBardingFromItems(items []Item) bool {
+	for _, item := range items {
+		if strings.EqualFold(item.Name, "horse barding") {
+			return true
+		}
+	}
+	return false
 }
 
 // CompanionAC returns the effective AC for a companion.

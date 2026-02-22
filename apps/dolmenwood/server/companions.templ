@@ -74,22 +74,6 @@ templ CompanionsSection(view *CharacterView) {
 									"value": fmt.Sprintf("%d", comp.HPMax),
 								})
 							}
-							@InlineFormActions() {
-								@LabelInline() { Saddle }
-								@FormSelectSmall(templ.Attributes{"name": "saddle_type"}) {
-									<option value="" if comp.SaddleType == "" { selected }>None</option>
-									<option value="riding" if comp.SaddleType == "riding" { selected }>Riding</option>
-									<option value="pack" if comp.SaddleType == "pack" { selected }>Pack</option>
-								}
-							}
-							@Checkbox() {
-								if comp.HasBarding {
-									<input type="checkbox" name="has_barding" checked/>
-								} else {
-									<input type="checkbox" name="has_barding"/>
-								}
-								@CheckboxLabel() { Barding }
-							}
 							@ActionRight() {
 								@BtnSecondary() { Save }
 							}

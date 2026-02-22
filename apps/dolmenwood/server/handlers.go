@@ -627,8 +627,6 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			oldName := comp.Name
 			oldHP := comp.HPCurrent
 			oldHPMax := comp.HPMax
-			oldSaddle := comp.SaddleType
-			oldBarding := comp.HasBarding
 
 			if name := r.FormValue("name"); name != "" {
 				comp.Name = name
@@ -637,8 +635,6 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			if hpMax := r.FormValue("hp_max"); hpMax != "" {
 				comp.HPMax = atoi(hpMax)
 			}
-			comp.SaddleType = r.FormValue("saddle_type")
-			comp.HasBarding = r.FormValue("has_barding") == "on"
 			s.db.UpdateCompanion(&comp)
 
 			var changes []string
@@ -647,16 +643,6 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			}
 			if comp.HPCurrent != oldHP || comp.HPMax != oldHPMax {
 				changes = append(changes, fmt.Sprintf("HP %d/%d → %d/%d", oldHP, oldHPMax, comp.HPCurrent, comp.HPMax))
-			}
-			if comp.SaddleType != oldSaddle {
-				changes = append(changes, fmt.Sprintf("saddle %s → %s", oldSaddle, comp.SaddleType))
-			}
-			if comp.HasBarding != oldBarding {
-				if comp.HasBarding {
-					changes = append(changes, "barding added")
-				} else {
-					changes = append(changes, "barding removed")
-				}
 			}
 			if len(changes) > 0 {
 				s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: %s", comp.Name, strings.Join(changes, ", ")))
@@ -1200,6 +1186,31 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, ch *db.
 	EncumbranceSection(view).Render(r.Context(), &buf)
 	oob := strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
 	fmt.Fprint(w, oob)
+	// OOB swap: also update companions (moving saddle/barding changes companion stats)
+	buf.Reset()
+	CompanionsSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="companions"`, `id="companions" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
+}
+
+func (s *Server) renderInventoryAndCompanions(w http.ResponseWriter, r *http.Request, ch *db.Character) {
+	view, err := buildCharacterView(s.db, ch)
+	if err != nil {
+		slog.Error("renderInventoryAndCompanions", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	InventorySection(view).Render(r.Context(), w)
+	// OOB swap encumbrance
+	var buf bytes.Buffer
+	EncumbranceSection(view).Render(r.Context(), &buf)
+	oob := strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
+	// OOB swap companions
+	buf.Reset()
+	CompanionsSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="companions"`, `id="companions" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 }
 
 func (s *Server) renderCompanions(w http.ResponseWriter, r *http.Request, ch *db.Character) {
@@ -1210,6 +1221,16 @@ func (s *Server) renderCompanions(w http.ResponseWriter, r *http.Request, ch *db
 		return
 	}
 	CompanionsSection(view).Render(r.Context(), w)
+	// OOB swap: also update inventory (companion changes affect move targets and inventory sections)
+	var buf bytes.Buffer
+	InventorySection(view).Render(r.Context(), &buf)
+	oob := strings.Replace(buf.String(), `id="inventory"`, `id="inventory" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
+	// OOB swap: also update encumbrance
+	buf.Reset()
+	EncumbranceSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 }
 
 func (s *Server) renderNotes(w http.ResponseWriter, r *http.Request, ch *db.Character) {

@@ -722,8 +722,6 @@ func TestUpdateCompanion(t *testing.T) {
 	form.Set("name", "Shadowfax")
 	form.Set("hp_current", "7")
 	form.Set("hp_max", "12")
-	form.Set("saddle_type", "pack")
-	form.Set("has_barding", "on")
 	req := httptest.NewRequest("POST", "/characters/1/companions/1/update/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
@@ -749,12 +747,6 @@ func TestUpdateCompanion(t *testing.T) {
 	}
 	if got.HPMax != 12 {
 		t.Errorf("HPMax = %d, want 12", got.HPMax)
-	}
-	if got.SaddleType != "pack" {
-		t.Errorf("SaddleType = %q, want %q", got.SaddleType, "pack")
-	}
-	if !got.HasBarding {
-		t.Error("HasBarding should be true")
 	}
 }
 
@@ -4433,5 +4425,225 @@ func TestSplitCoinsAuditLogUsesHumanReadableDestination(t *testing.T) {
 	}
 	if strings.Contains(splitEntry.Detail, fmt.Sprintf("companion:%d", comp.ID)) {
 		t.Errorf("AuditLog.Detail = %q, should not contain raw 'companion:ID' format", splitEntry.Detail)
+	}
+}
+
+func TestBuyCompanionFromStore(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Give enough coins to buy a Mule (30gp = 3000cp). 10pp = 5000cp.
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 10, Notes: "10pp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("Mule", 3000))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	// Should NOT create an inventory item named "Mule"
+	items, _ := d.ListItems(ch.ID)
+	for _, item := range items {
+		if item.Name == "Mule" {
+			t.Fatalf("buying a breed should NOT create an inventory item, got item %q", item.Name)
+		}
+	}
+
+	// Should create a companion
+	companions, _ := d.ListCompanions(ch.ID)
+	if len(companions) != 1 {
+		t.Fatalf("expected 1 companion, got %d", len(companions))
+	}
+	comp := companions[0]
+	if comp.Breed != "Mule" {
+		t.Errorf("companion breed = %q, want %q", comp.Breed, "Mule")
+	}
+	if comp.Name != "Mule" {
+		t.Errorf("companion name = %q, want %q (default name = breed)", comp.Name, "Mule")
+	}
+	stats, _ := engine.BreedStats("Mule")
+	if comp.HPMax != stats.HPMax {
+		t.Errorf("companion HPMax = %d, want %d", comp.HPMax, stats.HPMax)
+	}
+	if comp.HPCurrent != stats.HPMax {
+		t.Errorf("companion HPCurrent = %d, want %d", comp.HPCurrent, stats.HPMax)
+	}
+}
+
+func TestBuyCompanionFromStoreDeductsCoins(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Give enough coins to buy a Mule (30gp = 3000cp). 10pp = 5000cp.
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 10, Notes: "10pp"})
+
+	form := url.Values{}
+	form.Set("item_id", storeItemID("Mule", 3000))
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	// Should create a companion
+	companions, _ := d.ListCompanions(ch.ID)
+	if len(companions) != 1 {
+		t.Fatalf("expected 1 companion, got %d", len(companions))
+	}
+
+	// Coins should be deducted: 5000cp - 3000cp = 2000cp = 4pp
+	items, _ := d.ListItems(ch.ID)
+	for _, item := range items {
+		if item.Name == "Coins" {
+			if item.Notes != "4pp" {
+				t.Errorf("coin notes = %q, want %q", item.Notes, "4pp")
+			}
+			if item.Quantity != 4 {
+				t.Errorf("coin quantity = %d, want 4", item.Quantity)
+			}
+		}
+	}
+
+	// Should NOT create an inventory item named "Mule"
+	for _, item := range items {
+		if item.Name == "Mule" {
+			t.Fatalf("buying a breed should NOT create an inventory item")
+		}
+	}
+
+	// Audit log should have both store_buy and companion_add
+	auditLog, _ := d.ListAuditLog(ch.ID)
+	var hasStoreBuy, hasCompanionAdd bool
+	for _, entry := range auditLog {
+		if entry.Action == "store_buy" {
+			hasStoreBuy = true
+		}
+		if entry.Action == "companion_add" {
+			hasCompanionAdd = true
+		}
+	}
+	if !hasStoreBuy {
+		t.Error("expected store_buy audit log entry")
+	}
+	if !hasCompanionAdd {
+		t.Error("expected companion_add audit log entry")
+	}
+}
+
+func TestSellItem(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Add a Longsword (store price 10gp = 1000cp, sell price = 500cp = 1pp)
+	sword := &db.Item{CharacterID: ch.ID, Name: "Longsword", Quantity: 1, Location: "stowed"}
+	d.CreateItem(sword)
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/sell/", sword.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	// Sword should be gone
+	for _, item := range items {
+		if item.Name == "Longsword" {
+			t.Fatal("longsword should have been deleted after selling")
+		}
+	}
+	// Should have coins worth 500cp = 1gp
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if coinNotes != "1pp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "1pp")
+	}
+
+	// Audit log should have store_sell
+	auditLog, _ := d.ListAuditLog(ch.ID)
+	var hasSell bool
+	for _, entry := range auditLog {
+		if entry.Action == "store_sell" {
+			hasSell = true
+		}
+	}
+	if !hasSell {
+		t.Error("expected store_sell audit log entry")
+	}
+}
+
+func TestSellBundledItem(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Arrows: store price 5gp = 500cp for bundle of 20. Sell = 250cp = 2gp 1ep
+	arrows := &db.Item{CharacterID: ch.ID, Name: "Arrows", Quantity: 20, Location: "stowed"}
+	d.CreateItem(arrows)
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/sell/", arrows.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	// Arrows should be gone
+	for _, item := range items {
+		if item.Name == "Arrows" {
+			t.Fatal("arrows should have been deleted after selling")
+		}
+	}
+	// Should have coins: 250cp = 2gp 1ep
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if coinNotes != "2gp 1ep" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 1ep")
 	}
 }

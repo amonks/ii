@@ -89,6 +89,101 @@ func TestCompanionAC(t *testing.T) {
 	}
 }
 
+func TestIsCompanionBreed(t *testing.T) {
+	cases := []struct {
+		name string
+		want bool
+	}{
+		{"Mule", true},
+		{"Charger", true},
+		{"Dapple-doff", true},
+		{"mule", true},   // case insensitive
+		{"CHARGER", true}, // case insensitive
+		{"Longsword", false},
+		{"Backpack", false},
+		{"", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := IsCompanionBreed(tc.name)
+			if got != tc.want {
+				t.Errorf("IsCompanionBreed(%q) = %v, want %v", tc.name, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestIsCompanionGear(t *testing.T) {
+	cases := []struct {
+		name string
+		want bool
+	}{
+		{"Pack saddle and bridle", true},
+		{"Riding saddle and bridle", true},
+		{"Horse barding", true},
+		{"pack saddle and bridle", true},   // case insensitive
+		{"HORSE BARDING", true},            // case insensitive
+		{"Riding saddle bags", false},      // saddle bags are NOT gear (they're a regular item)
+		{"Longsword", false},
+		{"", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := IsCompanionGear(tc.name)
+			if got != tc.want {
+				t.Errorf("IsCompanionGear(%q) = %v, want %v", tc.name, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCompanionSaddleTypeFromItems(t *testing.T) {
+	cases := []struct {
+		name  string
+		items []Item
+		want  string
+	}{
+		{"no items", nil, ""},
+		{"pack saddle", []Item{{Name: "Pack saddle and bridle", Quantity: 1}}, "pack"},
+		{"riding saddle", []Item{{Name: "Riding saddle and bridle", Quantity: 1}}, "riding"},
+		{"barding only", []Item{{Name: "Horse barding", Quantity: 1}}, ""},
+		{"mixed gear", []Item{
+			{Name: "Riding saddle and bridle", Quantity: 1},
+			{Name: "Horse barding", Quantity: 1},
+		}, "riding"},
+		{"case insensitive", []Item{{Name: "PACK SADDLE AND BRIDLE", Quantity: 1}}, "pack"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CompanionSaddleTypeFromItems(tc.items)
+			if got != tc.want {
+				t.Errorf("CompanionSaddleTypeFromItems() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCompanionHasBardingFromItems(t *testing.T) {
+	cases := []struct {
+		name  string
+		items []Item
+		want  bool
+	}{
+		{"no items", nil, false},
+		{"has barding", []Item{{Name: "Horse barding", Quantity: 1}}, true},
+		{"no barding", []Item{{Name: "Pack saddle and bridle", Quantity: 1}}, false},
+		{"case insensitive", []Item{{Name: "HORSE BARDING", Quantity: 1}}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CompanionHasBardingFromItems(tc.items)
+			if got != tc.want {
+				t.Errorf("CompanionHasBardingFromItems() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestCompanionLoadCapacity(t *testing.T) {
 	cases := []struct {
 		name          string

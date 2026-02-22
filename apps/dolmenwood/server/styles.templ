@@ -575,6 +575,11 @@ templ BtnDecrement() {
 	<button type="submit" class="text-red-400 hover:text-red-600">-</button>
 }
 
+// BtnSell — sell button with price label.
+templ BtnSell(priceLabel string) {
+	<button type="submit" class="text-amber-600 hover:text-amber-800 text-xs">Sell { priceLabel }</button>
+}
+
 // BtnWide — full-width action button with variant styling.
 templ BtnWide(variant string, attrs templ.Attributes) {
 	switch variant {
