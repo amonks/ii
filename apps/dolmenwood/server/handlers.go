@@ -22,6 +22,15 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	CharacterList(chars).Render(r.Context(), w)
 }
 
+func (s *Server) handleDeleteCharacter(w http.ResponseWriter, r *http.Request) {
+	id := atoui(r.PathValue("id"))
+	if err := s.db.DeleteCharacter(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (s *Server) handleCreateCharacter(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	hpMax := atoi(r.FormValue("hp_max"))

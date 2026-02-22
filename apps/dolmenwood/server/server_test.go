@@ -84,6 +84,52 @@ func TestGetIndex(t *testing.T) {
 	}
 }
 
+func TestDeleteCharacter(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Doomed", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Add some items and companions to ensure cascade
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Longsword", Quantity: 1})
+	d.CreateCompanion(&db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9})
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/delete/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	// Should redirect to index
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusSeeOther, w.Body.String())
+	}
+
+	// Character should be gone
+	chars, _ := d.ListCharacters()
+	for _, c := range chars {
+		if c.ID == ch.ID {
+			t.Fatal("character should have been deleted")
+		}
+	}
+
+	// Items should be gone
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("expected 0 items, got %d", len(items))
+	}
+
+	// Companions should be gone
+	comps, _ := d.ListCompanions(ch.ID)
+	if len(comps) != 0 {
+		t.Errorf("expected 0 companions, got %d", len(comps))
+	}
+}
+
 func TestCreateCharacter(t *testing.T) {
 	srv, _ := setupTest(t)
 	mux := srv.Mux()
@@ -4645,5 +4691,46 @@ func TestSellBundledItem(t *testing.T) {
 	}
 	if coinNotes != "2gp 1ep" {
 		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 1ep")
+	}
+}
+
+func TestSellOilFlask(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Oil Flask: store price 1gp = 100cp, sell price = 50cp = 1ep
+	oil := &db.Item{CharacterID: ch.ID, Name: "Oil Flask", Quantity: 1, Location: "stowed"}
+	d.CreateItem(oil)
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/sell/", oil.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, item := range items {
+		if item.Name == "Oil Flask" {
+			t.Fatal("oil flask should have been deleted after selling")
+		}
+	}
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if coinNotes != "1ep" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "1ep")
 	}
 }

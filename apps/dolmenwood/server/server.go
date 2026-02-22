@@ -18,6 +18,7 @@ func (s *Server) Mux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.handleIndex)
 	mux.HandleFunc("POST /characters/{$}", s.handleCreateCharacter)
+	mux.HandleFunc("POST /characters/{id}/delete/{$}", s.handleDeleteCharacter)
 	mux.HandleFunc("GET /characters/{id}/{$}", s.handleCharacterSheet)
 	mux.HandleFunc("POST /characters/{id}/hp/{$}", s.handleUpdateHP)
 	mux.HandleFunc("POST /characters/{id}/birthday/{$}", s.handleUpdateBirthday)

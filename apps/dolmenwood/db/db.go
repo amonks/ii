@@ -386,6 +386,17 @@ func (db *DB) UpdateCharacter(ch *Character) error {
 	return db.Save(ch).Error
 }
 
+func (db *DB) DeleteCharacter(id uint) error {
+	db.Where("character_id = ?", id).Delete(&Item{})
+	db.Where("character_id = ?", id).Delete(&Companion{})
+	db.Where("character_id = ?", id).Delete(&Transaction{})
+	db.Where("character_id = ?", id).Delete(&XPLogEntry{})
+	db.Where("character_id = ?", id).Delete(&Note{})
+	db.Where("character_id = ?", id).Delete(&AuditLogEntry{})
+	db.Where("character_id = ?", id).Delete(&BankDeposit{})
+	return db.Delete(&Character{}, id).Error
+}
+
 // --- Item CRUD ---
 
 func (db *DB) CreateItem(item *Item) error {

@@ -449,7 +449,7 @@ func buildStoreGroups() []StoreGroup {
 				storeItem("Candles", 100, "1gp"),
 				storeItem("Lantern (hooded)", 500, "5gp"),
 				storeItem("Lantern (bullseye)", 1000, "10gp"),
-				storeItem("Oil", 100, "1gp"),
+				storeItem("Oil Flask", 100, "1gp"),
 				storeItem("Tinder box", 300, "3gp"),
 				storeItem("Bedroll", 200, "2gp"),
 				storeItem("Cooking pots", 300, "3gp"),
@@ -689,7 +689,7 @@ func storeWeaponName(name string) string {
 	switch strings.ToLower(name) {
 	case "holy water":
 		return "holy water vial"
-	case "oil":
+	case "oil", "oil flask":
 		return "oil flask (burning)"
 	case "torches":
 		return "torch (flaming)"

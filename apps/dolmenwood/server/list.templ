@@ -12,11 +12,17 @@ templ CharacterList(characters []db.Character) {
 			if len(characters) > 0 {
 				@SpacerLg() {
 					for _, ch := range characters {
-						@CardLink(templ.SafeURL(fmt.Sprintf("characters/%d/", ch.ID))) {
-							@TextBlock() { { ch.Name } }
-							@LabelBlock() {
-								Level { fmt.Sprintf("%d", ch.Level) } { ch.Kindred } { ch.Class }
+						@Row() {
+							@CardLink(templ.SafeURL(fmt.Sprintf("characters/%d/", ch.ID))) {
+								@TextBlock() { { ch.Name } }
+								@LabelBlock() {
+									Level { fmt.Sprintf("%d", ch.Level) } { ch.Kindred } { ch.Class }
+								}
 							}
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("characters/%d/delete/", ch.ID)) }
+								onsubmit="return confirm('Delete this character? This cannot be undone.')">
+								@BtnDelete()
+							</form>
 						}
 					}
 				}
