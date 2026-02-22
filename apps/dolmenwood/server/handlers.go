@@ -515,7 +515,14 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Not enough %s (have %d, want %d)", source.Name, source.Quantity, qty), http.StatusBadRequest)
 			return
 		}
-		if qty == source.Quantity {
+		if moveTo == "sell" {
+			totalSellCP, oldWealth, newWealth, err := s.sellItemQuantity(ch, source, qty)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			s.addAuditLog(ch, "store_sell", fmt.Sprintf("sold %d %s for %s, wealth %s -> %s", qty, source.Name, itemCostLabel(totalSellCP, ""), oldWealth, newWealth))
+		} else if qty == source.Quantity {
 			// Move the whole item
 			source.ContainerID = containerID
 			source.CompanionID = companionID
@@ -530,6 +537,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			s.addAuditLog(ch, "item_split", fmt.Sprintf("move %s qty %d from %s to %s", source.Name, qty, sourceLabel, s.resolveMoveTargetLabel(moveTo)))
 		} else {
 			// Reduce source and create new item
 			source.Quantity -= qty
@@ -554,8 +562,8 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			s.addAuditLog(ch, "item_split", fmt.Sprintf("move %s qty %d from %s to %s", source.Name, qty, sourceLabel, s.resolveMoveTargetLabel(moveTo)))
 		}
-		s.addAuditLog(ch, "item_split", fmt.Sprintf("move %s qty %d from %s to %s", source.Name, qty, sourceLabel, s.resolveMoveTargetLabel(moveTo)))
 	}
 
 	s.renderInventory(w, r, ch)

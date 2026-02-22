@@ -807,6 +807,9 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 			Slots:      itemSlots(item),
 			BundleSize: engine.ItemBundleSize(item.Name),
 		}
+		if item.CompanionID != nil && engine.IsCompanionGear(item.Name) {
+			inv.Slots = 0
+		}
 		if sellCP, ok := storeSellPriceCP(item.Name); ok {
 			inv.SellPriceCP = sellCP
 		}

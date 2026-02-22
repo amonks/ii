@@ -4627,27 +4627,30 @@ func TestSellItem(t *testing.T) {
 			t.Fatal("longsword should have been deleted after selling")
 		}
 	}
-	// Should have coins worth 500cp = 1gp
+	// Should have coins worth 500cp = 5gp (PP is not used in changemaking)
 	var coinNotes string
 	for _, item := range items {
 		if item.Name == "Coins" {
 			coinNotes = item.Notes
 		}
 	}
-	if coinNotes != "1pp" {
-		t.Errorf("coin notes = %q, want %q", coinNotes, "1pp")
+	if coinNotes != "5gp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "5gp")
 	}
 
-	// Audit log should have store_sell
+	// Audit log should have store_sell with wealth info
 	auditLog, _ := d.ListAuditLog(ch.ID)
-	var hasSell bool
+	var sellDetail string
 	for _, entry := range auditLog {
 		if entry.Action == "store_sell" {
-			hasSell = true
+			sellDetail = entry.Detail
 		}
 	}
-	if !hasSell {
-		t.Error("expected store_sell audit log entry")
+	if sellDetail == "" {
+		t.Fatal("expected store_sell audit log entry")
+	}
+	if !strings.Contains(sellDetail, "wealth") {
+		t.Errorf("sell audit log should contain wealth info, got %q", sellDetail)
 	}
 }
 
@@ -4732,5 +4735,260 @@ func TestSellOilFlask(t *testing.T) {
 	}
 	if coinNotes != "1ep" {
 		t.Errorf("coin notes = %q, want %q", coinNotes, "1ep")
+	}
+}
+
+func TestSellPartialQuantity(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Add 3 longswords (store price 10gp = 1000cp each, sell = 500cp each)
+	swords := &db.Item{CharacterID: ch.ID, Name: "Longsword", Quantity: 3, Location: "stowed"}
+	d.CreateItem(swords)
+
+	// Sell 2 via split handler with move_to=sell
+	form := url.Values{"quantity": {"2"}, "move_to": {"sell"}}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", swords.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var swordQty int
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Longsword" {
+			swordQty = item.Quantity
+		}
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if swordQty != 1 {
+		t.Errorf("remaining swords = %d, want 1", swordQty)
+	}
+	// 2 * 500cp = 1000cp = 10gp
+	if coinNotes != "10gp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "10gp")
+	}
+}
+
+func TestSellBundledPartial(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 40 arrows (2 bundles of 20). Store price 5gp = 500cp per bundle, sell = 250cp per bundle.
+	arrows := &db.Item{CharacterID: ch.ID, Name: "Arrows", Quantity: 40, Location: "stowed"}
+	d.CreateItem(arrows)
+
+	// Sell 20 (1 bundle worth)
+	form := url.Values{"quantity": {"20"}, "move_to": {"sell"}}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", arrows.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var arrowQty int
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Arrows" {
+			arrowQty = item.Quantity
+		}
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if arrowQty != 20 {
+		t.Errorf("remaining arrows = %d, want 20", arrowQty)
+	}
+	// 250cp = 2gp 1ep
+	if coinNotes != "2gp 1ep" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 1ep")
+	}
+}
+
+func TestSellFullStackScalesPrice(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 40 arrows: sell all should give 500cp (2 bundles * 250cp each), not 250cp
+	arrows := &db.Item{CharacterID: ch.ID, Name: "Arrows", Quantity: 40, Location: "stowed"}
+	d.CreateItem(arrows)
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/sell/", arrows.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, item := range items {
+		if item.Name == "Arrows" {
+			t.Fatal("arrows should be deleted after selling all")
+		}
+	}
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	// 40 arrows / 20 bundle * 250cp = 500cp = 5gp
+	if coinNotes != "5gp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "5gp")
+	}
+}
+
+func TestDeductCoinsPreservesPP(t *testing.T) {
+	srv, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Rich", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Give character 2pp 5gp (1000 + 500 = 1500cp total)
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID,
+		Name:        engine.CoinItemNameStr,
+		Quantity:    7,
+		Notes:       "2pp 5gp",
+	})
+
+	// Buy something for 100cp (1gp)
+	oldWealth, newWealth, err := srv.deductCoins(ch, 100)
+	if err != nil {
+		t.Fatalf("deductCoins: %v", err)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	// PP should be preserved: 2pp 5gp - 1gp = 2pp 4gp
+	if coinNotes != "2pp 4gp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "2pp 4gp")
+	}
+	if oldWealth != "15gp" {
+		t.Errorf("oldWealth = %q, want %q", oldWealth, "15gp")
+	}
+	if newWealth != "14gp" {
+		t.Errorf("newWealth = %q, want %q", newWealth, "14gp")
+	}
+}
+
+func TestSellDoesNotCreatePP(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Seller", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Longsword sell price = 500cp. Should yield 5gp, not 1pp.
+	sword := &db.Item{CharacterID: ch.ID, Name: "Longsword", Quantity: 1, Location: "stowed"}
+	d.CreateItem(sword)
+
+	form := url.Values{}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/sell/", sword.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var coinNotes string
+	for _, item := range items {
+		if item.Name == "Coins" {
+			coinNotes = item.Notes
+		}
+	}
+	if coinNotes != "5gp" {
+		t.Errorf("coin notes = %q, want %q (PP should never appear in changemaking)", coinNotes, "5gp")
+	}
+}
+
+func TestBuyAuditLogShowsWealth(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Buyer", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Give 50gp (5000cp)
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID,
+		Name:        engine.CoinItemNameStr,
+		Quantity:    50,
+		Notes:       "50gp",
+	})
+
+	// Buy a Longsword (10gp = 1000cp)
+	form := url.Values{"item_id": {"Longsword|1000"}}
+	req := httptest.NewRequest("POST", "/characters/1/store/buy/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	auditLog, _ := d.ListAuditLog(ch.ID)
+	var buyDetail string
+	for _, entry := range auditLog {
+		if entry.Action == "store_buy" {
+			buyDetail = entry.Detail
+		}
+	}
+	if buyDetail == "" {
+		t.Fatal("expected store_buy audit log entry")
+	}
+	// Should contain wealth transition
+	if !strings.Contains(buyDetail, "wealth 50gp -> 40gp") {
+		t.Errorf("buy audit log should show wealth transition, got %q", buyDetail)
 	}
 }

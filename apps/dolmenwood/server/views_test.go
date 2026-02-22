@@ -219,3 +219,43 @@ func TestItemIsTiny(t *testing.T) {
 		})
 	}
 }
+
+func TestCompanionGearShowsZeroSlotsInView(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID, Name: "Bessie", Breed: "Mule",
+		HPCurrent: 9, HPMax: 9,
+	}
+	d.CreateCompanion(comp)
+
+	// Add a Pack Saddle and Bridle (companion gear) to the companion
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID, Name: "Pack Saddle and Bridle", Quantity: 1,
+		CompanionID: &comp.ID,
+	})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Find the saddle in companion groups
+	for _, cg := range view.CompanionGroups {
+		for _, item := range cg.Items {
+			if item.Name == "Pack Saddle and Bridle" {
+				if item.Slots != 0 {
+					t.Errorf("companion gear Pack Saddle and Bridle should have Slots=0, got %d", item.Slots)
+				}
+				return
+			}
+		}
+	}
+	t.Fatal("Pack Saddle and Bridle not found in companion inventory")
+}

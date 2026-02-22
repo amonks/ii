@@ -76,7 +76,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 				}
 				if itemIsTiny(item) {
 					@Badge() { tiny }
-				} else if item.Slots != 1 {
+				} else if item.Slots > 1 {
 					@Badge() { { fmt.Sprintf("%d slots", item.Slots) } }
 				}
 				if item.Capacity > 0 {
@@ -130,6 +130,9 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 								for _, target := range moveTargets {
 									<option value={ target.Value }>{ target.Label }</option>
 								}
+								if item.SellPriceCP > 0 {
+									<option value="sell">{ fmt.Sprintf("Sell (%s)", itemCostLabel(item.SellPriceCP, "")) }</option>
+								}
 							}
 						}
 					</form>
@@ -144,7 +147,7 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 						}
 					</form>
 				}
-				if item.SellPriceCP > 0 {
+				if item.SellPriceCP > 0 && item.Quantity <= 1 {
 					<form hx-post={ fmt.Sprintf("items/%d/sell/", item.ID) }
 						hx-target="#inventory" hx-swap="outerHTML">
 						@BtnSell(itemCostLabel(item.SellPriceCP, ""))
