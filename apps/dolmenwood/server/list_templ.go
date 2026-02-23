@@ -137,7 +137,7 @@ func CharacterList(characters []db.Character) templ.Component {
 										var templ_7745c5c3_Var9 string
 										templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(ch.Name)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/list.templ`, Line: 17, Col: 32}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/list.templ`, Line: 17, Col: 32}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 										if templ_7745c5c3_Err != nil {
@@ -172,7 +172,7 @@ func CharacterList(characters []db.Character) templ.Component {
 										var templ_7745c5c3_Var11 string
 										templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", ch.Level))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/list.templ`, Line: 19, Col: 44}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/list.templ`, Line: 19, Col: 44}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 										if templ_7745c5c3_Err != nil {
@@ -185,7 +185,7 @@ func CharacterList(characters []db.Character) templ.Component {
 										var templ_7745c5c3_Var12 string
 										templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(ch.Kindred)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/list.templ`, Line: 19, Col: 59}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/list.templ`, Line: 19, Col: 59}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 										if templ_7745c5c3_Err != nil {
@@ -198,7 +198,7 @@ func CharacterList(characters []db.Character) templ.Component {
 										var templ_7745c5c3_Var13 string
 										templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(ch.Class)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/list.templ`, Line: 19, Col: 72}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/list.templ`, Line: 19, Col: 72}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 										if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func CharacterList(characters []db.Character) templ.Component {
 								var templ_7745c5c3_Var14 templ.SafeURL
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("characters/%d/delete/", ch.ID)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/list.templ`, Line: 22, Col: 94}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/list.templ`, Line: 22, Col: 94}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {

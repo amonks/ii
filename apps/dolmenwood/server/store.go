@@ -143,6 +143,9 @@ func (s *Server) buyStoreCompanion(ch *db.Character, breed string, costCP int) (
 		HPMax:       stats.HPMax,
 		HPCurrent:   stats.HPMax,
 	}
+	if engine.IsRetainer(breed) {
+		comp.Loyalty = engine.RetainerLoyalty(engine.Modifier(ch.CHA))
+	}
 	if err := s.db.CreateCompanion(comp); err != nil {
 		return "", "", err
 	}
@@ -186,11 +189,10 @@ func (s *Server) deductCoins(ch *db.Character, costCP int) (string, string, erro
 	newNotes := engine.FormatCoinNotes(map[engine.CoinType]int{
 		engine.PP: existingPP,
 		engine.GP: remainingCoins.GP,
-		engine.EP: remainingCoins.EP,
 		engine.SP: remainingCoins.SP,
 		engine.CP: remainingCoins.CP,
 	})
-	newTotal := existingPP + remainingCoins.GP + remainingCoins.EP + remainingCoins.SP + remainingCoins.CP
+	newTotal := existingPP + remainingCoins.GP + remainingCoins.SP + remainingCoins.CP
 	newWealth := cpAsCoinLabel(remainingInventoryCP)
 	coinItem.Notes = newNotes
 	coinItem.Quantity = newTotal
@@ -240,21 +242,19 @@ func coinPurseCPValue(coins map[engine.CoinType]int) int {
 
 type coinCounts struct {
 	GP int
-	EP int
 	SP int
 	CP int
 }
 
-// minCoinCounts converts a CP value into the fewest coins using GP/EP/SP/CP.
+// minCoinCounts converts a CP value into the fewest coins using GP/SP/CP.
 // PP is excluded because it is not a financial instrument in Dolmenwood.
+// EP is excluded because electrum pieces don't exist in Dolmenwood.
 func minCoinCounts(cpValue int) coinCounts {
 	gp := cpValue / 100
 	rem := cpValue % 100
-	ep := rem / 50
-	rem = rem % 50
 	sp := rem / 10
 	cp := rem % 10
-	return coinCounts{GP: gp, EP: ep, SP: sp, CP: cp}
+	return coinCounts{GP: gp, SP: sp, CP: cp}
 }
 
 // storeSellPriceCP returns the sell price (half of buy price) for a named item.
@@ -272,7 +272,6 @@ func cpAsCoinLabel(cpValue int) string {
 	coins := minCoinCounts(cpValue)
 	return engine.FormatCoinNotes(map[engine.CoinType]int{
 		engine.GP: coins.GP,
-		engine.EP: coins.EP,
 		engine.SP: coins.SP,
 		engine.CP: coins.CP,
 	})
@@ -323,10 +322,6 @@ func (s *Server) sellItemQuantity(ch *db.Character, item *db.Item, qty int) (int
 	if coins.GP > 0 {
 		coinMap[engine.GP] = coins.GP
 		totalCoins += coins.GP
-	}
-	if coins.EP > 0 {
-		coinMap[engine.EP] = coins.EP
-		totalCoins += coins.EP
 	}
 	if coins.SP > 0 {
 		coinMap[engine.SP] = coins.SP

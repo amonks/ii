@@ -1,6 +1,9 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+	"monks.co/apps/dolmenwood/engine"
+)
 
 templ CompanionsSection(view *CharacterView) {
 	@CardDisclosure("companions", true) {
@@ -53,6 +56,11 @@ templ CompanionsSection(view *CharacterView) {
 					@LabelBlock() {
 						Morale { fmt.Sprintf("%d", comp.Morale) }
 					}
+					if engine.IsRetainer(comp.Breed) {
+						@LabelBlock() {
+							Loyalty { fmt.Sprintf("%d", comp.Loyalty) }
+						}
+					}
 					<form hx-post={ fmt.Sprintf("companions/%d/update/", comp.ID) }
 						hx-target="#companions" hx-swap="outerHTML">
 						@FormRowWrapSm() {
@@ -73,6 +81,16 @@ templ CompanionsSection(view *CharacterView) {
 									"name": "hp_max",
 									"value": fmt.Sprintf("%d", comp.HPMax),
 								})
+							}
+							if engine.IsRetainer(comp.Breed) {
+								@InlineFormActions() {
+									@LabelInline() { Loyalty }
+									@FormInputSmallCenter(templ.Attributes{
+										"type": "number",
+										"name": "loyalty",
+										"value": fmt.Sprintf("%d", comp.Loyalty),
+									})
+								}
 							}
 							@ActionRight() {
 								@BtnSecondary() { Save }

@@ -177,6 +177,19 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name, qty := parseItemInput(rawName)
+
+	// Negative quantity: deduct from existing inventory items
+	if qty < 0 {
+		deductQty := -qty
+		if err := s.deductItemQuantity(ch, name, deductQty); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.addAuditLog(ch, "item_deduct", fmt.Sprintf("deduct %s, qty %d", name, deductQty))
+		s.renderInventory(w, r, ch)
+		return
+	}
+
 	isTiny, name := extractTinyFlag(name)
 	item := &db.Item{
 		CharacterID: ch.ID,
@@ -262,6 +275,17 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			}
 			// Support move_to for container hierarchy
 			if moveTo := r.FormValue("move_to"); moveTo != "" {
+				// Consume: delete item
+				if moveTo == "consume" && !strings.EqualFold(item.Name, engine.CoinItemNameStr) {
+					if err := s.db.DeleteItem(item.ID); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+					s.addAuditLog(ch, "item_consume", fmt.Sprintf("consume %s, qty %d", item.Name, item.Quantity))
+					s.renderInventory(w, r, ch)
+					return
+				}
+
 				// Bank deposit: convert coin item to a bank deposit
 				if moveTo == "bank" && strings.EqualFold(item.Name, engine.CoinItemNameStr) {
 					// Parse coin notes and reject PP/EP
@@ -414,6 +438,12 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 		}
 		splitNotes := engine.FormatCoinNotes(splitMap)
 
+		// Reject consume for coin items
+		if moveTo == "consume" {
+			http.Error(w, "Cannot consume coins", http.StatusBadRequest)
+			return
+		}
+
 		// Bank deposit: convert coins to a bank deposit instead of moving
 		if moveTo == "bank" {
 			// Reject PP and EP
@@ -515,7 +545,21 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Not enough %s (have %d, want %d)", source.Name, source.Quantity, qty), http.StatusBadRequest)
 			return
 		}
-		if moveTo == "sell" {
+		if moveTo == "consume" {
+			source.Quantity -= qty
+			if source.Quantity <= 0 {
+				if err := s.db.DeleteItem(source.ID); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				if err := s.db.UpdateItem(source); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+			s.addAuditLog(ch, "item_consume", fmt.Sprintf("consume %s, qty %d", source.Name, qty))
+		} else if moveTo == "sell" {
 			totalSellCP, oldWealth, newWealth, err := s.sellItemQuantity(ch, source, qty)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -618,6 +662,9 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		comp.HPMax = stats.HPMax
 		comp.HPCurrent = stats.HPMax
 	}
+	if engine.IsRetainer(breed) {
+		comp.Loyalty = engine.RetainerLoyalty(engine.Modifier(ch.CHA))
+	}
 	if err := s.db.CreateCompanion(comp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -644,6 +691,7 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			oldName := comp.Name
 			oldHP := comp.HPCurrent
 			oldHPMax := comp.HPMax
+			oldLoyalty := comp.Loyalty
 
 			if name := r.FormValue("name"); name != "" {
 				comp.Name = name
@@ -651,6 +699,9 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			comp.HPCurrent = atoi(r.FormValue("hp_current"))
 			if hpMax := r.FormValue("hp_max"); hpMax != "" {
 				comp.HPMax = atoi(hpMax)
+			}
+			if loyalty := r.FormValue("loyalty"); loyalty != "" && engine.IsRetainer(comp.Breed) {
+				comp.Loyalty = atoi(loyalty)
 			}
 			s.db.UpdateCompanion(&comp)
 
@@ -660,6 +711,9 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 			}
 			if comp.HPCurrent != oldHP || comp.HPMax != oldHPMax {
 				changes = append(changes, fmt.Sprintf("HP %d/%d → %d/%d", oldHP, oldHPMax, comp.HPCurrent, comp.HPMax))
+			}
+			if engine.IsRetainer(comp.Breed) && comp.Loyalty != oldLoyalty {
+				changes = append(changes, fmt.Sprintf("loyalty %d → %d", oldLoyalty, comp.Loyalty))
 			}
 			if len(changes) > 0 {
 				s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: %s", comp.Name, strings.Join(changes, ", ")))
@@ -1136,6 +1190,9 @@ func (s *Server) resolveMoveTargetLabel(moveTo string) string {
 	if moveTo == "bank" {
 		return "Bank"
 	}
+	if moveTo == "consume" {
+		return "Consumed"
+	}
 	if after, ok := strings.CutPrefix(moveTo, "container:"); ok {
 		id := atoui(after)
 		if item, err := s.db.GetItem(id); err == nil {
@@ -1351,12 +1408,55 @@ func addToFound(ch *db.Character, amount int, coinType string) {
 	}
 }
 
+// deductItemQuantity finds items matching name and deducts the given quantity.
+// Deducts from the first matching item found. Deletes the item if quantity reaches 0.
+// Returns an error if there aren't enough items without modifying anything.
+func (s *Server) deductItemQuantity(ch *db.Character, name string, qty int) error {
+	items, err := s.db.ListItems(ch.ID)
+	if err != nil {
+		return err
+	}
+	// First pass: check if we have enough
+	available := 0
+	for _, item := range items {
+		if strings.EqualFold(item.Name, name) {
+			available += item.Quantity
+		}
+	}
+	if available < qty {
+		return fmt.Errorf("not enough %s (have %d, need %d)", name, available, qty)
+	}
+	// Second pass: deduct
+	remaining := qty
+	for _, item := range items {
+		if remaining <= 0 {
+			break
+		}
+		if !strings.EqualFold(item.Name, name) {
+			continue
+		}
+		if item.Quantity <= remaining {
+			remaining -= item.Quantity
+			if err := s.db.DeleteItem(item.ID); err != nil {
+				return err
+			}
+		} else {
+			item.Quantity -= remaining
+			remaining = 0
+			if err := s.db.UpdateItem(&item); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // parseItemInput parses "5x preserved rations" into ("preserved rations", 5)
-// or just "rope" into ("rope", 1).
+// or "-2x feed" into ("feed", -2), or just "rope" into ("rope", 1).
 func parseItemInput(input string) (string, int) {
 	input = strings.TrimSpace(input)
 	if idx := strings.Index(strings.ToLower(input), "x "); idx > 0 {
-		if qty := atoi(input[:idx]); qty > 0 {
+		if qty := atoi(input[:idx]); qty != 0 {
 			return strings.TrimSpace(input[idx+2:]), qty
 		}
 	}

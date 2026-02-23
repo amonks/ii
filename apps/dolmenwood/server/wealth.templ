@@ -11,16 +11,31 @@ templ WealthSection(view *CharacterView) {
 		@CardSection() {
 			@SectionHeader() { Overview }
 			@InfoBox() {
-				@LabelBlockMb() { Total Coins (~{ fmt.Sprintf("%d", view.InventoryGPValue) } GP) }
+				@LabelBlockMb() {
+					Total Coins
+					if view.TotalCoinsLabel != "" {
+						({ view.TotalCoinsLabel })
+					}
+				}
 				@coinDisplay(view.InventoryCoins["cp"], view.InventoryCoins["sp"], view.InventoryCoins["ep"], view.InventoryCoins["gp"], view.InventoryCoins["pp"])
 			}
 			@Grid(2) {
 				@InfoBox() {
-					@LabelBlockMb() { Purse (~{ fmt.Sprintf("%d", view.PurseGPValue) } GP) }
+					@LabelBlockMb() {
+						Purse
+						if view.PurseLabel != "" {
+							({ view.PurseLabel })
+						}
+					}
 					@coinDisplay(view.PurseCoins["cp"], view.PurseCoins["sp"], view.PurseCoins["ep"], view.PurseCoins["gp"], view.PurseCoins["pp"])
 				}
 				@WarningBox() {
-					@LabelBlockMb() { Found Treasure (~{ fmt.Sprintf("%d", view.FoundGPValue) } GP) }
+					@LabelBlockMb() {
+						Found Treasure
+						if view.FoundLabel != "" {
+							({ view.FoundLabel })
+						}
+					}
 					@coinDisplay(view.Character.FoundCP, view.Character.FoundSP, view.Character.FoundEP, view.Character.FoundGP, view.Character.FoundPP)
 				}
 			}
@@ -76,7 +91,7 @@ templ WealthSection(view *CharacterView) {
 				}
 			}
 		}
-		if entries := filterAuditLog(view.AuditLog, "treasure_add", "treasure_undo", "return_to_safety"); len(entries) > 0 {
+		if entries := filterAuditLog(view.AuditLog, "treasure_add", "treasure_undo", "return_to_safety", "store_buy", "store_sell", "bank_deposit", "bank_withdraw"); len(entries) > 0 {
 			@CardSection() {
 				@SectionHeader() { Wealth Log }
 				@Details() {

@@ -3408,11 +3408,11 @@ func TestStoreBuyUsesElectrumChange(t *testing.T) {
 			coinQty = item.Quantity
 		}
 	}
-	if coinNotes != "1ep" {
-		t.Fatalf("coin notes = %q, want %q", coinNotes, "1ep")
+	if coinNotes != "5sp" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "5sp")
 	}
-	if coinQty != 1 {
-		t.Fatalf("coin quantity = %d, want 1", coinQty)
+	if coinQty != 5 {
+		t.Fatalf("coin quantity = %d, want 5", coinQty)
 	}
 }
 
@@ -3426,7 +3426,7 @@ func TestStoreBuyAcceptsElectrumInPurse(t *testing.T) {
 	}
 	d.CreateCharacter(ch)
 
-	// 1gp 1ep = 150cp total
+	// 1gp 1ep = 150cp total (EP converted to CP value during changemaking)
 	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 2, Notes: "1gp 1ep"})
 
 	form := url.Values{}
@@ -3452,11 +3452,12 @@ func TestStoreBuyAcceptsElectrumInPurse(t *testing.T) {
 			coinQty = item.Quantity
 		}
 	}
-	if coinNotes != "1ep" {
-		t.Fatalf("coin notes = %q, want %q", coinNotes, "1ep")
+	// 150cp - 100cp = 50cp = 5sp (EP is converted away)
+	if coinNotes != "5sp" {
+		t.Fatalf("coin notes = %q, want %q", coinNotes, "5sp")
 	}
-	if coinQty != 1 {
-		t.Fatalf("coin quantity = %d, want 1", coinQty)
+	if coinQty != 5 {
+		t.Fatalf("coin quantity = %d, want 5", coinQty)
 	}
 }
 
@@ -4664,7 +4665,7 @@ func TestSellBundledItem(t *testing.T) {
 	}
 	d.CreateCharacter(ch)
 
-	// Arrows: store price 5gp = 500cp for bundle of 20. Sell = 250cp = 2gp 1ep
+	// Arrows: store price 5gp = 500cp for bundle of 20. Sell = 250cp = 2gp 5sp
 	arrows := &db.Item{CharacterID: ch.ID, Name: "Arrows", Quantity: 20, Location: "stowed"}
 	d.CreateItem(arrows)
 
@@ -4685,15 +4686,15 @@ func TestSellBundledItem(t *testing.T) {
 			t.Fatal("arrows should have been deleted after selling")
 		}
 	}
-	// Should have coins: 250cp = 2gp 1ep
+	// Should have coins: 250cp = 2gp 5sp
 	var coinNotes string
 	for _, item := range items {
 		if item.Name == "Coins" {
 			coinNotes = item.Notes
 		}
 	}
-	if coinNotes != "2gp 1ep" {
-		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 1ep")
+	if coinNotes != "2gp 5sp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 5sp")
 	}
 }
 
@@ -4707,7 +4708,7 @@ func TestSellOilFlask(t *testing.T) {
 	}
 	d.CreateCharacter(ch)
 
-	// Oil Flask: store price 1gp = 100cp, sell price = 50cp = 1ep
+	// Oil Flask: store price 1gp = 100cp, sell price = 50cp = 5sp
 	oil := &db.Item{CharacterID: ch.ID, Name: "Oil Flask", Quantity: 1, Location: "stowed"}
 	d.CreateItem(oil)
 
@@ -4733,8 +4734,8 @@ func TestSellOilFlask(t *testing.T) {
 			coinNotes = item.Notes
 		}
 	}
-	if coinNotes != "1ep" {
-		t.Errorf("coin notes = %q, want %q", coinNotes, "1ep")
+	if coinNotes != "5sp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "5sp")
 	}
 }
 
@@ -4822,9 +4823,9 @@ func TestSellBundledPartial(t *testing.T) {
 	if arrowQty != 20 {
 		t.Errorf("remaining arrows = %d, want 20", arrowQty)
 	}
-	// 250cp = 2gp 1ep
-	if coinNotes != "2gp 1ep" {
-		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 1ep")
+	// 250cp = 2gp 5sp
+	if coinNotes != "2gp 5sp" {
+		t.Errorf("coin notes = %q, want %q", coinNotes, "2gp 5sp")
 	}
 }
 
@@ -4990,5 +4991,403 @@ func TestBuyAuditLogShowsWealth(t *testing.T) {
 	// Should contain wealth transition
 	if !strings.Contains(buyDetail, "wealth 50gp -> 40gp") {
 		t.Errorf("buy audit log should show wealth transition, got %q", buyDetail)
+	}
+}
+
+func TestNegativeQuantityDeductsFromInventory(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Start with 10 feed
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Feed", Quantity: 10, Location: "stowed"})
+
+	// Deduct 2 feed via "-2x Feed"
+	form := url.Values{}
+	form.Set("name", "-2x Feed")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Quantity != 8 {
+		t.Errorf("Quantity = %d, want 8", items[0].Quantity)
+	}
+}
+
+func TestNegativeQuantityDeletesItemAtZero(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Start with 3 feed
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Feed", Quantity: 3, Location: "stowed"})
+
+	// Deduct all 3
+	form := url.Values{}
+	form.Set("name", "-3x Feed")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (item should be deleted)", len(items))
+	}
+}
+
+func TestNegativeQuantityInsufficientStock(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Start with 2 feed
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Feed", Quantity: 2, Location: "stowed"})
+
+	// Try to deduct 5 — should fail
+	form := url.Values{}
+	form.Set("name", "-5x Feed")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+
+	// Item should be unchanged
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Quantity != 2 {
+		t.Errorf("Quantity = %d, want 2 (unchanged)", items[0].Quantity)
+	}
+}
+
+func TestNegativeQuantityWithParenthesizedName(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Start with 5 rations (preserved) — using the exact store name
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Rations (preserved)", Quantity: 5})
+
+	// Deduct 3 via "-3x rations (preserved)" with move_to=equipped (matches real form)
+	form := url.Values{}
+	form.Set("name", "-3x rations (preserved)")
+	form.Set("move_to", "equipped")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Quantity != 2 {
+		t.Errorf("Quantity = %d, want 2", items[0].Quantity)
+	}
+}
+
+func TestAddTownsfolkRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		CHA: 14, // modifier +1
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("name", "Torchbearer")
+	form.Set("breed", "Townsfolk")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/companions/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	comps, _ := d.ListCompanions(ch.ID)
+	if len(comps) != 1 {
+		t.Fatalf("got %d companions, want 1", len(comps))
+	}
+	got := comps[0]
+	if got.Breed != "Townsfolk" {
+		t.Errorf("Breed = %q, want %q", got.Breed, "Townsfolk")
+	}
+	if got.HPMax != 2 {
+		t.Errorf("HPMax = %d, want 2", got.HPMax)
+	}
+	// CHA 14 → modifier +1, loyalty = 7 + 1 = 8
+	if got.Loyalty != 8 {
+		t.Errorf("Loyalty = %d, want 8", got.Loyalty)
+	}
+}
+
+func TestUpdateRetainerLoyalty(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		CHA: 10,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID, Name: "Porter", Breed: "Townsfolk",
+		HPCurrent: 2, HPMax: 2, Loyalty: 7,
+	}
+	d.CreateCompanion(comp)
+
+	form := url.Values{}
+	form.Set("name", "Porter")
+	form.Set("hp_current", "2")
+	form.Set("hp_max", "2")
+	form.Set("loyalty", "9")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/companions/%d/update/", ch.ID, comp.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	updated, _ := d.GetCompanion(comp.ID)
+	if updated.Loyalty != 9 {
+		t.Errorf("Loyalty = %d, want 9", updated.Loyalty)
+	}
+}
+
+func TestConsumeItemViaMove(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	feed := &db.Item{CharacterID: ch.ID, Name: "Feed", Quantity: 5, Location: "stowed"}
+	d.CreateItem(feed)
+
+	// Consume 2 via split handler with move_to=consume
+	form := url.Values{"quantity": {"2"}, "move_to": {"consume"}}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", feed.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	var feedQty int
+	for _, item := range items {
+		if item.Name == "Feed" {
+			feedQty = item.Quantity
+		}
+	}
+	if feedQty != 3 {
+		t.Errorf("remaining feed = %d, want 3", feedQty)
+	}
+
+	// Audit log should have item_consume
+	auditLog, _ := d.ListAuditLog(ch.ID)
+	var consumeDetail string
+	for _, entry := range auditLog {
+		if entry.Action == "item_consume" {
+			consumeDetail = entry.Detail
+		}
+	}
+	if consumeDetail == "" {
+		t.Fatal("expected item_consume audit log entry")
+	}
+	if !strings.Contains(consumeDetail, "Feed") || !strings.Contains(consumeDetail, "2") {
+		t.Errorf("consume audit log should mention item and qty, got %q", consumeDetail)
+	}
+}
+
+func TestConsumeEntireItem(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	torch := &db.Item{CharacterID: ch.ID, Name: "Torch", Quantity: 1, Location: "equipped"}
+	d.CreateItem(torch)
+
+	// Consume single-qty item via update handler with move_to=consume
+	form := url.Values{"move_to": {"consume"}}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/update/", torch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(ch.ID)
+	for _, item := range items {
+		if item.Name == "Torch" {
+			t.Fatal("torch should have been deleted after consuming")
+		}
+	}
+
+	// Audit log should have item_consume
+	auditLog, _ := d.ListAuditLog(ch.ID)
+	found := false
+	for _, entry := range auditLog {
+		if entry.Action == "item_consume" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("expected item_consume audit log entry")
+	}
+}
+
+func TestConsumeItemRejectsCoins(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	coins := &db.Item{CharacterID: ch.ID, Name: engine.CoinItemNameStr, Quantity: 5, Notes: "5gp", Location: "stowed"}
+	d.CreateItem(coins)
+
+	// Try to consume coins via split handler — should be rejected
+	form := url.Values{"quantity": {"5gp"}, "move_to": {"consume"}}
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+
+	// Coins should still exist
+	items, _ := d.ListItems(ch.ID)
+	var coinFound bool
+	for _, item := range items {
+		if item.Name == engine.CoinItemNameStr {
+			coinFound = true
+		}
+	}
+	if !coinFound {
+		t.Fatal("coins should not have been consumed")
+	}
+}
+
+func TestWealthCardConsolidatesAllWealthLogs(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Create audit log entries for all wealth-affecting actions
+	d.AddAuditLog(ch.ID, "treasure_add", "10 gp dragon hoard (found)", 0)
+	d.AddAuditLog(ch.ID, "treasure_undo", "undo dragon hoard", 0)
+	d.AddAuditLog(ch.ID, "return_to_safety", "returned to safety", 0)
+	d.AddAuditLog(ch.ID, "store_buy", "bought Longsword for 10gp", 0)
+	d.AddAuditLog(ch.ID, "store_sell", "sold Longsword for 5gp", 0)
+	d.AddAuditLog(ch.ID, "bank_deposit", "deposit 10gp to bank", 0)
+	d.AddAuditLog(ch.ID, "bank_withdraw", "withdrew 5gp from bank", 0)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+
+	// Wealth card should have a single "Wealth Log" containing all entries
+	if !strings.Contains(body, "Wealth Log") {
+		t.Error("wealth card should contain 'Wealth Log'")
+	}
+	for _, detail := range []string{
+		"dragon hoard", "undo dragon hoard", "returned to safety",
+		"bought Longsword", "sold Longsword",
+		"deposit 10gp", "withdrew 5gp",
+	} {
+		if !strings.Contains(body, detail) {
+			t.Errorf("wealth log should contain %q", detail)
+		}
+	}
+
+	// Store card should NOT have its own log
+	if strings.Contains(body, "Store Log") {
+		t.Error("store card should not have its own 'Store Log' — entries should be in wealth log")
+	}
+
+	// Bank card should NOT have its own log
+	if strings.Contains(body, "Bank Log") {
+		t.Error("bank card should not have its own 'Bank Log' — entries should be in wealth log")
 	}
 }

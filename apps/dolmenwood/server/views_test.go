@@ -259,3 +259,134 @@ func TestCompanionGearShowsZeroSlotsInView(t *testing.T) {
 	}
 	t.Fatal("Pack Saddle and Bridle not found in companion inventory")
 }
+
+func TestWealthLabelsSimplifyDenominations(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		FoundGP: 10,
+	}
+	d.CreateCharacter(ch)
+
+	// 50gp + 20sp + 10cp = 5210cp total. Simplified: 52gp 1sp
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 80, Notes: "50gp 20sp 10cp"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if view.TotalCoinsLabel != "52gp 1sp" {
+		t.Errorf("TotalCoinsLabel = %q, want %q", view.TotalCoinsLabel, "52gp 1sp")
+	}
+	// Purse = 5210cp - 1000cp(found) = 4210cp = 42gp 1sp
+	if view.PurseLabel != "42gp 1sp" {
+		t.Errorf("PurseLabel = %q, want %q", view.PurseLabel, "42gp 1sp")
+	}
+	if view.FoundLabel != "10gp" {
+		t.Errorf("FoundLabel = %q, want %q", view.FoundLabel, "10gp")
+	}
+}
+
+func TestCoinValueLabelInInventoryTree(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// 50gp 20sp = 5200cp. Simplified: 52gp. Different from notes.
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 70, Notes: "50gp 20sp"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Find coins in equipped items
+	for _, item := range view.EquippedItems {
+		if item.Name == "Coins" {
+			if item.CoinValueLabel != "52gp" {
+				t.Errorf("CoinValueLabel = %q, want %q", item.CoinValueLabel, "52gp")
+			}
+			return
+		}
+	}
+	t.Fatal("Coins not found in inventory")
+}
+
+func TestTownsfolkCompanionView(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		CHA: 14, // +1 modifier
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID, Name: "Torchbearer", Breed: "Townsfolk",
+		HPCurrent: 2, HPMax: 2, Loyalty: 8,
+	}
+	d.CreateCompanion(comp)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.Companions) != 1 {
+		t.Fatalf("expected 1 companion, got %d", len(view.Companions))
+	}
+	cv := view.Companions[0]
+
+	// Townsfolk gets breed stats directly, no saddle needed
+	if cv.AC != 10 {
+		t.Errorf("AC = %d, want 10", cv.AC)
+	}
+	if cv.LoadCapacity != 10 {
+		t.Errorf("LoadCapacity = %d, want 10", cv.LoadCapacity)
+	}
+	if cv.Speed != 40 {
+		t.Errorf("Speed = %d, want 40", cv.Speed)
+	}
+	if cv.Morale != 6 {
+		t.Errorf("Morale = %d, want 6", cv.Morale)
+	}
+	if cv.Loyalty != 8 {
+		t.Errorf("Loyalty = %d, want 8", cv.Loyalty)
+	}
+}
+
+func TestCoinValueLabelEmptyWhenSame(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	// Already simplified: "5gp" = 500cp → cpAsCoinLabel = "5gp" → same as notes
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 5, Notes: "5gp"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	for _, item := range view.EquippedItems {
+		if item.Name == "Coins" {
+			if item.CoinValueLabel != "" {
+				t.Errorf("CoinValueLabel = %q, want empty (same as notes)", item.CoinValueLabel)
+			}
+			return
+		}
+	}
+	t.Fatal("Coins not found in inventory")
+}

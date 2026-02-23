@@ -89,6 +89,7 @@ type Companion struct {
 	HPMax       int    `gorm:"column:hp_max"`
 	HasBarding  bool   `gorm:"column:has_barding"`
 	SaddleType  string `gorm:"column:saddle_type"` // "", "riding", "pack"
+	Loyalty     int    `gorm:"column:loyalty"`      // retainer loyalty score (7 + CHA mod)
 }
 
 type Transaction struct {
@@ -207,7 +208,8 @@ CREATE TABLE IF NOT EXISTS companions (
 	speed INTEGER NOT NULL DEFAULT 40,
 	load_capacity INTEGER NOT NULL DEFAULT 0,
 	has_barding INTEGER NOT NULL DEFAULT 0,
-	saddle_type TEXT NOT NULL DEFAULT ''
+	saddle_type TEXT NOT NULL DEFAULT '',
+	loyalty INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS companions_by_character ON companions(character_id);
 
@@ -317,6 +319,32 @@ ALTER TABLE characters ADD COLUMN birthday_month TEXT NOT NULL DEFAULT '';
 ALTER TABLE characters ADD COLUMN birthday_day INTEGER NOT NULL DEFAULT 0;
 `
 
+const migrationCompanionLoyalty = `
+ALTER TABLE companions ADD COLUMN loyalty INTEGER NOT NULL DEFAULT 0;
+`
+
+const migrationConsolidateFeed = `
+UPDATE items SET quantity = (
+    SELECT SUM(i2.quantity) FROM items i2
+    WHERE i2.character_id = items.character_id
+    AND i2.name = 'Feed'
+    AND COALESCE(i2.container_id, 0) = COALESCE(items.container_id, 0)
+    AND COALESCE(i2.companion_id, 0) = COALESCE(items.companion_id, 0)
+)
+WHERE name = 'Feed'
+AND id = (
+    SELECT MIN(i3.id) FROM items i3
+    WHERE i3.character_id = items.character_id
+    AND i3.name = 'Feed'
+    AND COALESCE(i3.container_id, 0) = COALESCE(items.container_id, 0)
+    AND COALESCE(i3.companion_id, 0) = COALESCE(items.companion_id, 0)
+);
+DELETE FROM items WHERE name = 'Feed' AND id NOT IN (
+    SELECT MIN(id) FROM items WHERE name = 'Feed'
+    GROUP BY character_id, COALESCE(container_id, 0), COALESCE(companion_id, 0)
+);
+`
+
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dolmenwood")
 	if err != nil {
@@ -337,7 +365,33 @@ func New() (*DB, error) {
 	d.Exec(migrationAuditLogGameDay)
 	d.Exec(migrationBankDeposits)
 	d.Exec(migrationBirthday)
+	d.Exec(migrationCompanionLoyalty)
+	d.Exec(migrationConsolidateFeed)
+	migrateEPtoSP(&DB{d})
 	return &DB{d}, nil
+}
+
+// migrateEPtoSP converts any electrum pieces in coin notes to silver pieces.
+// EP doesn't exist in Dolmenwood; any EP in the DB was created by changemaking.
+func migrateEPtoSP(db *DB) {
+	var coins []Item
+	db.Where("name = ? AND notes LIKE ?", engine.CoinItemNameStr, "%ep%").Find(&coins)
+	for _, coin := range coins {
+		parsed := engine.ParseCoinNotes(coin.Notes)
+		ep := parsed[engine.EP]
+		if ep == 0 {
+			continue
+		}
+		parsed[engine.SP] += ep * 5 // 1ep = 50cp = 5sp
+		delete(parsed, engine.EP)
+		coin.Notes = engine.FormatCoinNotes(parsed)
+		total := 0
+		for _, qty := range parsed {
+			total += qty
+		}
+		coin.Quantity = total
+		db.Save(&coin)
+	}
 }
 
 func NewMemory() (*DB, error) {

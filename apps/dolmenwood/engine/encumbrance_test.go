@@ -124,6 +124,10 @@ func TestItemSlots(t *testing.T) {
 		{"polearm = 2 slots", Item{Name: "Polearm", Quantity: 1, Location: "equipped"}, 2},
 		{"two-handed sword = 2 slots", Item{Name: "Two-Handed Sword", Quantity: 1, Location: "equipped"}, 2},
 		{"clothes = 0 slots", Item{Name: "Clothes", Quantity: 1, Location: "equipped"}, 0},
+		// Feed stacks like rations: 20cn each, 5 per slot
+		{"1 feed = 1 slot", Item{Name: "Feed", Quantity: 1, Location: "stowed"}, 1},
+		{"5 feed = 1 slot", Item{Name: "Feed", Quantity: 5, Location: "stowed"}, 1},
+		{"10 feed = 2 slots", Item{Name: "Feed", Quantity: 10, Location: "stowed"}, 2},
 		// General items with known weight use weight-based
 		{"rope = 1 slot", Item{Name: "Rope", Quantity: 1, Location: "stowed"}, 1},
 		{"3 oil flasks = 1 slot", Item{Name: "Oil Flask", Quantity: 3, Location: "stowed"}, 1},

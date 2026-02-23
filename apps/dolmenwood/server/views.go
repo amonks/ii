@@ -53,9 +53,12 @@ type CharacterView struct {
 	CanLevelUp              bool
 	PurseCoins              map[string]int // computed: inventory coins minus found treasure
 	PurseGPValue            int            // computed: inventory GP value minus found GP value
+	PurseLabel              string         // simplified purse value (e.g. "52gp 1sp")
 	FoundGPValue            int
+	FoundLabel              string         // simplified found treasure value
 	InventoryCoins          map[string]int // coin counts from inventory items, keyed by CoinType
 	InventoryGPValue        int            // total GP value of all inventory coin items
+	TotalCoinsLabel         string         // simplified total coins value
 	BreedNames              []string
 
 	// Inventory tree
@@ -103,12 +106,13 @@ type StoreItem struct {
 
 type InventoryItem struct {
 	db.Item
-	Slots       int
-	BundleSize  int
-	Children    []InventoryItem
-	Capacity    int // container capacity (0 if not a container)
-	UsedSlots   int // sum of children's slots
-	SellPriceCP int // sell price in CP (half of store buy price), 0 if not sellable
+	Slots          int
+	BundleSize     int
+	Children       []InventoryItem
+	Capacity       int    // container capacity (0 if not a container)
+	UsedSlots      int    // sum of children's slots
+	SellPriceCP    int    // sell price in CP (half of store buy price), 0 if not sellable
+	CoinValueLabel string // simplified total for coin items (e.g. "52gp 1sp"), empty if same as Notes
 }
 
 // CompanionInventory groups items under a companion.
@@ -196,6 +200,7 @@ type CompanionView struct {
 	Saves        engine.SaveTargets
 	Attack       string
 	Morale       int
+	Loyalty      int
 }
 
 func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
@@ -267,16 +272,22 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	for i, comp := range companions {
 		cv := CompanionView{Companion: comp}
 		if stats, ok := engine.BreedStats(comp.Breed); ok {
-			compItems := companionItems[comp.ID]
-			saddleType := engine.CompanionSaddleTypeFromItems(compItems)
-			hasBarding := engine.CompanionHasBardingFromItems(compItems)
-			cv.AC = engine.CompanionAC(stats.AC, hasBarding)
 			cv.Speed = stats.Speed
-			cv.LoadCapacity = engine.CompanionLoadCapacity(stats.LoadCapacity, saddleType)
 			cv.Level = stats.Level
 			cv.Saves = stats.Saves
 			cv.Attack = stats.Attack
 			cv.Morale = stats.Morale
+			if stats.NeedsSaddle {
+				compItems := companionItems[comp.ID]
+				saddleType := engine.CompanionSaddleTypeFromItems(compItems)
+				hasBarding := engine.CompanionHasBardingFromItems(compItems)
+				cv.AC = engine.CompanionAC(stats.AC, hasBarding)
+				cv.LoadCapacity = engine.CompanionLoadCapacity(stats.LoadCapacity, saddleType)
+			} else {
+				cv.AC = stats.AC
+				cv.LoadCapacity = stats.LoadCapacity
+			}
+			cv.Loyalty = comp.Loyalty
 		}
 		compViews[i] = cv
 	}
@@ -309,6 +320,14 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		engine.GP: inventoryCoins[engine.GP] - ch.FoundGP,
 		engine.PP: inventoryCoins[engine.PP] - ch.FoundPP,
 	}
+
+	// Simplified labels for wealth display
+	inventoryCPValue := coinPurseCPValue(inventoryCoins)
+	totalCoinsLabel := cpAsCoinLabel(inventoryCPValue)
+	foundCPValue := ch.FoundCP + ch.FoundSP*10 + ch.FoundEP*50 + ch.FoundGP*100 + ch.FoundPP*500
+	foundLabel := cpAsCoinLabel(foundCPValue)
+	purseCPValue := inventoryCPValue - foundCPValue
+	purseLabel := cpAsCoinLabel(purseCPValue)
 
 	birthdayDays := make([]int, 0, 31)
 	for day := 1; day <= 31; day++ {
@@ -414,9 +433,12 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		CanLevelUp:              canLevelUp,
 		PurseCoins:              purseCoins,
 		PurseGPValue:            inventoryGPValue - foundGPValue,
+		PurseLabel:              purseLabel,
 		FoundGPValue:            foundGPValue,
+		FoundLabel:              foundLabel,
 		InventoryCoins:          inventoryCoins,
 		InventoryGPValue:        inventoryGPValue,
+		TotalCoinsLabel:         totalCoinsLabel,
 		BreedNames:              engine.BreedNames(),
 		EquippedItems:           equippedTree,
 		CompanionGroups:         compGroups,
@@ -809,6 +831,14 @@ func buildInventoryTree(items []db.Item, compViews []CompanionView, companionSlo
 		}
 		if item.CompanionID != nil && engine.IsCompanionGear(item.Name) {
 			inv.Slots = 0
+		}
+		if strings.EqualFold(item.Name, engine.CoinItemNameStr) && item.Notes != "" {
+			coinNotes := engine.ParseCoinNotes(item.Notes)
+			cpValue := coinPurseCPValue(coinNotes)
+			label := cpAsCoinLabel(cpValue)
+			if label != item.Notes {
+				inv.CoinValueLabel = label
+			}
 		}
 		if sellCP, ok := storeSellPriceCP(item.Name); ok {
 			inv.SellPriceCP = sellCP

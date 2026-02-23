@@ -160,7 +160,7 @@ var itemWeights = map[string]int{
 	"pipeleaf": 0,
 
 	// Horse accessories
-	"feed":                     100,
+	"feed":                     20,
 	"horse barding":            600,
 	"canoe":                    500,
 	"pack saddle and bridle":   150,
@@ -203,6 +203,10 @@ var containers = map[string]Container{
 	"chest (wooden, small)":  {Slots: 3},  // ceil(300 / 100)
 	"scroll case":            {Slots: 1},  // 1 scroll
 	"riding saddle bags":     {Slots: 5},  // 500 coins / 100
+
+	// Vehicles
+	"cart":  {Slots: 100}, // 10,000 coins / 100
+	"wagon": {Slots: 200}, // 20,000 coins / 100
 }
 
 // ContainerCapacity returns the slot capacity for a known container (case-insensitive).

@@ -77,6 +77,10 @@ func TestContainerCapacity(t *testing.T) {
 		{"Scroll Case", 1, true},
 		{"Riding Saddle Bags", 5, true},
 
+		// Vehicles
+		{"Cart", 100, true},
+		{"Wagon", 200, true},
+
 		// Not containers
 		{"Longsword", 0, false},
 		{"Rope", 0, false},

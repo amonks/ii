@@ -82,7 +82,7 @@ templ Header() {
 
 // Row — bordered list-item row.
 templ Row() {
-	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100">
+	<div class="flex items-center justify-between text-sm py-1 border-b border-stone-100 flex-wrap gap-y-1">
 		{ children... }
 	</div>
 }
@@ -715,7 +715,7 @@ templ InlineNoteInput(attrs templ.Attributes) {
 // MoveSelect — compact stone-bg select for move-to.
 templ MoveSelect(attrs templ.Attributes) {
 	<select { attrs... }
-		class="text-xs bg-stone-100 rounded px-1 border-0">
+		class="text-xs bg-stone-100 rounded px-1 border-0 max-w-28">
 		{ children... }
 	</select>
 }

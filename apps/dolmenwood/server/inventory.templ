@@ -39,7 +39,7 @@ templ InventorySection(view *CharacterView) {
 				</form>
 			}
 		}
-		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "item_split"); len(entries) > 0 {
+		if entries := filterAuditLog(view.AuditLog, "item_add", "item_delete", "item_update", "item_decrement", "item_split", "item_consume"); len(entries) > 0 {
 			@CardSection() {
 				@SectionHeader() { Item Log }
 				@Details() {
@@ -65,7 +65,10 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 			@ClusterMin() {
 				if engine.IsCoinItem(item.Name) {
 					@Accent("goldItem") { { item.Name } }
-					if item.Notes != "" {
+					if item.CoinValueLabel != "" {
+						@BadgeGold() { { item.CoinValueLabel } }
+						@Label() { { item.Notes } }
+					} else if item.Notes != "" {
 						@BadgeGold() { { item.Notes } }
 					}
 				} else {
@@ -133,6 +136,9 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 								if item.SellPriceCP > 0 {
 									<option value="sell">{ fmt.Sprintf("Sell (%s)", itemCostLabel(item.SellPriceCP, "")) }</option>
 								}
+								if !engine.IsCoinItem(item.Name) {
+									<option value="consume">Consume</option>
+								}
 							}
 						}
 					</form>
@@ -143,6 +149,9 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 							<option value="">Move to...</option>
 							for _, target := range moveTargets {
 								<option value={ target.Value }>{ target.Label }</option>
+							}
+							if !engine.IsCoinItem(item.Name) {
+								<option value="consume">Consume</option>
 							}
 						}
 					</form>

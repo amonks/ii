@@ -2,7 +2,7 @@ package engine
 
 import "strings"
 
-// CompanionStats holds the full stats for a horse/mule breed.
+// CompanionStats holds the full stats for a companion breed (horse/mule/retainer).
 type CompanionStats struct {
 	AC           int
 	HPMax        int
@@ -12,15 +12,17 @@ type CompanionStats struct {
 	Saves        SaveTargets
 	Attack       string
 	Morale       int
+	NeedsSaddle  bool // true for horses/mules that require saddle/barding gear
 }
 
 var breeds = map[string]CompanionStats{
-	"Charger":          {AC: 12, HPMax: 13, Speed: 40, LoadCapacity: 40, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d6)", Morale: 9},
-	"Dapple-doff":      {AC: 12, HPMax: 13, Speed: 30, LoadCapacity: 50, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "None", Morale: 5},
-	"Hop-clopper":      {AC: 12, HPMax: 13, Speed: 30, LoadCapacity: 50, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d4)", Morale: 7},
-	"Mule":             {AC: 12, HPMax: 9, Speed: 40, LoadCapacity: 25, Level: 2, Saves: SaveTargets{12, 13, 14, 15, 16}, Attack: "Kick (+1, 1d4) or bite (+1, 1d3)", Morale: 8},
-	"Prigwort prancer": {AC: 12, HPMax: 9, Speed: 80, LoadCapacity: 30, Level: 2, Saves: SaveTargets{12, 13, 14, 15, 16}, Attack: "2 hooves (+1, 1d4)", Morale: 7},
-	"Yellow-flank":     {AC: 12, HPMax: 13, Speed: 60, LoadCapacity: 35, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d4)", Morale: 7},
+	"Charger":          {AC: 12, HPMax: 13, Speed: 40, LoadCapacity: 40, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d6)", Morale: 9, NeedsSaddle: true},
+	"Dapple-doff":      {AC: 12, HPMax: 13, Speed: 30, LoadCapacity: 50, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "None", Morale: 5, NeedsSaddle: true},
+	"Hop-clopper":      {AC: 12, HPMax: 13, Speed: 30, LoadCapacity: 50, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d4)", Morale: 7, NeedsSaddle: true},
+	"Mule":             {AC: 12, HPMax: 9, Speed: 40, LoadCapacity: 25, Level: 2, Saves: SaveTargets{12, 13, 14, 15, 16}, Attack: "Kick (+1, 1d4) or bite (+1, 1d3)", Morale: 8, NeedsSaddle: true},
+	"Prigwort prancer": {AC: 12, HPMax: 9, Speed: 80, LoadCapacity: 30, Level: 2, Saves: SaveTargets{12, 13, 14, 15, 16}, Attack: "2 hooves (+1, 1d4)", Morale: 7, NeedsSaddle: true},
+	"Yellow-flank":     {AC: 12, HPMax: 13, Speed: 60, LoadCapacity: 35, Level: 3, Saves: SaveTargets{11, 12, 13, 14, 15}, Attack: "2 hooves (+2, 1d4)", Morale: 7, NeedsSaddle: true},
+	"Townsfolk":        {AC: 10, HPMax: 2, Speed: 40, LoadCapacity: 10, Level: 1, Saves: SaveTargets{12, 13, 14, 15, 16}, Attack: "Weapon (-1)", Morale: 6, NeedsSaddle: false},
 }
 
 // breedOrder preserves a consistent display order.
@@ -31,6 +33,7 @@ var breedOrder = []string{
 	"Mule",
 	"Prigwort prancer",
 	"Yellow-flank",
+	"Townsfolk",
 }
 
 // BreedStats returns the default stats for a named breed.
@@ -52,6 +55,16 @@ func IsCompanionBreed(name string) bool {
 		}
 	}
 	return false
+}
+
+// IsRetainer returns true if the breed is a townsfolk retainer (not a mount).
+func IsRetainer(breed string) bool {
+	return strings.EqualFold(breed, "Townsfolk")
+}
+
+// RetainerLoyalty returns the initial loyalty score for a retainer: 7 + CHA modifier.
+func RetainerLoyalty(chaMod int) int {
+	return 7 + chaMod
 }
 
 // IsCompanionGear returns true if the item is companion gear (saddle/bridle/barding)

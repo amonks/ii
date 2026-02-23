@@ -39,22 +39,6 @@ templ BankSection(view *CharacterView) {
 				}
 			</form>
 		}
-		if entries := filterAuditLog(view.AuditLog, "bank_deposit", "bank_withdraw"); len(entries) > 0 {
-			@CardSection() {
-				@SectionHeader() { Bank Log }
-				@Details() {
-					@Summary() { Show }
-					@DetailsBody() {
-						for _, entry := range entries {
-							@LogEntry() {
-								<span>{ entry.Detail }</span>
-								@auditDate(entry)
-							}
-						}
-					}
-				}
-			}
-		}
 		}
 	}
 }

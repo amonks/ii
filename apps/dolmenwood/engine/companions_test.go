@@ -20,6 +20,7 @@ func TestBreedStats(t *testing.T) {
 		{"Mule", 12, 9, 40, 25, 2, SaveTargets{12, 13, 14, 15, 16}, "Kick (+1, 1d4) or bite (+1, 1d3)", 8},
 		{"Prigwort prancer", 12, 9, 80, 30, 2, SaveTargets{12, 13, 14, 15, 16}, "2 hooves (+1, 1d4)", 7},
 		{"Yellow-flank", 12, 13, 60, 35, 3, SaveTargets{11, 12, 13, 14, 15}, "2 hooves (+2, 1d4)", 7},
+		{"Townsfolk", 10, 2, 40, 10, 1, SaveTargets{12, 13, 14, 15, 16}, "Weapon (-1)", 6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.breed, func(t *testing.T) {
@@ -64,8 +65,19 @@ func TestBreedStatsUnknown(t *testing.T) {
 
 func TestBreedNames(t *testing.T) {
 	names := BreedNames()
-	if len(names) != 6 {
-		t.Errorf("got %d breeds, want 6", len(names))
+	if len(names) != 7 {
+		t.Errorf("got %d breeds, want 7", len(names))
+	}
+	// Townsfolk should be in the list
+	found := false
+	for _, n := range names {
+		if n == "Townsfolk" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("BreedNames() should contain Townsfolk")
 	}
 }
 
@@ -203,5 +215,66 @@ func TestCompanionLoadCapacity(t *testing.T) {
 				t.Errorf("CompanionLoadCapacity(%d, %q) = %d, want %d", tc.breedCapacity, tc.saddleType, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestIsRetainer(t *testing.T) {
+	cases := []struct {
+		breed string
+		want  bool
+	}{
+		{"Townsfolk", true},
+		{"Mule", false},
+		{"Charger", false},
+		{"", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.breed, func(t *testing.T) {
+			got := IsRetainer(tc.breed)
+			if got != tc.want {
+				t.Errorf("IsRetainer(%q) = %v, want %v", tc.breed, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestRetainerLoyalty(t *testing.T) {
+	cases := []struct {
+		name   string
+		chaMod int
+		want   int
+	}{
+		{"neutral CHA", 0, 7},
+		{"high CHA", 2, 9},
+		{"low CHA", -1, 6},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := RetainerLoyalty(tc.chaMod)
+			if got != tc.want {
+				t.Errorf("RetainerLoyalty(%d) = %d, want %d", tc.chaMod, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestNeedsSaddle(t *testing.T) {
+	// Horse breeds need saddles
+	for _, breed := range []string{"Charger", "Dapple-doff", "Hop-clopper", "Mule", "Prigwort prancer", "Yellow-flank"} {
+		stats, ok := BreedStats(breed)
+		if !ok {
+			t.Fatalf("breed %q not found", breed)
+		}
+		if !stats.NeedsSaddle {
+			t.Errorf("breed %q: NeedsSaddle = false, want true", breed)
+		}
+	}
+	// Townsfolk don't need saddles
+	stats, ok := BreedStats("Townsfolk")
+	if !ok {
+		t.Fatal("Townsfolk breed not found")
+	}
+	if stats.NeedsSaddle {
+		t.Error("Townsfolk: NeedsSaddle = true, want false")
 	}
 }
