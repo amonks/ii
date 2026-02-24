@@ -362,7 +362,7 @@ func TestArmorContributors(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			armor, hasShield := ArmorContributors(tc.items)
+			armor, hasShield, _ := ArmorContributors(tc.items)
 			if armor != tc.wantArmor {
 				t.Errorf("armor = %q, want %q", armor, tc.wantArmor)
 			}
@@ -484,6 +484,90 @@ func TestItemSlotCost(t *testing.T) {
 				t.Errorf("ItemSlotCost(%q) = %d, want %d", tt.name, got, tt.wantSlot)
 			}
 		})
+	}
+}
+
+func TestParseMagicBonus(t *testing.T) {
+	tests := []struct {
+		name      string
+		wantBase  string
+		wantBonus int
+	}{
+		{"+2 Longsword", "Longsword", 2},
+		{"Longsword", "Longsword", 0},
+		{"+0 Dagger", "Dagger", 0},
+		{"+1 Plate mail", "Plate mail", 1},
+		{"+3 Two-handed sword", "Two-handed sword", 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			base, bonus := ParseMagicBonus(tt.name)
+			if base != tt.wantBase {
+				t.Errorf("base = %q, want %q", base, tt.wantBase)
+			}
+			if bonus != tt.wantBonus {
+				t.Errorf("bonus = %d, want %d", bonus, tt.wantBonus)
+			}
+		})
+	}
+}
+
+func TestWeaponStatsWithMagicPrefix(t *testing.T) {
+	stats, ok := WeaponStats("+2 Longsword")
+	if !ok {
+		t.Fatal("WeaponStats(+2 Longsword) not found")
+	}
+	if stats.Damage != "1d8" {
+		t.Errorf("Damage = %q, want %q", stats.Damage, "1d8")
+	}
+}
+
+func TestArmorStatsWithMagicPrefix(t *testing.T) {
+	stats, ok := ArmorStats("+1 Leather")
+	if !ok {
+		t.Fatal("ArmorStats(+1 Leather) not found")
+	}
+	if stats.AC != 12 {
+		t.Errorf("AC = %d, want 12", stats.AC)
+	}
+}
+
+func TestCharacterACWithMagicArmor(t *testing.T) {
+	items := []Item{
+		{Name: "+1 Leather", Quantity: 1, Location: "equipped"},
+	}
+	ac, armorName := CharacterAC("Human", items, 10)
+	if ac != 13 {
+		t.Errorf("AC = %d, want 13 (base 12 + 1 magic)", ac)
+	}
+	if armorName != "+1 Leather" {
+		t.Errorf("armorName = %q, want %q", armorName, "+1 Leather")
+	}
+}
+
+func TestEquippedWeaponsWithMagicBonus(t *testing.T) {
+	items := []Item{
+		{Name: "+2 Longsword", Quantity: 1, Location: "equipped"},
+		{Name: "Dagger", Quantity: 1, Location: "equipped"},
+	}
+	weapons := EquippedWeapons(items)
+	if len(weapons) != 2 {
+		t.Fatalf("got %d weapons, want 2", len(weapons))
+	}
+	if weapons[0].Name != "+2 Longsword" {
+		t.Errorf("Name = %q, want %q", weapons[0].Name, "+2 Longsword")
+	}
+	if weapons[0].Damage != "1d8+2" {
+		t.Errorf("Damage = %q, want %q", weapons[0].Damage, "1d8+2")
+	}
+	if weapons[0].MagicBonus != 2 {
+		t.Errorf("MagicBonus = %d, want 2", weapons[0].MagicBonus)
+	}
+	if weapons[1].Damage != "1d4" {
+		t.Errorf("Damage = %q, want %q", weapons[1].Damage, "1d4")
+	}
+	if weapons[1].MagicBonus != 0 {
+		t.Errorf("MagicBonus = %d, want 0", weapons[1].MagicBonus)
 	}
 }
 

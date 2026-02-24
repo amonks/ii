@@ -47,11 +47,11 @@ templ CompanionsSection(view *CharacterView) {
 						}
 					}
 					@Grid(5) {
-						@saveBox("Death", comp.Saves.Death)
-						@saveBox("Wands", comp.Saves.Wands)
-						@saveBox("Para", comp.Saves.Paralysis)
-						@saveBox("Breath", comp.Saves.Breath)
-						@saveBox("Spells", comp.Saves.Spells)
+						@saveBox("Doom", comp.Saves.Doom)
+						@saveBox("Ray", comp.Saves.Ray)
+						@saveBox("Hold", comp.Saves.Hold)
+						@saveBox("Blast", comp.Saves.Blast)
+						@saveBox("Spell", comp.Saves.Spell)
 					}
 					@LabelBlock() {
 						Morale { fmt.Sprintf("%d", comp.Morale) }

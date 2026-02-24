@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"monks.co/apps/dolmenwood/db"
+	"monks.co/apps/dolmenwood/engine"
 )
 
 func TestWealthViewAggregatesCoinItems(t *testing.T) {
@@ -361,6 +362,136 @@ func TestTownsfolkCompanionView(t *testing.T) {
 	if cv.Loyalty != 8 {
 		t.Errorf("Loyalty = %d, want 8", cv.Loyalty)
 	}
+}
+
+func TestMagicArmorACInView(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8, DEX: 10,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "+1 Leather", Quantity: 1, Location: "equipped"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if view.AC != 13 {
+		t.Errorf("AC = %d, want 13 (base 12 + 1 magic)", view.AC)
+	}
+	if view.ArmorAC != 13 {
+		t.Errorf("ArmorAC = %d, want 13 (base 12 + 1 magic)", view.ArmorAC)
+	}
+	if view.ArmorName != "+1 Leather" {
+		t.Errorf("ArmorName = %q, want %q", view.ArmorName, "+1 Leather")
+	}
+}
+
+func TestMagicWeaponInView(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "+2 Longsword", Quantity: 1, Location: "equipped"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.Weapons) != 1 {
+		t.Fatalf("got %d weapons, want 1", len(view.Weapons))
+	}
+	w := view.Weapons[0]
+	if w.Name != "+2 Longsword" {
+		t.Errorf("Name = %q, want %q", w.Name, "+2 Longsword")
+	}
+	if w.Damage != "1d8+2" {
+		t.Errorf("Damage = %q, want %q", w.Damage, "1d8+2")
+	}
+	if w.MagicBonus != 2 {
+		t.Errorf("MagicBonus = %d, want 2", w.MagicBonus)
+	}
+}
+
+func TestMagicWeaponInventoryPill(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "+2 Longsword", Quantity: 1, Location: "equipped"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	// Find the magic longsword in equipped items
+	for _, item := range view.EquippedItems {
+		if item.Name == "+2 Longsword" {
+			// The weapon stats lookup should still work via ParseMagicBonus
+			w, ok := engine.WeaponStats(item.Name)
+			if !ok {
+				t.Fatal("WeaponStats should find +2 Longsword")
+			}
+			_, mb := engine.ParseMagicBonus(item.Name)
+			if mb != 2 {
+				t.Errorf("magic bonus = %d, want 2", mb)
+			}
+			// Pill should show "1d8+2"
+			expectedDamage := "1d8"
+			if w.Damage != expectedDamage {
+				t.Errorf("base weapon Damage = %q, want %q", w.Damage, expectedDamage)
+			}
+			return
+		}
+	}
+	t.Fatal("+2 Longsword not found in equipped items")
+}
+
+func TestMagicArmorInventoryPill(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "+1 Leather", Quantity: 1, Location: "equipped"})
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	for _, item := range view.EquippedItems {
+		if item.Name == "+1 Leather" {
+			a, ok := engine.ArmorStats(item.Name)
+			if !ok {
+				t.Fatal("ArmorStats should find +1 Leather")
+			}
+			_, mb := engine.ParseMagicBonus(item.Name)
+			// Pill should show AC 13 (base 12 + 1 magic)
+			if a.AC+mb != 13 {
+				t.Errorf("displayed AC = %d, want 13", a.AC+mb)
+			}
+			return
+		}
+	}
+	t.Fatal("+1 Leather not found in equipped items")
 }
 
 func TestCoinValueLabelEmptyWhenSame(t *testing.T) {

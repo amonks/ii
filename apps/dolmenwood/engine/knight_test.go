@@ -53,8 +53,8 @@ func TestKnightSaveTargets(t *testing.T) {
 		level int
 		want  SaveTargets
 	}{
-		{1, SaveTargets{Death: 12, Wands: 13, Paralysis: 12, Breath: 15, Spells: 15}},
-		{4, SaveTargets{Death: 10, Wands: 11, Paralysis: 10, Breath: 13, Spells: 13}},
+		{1, SaveTargets{Doom: 12, Ray: 13, Hold: 12, Blast: 15, Spell: 15}},
+		{4, SaveTargets{Doom: 10, Ray: 11, Hold: 10, Blast: 13, Spell: 13}},
 	}
 	for _, tc := range cases {
 		got := KnightSaveTargets(tc.level)

@@ -69,8 +69,10 @@ func RetainerLoyalty(chaMod int) int {
 
 // IsCompanionGear returns true if the item is companion gear (saddle/bridle/barding)
 // that enables companion capacity rather than consuming it.
+// Strips magic bonus prefix before lookup.
 func IsCompanionGear(name string) bool {
-	lower := strings.ToLower(name)
+	baseName, _ := ParseMagicBonus(name)
+	lower := strings.ToLower(baseName)
 	switch lower {
 	case "pack saddle and bridle", "riding saddle and bridle", "horse barding":
 		return true
@@ -100,6 +102,14 @@ func CompanionHasBardingFromItems(items []Item) bool {
 		}
 	}
 	return false
+}
+
+// BardingACBonus returns the AC bonus for a barding item, or 0 if not barding.
+func BardingACBonus(name string) int {
+	if strings.EqualFold(name, "horse barding") {
+		return 2
+	}
+	return 0
 }
 
 // CompanionAC returns the effective AC for a companion.

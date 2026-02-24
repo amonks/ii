@@ -76,8 +76,10 @@ func TotalCoins(purse CoinPurse) int {
 
 // IsCoinItem returns true if the item name represents coins.
 // Matches both consolidated "Coins" and legacy per-denomination names.
+// Strips magic bonus prefix before lookup.
 func IsCoinItem(name string) bool {
-	lower := strings.ToLower(name)
+	baseName, _ := ParseMagicBonus(name)
+	lower := strings.ToLower(baseName)
 	if lower == "coins" {
 		return true
 	}

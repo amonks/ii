@@ -76,7 +76,11 @@ templ StatsSection(view *CharacterView) {
 						@ValueText() { +{ fmt.Sprintf("%d", view.AttackBonus) } }
 						if len(view.Weapons) > 0 {
 							for _, w := range view.Weapons {
-								@LabelBlock() { { w.Name } { w.Damage } }
+								if w.MagicBonus > 0 {
+									@LabelBlock() { { w.Name } { w.Damage } (+{ fmt.Sprintf("%d", w.MagicBonus + view.AttackBonus) }) }
+								} else {
+									@LabelBlock() { { w.Name } { w.Damage } }
+								}
 							}
 						}
 					}
@@ -106,11 +110,11 @@ templ StatsSection(view *CharacterView) {
 				@SectionHeader() { Saves }
 				if view.MagicResistance != 0 {
 					@Grid(6) {
-						@saveBox("Death", view.Saves.Death)
-						@saveBox("Wands", view.Saves.Wands)
-						@saveBox("Para", view.Saves.Paralysis)
-						@saveBox("Breath", view.Saves.Breath)
-						@saveBox("Spells", view.Saves.Spells)
+						@saveBox("Doom", view.Saves.Doom)
+						@saveBox("Ray", view.Saves.Ray)
+						@saveBox("Hold", view.Saves.Hold)
+						@saveBox("Blast", view.Saves.Blast)
+						@saveBox("Spell", view.Saves.Spell)
 						@Billboard() {
 							@LabelBlock() { MR }
 							@ValueText() { { formatMod(view.MagicResistance) } }
@@ -118,11 +122,11 @@ templ StatsSection(view *CharacterView) {
 					}
 				} else {
 					@Grid(5) {
-						@saveBox("Death", view.Saves.Death)
-						@saveBox("Wands", view.Saves.Wands)
-						@saveBox("Para", view.Saves.Paralysis)
-						@saveBox("Breath", view.Saves.Breath)
-						@saveBox("Spells", view.Saves.Spells)
+						@saveBox("Doom", view.Saves.Doom)
+						@saveBox("Ray", view.Saves.Ray)
+						@saveBox("Hold", view.Saves.Hold)
+						@saveBox("Blast", view.Saves.Blast)
+						@saveBox("Spell", view.Saves.Spell)
 					}
 				}
 				if len(view.SaveBonuses) > 0 {

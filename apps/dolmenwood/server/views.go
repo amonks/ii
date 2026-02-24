@@ -348,12 +348,13 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	armorAC := 0
 	if armorName != "" {
 		if armor, ok := engine.ArmorStats(armorName); ok {
-			armorAC = armor.AC
+			_, magicBonus := engine.ParseMagicBonus(armorName)
+			armorAC = armor.AC + magicBonus
 		}
 	}
 	shieldName := ""
 	shieldAC := 0
-	if _, hasShield := engine.ArmorContributors(engineItems); hasShield {
+	if _, hasShield, _ := engine.ArmorContributors(engineItems); hasShield {
 		shieldName = "Shield"
 		shieldAC = 1
 	}

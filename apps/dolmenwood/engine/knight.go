@@ -1,11 +1,11 @@
 package engine
 
 type SaveTargets struct {
-	Death     int
-	Wands     int
-	Paralysis int
-	Breath    int
-	Spells    int
+	Doom  int
+	Ray   int
+	Hold  int
+	Blast int
+	Spell int
 }
 
 type Traits struct {

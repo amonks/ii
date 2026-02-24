@@ -1,6 +1,10 @@
 package engine
 
-import "strings"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // Weapon holds stats for a known weapon.
 type Weapon struct {
@@ -210,34 +214,60 @@ var containers = map[string]Container{
 }
 
 // ContainerCapacity returns the slot capacity for a known container (case-insensitive).
+// Strips magic bonus prefix before lookup.
 func ContainerCapacity(name string) (int, bool) {
-	c, ok := containers[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	c, ok := containers[strings.ToLower(baseName)]
 	return c.Slots, ok
 }
 
 // IsContainer returns whether the item name is a known container.
+// Strips magic bonus prefix before lookup.
 func IsContainer(name string) bool {
-	_, ok := containers[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	_, ok := containers[strings.ToLower(baseName)]
 	return ok
 }
 
 // IsPersonalContainer returns whether the item is a personal container
 // (backpack, sack, belt pouch) that is 0 slots when equipped.
 func IsPersonalContainer(name string) bool {
-	c, ok := containers[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	c, ok := containers[strings.ToLower(baseName)]
 	return ok && c.Personal
+}
+
+// ParseMagicBonus extracts a magic bonus prefix from an item name.
+// "+2 Longsword" → ("Longsword", 2); "Longsword" → ("Longsword", 0).
+func ParseMagicBonus(name string) (string, int) {
+	if len(name) < 2 || name[0] != '+' {
+		return name, 0
+	}
+	spaceIdx := strings.IndexByte(name, ' ')
+	if spaceIdx < 2 {
+		return name, 0
+	}
+	bonusStr := name[1:spaceIdx]
+	bonus, err := strconv.Atoi(bonusStr)
+	if err != nil {
+		return name, 0
+	}
+	return name[spaceIdx+1:], bonus
 }
 
 // EquippedWeapon holds stats for an equipped weapon, including the display name.
 type EquippedWeapon struct {
-	Name      string
-	Damage    string
-	Qualities string
+	Name       string
+	Damage     string
+	Qualities  string
+	MagicBonus int
 }
 
 // WeaponStats returns stats for a weapon by name (case-insensitive).
+// Strips magic bonus prefix (e.g. "+2 Longsword" → looks up "longsword").
 func WeaponStats(name string) (Weapon, bool) {
-	w, ok := weapons[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	w, ok := weapons[strings.ToLower(baseName)]
 	return w, ok
 }
 
@@ -252,7 +282,7 @@ func ACFromEquippedItems(items []Item, dexScore int) (int, string) {
 func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 	baseAC := 10
 	armorName := ""
-	armorName, hasShield := ArmorContributors(items)
+	armorName, hasShield, magicBonus := ArmorContributors(items)
 
 	if armorName != "" {
 		if armor, ok := ArmorStats(armorName); ok {
@@ -269,7 +299,7 @@ func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 		}
 	}
 
-	ac := baseAC + Modifier(dexScore)
+	ac := baseAC + Modifier(dexScore) + magicBonus
 	if hasShield {
 		ac++
 	}
@@ -277,11 +307,13 @@ func CharacterAC(kindred string, items []Item, dexScore int) (int, string) {
 	return ac, armorName
 }
 
-// ArmorContributors returns the equipped armor name and whether a shield is equipped.
-func ArmorContributors(items []Item) (string, bool) {
+// ArmorContributors returns the equipped armor name, whether a shield is equipped,
+// and the magic bonus on the armor (if any).
+func ArmorContributors(items []Item) (string, bool, int) {
 	armorName := ""
 	hasShield := false
 	baseAC := 10
+	magicBonus := 0
 
 	for _, item := range items {
 		if item.Location != "equipped" && !item.IsEquippedOnCharacter() {
@@ -290,7 +322,8 @@ func ArmorContributors(items []Item) (string, bool) {
 		if item.Location != "" && item.Location != "equipped" {
 			continue
 		}
-		lower := strings.ToLower(item.Name)
+		baseName, bonus := ParseMagicBonus(item.Name)
+		lower := strings.ToLower(baseName)
 		if lower == "shield" {
 			hasShield = true
 			continue
@@ -299,11 +332,12 @@ func ArmorContributors(items []Item) (string, bool) {
 			if armor.AC > baseAC {
 				baseAC = armor.AC
 				armorName = item.Name
+				magicBonus = bonus
 			}
 		}
 	}
 
-	return armorName, hasShield
+	return armorName, hasShield, magicBonus
 }
 
 // EquippedWeapons returns stats for all equipped weapons.
@@ -316,11 +350,17 @@ func EquippedWeapons(items []Item) []EquippedWeapon {
 		if item.Location != "" && item.Location != "equipped" {
 			continue
 		}
-		if w, ok := weapons[strings.ToLower(item.Name)]; ok {
+		baseName, bonus := ParseMagicBonus(item.Name)
+		if w, ok := weapons[strings.ToLower(baseName)]; ok {
+			damage := w.Damage
+			if bonus > 0 {
+				damage = fmt.Sprintf("%s+%d", w.Damage, bonus)
+			}
 			result = append(result, EquippedWeapon{
-				Name:      item.Name,
-				Damage:    w.Damage,
-				Qualities: w.Qualities,
+				Name:       item.Name,
+				Damage:     damage,
+				Qualities:  w.Qualities,
+				MagicBonus: bonus,
 			})
 		}
 	}
@@ -328,8 +368,10 @@ func EquippedWeapons(items []Item) []EquippedWeapon {
 }
 
 // ArmorStats returns stats for armor by name (case-insensitive).
+// Strips magic bonus prefix (e.g. "+1 Leather" → looks up "leather").
 func ArmorStats(name string) (Armor, bool) {
-	a, ok := armors[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	a, ok := armors[strings.ToLower(baseName)]
 	return a, ok
 }
 
@@ -407,8 +449,10 @@ var tinyItems = map[string]struct{}{
 }
 
 // IsTinyItem returns whether the item is a known tiny item.
+// Strips magic bonus prefix before lookup.
 func IsTinyItem(name string) bool {
-	_, ok := tinyItems[strings.ToLower(name)]
+	baseName, _ := ParseMagicBonus(name)
+	_, ok := tinyItems[strings.ToLower(baseName)]
 	return ok
 }
 
@@ -432,7 +476,8 @@ func ItemSlotCostExplicit(name string) (int, bool) {
 // Items with only a known weight return (1, false) so the caller can fall back
 // to weight-based calculation.
 func itemSlotCostExplicit(name string) (int, bool) {
-	lower := strings.ToLower(name)
+	baseName, _ := ParseMagicBonus(name)
+	lower := strings.ToLower(baseName)
 
 	// Explicit slot cost catalog (clothing, tiny, bundled, bulky)
 	if info, ok := itemSlotCosts[lower]; ok {
@@ -469,7 +514,8 @@ func ItemBundleSize(name string) int {
 
 // itemBundleSize returns the bundle size for a named item, or 0 if not bundled.
 func itemBundleSize(name string) int {
-	lower := strings.ToLower(name)
+	baseName, _ := ParseMagicBonus(name)
+	lower := strings.ToLower(baseName)
 	if info, ok := itemSlotCosts[lower]; ok {
 		return info.BundleSize
 	}
@@ -477,9 +523,11 @@ func itemBundleSize(name string) int {
 }
 
 // ItemWeight returns the weight in coins for a known item name (case-insensitive).
+// Strips magic bonus prefix before lookup.
 // Returns the weight and true if found, or 0 and false if unknown.
 func ItemWeight(name string) (int, bool) {
-	lower := strings.ToLower(name)
+	baseName, _ := ParseMagicBonus(name)
+	lower := strings.ToLower(baseName)
 	// Check weapons first
 	if w, ok := weapons[lower]; ok {
 		return w.Weight, true

@@ -90,10 +90,21 @@ templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
 					}
 				}
 				if w, ok := engine.WeaponStats(item.Name); ok {
-					@Accent("weapon") { { w.Damage } }
+					if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
+						@Accent("weapon") { { fmt.Sprintf("%s+%d", w.Damage, mb) } }
+					} else {
+						@Accent("weapon") { { w.Damage } }
+					}
 				}
 				if a, ok := engine.ArmorStats(item.Name); ok {
-					@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
+					if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
+						@Accent("armor") { AC { fmt.Sprintf("%d", a.AC + mb) } }
+					} else {
+						@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
+					}
+				}
+				if bonus := engine.BardingACBonus(item.Name); bonus > 0 {
+					@Accent("armor") { { fmt.Sprintf("+%d AC", bonus) } }
 				}
 				if !engine.IsCoinItem(item.Name) {
 					<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }

@@ -556,7 +556,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = saveBox("Death", comp.Saves.Death).Render(ctx, templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = saveBox("Doom", comp.Saves.Doom).Render(ctx, templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -564,7 +564,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = saveBox("Wands", comp.Saves.Wands).Render(ctx, templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = saveBox("Ray", comp.Saves.Ray).Render(ctx, templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -572,7 +572,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = saveBox("Para", comp.Saves.Paralysis).Render(ctx, templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = saveBox("Hold", comp.Saves.Hold).Render(ctx, templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -580,7 +580,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = saveBox("Breath", comp.Saves.Breath).Render(ctx, templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = saveBox("Blast", comp.Saves.Blast).Render(ctx, templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -588,7 +588,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = saveBox("Spells", comp.Saves.Spells).Render(ctx, templ_7745c5c3_Buffer)
+								templ_7745c5c3_Err = saveBox("Spell", comp.Saves.Spell).Render(ctx, templ_7745c5c3_Buffer)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}

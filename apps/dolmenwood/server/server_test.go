@@ -680,7 +680,7 @@ func TestCompanionStatsDerivedFromBreed(t *testing.T) {
 		t.Error("response should contain breed name")
 	}
 	// Should show saves
-	if !strings.Contains(body, "Death") {
+	if !strings.Contains(body, "Doom") {
 		t.Error("response should show save labels")
 	}
 	// Charger attack: "2 hooves (+2, 1d6)"
@@ -5335,6 +5335,48 @@ func TestConsumeItemRejectsCoins(t *testing.T) {
 	}
 	if !coinFound {
 		t.Fatal("coins should not have been consumed")
+	}
+}
+
+func TestBardingShowsACBonusPill(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID, Name: "Bessie", Breed: "Mule",
+		HPCurrent: 9, HPMax: 9,
+	}
+	d.CreateCompanion(comp)
+
+	d.CreateItem(&db.Item{
+		CharacterID: ch.ID, Name: "Horse barding",
+		Quantity: 1, CompanionID: &comp.ID,
+	})
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	// The inventory should show "+2 AC" pill on the barding item
+	bardingIdx := strings.Index(body, "Horse barding")
+	if bardingIdx == -1 {
+		t.Fatal("Horse barding not found in body")
+	}
+	// Look in a reasonable region after the item name
+	region := body[bardingIdx : bardingIdx+500]
+	if !strings.Contains(region, "+2 AC") {
+		t.Errorf("expected '+2 AC' pill near Horse barding item, got: %s", region)
 	}
 }
 
