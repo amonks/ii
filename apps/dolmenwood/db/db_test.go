@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 )
@@ -58,6 +59,31 @@ func TestCharacterRoundTrip(t *testing.T) {
 	}
 	if got.BirthdayDay != 19 {
 		t.Errorf("BirthdayDay = %d, want 19", got.BirthdayDay)
+	}
+}
+
+func TestCharacterDefaults(t *testing.T) {
+	db := newTestDB(t)
+
+	type columnInfo struct {
+		Name       string         `gorm:"column:name"`
+		DfltValue  sql.NullString `gorm:"column:dflt_value"`
+	}
+
+	var columns []columnInfo
+	if err := db.Raw("PRAGMA table_info(characters)").Scan(&columns).Error; err != nil {
+		t.Fatalf("PRAGMA table_info: %v", err)
+	}
+
+	defaults := map[string]sql.NullString{}
+	for _, col := range columns {
+		defaults[col.Name] = col.DfltValue
+	}
+
+	for _, name := range []string{"class", "kindred"} {
+		if def, ok := defaults[name]; ok && def.Valid {
+			t.Errorf("%s default = %q, want no default", name, def.String)
+		}
 	}
 }
 
