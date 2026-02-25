@@ -84,6 +84,30 @@ func TestGetIndex(t *testing.T) {
 	}
 }
 
+func TestIndexShowsClassAndKindredOptions(t *testing.T) {
+	srv, _ := setupTest(t)
+	mux := srv.Mux()
+
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	for _, class := range engine.ClassNames() {
+		if !strings.Contains(body, fmt.Sprintf("value=\"%s\"", class)) {
+			t.Errorf("expected class option %q", class)
+		}
+	}
+	for _, kindred := range engine.KindredNames() {
+		if !strings.Contains(body, fmt.Sprintf("value=\"%s\"", kindred)) {
+			t.Errorf("expected kindred option %q", kindred)
+		}
+	}
+}
+
 func TestDeleteCharacter(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
