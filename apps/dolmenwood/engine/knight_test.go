@@ -66,24 +66,33 @@ func TestKnightSaveTargets(t *testing.T) {
 
 func TestKnightTraits(t *testing.T) {
 	t.Run("MonsterSlayer", func(t *testing.T) {
-		traits := KnightTraits(4)
-		if traits.MonsterSlayer {
-			t.Error("level 4 should not have MonsterSlayer")
+		traits := ClassTraits("Knight", 4)
+		if containsTrait(traits, "Monster Slayer") {
+			t.Error("level 4 should not have Monster Slayer")
 		}
-		traits = KnightTraits(5)
-		if !traits.MonsterSlayer {
-			t.Error("level 5 should have MonsterSlayer")
+		traits = ClassTraits("Knight", 5)
+		if !containsTrait(traits, "Monster Slayer") {
+			t.Error("level 5 should have Monster Slayer")
 		}
 	})
 
 	t.Run("Knighthood", func(t *testing.T) {
-		traits := KnightTraits(2)
-		if traits.Knighthood {
+		traits := ClassTraits("Knight", 2)
+		if containsTrait(traits, "Knighthood") {
 			t.Error("level 2 should not have Knighthood")
 		}
-		traits = KnightTraits(3)
-		if !traits.Knighthood {
+		traits = ClassTraits("Knight", 3)
+		if !containsTrait(traits, "Knighthood") {
 			t.Error("level 3 should have Knighthood")
 		}
 	})
+}
+
+func containsTrait(traits []Trait, name string) bool {
+	for _, trait := range traits {
+		if trait.Name == name {
+			return true
+		}
+	}
+	return false
 }

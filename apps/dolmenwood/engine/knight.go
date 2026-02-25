@@ -8,11 +8,6 @@ type SaveTargets struct {
 	Spell int
 }
 
-type Traits struct {
-	MonsterSlayer bool
-	Knighthood    bool
-}
-
 // KnightLevelForXP returns the knight level for the given XP total.
 func KnightLevelForXP(xp int) int {
 	return ClassLevelForXP("Knight", xp)
@@ -26,12 +21,4 @@ func KnightAttackBonus(level int) int {
 // KnightSaveTargets returns the saving throw targets for a knight at the given level.
 func KnightSaveTargets(level int) SaveTargets {
 	return ClassSaveTargets("Knight", level)
-}
-
-// KnightTraits returns which class traits are unlocked at the given level.
-func KnightTraits(level int) Traits {
-	return Traits{
-		MonsterSlayer: level >= 5,
-		Knighthood:    level >= 3,
-	}
 }

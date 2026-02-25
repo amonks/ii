@@ -164,16 +164,6 @@ templ StatsSection(view *CharacterView) {
 						@ValueText() { { fmt.Sprintf("%d tp/day", view.SpeedOverland) } }
 					}
 				}
-				if view.Traits.Knighthood || view.Traits.MonsterSlayer {
-					@Cluster() {
-						if view.Traits.Knighthood {
-							@BadgeWarning() { Knighthood }
-						}
-						if view.Traits.MonsterSlayer {
-							@BadgeDanger() { Monster Slayer }
-						}
-					}
-				}
 			}
 			if entries := filterAuditLog(view.AuditLog, "character_create", "hp_change", "birthday_update", "level_up"); len(entries) > 0 {
 				@CardSection() {

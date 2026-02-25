@@ -33,11 +33,17 @@ func (s *Server) handleDeleteCharacter(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCreateCharacter(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
+	class := r.FormValue("class")
+	kindred := r.FormValue("kindred")
+	if !engine.IsValidClass(class) || !engine.IsValidKindred(kindred) {
+		http.Error(w, "Invalid class or kindred", http.StatusBadRequest)
+		return
+	}
 	hpMax := atoi(r.FormValue("hp_max"))
 	ch := &db.Character{
 		Name:       r.FormValue("name"),
-		Class:      "Knight",
-		Kindred:    "Human",
+		Class:      class,
+		Kindred:    kindred,
 		Level:      1,
 		STR:        atoi(r.FormValue("str")),
 		DEX:        atoi(r.FormValue("dex")),
@@ -912,7 +918,7 @@ func (s *Server) handleReturnToSafety(w http.ResponseWriter, r *http.Request) {
 		"str": ch.STR, "dex": ch.DEX, "con": ch.CON,
 		"int": ch.INT, "wis": ch.WIS, "cha": ch.CHA,
 	}
-	xpMod := engine.TotalXPModifier(ch.Kindred, scores, []string{"str"})
+	xpMod := engine.TotalXPModifier(ch.Kindred, scores, engine.ClassPrimes(ch.Class))
 
 	if err := s.db.ReturnToSafety(ch.ID, xpMod, ch.CurrentDay); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

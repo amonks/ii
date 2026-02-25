@@ -28,7 +28,6 @@ type CharacterView struct {
 	Weapons          []engine.EquippedWeapon
 	MagicResistance  int
 	Saves            engine.SaveTargets
-	Traits           engine.Traits
 	AdvancementTable *engine.AdvancementTable
 	Speed                   int
 	SpeedEncounter          int
@@ -248,7 +247,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		"str": ch.STR, "dex": ch.DEX, "con": ch.CON,
 		"int": ch.INT, "wis": ch.WIS, "cha": ch.CHA,
 	}
-	primes := []string{"str"} // Knight prime is STR
+	primes := engine.ClassPrimes(ch.Class)
 
 	// Use hierarchy-based encumbrance
 	equipped, stowed, companionSlots := engine.CalculateEncumbrance(engineItems)
@@ -405,11 +404,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ArmorAC:          armorAC,
 		ShieldName:       shieldName,
 		ShieldAC:         shieldAC,
-		AttackBonus:      engine.KnightAttackBonus(ch.Level),
+		AttackBonus:      engine.ClassAttackBonus(ch.Class, ch.Level),
 		Weapons:          engine.EquippedWeapons(engineItems),
 		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),
-		Saves:            engine.KnightSaveTargets(ch.Level),
-		Traits:           engine.KnightTraits(ch.Level),
+		Saves:            engine.ClassSaveTargets(ch.Class, ch.Level),
 		AdvancementTable: advancementTable,
 		Speed:                   speed,
 		SpeedEncounter:          speedEncounter,

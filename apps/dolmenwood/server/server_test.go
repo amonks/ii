@@ -142,10 +142,10 @@ func TestCreateCharacter(t *testing.T) {
 	form.Set("int", "9")
 	form.Set("wis", "12")
 	form.Set("cha", "13")
+	form.Set("class", "Knight")
+	form.Set("kindred", "Human")
 	form.Set("hp_max", "8")
 	form.Set("alignment", "Lawful")
-	form.Set("background", "Noble")
-	form.Set("liege", "Duke Maldric")
 
 	req := httptest.NewRequest("POST", "/characters/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -158,6 +158,33 @@ func TestCreateCharacter(t *testing.T) {
 	loc := w.Header().Get("Location")
 	if loc != "1/" {
 		t.Errorf("Location = %q, want %q", loc, "1/")
+	}
+}
+
+
+func TestCreateCharacterRejectsInvalidClass(t *testing.T) {
+	srv, _ := setupTest(t)
+	mux := srv.Mux()
+
+	form := url.Values{}
+	form.Set("name", "Sir Galahad")
+	form.Set("str", "16")
+	form.Set("dex", "10")
+	form.Set("con", "14")
+	form.Set("int", "9")
+	form.Set("wis", "12")
+	form.Set("cha", "13")
+	form.Set("class", "NotAClass")
+	form.Set("kindred", "Human")
+	form.Set("hp_max", "8")
+
+	req := httptest.NewRequest("POST", "/characters/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
 }
 
@@ -236,6 +263,33 @@ func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
 	}
 }
 
+func TestStatsCardDoesNotRepeatKnightTraits(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 5, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	traitsIndex := strings.Index(body, "Traits")
+	knighthoodIndex := strings.Index(body, "Knighthood")
+	if traitsIndex == -1 || knighthoodIndex == -1 {
+		t.Fatalf("expected traits and knighthood labels in response")
+	}
+	if traitsIndex > knighthoodIndex {
+		t.Errorf("expected knighthood to appear after traits section, got traits=%d knighthood=%d", traitsIndex, knighthoodIndex)
+	}
+}
 
 func TestCardDisclosureMarkup(t *testing.T) {
 	srv, d := setupTest(t)

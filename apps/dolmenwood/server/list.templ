@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"monks.co/apps/dolmenwood/db"
+	"monks.co/apps/dolmenwood/engine"
 )
 
 templ CharacterList(characters []db.Character) {
@@ -37,6 +38,26 @@ templ CharacterList(characters []db.Character) {
 							@LabelBlockText() { Name }
 							@FormInputBlock(templ.Attributes{"type": "text", "name": "name", "required": true})
 						</div>
+						@Grid(2) {
+							<div>
+								@LabelBlockText() { Class }
+								@FormSelect(templ.Attributes{"name": "class", "required": true}) {
+									<option value="" disabled selected>Class</option>
+									for _, class := range engine.ClassNames() {
+										<option value={ class }>{ class }</option>
+									}
+								}
+							</div>
+							<div>
+								@LabelBlockText() { Kindred }
+								@FormSelect(templ.Attributes{"name": "kindred", "required": true}) {
+									<option value="" disabled selected>Kindred</option>
+									for _, kindred := range engine.KindredNames() {
+										<option value={ kindred }>{ kindred }</option>
+									}
+								}
+							</div>
+						}
 						@Grid(3) {
 							<div>
 								@LabelBlockSmall() { STR }
