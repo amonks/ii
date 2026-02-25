@@ -26,23 +26,24 @@ func TestApplyXPModifiers(t *testing.T) {
 func TestDetectLevelUp(t *testing.T) {
 	cases := []struct {
 		name     string
-		level    int
-		xp       int
-		wantLvl  int
-		wantUp   bool
+		class   string
+		level   int
+		xp      int
+		wantLvl int
+		wantUp  bool
 	}{
-		{"level up at 2250", 1, 2250, 2, true},
-		{"no level up at 2249", 1, 2249, 1, false},
-		{"level up to 3", 2, 4500, 3, true},
+		{"level up at 2250", "Knight", 1, 2250, 2, true},
+		{"no level up at 2249", "Knight", 1, 2249, 1, false},
+		{"level up to 3", "Knight", 2, 4500, 3, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			newLevel, leveledUp := DetectLevelUp(tc.level, tc.xp)
+			newLevel, leveledUp := DetectLevelUp(tc.class, tc.level, tc.xp)
 			if newLevel != tc.wantLvl {
-				t.Errorf("DetectLevelUp(%d, %d) level = %d, want %d", tc.level, tc.xp, newLevel, tc.wantLvl)
+				t.Errorf("DetectLevelUp(%s, %d, %d) level = %d, want %d", tc.class, tc.level, tc.xp, newLevel, tc.wantLvl)
 			}
 			if leveledUp != tc.wantUp {
-				t.Errorf("DetectLevelUp(%d, %d) leveled = %v, want %v", tc.level, tc.xp, leveledUp, tc.wantUp)
+				t.Errorf("DetectLevelUp(%s, %d, %d) leveled = %v, want %v", tc.class, tc.level, tc.xp, leveledUp, tc.wantUp)
 			}
 		})
 	}
@@ -51,18 +52,19 @@ func TestDetectLevelUp(t *testing.T) {
 func TestXPToNextLevel(t *testing.T) {
 	cases := []struct {
 		name  string
+		class string
 		level int
 		xp    int
 		want  int
 	}{
-		{"level 1 no xp", 1, 0, 2250},
-		{"level 1 some xp", 1, 1000, 1250},
+		{"level 1 no xp", "Knight", 1, 0, 2250},
+		{"level 1 some xp", "Knight", 1, 1000, 1250},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := XPToNextLevel(tc.level, tc.xp)
+			got := XPToNextLevel(tc.class, tc.level, tc.xp)
 			if got != tc.want {
-				t.Errorf("XPToNextLevel(%d, %d) = %d, want %d", tc.level, tc.xp, got, tc.want)
+				t.Errorf("XPToNextLevel(%s, %d, %d) = %d, want %d", tc.class, tc.level, tc.xp, got, tc.want)
 			}
 		})
 	}

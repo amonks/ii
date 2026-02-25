@@ -931,7 +931,7 @@ func (s *Server) handleLevelUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newLevel, canLevel := engine.DetectLevelUp(ch.Level, ch.TotalXP)
+	newLevel, canLevel := engine.DetectLevelUp(ch.Class, ch.Level, ch.TotalXP)
 	if !canLevel {
 		http.Error(w, "Not enough XP to level up", http.StatusBadRequest)
 		return

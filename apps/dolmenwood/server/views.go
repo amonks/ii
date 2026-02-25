@@ -359,7 +359,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		shieldAC = 1
 	}
 	xpMod := engine.TotalXPModifier(ch.Kindred, scores, primes)
-	newLevel, canLevelUp := engine.DetectLevelUp(ch.Level, ch.TotalXP)
+	newLevel, canLevelUp := engine.DetectLevelUp(ch.Class, ch.Level, ch.TotalXP)
 	var advancementTable *engine.AdvancementTable
 	if table, ok := engine.AdvancementTableForClass(ch.Class); ok {
 		advancementTable = &table
@@ -429,7 +429,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		BirthdayMonths:          engine.Months(),
 		BirthdayDays:            birthdayDays,
 		MoonSign:                moonSign,
-		XPToNext:                engine.XPToNextLevel(ch.Level, ch.TotalXP),
+		XPToNext:                engine.XPToNextLevel(ch.Class, ch.Level, ch.TotalXP),
 		NewLevel:                newLevel,
 		CanLevelUp:              canLevelUp,
 		PurseCoins:              purseCoins,

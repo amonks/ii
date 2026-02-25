@@ -8,8 +8,8 @@ func ApplyXPModifiers(base, modPercent int) int {
 
 // DetectLevelUp checks if the current XP qualifies for a higher level.
 // Returns the new level and whether a level-up occurred.
-func DetectLevelUp(currentLevel, xp int) (int, bool) {
-	newLevel := KnightLevelForXP(xp)
+func DetectLevelUp(class string, currentLevel, xp int) (int, bool) {
+	newLevel := ClassLevelForXP(class, xp)
 	if newLevel > currentLevel {
 		return newLevel, true
 	}
@@ -17,11 +17,12 @@ func DetectLevelUp(currentLevel, xp int) (int, bool) {
 }
 
 // XPToNextLevel returns how much XP is needed to reach the next level.
-func XPToNextLevel(currentLevel, currentXP int) int {
-	if currentLevel >= len(knightTable) {
+func XPToNextLevel(class string, currentLevel, currentXP int) int {
+	nextLevel := currentLevel + 1
+	if ClassXPForLevel(class, nextLevel) == 0 {
 		return 0
 	}
-	nextLevelXP := knightTable[currentLevel].XPRequired
+	nextLevelXP := ClassXPForLevel(class, nextLevel)
 	remaining := nextLevelXP - currentXP
 	if remaining < 0 {
 		return 0
