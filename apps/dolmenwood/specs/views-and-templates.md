@@ -102,7 +102,7 @@ Templates use the `templ` language (Go-based, compiles to Go). 15 template files
 
 Each section is a collapsible card (using `CardDisclosure` from `styles.templ`):
 
-- **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege. Level-gated class traits shown as badges (generic for all classes, not Knight-specific).
+- **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege.
 - **`traits.templ`** -- Kindred traits list, class traits list, moon sign display
 - **`inventory.templ`** -- Equipped items section, companion inventory sections, add-item forms. Item rows show: name, badges (quantity, tiny, slots, capacity), weapon damage, armor AC, inline note editing, action buttons (split, move, sell, decrement, delete)
 - **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty, morale), retainer inventory with transfer buttons, contract terms display, link to retainer's own sheet, "Hire Adventurer" form
