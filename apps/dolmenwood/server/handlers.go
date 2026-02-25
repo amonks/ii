@@ -19,7 +19,18 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	CharacterList(chars).Render(r.Context(), w)
+	retainerEmployers := map[uint]string{}
+	for _, ch := range chars {
+		contracts, err := s.db.ListActiveRetainerContracts(ch.ID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		for _, contract := range contracts {
+			retainerEmployers[contract.RetainerID] = ch.Name
+		}
+	}
+	CharacterList(chars, retainerEmployers).Render(r.Context(), w)
 }
 
 func (s *Server) handleDeleteCharacter(w http.ResponseWriter, r *http.Request) {

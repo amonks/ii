@@ -108,6 +108,56 @@ func TestIndexShowsClassAndKindredOptions(t *testing.T) {
 	}
 }
 
+
+func TestIndexShowsRetainerEmployerLabel(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name: "Alder",
+		Class: "Knight",
+		Kindred: "Human",
+		Level: 1,
+		HPCurrent: 10,
+		HPMax: 10,
+	}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{
+		Name: "Bram",
+		Class: "Hunter",
+		Kindred: "Human",
+		Level: 1,
+		HPCurrent: 6,
+		HPMax: 6,
+	}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{
+		EmployerID: employer.ID,
+		RetainerID: retainer.ID,
+		Active: true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	expected := fmt.Sprintf("Retainer of %s", employer.Name)
+	if !strings.Contains(body, expected) {
+		t.Errorf("expected retainer label %q", expected)
+	}
+}
+
 func TestDeleteCharacter(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
@@ -153,6 +203,7 @@ func TestDeleteCharacter(t *testing.T) {
 		t.Errorf("expected 0 companions, got %d", len(comps))
 	}
 }
+
 
 func TestCreateCharacter(t *testing.T) {
 	srv, _ := setupTest(t)

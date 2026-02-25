@@ -6,7 +6,7 @@ import (
 	"monks.co/apps/dolmenwood/engine"
 )
 
-templ CharacterList(characters []db.Character) {
+templ CharacterList(characters []db.Character, retainerEmployers map[uint]string) {
 	@Layout("Characters", ".") {
 		@VStack() {
 			@HeadingLg() { Characters }
@@ -18,6 +18,9 @@ templ CharacterList(characters []db.Character) {
 								@TextBlock() { { ch.Name } }
 								@LabelBlock() {
 									Level { fmt.Sprintf("%d", ch.Level) } { ch.Kindred } { ch.Class }
+								}
+								if employer, ok := retainerEmployers[ch.ID]; ok {
+									@LabelBlock() { Retainer of { employer } }
 								}
 							}
 							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("characters/%d/delete/", ch.ID)) }
