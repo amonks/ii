@@ -90,8 +90,12 @@ func TestCharacterDefaults(t *testing.T) {
 func TestListCharacters(t *testing.T) {
 	db := newTestDB(t)
 
-	db.CreateCharacter(&Character{Name: "Alice", Class: "Knight", Kindred: "Human", Level: 1})
-	db.CreateCharacter(&Character{Name: "Bob", Class: "Knight", Kindred: "Human", Level: 2})
+	if err := db.CreateCharacter(&Character{Name: "Alice", Class: "Knight", Kindred: "Human", Level: 1}); err != nil {
+		t.Fatalf("CreateCharacter Alice: %v", err)
+	}
+	if err := db.CreateCharacter(&Character{Name: "Bob", Class: "Knight", Kindred: "Human", Level: 2}); err != nil {
+		t.Fatalf("CreateCharacter Bob: %v", err)
+	}
 
 	chars, err := db.ListCharacters()
 	if err != nil {
@@ -106,7 +110,9 @@ func TestItems(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	item := &Item{
 		CharacterID: ch.ID,
@@ -135,7 +141,9 @@ func TestCompanion(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	comp := &Companion{
 		CharacterID: ch.ID,
@@ -170,7 +178,9 @@ func TestTransactions(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	tx := &Transaction{
 		CharacterID:    ch.ID,
@@ -208,7 +218,9 @@ func TestReturnToSafety(t *testing.T) {
 		FoundGP:  50,
 		FoundSP:  100,
 	}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	// Return to Safety should:
 	// 1. Move found treasure to purse
@@ -247,7 +259,9 @@ func TestNotes(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	note := &Note{
 		CharacterID: ch.ID,
@@ -274,7 +288,9 @@ func TestItemContainerHierarchy(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	// Create a backpack
 	backpack := &Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1, Location: "equipped"}
@@ -308,7 +324,9 @@ func TestItemOnCompanion(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	comp := &Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
 	db.CreateCompanion(comp)
@@ -329,7 +347,9 @@ func TestDeleteContainerCascade(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	backpack := &Item{CharacterID: ch.ID, Name: "Backpack", Quantity: 1}
 	db.CreateItem(backpack)
@@ -358,7 +378,9 @@ func TestDeleteCompanionMovesItems(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	comp := &Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
 	db.CreateCompanion(comp)
@@ -383,7 +405,9 @@ func TestAuditLog(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	if err := db.AddAuditLog(ch.ID, "hp_change", "HP 8 -> 5", 0); err != nil {
 		t.Fatalf("AddAuditLog: %v", err)
@@ -405,7 +429,9 @@ func TestAuditLogGameDay(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	if err := db.AddAuditLog(ch.ID, "hp_change", "HP 8 -> 5", 3); err != nil {
 		t.Fatalf("AddAuditLog: %v", err)
@@ -424,7 +450,9 @@ func TestCharacterCurrentDay(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1, CurrentDay: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	got, _ := db.GetCharacter(ch.ID)
 	if got.CurrentDay != 1 {
@@ -440,11 +468,186 @@ func TestCharacterCurrentDay(t *testing.T) {
 	}
 }
 
+func TestRetainerContracts(t *testing.T) {
+	db := newTestDB(t)
+
+	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
+	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	if err := db.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 20,
+		XPSharePct:   55,
+		DailyWageCP:  12,
+		HiredOnDay:   3,
+		Active:       true,
+	}
+	if err := db.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+	if contract.ID == 0 {
+		t.Fatal("expected contract ID to be set")
+	}
+
+	got, err := db.GetRetainerContract(contract.ID)
+	if err != nil {
+		t.Fatalf("GetRetainerContract: %v", err)
+	}
+	if got.LootSharePct != 20 {
+		t.Errorf("LootSharePct = %v, want 20", got.LootSharePct)
+	}
+	if got.XPSharePct != 55 {
+		t.Errorf("XPSharePct = %v, want 55", got.XPSharePct)
+	}
+	if got.DailyWageCP != 12 {
+		t.Errorf("DailyWageCP = %d, want 12", got.DailyWageCP)
+	}
+	if got.HiredOnDay != 3 {
+		t.Errorf("HiredOnDay = %d, want 3", got.HiredOnDay)
+	}
+}
+
+func TestListActiveRetainerContracts(t *testing.T) {
+	db := newTestDB(t)
+
+	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
+	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	if err := db.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := db.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	contracts, err := db.ListActiveRetainerContracts(employer.ID)
+	if err != nil {
+		t.Fatalf("ListActiveRetainerContracts: %v", err)
+	}
+	if len(contracts) != 1 {
+		t.Fatalf("len = %d, want 1", len(contracts))
+	}
+	if contracts[0].ID != contract.ID {
+		t.Errorf("ID = %d, want %d", contracts[0].ID, contract.ID)
+	}
+}
+
+func TestDeactivateRetainerContract(t *testing.T) {
+	db := newTestDB(t)
+
+	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
+	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	if err := db.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := db.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	if err := db.DeactivateRetainerContract(contract.ID); err != nil {
+		t.Fatalf("DeactivateRetainerContract: %v", err)
+	}
+
+	contracts, err := db.ListActiveRetainerContracts(employer.ID)
+	if err != nil {
+		t.Fatalf("ListActiveRetainerContracts: %v", err)
+	}
+	if len(contracts) != 0 {
+		t.Fatalf("len = %d, want 0", len(contracts))
+	}
+}
+
+func TestDeleteCharacterCleansRetainerContracts(t *testing.T) {
+	db := newTestDB(t)
+
+	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
+	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	if err := db.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := db.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	if err := db.DeleteCharacter(employer.ID); err != nil {
+		t.Fatalf("DeleteCharacter employer: %v", err)
+	}
+
+	if _, err := db.GetCharacter(retainer.ID); err != nil {
+		t.Fatalf("retainer should remain: %v", err)
+	}
+
+	contracts, err := db.ListActiveRetainerContracts(employer.ID)
+	if err != nil {
+		t.Fatalf("ListActiveRetainerContracts: %v", err)
+	}
+	if len(contracts) != 0 {
+		t.Fatalf("len = %d, want 0", len(contracts))
+	}
+}
+
+func TestDeleteRetainerCleansRetainerContracts(t *testing.T) {
+	db := newTestDB(t)
+
+	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
+	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	if err := db.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := db.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	if err := db.DeleteCharacter(retainer.ID); err != nil {
+		t.Fatalf("DeleteCharacter retainer: %v", err)
+	}
+
+	if _, err := db.GetCharacter(employer.ID); err != nil {
+		t.Fatalf("employer should remain: %v", err)
+	}
+
+	contracts, err := db.ListActiveRetainerContracts(employer.ID)
+	if err != nil {
+		t.Fatalf("ListActiveRetainerContracts: %v", err)
+	}
+	if len(contracts) != 0 {
+		t.Fatalf("len = %d, want 0", len(contracts))
+	}
+}
+
 func TestBankDeposits(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{Name: "Test", Class: "Knight", Kindred: "Human", Level: 1}
-	db.CreateCharacter(ch)
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
 
 	dep := &BankDeposit{
 		CharacterID: ch.ID,
@@ -492,4 +695,3 @@ func TestBankDeposits(t *testing.T) {
 		t.Errorf("after delete len = %d, want 0", len(deps))
 	}
 }
-

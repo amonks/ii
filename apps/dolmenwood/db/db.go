@@ -92,6 +92,18 @@ type Companion struct {
 	Loyalty     int    `gorm:"column:loyalty"`      // retainer loyalty score (7 + CHA mod)
 }
 
+type RetainerContract struct {
+	ID           uint      `gorm:"primarykey"`
+	EmployerID   uint      `gorm:"column:employer_id;index"`
+	RetainerID   uint      `gorm:"column:retainer_id;index"`
+	LootSharePct float64   `gorm:"column:loot_share_pct;default:15.0"`
+	XPSharePct   float64   `gorm:"column:xp_share_pct;default:50.0"`
+	DailyWageCP  int       `gorm:"column:daily_wage_cp;default:0"`
+	HiredOnDay   int       `gorm:"column:hired_on_day;default:1"`
+	Active       bool      `gorm:"column:active;default:true"`
+	CreatedAt    time.Time `gorm:"column:created_at"`
+}
+
 type Transaction struct {
 	ID              uint      `gorm:"primarykey"`
 	CharacterID     uint      `gorm:"column:character_id"`
@@ -102,6 +114,8 @@ type Transaction struct {
 	CreatedAt       time.Time `gorm:"column:created_at"`
 }
 
+func (XPLogEntry) TableName() string { return "xp_log" }
+
 type XPLogEntry struct {
 	ID          uint      `gorm:"primarykey"`
 	CharacterID uint      `gorm:"column:character_id"`
@@ -109,8 +123,6 @@ type XPLogEntry struct {
 	Description string    `gorm:"column:description"`
 	CreatedAt   time.Time `gorm:"column:created_at"`
 }
-
-func (XPLogEntry) TableName() string { return "xp_log" }
 
 type Note struct {
 	ID          uint      `gorm:"primarykey"`
@@ -212,6 +224,20 @@ CREATE TABLE IF NOT EXISTS companions (
 	loyalty INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS companions_by_character ON companions(character_id);
+
+CREATE TABLE IF NOT EXISTS retainer_contracts (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	employer_id INTEGER NOT NULL,
+	retainer_id INTEGER NOT NULL,
+	loot_share_pct REAL NOT NULL DEFAULT 15.0,
+	xp_share_pct REAL NOT NULL DEFAULT 50.0,
+	daily_wage_cp INTEGER NOT NULL DEFAULT 0,
+	hired_on_day INTEGER NOT NULL DEFAULT 1,
+	active INTEGER NOT NULL DEFAULT 1,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_retainer_contracts_employer ON retainer_contracts(employer_id);
+CREATE INDEX IF NOT EXISTS idx_retainer_contracts_retainer ON retainer_contracts(retainer_id);
 
 CREATE TABLE IF NOT EXISTS transactions (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -323,6 +349,22 @@ const migrationCompanionLoyalty = `
 ALTER TABLE companions ADD COLUMN loyalty INTEGER NOT NULL DEFAULT 0;
 `
 
+const migrationRetainerContracts = `
+CREATE TABLE IF NOT EXISTS retainer_contracts (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	employer_id INTEGER NOT NULL,
+	retainer_id INTEGER NOT NULL,
+	loot_share_pct REAL NOT NULL DEFAULT 15.0,
+	xp_share_pct REAL NOT NULL DEFAULT 50.0,
+	daily_wage_cp INTEGER NOT NULL DEFAULT 0,
+	hired_on_day INTEGER NOT NULL DEFAULT 1,
+	active INTEGER NOT NULL DEFAULT 1,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_retainer_contracts_employer ON retainer_contracts(employer_id);
+CREATE INDEX IF NOT EXISTS idx_retainer_contracts_retainer ON retainer_contracts(retainer_id);
+`
+
 const migrationConsolidateFeed = `
 UPDATE items SET quantity = (
     SELECT SUM(i2.quantity) FROM items i2
@@ -366,6 +408,7 @@ func New() (*DB, error) {
 	d.Exec(migrationBankDeposits)
 	d.Exec(migrationBirthday)
 	d.Exec(migrationCompanionLoyalty)
+	d.Exec(migrationRetainerContracts)
 	d.Exec(migrationConsolidateFeed)
 	migrateEPtoSP(&DB{d})
 	return &DB{d}, nil
@@ -448,6 +491,8 @@ func (db *DB) DeleteCharacter(id uint) error {
 	db.Where("character_id = ?", id).Delete(&Note{})
 	db.Where("character_id = ?", id).Delete(&AuditLogEntry{})
 	db.Where("character_id = ?", id).Delete(&BankDeposit{})
+	db.Where("employer_id = ?", id).Delete(&RetainerContract{})
+	db.Where("retainer_id = ?", id).Delete(&RetainerContract{})
 	return db.Delete(&Character{}, id).Error
 }
 
@@ -534,6 +579,39 @@ func (db *DB) DeleteCompanion(id uint) error {
 		"coin_container_id": nil,
 	})
 	return db.Delete(&Companion{}, id).Error
+}
+
+// --- Retainer Contract CRUD ---
+
+func (db *DB) CreateRetainerContract(rc *RetainerContract) error {
+	if rc.CreatedAt.IsZero() {
+		rc.CreatedAt = time.Now()
+	}
+	return db.Create(rc).Error
+}
+
+func (db *DB) ListActiveRetainerContracts(employerID uint) ([]RetainerContract, error) {
+	var contracts []RetainerContract
+	if err := db.Where("employer_id = ? AND active = 1", employerID).Order("created_at asc, id asc").Find(&contracts).Error; err != nil {
+		return nil, err
+	}
+	return contracts, nil
+}
+
+func (db *DB) GetRetainerContract(id uint) (*RetainerContract, error) {
+	var rc RetainerContract
+	if err := db.First(&rc, id).Error; err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func (db *DB) UpdateRetainerContract(rc *RetainerContract) error {
+	return db.Save(rc).Error
+}
+
+func (db *DB) DeactivateRetainerContract(id uint) error {
+	return db.Model(&RetainerContract{}).Where("id = ?", id).Update("active", false).Error
 }
 
 // --- Transaction CRUD ---
