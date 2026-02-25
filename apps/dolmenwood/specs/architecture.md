@@ -30,9 +30,10 @@ apps/dolmenwood/
     calendar.go    -- Dolmenwood calendar (12 months, wysendays)
     companions.go  -- Companion breeds, saddles, barding, retainers
     encumbrance.go -- Slot-based encumbrance, speed calculation
+    class.go       -- Class helpers (advancement parsing, primes, validation)
     equipment.go   -- Item catalog (weapons, armor, containers, weights)
     human.go       -- Human XP bonus
-    knight.go      -- Knight class data (saves, attack, XP thresholds)
+    knight.go      -- Deprecated knight wrappers
     magic_resistance.go -- Magic resistance by kindred + WIS
     moon.go        -- Moon signs from birthday
     save_bonuses.go -- Conditional save bonuses from traits/moon
