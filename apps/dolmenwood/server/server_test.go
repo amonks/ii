@@ -188,6 +188,32 @@ func TestCreateCharacterRejectsInvalidClass(t *testing.T) {
 	}
 }
 
+func TestCreateCharacterRejectsInvalidKindred(t *testing.T) {
+	srv, _ := setupTest(t)
+	mux := srv.Mux()
+
+	form := url.Values{}
+	form.Set("name", "Sir Galahad")
+	form.Set("str", "16")
+	form.Set("dex", "10")
+	form.Set("con", "14")
+	form.Set("int", "9")
+	form.Set("wis", "12")
+	form.Set("cha", "13")
+	form.Set("class", "Knight")
+	form.Set("kindred", "NotAKindred")
+	form.Set("hp_max", "8")
+
+	req := httptest.NewRequest("POST", "/characters/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
 func TestGetCharacterSheet(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
