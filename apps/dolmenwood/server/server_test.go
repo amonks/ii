@@ -289,7 +289,7 @@ func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
 	}
 }
 
-func TestStatsCardDoesNotRepeatKnightTraits(t *testing.T) {
+func TestStatsCardTraitsAppearAfterStats(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
@@ -307,13 +307,14 @@ func TestStatsCardDoesNotRepeatKnightTraits(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	traitsIndex := strings.Index(body, "Traits")
+	statsIndex := strings.Index(body, "id=\"stats\"")
+	traitsIndex := strings.Index(body, "id=\"traits\"")
 	knighthoodIndex := strings.Index(body, "Knighthood")
-	if traitsIndex == -1 || knighthoodIndex == -1 {
-		t.Fatalf("expected traits and knighthood labels in response")
+	if statsIndex == -1 || traitsIndex == -1 || knighthoodIndex == -1 {
+		t.Fatalf("expected stats, traits, and knighthood markers in response")
 	}
-	if traitsIndex > knighthoodIndex {
-		t.Errorf("expected knighthood to appear after traits section, got traits=%d knighthood=%d", traitsIndex, knighthoodIndex)
+	if !(statsIndex < traitsIndex && traitsIndex < knighthoodIndex) {
+		t.Errorf("expected ordering stats card -> traits card -> knighthood trait, got stats=%d traits=%d knighthood=%d", statsIndex, traitsIndex, knighthoodIndex)
 	}
 }
 

@@ -10,6 +10,7 @@ The `db` package provides SQLite persistence via GORM. It defines all data model
 
 The core entity. Fields:
 - **Identity**: `ID`, `Name`, `Class`, `Kindred`, `Level`
+- Defaults: `class` (text, default "Knight"), `kindred` (text, default "Human")
 - **Ability Scores**: `STR`, `DEX`, `CON`, `INT`, `WIS`, `CHA`
 - **Combat**: `HPCurrent`, `HPMax`
 - **Background**: `Alignment`, `Background`, `Liege`
