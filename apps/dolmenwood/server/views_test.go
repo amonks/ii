@@ -1,6 +1,7 @@
 package server
 
 import (
+	"reflect"
 	"testing"
 
 	"monks.co/apps/dolmenwood/db"
@@ -107,6 +108,94 @@ func TestSaveBonusesInViewNoBirthday(t *testing.T) {
 
 	if len(view.SaveBonuses) != 0 {
 		t.Errorf("expected no save bonuses for Human Fighter with no birthday, got %d", len(view.SaveBonuses))
+	}
+}
+
+func TestRetainerViewBuildsFromContract(t *testing.T) {
+	_, d := setupTest(t)
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       14,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Retainer",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		DEX:       13,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	retainerItems := []db.Item{
+		{CharacterID: retainer.ID, Name: "Leather", Quantity: 1, Location: "equipped"},
+		{CharacterID: retainer.ID, Name: "Longsword", Quantity: 1, Location: "equipped"},
+	}
+	for i := range retainerItems {
+		d.CreateItem(&retainerItems[i])
+	}
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 20,
+		XPSharePct:   60,
+		DailyWageCP:  50,
+		HiredOnDay:   12,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	view, err := buildCharacterView(d, employer)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.Retainers) != 1 {
+		t.Fatalf("expected 1 retainer, got %d", len(view.Retainers))
+	}
+
+	retainerView := view.Retainers[0]
+	if retainerView.Character.Name != "Retainer" {
+		t.Errorf("retainer name = %q, want Retainer", retainerView.Character.Name)
+	}
+	if retainerView.Contract.ID != contract.ID {
+		t.Errorf("contract ID = %d, want %d", retainerView.Contract.ID, contract.ID)
+	}
+	if retainerView.AC != 13 {
+		t.Errorf("retainer AC = %d, want 13", retainerView.AC)
+	}
+	if retainerView.AttackBonus != engine.ClassAttackBonus(retainer.Class, retainer.Level) {
+		t.Errorf("retainer AttackBonus = %d, want %d", retainerView.AttackBonus, engine.ClassAttackBonus(retainer.Class, retainer.Level))
+	}
+	if !reflect.DeepEqual(retainerView.Saves, engine.ClassSaveTargets(retainer.Class, retainer.Level)) {
+		t.Errorf("retainer Saves = %+v, want %+v", retainerView.Saves, engine.ClassSaveTargets(retainer.Class, retainer.Level))
+	}
+	if retainerView.Speed != 40 {
+		t.Errorf("retainer Speed = %d, want 40", retainerView.Speed)
+	}
+	if retainerView.Loyalty != engine.RetainerLoyalty(engine.Modifier(employer.CHA)) {
+		t.Errorf("retainer Loyalty = %d, want %d", retainerView.Loyalty, engine.RetainerLoyalty(engine.Modifier(employer.CHA)))
+	}
+	if len(retainerView.Weapons) != 1 {
+		t.Errorf("retainer Weapons = %d, want 1", len(retainerView.Weapons))
+	}
+	if len(retainerView.KindredTraits) == 0 {
+		t.Error("expected kindred traits")
+	}
+	if len(retainerView.ClassTraits) == 0 {
+		t.Error("expected class traits")
 	}
 }
 

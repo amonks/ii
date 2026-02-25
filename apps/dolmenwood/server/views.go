@@ -17,6 +17,7 @@ type CharacterView struct {
 	XPLog        []db.XPLogEntry
 	Notes        []db.Note
 	AuditLog     []db.AuditLogEntry
+	Retainers    []RetainerView
 
 	// Computed fields
 	AC               int
@@ -76,6 +77,19 @@ type CharacterView struct {
 }
 
 // BankDepositView wraps a bank deposit with computed maturity info.
+type RetainerView struct {
+	Contract      db.RetainerContract
+	Character     *db.Character
+	AC            int
+	AttackBonus   int
+	Saves         engine.SaveTargets
+	Speed         int
+	Loyalty       int
+	Weapons       []engine.EquippedWeapon
+	KindredTraits []engine.Trait
+	ClassTraits   []engine.Trait
+}
+
 type BankDepositView struct {
 	db.BankDeposit
 	IsMature        bool
@@ -228,6 +242,11 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		return nil, err
 	}
 	bankDeposits, err := d.ListBankDeposits(ch.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	retainers, err := buildRetainerViews(d, ch)
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +418,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		XPLog:            xpLog,
 		Notes:            notes,
 		AuditLog:         auditLog,
+		Retainers:        retainers,
 		AC:               ac,
 		ArmorName:        armorName,
 		ArmorAC:          armorAC,
@@ -794,6 +814,46 @@ func dbItemToEngine(item db.Item) engine.Item {
 // itemSlots returns the number of gear slots occupied by an item.
 func itemSlots(item db.Item) int {
 	return engine.ItemSlots(dbItemToEngine(item))
+}
+
+func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
+	contracts, err := d.ListActiveRetainerContracts(ch.ID)
+	if err != nil {
+		return nil, err
+	}
+	retainers := make([]RetainerView, 0, len(contracts))
+	for _, contract := range contracts {
+		retainer, err := d.GetCharacter(contract.RetainerID)
+		if err != nil {
+			return nil, err
+		}
+		items, err := d.ListItems(retainer.ID)
+		if err != nil {
+			return nil, err
+		}
+		engineItems := make([]engine.Item, len(items))
+		for i, item := range items {
+			engineItems[i] = dbItemToEngine(item)
+		}
+		ac, _ := engine.CharacterAC(retainer.Kindred, engineItems, retainer.DEX)
+		attackBonus := engine.ClassAttackBonus(retainer.Class, retainer.Level)
+		saves := engine.ClassSaveTargets(retainer.Class, retainer.Level)
+		equipped, stowed, _ := engine.CalculateEncumbrance(engineItems)
+		speed := engine.SpeedFromSlots(equipped, stowed)
+		retainers = append(retainers, RetainerView{
+			Contract:      contract,
+			Character:     retainer,
+			AC:            ac,
+			AttackBonus:   attackBonus,
+			Saves:         saves,
+			Speed:         speed,
+			Loyalty:       engine.RetainerLoyalty(engine.Modifier(ch.CHA)),
+			Weapons:       engine.EquippedWeapons(engineItems),
+			KindredTraits: engine.KindredTraits(retainer.Kindred, retainer.Level),
+			ClassTraits:   engine.ClassTraits(retainer.Class, retainer.Level),
+		})
+	}
+	return retainers, nil
 }
 
 // buildInventoryTree builds the hierarchical inventory from flat items.
