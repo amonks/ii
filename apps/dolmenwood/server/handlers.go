@@ -750,6 +750,86 @@ func (s *Server) handleDeleteCompanion(w http.ResponseWriter, r *http.Request) {
 	s.renderCompanions(w, r, ch)
 }
 
+func (s *Server) handleHireRetainer(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	class := r.FormValue("class")
+	kindred := r.FormValue("kindred")
+	if !engine.IsValidClass(class) || !engine.IsValidKindred(kindred) {
+		http.Error(w, "Invalid class or kindred", http.StatusBadRequest)
+		return
+	}
+	lootShare, err := strconv.ParseFloat(r.FormValue("loot_share_pct"), 64)
+	if err != nil {
+		http.Error(w, "Invalid loot share", http.StatusBadRequest)
+		return
+	}
+	xpShare, err := strconv.ParseFloat(r.FormValue("xp_share_pct"), 64)
+	if err != nil {
+		http.Error(w, "Invalid XP share", http.StatusBadRequest)
+		return
+	}
+	dailyWage := 0
+	if wage := strings.TrimSpace(r.FormValue("daily_wage_cp")); wage != "" {
+		parsed, err := strconv.Atoi(wage)
+		if err != nil {
+			http.Error(w, "Invalid daily wage", http.StatusBadRequest)
+			return
+		}
+		dailyWage = parsed
+	}
+
+	hpMax := atoi(r.FormValue("hp_max"))
+	if hpMax <= 0 {
+		http.Error(w, "Invalid HP max", http.StatusBadRequest)
+		return
+	}
+
+	retainer := &db.Character{
+		Name:             r.FormValue("name"),
+		Class:            class,
+		Kindred:          kindred,
+		Level:            1,
+		STR:              atoi(r.FormValue("str")),
+		DEX:              atoi(r.FormValue("dex")),
+		CON:              atoi(r.FormValue("con")),
+		INT:              atoi(r.FormValue("int")),
+		WIS:              atoi(r.FormValue("wis")),
+		CHA:              atoi(r.FormValue("cha")),
+		HPCurrent:        hpMax,
+		HPMax:            hpMax,
+		Alignment:        r.FormValue("alignment"),
+		CurrentDay:       ch.CurrentDay,
+		CalendarStartDay: ch.CalendarStartDay,
+	}
+	if err := s.db.CreateCharacter(retainer); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	contract := &db.RetainerContract{
+		EmployerID:   ch.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: lootShare,
+		XPSharePct:   xpShare,
+		DailyWageCP:  dailyWage,
+		HiredOnDay:   ch.CurrentDay,
+		Active:       true,
+	}
+	if err := s.db.CreateRetainerContract(contract); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.addAuditLog(ch, "retainer_hire", fmt.Sprintf("hired %s, Level %d %s %s", retainer.Name, retainer.Level, retainer.Kindred, retainer.Class))
+	s.addAuditLog(retainer, "retainer_hired", fmt.Sprintf("hired by %s", ch.Name))
+	s.renderRetainers(w, r, ch)
+}
+
 func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
@@ -1311,6 +1391,16 @@ func (s *Server) renderCompanions(w http.ResponseWriter, r *http.Request, ch *db
 	EncumbranceSection(view).Render(r.Context(), &buf)
 	oob = strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
 	fmt.Fprint(w, oob)
+}
+
+func (s *Server) renderRetainers(w http.ResponseWriter, r *http.Request, ch *db.Character) {
+	view, err := buildCharacterView(s.db, ch)
+	if err != nil {
+		slog.Error("renderRetainers", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RetainersSection(view).Render(r.Context(), w)
 }
 
 func (s *Server) renderNotes(w http.ResponseWriter, r *http.Request, ch *db.Character) {
