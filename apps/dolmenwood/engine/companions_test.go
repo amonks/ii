@@ -1,17 +1,20 @@
 package engine
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func TestBreedStats(t *testing.T) {
 	tests := []struct {
-		breed     string
-		wantAC    int
-		wantHP    int
-		wantSpeed int
-		wantLoad  int
-		wantLevel int
-		wantSaves SaveTargets
-		wantAtk   string
+		breed      string
+		wantAC     int
+		wantHP     int
+		wantSpeed  int
+		wantLoad   int
+		wantLevel  int
+		wantSaves  SaveTargets
+		wantAtk    string
 		wantMorale int
 	}{
 		{"Charger", 12, 13, 40, 40, 3, SaveTargets{11, 12, 13, 14, 15}, "2 hooves (+2, 1d6)", 9},
@@ -69,13 +72,7 @@ func TestBreedNames(t *testing.T) {
 		t.Errorf("got %d breeds, want 7", len(names))
 	}
 	// Townsfolk should be in the list
-	found := false
-	for _, n := range names {
-		if n == "Townsfolk" {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(names, "Townsfolk")
 	if !found {
 		t.Error("BreedNames() should contain Townsfolk")
 	}
