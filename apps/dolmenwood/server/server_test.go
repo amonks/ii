@@ -2149,6 +2149,77 @@ func TestTransferItemRejectsWrongOwner(t *testing.T) {
 	}
 }
 
+func TestUpdateItemMoveToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("move_to", fmt.Sprintf("retainer:%d", contract.ID))
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/%d/update/", employer.ID, item.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 0 {
+		t.Fatalf("employer items = %d, want 0", len(employerItems))
+	}
+
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Name != "Rope" {
+		t.Errorf("retainer item name = %q, want Rope", retainerItems[0].Name)
+	}
+
+	employerLog, _ := d.ListAuditLog(employer.ID)
+	retainerLog, _ := d.ListAuditLog(retainer.ID)
+	foundEmployer := false
+	for _, entry := range employerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "gave") && strings.Contains(entry.Detail, "Rowan") {
+			foundEmployer = true
+			break
+		}
+	}
+	if !foundEmployer {
+		t.Fatal("expected retainer_transfer audit log entry on employer")
+	}
+
+	foundRetainer := false
+	for _, entry := range retainerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "received") && strings.Contains(entry.Detail, "Employer") {
+			foundRetainer = true
+			break
+		}
+	}
+	if !foundRetainer {
+		t.Fatal("expected retainer_transfer audit log entry on retainer")
+	}
+}
+
 func TestDecrementBundledItem(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
