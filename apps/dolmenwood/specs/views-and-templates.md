@@ -106,7 +106,7 @@ Each section is a collapsible card (using `CardDisclosure` from `styles.templ`):
 - **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege.
 - **`traits.templ`** -- Kindred traits list, class traits list, moon sign display
 - **`inventory.templ`** -- Equipped items section, companion inventory sections, add-item forms. Item rows show: name, badges (quantity, tiny, slots, capacity), weapon damage, armor AC, inline note editing, action buttons (split, move, sell, decrement, delete)
-- **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty), weapons list, contract terms display, link to retainer's own sheet, inline inventory list (equipped, stowed slots, companion gear), "Hire Adventurer" form
+- **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty), weapons list, contract terms display, link to retainer's own sheet, inline inventory list (equipped, stowed slots, companion gear) with "Take" buttons and an add-item form, "Hire Adventurer" form
 - **`wealth.templ`** -- Total coins overview, purse/found treasure boxes, treasure form, "Return to Safety" button, transaction log with undo
 - **`bank.templ`** -- Deposit list with maturity badges, withdraw form
 - **`xp.templ`** -- Progress bar, level-up button (pulsing when eligible), add XP form, XP log

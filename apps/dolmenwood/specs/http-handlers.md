@@ -134,10 +134,10 @@ Sets the contract's `Active` field to false. The retainer Character remains as a
 
 Most handlers re-render specific page sections rather than redirecting:
 - `renderStats(w, r, charID)` -- re-renders the stats card
-- `renderInventory(w, r, charID)` -- re-renders inventory with OOB swaps for encumbrance and companions
-- `renderCompanions(w, r, charID)`
-- `renderRetainers(w, r, charID)` -- re-renders the retainers section
-- `renderNotes(w, r, charID)`
+- `renderInventory(w, r, charID)` -- re-renders inventory with OOB swaps for encumbrance, companions, and retainers
+- `renderCompanions(w, r, charID)` -- re-renders companions with OOB swaps for inventory and encumbrance
+- `renderRetainers(w, r, charID)` -- re-renders the retainers section (OOB swaps inventory + encumbrance)
+- `renderInventoryAndRetainers(w, r, charID)` -- re-renders inventory and uses OOB swaps for retainers, encumbrance, and companion sections
 - `renderSheetBody(w, r, charID)` -- re-renders entire sheet body
 
 OOB (Out of Band) swaps allow a single handler response to update multiple independent page sections. For example, adding an item updates the inventory section AND the encumbrance section AND companion sections simultaneously.
