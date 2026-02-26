@@ -93,6 +93,13 @@ templ RetainersSection(view *CharacterView) {
 						for _, item := range retainer.EquippedItems {
 							@inventoryItem(item, view.MoveTargets, 0, retainer.Contract.ID)
 						}
+						@LabelMuted() {
+							if retainer.StowedCapacity > 0 {
+								{ fmt.Sprintf("Stowed %d / %d slots", retainer.StowedSlots, retainer.StowedCapacity) }
+							} else {
+								{ fmt.Sprintf("Stowed %d slots", retainer.StowedSlots) }
+							}
+						}
 						for _, cg := range retainer.CompanionGroups {
 							@LabelMuted() { { companionInventoryLabel(cg) } }
 							for _, item := range cg.Items {

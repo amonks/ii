@@ -5630,6 +5630,54 @@ func TestHireAdventurerRetainer(t *testing.T) {
 	}
 }
 
+func TestRetainerInventoryShowsStowedSlots(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	backpack := &db.Item{CharacterID: retainer.ID, Name: "Backpack", Quantity: 1, Location: "equipped"}
+	d.CreateItem(backpack)
+	d.CreateItem(&db.Item{CharacterID: retainer.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID})
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("/characters/%d/", employer.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "Stowed 1 / 10 slots") {
+		t.Fatalf("expected stowed slots label, got: %s", body)
+	}
+}
+
 func TestDismissRetainerContract(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
