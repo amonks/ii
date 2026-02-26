@@ -55,7 +55,7 @@ func (s *Server) handleStoreBuy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.addAuditLog(ch, "store_buy", fmt.Sprintf("bought %s for %s, wealth %s -> %s", name, itemCostLabel(costCP, ""), oldWealth, newWealth))
-		s.renderInventoryAndCompanions(w, r, ch)
+		s.renderInventory(w, r, ch)
 		return
 	}
 

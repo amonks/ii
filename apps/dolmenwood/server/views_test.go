@@ -307,7 +307,47 @@ func TestRetainerViewIncludesInventory(t *testing.T) {
 	}
 }
 
-func TestCompanionStatsFromItems(t *testing.T) {
+func TestMoveTargetsIncludeRetainers(t *testing.T) {
+	_, d := setupTest(t)
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Retainer",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	view, err := buildCharacterView(d, employer)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	retainerTarget := fmt.Sprintf("retainer:%d", contract.ID)
+	if !hasMoveTarget(view.MoveTargets, retainerTarget) {
+		t.Fatalf("expected retainer move target %q", retainerTarget)
+	}
+}
+
+func TestCompanionStatsWithGear(t *testing.T) {
 	_, d := setupTest(t)
 
 	ch := &db.Character{

@@ -189,7 +189,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			}
 			s.addAuditLog(ch, "item_add", fmt.Sprintf("add Coins (%s) in %s", item.Notes, s.itemLocationLabel(item)))
 		}
-		s.renderInventory(w, r, ch)
+		s.renderInventoryAndRetainers(w, r, ch)
 		return
 	}
 
@@ -203,7 +203,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.addAuditLog(ch, "item_deduct", fmt.Sprintf("deduct %s, qty %d", name, deductQty))
-		s.renderInventory(w, r, ch)
+		s.renderInventoryAndRetainers(w, r, ch)
 		return
 	}
 
@@ -232,7 +232,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			s.renderInventory(w, r, ch)
+			s.renderInventoryAndRetainers(w, r, ch)
 			return
 		}
 		if err := s.db.CreateItem(item); err != nil {
@@ -240,7 +240,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.addAuditLog(ch, "item_add", fmt.Sprintf("add %s, qty %d in %s", item.Name, item.Quantity, s.itemLocationLabel(item)))
-		s.renderInventory(w, r, ch)
+		s.renderInventoryAndRetainers(w, r, ch)
 		return
 	}
 	if err := s.combineStackableItems(ch.ID, item, ch.CurrentDay); err != nil {
@@ -249,7 +249,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		s.renderInventory(w, r, ch)
+		s.renderInventoryAndRetainers(w, r, ch)
 		return
 	}
 	if err := s.db.CreateItem(item); err != nil {
@@ -257,7 +257,7 @@ func (s *Server) handleAddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.addAuditLog(ch, "item_add", fmt.Sprintf("add %s, qty %d in %s", item.Name, item.Quantity, s.itemLocationLabel(item)))
-	s.renderInventory(w, r, ch)
+	s.renderInventoryAndRetainers(w, r, ch)
 }
 
 func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +292,35 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			}
 			// Support move_to for container hierarchy
 			if moveTo := r.FormValue("move_to"); moveTo != "" {
+				if after, ok := strings.CutPrefix(moveTo, "retainer:"); ok {
+					contractID := atoui(after)
+					contract, err := s.db.GetRetainerContract(contractID)
+					if err != nil {
+						http.Error(w, "Retainer contract not found", http.StatusNotFound)
+						return
+					}
+					if !contract.Active {
+						http.Error(w, "Retainer contract is inactive", http.StatusBadRequest)
+						return
+					}
+					if contract.EmployerID != ch.ID {
+						http.Error(w, "Retainer contract does not belong to this character", http.StatusBadRequest)
+						return
+					}
+					retainer, err := s.db.GetCharacter(contract.RetainerID)
+					if err != nil {
+						http.Error(w, "Retainer not found", http.StatusNotFound)
+						return
+					}
+					if err := s.db.TransferItem(item.ID, contract.RetainerID, 0); err != nil {
+						http.Error(w, err.Error(), http.StatusBadRequest)
+						return
+					}
+					s.addAuditLog(ch, "retainer_transfer", fmt.Sprintf("gave %s to %s", item.Name, retainer.Name))
+					s.addAuditLog(retainer, "retainer_transfer", fmt.Sprintf("received %s from %s", item.Name, ch.Name))
+					s.renderInventoryAndRetainers(w, r, ch)
+					return
+				}
 				// Consume: delete item
 				if moveTo == "consume" && !strings.EqualFold(item.Name, engine.CoinItemNameStr) {
 					if err := s.db.DeleteItem(item.ID); err != nil {
@@ -299,7 +328,7 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					s.addAuditLog(ch, "item_consume", fmt.Sprintf("consume %s, qty %d", item.Name, item.Quantity))
-					s.renderInventory(w, r, ch)
+					s.renderInventoryAndRetainers(w, r, ch)
 					return
 				}
 
@@ -381,7 +410,7 @@ func (s *Server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	s.renderInventory(w, r, ch)
+	s.renderInventoryAndRetainers(w, r, ch)
 }
 
 func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
@@ -401,7 +430,7 @@ func (s *Server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		detail = fmt.Sprintf("delete %s, qty %d from %s", item.Name, item.Quantity, s.itemLocationLabel(item))
 	}
 	s.addAuditLog(ch, "item_delete", detail)
-	s.renderInventory(w, r, ch)
+	s.renderInventoryAndRetainers(w, r, ch)
 }
 
 func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
@@ -422,6 +451,11 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 	moveTo := r.FormValue("move_to")
 	containerID, companionID := parseMoveTarget(moveTo)
 	qtyStr := strings.TrimSpace(r.FormValue("quantity"))
+	retainerID, retainer, retainerErr := s.retainerMoveTarget(ch, moveTo)
+	if retainerErr != nil {
+		http.Error(w, retainerErr.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Empty quantity means "move all"
 	if qtyStr == "" {
@@ -458,6 +492,39 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 		// Reject consume for coin items
 		if moveTo == "consume" {
 			http.Error(w, "Cannot consume coins", http.StatusBadRequest)
+			return
+		}
+
+		if retainerID != 0 {
+			if newTotal == 0 {
+				if err := s.db.TransferItem(source.ID, retainerID, 0); err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+			} else {
+				source.Notes = newNotes
+				source.Quantity = newTotal
+				if err := s.db.UpdateItem(source); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				newItem := &db.Item{
+					CharacterID:    retainerID,
+					Name:           engine.CoinItemNameStr,
+					Quantity:       splitTotal,
+					Notes:          splitNotes,
+					IsTiny:         source.IsTiny,
+					WeightOverride: source.WeightOverride,
+				}
+				if err := s.db.CreateItem(newItem); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+			itemLabel := fmt.Sprintf("Coins %s", splitNotes)
+			s.addAuditLog(ch, "retainer_transfer", fmt.Sprintf("gave %s to %s", itemLabel, retainer.Name))
+			s.addAuditLog(retainer, "retainer_transfer", fmt.Sprintf("received %s from %s", itemLabel, ch.Name))
+			s.renderInventoryAndRetainers(w, r, ch)
 			return
 		}
 
@@ -583,6 +650,23 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			s.addAuditLog(ch, "store_sell", fmt.Sprintf("sold %d %s for %s, wealth %s -> %s", qty, source.Name, itemCostLabel(totalSellCP, ""), oldWealth, newWealth))
+		} else if retainerID != 0 {
+			transferQty := qty
+			itemLabel := fmt.Sprintf("%s x%d", source.Name, qty)
+			if qty >= source.Quantity {
+				transferQty = 0
+				if source.Quantity == 1 {
+					itemLabel = source.Name
+				} else {
+					itemLabel = fmt.Sprintf("%s x%d", source.Name, source.Quantity)
+				}
+			}
+			if err := s.db.TransferItem(source.ID, retainerID, transferQty); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			s.addAuditLog(ch, "retainer_transfer", fmt.Sprintf("gave %s to %s", itemLabel, retainer.Name))
+			s.addAuditLog(retainer, "retainer_transfer", fmt.Sprintf("received %s from %s", itemLabel, ch.Name))
 		} else if qty == source.Quantity {
 			// Move the whole item
 			source.ContainerID = containerID
@@ -627,7 +711,7 @@ func (s *Server) handleSplitItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.renderInventory(w, r, ch)
+	s.renderInventoryAndRetainers(w, r, ch)
 }
 
 func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
@@ -659,7 +743,7 @@ func (s *Server) handleDecrementItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.addAuditLog(ch, "item_decrement", fmt.Sprintf("%s -%d (%d → %d)", item.Name, bundle, oldQty, item.Quantity))
-	s.renderInventory(w, r, ch)
+	s.renderInventoryAndRetainers(w, r, ch)
 }
 
 func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
@@ -917,6 +1001,95 @@ func (s *Server) handleUpdateRetainerContract(w http.ResponseWriter, r *http.Req
 		return
 	}
 	s.renderRetainers(w, r, ch)
+}
+
+func (s *Server) handleTransferItem(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil {
+		http.Error(w, "Retainer contract not found", http.StatusNotFound)
+		return
+	}
+	if !contract.Active {
+		http.Error(w, "Retainer contract is inactive", http.StatusBadRequest)
+		return
+	}
+	if contract.EmployerID != ch.ID {
+		http.Error(w, "Retainer contract does not belong to this character", http.StatusBadRequest)
+		return
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+
+	r.ParseForm()
+	itemID := atoui(r.FormValue("item_id"))
+	quantity := atoi(r.FormValue("quantity"))
+	direction := r.FormValue("direction")
+
+	source := ch
+	target := retainer
+	verbEmployer := "gave"
+	verbRetainer := "received"
+	if direction == "take" {
+		source = retainer
+		target = ch
+		verbEmployer = "received"
+		verbRetainer = "gave"
+	} else if direction != "give" {
+		http.Error(w, "Invalid direction", http.StatusBadRequest)
+		return
+	}
+
+	item, err := s.db.GetItem(itemID)
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+	if item.CharacterID != source.ID {
+		http.Error(w, "Item does not belong to source", http.StatusBadRequest)
+		return
+	}
+
+	itemLabel := item.Name
+	if quantity > 0 && quantity < item.Quantity {
+		itemLabel = fmt.Sprintf("%s x%d", item.Name, quantity)
+	} else if item.Quantity > 1 {
+		itemLabel = fmt.Sprintf("%s x%d", item.Name, item.Quantity)
+	}
+
+	if err := s.db.TransferItem(item.ID, target.ID, quantity); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	logDetailEmployer := fmt.Sprintf("%s %s %s %s", verbEmployer, itemLabel, employerDirection(direction), retainer.Name)
+	logDetailRetainer := fmt.Sprintf("%s %s %s %s", verbRetainer, itemLabel, retainerDirection(direction), ch.Name)
+
+	s.addAuditLog(ch, "retainer_transfer", logDetailEmployer)
+	s.addAuditLog(retainer, "retainer_transfer", logDetailRetainer)
+	s.renderInventoryAndRetainers(w, r, ch)
+}
+
+func employerDirection(direction string) string {
+	if direction == "give" {
+		return "to"
+	}
+	return "from"
+}
+
+func retainerDirection(direction string) string {
+	if direction == "give" {
+		return "from"
+	}
+	return "to"
 }
 
 func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
@@ -1380,7 +1553,38 @@ func (s *Server) resolveMoveTargetLabel(moveTo string) string {
 			return comp.Name
 		}
 	}
+	if after, ok := strings.CutPrefix(moveTo, "retainer:"); ok {
+		id := atoui(after)
+		if contract, err := s.db.GetRetainerContract(id); err == nil {
+			if retainer, err := s.db.GetCharacter(contract.RetainerID); err == nil {
+				return fmt.Sprintf("%s (%s)", retainer.Name, retainer.Class)
+			}
+		}
+	}
 	return moveTo
+}
+
+func (s *Server) retainerMoveTarget(ch *db.Character, moveTo string) (uint, *db.Character, error) {
+	after, ok := strings.CutPrefix(moveTo, "retainer:")
+	if !ok {
+		return 0, nil, nil
+	}
+	contractID := atoui(after)
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil {
+		return 0, nil, fmt.Errorf("retainer contract not found")
+	}
+	if !contract.Active {
+		return 0, nil, fmt.Errorf("retainer contract is inactive")
+	}
+	if contract.EmployerID != ch.ID {
+		return 0, nil, fmt.Errorf("retainer contract does not belong to this character")
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		return 0, nil, fmt.Errorf("retainer not found")
+	}
+	return retainer.ID, retainer, nil
 }
 
 func (s *Server) addAuditLog(ch *db.Character, action, detail string) {
@@ -1440,22 +1644,28 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, ch *db.
 	CompanionsSection(view).Render(r.Context(), &buf)
 	oob = strings.Replace(buf.String(), `id="companions"`, `id="companions" hx-swap-oob="outerHTML"`, 1)
 	fmt.Fprint(w, oob)
+	buf.Reset()
+	RetainersSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="retainers"`, `id="retainers" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 }
 
-func (s *Server) renderInventoryAndCompanions(w http.ResponseWriter, r *http.Request, ch *db.Character) {
+func (s *Server) renderInventoryAndRetainers(w http.ResponseWriter, r *http.Request, ch *db.Character) {
 	view, err := buildCharacterView(s.db, ch)
 	if err != nil {
-		slog.Error("renderInventoryAndCompanions", "error", err)
+		slog.Error("renderInventoryAndRetainers", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	InventorySection(view).Render(r.Context(), w)
-	// OOB swap encumbrance
 	var buf bytes.Buffer
-	EncumbranceSection(view).Render(r.Context(), &buf)
-	oob := strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	RetainersSection(view).Render(r.Context(), &buf)
+	oob := strings.Replace(buf.String(), `id="retainers"`, `id="retainers" hx-swap-oob="outerHTML"`, 1)
 	fmt.Fprint(w, oob)
-	// OOB swap companions
+	buf.Reset()
+	EncumbranceSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 	buf.Reset()
 	CompanionsSection(view).Render(r.Context(), &buf)
 	oob = strings.Replace(buf.String(), `id="companions"`, `id="companions" hx-swap-oob="outerHTML"`, 1)
@@ -1490,6 +1700,14 @@ func (s *Server) renderRetainers(w http.ResponseWriter, r *http.Request, ch *db.
 		return
 	}
 	RetainersSection(view).Render(r.Context(), w)
+	var buf bytes.Buffer
+	InventorySection(view).Render(r.Context(), &buf)
+	oob := strings.Replace(buf.String(), `id="inventory"`, `id="inventory" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
+	buf.Reset()
+	EncumbranceSection(view).Render(r.Context(), &buf)
+	oob = strings.Replace(buf.String(), `id="encumbrance"`, `id="encumbrance" hx-swap-oob="outerHTML"`, 1)
+	fmt.Fprint(w, oob)
 }
 
 func (s *Server) renderNotes(w http.ResponseWriter, r *http.Request, ch *db.Character) {

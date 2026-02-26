@@ -59,138 +59,174 @@ templ InventorySection(view *CharacterView) {
 	}
 }
 
-templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int) {
-	@Indent(depth) {
-		@Row() {
-			@ClusterMin() {
-				if engine.IsCoinItem(item.Name) {
-					@Accent("goldItem") { { item.Name } }
-					if item.CoinValueLabel != "" {
-						@BadgeGold() { { item.CoinValueLabel } }
+	templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, contractID ...uint) {
+		transferContractID := uint(0)
+		transferDirection := ""
+		if len(contractID) > 0 {
+			transferContractID = contractID[0]
+			transferDirection = "take"
+		}
+		@Indent(depth) {
+			@Row() {
+				@ClusterMin() {
+					if engine.IsCoinItem(item.Name) {
+						@Accent("goldItem") { { item.Name } }
+						if item.CoinValueLabel != "" {
+							@BadgeGold() { { item.CoinValueLabel } }
+							@Label() { { item.Notes } }
+						} else if item.Notes != "" {
+							@BadgeGold() { { item.Notes } }
+						}
+					} else {
+						@Text() { { item.Name } }
+					}
+					if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
+						@Badge() { { fmt.Sprintf("%dx", item.Quantity) } }
+					}
+					if itemIsTiny(item) {
+						@Badge() { tiny }
+					} else if item.Slots > 1 {
+						@Badge() { { fmt.Sprintf("%d slots", item.Slots) } }
+					}
+					if item.Capacity > 0 {
+						if item.UsedSlots > item.Capacity {
+							@BadgeDanger() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
+						} else {
+							@Badge() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
+						}
+					}
+					if w, ok := engine.WeaponStats(item.Name); ok {
+						if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
+							@Accent("weapon") { { fmt.Sprintf("%s+%d", w.Damage, mb) } }
+						} else {
+							@Accent("weapon") { { w.Damage } }
+						}
+					}
+					if a, ok := engine.ArmorStats(item.Name); ok {
+						if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
+							@Accent("armor") { AC { fmt.Sprintf("%d", a.AC + mb) } }
+						} else {
+							@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
+						}
+					}
+					if bonus := engine.BardingACBonus(item.Name); bonus > 0 {
+						@Accent("armor") { { fmt.Sprintf("+%d AC", bonus) } }
+					}
+					if transferContractID == 0 && !engine.IsCoinItem(item.Name) {
+						<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+							hx-target="#inventory" hx-swap="outerHTML">
+							<input type="hidden" name="has_notes" value="1"/>
+							@InlineNoteInput(templ.Attributes{
+								"name": "notes",
+								"value": item.Notes,
+								"placeholder": "note",
+								"onchange": "this.form.requestSubmit()",
+							})
+						</form>
+					} else if transferContractID > 0 && item.Notes != "" && !engine.IsCoinItem(item.Name) {
 						@Label() { { item.Notes } }
-					} else if item.Notes != "" {
-						@BadgeGold() { { item.Notes } }
-					}
-				} else {
-					@Text() { { item.Name } }
-				}
-				if !engine.IsCoinItem(item.Name) && item.Quantity > 1 {
-					@Badge() { { fmt.Sprintf("%dx", item.Quantity) } }
-				}
-				if itemIsTiny(item) {
-					@Badge() { tiny }
-				} else if item.Slots > 1 {
-					@Badge() { { fmt.Sprintf("%d slots", item.Slots) } }
-				}
-				if item.Capacity > 0 {
-					if item.UsedSlots > item.Capacity {
-						@BadgeDanger() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
-					} else {
-						@Badge() { { fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity) } }
 					}
 				}
-				if w, ok := engine.WeaponStats(item.Name); ok {
-					if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
-						@Accent("weapon") { { fmt.Sprintf("%s+%d", w.Damage, mb) } }
-					} else {
-						@Accent("weapon") { { w.Damage } }
-					}
-				}
-				if a, ok := engine.ArmorStats(item.Name); ok {
-					if _, mb := engine.ParseMagicBonus(item.Name); mb > 0 {
-						@Accent("armor") { AC { fmt.Sprintf("%d", a.AC + mb) } }
-					} else {
-						@Accent("armor") { AC { fmt.Sprintf("%d", a.AC) } }
-					}
-				}
-				if bonus := engine.BardingACBonus(item.Name); bonus > 0 {
-					@Accent("armor") { { fmt.Sprintf("+%d AC", bonus) } }
-				}
-				if !engine.IsCoinItem(item.Name) {
-					<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						<input type="hidden" name="has_notes" value="1"/>
-						@InlineNoteInput(templ.Attributes{
-							"name": "notes",
-							"value": item.Notes,
-							"placeholder": "note",
-							"onchange": "this.form.requestSubmit()",
-						})
-					</form>
-				}
-			}
-			@InlineActions() {
-				if item.Quantity > 1 {
-					<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						@InlineFormActions() {
-							if engine.IsCoinItem(item.Name) {
-								@SplitInputWide(templ.Attributes{
-									"name": "quantity",
-									"placeholder": "50gp 10sp",
-								})
-							} else {
-								@SplitInput(templ.Attributes{
-									"type": "number",
-									"name": "quantity",
-									"placeholder": fmt.Sprintf("%d", item.Quantity),
-									"min": "1",
-									"max": fmt.Sprintf("%d", item.Quantity),
-									"value": fmt.Sprintf("%d", item.Quantity),
-								})
-							}
-							@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
-								<option value="">Move to...</option>
-								for _, target := range moveTargets {
-									<option value={ target.Value }>{ target.Label }</option>
+				@InlineActions() {
+					if transferContractID > 0 {
+						<form hx-post={ templ.SafeURL(transferFormAction(transferContractID)) }
+							hx-target="#inventory" hx-swap="outerHTML">
+							@InlineFormActions() {
+								<input type="hidden" name="item_id" value={ fmt.Sprintf("%d", item.ID) }/>
+								<input type="hidden" name="direction" value={ transferDirection }/>
+								if item.Quantity > 1 {
+									@SplitInput(templ.Attributes{
+										"type": "number",
+										"name": "quantity",
+										"placeholder": fmt.Sprintf("%d", item.Quantity),
+										"min": "0",
+										"max": fmt.Sprintf("%d", item.Quantity),
+									})
+								} else {
+									<input type="hidden" name="quantity" value="0"/>
 								}
-								if item.SellPriceCP > 0 {
-									<option value="sell">{ fmt.Sprintf("Sell (%s)", itemCostLabel(item.SellPriceCP, "")) }</option>
-								}
-								if !engine.IsCoinItem(item.Name) {
-									<option value="consume">Consume</option>
+								if transferDirection == "give" {
+									@BtnSecondary() { Give }
+								} else {
+									@BtnSecondary() { Take }
 								}
 							}
+						</form>
+					} else {
+						if item.Quantity > 1 {
+							<form hx-post={ fmt.Sprintf("items/%d/split/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								@InlineFormActions() {
+									if engine.IsCoinItem(item.Name) {
+										@SplitInputWide(templ.Attributes{
+											"name": "quantity",
+											"placeholder": "50gp 10sp",
+										})
+									} else {
+										@SplitInput(templ.Attributes{
+											"type": "number",
+											"name": "quantity",
+											"placeholder": fmt.Sprintf("%d", item.Quantity),
+											"min": "1",
+											"max": fmt.Sprintf("%d", item.Quantity),
+											"value": fmt.Sprintf("%d", item.Quantity),
+										})
+									}
+									@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
+										<option value="">Move to...</option>
+										for _, target := range moveTargets {
+											<option value={ target.Value }>{ target.Label }</option>
+										}
+										if item.SellPriceCP > 0 {
+											<option value="sell">{ fmt.Sprintf("Sell (%s)", itemCostLabel(item.SellPriceCP, "")) }</option>
+										}
+										if !engine.IsCoinItem(item.Name) {
+											<option value="consume">Consume</option>
+										}
+									}
+								}
+							</form>
+						} else {
+							<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
+									<option value="">Move to...</option>
+									for _, target := range moveTargets {
+										<option value={ target.Value }>{ target.Label }</option>
+									}
+									if !engine.IsCoinItem(item.Name) {
+										<option value="consume">Consume</option>
+									}
+								}
+							</form>
 						}
-					</form>
-				} else {
-					<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						@MoveSelect(templ.Attributes{"name": "move_to", "onchange": "this.form.requestSubmit()"}) {
-							<option value="">Move to...</option>
-							for _, target := range moveTargets {
-								<option value={ target.Value }>{ target.Label }</option>
-							}
-							if !engine.IsCoinItem(item.Name) {
-								<option value="consume">Consume</option>
-							}
+						if item.SellPriceCP > 0 && item.Quantity <= 1 {
+							<form hx-post={ fmt.Sprintf("items/%d/sell/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								@BtnSell(itemCostLabel(item.SellPriceCP, ""))
+							</form>
 						}
-					</form>
-				}
-				if item.SellPriceCP > 0 && item.Quantity <= 1 {
-					<form hx-post={ fmt.Sprintf("items/%d/sell/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						@BtnSell(itemCostLabel(item.SellPriceCP, ""))
-					</form>
-				}
-				if item.BundleSize > 0 && item.Quantity > 1 {
-					<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						@BtnDecrement()
-					</form>
-				} else {
-					<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
-						hx-target="#inventory" hx-swap="outerHTML">
-						@BtnDelete()
-					</form>
+						if item.BundleSize > 0 && item.Quantity > 1 {
+							<form hx-post={ fmt.Sprintf("items/%d/decrement/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								@BtnDecrement()
+							</form>
+						} else {
+							<form hx-post={ fmt.Sprintf("items/%d/delete/", item.ID) }
+								hx-target="#inventory" hx-swap="outerHTML">
+								@BtnDelete()
+							</form>
+						}
+					}
 				}
 			}
 		}
+		for _, child := range item.Children {
+			@inventoryItem(child, moveTargets, depth+1, transferContractID)
+		}
 	}
-	for _, child := range item.Children {
-		@inventoryItem(child, moveTargets, depth+1)
-	}
-}
+
+
 
 templ EncumbranceSection(view *CharacterView) {
 	@CardDisclosure("encumbrance", true) {
@@ -257,15 +293,9 @@ templ EncumbranceSection(view *CharacterView) {
 	}
 }
 
-func companionInventoryLabel(cg CompanionInventory) string {
-	label := cg.Companion.Name
-	if cg.Companion.Breed != "" {
-		label += " (" + cg.Companion.Breed + ")"
-	}
-	label += fmt.Sprintf(" (%d / %d slots)", cg.UsedSlots, cg.Companion.LoadCapacity)
-	return label
+func transferFormAction(contractID uint) string {
+	return fmt.Sprintf("retainers/%d/transfer/", contractID)
 }
-
 
 templ EncumbranceSummary(view *CharacterView) {
 	@Header() {

@@ -88,6 +88,25 @@ templ RetainersSection(view *CharacterView) {
 						@LabelBlock() {
 							Traits: { fmt.Sprintf("%d kindred, %d class", len(retainer.KindredTraits), len(retainer.ClassTraits)) }
 						}
+						@SectionHeader() { Inventory }
+						@LabelMuted() { { fmt.Sprintf("Equipped %d / 10 slots", retainer.EquippedSlots) } }
+						for _, item := range retainer.EquippedItems {
+							@inventoryItem(item, view.MoveTargets, 0, retainer.Contract.ID)
+						}
+						for _, cg := range retainer.CompanionGroups {
+							@LabelMuted() { { companionInventoryLabel(cg) } }
+							for _, item := range cg.Items {
+								@inventoryItem(item, view.MoveTargets, 0, retainer.Contract.ID)
+							}
+						}
+						<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/transfer/", retainer.Contract.ID)) } hx-target="#inventory" hx-swap="outerHTML">
+							@FormRow() {
+								<input type="hidden" name="direction" value="give"/>
+								@FormInput(templ.Attributes{"name": "item_id", "placeholder": "Item ID", "required": true})
+								@FormInput(templ.Attributes{"name": "quantity", "type": "number", "placeholder": "Qty (0=all)", "min": "0"})
+								@BtnPrimary() { Give }
+							}
+						</form>
 					}
 				}
 			} else {

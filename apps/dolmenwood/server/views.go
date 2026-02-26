@@ -20,16 +20,16 @@ type CharacterView struct {
 	Retainers    []RetainerView
 
 	// Computed fields
-	AC               int
-	ArmorName        string
-	ArmorAC          int
-	ShieldName       string
-	ShieldAC         int
-	AttackBonus      int
-	Weapons          []engine.EquippedWeapon
-	MagicResistance  int
-	Saves            engine.SaveTargets
-	AdvancementTable *engine.AdvancementTable
+	AC                      int
+	ArmorName               string
+	ArmorAC                 int
+	ShieldName              string
+	ShieldAC                int
+	AttackBonus             int
+	Weapons                 []engine.EquippedWeapon
+	MagicResistance         int
+	Saves                   engine.SaveTargets
+	AdvancementTable        *engine.AdvancementTable
 	Speed                   int
 	SpeedEncounter          int
 	SpeedExplorationUnknown int
@@ -411,7 +411,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	// Build inventory tree
 	equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
-	moveTargets := buildMoveTargets(items, compViews)
+	moveTargets := buildMoveTargets(items, compViews, retainers)
 	storeGroups := buildStoreGroups()
 
 	// Compute speed breakdowns
@@ -423,24 +423,24 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	speedOverland := speed / 5
 
 	return &CharacterView{
-		Character:        ch,
-		Items:            items,
-		Companions:       compViews,
-		Transactions:     transactions,
-		XPLog:            xpLog,
-		Notes:            notes,
-		AuditLog:         auditLog,
-		Retainers:        retainers,
-		AC:               ac,
-		ArmorName:        armorName,
-		ArmorAC:          armorAC,
-		ShieldName:       shieldName,
-		ShieldAC:         shieldAC,
-		AttackBonus:      engine.ClassAttackBonus(ch.Class, ch.Level),
-		Weapons:          engine.EquippedWeapons(engineItems),
-		MagicResistance:  engine.MagicResistance(ch.Kindred, ch.WIS),
-		Saves:            engine.ClassSaveTargets(ch.Class, ch.Level),
-		AdvancementTable: advancementTable,
+		Character:               ch,
+		Items:                   items,
+		Companions:              compViews,
+		Transactions:            transactions,
+		XPLog:                   xpLog,
+		Notes:                   notes,
+		AuditLog:                auditLog,
+		Retainers:               retainers,
+		AC:                      ac,
+		ArmorName:               armorName,
+		ArmorAC:                 armorAC,
+		ShieldName:              shieldName,
+		ShieldAC:                shieldAC,
+		AttackBonus:             engine.ClassAttackBonus(ch.Class, ch.Level),
+		Weapons:                 engine.EquippedWeapons(engineItems),
+		MagicResistance:         engine.MagicResistance(ch.Kindred, ch.WIS),
+		Saves:                   engine.ClassSaveTargets(ch.Class, ch.Level),
+		AdvancementTable:        advancementTable,
 		Speed:                   speed,
 		SpeedEncounter:          speedEncounter,
 		SpeedExplorationUnknown: speedExplorationUnknown,
@@ -881,7 +881,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			compViews[i] = cv
 		}
 		equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
-		moveTargets := buildMoveTargets(items, compViews)
+		moveTargets := buildMoveTargets(items, compViews, retainers)
 		speed := engine.SpeedFromSlots(equipped, stowed)
 		retainers = append(retainers, RetainerView{
 			Contract:        contract,
@@ -992,8 +992,20 @@ func itemIsTiny(item InventoryItem) bool {
 	return engine.IsTinyItem(item.Name)
 }
 
-// buildMoveTargets builds the list of destinations an item can be moved to.
-func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
+func companionInventoryLabel(cg CompanionInventory) string {
+	label := cg.Companion.Name
+	if cg.Companion.Breed != "" {
+		label = fmt.Sprintf("%s (%s)", cg.Companion.Name, cg.Companion.Breed)
+	}
+	if cg.Companion.LoadCapacity > 0 {
+		label = fmt.Sprintf("%s, %d/%d slots", label, cg.UsedSlots, cg.Companion.LoadCapacity)
+	} else {
+		label = fmt.Sprintf("%s, %d slots", label, cg.UsedSlots)
+	}
+	return label
+}
+
+func buildMoveTargets(items []db.Item, compViews []CompanionView, retainers []RetainerView) []MoveTarget {
 	targets := []MoveTarget{
 		{Label: "Equipped", Value: "equipped"},
 	}
@@ -1077,6 +1089,14 @@ func buildMoveTargets(items []db.Item, compViews []CompanionView) []MoveTarget {
 		targets = append(targets, MoveTarget{
 			Label: label,
 			Value: fmt.Sprintf("companion:%d", cv.ID),
+		})
+	}
+
+	// Add retainers
+	for _, ret := range retainers {
+		targets = append(targets, MoveTarget{
+			Value: fmt.Sprintf("retainer:%d", ret.Contract.ID),
+			Label: fmt.Sprintf("→ %s (%s)", ret.Character.Name, ret.Character.Class),
 		})
 	}
 

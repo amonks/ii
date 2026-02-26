@@ -76,8 +76,8 @@ Handler `handleTransferItem`:
    - "take": source = retainer, target = employer
 4. Verify the item belongs to the source character
 5. Call `db.TransferItem(itemID, targetCharacterID, quantity)`
-6. Audit log on employer: "Gave/Received [item] to/from [retainer name]"
-7. Audit log on retainer: "Received/Gave [item] from/to [employer name]"
+6. Audit log on employer: "Gave/Received [item] to/from [retainer name]" (directional)
+7. Audit log on retainer: "Received/Gave [item] from/to [employer name]" (directional)
 8. Re-render inventory and retainers sections (OOB swap)
 
 **Tests** (`server/server_test.go`):

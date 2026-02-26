@@ -22,7 +22,6 @@ func setupTest(t *testing.T) (*Server, *db.DB) {
 	return srv, d
 }
 
-
 func parseStatSpeedValues(t *testing.T, body string) map[string]string {
 	t.Helper()
 	segments := strings.Split(body, "bg-stone-50 rounded p-1")
@@ -108,29 +107,28 @@ func TestIndexShowsClassAndKindredOptions(t *testing.T) {
 	}
 }
 
-
 func TestIndexShowsRetainerEmployerLabel(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
 	employer := &db.Character{
-		Name: "Alder",
-		Class: "Knight",
-		Kindred: "Human",
-		Level: 1,
+		Name:      "Alder",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
 		HPCurrent: 10,
-		HPMax: 10,
+		HPMax:     10,
 	}
 	if err := d.CreateCharacter(employer); err != nil {
 		t.Fatalf("CreateCharacter employer: %v", err)
 	}
 	retainer := &db.Character{
-		Name: "Bram",
-		Class: "Hunter",
-		Kindred: "Human",
-		Level: 1,
+		Name:      "Bram",
+		Class:     "Hunter",
+		Kindred:   "Human",
+		Level:     1,
 		HPCurrent: 6,
-		HPMax: 6,
+		HPMax:     6,
 	}
 	if err := d.CreateCharacter(retainer); err != nil {
 		t.Fatalf("CreateCharacter retainer: %v", err)
@@ -138,7 +136,7 @@ func TestIndexShowsRetainerEmployerLabel(t *testing.T) {
 	contract := &db.RetainerContract{
 		EmployerID: employer.ID,
 		RetainerID: retainer.ID,
-		Active: true,
+		Active:     true,
 	}
 	if err := d.CreateRetainerContract(contract); err != nil {
 		t.Fatalf("CreateRetainerContract: %v", err)
@@ -204,7 +202,6 @@ func TestDeleteCharacter(t *testing.T) {
 	}
 }
 
-
 func TestCreateCharacter(t *testing.T) {
 	srv, _ := setupTest(t)
 	mux := srv.Mux()
@@ -235,7 +232,6 @@ func TestCreateCharacter(t *testing.T) {
 		t.Errorf("Location = %q, want %q", loc, "1/")
 	}
 }
-
 
 func TestCreateCharacterRejectsInvalidClass(t *testing.T) {
 	srv, _ := setupTest(t)
@@ -1946,26 +1942,32 @@ func TestSplitEmptyQuantityMovesAll(t *testing.T) {
 	}
 }
 
-func TestSplitEmptyQuantityMovesAllCoins(t *testing.T) {
+func TestTransferItemGive(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
-	ch := &db.Character{
-		Name: "Test", Class: "Knight", Kindred: "Human",
-		Level: 1, HPCurrent: 8, HPMax: 8,
+	employer := &db.Character{Name: "Alder", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
 	}
-	d.CreateCharacter(ch)
+	retainer := &db.Character{Name: "Bram", Class: "Hunter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
 
-	comp := &db.Companion{CharacterID: ch.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
-	d.CreateCompanion(comp)
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
 
-	coins := &db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 80, Notes: "50gp 30sp"}
-	d.CreateItem(coins)
-
-	// Split with empty quantity — should move all coins
 	form := url.Values{}
-	form.Set("move_to", fmt.Sprintf("companion:%d", comp.ID))
-	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/1/items/%d/split/", coins.ID), strings.NewReader(form.Encode()))
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("direction", "give")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
@@ -1974,15 +1976,176 @@ func TestSplitEmptyQuantityMovesAllCoins(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
-	items, _ := d.ListItems(ch.ID)
+	items, _ := d.ListItems(retainer.ID)
 	if len(items) != 1 {
-		t.Fatalf("got %d items, want 1", len(items))
+		t.Fatalf("got %d retainer items, want 1", len(items))
 	}
-	if items[0].CompanionID == nil || *items[0].CompanionID != comp.ID {
-		t.Errorf("Coins CompanionID = %v, want %d", items[0].CompanionID, comp.ID)
+	if items[0].CharacterID != retainer.ID {
+		t.Errorf("item CharacterID = %d, want %d", items[0].CharacterID, retainer.ID)
 	}
-	if items[0].Quantity != 80 {
-		t.Errorf("Coins Quantity = %d, want 80", items[0].Quantity)
+}
+
+func TestTransferItemTake(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Alder", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Bram", Class: "Hunter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: retainer.ID, Name: "Torch", Quantity: 3}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("direction", "take")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	items, _ := d.ListItems(employer.ID)
+	if len(items) != 1 {
+		t.Fatalf("got %d employer items, want 1", len(items))
+	}
+	if items[0].CharacterID != employer.ID {
+		t.Errorf("item CharacterID = %d, want %d", items[0].CharacterID, employer.ID)
+	}
+}
+
+func TestTransferItemPartial(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Alder", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Bram", Class: "Hunter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Torches", Quantity: 5}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("direction", "give")
+	form.Set("quantity", "2")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(employerItems) != 1 {
+		t.Fatalf("got %d employer items, want 1", len(employerItems))
+	}
+	if employerItems[0].Quantity != 3 {
+		t.Errorf("employer quantity = %d, want 3", employerItems[0].Quantity)
+	}
+	if len(retainerItems) != 1 {
+		t.Fatalf("got %d retainer items, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Quantity != 2 {
+		t.Errorf("retainer quantity = %d, want 2", retainerItems[0].Quantity)
+	}
+}
+
+func TestTransferItemRejectsInvalidDirection(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Alder", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Bram", Class: "Hunter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("direction", "swap")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestTransferItemRejectsWrongOwner(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Alder", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Bram", Class: "Hunter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: retainer.ID, Name: "Rope", Quantity: 1}
+	if err := d.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("direction", "give")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
 }
 
@@ -2207,7 +2370,7 @@ func TestBuildMoveTargetsIncludesCompanionContainers(t *testing.T) {
 
 	items, _ := d.ListItems(ch.ID)
 	compViews := []CompanionView{{Companion: *comp, LoadCapacity: 25}}
-	targets := buildMoveTargets(items, compViews)
+	targets := buildMoveTargets(items, compViews, nil)
 
 	// Should have: Equipped, Equipped > Backpack, Bessie (Mule) > Chest (wooden, large), Bessie (Mule)
 	found := map[string]bool{}
@@ -2559,7 +2722,7 @@ func TestBuildMoveTargetsIncludesNestedContainers(t *testing.T) {
 
 	items, _ := d.ListItems(ch.ID)
 	compViews := []CompanionView{{Companion: *comp, LoadCapacity: 25}}
-	targets := buildMoveTargets(items, compViews)
+	targets := buildMoveTargets(items, compViews, nil)
 
 	found := map[string]bool{}
 	for _, tgt := range targets {
@@ -5614,6 +5777,416 @@ func TestUpdateRetainerContract(t *testing.T) {
 	}
 	if updated.DailyWageCP != 12 {
 		t.Errorf("DailyWageCP = %d, want 12", updated.DailyWageCP)
+	}
+}
+
+func TestTransferItemGiveToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 15,
+		XPSharePct:   50,
+		DailyWageCP:  0,
+		HiredOnDay:   1,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1, Location: "stowed"}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("quantity", "0")
+	form.Set("direction", "give")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 0 {
+		t.Fatalf("employer items = %d, want 0", len(employerItems))
+	}
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Name != "Rope" {
+		t.Errorf("retainer item name = %q, want Rope", retainerItems[0].Name)
+	}
+
+	employerLog, _ := d.ListAuditLog(employer.ID)
+	retainerLog, _ := d.ListAuditLog(retainer.ID)
+	if len(employerLog) == 0 || len(retainerLog) == 0 {
+		t.Fatalf("expected audit logs for employer and retainer")
+	}
+	foundGive := false
+	for _, entry := range employerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "gave") && strings.Contains(entry.Detail, " to ") && strings.Contains(entry.Detail, retainer.Name) {
+			foundGive = true
+		}
+	}
+	if !foundGive {
+		t.Errorf("expected employer transfer audit log")
+	}
+	foundReceive := false
+	for _, entry := range retainerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "received") && strings.Contains(entry.Detail, " from ") && strings.Contains(entry.Detail, employer.Name) {
+			foundReceive = true
+		}
+	}
+	if !foundReceive {
+		t.Errorf("expected retainer transfer audit log")
+	}
+}
+
+func TestTransferItemTakeFromRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 15,
+		XPSharePct:   50,
+		DailyWageCP:  0,
+		HiredOnDay:   1,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: retainer.ID, Name: "Torch", Quantity: 1, Location: "stowed"}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("quantity", "0")
+	form.Set("direction", "take")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 1 {
+		t.Fatalf("employer items = %d, want 1", len(employerItems))
+	}
+	if employerItems[0].Name != "Torch" {
+		t.Errorf("employer item name = %q, want Torch", employerItems[0].Name)
+	}
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 0 {
+		t.Fatalf("retainer items = %d, want 0", len(retainerItems))
+	}
+}
+
+func TestTransferItemPartialToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 15,
+		XPSharePct:   50,
+		DailyWageCP:  0,
+		HiredOnDay:   1,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Torches", Quantity: 5, Location: "stowed"}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("quantity", "2")
+	form.Set("direction", "give")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 1 {
+		t.Fatalf("employer items = %d, want 1", len(employerItems))
+	}
+	if employerItems[0].Quantity != 3 {
+		t.Errorf("employer torches qty = %d, want 3", employerItems[0].Quantity)
+	}
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Quantity != 2 {
+		t.Errorf("retainer torches qty = %d, want 2", retainerItems[0].Quantity)
+	}
+}
+
+func TestSplitItemMovesToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Torches", Quantity: 5, Location: "stowed"}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("quantity", "2")
+	form.Set("move_to", fmt.Sprintf("retainer:%d", contract.ID))
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/%d/split/", employer.ID, item.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 1 {
+		t.Fatalf("employer items = %d, want 1", len(employerItems))
+	}
+	if employerItems[0].Quantity != 3 {
+		t.Errorf("employer torches qty = %d, want 3", employerItems[0].Quantity)
+	}
+
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Quantity != 2 {
+		t.Errorf("retainer torches qty = %d, want 2", retainerItems[0].Quantity)
+	}
+
+	employerLog, _ := d.ListAuditLog(employer.ID)
+	retainerLog, _ := d.ListAuditLog(retainer.ID)
+	foundEmployer := false
+	for _, entry := range employerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "gave") && strings.Contains(entry.Detail, " to ") && strings.Contains(entry.Detail, "Rowan") {
+			foundEmployer = true
+		}
+	}
+	if !foundEmployer {
+		t.Fatal("expected retainer_transfer audit log entry on employer")
+	}
+	foundRetainer := false
+	for _, entry := range retainerLog {
+		if entry.Action == "retainer_transfer" && strings.Contains(entry.Detail, "received") && strings.Contains(entry.Detail, " from ") && strings.Contains(entry.Detail, "Employer") {
+			foundRetainer = true
+		}
+	}
+	if !foundRetainer {
+		t.Fatal("expected retainer_transfer audit log entry on retainer")
+	}
+}
+
+func TestSplitCoinsMoveToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	coins := &db.Item{CharacterID: employer.ID, Name: engine.CoinItemNameStr, Quantity: 5, Notes: "5gp", Location: "stowed"}
+	d.CreateItem(coins)
+
+	form := url.Values{}
+	form.Set("quantity", "2gp")
+	form.Set("move_to", fmt.Sprintf("retainer:%d", contract.ID))
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/items/%d/split/", employer.ID, coins.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 1 {
+		t.Fatalf("employer items = %d, want 1", len(employerItems))
+	}
+	if employerItems[0].Notes != "3gp" {
+		t.Errorf("employer coin notes = %q, want 3gp", employerItems[0].Notes)
+	}
+
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Notes != "2gp" {
+		t.Errorf("retainer coin notes = %q, want 2gp", retainerItems[0].Notes)
+	}
+}
+
+func TestTransferItemRejectsInvalidDirectionV2(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("quantity", "0")
+	form.Set("direction", "flip")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestTransferItemRejectsItemNotOwnedBySource(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	item := &db.Item{CharacterID: employer.ID, Name: "Rope", Quantity: 1}
+	d.CreateItem(item)
+
+	form := url.Values{}
+	form.Set("item_id", fmt.Sprintf("%d", item.ID))
+	form.Set("quantity", "0")
+	form.Set("direction", "take")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/transfer/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
 }
 
