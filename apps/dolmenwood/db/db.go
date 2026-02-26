@@ -287,6 +287,15 @@ CREATE TABLE IF NOT EXISTS bank_deposits (
 	created_at DATETIME
 );
 CREATE INDEX IF NOT EXISTS bank_deposits_by_character ON bank_deposits(character_id);
+
+CREATE TABLE IF NOT EXISTS prepared_spells (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	name TEXT NOT NULL,
+	spell_level INTEGER NOT NULL DEFAULT 1,
+	used INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_prepared_spells_character ON prepared_spells(character_id);
 `
 
 const migrations = `
@@ -339,6 +348,17 @@ CREATE TABLE IF NOT EXISTS bank_deposits (
 	created_at DATETIME
 );
 CREATE INDEX IF NOT EXISTS bank_deposits_by_character ON bank_deposits(character_id);
+`
+
+const migrationPreparedSpells = `
+CREATE TABLE IF NOT EXISTS prepared_spells (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	name TEXT NOT NULL,
+	spell_level INTEGER NOT NULL DEFAULT 1,
+	used INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_prepared_spells_character ON prepared_spells(character_id);
 `
 
 const migrationBirthday = `
@@ -407,6 +427,7 @@ func New() (*DB, error) {
 	d.Exec(migrationCalendarStartDay)
 	d.Exec(migrationAuditLogGameDay)
 	d.Exec(migrationBankDeposits)
+	d.Exec(migrationPreparedSpells)
 	d.Exec(migrationBirthday)
 	d.Exec(migrationCompanionLoyalty)
 	d.Exec(migrationRetainerContracts)
@@ -491,6 +512,7 @@ func (db *DB) DeleteCharacter(id uint) error {
 	db.Where("character_id = ?", id).Delete(&XPLogEntry{})
 	db.Where("character_id = ?", id).Delete(&Note{})
 	db.Where("character_id = ?", id).Delete(&AuditLogEntry{})
+	db.Where("character_id = ?", id).Delete(&PreparedSpell{})
 	db.Where("character_id = ?", id).Delete(&BankDeposit{})
 	db.Where("employer_id = ?", id).Delete(&RetainerContract{})
 	db.Where("retainer_id = ?", id).Delete(&RetainerContract{})
@@ -852,6 +874,32 @@ func (db *DB) UpdateBankDeposit(dep *BankDeposit) error {
 
 func (db *DB) DeleteBankDeposit(id uint) error {
 	return db.Delete(&BankDeposit{}, id).Error
+}
+
+// --- Prepared Spells ---
+
+func (db *DB) ListPreparedSpells(characterID uint) ([]PreparedSpell, error) {
+	var spells []PreparedSpell
+	if err := db.Where("character_id = ?", characterID).Order("id asc").Find(&spells).Error; err != nil {
+		return nil, err
+	}
+	return spells, nil
+}
+
+func (db *DB) CreatePreparedSpell(spell *PreparedSpell) error {
+	return db.Create(spell).Error
+}
+
+func (db *DB) MarkSpellUsed(spellID uint) error {
+	return db.Model(&PreparedSpell{}).Where("id = ?", spellID).Update("used", true).Error
+}
+
+func (db *DB) ResetSpells(characterID uint) error {
+	return db.Model(&PreparedSpell{}).Where("character_id = ?", characterID).Update("used", false).Error
+}
+
+func (db *DB) DeletePreparedSpell(spellID uint) error {
+	return db.Delete(&PreparedSpell{}, spellID).Error
 }
 
 // --- Return to Safety ---

@@ -698,6 +698,63 @@ func TestBankDeposits(t *testing.T) {
 	}
 }
 
+func TestPreparedSpellsCRUD(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Test", Class: "Magician", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+
+	spell := &PreparedSpell{
+		CharacterID: ch.ID,
+		Name:        "Fairy Servant",
+		SpellLevel:  1,
+		Used:        false,
+	}
+	if err := db.CreatePreparedSpell(spell); err != nil {
+		t.Fatalf("CreatePreparedSpell: %v", err)
+	}
+	if spell.ID == 0 {
+		t.Fatal("expected spell ID to be set")
+	}
+
+	spells, err := db.ListPreparedSpells(ch.ID)
+	if err != nil {
+		t.Fatalf("ListPreparedSpells: %v", err)
+	}
+	if len(spells) != 1 {
+		t.Fatalf("len = %d, want 1", len(spells))
+	}
+	if spells[0].Name != spell.Name || spells[0].SpellLevel != 1 || spells[0].Used {
+		t.Fatalf("unexpected spell data: %+v", spells[0])
+	}
+
+	if err := db.MarkSpellUsed(spell.ID); err != nil {
+		t.Fatalf("MarkSpellUsed: %v", err)
+	}
+	spells, _ = db.ListPreparedSpells(ch.ID)
+	if !spells[0].Used {
+		t.Fatalf("expected spell to be marked used")
+	}
+
+	if err := db.ResetSpells(ch.ID); err != nil {
+		t.Fatalf("ResetSpells: %v", err)
+	}
+	spells, _ = db.ListPreparedSpells(ch.ID)
+	if spells[0].Used {
+		t.Fatalf("expected spell to be reset")
+	}
+
+	if err := db.DeletePreparedSpell(spell.ID); err != nil {
+		t.Fatalf("DeletePreparedSpell: %v", err)
+	}
+	spells, _ = db.ListPreparedSpells(ch.ID)
+	if len(spells) != 0 {
+		t.Fatalf("len = %d, want 0", len(spells))
+	}
+}
+
 func TestTransferItemFull(t *testing.T) {
 	db := newTestDB(t)
 

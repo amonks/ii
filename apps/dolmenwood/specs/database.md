@@ -4,7 +4,7 @@
 
 The `db` package provides SQLite persistence via GORM. It defines all data models, handles schema creation and migrations, and exposes CRUD methods. Located in `db/db.go`.
 
-## Schema (9 tables)
+## Schema (10 tables)
 
 ### `characters`
 
@@ -90,10 +90,22 @@ Activity log tracking all character changes. Fields:
 In-game bank deposits. Fields:
 - `ID`, `CharacterID`, `CoinNotes` (denomination string like "50gp"), `CPValue` (total value in copper), `DepositDay` (game day of deposit)
 
+### `prepared_spells`
+
+Prepared spells for spellcasters. Fields:
+- `ID`, `CharacterID`, `Name`, `SpellLevel`, `Used`
+
+CRUD methods:
+- `ListPreparedSpells(characterID)` -- returns prepared spells for a character
+- `CreatePreparedSpell(spell)` -- create a prepared spell entry
+- `MarkSpellUsed(spellID)` -- set used = true
+- `ResetSpells(characterID)` -- set used = false for all prepared spells
+- `DeletePreparedSpell(spellID)` -- remove a prepared spell
+
 ## Cascade Behaviors
 
 ### `DeleteCharacter(id)`
-Deletes all related records: items, companions, transactions, XP log, notes, audit log, bank deposits. Also deletes any `retainer_contracts` where `employer_id` or `retainer_id` matches. When deleting an employer, retainer Characters remain as independent characters (just the contract is removed).
+Deletes all related records: items, companions, transactions, XP log, notes, audit log, prepared spells, bank deposits. Also deletes any `retainer_contracts` where `employer_id` or `retainer_id` matches. When deleting an employer, retainer Characters remain as independent characters (just the contract is removed).
 
 ### `DeleteItem(id)`
 - Reparents child items: any item whose `ContainerID` points to the deleted item gets `ContainerID = nil`
@@ -127,10 +139,11 @@ The one piece of business logic in the DB layer:
 
 ## Migrations
 
-Schema creation uses GORM's `AutoMigrate` for the model types. Additional migrations run as best-effort `ALTER TABLE` statements that silently fail if already applied. This includes:
+Schema creation uses raw SQL definitions in `db/db.go`, with additional best-effort migrations (`ALTER TABLE`/`CREATE TABLE`) that silently fail if already applied. This includes:
 - Adding columns like `CoinCompanionID`, `CoinContainerID`, `IsTiny`, `Loyalty`
 - Adding `BirthdayMonth`, `BirthdayDay` columns
 - Adding the `bank_deposits` table
+- Adding the `prepared_spells` table
 - Adding the `retainer_contracts` table
 - Running `migrateEPtoSP()` to convert electrum pieces to silver (EP doesn't exist in Dolmenwood)
 
