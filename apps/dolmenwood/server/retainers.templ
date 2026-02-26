@@ -58,6 +58,9 @@ templ RetainersSection(view *CharacterView) {
 						if retainer.HasCombatTalents {
 							@LabelBlock() { Combat talents { fmt.Sprintf("%d", retainer.CombatTalentsTotal) } }
 						}
+						if retainer.EnchantmentUsesTotal > 0 {
+							@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", retainer.EnchantmentUsesTotal) }/day }
+						}
 						if retainer.GlamoursKnown > 0 {
 							@LabelBlock() { Glamours known { fmt.Sprintf("%d", retainer.GlamoursKnown) } }
 						}

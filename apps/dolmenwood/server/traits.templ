@@ -26,7 +26,7 @@ templ TraitsSection(view *CharacterView) {
 				@LabelBlock() { None }
 			}
 		}
-		if view.HasCombatTalents || view.GlamoursKnown > 0 {
+		if view.HasCombatTalents || view.GlamoursKnown > 0 || view.EnchantmentUsesTotal > 0 {
 			@CardSection() {
 				@SectionHeader() { Class Features }
 				if view.HasCombatTalents {
@@ -34,6 +34,9 @@ templ TraitsSection(view *CharacterView) {
 				}
 				if view.GlamoursKnown > 0 {
 					@LabelBlock() { Glamours known { fmt.Sprintf("%d", view.GlamoursKnown) } }
+				}
+				if view.EnchantmentUsesTotal > 0 {
+					@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", view.EnchantmentUsesTotal) }/day }
 				}
 			}
 		}

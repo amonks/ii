@@ -383,6 +383,29 @@ func TestCombatTalentsShownInTraits(t *testing.T) {
 	}
 }
 
+func TestBardEnchantmentUsesShownInTraits(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Bard", Kindred: "Human",
+		Level: 4, HPCurrent: 6, HPMax: 6,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Enchantment uses 4/day") {
+		t.Errorf("response should include enchantment uses")
+	}
+}
+
 func TestGlamoursShownInTraits(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

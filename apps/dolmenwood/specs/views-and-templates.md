@@ -14,7 +14,7 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 6. Aggregates coin items from inventory, computes purse = inventory - found
 7. Determines AC from equipped armor + DEX
 8. Computes weapons from equipped items
-9. Determines attack bonus, save targets, and class feature counts (combat talents, enchanter glamours, thief backstab, bard/hunter skills) via `ClassAttackBonus` / `ClassSaveTargets` and skill helpers
+9. Determines attack bonus, save targets, and class feature counts (combat talents, enchanter glamours, bard enchantment uses, thief backstab, bard/hunter skills) via `ClassAttackBonus` / `ClassSaveTargets` and skill helpers
 10. Determines XP modifier (using `ClassPrimes`) and level-up eligibility
 11. Builds inventory tree, move targets, store catalog
 12. Computes speed from encumbrance slots
@@ -26,7 +26,7 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 - **`InventoryItem`** -- Wraps `db.Item` with computed `Slots`, `BundleSize`, `Children` (nested tree), `Capacity`, `UsedSlots`, `SellPriceCP`, `CoinValueLabel`
 - **`CompanionInventory`** -- Groups items under a companion with `UsedSlots`
 - **`CompanionView`** -- Wraps `db.Companion` with engine-derived stats (AC, speed, load, saves, attack, morale, loyalty)
-- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, class features (combat talents, glamours, skill targets, backstab), loyalty, and weapon summaries
+- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, class features (combat talents, glamours, enchantment uses, skill targets, backstab), loyalty, and weapon summaries
 - **`BankDepositView`** -- Wraps `BankDeposit` with `IsMature`, `DaysUntilMature`, `GPValue`
 - **`MoveTarget`** -- Dropdown target for moving items ("Equipped", "Backpack", "Bessie (Mule)", etc.)
 - **`StoreGroup` / `StoreItem`** -- Store catalog groups with item details

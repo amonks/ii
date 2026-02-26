@@ -55,6 +55,7 @@ type CharacterView struct {
 	HunterSkillTargets      engine.SkillTargets
 	HunterSkillNames        []string
 	GlamoursKnown           int
+	EnchantmentUsesTotal    int
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
@@ -116,7 +117,8 @@ type RetainerView struct {
 	BardSkillNames      []string
 	HunterSkillTargets  engine.SkillTargets
 	HunterSkillNames    []string
-	GlamoursKnown       int
+	GlamoursKnown           int
+	EnchantmentUsesTotal    int
 }
 
 type BankDepositView struct {
@@ -450,6 +452,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	var bardSkillNames []string
 	var hunterSkillTargets engine.SkillTargets
 	var hunterSkillNames []string
+	bardEnchantmentUses := 0
 	thiefBackstabBonus := 0
 	thiefBackstabDamage := ""
 	enchanterGlamours := 0
@@ -471,6 +474,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	if strings.EqualFold(ch.Class, "Bard") {
 		bardSkillTargets = engine.BardSkillTargets(ch.Level)
 		bardSkillNames = engine.BardSkillNames()
+		bardEnchantmentUses = ch.Level
 	}
 	if strings.EqualFold(ch.Class, "Hunter") {
 		hunterSkillTargets = engine.HunterSkillTargets(ch.Level)
@@ -519,6 +523,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		HunterSkillTargets:      hunterSkillTargets,
 		HunterSkillNames:        hunterSkillNames,
 		GlamoursKnown:           enchanterGlamours,
+		EnchantmentUsesTotal:    bardEnchantmentUses,
 		CombatTalentsTotal:      combatTalentsTotal,
 		HasCombatTalents:        hasCombatTalents,
 		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
@@ -957,6 +962,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerBardNames []string
 		var retainerHunterTargets engine.SkillTargets
 		var retainerHunterNames []string
+		retainerBardEnchantmentUses := 0
 		retainerGlamours := 0
 		retainerCombatTalents := 0
 		hasRetainerCombatTalents := false
@@ -976,6 +982,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		case "bard":
 			retainerBardTargets = engine.BardSkillTargets(retainer.Level)
 			retainerBardNames = engine.BardSkillNames()
+			retainerBardEnchantmentUses = retainer.Level
 		case "hunter":
 			retainerHunterTargets = engine.HunterSkillTargets(retainer.Level)
 			retainerHunterNames = engine.HunterSkillNames()
@@ -1004,11 +1011,12 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			ThiefSkillNames:     retainerThiefNames,
 			ThiefBackstabBonus:  retainerThiefBonus,
 			ThiefBackstabDamage: retainerThiefDamage,
-			BardSkillTargets:    retainerBardTargets,
-			BardSkillNames:      retainerBardNames,
-			HunterSkillTargets:  retainerHunterTargets,
-			HunterSkillNames:    retainerHunterNames,
-			GlamoursKnown:       retainerGlamours,
+			BardSkillTargets:     retainerBardTargets,
+			BardSkillNames:       retainerBardNames,
+			HunterSkillTargets:   retainerHunterTargets,
+			HunterSkillNames:     retainerHunterNames,
+			GlamoursKnown:        retainerGlamours,
+			EnchantmentUsesTotal: retainerBardEnchantmentUses,
 		})
 	}
 	return retainers, nil

@@ -28,6 +28,12 @@ func TestCharacterViewBardSkillTargets(t *testing.T) {
 	if len(view.BardSkillNames) == 0 {
 		t.Errorf("expected bard skill names")
 	}
+	if view.EnchantmentUsesTotal != 8 {
+		t.Errorf("EnchantmentUsesTotal = %d, want 8", view.EnchantmentUsesTotal)
+	}
+	if view.GlamoursKnown != 0 {
+		t.Errorf("GlamoursKnown = %d, want 0", view.GlamoursKnown)
+	}
 }
 
 func TestCharacterViewHunterSkillTargets(t *testing.T) {
