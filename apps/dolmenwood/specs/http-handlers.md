@@ -103,13 +103,14 @@ Supports special `move_to` values:
 - Container/companion IDs: moves item to that location
 - `"consume"`: deletes the item
 - `"bank"`: converts a coin item into a bank deposit
+- `"retainer:{contractID}"`: transfers the item to an active retainer contract (full transfer) and logs audit entries on both characters
 - Also handles quantity and notes updates
 
 ### `handleSplitItem`
 Complex splitting logic:
 - For coins: parses coin expression to split partial denominations from a coin item
 - For regular items: splits N units into a new item at a target location
-- Split targets: bank deposit, consume, sell, move to location
+- Split targets: bank deposit, consume, sell, move to location, or `"retainer:{contractID}"` transfers (with audit logs on both characters)
 
 ### `handleDecrementItem`
 For bundled items (torches come in bundles of 6): decrements by one bundle-worth. If quantity reaches 0, deletes the item.

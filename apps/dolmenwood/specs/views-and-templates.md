@@ -36,20 +36,27 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 
 ```
 type RetainerView struct {
-    Contract      db.RetainerContract
-    Character     *db.Character
-    AC            int
-    AttackBonus   int
-    Saves         engine.SaveTargets
-    Speed         int
-    Loyalty       int
-    Weapons       []engine.EquippedWeapon
-    KindredTraits []engine.Trait
-    ClassTraits   []engine.Trait
+    Contract        db.RetainerContract
+    Character       *db.Character
+    Items           []db.Item
+    EquippedItems   []InventoryItem
+    CompanionGroups []CompanionInventory
+    EquippedSlots   int
+    StowedSlots     int
+    StowedCapacity  int
+    MoveTargets     []MoveTarget
+    AC              int
+    AttackBonus     int
+    Saves           engine.SaveTargets
+    Speed           int
+    Loyalty         int
+    Weapons         []engine.EquippedWeapon
+    KindredTraits   []engine.Trait
+    ClassTraits     []engine.Trait
 }
 ```
 
-For each active retainer contract, `buildCharacterView` loads the retainer's Character and computes their stats using the same engine functions as the employer (ClassAttackBonus, ClassSaveTargets, CharacterAC, etc.).
+For each active retainer contract, `buildCharacterView` loads the retainer's Character and computes their stats using the same engine functions as the employer (ClassAttackBonus, ClassSaveTargets, CharacterAC, etc.). It also loads the retainer's inventory and companion data, computes encumbrance and inventory trees, and builds move targets scoped to the retainer's items.
 
 ### Inventory Tree
 

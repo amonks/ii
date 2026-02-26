@@ -50,7 +50,7 @@ Adventurer retainers are added to the employer's move target dropdown list. The 
 2. Calls `db.TransferItem` to move the item to the retainer's character
 3. Re-renders both the inventory and retainers sections
 
-Similarly, the retainer's own inventory items (when displayed on the employer's sheet) can be moved to `"employer"` to transfer them back.
+The move-to dropdown is only used from the employer's inventory; retainer items are transferred back using the "Take" buttons on each retainer item row.
 
 ## Audit Trail
 
