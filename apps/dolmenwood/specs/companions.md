@@ -23,10 +23,11 @@ Seven breeds are supported for animal companions and townsfolk:
 | Yellow-flank     | 13 | 8      | 40    | 20   | 2×hoof 1d4 | 6 | Yes |
 | Townsfolk        | 10 | 4      | 40    | 5    | 1×weapon 1d6 | 6 | No |
 
+- **Animal Companion** (custom stats): Breed name for Hunter companions with manually entered stats.
+
 Functions:
-- `BreedStats(breed)` -- Lookup by name
-- `BreedNames()` -- All breeds in display order
-- `IsCompanionBreed(name)` -- Case-insensitive check
+- `IsCompanionBreed(name)` -- Case-insensitive check (includes the special "Animal Companion" breed for Hunter companions)
+- `IsAnimalCompanionBreed(name)` -- Case-insensitive check for the Hunter companion breed
 
 ## Townsfolk Retainers
 
@@ -90,10 +91,10 @@ The encumbrance system (`CalculateEncumbrance`) tracks companion slots separatel
 ## Companion View Model
 
 `CompanionView` wraps `db.Companion` with engine-derived stats:
-- AC computed from breed base + barding
-- Speed from breed
-- Load capacity from breed + saddle type
-- Level, saves, attack, morale from breed data
+- AC computed from breed base + barding (or custom stats for Animal Companion)
+- Speed from breed (or custom stats for Animal Companion)
+- Load capacity from breed + saddle type (or custom stats for Animal Companion)
+- Level, saves, attack, morale from breed data (or custom stats for Animal Companion)
 - Loyalty (for retainers)
 - Saddle type and barding status derived from the companion's items
 
@@ -101,6 +102,7 @@ The encumbrance system (`CalculateEncumbrance`) tracks companion slots separatel
 
 The `db.Companion` model has:
 - `Name`, `Breed`, `HPCurrent`, `HPMax`, `Loyalty`
+- `AC`, `Speed`, `LoadCapacity`, `Level`, `Attack`, `Morale` (custom stats for Animal Companion)
 - `HasBarding`, `SaddleType` (legacy fields, now derived from items in views)
 
 Deleting a companion moves all its items to the character (sets `CompanionID = nil`, `ContainerID = nil`).

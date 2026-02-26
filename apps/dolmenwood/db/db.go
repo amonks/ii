@@ -88,6 +88,12 @@ type Companion struct {
 	Breed       string `gorm:"column:breed"`
 	HPCurrent   int    `gorm:"column:hp_current"`
 	HPMax       int    `gorm:"column:hp_max"`
+	AC          int    `gorm:"column:ac"`
+	Speed       int    `gorm:"column:speed"`
+	LoadCapacity int   `gorm:"column:load_capacity"`
+	Level       int    `gorm:"column:level"`
+	Attack      string `gorm:"column:attack"`
+	Morale      int    `gorm:"column:morale"`
 	HasBarding  bool   `gorm:"column:has_barding"`
 	SaddleType  string `gorm:"column:saddle_type"` // "", "riding", "pack"
 	Loyalty     int    `gorm:"column:loyalty"`     // retainer loyalty score (7 + CHA mod)
@@ -220,6 +226,9 @@ CREATE TABLE IF NOT EXISTS companions (
 	ac INTEGER NOT NULL DEFAULT 10,
 	speed INTEGER NOT NULL DEFAULT 40,
 	load_capacity INTEGER NOT NULL DEFAULT 0,
+	level INTEGER NOT NULL DEFAULT 1,
+	attack TEXT NOT NULL DEFAULT '',
+	morale INTEGER NOT NULL DEFAULT 0,
 	has_barding INTEGER NOT NULL DEFAULT 0,
 	saddle_type TEXT NOT NULL DEFAULT '',
 	loyalty INTEGER NOT NULL DEFAULT 0
@@ -366,6 +375,15 @@ ALTER TABLE characters ADD COLUMN birthday_month TEXT NOT NULL DEFAULT '';
 ALTER TABLE characters ADD COLUMN birthday_day INTEGER NOT NULL DEFAULT 0;
 `
 
+var migrationCompanionStats = []string{
+	`ALTER TABLE companions ADD COLUMN ac INTEGER NOT NULL DEFAULT 10;`,
+	`ALTER TABLE companions ADD COLUMN speed INTEGER NOT NULL DEFAULT 40;`,
+	`ALTER TABLE companions ADD COLUMN load_capacity INTEGER NOT NULL DEFAULT 0;`,
+	`ALTER TABLE companions ADD COLUMN level INTEGER NOT NULL DEFAULT 1;`,
+	`ALTER TABLE companions ADD COLUMN attack TEXT NOT NULL DEFAULT '';`,
+	`ALTER TABLE companions ADD COLUMN morale INTEGER NOT NULL DEFAULT 0;`,
+}
+
 const migrationCompanionLoyalty = `
 ALTER TABLE companions ADD COLUMN loyalty INTEGER NOT NULL DEFAULT 0;
 `
@@ -429,6 +447,9 @@ func New() (*DB, error) {
 	d.Exec(migrationBankDeposits)
 	d.Exec(migrationPreparedSpells)
 	d.Exec(migrationBirthday)
+	for _, stmt := range migrationCompanionStats {
+		d.Exec(stmt)
+	}
 	d.Exec(migrationCompanionLoyalty)
 	d.Exec(migrationRetainerContracts)
 	d.Exec(migrationConsolidateFeed)

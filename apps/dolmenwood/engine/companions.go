@@ -2,6 +2,12 @@ package engine
 
 import "strings"
 
+const AnimalCompanionBreed = "Animal Companion"
+
+func IsAnimalCompanionBreed(name string) bool {
+	return strings.EqualFold(name, AnimalCompanionBreed)
+}
+
 // CompanionStats holds the full stats for a companion breed (horse/mule/retainer).
 type CompanionStats struct {
 	AC           int
@@ -34,6 +40,7 @@ var breedOrder = []string{
 	"Prigwort prancer",
 	"Yellow-flank",
 	"Townsfolk",
+	AnimalCompanionBreed,
 }
 
 // BreedStats returns the default stats for a named breed.
@@ -49,6 +56,9 @@ func BreedNames() []string {
 
 // IsCompanionBreed returns true if the name matches a known horse/mule breed.
 func IsCompanionBreed(name string) bool {
+	if IsAnimalCompanionBreed(name) {
+		return true
+	}
 	for breed := range breeds {
 		if strings.EqualFold(breed, name) {
 			return true
@@ -60,6 +70,10 @@ func IsCompanionBreed(name string) bool {
 // IsRetainer returns true if the breed is a townsfolk retainer (not a mount).
 func IsRetainer(breed string) bool {
 	return strings.EqualFold(breed, "Townsfolk")
+}
+
+func IsCustomCompanionBreed(breed string) bool {
+	return IsAnimalCompanionBreed(breed)
 }
 
 // RetainerLoyalty returns the initial loyalty score for a retainer: 7 + CHA modifier.

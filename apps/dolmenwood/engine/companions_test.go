@@ -68,13 +68,16 @@ func TestBreedStatsUnknown(t *testing.T) {
 
 func TestBreedNames(t *testing.T) {
 	names := BreedNames()
-	if len(names) != 7 {
-		t.Errorf("got %d breeds, want 7", len(names))
+	if len(names) != 8 {
+		t.Errorf("got %d breeds, want 8", len(names))
 	}
 	// Townsfolk should be in the list
 	found := slices.Contains(names, "Townsfolk")
 	if !found {
 		t.Error("BreedNames() should contain Townsfolk")
+	}
+	if !slices.Contains(names, "Animal Companion") {
+		t.Error("BreedNames() should contain Animal Companion")
 	}
 }
 
@@ -103,6 +106,7 @@ func TestIsCompanionBreed(t *testing.T) {
 		name string
 		want bool
 	}{
+		{"Animal Companion", true},
 		{"Mule", true},
 		{"Charger", true},
 		{"Dapple-doff", true},
@@ -221,6 +225,7 @@ func TestIsRetainer(t *testing.T) {
 		want  bool
 	}{
 		{"Townsfolk", true},
+		{"Animal Companion", false},
 		{"Mule", false},
 		{"Charger", false},
 		{"", false},

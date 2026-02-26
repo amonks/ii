@@ -176,6 +176,33 @@ func TestCompanion(t *testing.T) {
 	}
 }
 
+func TestCompanionDefaults(t *testing.T) {
+	db := newTestDB(t)
+
+	type columnInfo struct {
+		Name      string         `gorm:"column:name"`
+		DfltValue sql.NullString `gorm:"column:dflt_value"`
+	}
+
+	var columns []columnInfo
+	if err := db.Raw("PRAGMA table_info(companions)").Scan(&columns).Error; err != nil {
+		t.Fatalf("PRAGMA table_info: %v", err)
+	}
+
+	defaults := map[string]sql.NullString{}
+	for _, col := range columns {
+		defaults[col.Name] = col.DfltValue
+	}
+
+	loyalty, ok := defaults["loyalty"]
+	if !ok {
+		t.Fatal("expected loyalty column in companions")
+	}
+	if !loyalty.Valid || loyalty.String != "0" {
+		t.Errorf("loyalty default = %q, want %q", loyalty.String, "0")
+	}
+}
+
 func TestTransactions(t *testing.T) {
 	db := newTestDB(t)
 

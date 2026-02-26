@@ -759,7 +759,19 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		Name:        r.FormValue("name"),
 		Breed:       breed,
 	}
-	if stats, ok := engine.BreedStats(breed); ok {
+	if engine.IsCustomCompanionBreed(breed) {
+		comp.HPMax = atoi(r.FormValue("hp_max"))
+		comp.HPCurrent = atoi(r.FormValue("hp_current"))
+		if comp.HPMax > 0 && comp.HPCurrent == 0 {
+			comp.HPCurrent = comp.HPMax
+		}
+		comp.AC = atoi(r.FormValue("ac"))
+		comp.Speed = atoi(r.FormValue("speed"))
+		comp.LoadCapacity = atoi(r.FormValue("load_capacity"))
+		comp.Level = atoi(r.FormValue("level"))
+		comp.Attack = strings.TrimSpace(r.FormValue("attack"))
+		comp.Morale = atoi(r.FormValue("morale"))
+	} else if stats, ok := engine.BreedStats(breed); ok {
 		comp.HPMax = stats.HPMax
 		comp.HPCurrent = stats.HPMax
 	}
@@ -770,7 +782,15 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
+		if engine.IsCustomCompanionBreed(breed) {
+			if comp.HPMax > 0 {
+				s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
+			} else {
+				s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s", comp.Name, comp.Breed))
+			}
+		} else {
+			s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
+		}
 	s.renderCompanions(w, r, ch)
 }
 
@@ -788,39 +808,89 @@ func (s *Server) handleUpdateCompanion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, comp := range comps {
-		if comp.ID == compID {
-			oldName := comp.Name
-			oldHP := comp.HPCurrent
-			oldHPMax := comp.HPMax
-			oldLoyalty := comp.Loyalty
+		if comp.ID != compID {
+			continue
+		}
+		oldName := comp.Name
+		oldHP := comp.HPCurrent
+		oldHPMax := comp.HPMax
+		oldLoyalty := comp.Loyalty
+		oldAC := comp.AC
+		oldSpeed := comp.Speed
+		oldLoad := comp.LoadCapacity
+		oldLevel := comp.Level
+		oldAttack := comp.Attack
+		oldMorale := comp.Morale
 
-			if name := r.FormValue("name"); name != "" {
-				comp.Name = name
-			}
+		if name := r.FormValue("name"); name != "" {
+			comp.Name = name
+		}
+		if engine.IsCustomCompanionBreed(comp.Breed) {
 			comp.HPCurrent = atoi(r.FormValue("hp_current"))
 			if hpMax := r.FormValue("hp_max"); hpMax != "" {
 				comp.HPMax = atoi(hpMax)
 			}
-			if loyalty := r.FormValue("loyalty"); loyalty != "" && engine.IsRetainer(comp.Breed) {
-				comp.Loyalty = atoi(loyalty)
+			if ac := r.FormValue("ac"); ac != "" {
+				comp.AC = atoi(ac)
 			}
-			s.db.UpdateCompanion(&comp)
-
-			var changes []string
-			if comp.Name != oldName {
-				changes = append(changes, fmt.Sprintf("name %s → %s", oldName, comp.Name))
+			if speed := r.FormValue("speed"); speed != "" {
+				comp.Speed = atoi(speed)
 			}
-			if comp.HPCurrent != oldHP || comp.HPMax != oldHPMax {
-				changes = append(changes, fmt.Sprintf("HP %d/%d → %d/%d", oldHP, oldHPMax, comp.HPCurrent, comp.HPMax))
+			if load := r.FormValue("load_capacity"); load != "" {
+				comp.LoadCapacity = atoi(load)
 			}
-			if engine.IsRetainer(comp.Breed) && comp.Loyalty != oldLoyalty {
-				changes = append(changes, fmt.Sprintf("loyalty %d → %d", oldLoyalty, comp.Loyalty))
+			if level := r.FormValue("level"); level != "" {
+				comp.Level = atoi(level)
 			}
-			if len(changes) > 0 {
-				s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: %s", comp.Name, strings.Join(changes, ", ")))
+			comp.Attack = strings.TrimSpace(r.FormValue("attack"))
+			if morale := r.FormValue("morale"); morale != "" {
+				comp.Morale = atoi(morale)
 			}
-			break
+		} else {
+			comp.HPCurrent = atoi(r.FormValue("hp_current"))
+			if hpMax := r.FormValue("hp_max"); hpMax != "" {
+				comp.HPMax = atoi(hpMax)
+			}
 		}
+		if loyalty := r.FormValue("loyalty"); loyalty != "" && engine.IsRetainer(comp.Breed) {
+			comp.Loyalty = atoi(loyalty)
+		}
+		s.db.UpdateCompanion(&comp)
+
+		var changes []string
+		if comp.Name != oldName {
+			changes = append(changes, fmt.Sprintf("name %s → %s", oldName, comp.Name))
+		}
+		if comp.HPCurrent != oldHP || comp.HPMax != oldHPMax {
+			changes = append(changes, fmt.Sprintf("HP %d/%d → %d/%d", oldHP, oldHPMax, comp.HPCurrent, comp.HPMax))
+		}
+		if engine.IsCustomCompanionBreed(comp.Breed) {
+			if comp.AC != oldAC {
+				changes = append(changes, fmt.Sprintf("AC %d → %d", oldAC, comp.AC))
+			}
+			if comp.Speed != oldSpeed {
+				changes = append(changes, fmt.Sprintf("speed %d → %d", oldSpeed, comp.Speed))
+			}
+			if comp.LoadCapacity != oldLoad {
+				changes = append(changes, fmt.Sprintf("load %d → %d", oldLoad, comp.LoadCapacity))
+			}
+			if comp.Level != oldLevel {
+				changes = append(changes, fmt.Sprintf("level %d → %d", oldLevel, comp.Level))
+			}
+			if comp.Attack != oldAttack {
+				changes = append(changes, fmt.Sprintf("attack %s → %s", oldAttack, comp.Attack))
+			}
+			if comp.Morale != oldMorale {
+				changes = append(changes, fmt.Sprintf("morale %d → %d", oldMorale, comp.Morale))
+			}
+		}
+		if engine.IsRetainer(comp.Breed) && comp.Loyalty != oldLoyalty {
+			changes = append(changes, fmt.Sprintf("loyalty %d → %d", oldLoyalty, comp.Loyalty))
+		}
+		if len(changes) > 0 {
+			s.addAuditLog(ch, "companion_update", fmt.Sprintf("%s: %s", comp.Name, strings.Join(changes, ", ")))
+		}
+		break
 	}
 	s.renderCompanions(w, r, ch)
 }

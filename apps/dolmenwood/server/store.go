@@ -132,6 +132,23 @@ func (s *Server) buyStoreCompanion(ch *db.Character, breed string, costCP int) (
 	if err != nil {
 		return "", "", err
 	}
+	if engine.IsCustomCompanionBreed(breed) {
+		comp := &db.Companion{
+			CharacterID:  ch.ID,
+			Name:         breed,
+			Breed:        breed,
+			AC:           10,
+			Speed:        40,
+			LoadCapacity: 0,
+			Level:        1,
+			Morale:       0,
+		}
+		if err := s.db.CreateCompanion(comp); err != nil {
+			return "", "", err
+		}
+		s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s", comp.Name, comp.Breed))
+		return oldWealth, newWealth, nil
+	}
 	stats, ok := engine.BreedStats(breed)
 	if !ok {
 		return "", "", fmt.Errorf("unknown breed: %s", breed)

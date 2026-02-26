@@ -1089,6 +1089,51 @@ func TestUpdateCompanion(t *testing.T) {
 	}
 }
 
+func TestUpdateAnimalCompanionClearsAttack(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID: ch.ID,
+		Name:        "Fang",
+		Breed:       engine.AnimalCompanionBreed,
+		HPCurrent:   4,
+		HPMax:       6,
+		Attack:      "Bite (1d6)",
+	}
+	d.CreateCompanion(comp)
+
+	form := url.Values{}
+	form.Set("hp_current", "4")
+	form.Set("attack", "")
+	req := httptest.NewRequest("POST", "/characters/1/companions/1/update/", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	comps, err := d.ListCompanions(ch.ID)
+	if err != nil {
+		t.Fatalf("ListCompanions: %v", err)
+	}
+	if len(comps) != 1 {
+		t.Fatalf("got %d companions, want 1", len(comps))
+	}
+	got := comps[0]
+	if got.Attack != "" {
+		t.Errorf("Attack = %q, want empty", got.Attack)
+	}
+}
+
 func TestUndoTransaction(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

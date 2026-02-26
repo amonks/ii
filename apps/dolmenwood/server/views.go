@@ -255,6 +255,7 @@ type CompanionView struct {
 	Attack       string
 	Morale       int
 	Loyalty      int
+	CustomStats  bool
 }
 
 func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
@@ -342,6 +343,16 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 				cv.LoadCapacity = stats.LoadCapacity
 			}
 			cv.Loyalty = comp.Loyalty
+		} else if engine.IsCustomCompanionBreed(comp.Breed) {
+			cv.AC = comp.AC
+			cv.Speed = comp.Speed
+			cv.LoadCapacity = comp.LoadCapacity
+			cv.Level = comp.Level
+			cv.Saves = engine.SaveTargets{}
+			cv.Attack = comp.Attack
+			cv.Morale = comp.Morale
+			cv.Loyalty = comp.Loyalty
+			cv.CustomStats = true
 		}
 		compViews[i] = cv
 	}
@@ -948,6 +959,16 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 					cv.LoadCapacity = stats.LoadCapacity
 				}
 				cv.Loyalty = comp.Loyalty
+			} else if engine.IsCustomCompanionBreed(comp.Breed) {
+				cv.AC = comp.AC
+				cv.Speed = comp.Speed
+				cv.LoadCapacity = comp.LoadCapacity
+				cv.Level = comp.Level
+				cv.Saves = engine.SaveTargets{}
+				cv.Attack = comp.Attack
+				cv.Morale = comp.Morale
+				cv.Loyalty = comp.Loyalty
+				cv.CustomStats = true
 			}
 			compViews[i] = cv
 		}
