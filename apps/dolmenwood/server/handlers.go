@@ -1036,6 +1036,11 @@ func (s *Server) handleAddRetainerItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	moveTo := r.FormValue("move_to")
+	if moveTo == "" {
+		moveTo = "equipped"
+	}
+
 	if amounts, err := engine.ParseCoinExpression(rawName); err == nil {
 		coinMap := make(map[engine.CoinType]int)
 		totalCoins := 0
@@ -1048,8 +1053,11 @@ func (s *Server) handleAddRetainerItem(w http.ResponseWriter, r *http.Request) {
 			Name:        engine.CoinItemNameStr,
 			Quantity:    totalCoins,
 			Notes:       engine.FormatCoinNotes(coinMap),
-			Location:    "stowed",
+			Location:    "",
 		}
+		containerID, companionID := parseMoveTarget(moveTo)
+		item.ContainerID = containerID
+		item.CompanionID = companionID
 		if err := s.combineStackableItems(retainer.ID, item, retainer.CurrentDay); err == nil {
 			s.renderInventoryAndRetainers(w, r, employer)
 			return
@@ -1083,9 +1091,12 @@ func (s *Server) handleAddRetainerItem(w http.ResponseWriter, r *http.Request) {
 		CharacterID: retainer.ID,
 		Name:        name,
 		Quantity:    qty,
-		Location:    "stowed",
+		Location:    "",
 		IsTiny:      isTiny,
 	}
+	containerID, companionID := parseMoveTarget(moveTo)
+	item.ContainerID = containerID
+	item.CompanionID = companionID
 	if err := s.combineStackableItems(retainer.ID, item, retainer.CurrentDay); err == nil {
 		s.renderInventoryAndRetainers(w, r, employer)
 		return

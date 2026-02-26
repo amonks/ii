@@ -6146,6 +6146,7 @@ func TestAddItemToRetainer(t *testing.T) {
 
 	form := url.Values{}
 	form.Set("name", "Rope")
+	form.Set("move_to", "equipped")
 	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/items/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
@@ -6177,6 +6178,112 @@ func TestAddItemToRetainer(t *testing.T) {
 	}
 	if !foundAdd {
 		t.Fatalf("expected item_add audit log entry for retainer")
+	}
+}
+
+func TestAddItemToRetainerCombinesStackables(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	existing := &db.Item{CharacterID: retainer.ID, Name: "Torch", Quantity: 2, Location: ""}
+	if err := d.CreateItem(existing); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("name", "Torch")
+	form.Set("move_to", "equipped")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/items/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Quantity != 3 {
+		t.Errorf("retainer torch qty = %d, want 3", retainerItems[0].Quantity)
+	}
+	if retainerItems[0].Location != "" {
+		t.Errorf("retainer torch location = %q, want empty", retainerItems[0].Location)
+	}
+}
+
+func TestAddItemToRetainerContainerSetsStowedCapacity(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("name", "Backpack")
+	form.Set("move_to", "equipped")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/items/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	items, _ := d.ListItems(retainer.ID)
+	if len(items) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(items))
+	}
+	backpack := items[0]
+	if backpack.Location != "" {
+		t.Fatalf("backpack location = %q, want empty", backpack.Location)
+	}
+
+	form = url.Values{}
+	form.Set("name", "Rope")
+	form.Set("move_to", fmt.Sprintf("container:%d", backpack.ID))
+	req = httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/items/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	view, err := buildCharacterView(srv.db, employer)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+	if len(view.Retainers) != 1 {
+		t.Fatalf("retainers = %d, want 1", len(view.Retainers))
+	}
+	retainerView := view.Retainers[0]
+	if retainerView.StowedCapacity == 0 {
+		t.Fatalf("retainer stowed capacity = 0, want > 0")
+	}
+	if retainerView.StowedSlots == 0 {
+		t.Fatalf("retainer stowed slots = 0, want > 0")
 	}
 }
 
