@@ -881,7 +881,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			compViews[i] = cv
 		}
 		equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
-		moveTargets := buildMoveTargets(items, compViews, retainers)
+		moveTargets := buildMoveTargets(items, compViews, nil)
 		speed := engine.SpeedFromSlots(equipped, stowed)
 		retainers = append(retainers, RetainerView{
 			Contract:        contract,

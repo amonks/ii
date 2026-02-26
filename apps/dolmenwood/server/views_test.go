@@ -307,6 +307,80 @@ func TestRetainerViewIncludesInventory(t *testing.T) {
 	}
 }
 
+func TestRetainerMoveTargetsScopedToRetainer(t *testing.T) {
+	_, d := setupTest(t)
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainerOne := &db.Character{
+		Name:      "Retainer One",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainerOne)
+
+	retainerTwo := &db.Character{
+		Name:      "Retainer Two",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainerTwo)
+
+	backpack := &db.Item{CharacterID: retainerOne.ID, Name: "Backpack", Quantity: 1, Location: "equipped"}
+	d.CreateItem(backpack)
+
+	contracts := []*db.RetainerContract{
+		{EmployerID: employer.ID, RetainerID: retainerOne.ID, Active: true},
+		{EmployerID: employer.ID, RetainerID: retainerTwo.ID, Active: true},
+	}
+	for _, contract := range contracts {
+		if err := d.CreateRetainerContract(contract); err != nil {
+			t.Fatalf("CreateRetainerContract: %v", err)
+		}
+	}
+
+	view, err := buildCharacterView(d, employer)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	retainerViews := map[string]RetainerView{}
+	for _, retainerView := range view.Retainers {
+		retainerViews[retainerView.Character.Name] = retainerView
+	}
+	retainerOneView, ok := retainerViews["Retainer One"]
+	if !ok {
+		t.Fatalf("missing Retainer One view")
+	}
+	retainerTwoView, ok := retainerViews["Retainer Two"]
+	if !ok {
+		t.Fatalf("missing Retainer Two view")
+	}
+
+	containerTarget := fmt.Sprintf("container:%d", backpack.ID)
+	if !hasMoveTarget(retainerOneView.MoveTargets, containerTarget) {
+		t.Fatalf("expected Retainer One targets to include %q", containerTarget)
+	}
+	if hasMoveTarget(retainerTwoView.MoveTargets, containerTarget) {
+		t.Fatalf("expected Retainer Two targets to exclude %q", containerTarget)
+	}
+}
+
 func TestMoveTargetsIncludeRetainers(t *testing.T) {
 	_, d := setupTest(t)
 
