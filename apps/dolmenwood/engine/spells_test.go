@@ -68,3 +68,46 @@ func TestClassSpellSlots(t *testing.T) {
 		})
 	}
 }
+
+func TestAvailableSlots(t *testing.T) {
+	cases := []struct {
+		name     string
+		slots    *SpellSlots
+		prepared []PreparedSpell
+		want     *SpellSlots
+	}{
+		{
+			name:     "nil slots",
+			slots:    nil,
+			prepared: []PreparedSpell{{SpellLevel: 1}},
+			want:     nil,
+		},
+		{
+			name:     "subtracts prepared",
+			slots:    &SpellSlots{Level1: 2, Level2: 1},
+			prepared: []PreparedSpell{{SpellLevel: 1}, {SpellLevel: 2}},
+			want:     &SpellSlots{Level1: 1},
+		},
+		{
+			name:     "never negative",
+			slots:    &SpellSlots{Level1: 1},
+			prepared: []PreparedSpell{{SpellLevel: 1}, {SpellLevel: 1}},
+			want:     &SpellSlots{},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := AvailableSlots(tc.slots, tc.prepared)
+			if (got == nil) != (tc.want == nil) {
+				t.Fatalf("AvailableSlots() = %v, want %v", got, tc.want)
+			}
+			if got == nil {
+				return
+			}
+			if *got != *tc.want {
+				t.Fatalf("AvailableSlots() = %+v, want %+v", *got, *tc.want)
+			}
+		})
+	}
+}

@@ -11,6 +11,11 @@ type SpellSlots struct {
 	Level6 int
 }
 
+type PreparedSpell struct {
+	SpellLevel int
+	Used       bool
+}
+
 var spellSlotsByClass = map[string][]SpellSlots{
 	"cleric": {
 		{},
@@ -80,4 +85,41 @@ func ClassSpellSlots(class string, level int) *SpellSlots {
 	}
 	slots := rows[level-1]
 	return &slots
+}
+
+// AvailableSlots returns the remaining slots after subtracting prepared spells.
+func AvailableSlots(slots *SpellSlots, prepared []PreparedSpell) *SpellSlots {
+	if slots == nil {
+		return nil
+	}
+	available := *slots
+	for _, spell := range prepared {
+		switch spell.SpellLevel {
+		case 1:
+			if available.Level1 > 0 {
+				available.Level1--
+			}
+		case 2:
+			if available.Level2 > 0 {
+				available.Level2--
+			}
+		case 3:
+			if available.Level3 > 0 {
+				available.Level3--
+			}
+		case 4:
+			if available.Level4 > 0 {
+				available.Level4--
+			}
+		case 5:
+			if available.Level5 > 0 {
+				available.Level5--
+			}
+		case 6:
+			if available.Level6 > 0 {
+				available.Level6--
+			}
+		}
+	}
+	return &available
 }
