@@ -675,6 +675,63 @@ func TestTownsfolkCompanionView(t *testing.T) {
 	}
 }
 
+func TestAnimalCompanionCustomStats(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{
+		Name: "Test", Class: "Hunter", Kindred: "Human",
+		Level: 1, HPCurrent: 6, HPMax: 6,
+	}
+	d.CreateCharacter(ch)
+
+	comp := &db.Companion{
+		CharacterID:  ch.ID,
+		Name:         "Fang",
+		Breed:        engine.AnimalCompanionBreed,
+		HPCurrent:    5,
+		HPMax:        7,
+		AC:           14,
+		Speed:        50,
+		LoadCapacity: 0,
+		Level:        2,
+		Attack:       "Bite (1d6)",
+		Morale:       12,
+	}
+	d.CreateCompanion(comp)
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.Companions) != 1 {
+		t.Fatalf("expected 1 companion, got %d", len(view.Companions))
+	}
+	cv := view.Companions[0]
+
+	if !cv.CustomStats {
+		t.Fatal("expected custom stats for animal companion")
+	}
+	if cv.AC != 14 {
+		t.Errorf("AC = %d, want 14", cv.AC)
+	}
+	if cv.Speed != 50 {
+		t.Errorf("Speed = %d, want 50", cv.Speed)
+	}
+	if cv.Level != 2 {
+		t.Errorf("Level = %d, want 2", cv.Level)
+	}
+	if cv.Attack != "Bite (1d6)" {
+		t.Errorf("Attack = %q, want Bite (1d6)", cv.Attack)
+	}
+	if cv.Morale != 12 {
+		t.Errorf("Morale = %d, want 12", cv.Morale)
+	}
+	if cv.Saves != (engine.SaveTargets{}) {
+		t.Errorf("Saves = %+v, want empty", cv.Saves)
+	}
+}
+
 func hasMoveTarget(targets []MoveTarget, value string) bool {
 	for _, target := range targets {
 		if target.Value == value {

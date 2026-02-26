@@ -982,20 +982,28 @@ func TestCompanionStatsDerivedFromBreed(t *testing.T) {
 	}
 }
 
-func TestAddXP(t *testing.T) {
+func TestAddAnimalCompanionCustomStats(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
 	ch := &db.Character{
-		Name: "Test", Class: "Knight", Kindred: "Human",
-		Level: 1, HPCurrent: 8, HPMax: 8,
+		Name: "Test", Class: "Hunter", Kindred: "Human",
+		Level: 1, HPCurrent: 6, HPMax: 6,
 	}
 	d.CreateCharacter(ch)
 
 	form := url.Values{}
-	form.Set("xp_amount", "100")
-	form.Set("description", "Quest reward")
-	req := httptest.NewRequest("POST", "/characters/1/xp/", strings.NewReader(form.Encode()))
+	form.Set("name", "Fang")
+	form.Set("breed", engine.AnimalCompanionBreed)
+	form.Set("hp_current", "5")
+	form.Set("hp_max", "7")
+	form.Set("ac", "14")
+	form.Set("speed", "50")
+	form.Set("load_capacity", "6")
+	form.Set("level", "2")
+	form.Set("morale", "12")
+	form.Set("attack", "Bite (1d6)")
+	req := httptest.NewRequest("POST", "/characters/1/companions/", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
@@ -1004,39 +1012,40 @@ func TestAddXP(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
-	// Verify XP was added to character
-	got, _ := d.GetCharacter(ch.ID)
-	if got.TotalXP != 100 {
-		t.Errorf("TotalXP = %d, want 100", got.TotalXP)
-	}
-
-	// Verify XP log entry
-	xpLog, err := d.ListXPLog(ch.ID)
+	comps, err := d.ListCompanions(ch.ID)
 	if err != nil {
-		t.Fatalf("ListXPLog: %v", err)
+		t.Fatalf("ListCompanions: %v", err)
 	}
-	if len(xpLog) != 1 {
-		t.Fatalf("got %d XP log entries, want 1", len(xpLog))
+	if len(comps) != 1 {
+		t.Fatalf("got %d companions, want 1", len(comps))
 	}
-	if xpLog[0].Amount != 100 {
-		t.Errorf("XPLogEntry.Amount = %d, want 100", xpLog[0].Amount)
+	got := comps[0]
+	if got.Breed != engine.AnimalCompanionBreed {
+		t.Errorf("Breed = %q, want %q", got.Breed, engine.AnimalCompanionBreed)
 	}
-	if xpLog[0].Description != "Quest reward" {
-		t.Errorf("XPLogEntry.Description = %q, want %q", xpLog[0].Description, "Quest reward")
+	if got.AC != 14 {
+		t.Errorf("AC = %d, want 14", got.AC)
 	}
-
-	// Verify audit log
-	auditLog, err := d.ListAuditLog(ch.ID)
-	if err != nil {
-		t.Fatalf("ListAuditLog: %v", err)
+	if got.Speed != 50 {
+		t.Errorf("Speed = %d, want 50", got.Speed)
 	}
-	if len(auditLog) != 1 {
-		t.Fatalf("got %d audit log entries, want 1", len(auditLog))
+	if got.LoadCapacity != 6 {
+		t.Errorf("LoadCapacity = %d, want 6", got.LoadCapacity)
 	}
-	if auditLog[0].Action != "xp_add" {
-		t.Errorf("AuditLog.Action = %q, want %q", auditLog[0].Action, "xp_add")
+	if got.Level != 2 {
+		t.Errorf("Level = %d, want 2", got.Level)
+	}
+	if got.Morale != 12 {
+		t.Errorf("Morale = %d, want 12", got.Morale)
+	}
+	if got.Attack != "Bite (1d6)" {
+		t.Errorf("Attack = %q, want Bite (1d6)", got.Attack)
+	}
+	if got.HPCurrent != 5 || got.HPMax != 7 {
+		t.Errorf("HP = %d/%d, want 5/7", got.HPCurrent, got.HPMax)
 	}
 }
+
 
 func TestUpdateCompanion(t *testing.T) {
 	srv, d := setupTest(t)
@@ -1134,7 +1143,67 @@ func TestUpdateAnimalCompanionClearsAttack(t *testing.T) {
 	}
 }
 
-func TestUndoTransaction(t *testing.T) {
+func TestAddXPAddsLogAndAudit(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		TotalXP: 100,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("xp_amount", "250")
+	form.Set("description", "quest reward")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/xp/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	updated, err := d.GetCharacter(ch.ID)
+	if err != nil {
+		t.Fatalf("GetCharacter: %v", err)
+	}
+	if updated.TotalXP != 350 {
+		t.Errorf("TotalXP = %d, want 350", updated.TotalXP)
+	}
+
+	entries, err := d.ListXPLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListXPLog: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("got %d xp log entries, want 1", len(entries))
+	}
+	if entries[0].Amount != 250 {
+		t.Errorf("XP log amount = %d, want 250", entries[0].Amount)
+	}
+	if entries[0].Description != "quest reward" {
+		t.Errorf("XP log description = %q, want %q", entries[0].Description, "quest reward")
+	}
+
+	audit, err := d.ListAuditLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListAuditLog: %v", err)
+	}
+	if len(audit) != 1 {
+		t.Fatalf("got %d audit log entries, want 1", len(audit))
+	}
+	if audit[0].Action != "xp_add" {
+		t.Errorf("audit action = %q, want %q", audit[0].Action, "xp_add")
+	}
+	if audit[0].Detail != "+250 XP (quest reward)" {
+		t.Errorf("audit detail = %q, want %q", audit[0].Detail, "+250 XP (quest reward)")
+	}
+}
+
+func TestUndoTreasureRemovesCoinItem(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
@@ -1299,45 +1368,6 @@ func TestAddTreasureMergesExistingCoinItem(t *testing.T) {
 	}
 	if items[0].Notes != "150gp" {
 		t.Errorf("item Notes = %q, want %q", items[0].Notes, "150gp")
-	}
-}
-
-func TestUndoTreasureRemovesCoinItem(t *testing.T) {
-	srv, d := setupTest(t)
-	mux := srv.Mux()
-
-	ch := &db.Character{
-		Name: "Test", Class: "Knight", Kindred: "Human",
-		Level: 1, HPCurrent: 8, HPMax: 8,
-	}
-	d.CreateCharacter(ch)
-
-	// Existing consolidated coin item
-	d.CreateItem(&db.Item{CharacterID: ch.ID, Name: "Coins", Quantity: 50, Notes: "50gp"})
-
-	// Create a transaction to undo
-	tx := &db.Transaction{
-		CharacterID:     ch.ID,
-		Amount:          50,
-		CoinType:        "gp",
-		Description:     "dragon hoard",
-		IsFoundTreasure: false,
-	}
-	d.CreateTransaction(tx)
-
-	// Undo it
-	req := httptest.NewRequest("POST", "/characters/1/treasure/1/undo/", nil)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
-	}
-
-	// Coin item should be removed (quantity reaches 0)
-	items, _ := d.ListItems(ch.ID)
-	if len(items) != 0 {
-		t.Fatalf("got %d items, want 0 (coin item should be removed)", len(items))
 	}
 }
 
