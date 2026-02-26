@@ -1,6 +1,10 @@
 package server
 
-import "monks.co/apps/dolmenwood/engine"
+import (
+	"fmt"
+
+	"monks.co/apps/dolmenwood/engine"
+)
 
 templ TraitsSection(view *CharacterView) {
 	@CardDisclosure("traits", true) {
@@ -20,6 +24,17 @@ templ TraitsSection(view *CharacterView) {
 			@traitList(view.ClassTraits)
 			if len(view.ClassTraits) == 0 {
 				@LabelBlock() { None }
+			}
+		}
+		if view.HasCombatTalents || view.GlamoursKnown > 0 {
+			@CardSection() {
+				@SectionHeader() { Class Features }
+				if view.HasCombatTalents {
+					@LabelBlock() { Combat talents { fmt.Sprintf("%d", view.CombatTalentsTotal) } }
+				}
+				if view.GlamoursKnown > 0 {
+					@LabelBlock() { Glamours known { fmt.Sprintf("%d", view.GlamoursKnown) } }
+				}
 			}
 		}
 		if view.MoonSign != nil {

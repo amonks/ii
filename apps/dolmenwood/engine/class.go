@@ -88,6 +88,31 @@ func FighterCombatTalents(level int) int {
 	return talents
 }
 
+// IsEnchanterClass reports whether the class is an enchanter.
+func IsEnchanterClass(class string) bool {
+	return strings.EqualFold(class, "Enchanter")
+}
+
+// EnchanterGlamours returns the number of glamours known for an enchanter level.
+func EnchanterGlamours(level int) int {
+	if level < 1 {
+		return 0
+	}
+	columns := ClassSpecificColumns("Enchanter", level)
+	if columns == nil {
+		return 0
+	}
+	value, ok := columns["Glamours"]
+	if !ok {
+		return 0
+	}
+	glamours, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+	return glamours
+}
+
 // ClassPrimes returns the prime ability score names for a class.
 func ClassPrimes(class string) []string {
 	primes, ok := classPrimes[strings.ToLower(class)]

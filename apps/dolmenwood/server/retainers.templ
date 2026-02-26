@@ -63,6 +63,12 @@ templ RetainersSection(view *CharacterView) {
 								}
 							}
 						}
+						if retainer.HasCombatTalents {
+							@LabelBlock() { Combat talents { fmt.Sprintf("%d", retainer.CombatTalentsTotal) } }
+						}
+						if retainer.GlamoursKnown > 0 {
+							@LabelBlock() { Glamours known { fmt.Sprintf("%d", retainer.GlamoursKnown) } }
+						}
 						@LabelBlock() { Loyalty { fmt.Sprintf("%d", retainer.Loyalty) } }
 						@FormRowWrapSm() {
 							@LabelInline() { Loot Share }

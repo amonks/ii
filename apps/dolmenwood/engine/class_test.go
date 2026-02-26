@@ -99,6 +99,47 @@ func TestFighterCombatTalents(t *testing.T) {
 	}
 }
 
+func TestIsEnchanterClass(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{"enchanter", "Enchanter", true},
+		{"enchanter lowercase", "enchanter", true},
+		{"other class", "Thief", false},
+		{"empty", "", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := IsEnchanterClass(tc.input); got != tc.want {
+				t.Errorf("IsEnchanterClass(%q) = %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEnchanterGlamours(t *testing.T) {
+	cases := []struct {
+		name  string
+		level int
+		want  int
+	}{
+		{"level 1", 1, 1},
+		{"level 4", 4, 3},
+		{"level 10", 10, 7},
+		{"level 15", 15, 10},
+		{"invalid level", 0, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := EnchanterGlamours(tc.level); got != tc.want {
+				t.Errorf("EnchanterGlamours(%d) = %d, want %d", tc.level, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestClassPrimes(t *testing.T) {
 	cases := []struct {
 		class string

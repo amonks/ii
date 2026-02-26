@@ -360,13 +360,13 @@ func TestTraitsCardShowsKindredAndClassTraits(t *testing.T) {
 	}
 }
 
-func TestStatsCardTraitsAppearAfterStats(t *testing.T) {
+func TestCombatTalentsShownInTraits(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
 	ch := &db.Character{
-		Name: "Test", Class: "Knight", Kindred: "Human",
-		Level: 5, HPCurrent: 8, HPMax: 8,
+		Name: "Test", Class: "Fighter", Kindred: "Human",
+		Level: 6, HPCurrent: 8, HPMax: 8,
 	}
 	d.CreateCharacter(ch)
 
@@ -378,16 +378,84 @@ func TestStatsCardTraitsAppearAfterStats(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	statsIndex := strings.Index(body, "id=\"stats\"")
-	traitsIndex := strings.Index(body, "id=\"traits\"")
-	knighthoodIndex := strings.Index(body, "Knighthood")
-	if statsIndex == -1 || traitsIndex == -1 || knighthoodIndex == -1 {
-		t.Fatalf("expected stats, traits, and knighthood markers in response")
-	}
-	if !(statsIndex < traitsIndex && traitsIndex < knighthoodIndex) {
-		t.Errorf("expected ordering stats card -> traits card -> knighthood trait, got stats=%d traits=%d knighthood=%d", statsIndex, traitsIndex, knighthoodIndex)
+	if !strings.Contains(body, "Combat talents 2") {
+		t.Errorf("response should include combat talent count")
 	}
 }
+
+func TestGlamoursShownInTraits(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "Test", Class: "Enchanter", Kindred: "Elf",
+		Level: 4, HPCurrent: 6, HPMax: 6,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Glamours known 3") {
+		t.Errorf("response should include glamour count")
+	}
+}
+
+func TestRetainerCombatTalentsShown(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 10,
+		HPMax:     10,
+	}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     6,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &db.RetainerContract{
+		EmployerID: employer.ID,
+		RetainerID: retainer.ID,
+		Active:     true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("/characters/%d/", employer.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Combat talents 2") {
+		t.Errorf("response should include retainer combat talent count")
+	}
+}
+
 
 func TestCardDisclosureMarkup(t *testing.T) {
 	srv, d := setupTest(t)

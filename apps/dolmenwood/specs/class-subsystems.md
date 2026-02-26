@@ -86,9 +86,9 @@ Hunters bond with an animal companion at level 1. This is a special companion wi
 
 Glamours are fairy magic abilities. Enchanters learn glamours by level (count from advancement table). Elves, Grimalkin, and Woodgrue know one glamour from their kindred.
 
-**Implementation**: Track glamour names as a list. The count of available glamours for Enchanters comes from `ClassSpecificColumns("Enchanter", level)["Glamours"]`.
+**Implementation**: Display the glamour count for Enchanters using `EnchanterGlamours(level)` (from the advancement table). Glamours are still recorded in Notes; kindred glamours remain described by their traits.
 
-**UI**: A "Glamours" section listing known glamours. For Enchanters, show available count vs. known count.
+**UI**: A "Class Features" section shows "Glamours known N" for Enchanters.
 
 ## Turning Undead (Cleric, Friar)
 

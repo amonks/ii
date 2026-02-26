@@ -14,7 +14,7 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 6. Aggregates coin items from inventory, computes purse = inventory - found
 7. Determines AC from equipped armor + DEX
 8. Computes weapons from equipped items
-9. Determines attack bonus and save targets via `ClassAttackBonus` / `ClassSaveTargets`
+9. Determines attack bonus, save targets, and class feature counts (combat talents, enchanter glamours) via `ClassAttackBonus` / `ClassSaveTargets`
 10. Determines XP modifier (using `ClassPrimes`) and level-up eligibility
 11. Builds inventory tree, move targets, store catalog
 12. Computes speed from encumbrance slots
@@ -26,7 +26,7 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 - **`InventoryItem`** -- Wraps `db.Item` with computed `Slots`, `BundleSize`, `Children` (nested tree), `Capacity`, `UsedSlots`, `SellPriceCP`, `CoinValueLabel`
 - **`CompanionInventory`** -- Groups items under a companion with `UsedSlots`
 - **`CompanionView`** -- Wraps `db.Companion` with engine-derived stats (AC, speed, load, saves, attack, morale, loyalty)
-- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, loyalty, and weapon summaries
+- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, loyalty, glamours, and weapon summaries
 - **`BankDepositView`** -- Wraps `BankDeposit` with `IsMature`, `DaysUntilMature`, `GPValue`
 - **`MoveTarget`** -- Dropdown target for moving items ("Equipped", "Backpack", "Bessie (Mule)", etc.)
 - **`StoreGroup` / `StoreItem`** -- Store catalog groups with item details
@@ -104,7 +104,7 @@ Templates use the `templ` language (Go-based, compiles to Go). 15 template files
 Each section is a collapsible card (using `CardDisclosure` from `styles.templ`):
 
 - **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege.
-- **`traits.templ`** -- Kindred traits list, class traits list, moon sign display
+- **`traits.templ`** -- Kindred traits list, class traits list, class features (combat talents, glamours), moon sign display
 - **`inventory.templ`** -- Equipped items section, companion inventory sections, add-item forms. Item rows show: name, badges (quantity, tiny, slots, capacity), weapon damage, armor AC, inline note editing, action buttons (split, move, sell, decrement, delete)
 - **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty), weapons list, contract terms display, link to retainer's own sheet, inline inventory list (equipped, stowed slots, companion gear) with "Take" buttons and an add-item form, "Hire Adventurer" form
 - **`wealth.templ`** -- Total coins overview, purse/found treasure boxes, treasure form, "Return to Safety" button, transaction log with undo

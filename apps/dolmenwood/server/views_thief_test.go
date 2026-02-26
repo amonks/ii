@@ -36,6 +36,42 @@ func TestCharacterViewThiefBackstabAndSkills(t *testing.T) {
 	}
 }
 
+func TestCharacterViewEnchanterGlamours(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{Name: "Glamour", Class: "Enchanter", Kindred: "Elf", Level: 4, HPCurrent: 4, HPMax: 4}
+	if err := d.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if view.GlamoursKnown != 3 {
+		t.Errorf("GlamoursKnown = %d, want 3", view.GlamoursKnown)
+	}
+}
+
+func TestCharacterViewNonEnchanterHasNoGlamours(t *testing.T) {
+	_, d := setupTest(t)
+
+	ch := &db.Character{Name: "No Glamour", Class: "Fighter", Kindred: "Human", Level: 3, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+
+	view, err := buildCharacterView(d, ch)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if view.GlamoursKnown != 0 {
+		t.Errorf("GlamoursKnown = %d, want 0", view.GlamoursKnown)
+	}
+}
+
 func TestCharacterViewNonThiefHasNoSkills(t *testing.T) {
 	_, d := setupTest(t)
 

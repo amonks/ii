@@ -46,10 +46,11 @@ type CharacterView struct {
 	ClassTraits             []engine.Trait
 	CombatTalentsTotal      int
 	HasCombatTalents        bool
-	ThiefSkillTargets       engine.SkillTargets
-	ThiefSkillNames         []string
-	ThiefBackstabBonus      int
-	ThiefBackstabDamage     string
+	ThiefSkillTargets  engine.SkillTargets
+	ThiefSkillNames    []string
+	ThiefBackstabBonus int
+	ThiefBackstabDamage string
+	GlamoursKnown      int
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
@@ -84,29 +85,30 @@ type CharacterView struct {
 
 // BankDepositView wraps a bank deposit with computed maturity info.
 type RetainerView struct {
-	Contract        db.RetainerContract
-	Character       *db.Character
-	Items           []db.Item
-	EquippedItems   []InventoryItem
-	CompanionGroups []CompanionInventory
-	EquippedSlots   int
-	StowedSlots     int
-	StowedCapacity  int
-	MoveTargets     []MoveTarget
-	AC              int
-	AttackBonus     int
-	Saves           engine.SaveTargets
-	Speed           int
-	Loyalty         int
-	Weapons         []engine.EquippedWeapon
-	KindredTraits   []engine.Trait
-	ClassTraits     []engine.Trait
+	Contract           db.RetainerContract
+	Character          *db.Character
+	Items              []db.Item
+	EquippedItems      []InventoryItem
+	CompanionGroups    []CompanionInventory
+	EquippedSlots      int
+	StowedSlots        int
+	StowedCapacity     int
+	MoveTargets        []MoveTarget
+	AC                 int
+	AttackBonus        int
+	Saves              engine.SaveTargets
+	Speed              int
+	Loyalty            int
+	Weapons            []engine.EquippedWeapon
+	KindredTraits      []engine.Trait
+	ClassTraits        []engine.Trait
 	CombatTalentsTotal int
 	HasCombatTalents   bool
-	ThiefSkillTargets   engine.SkillTargets
-	ThiefSkillNames     []string
-	ThiefBackstabBonus  int
+	ThiefSkillTargets  engine.SkillTargets
+	ThiefSkillNames    []string
+	ThiefBackstabBonus int
 	ThiefBackstabDamage string
+	GlamoursKnown      int
 }
 
 type BankDepositView struct {
@@ -436,13 +438,17 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	var thiefSkillTargets engine.SkillTargets
 	var thiefSkillNames []string
-	var thiefBackstabBonus int
-	var thiefBackstabDamage string
+	thiefBackstabBonus := 0
+	thiefBackstabDamage := ""
+	enchanterGlamours := 0
 	combatTalentsTotal := 0
 	hasCombatTalents := false
 	if engine.IsFighterClass(ch.Class) {
 		combatTalentsTotal = engine.FighterCombatTalents(ch.Level)
 		hasCombatTalents = true
+	}
+	if engine.IsEnchanterClass(ch.Class) {
+		enchanterGlamours = engine.EnchanterGlamours(ch.Level)
 	}
 	if engine.IsThiefClass(ch.Class) {
 		thiefSkillTargets = engine.ThiefSkillTargets(ch.Level)
@@ -488,6 +494,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ThiefSkillNames:         thiefSkillNames,
 		ThiefBackstabBonus:      thiefBackstabBonus,
 		ThiefBackstabDamage:     thiefBackstabDamage,
+		GlamoursKnown:           enchanterGlamours,
 		CombatTalentsTotal:      combatTalentsTotal,
 		HasCombatTalents:        hasCombatTalents,
 		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
@@ -922,11 +929,15 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerThiefNames []string
 		var retainerThiefBonus int
 		var retainerThiefDamage string
+		retainerGlamours := 0
 		retainerCombatTalents := 0
 		hasRetainerCombatTalents := false
 		if engine.IsFighterClass(retainer.Class) {
 			retainerCombatTalents = engine.FighterCombatTalents(retainer.Level)
 			hasRetainerCombatTalents = true
+		}
+		if engine.IsEnchanterClass(retainer.Class) {
+			retainerGlamours = engine.EnchanterGlamours(retainer.Level)
 		}
 		if engine.IsThiefClass(retainer.Class) {
 			retainerThiefTargets = engine.ThiefSkillTargets(retainer.Level)
@@ -958,6 +969,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			ThiefSkillNames: retainerThiefNames,
 			ThiefBackstabBonus: retainerThiefBonus,
 			ThiefBackstabDamage: retainerThiefDamage,
+			GlamoursKnown: retainerGlamours,
 		})
 	}
 	return retainers, nil
