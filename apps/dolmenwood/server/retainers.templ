@@ -49,6 +49,20 @@ templ RetainersSection(view *CharacterView) {
 							@saveBox("Blast", retainer.Saves.Blast)
 							@saveBox("Spell", retainer.Saves.Spell)
 						}
+						if retainer.ThiefBackstabBonus != 0 && retainer.ThiefBackstabDamage != "" {
+							@LabelBlock() { Backstab +{ fmt.Sprintf("%d", retainer.ThiefBackstabBonus) } { retainer.ThiefBackstabDamage } }
+						}
+						if len(retainer.ThiefSkillTargets) > 0 {
+							@LabelBlock() { Skills }
+							@Text() {
+								for i, name := range retainer.ThiefSkillNames {
+									if i > 0 {
+										@Text() { "," }
+									}
+									@Text() { { name } { fmt.Sprintf("%d", retainer.ThiefSkillTargets[name]) }+ }
+								}
+							}
+						}
 						@LabelBlock() { Loyalty { fmt.Sprintf("%d", retainer.Loyalty) } }
 						@FormRowWrapSm() {
 							@LabelInline() { Loot Share }

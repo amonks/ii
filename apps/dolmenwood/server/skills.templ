@@ -1,0 +1,19 @@
+package server
+
+import "fmt"
+
+templ ThiefSkillsSection(view *CharacterView) {
+	if len(view.ThiefSkillTargets) > 0 {
+		@CardSection() {
+			@SectionHeader() { Thief Skills }
+			@Grid(2) {
+				for _, name := range view.ThiefSkillNames {
+					@Billboard() {
+						@LabelBlock() { { name } }
+						@ValueText() { { fmt.Sprintf("%d", view.ThiefSkillTargets[name]) }+ }
+					}
+				}
+			}
+		}
+	}
+}

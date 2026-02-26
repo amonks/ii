@@ -62,15 +62,15 @@ The Fighter gains combat talents at levels 2, 6, 10, and 14 (from advancement ta
 
 The Thief's backstab ability: +4 to attack, 3d4 damage when striking an unaware target from behind.
 
-**Implementation**: Display backstab stats in the combat section. The damage multiplier scales with level in some variants, but in Dolmenwood it's fixed at 3d4.
+**Implementation**: `ThiefBackstabBonus()` returns +4, `ThiefBackstabDamage()` returns `3d4`. Display backstab stats in the combat section.
 
 **UI**: Show backstab bonus and damage in the combat stats area, alongside normal weapons.
 
 ## Thief Skills
 
-Thief skill target numbers improve by level. Skills: Climb, Disarm Traps, Hear Noise, Hide in Shadows, Move Silently, Open Locks, Pick Pockets, Read Languages.
+Thief skill target numbers improve by level. Skills: Climb Wall, Decipher Doc., Disarm Mech., Legerdemain, Listen, Pick Lock, Search, Stealth.
 
-**Implementation**: `ThiefSkillTargets(level) map[string]int` returns target numbers for each skill at the given level.
+**Implementation**: `ThiefSkillTargets(level) map[string]int` returns target numbers for each skill at the given level. `ThiefSkillNames()` returns display order.
 
 **UI**: A "Thief Skills" section showing each skill with its target number.
 

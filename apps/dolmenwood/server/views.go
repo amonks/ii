@@ -44,6 +44,10 @@ type CharacterView struct {
 	XPModPercent            int
 	KindredTraits           []engine.Trait
 	ClassTraits             []engine.Trait
+	ThiefSkillTargets       engine.SkillTargets
+	ThiefSkillNames         []string
+	ThiefBackstabBonus      int
+	ThiefBackstabDamage     string
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
@@ -95,6 +99,10 @@ type RetainerView struct {
 	Weapons         []engine.EquippedWeapon
 	KindredTraits   []engine.Trait
 	ClassTraits     []engine.Trait
+	ThiefSkillTargets   engine.SkillTargets
+	ThiefSkillNames     []string
+	ThiefBackstabBonus  int
+	ThiefBackstabDamage string
 }
 
 type BankDepositView struct {
@@ -422,6 +430,17 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	speedRunning := speed * 3
 	speedOverland := speed / 5
 
+	var thiefSkillTargets engine.SkillTargets
+	var thiefSkillNames []string
+	var thiefBackstabBonus int
+	var thiefBackstabDamage string
+	if engine.IsThiefClass(ch.Class) {
+		thiefSkillTargets = engine.ThiefSkillTargets(ch.Level)
+		thiefSkillNames = engine.ThiefSkillNames()
+		thiefBackstabBonus = engine.ThiefBackstabBonus()
+		thiefBackstabDamage = engine.ThiefBackstabDamage()
+	}
+
 	return &CharacterView{
 		Character:               ch,
 		Items:                   items,
@@ -455,6 +474,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		XPModPercent:            xpMod,
 		KindredTraits:           engine.KindredTraits(ch.Kindred, ch.Level),
 		ClassTraits:             engine.ClassTraits(ch.Class, ch.Level),
+		ThiefSkillTargets:       thiefSkillTargets,
+		ThiefSkillNames:         thiefSkillNames,
+		ThiefBackstabBonus:      thiefBackstabBonus,
+		ThiefBackstabDamage:     thiefBackstabDamage,
 		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
 		BirthdayMonths:          engine.Months(),
 		BirthdayDays:            birthdayDays,
@@ -883,6 +906,16 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
 		moveTargets := buildMoveTargets(items, compViews, nil)
 		speed := engine.SpeedFromSlots(equipped, stowed)
+		var retainerThiefTargets engine.SkillTargets
+		var retainerThiefNames []string
+		var retainerThiefBonus int
+		var retainerThiefDamage string
+		if engine.IsThiefClass(retainer.Class) {
+			retainerThiefTargets = engine.ThiefSkillTargets(retainer.Level)
+			retainerThiefNames = engine.ThiefSkillNames()
+			retainerThiefBonus = engine.ThiefBackstabBonus()
+			retainerThiefDamage = engine.ThiefBackstabDamage()
+		}
 		retainers = append(retainers, RetainerView{
 			Contract:        contract,
 			Character:       retainer,
@@ -901,6 +934,10 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			Weapons:         engine.EquippedWeapons(engineItems),
 			KindredTraits:   engine.KindredTraits(retainer.Kindred, retainer.Level),
 			ClassTraits:     engine.ClassTraits(retainer.Class, retainer.Level),
+			ThiefSkillTargets: retainerThiefTargets,
+			ThiefSkillNames: retainerThiefNames,
+			ThiefBackstabBonus: retainerThiefBonus,
+			ThiefBackstabDamage: retainerThiefDamage,
 		})
 	}
 	return retainers, nil

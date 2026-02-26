@@ -83,6 +83,9 @@ templ StatsSection(view *CharacterView) {
 								}
 							}
 						}
+						if view.ThiefBackstabBonus != 0 && view.ThiefBackstabDamage != "" {
+							@LabelBlock() { Backstab +{ fmt.Sprintf("%d", view.ThiefBackstabBonus) } { view.ThiefBackstabDamage } }
+						}
 					}
 				}
 			}
