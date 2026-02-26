@@ -24,7 +24,7 @@ Logic:
    - Update `item.CharacterID = toCharacterID`
    - Clear `item.ContainerID = nil`, `item.CompanionID = nil`
    - If the item is a container, also update all child items (items with `ContainerID = itemID`) to have `CharacterID = toCharacterID`
-   - If the source character's `CoinContainerID` or `CoinCompanionID` references this item, clear those references
+   - If the source character's coin location references this coin item or its container/companion, clear those references
    - Save
 3. If `quantity < item.Quantity`: partial transfer
    - Reduce `item.Quantity` by `quantity`, save

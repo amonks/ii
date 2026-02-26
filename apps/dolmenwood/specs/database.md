@@ -110,7 +110,7 @@ Deletes all related records: items, companions, transactions, XP log, notes, aud
 Moves an item (or partial stack) from one character to another:
 - Full transfer: updates `item.CharacterID` to the target, clears `ContainerID` and `CompanionID`
 - Partial transfer (quantity < item.Quantity): creates a new item on the target character with the specified quantity, reduces the source item's quantity
-- Used for item transfers between employer and adventurer retainer
+- Clears the source character's coin location when the moved item is the consolidated coin item or the container holding it
 
 ## Key Business Logic
 

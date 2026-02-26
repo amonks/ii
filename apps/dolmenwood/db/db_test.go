@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 	"time"
+
+	"monks.co/apps/dolmenwood/engine"
 )
 
 func newTestDB(t *testing.T) *DB {
@@ -19,18 +21,18 @@ func TestCharacterRoundTrip(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{
-		Name:       "Sir Galahad",
-		Class:      "Knight",
-		Kindred:    "Human",
-		Level:      1,
-		STR:        16,
-		DEX:        10,
-		CON:        14,
-		INT:        9,
-		WIS:        12,
-		CHA:        13,
-		HPCurrent:  8,
-		HPMax:      8,
+		Name:          "Sir Galahad",
+		Class:         "Knight",
+		Kindred:       "Human",
+		Level:         1,
+		STR:           16,
+		DEX:           10,
+		CON:           14,
+		INT:           9,
+		WIS:           12,
+		CHA:           13,
+		HPCurrent:     8,
+		HPMax:         8,
 		Alignment:     "Lawful",
 		Background:    "Noble",
 		Liege:         "Duke Maldric",
@@ -66,8 +68,8 @@ func TestCharacterDefaults(t *testing.T) {
 	db := newTestDB(t)
 
 	type columnInfo struct {
-		Name       string         `gorm:"column:name"`
-		DfltValue  sql.NullString `gorm:"column:dflt_value"`
+		Name      string         `gorm:"column:name"`
+		DfltValue sql.NullString `gorm:"column:dflt_value"`
 	}
 
 	var columns []columnInfo
@@ -183,12 +185,12 @@ func TestTransactions(t *testing.T) {
 	}
 
 	tx := &Transaction{
-		CharacterID:    ch.ID,
-		Amount:         50,
-		CoinType:       "gp",
-		Description:    "dragon hoard",
+		CharacterID:     ch.ID,
+		Amount:          50,
+		CoinType:        "gp",
+		Description:     "dragon hoard",
 		IsFoundTreasure: true,
-		CreatedAt:      time.Now(),
+		CreatedAt:       time.Now(),
 	}
 	if err := db.CreateTransaction(tx); err != nil {
 		t.Fatalf("CreateTransaction: %v", err)
@@ -210,13 +212,13 @@ func TestReturnToSafety(t *testing.T) {
 	db := newTestDB(t)
 
 	ch := &Character{
-		Name:     "Test",
-		Class:    "Knight",
-		Kindred:  "Human",
-		Level:    1,
-		STR:      13, // prime ability
-		FoundGP:  50,
-		FoundSP:  100,
+		Name:    "Test",
+		Class:   "Knight",
+		Kindred: "Human",
+		Level:   1,
+		STR:     13, // prime ability
+		FoundGP: 50,
+		FoundSP: 100,
 	}
 	if err := db.CreateCharacter(ch); err != nil {
 		t.Fatalf("CreateCharacter: %v", err)
@@ -693,5 +695,238 @@ func TestBankDeposits(t *testing.T) {
 	deps, _ = db.ListBankDeposits(ch.ID)
 	if len(deps) != 0 {
 		t.Errorf("after delete len = %d, want 0", len(deps))
+	}
+}
+
+func TestTransferItemFull(t *testing.T) {
+	db := newTestDB(t)
+
+	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
+	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(source); err != nil {
+		t.Fatalf("CreateCharacter source: %v", err)
+	}
+	if err := db.CreateCharacter(target); err != nil {
+		t.Fatalf("CreateCharacter target: %v", err)
+	}
+
+	container := &Item{CharacterID: source.ID, Name: "Backpack", Quantity: 1}
+	if err := db.CreateItem(container); err != nil {
+		t.Fatalf("CreateItem container: %v", err)
+	}
+	companion := &Companion{CharacterID: source.ID, Name: "Bessie", Breed: "Mule"}
+	if err := db.CreateCompanion(companion); err != nil {
+		t.Fatalf("CreateCompanion: %v", err)
+	}
+
+	item := &Item{
+		CharacterID: source.ID,
+		Name:        engine.CoinItemNameStr,
+		Quantity:    5,
+		Notes:       "5gp",
+		ContainerID: &container.ID,
+		CompanionID: &companion.ID,
+	}
+	if err := db.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	source.CoinContainerID = &container.ID
+	source.CoinCompanionID = &companion.ID
+	if err := db.UpdateCharacter(source); err != nil {
+		t.Fatalf("UpdateCharacter: %v", err)
+	}
+
+	if err := db.TransferItem(item.ID, target.ID, 0); err != nil {
+		t.Fatalf("TransferItem: %v", err)
+	}
+
+	moved, err := db.GetItem(item.ID)
+	if err != nil {
+		t.Fatalf("GetItem: %v", err)
+	}
+	if moved.CharacterID != target.ID {
+		t.Errorf("CharacterID = %d, want %d", moved.CharacterID, target.ID)
+	}
+	if moved.ContainerID != nil || moved.CompanionID != nil {
+		t.Errorf("expected container/companion to be cleared, got %v/%v", moved.ContainerID, moved.CompanionID)
+	}
+
+	reloaded, _ := db.GetCharacter(source.ID)
+	if reloaded.CoinContainerID != nil || reloaded.CoinCompanionID != nil {
+		t.Errorf("expected coin references to clear, got %v/%v", reloaded.CoinContainerID, reloaded.CoinCompanionID)
+	}
+}
+
+func TestTransferItemPartial(t *testing.T) {
+	db := newTestDB(t)
+
+	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
+	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(source); err != nil {
+		t.Fatalf("CreateCharacter source: %v", err)
+	}
+	if err := db.CreateCharacter(target); err != nil {
+		t.Fatalf("CreateCharacter target: %v", err)
+	}
+
+	weight := 250
+	item := &Item{
+		CharacterID:    source.ID,
+		Name:           "Torches",
+		Notes:          "oil-soaked",
+		Quantity:       5,
+		IsTiny:         true,
+		WeightOverride: &weight,
+	}
+	if err := db.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	if err := db.TransferItem(item.ID, target.ID, 2); err != nil {
+		t.Fatalf("TransferItem: %v", err)
+	}
+
+	updated, _ := db.GetItem(item.ID)
+	if updated.Quantity != 3 {
+		t.Errorf("source quantity = %d, want 3", updated.Quantity)
+	}
+
+	targetItems, _ := db.ListItems(target.ID)
+	if len(targetItems) != 1 {
+		t.Fatalf("target items = %d, want 1", len(targetItems))
+	}
+	moved := targetItems[0]
+	if moved.Quantity != 2 {
+		t.Errorf("moved quantity = %d, want 2", moved.Quantity)
+	}
+	if moved.ContainerID != nil || moved.CompanionID != nil {
+		t.Errorf("expected moved container/companion nil, got %v/%v", moved.ContainerID, moved.CompanionID)
+	}
+	if moved.Name != item.Name || moved.Notes != item.Notes || !moved.IsTiny {
+		t.Errorf("moved fields not copied")
+	}
+	if moved.WeightOverride == nil || *moved.WeightOverride != weight {
+		t.Errorf("moved weight override = %v, want %d", moved.WeightOverride, weight)
+	}
+}
+
+func TestTransferItemContainerMovesChildren(t *testing.T) {
+	db := newTestDB(t)
+
+	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
+	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(source); err != nil {
+		t.Fatalf("CreateCharacter source: %v", err)
+	}
+	if err := db.CreateCharacter(target); err != nil {
+		t.Fatalf("CreateCharacter target: %v", err)
+	}
+
+	container := &Item{CharacterID: source.ID, Name: "Backpack", Quantity: 1}
+	if err := db.CreateItem(container); err != nil {
+		t.Fatalf("CreateItem container: %v", err)
+	}
+	child := &Item{CharacterID: source.ID, Name: "Rope", Quantity: 1, ContainerID: &container.ID}
+	if err := db.CreateItem(child); err != nil {
+		t.Fatalf("CreateItem child: %v", err)
+	}
+
+	if err := db.TransferItem(container.ID, target.ID, 0); err != nil {
+		t.Fatalf("TransferItem: %v", err)
+	}
+
+	movedChild, _ := db.GetItem(child.ID)
+	if movedChild.CharacterID != target.ID {
+		t.Errorf("child CharacterID = %d, want %d", movedChild.CharacterID, target.ID)
+	}
+	if movedChild.ContainerID == nil || *movedChild.ContainerID != container.ID {
+		t.Errorf("child container id = %v, want %d", movedChild.ContainerID, container.ID)
+	}
+}
+
+func TestTransferItemContainerClearsCoinLocation(t *testing.T) {
+	db := newTestDB(t)
+
+	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
+	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(source); err != nil {
+		t.Fatalf("CreateCharacter source: %v", err)
+	}
+	if err := db.CreateCharacter(target); err != nil {
+		t.Fatalf("CreateCharacter target: %v", err)
+	}
+
+	container := &Item{CharacterID: source.ID, Name: "Backpack", Quantity: 1}
+	if err := db.CreateItem(container); err != nil {
+		t.Fatalf("CreateItem container: %v", err)
+	}
+
+	coins := &Item{
+		CharacterID: source.ID,
+		Name:        engine.CoinItemNameStr,
+		Quantity:    5,
+		Notes:       "5gp",
+		ContainerID: &container.ID,
+	}
+	if err := db.CreateItem(coins); err != nil {
+		t.Fatalf("CreateItem coins: %v", err)
+	}
+
+	source.CoinContainerID = &container.ID
+	if err := db.UpdateCharacter(source); err != nil {
+		t.Fatalf("UpdateCharacter: %v", err)
+	}
+
+	if err := db.TransferItem(container.ID, target.ID, 0); err != nil {
+		t.Fatalf("TransferItem: %v", err)
+	}
+
+	reloaded, _ := db.GetCharacter(source.ID)
+	if reloaded.CoinContainerID != nil || reloaded.CoinCompanionID != nil {
+		t.Errorf("expected coin references to clear, got %v/%v", reloaded.CoinContainerID, reloaded.CoinCompanionID)
+	}
+
+	movedCoins, _ := db.GetItem(coins.ID)
+	if movedCoins.CharacterID != target.ID {
+		t.Errorf("coin CharacterID = %d, want %d", movedCoins.CharacterID, target.ID)
+	}
+	if movedCoins.ContainerID == nil || *movedCoins.ContainerID != container.ID {
+		t.Errorf("coin container id = %v, want %d", movedCoins.ContainerID, container.ID)
+	}
+}
+
+func TestTransferItemCoinsPartial(t *testing.T) {
+	db := newTestDB(t)
+
+	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
+	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
+	if err := db.CreateCharacter(source); err != nil {
+		t.Fatalf("CreateCharacter source: %v", err)
+	}
+	if err := db.CreateCharacter(target); err != nil {
+		t.Fatalf("CreateCharacter target: %v", err)
+	}
+
+	item := &Item{CharacterID: source.ID, Name: engine.CoinItemNameStr, Quantity: 5, Notes: "3gp 2sp"}
+	if err := db.CreateItem(item); err != nil {
+		t.Fatalf("CreateItem: %v", err)
+	}
+
+	if err := db.TransferItem(item.ID, target.ID, 2); err != nil {
+		t.Fatalf("TransferItem: %v", err)
+	}
+
+	updated, _ := db.GetItem(item.ID)
+	if updated.Notes != "1gp 2sp" || updated.Quantity != 3 {
+		t.Errorf("remaining notes/qty = %q/%d, want %q/3", updated.Notes, updated.Quantity, "1gp 2sp")
+	}
+
+	targetItems, _ := db.ListItems(target.ID)
+	if len(targetItems) != 1 {
+		t.Fatalf("target items = %d, want 1", len(targetItems))
+	}
+	if targetItems[0].Notes != "2gp" || targetItems[0].Quantity != 2 {
+		t.Errorf("target notes/qty = %q/%d, want %q/2", targetItems[0].Notes, targetItems[0].Quantity, "2gp")
 	}
 }

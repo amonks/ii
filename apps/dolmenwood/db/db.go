@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"monks.co/apps/dolmenwood/engine"
@@ -89,7 +90,7 @@ type Companion struct {
 	HPMax       int    `gorm:"column:hp_max"`
 	HasBarding  bool   `gorm:"column:has_barding"`
 	SaddleType  string `gorm:"column:saddle_type"` // "", "riding", "pack"
-	Loyalty     int    `gorm:"column:loyalty"`      // retainer loyalty score (7 + CHA mod)
+	Loyalty     int    `gorm:"column:loyalty"`     // retainer loyalty score (7 + CHA mod)
 }
 
 type RetainerContract struct {
@@ -539,6 +540,128 @@ func (db *DB) DeleteItem(id uint) error {
 		"coin_companion_id": item.CompanionID,
 	})
 	return db.Delete(&Item{}, id).Error
+}
+
+// TransferItem moves an item (or partial stack) to another character.
+func (db *DB) TransferItem(itemID uint, toCharacterID uint, quantity int) error {
+	if quantity < 0 {
+		return fmt.Errorf("invalid quantity %d", quantity)
+	}
+	item, err := db.GetItem(itemID)
+	if err != nil {
+		return err
+	}
+	sourceCharacterID := item.CharacterID
+
+	originalItem := *item
+	if quantity == 0 || quantity >= item.Quantity {
+		item.CharacterID = toCharacterID
+		item.ContainerID = nil
+		item.CompanionID = nil
+		item.Location = ""
+		if err := db.UpdateItem(item); err != nil {
+			return err
+		}
+		if engine.IsContainer(item.Name) {
+			if err := db.Model(&Item{}).Where("container_id = ?", item.ID).Update("character_id", toCharacterID).Error; err != nil {
+				return err
+			}
+		}
+		return db.clearCoinLocationForItemMove(sourceCharacterID, &originalItem)
+	}
+
+	if strings.EqualFold(item.Name, engine.CoinItemNameStr) {
+		remainingNotes, remainingTotal, transferNotes, transferTotal, err := splitCoinNotesByQuantity(item.Notes, quantity)
+		if err != nil {
+			return err
+		}
+		item.Notes = remainingNotes
+		item.Quantity = remainingTotal
+		if err := db.UpdateItem(item); err != nil {
+			return err
+		}
+		return db.CreateItem(&Item{
+			CharacterID:    toCharacterID,
+			Name:           item.Name,
+			Notes:          transferNotes,
+			Quantity:       transferTotal,
+			IsTiny:         item.IsTiny,
+			WeightOverride: item.WeightOverride,
+		})
+	}
+
+	item.Quantity -= quantity
+	if err := db.UpdateItem(item); err != nil {
+		return err
+	}
+	return db.CreateItem(&Item{
+		CharacterID:    toCharacterID,
+		Name:           item.Name,
+		Notes:          item.Notes,
+		Quantity:       quantity,
+		IsTiny:         item.IsTiny,
+		WeightOverride: item.WeightOverride,
+	})
+}
+
+func (db *DB) clearCoinLocationForItemMove(characterID uint, item *Item) error {
+	var ch Character
+	if err := db.First(&ch, characterID).Error; err != nil {
+		return err
+	}
+	updates := map[string]any{}
+	if strings.EqualFold(item.Name, engine.CoinItemNameStr) {
+		if item.ContainerID != nil && ch.CoinContainerID != nil && *ch.CoinContainerID == *item.ContainerID {
+			updates["coin_container_id"] = nil
+		}
+		if item.CompanionID != nil && ch.CoinCompanionID != nil && *ch.CoinCompanionID == *item.CompanionID {
+			updates["coin_companion_id"] = nil
+		}
+	} else if ch.CoinContainerID != nil && *ch.CoinContainerID == item.ID {
+		updates["coin_container_id"] = nil
+		updates["coin_companion_id"] = nil
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+	return db.Model(&Character{}).Where("id = ?", characterID).Updates(updates).Error
+}
+
+func splitCoinNotesByQuantity(notes string, quantity int) (string, int, string, int, error) {
+	coins := engine.ParseCoinNotes(notes)
+	available := 0
+	for _, qty := range coins {
+		available += qty
+	}
+	if quantity > available {
+		return "", 0, "", 0, fmt.Errorf("insufficient coins: have %d, want %d", available, quantity)
+	}
+	order := []engine.CoinType{engine.PP, engine.GP, engine.EP, engine.SP, engine.CP}
+	transfer := make(map[engine.CoinType]int)
+	remaining := quantity
+	for _, ct := range order {
+		if remaining == 0 {
+			break
+		}
+		if coins[ct] <= 0 {
+			continue
+		}
+		take := min(coins[ct], remaining)
+		transfer[ct] = take
+		coins[ct] -= take
+		remaining -= take
+	}
+	transferNotes := engine.FormatCoinNotes(transfer)
+	remainingNotes := engine.FormatCoinNotes(coins)
+	remainingTotal := 0
+	transferTotal := 0
+	for _, qty := range coins {
+		remainingTotal += qty
+	}
+	for _, qty := range transfer {
+		transferTotal += qty
+	}
+	return remainingNotes, remainingTotal, transferNotes, transferTotal, nil
 }
 
 // --- Companion CRUD ---
