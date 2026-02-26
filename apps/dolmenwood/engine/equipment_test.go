@@ -312,7 +312,7 @@ func TestCharacterACBreggleFur(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			ac, armor := CharacterAC(tc.kindred, tc.items, tc.dexScore)
+			ac, armor := CharacterAC(tc.kindred, "", 0, tc.items, tc.dexScore)
 			if ac != tc.wantAC {
 				t.Errorf("AC = %d, want %d", ac, tc.wantAC)
 			}
@@ -326,6 +326,29 @@ func TestCharacterACBreggleFur(t *testing.T) {
 				t.Errorf("armor = %q, want %q", armor, tc.wantArmor)
 			}
 		})
+	}
+}
+
+func TestCharacterACFriarUnarmoredBonus(t *testing.T) {
+	items := []Item{
+		{Name: "Shield", Quantity: 1, Location: "equipped"},
+	}
+	ac, armorName := CharacterAC("Human", "Friar", 1, items, 10)
+	if ac != 13 {
+		t.Errorf("AC = %d, want 13 (base 10 + shield + AC bonus 2)", ac)
+	}
+	if armorName != "" {
+		t.Errorf("armorName = %q, want empty", armorName)
+	}
+}
+
+func TestCharacterACFriarArmoredNoBonus(t *testing.T) {
+	items := []Item{
+		{Name: "Leather", Quantity: 1, Location: "equipped"},
+	}
+	ac, _ := CharacterAC("Human", "Friar", 1, items, 10)
+	if ac != 12 {
+		t.Errorf("AC = %d, want 12", ac)
 	}
 }
 
@@ -536,7 +559,7 @@ func TestCharacterACWithMagicArmor(t *testing.T) {
 	items := []Item{
 		{Name: "+1 Leather", Quantity: 1, Location: "equipped"},
 	}
-	ac, armorName := CharacterAC("Human", items, 10)
+	ac, armorName := CharacterAC("Human", "", 0, items, 10)
 	if ac != 13 {
 		t.Errorf("AC = %d, want 13 (base 12 + 1 magic)", ac)
 	}

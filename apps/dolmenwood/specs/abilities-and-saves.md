@@ -35,8 +35,8 @@ A separate bracket table determines XP modifiers based on a class's prime abilit
 ### `ACFromArmor(baseAC, dexScore, hasShield)`
 Base formula: `baseAC + Modifier(dexScore) + (1 if shield)`
 
-### `CharacterAC(kindred, items, dexScore)` (in `equipment.go`)
-Scans equipped items for the best armor and shield presence via `ArmorContributors()`. Computes AC using `ACFromArmor`. Special case: **Breggles** get +1 AC when unarmored or wearing light armor (Bulk 1) due to their tough fur.
+### `CharacterAC(kindred, class, level, items, dexScore)` (in `equipment.go`)
+Scans equipped items for the best armor and shield presence via `ArmorContributors()`. Computes AC using `ACFromArmor`. Special case: **Breggles** get +1 AC when unarmored or wearing light armor (Bulk 1) due to their tough fur. **Friars** gain their "Armour of Faith" AC bonus when unarmored based on `ClassSpecificColumns("Friar", level)["AC Bonus"]`; shields still apply.
 
 ### `ArmorContributors(items)`
 Scans equipped items for armor and shield. Returns armor name, shield presence, and magic bonus. Only considers items that are equipped (not stowed, not on companions). Handles magic bonus prefix (e.g., "+1 Leather").

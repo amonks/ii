@@ -374,7 +374,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		moonSign = &sign
 	}
 
-	ac, armorName := engine.CharacterAC(ch.Kindred, engineItems, ch.DEX)
+	ac, armorName := engine.CharacterAC(ch.Kindred, ch.Class, ch.Level, engineItems, ch.DEX)
 	armorAC := 0
 	if armorName != "" {
 		if armor, ok := engine.ArmorStats(armorName); ok {
@@ -851,7 +851,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		for i, item := range items {
 			engineItems[i] = dbItemToEngine(item)
 		}
-		ac, _ := engine.CharacterAC(retainer.Kindred, engineItems, retainer.DEX)
+			ac, _ := engine.CharacterAC(retainer.Kindred, retainer.Class, retainer.Level, engineItems, retainer.DEX)
 		attackBonus := engine.ClassAttackBonus(retainer.Class, retainer.Level)
 		saves := engine.ClassSaveTargets(retainer.Class, retainer.Level)
 		equipped, stowed, companionSlots := engine.CalculateEncumbrance(engineItems)
