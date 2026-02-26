@@ -782,15 +782,15 @@ func (s *Server) handleAddCompanion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-		if engine.IsCustomCompanionBreed(breed) {
-			if comp.HPMax > 0 {
-				s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
-			} else {
-				s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s", comp.Name, comp.Breed))
-			}
-		} else {
+	if engine.IsCustomCompanionBreed(breed) {
+		if comp.HPMax > 0 {
 			s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
+		} else {
+			s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s", comp.Name, comp.Breed))
 		}
+	} else {
+		s.addAuditLog(ch, "companion_add", fmt.Sprintf("created %s the %s, HP %d/%d", comp.Name, comp.Breed, comp.HPCurrent, comp.HPMax))
+	}
 	s.renderCompanions(w, r, ch)
 }
 
@@ -1544,6 +1544,154 @@ func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 }
 
 // --- Bank / Day handlers ---
+
+func (s *Server) handleRestSpells(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.ResetSpells(ch.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "spells_rest", "rested spells")
+	s.renderSpells(w, r, ch)
+}
+
+func (s *Server) handlePrepareSpell(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	spellName := strings.TrimSpace(r.FormValue("name"))
+	spellLevel := atoi(r.FormValue("spell_level"))
+	if spellName == "" || spellLevel < 1 {
+		http.Error(w, "Invalid spell", http.StatusBadRequest)
+		return
+	}
+	slots := engine.ClassSpellSlots(ch.Class, ch.Level)
+	if slots == nil {
+		http.Error(w, "Spellcasting not available", http.StatusBadRequest)
+		return
+	}
+	spells, err := s.db.ListPreparedSpells(ch.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	enginePrepared := make([]engine.PreparedSpell, 0, len(spells))
+	for _, spell := range spells {
+		enginePrepared = append(enginePrepared, engine.PreparedSpell{SpellLevel: spell.SpellLevel, Used: spell.Used})
+	}
+	available := engine.AvailableSlots(slots, enginePrepared)
+	if available == nil {
+		http.Error(w, "Spellcasting not available", http.StatusBadRequest)
+		return
+	}
+	switch spellLevel {
+	case 1:
+		if available.Level1 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	case 2:
+		if available.Level2 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	case 3:
+		if available.Level3 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	case 4:
+		if available.Level4 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	case 5:
+		if available.Level5 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	case 6:
+		if available.Level6 <= 0 {
+			http.Error(w, "No available spell slots", http.StatusBadRequest)
+			return
+		}
+	default:
+		http.Error(w, "Invalid spell level", http.StatusBadRequest)
+		return
+	}
+	spell := &db.PreparedSpell{CharacterID: ch.ID, Name: spellName, SpellLevel: spellLevel}
+	if err := s.db.CreatePreparedSpell(spell); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "spell_prepare", fmt.Sprintf("prepared %s (level %d)", spellName, spellLevel))
+	s.renderSpells(w, r, ch)
+}
+
+func (s *Server) handleCastSpell(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	spellID := atoui(r.PathValue("spellID"))
+	spell, err := s.db.GetPreparedSpell(spellID)
+	if err != nil {
+		http.Error(w, "Spell not found", http.StatusNotFound)
+		return
+	}
+	if spell.CharacterID != ch.ID {
+		http.Error(w, "Spell not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.MarkSpellUsed(spellID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "spell_cast", fmt.Sprintf("cast %s", spell.Name))
+	s.renderSpells(w, r, ch)
+}
+
+func (s *Server) handleForgetSpell(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	spellID := atoui(r.PathValue("spellID"))
+	spell, err := s.db.GetPreparedSpell(spellID)
+	if err != nil {
+		http.Error(w, "Spell not found", http.StatusNotFound)
+		return
+	}
+	if spell.CharacterID != ch.ID {
+		http.Error(w, "Spell not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.DeletePreparedSpell(spellID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "spell_forget", fmt.Sprintf("forgot %s", spell.Name))
+	s.renderSpells(w, r, ch)
+}
+
+func (s *Server) renderSpells(w http.ResponseWriter, r *http.Request, ch *db.Character) {
+	view, err := buildCharacterView(s.db, ch)
+	if err != nil {
+		slog.Error("renderSpells", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	SpellsSection(view).Render(r.Context(), w)
+}
 
 func (s *Server) handleAdvanceDay(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)

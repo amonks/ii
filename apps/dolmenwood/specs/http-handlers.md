@@ -70,6 +70,14 @@ All routes are registered via `Mux()` on the `Server` struct, using Go 1.22+ met
 | POST | `/characters/{id}/notes/` | `handleAddNote` | Add note |
 | POST | `/characters/{id}/notes/{noteID}/delete/` | `handleDeleteNote` | Delete note |
 
+### Spells
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| POST | `/characters/{id}/spells/` | `handlePrepareSpell` | Prepare a spell |
+| POST | `/characters/{id}/spells/{spellID}/cast/` | `handleCastSpell` | Mark a prepared spell as used |
+| POST | `/characters/{id}/spells/{spellID}/forget/` | `handleForgetSpell` | Forget a prepared spell |
+| POST | `/characters/{id}/spells/rest/` | `handleRestSpells` | Reset prepared spell usage |
+
 ### Calendar
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|

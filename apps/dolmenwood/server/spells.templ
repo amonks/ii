@@ -1,0 +1,136 @@
+package server
+
+import (
+	"fmt"
+
+	"monks.co/apps/dolmenwood/engine"
+)
+
+type spellSlotView struct {
+	Level     int
+	Total     int
+	Available int
+}
+
+func spellSlotViews(slots *engine.SpellSlots, available *engine.SpellSlots) []spellSlotView {
+	if slots == nil {
+		return nil
+	}
+	if available == nil {
+		available = slots
+	}
+	levels := []struct {
+		level     int
+		total     int
+		available int
+	}{
+		{1, slots.Level1, available.Level1},
+		{2, slots.Level2, available.Level2},
+		{3, slots.Level3, available.Level3},
+		{4, slots.Level4, available.Level4},
+		{5, slots.Level5, available.Level5},
+		{6, slots.Level6, available.Level6},
+	}
+	views := make([]spellSlotView, 0, len(levels))
+	for _, level := range levels {
+		if level.total > 0 {
+			views = append(views, spellSlotView{Level: level.level, Total: level.total, Available: level.available})
+		}
+	}
+	return views
+}
+
+func spellLevelLabel(level int) string {
+	switch level {
+	case 1:
+		return "Level 1"
+	case 2:
+		return "Level 2"
+	case 3:
+		return "Level 3"
+	case 4:
+		return "Level 4"
+	case 5:
+		return "Level 5"
+	case 6:
+		return "Level 6"
+	default:
+		return fmt.Sprintf("Level %d", level)
+	}
+}
+
+templ SpellsSection(view *CharacterView) {
+	if view.SpellSlots != nil {
+		@CardDisclosure("spells", true) {
+			@CardDisclosureHeader() {
+				@SpellsSummary(view)
+			}
+			@CardDisclosureBody() {
+				@CardSection() {
+					@SectionHeader() { Spell Slots }
+					if slots := spellSlotViews(view.SpellSlots, view.AvailableSpellSlots); len(slots) > 0 {
+						@Grid(3) {
+							for _, slot := range slots {
+								@Billboard() {
+									@LabelBlock() { { spellLevelLabel(slot.Level) } }
+									@ValueText() { { fmt.Sprintf("%d/%d", slot.Available, slot.Total) } }
+								}
+							}
+						}
+					} else {
+						@LabelBlock() { No spell slots yet. }
+					}
+				}
+				@CardSection() {
+					@SectionHeader() { Prepared Spells }
+					if len(view.PreparedSpells) == 0 {
+						@LabelBlock() { None }
+					} else {
+						for _, spell := range view.PreparedSpells {
+							@Row() {
+								<div>
+									@Text() { { spell.Name } }
+									@LabelLeft() { { fmt.Sprintf("(Level %d)", spell.SpellLevel) } }
+									if spell.Used {
+										@LabelLeft() { Used }
+									}
+								</div>
+								@InlineActions() {
+									if !spell.Used {
+										<form hx-post={ templ.SafeURL(fmt.Sprintf("spells/%d/cast/", spell.ID)) } hx-target="#spells" hx-swap="outerHTML">
+											@BtnSecondary() { Cast }
+										</form>
+									}
+									<form hx-post={ templ.SafeURL(fmt.Sprintf("spells/%d/forget/", spell.ID)) } hx-target="#spells" hx-swap="outerHTML">
+										@BtnDelete()
+									</form>
+								}
+							}
+						}
+					}
+				}
+				@CardSection() {
+					@SectionHeader() { Prepare Spell }
+					<form hx-post="spells/" hx-target="#spells" hx-swap="outerHTML">
+						@FormRow() {
+							@FormInput(templ.Attributes{"name": "name", "placeholder": "Spell name", "required": true})
+							@FormSelectSmall(templ.Attributes{"name": "spell_level", "required": true}) {
+								for _, slot := range spellSlotViews(view.SpellSlots, view.AvailableSpellSlots) {
+									<option value={ fmt.Sprintf("%d", slot.Level) }>{ spellLevelLabel(slot.Level) }</option>
+								}
+							}
+							@BtnPrimary() { Prepare }
+						}
+					</form>
+					<form hx-post="spells/rest/" hx-target="#spells" hx-swap="outerHTML">
+						@BtnSecondary() { Rest }
+					</form>
+				}
+			}
+		}
+	}
+}
+
+templ SpellsSummary(view *CharacterView) {
+	@Heading() { Spells }
+}

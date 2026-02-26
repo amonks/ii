@@ -773,6 +773,14 @@ func TestPreparedSpellsCRUD(t *testing.T) {
 		t.Fatalf("expected spell to be reset")
 	}
 
+	fetched, err := db.GetPreparedSpell(spell.ID)
+	if err != nil {
+		t.Fatalf("GetPreparedSpell: %v", err)
+	}
+	if fetched.Name != spell.Name {
+		t.Fatalf("GetPreparedSpell name = %q, want %q", fetched.Name, spell.Name)
+	}
+
 	if err := db.DeletePreparedSpell(spell.ID); err != nil {
 		t.Fatalf("DeletePreparedSpell: %v", err)
 	}

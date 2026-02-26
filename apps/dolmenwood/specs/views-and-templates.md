@@ -6,7 +6,7 @@
 
 The central view model assembled by `buildCharacterView()`. Contains all data needed to render the full character sheet. This function:
 
-1. Loads all related data from DB (items, companions, transactions, XP log, notes, audit log, bank deposits, retainer contracts)
+1. Loads all related data from DB (items, companions, transactions, XP log, notes, audit log, bank deposits, retainer contracts, prepared spells)
 2. Computes calendar display from game day
 3. Converts DB items to engine items for calculations
 4. Computes encumbrance via `engine.CalculateEncumbrance()`
@@ -19,7 +19,8 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 11. Builds inventory tree, move targets, store catalog
 12. Computes speed from encumbrance slots
 13. Builds bank deposit views with maturity info
-14. Loads active retainer contracts and builds retainer views
+14. Builds spell slot and prepared spell view data for spellcasting classes
+15. Loads active retainer contracts and builds retainer views
 
 ### Key View Types
 
@@ -27,6 +28,7 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 - **`CompanionInventory`** -- Groups items under a companion with `UsedSlots`
 - **`CompanionView`** -- Wraps `db.Companion` with engine-derived stats (AC, speed, load, saves, attack, morale, loyalty)
 - **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, class features (combat talents, glamours, enchantment uses, skill targets, backstab), loyalty, and weapon summaries
+- **`SpellSlots` / `PreparedSpells`** -- View fields for spellcasting classes, including prepared spell list and remaining slots.
 - **`BankDepositView`** -- Wraps `BankDeposit` with `IsMature`, `DaysUntilMature`, `GPValue`
 - **`MoveTarget`** -- Dropdown target for moving items ("Equipped", "Backpack", "Bessie (Mule)", etc.)
 - **`StoreGroup` / `StoreItem`** -- Store catalog groups with item details
@@ -96,7 +98,7 @@ Templates use the `templ` language (Go-based, compiles to Go). 15 template files
 ### Page Structure
 
 - **`layout.templ`** -- HTML skeleton: head (fonts, Tailwind, HTMX, custom CSS), nav bar ("Dolmenwood" heading), centered main container. Title format: "{name} -- Dolmenwood"
-- **`sheet.templ`** -- Character sheet layout: wraps all sections in `SheetBody`. Sections in order: DayCounter, Stats, Traits, Inventory, Store, Encumbrance, Companions, Retainers, Wealth, Bank, XP, Advancement, Notes, FullLog
+- **`sheet.templ`** -- Character sheet layout: wraps all sections in `SheetBody`. Sections in order: DayCounter, Stats, Skills, Spells, Traits, Inventory, Store, Encumbrance, Companions, Retainers, Wealth, Bank, XP, Advancement, Notes, FullLog
 - **`list.templ`** -- Character index: list of character cards (with retainers shown under their employer) + "New Character" form with class and kindred selection
 
 ### Section Templates
@@ -104,6 +106,7 @@ Templates use the `templ` language (Go-based, compiles to Go). 15 template files
 Each section is a collapsible card (using `CardDisclosure` from `styles.templ`):
 
 - **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege.
+- **`spells.templ`** -- Spell slots, prepared spell list, and spellcasting actions for spellcasters
 - **`traits.templ`** -- Kindred traits list, class traits list, class features (combat talents, glamours), moon sign display
 - **`skills.templ`** -- Skill targets sections for thief, bard, and hunter classes
 - **`inventory.templ`** -- Equipped items section, companion inventory sections, add-item forms. Item rows show: name, badges (quantity, tiny, slots, capacity), weapon damage, armor AC, inline note editing, action buttons (split, move, sell, decrement, delete)

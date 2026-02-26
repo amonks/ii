@@ -82,21 +82,21 @@ type Item struct {
 }
 
 type Companion struct {
-	ID          uint   `gorm:"primarykey"`
-	CharacterID uint   `gorm:"column:character_id"`
-	Name        string `gorm:"column:name"`
-	Breed       string `gorm:"column:breed"`
-	HPCurrent   int    `gorm:"column:hp_current"`
-	HPMax       int    `gorm:"column:hp_max"`
-	AC          int    `gorm:"column:ac"`
-	Speed       int    `gorm:"column:speed"`
-	LoadCapacity int   `gorm:"column:load_capacity"`
-	Level       int    `gorm:"column:level"`
-	Attack      string `gorm:"column:attack"`
-	Morale      int    `gorm:"column:morale"`
-	HasBarding  bool   `gorm:"column:has_barding"`
-	SaddleType  string `gorm:"column:saddle_type"` // "", "riding", "pack"
-	Loyalty     int    `gorm:"column:loyalty"`     // retainer loyalty score (7 + CHA mod)
+	ID           uint   `gorm:"primarykey"`
+	CharacterID  uint   `gorm:"column:character_id"`
+	Name         string `gorm:"column:name"`
+	Breed        string `gorm:"column:breed"`
+	HPCurrent    int    `gorm:"column:hp_current"`
+	HPMax        int    `gorm:"column:hp_max"`
+	AC           int    `gorm:"column:ac"`
+	Speed        int    `gorm:"column:speed"`
+	LoadCapacity int    `gorm:"column:load_capacity"`
+	Level        int    `gorm:"column:level"`
+	Attack       string `gorm:"column:attack"`
+	Morale       int    `gorm:"column:morale"`
+	HasBarding   bool   `gorm:"column:has_barding"`
+	SaddleType   string `gorm:"column:saddle_type"` // "", "riding", "pack"
+	Loyalty      int    `gorm:"column:loyalty"`     // retainer loyalty score (7 + CHA mod)
 }
 
 type RetainerContract struct {
@@ -921,6 +921,14 @@ func (db *DB) ResetSpells(characterID uint) error {
 
 func (db *DB) DeletePreparedSpell(spellID uint) error {
 	return db.Delete(&PreparedSpell{}, spellID).Error
+}
+
+func (db *DB) GetPreparedSpell(spellID uint) (*PreparedSpell, error) {
+	var spell PreparedSpell
+	if err := db.First(&spell, spellID).Error; err != nil {
+		return nil, err
+	}
+	return &spell, nil
 }
 
 // --- Return to Safety ---
