@@ -44,6 +44,8 @@ type CharacterView struct {
 	XPModPercent            int
 	KindredTraits           []engine.Trait
 	ClassTraits             []engine.Trait
+	CombatTalentsTotal      int
+	HasCombatTalents        bool
 	ThiefSkillTargets       engine.SkillTargets
 	ThiefSkillNames         []string
 	ThiefBackstabBonus      int
@@ -99,6 +101,8 @@ type RetainerView struct {
 	Weapons         []engine.EquippedWeapon
 	KindredTraits   []engine.Trait
 	ClassTraits     []engine.Trait
+	CombatTalentsTotal int
+	HasCombatTalents   bool
 	ThiefSkillTargets   engine.SkillTargets
 	ThiefSkillNames     []string
 	ThiefBackstabBonus  int
@@ -434,6 +438,12 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	var thiefSkillNames []string
 	var thiefBackstabBonus int
 	var thiefBackstabDamage string
+	combatTalentsTotal := 0
+	hasCombatTalents := false
+	if engine.IsFighterClass(ch.Class) {
+		combatTalentsTotal = engine.FighterCombatTalents(ch.Level)
+		hasCombatTalents = true
+	}
 	if engine.IsThiefClass(ch.Class) {
 		thiefSkillTargets = engine.ThiefSkillTargets(ch.Level)
 		thiefSkillNames = engine.ThiefSkillNames()
@@ -478,6 +488,8 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ThiefSkillNames:         thiefSkillNames,
 		ThiefBackstabBonus:      thiefBackstabBonus,
 		ThiefBackstabDamage:     thiefBackstabDamage,
+		CombatTalentsTotal:      combatTalentsTotal,
+		HasCombatTalents:        hasCombatTalents,
 		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
 		BirthdayMonths:          engine.Months(),
 		BirthdayDays:            birthdayDays,
@@ -910,6 +922,12 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerThiefNames []string
 		var retainerThiefBonus int
 		var retainerThiefDamage string
+		retainerCombatTalents := 0
+		hasRetainerCombatTalents := false
+		if engine.IsFighterClass(retainer.Class) {
+			retainerCombatTalents = engine.FighterCombatTalents(retainer.Level)
+			hasRetainerCombatTalents = true
+		}
 		if engine.IsThiefClass(retainer.Class) {
 			retainerThiefTargets = engine.ThiefSkillTargets(retainer.Level)
 			retainerThiefNames = engine.ThiefSkillNames()
@@ -934,6 +952,8 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			Weapons:         engine.EquippedWeapons(engineItems),
 			KindredTraits:   engine.KindredTraits(retainer.Kindred, retainer.Level),
 			ClassTraits:     engine.ClassTraits(retainer.Class, retainer.Level),
+			CombatTalentsTotal: retainerCombatTalents,
+			HasCombatTalents:   hasRetainerCombatTalents,
 			ThiefSkillTargets: retainerThiefTargets,
 			ThiefSkillNames: retainerThiefNames,
 			ThiefBackstabBonus: retainerThiefBonus,

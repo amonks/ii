@@ -55,4 +55,10 @@ func TestCharacterViewNonThiefHasNoSkills(t *testing.T) {
 	if view.ThiefBackstabBonus != 0 || view.ThiefBackstabDamage != "" {
 		t.Errorf("expected empty backstab stats, got bonus=%d damage=%q", view.ThiefBackstabBonus, view.ThiefBackstabDamage)
 	}
+	if !view.HasCombatTalents {
+		t.Errorf("expected fighter to have combat talents")
+	}
+	if view.CombatTalentsTotal != 0 {
+		t.Errorf("CombatTalentsTotal = %d, want 0", view.CombatTalentsTotal)
+	}
 }

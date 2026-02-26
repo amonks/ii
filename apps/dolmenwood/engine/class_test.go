@@ -78,6 +78,27 @@ func TestIsValidKindred(t *testing.T) {
 	}
 }
 
+func TestFighterCombatTalents(t *testing.T) {
+	cases := []struct {
+		name  string
+		level int
+		want  int
+	}{
+		{"level 1", 1, 0},
+		{"level 2", 2, 1},
+		{"level 6", 6, 2},
+		{"level 10", 10, 3},
+		{"level 14", 14, 4},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := FighterCombatTalents(tc.level); got != tc.want {
+				t.Errorf("FighterCombatTalents(%d) = %d, want %d", tc.level, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestClassPrimes(t *testing.T) {
 	cases := []struct {
 		class string

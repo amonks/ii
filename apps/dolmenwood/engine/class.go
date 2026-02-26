@@ -63,6 +63,31 @@ func IsValidKindred(kindred string) bool {
 	return ok
 }
 
+// IsFighterClass reports whether the class is a fighter.
+func IsFighterClass(class string) bool {
+	return strings.EqualFold(class, "Fighter")
+}
+
+// FighterCombatTalents returns the number of combat talents for a fighter level.
+func FighterCombatTalents(level int) int {
+	if level < 1 {
+		return 0
+	}
+	columns := ClassSpecificColumns("Fighter", level)
+	if columns == nil {
+		return 0
+	}
+	value, ok := columns["Combat Talents"]
+	if !ok {
+		return 0
+	}
+	talents, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+	return talents
+}
+
 // ClassPrimes returns the prime ability score names for a class.
 func ClassPrimes(class string) []string {
 	primes, ok := classPrimes[strings.ToLower(class)]
