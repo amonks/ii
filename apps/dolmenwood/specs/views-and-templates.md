@@ -46,16 +46,10 @@ type RetainerView struct {
     Weapons       []engine.EquippedWeapon
     KindredTraits []engine.Trait
     ClassTraits   []engine.Trait
-    Items         []db.Item
-    EquippedItems []InventoryItem
-    CompanionGroups []CompanionInventory
-    EquippedSlots int
-    StowedSlots   int
-    StowedCapacity int
 }
 ```
 
-For each active retainer contract, `buildCharacterView` loads the retainer's Character, their items, and computes their stats using the same engine functions as the employer (ClassAttackBonus, ClassSaveTargets, CharacterAC, etc.).
+For each active retainer contract, `buildCharacterView` loads the retainer's Character and computes their stats using the same engine functions as the employer (ClassAttackBonus, ClassSaveTargets, CharacterAC, etc.).
 
 ### Inventory Tree
 
