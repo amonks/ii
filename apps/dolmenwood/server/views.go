@@ -78,16 +78,23 @@ type CharacterView struct {
 
 // BankDepositView wraps a bank deposit with computed maturity info.
 type RetainerView struct {
-	Contract      db.RetainerContract
-	Character     *db.Character
-	AC            int
-	AttackBonus   int
-	Saves         engine.SaveTargets
-	Speed         int
-	Loyalty       int
-	Weapons       []engine.EquippedWeapon
-	KindredTraits []engine.Trait
-	ClassTraits   []engine.Trait
+	Contract        db.RetainerContract
+	Character       *db.Character
+	Items           []db.Item
+	EquippedItems   []InventoryItem
+	CompanionGroups []CompanionInventory
+	EquippedSlots   int
+	StowedSlots     int
+	StowedCapacity  int
+	MoveTargets     []MoveTarget
+	AC              int
+	AttackBonus     int
+	Saves           engine.SaveTargets
+	Speed           int
+	Loyalty         int
+	Weapons         []engine.EquippedWeapon
+	KindredTraits   []engine.Trait
+	ClassTraits     []engine.Trait
 }
 
 type BankDepositView struct {
@@ -95,6 +102,16 @@ type BankDepositView struct {
 	IsMature        bool
 	DaysUntilMature int
 	GPValue         int
+}
+
+func companionItemsByID(items []db.Item) map[uint][]engine.Item {
+	companionItems := make(map[uint][]engine.Item)
+	for _, item := range items {
+		if item.CompanionID != nil {
+			companionItems[*item.CompanionID] = append(companionItems[*item.CompanionID], dbItemToEngine(item))
+		}
+	}
+	return companionItems
 }
 
 type StoreGroup struct {
@@ -278,12 +295,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	stowedCap, stowedContainers := engine.StowedCapacity(engineItems)
 
 	// Group items by companion ID for gear derivation
-	companionItems := make(map[uint][]engine.Item)
-	for _, item := range items {
-		if item.CompanionID != nil {
-			companionItems[*item.CompanionID] = append(companionItems[*item.CompanionID], dbItemToEngine(item))
-		}
-	}
+	companionItems := companionItemsByID(items)
 
 	// Build companion views with breed-derived stats; saddle/barding from items
 	compViews := make([]CompanionView, len(companions))
@@ -831,6 +843,10 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		if err != nil {
 			return nil, err
 		}
+		companions, err := d.ListCompanions(retainer.ID)
+		if err != nil {
+			return nil, err
+		}
 		engineItems := make([]engine.Item, len(items))
 		for i, item := range items {
 			engineItems[i] = dbItemToEngine(item)
@@ -838,19 +854,53 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		ac, _ := engine.CharacterAC(retainer.Kindred, engineItems, retainer.DEX)
 		attackBonus := engine.ClassAttackBonus(retainer.Class, retainer.Level)
 		saves := engine.ClassSaveTargets(retainer.Class, retainer.Level)
-		equipped, stowed, _ := engine.CalculateEncumbrance(engineItems)
+		equipped, stowed, companionSlots := engine.CalculateEncumbrance(engineItems)
+		stowedCap, _ := engine.StowedCapacity(engineItems)
+		compViews := make([]CompanionView, len(companions))
+		companionItems := companionItemsByID(items)
+		for i, comp := range companions {
+			cv := CompanionView{Companion: comp}
+			if stats, ok := engine.BreedStats(comp.Breed); ok {
+				cv.Speed = stats.Speed
+				cv.Level = stats.Level
+				cv.Saves = stats.Saves
+				cv.Attack = stats.Attack
+				cv.Morale = stats.Morale
+				if stats.NeedsSaddle {
+					compItems := companionItems[comp.ID]
+					saddleType := engine.CompanionSaddleTypeFromItems(compItems)
+					hasBarding := engine.CompanionHasBardingFromItems(compItems)
+					cv.AC = engine.CompanionAC(stats.AC, hasBarding)
+					cv.LoadCapacity = engine.CompanionLoadCapacity(stats.LoadCapacity, saddleType)
+				} else {
+					cv.AC = stats.AC
+					cv.LoadCapacity = stats.LoadCapacity
+				}
+				cv.Loyalty = comp.Loyalty
+			}
+			compViews[i] = cv
+		}
+		equippedTree, compGroups := buildInventoryTree(items, compViews, companionSlots)
+		moveTargets := buildMoveTargets(items, compViews)
 		speed := engine.SpeedFromSlots(equipped, stowed)
 		retainers = append(retainers, RetainerView{
-			Contract:      contract,
-			Character:     retainer,
-			AC:            ac,
-			AttackBonus:   attackBonus,
-			Saves:         saves,
-			Speed:         speed,
-			Loyalty:       engine.RetainerLoyalty(engine.Modifier(ch.CHA)),
-			Weapons:       engine.EquippedWeapons(engineItems),
-			KindredTraits: engine.KindredTraits(retainer.Kindred, retainer.Level),
-			ClassTraits:   engine.ClassTraits(retainer.Class, retainer.Level),
+			Contract:        contract,
+			Character:       retainer,
+			Items:           items,
+			EquippedItems:   equippedTree,
+			CompanionGroups: compGroups,
+			EquippedSlots:   equipped,
+			StowedSlots:     stowed,
+			StowedCapacity:  stowedCap,
+			MoveTargets:     moveTargets,
+			AC:              ac,
+			AttackBonus:     attackBonus,
+			Saves:           saves,
+			Speed:           speed,
+			Loyalty:         engine.RetainerLoyalty(engine.Modifier(ch.CHA)),
+			Weapons:         engine.EquippedWeapons(engineItems),
+			KindredTraits:   engine.KindredTraits(retainer.Kindred, retainer.Level),
+			ClassTraits:     engine.ClassTraits(retainer.Class, retainer.Level),
 		})
 	}
 	return retainers, nil

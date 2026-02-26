@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -196,6 +197,113 @@ func TestRetainerViewBuildsFromContract(t *testing.T) {
 	}
 	if len(retainerView.ClassTraits) == 0 {
 		t.Error("expected class traits")
+	}
+}
+
+func TestRetainerViewIncludesInventory(t *testing.T) {
+	_, d := setupTest(t)
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		CHA:       12,
+		HPCurrent: 8,
+		HPMax:     8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Retainer",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	companion := &db.Companion{CharacterID: retainer.ID, Name: "Bessie", Breed: "Mule", HPCurrent: 9, HPMax: 9}
+	d.CreateCompanion(companion)
+
+	backpack := &db.Item{CharacterID: retainer.ID, Name: "Backpack", Quantity: 1, Location: "equipped"}
+	d.CreateItem(backpack)
+	rope := &db.Item{CharacterID: retainer.ID, Name: "Rope", Quantity: 1, ContainerID: &backpack.ID}
+	d.CreateItem(rope)
+	companionItem := &db.Item{CharacterID: retainer.ID, Name: "Torches", Quantity: 1, CompanionID: &companion.ID}
+	d.CreateItem(companionItem)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 20,
+		XPSharePct:   60,
+		DailyWageCP:  50,
+		HiredOnDay:   12,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	view, err := buildCharacterView(d, employer)
+	if err != nil {
+		t.Fatalf("buildCharacterView: %v", err)
+	}
+
+	if len(view.Retainers) != 1 {
+		t.Fatalf("expected 1 retainer, got %d", len(view.Retainers))
+	}
+
+	retainerView := view.Retainers[0]
+	if len(retainerView.Items) != 3 {
+		t.Fatalf("retainer items = %d, want 3", len(retainerView.Items))
+	}
+
+	foundBackpack := false
+	for _, item := range retainerView.EquippedItems {
+		if item.Name == "Backpack" {
+			foundBackpack = true
+			if len(item.Children) != 1 || item.Children[0].Name != "Rope" {
+				t.Fatalf("backpack children = %+v, want Rope", item.Children)
+			}
+		}
+	}
+	if !foundBackpack {
+		t.Fatal("expected backpack in retainer equipped items")
+	}
+
+	if len(retainerView.CompanionGroups) != 1 {
+		t.Fatalf("retainer companion groups = %d, want 1", len(retainerView.CompanionGroups))
+	}
+	if retainerView.CompanionGroups[0].Companion.Name != "Bessie" {
+		t.Errorf("companion name = %q, want Bessie", retainerView.CompanionGroups[0].Companion.Name)
+	}
+
+	engineItems := make([]engine.Item, 0, len(retainerView.Items))
+	for _, item := range retainerView.Items {
+		engineItems = append(engineItems, dbItemToEngine(item))
+	}
+	equipped, stowed, _ := engine.CalculateEncumbrance(engineItems)
+	stowedCapacity, _ := engine.StowedCapacity(engineItems)
+	if retainerView.EquippedSlots != equipped {
+		t.Errorf("retainer EquippedSlots = %d, want %d", retainerView.EquippedSlots, equipped)
+	}
+	if retainerView.StowedSlots != stowed {
+		t.Errorf("retainer StowedSlots = %d, want %d", retainerView.StowedSlots, stowed)
+	}
+	if retainerView.StowedCapacity != stowedCapacity {
+		t.Errorf("retainer StowedCapacity = %d, want %d", retainerView.StowedCapacity, stowedCapacity)
+	}
+
+	containerTarget := fmt.Sprintf("container:%d", backpack.ID)
+	companionTarget := fmt.Sprintf("companion:%d", companion.ID)
+	if !hasMoveTarget(retainerView.MoveTargets, containerTarget) {
+		t.Errorf("expected move target %q", containerTarget)
+	}
+	if !hasMoveTarget(retainerView.MoveTargets, companionTarget) {
+		t.Errorf("expected move target %q", companionTarget)
 	}
 }
 
@@ -451,6 +559,15 @@ func TestTownsfolkCompanionView(t *testing.T) {
 	if cv.Loyalty != 8 {
 		t.Errorf("Loyalty = %d, want 8", cv.Loyalty)
 	}
+}
+
+func hasMoveTarget(targets []MoveTarget, value string) bool {
+	for _, target := range targets {
+		if target.Value == value {
+			return true
+		}
+	}
+	return false
 }
 
 func TestMagicArmorACInView(t *testing.T) {
