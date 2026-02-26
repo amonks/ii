@@ -111,6 +111,7 @@ Moves an item (or partial stack) from one character to another:
 - Full transfer: updates `item.CharacterID` to the target, clears `ContainerID` and `CompanionID`
 - Partial transfer (quantity < item.Quantity): creates a new item on the target character with the specified quantity, reduces the source item's quantity
 - Clears the source character's coin location when the moved item is the consolidated coin item or the container holding it
+- When transferring a container item, all child items (items with `ContainerID` pointing at the container) are updated to the target character as well
 
 ## Key Business Logic
 
