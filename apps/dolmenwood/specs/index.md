@@ -38,19 +38,18 @@ The seven companion breeds (six mounts/pack animals plus Townsfolk retainers) wi
 
 ### [Retainer Contracts](retainer-contracts.md)
 
-The adventurer retainer system: the `retainer_contracts` table linking employer and retainer Characters, contract terms (loot share %, XP share %, daily wage), the hiring and dismissal flows, RetainerView on the employer's sheet with full inline stats and inventory, retainer independence as standalone playable characters, and the character list display.
+The adventurer retainer system: the `retainer_contracts` table linking employer and retainer Characters, contract terms (loot share %, XP share %, daily wage), the hiring and dismissal flows, RetainerView on the employer's sheet with full inline stats, retainer independence as standalone playable characters, and the character list display.
 
 ### [Item Transfers](item-transfers.md)
 
-How items move between characters (employer ↔ retainer): the `TransferItem` DB operation, full vs. partial transfers, the retainer inventory display on the employer's sheet, transfer UI with give/take buttons, move target integration, audit trail, and encumbrance impact.
+Planned work for phase 3: how items move between characters (employer ↔ retainer): the `TransferItem` DB operation, full vs. partial transfers, the retainer inventory display on the employer's sheet, transfer UI with give/take buttons, move target integration, audit trail, and encumbrance impact.
 
 ### [Class-Specific Subsystems](class-subsystems.md)
-
 Full mechanical support for all 9 classes: spellcasting system (Cleric, Friar, Magician, Enchanter) with spell slots, preparation, and casting; Fighter combat talents; Thief backstab and skills; Hunter animal companion; glamours (Enchanter, Elf, Grimalkin, Woodgrue); turning undead (Cleric, Friar); Friar's Armour of Faith and herbalism; Bard enchantment and counter charm; and implementation priority.
 
 ### [HTTP Handlers](http-handlers.md)
 
-All routes and their handler implementations. Covers character creation with class/kindred selection, the smart item input parser, item movement and splitting logic, the treasure/transaction system with undo, store buying, bank withdrawal handler, calendar/day advancement, adventurer retainer hire/dismiss/transfer handlers, and the HTMX partial-update and OOB swap patterns used throughout.
+All routes and their handler implementations. Covers character creation with class/kindred selection, the smart item input parser, item movement and splitting logic, the treasure/transaction system with undo, store buying, bank withdrawal handler, calendar/day advancement, adventurer retainer hire/dismiss/update handlers, and the HTMX partial-update and OOB swap patterns used throughout.
 
 ### [Views and Templates](views-and-templates.md)
 

@@ -82,19 +82,19 @@ For each active contract, `buildCharacterView` constructs a `RetainerView` with:
 - **Character data**: name, class, kindred, level, ability scores
 - **Computed combat stats**: AC, attack bonus, saves, speed, weapons (same engine functions as PCs)
 - **Traits**: kindred traits + class traits
-- **Loyalty**: from contract (initially 7 + employer CHA mod)
-- **Full inventory**: retainer's items, built into an inventory tree using the same `buildInventoryTree` function
+- **Loyalty**: from employer CHA modifier (initially 7 + modifier)
+- **Weapons summary**: equipped weapons list
 
 ### UI Layout (`server/retainers.templ`)
 
 The retainers section appears after companions on the employer's sheet. For each retainer:
 
 1. **Header**: Name, "Lvl N Kindred Class", link to full sheet
-2. **Stat grid**: HP (editable), AC, Attack, Speed
-3. **Saves**: Doom, Ray, Hold, Blast, Spell (+ magic resistance + conditional bonuses)
-4. **Loyalty/Morale display**
+2. **Stat grid**: HP, AC, Attack, Speed
+3. **Saves**: Doom, Ray, Hold, Blast, Spell
+4. **Loyalty display**
 5. **Contract terms**: loot share, XP share, daily wage (editable)
-6. **Inventory**: full tree with transfer buttons (give/take items)
+6. **Weapons summary**
 7. **Actions**: Dismiss button
 
 ### Character List

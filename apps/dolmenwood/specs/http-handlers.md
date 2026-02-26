@@ -48,7 +48,6 @@ All routes are registered via `Mux()` on the `Server` struct, using Go 1.22+ met
 | POST | `/characters/{id}/retainers/` | `handleHireRetainer` | Create retainer Character + contract |
 | POST | `/characters/{id}/retainers/{contractID}/dismiss/` | `handleDismissRetainer` | Deactivate retainer contract |
 | POST | `/characters/{id}/retainers/{contractID}/update/` | `handleUpdateRetainerContract` | Update contract terms |
-| POST | `/characters/{id}/retainers/{contractID}/transfer/` | `handleTransferItem` | Transfer item between employer and retainer |
 
 ### Wealth
 | Method | Path | Handler | Description |
@@ -127,9 +126,6 @@ Creates a new `Character` with the specified class, kindred, ability scores, and
 
 ### `handleDismissRetainer`
 Sets the contract's `Active` field to false. The retainer Character remains as an independent character. Creates audit log entries.
-
-### `handleTransferItem`
-Moves an item (or partial stack) between employer and retainer. Form values: `item_id`, `quantity`, `direction` (to-retainer or from-retainer). Calls `db.TransferItem()`. Creates audit log entries on both characters.
 
 ## HTMX Partial Update Pattern
 

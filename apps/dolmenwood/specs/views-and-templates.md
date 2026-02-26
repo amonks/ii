@@ -26,9 +26,9 @@ The central view model assembled by `buildCharacterView()`. Contains all data ne
 - **`InventoryItem`** -- Wraps `db.Item` with computed `Slots`, `BundleSize`, `Children` (nested tree), `Capacity`, `UsedSlots`, `SellPriceCP`, `CoinValueLabel`
 - **`CompanionInventory`** -- Groups items under a companion with `UsedSlots`
 - **`CompanionView`** -- Wraps `db.Companion` with engine-derived stats (AC, speed, load, saves, attack, morale, loyalty)
-- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, loyalty, and the retainer's full inventory tree
+- **`RetainerView`** -- Wraps a retainer contract + retainer Character with computed combat stats (AC, attack bonus, saves, speed, weapons), class/kindred traits, loyalty, and weapon summaries
 - **`BankDepositView`** -- Wraps `BankDeposit` with `IsMature`, `DaysUntilMature`, `GPValue`
-- **`MoveTarget`** -- Dropdown target for moving items ("Equipped", "Backpack", "Bessie (Mule)", retainer names, etc.)
+- **`MoveTarget`** -- Dropdown target for moving items ("Equipped", "Backpack", "Bessie (Mule)", etc.)
 - **`StoreGroup` / `StoreItem`** -- Store catalog groups with item details
 - **`SpeedChartCell`** -- For the visual encumbrance speed chart (filled/unfilled, colored by speed tier)
 
@@ -65,7 +65,7 @@ The move-to dropdown includes:
 - Each personal container by name (e.g., "Backpack")
 - Each companion by name (e.g., "Bessie (Mule)")
 - Containers on companions
-- Each adventurer retainer by name (transfers items between characters)
+- "Bank" for coin deposits
 
 ### Speed Charts
 
@@ -99,7 +99,7 @@ Each section is a collapsible card (using `CardDisclosure` from `styles.templ`):
 - **`stats.templ`** -- Ability scores (6 boxes with modifiers), combat (HP form, AC breakdown, attack bonus, weapons), birthday selectors, saves (5 targets + magic resistance + conditional bonuses), speed breakdown, alignment/background/liege.
 - **`traits.templ`** -- Kindred traits list, class traits list, moon sign display
 - **`inventory.templ`** -- Equipped items section, companion inventory sections, add-item forms. Item rows show: name, badges (quantity, tiny, slots, capacity), weapon damage, armor AC, inline note editing, action buttons (split, move, sell, decrement, delete)
-- **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty, morale), retainer inventory with transfer buttons, contract terms display, link to retainer's own sheet, "Hire Adventurer" form
+- **`retainers.templ`** -- Adventurer retainer section: per-retainer stat block (name, class/level, HP, AC, attack, saves, speed, loyalty), weapons list, contract terms display, link to retainer's own sheet, "Hire Adventurer" form
 - **`wealth.templ`** -- Total coins overview, purse/found treasure boxes, treasure form, "Return to Safety" button, transaction log with undo
 - **`bank.templ`** -- Deposit list with maturity badges, withdraw form
 - **`xp.templ`** -- Progress bar, level-up button (pulsing when eligible), add XP form, XP log
