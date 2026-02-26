@@ -5467,6 +5467,156 @@ func TestHireAdventurerRetainer(t *testing.T) {
 	}
 }
 
+func TestDismissRetainerContract(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:       "Employer",
+		Class:      "Knight",
+		Kindred:    "Human",
+		Level:      2,
+		HPCurrent:  12,
+		HPMax:      12,
+		CHA:        12,
+		CurrentDay: 8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 15,
+		XPSharePct:   50,
+		DailyWageCP:  0,
+		HiredOnDay:   employer.CurrentDay,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/dismiss/", employer.ID, contract.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	updated, err := d.GetRetainerContract(contract.ID)
+	if err != nil {
+		t.Fatalf("GetRetainerContract: %v", err)
+	}
+	if updated.Active {
+		t.Fatal("expected contract to be inactive")
+	}
+
+	if _, err := d.GetCharacter(retainer.ID); err != nil {
+		t.Fatalf("retainer should still exist: %v", err)
+	}
+
+	employerLog, _ := d.ListAuditLog(employer.ID)
+	foundEmployer := false
+	for _, entry := range employerLog {
+		if entry.Action == "retainer_dismiss" && strings.Contains(entry.Detail, "Rowan") {
+			foundEmployer = true
+		}
+	}
+	if !foundEmployer {
+		t.Fatal("expected retainer_dismiss audit log entry on employer")
+	}
+
+	retainerLog, _ := d.ListAuditLog(retainer.ID)
+	foundRetainer := false
+	for _, entry := range retainerLog {
+		if entry.Action == "retainer_dismissed" && strings.Contains(entry.Detail, "Employer") {
+			foundRetainer = true
+		}
+	}
+	if !foundRetainer {
+		t.Fatal("expected retainer_dismissed audit log entry on retainer")
+	}
+}
+
+func TestUpdateRetainerContract(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:       "Employer",
+		Class:      "Knight",
+		Kindred:    "Human",
+		Level:      2,
+		HPCurrent:  12,
+		HPMax:      12,
+		CHA:        12,
+		CurrentDay: 8,
+	}
+	d.CreateCharacter(employer)
+
+	retainer := &db.Character{
+		Name:      "Rowan",
+		Class:     "Fighter",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{
+		EmployerID:   employer.ID,
+		RetainerID:   retainer.ID,
+		LootSharePct: 15,
+		XPSharePct:   50,
+		DailyWageCP:  0,
+		HiredOnDay:   employer.CurrentDay,
+		Active:       true,
+	}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("loot_share_pct", "25")
+	form.Set("xp_share_pct", "40")
+	form.Set("daily_wage_cp", "12")
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/update/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	updated, err := d.GetRetainerContract(contract.ID)
+	if err != nil {
+		t.Fatalf("GetRetainerContract: %v", err)
+	}
+	if updated.LootSharePct != 25 {
+		t.Errorf("LootSharePct = %v, want 25", updated.LootSharePct)
+	}
+	if updated.XPSharePct != 40 {
+		t.Errorf("XPSharePct = %v, want 40", updated.XPSharePct)
+	}
+	if updated.DailyWageCP != 12 {
+		t.Errorf("DailyWageCP = %d, want 12", updated.DailyWageCP)
+	}
+}
+
 func TestConsumeItemViaMove(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

@@ -841,6 +841,84 @@ func (s *Server) handleHireRetainer(w http.ResponseWriter, r *http.Request) {
 	s.renderRetainers(w, r, ch)
 }
 
+func (s *Server) handleDismissRetainer(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil {
+		http.Error(w, "Retainer contract not found", http.StatusNotFound)
+		return
+	}
+	if contract.EmployerID != ch.ID {
+		http.Error(w, "Retainer contract does not belong to this character", http.StatusBadRequest)
+		return
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.DeactivateRetainerContract(contractID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.addAuditLog(ch, "retainer_dismiss", fmt.Sprintf("dismissed %s", retainer.Name))
+	s.addAuditLog(retainer, "retainer_dismissed", fmt.Sprintf("dismissed by %s", ch.Name))
+	s.renderRetainers(w, r, ch)
+}
+
+func (s *Server) handleUpdateRetainerContract(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil {
+		http.Error(w, "Retainer contract not found", http.StatusNotFound)
+		return
+	}
+	if contract.EmployerID != ch.ID {
+		http.Error(w, "Retainer contract does not belong to this character", http.StatusBadRequest)
+		return
+	}
+	r.ParseForm()
+	lootShare, err := strconv.ParseFloat(r.FormValue("loot_share_pct"), 64)
+	if err != nil {
+		http.Error(w, "Invalid loot share", http.StatusBadRequest)
+		return
+	}
+	xpShare, err := strconv.ParseFloat(r.FormValue("xp_share_pct"), 64)
+	if err != nil {
+		http.Error(w, "Invalid XP share", http.StatusBadRequest)
+		return
+	}
+	dailyWage := 0
+	if wage := strings.TrimSpace(r.FormValue("daily_wage_cp")); wage != "" {
+		parsed, err := strconv.Atoi(wage)
+		if err != nil {
+			http.Error(w, "Invalid daily wage", http.StatusBadRequest)
+			return
+		}
+		dailyWage = parsed
+	}
+
+	contract.LootSharePct = lootShare
+	contract.XPSharePct = xpShare
+	contract.DailyWageCP = dailyWage
+	if err := s.db.UpdateRetainerContract(contract); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.renderRetainers(w, r, ch)
+}
+
 func (s *Server) handleAddTreasure(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {

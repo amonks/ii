@@ -33,6 +33,8 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{id}/companions/{compID}/update/{$}", s.handleUpdateCompanion)
 	mux.HandleFunc("POST /characters/{id}/companions/{compID}/delete/{$}", s.handleDeleteCompanion)
 	mux.HandleFunc("POST /characters/{id}/retainers/{$}", s.handleHireRetainer)
+	mux.HandleFunc("POST /characters/{id}/retainers/{contractID}/dismiss/{$}", s.handleDismissRetainer)
+	mux.HandleFunc("POST /characters/{id}/retainers/{contractID}/update/{$}", s.handleUpdateRetainerContract)
 	mux.HandleFunc("POST /characters/{id}/treasure/{$}", s.handleAddTreasure)
 	mux.HandleFunc("POST /characters/{id}/treasure/{txID}/undo/{$}", s.handleUndoTransaction)
 	mux.HandleFunc("POST /characters/{id}/xp/{$}", s.handleAddXP)

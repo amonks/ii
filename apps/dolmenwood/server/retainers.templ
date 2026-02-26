@@ -58,6 +58,20 @@ templ RetainersSection(view *CharacterView) {
 							@LabelInline() { Daily Wage }
 							@Text() { { fmt.Sprintf("%d cp", retainer.Contract.DailyWageCP) } }
 						}
+						<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/update/", retainer.Contract.ID)) } hx-target="#retainers" hx-swap="outerHTML">
+							@FormRowWrapSm() {
+								@LabelInline() { Loot Share % }
+								@FormInputSmall(templ.Attributes{"type": "number", "name": "loot_share_pct", "value": fmt.Sprintf("%.0f", retainer.Contract.LootSharePct), "min": "0", "step": "1"})
+								@LabelInline() { XP Share % }
+								@FormInputSmall(templ.Attributes{"type": "number", "name": "xp_share_pct", "value": fmt.Sprintf("%.0f", retainer.Contract.XPSharePct), "min": "0", "step": "1"})
+								@LabelInline() { Daily Wage (cp) }
+								@FormInputSmall(templ.Attributes{"type": "number", "name": "daily_wage_cp", "value": fmt.Sprintf("%d", retainer.Contract.DailyWageCP), "min": "0"})
+								@BtnSecondary() { Update }
+							}
+						</form>
+						<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/dismiss/", retainer.Contract.ID)) } hx-target="#retainers" hx-swap="outerHTML">
+							@BtnSecondary() { Dismiss }
+						</form>
 						@FormRowWrapSm() {
 							@LabelInline() { Weapons }
 							if len(retainer.Weapons) == 0 {
