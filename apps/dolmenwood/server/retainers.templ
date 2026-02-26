@@ -52,17 +52,9 @@ templ RetainersSection(view *CharacterView) {
 						if retainer.ThiefBackstabBonus != 0 && retainer.ThiefBackstabDamage != "" {
 							@LabelBlock() { Backstab +{ fmt.Sprintf("%d", retainer.ThiefBackstabBonus) } { retainer.ThiefBackstabDamage } }
 						}
-						if len(retainer.ThiefSkillTargets) > 0 {
-							@LabelBlock() { Skills }
-							@Text() {
-								for i, name := range retainer.ThiefSkillNames {
-									if i > 0 {
-										@Text() { "," }
-									}
-									@Text() { { name } { fmt.Sprintf("%d", retainer.ThiefSkillTargets[name]) }+ }
-								}
-							}
-						}
+						@SkillList("Thief Skills", retainer.ThiefSkillNames, retainer.ThiefSkillTargets)
+						@SkillList("Bard Skills", retainer.BardSkillNames, retainer.BardSkillTargets)
+						@SkillList("Hunter Skills", retainer.HunterSkillNames, retainer.HunterSkillTargets)
 						if retainer.HasCombatTalents {
 							@LabelBlock() { Combat talents { fmt.Sprintf("%d", retainer.CombatTalentsTotal) } }
 						}

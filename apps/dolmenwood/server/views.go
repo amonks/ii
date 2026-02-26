@@ -46,11 +46,15 @@ type CharacterView struct {
 	ClassTraits             []engine.Trait
 	CombatTalentsTotal      int
 	HasCombatTalents        bool
-	ThiefSkillTargets  engine.SkillTargets
-	ThiefSkillNames    []string
-	ThiefBackstabBonus int
-	ThiefBackstabDamage string
-	GlamoursKnown      int
+	ThiefSkillTargets       engine.SkillTargets
+	ThiefSkillNames         []string
+	ThiefBackstabBonus      int
+	ThiefBackstabDamage     string
+	BardSkillTargets        engine.SkillTargets
+	BardSkillNames          []string
+	HunterSkillTargets      engine.SkillTargets
+	HunterSkillNames        []string
+	GlamoursKnown           int
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
@@ -85,30 +89,34 @@ type CharacterView struct {
 
 // BankDepositView wraps a bank deposit with computed maturity info.
 type RetainerView struct {
-	Contract           db.RetainerContract
-	Character          *db.Character
-	Items              []db.Item
-	EquippedItems      []InventoryItem
-	CompanionGroups    []CompanionInventory
-	EquippedSlots      int
-	StowedSlots        int
-	StowedCapacity     int
-	MoveTargets        []MoveTarget
-	AC                 int
-	AttackBonus        int
-	Saves              engine.SaveTargets
-	Speed              int
-	Loyalty            int
-	Weapons            []engine.EquippedWeapon
-	KindredTraits      []engine.Trait
-	ClassTraits        []engine.Trait
-	CombatTalentsTotal int
-	HasCombatTalents   bool
-	ThiefSkillTargets  engine.SkillTargets
-	ThiefSkillNames    []string
-	ThiefBackstabBonus int
+	Contract            db.RetainerContract
+	Character           *db.Character
+	Items               []db.Item
+	EquippedItems       []InventoryItem
+	CompanionGroups     []CompanionInventory
+	EquippedSlots       int
+	StowedSlots         int
+	StowedCapacity      int
+	MoveTargets         []MoveTarget
+	AC                  int
+	AttackBonus         int
+	Saves               engine.SaveTargets
+	Speed               int
+	Loyalty             int
+	Weapons             []engine.EquippedWeapon
+	KindredTraits       []engine.Trait
+	ClassTraits         []engine.Trait
+	CombatTalentsTotal  int
+	HasCombatTalents    bool
+	ThiefSkillTargets   engine.SkillTargets
+	ThiefSkillNames     []string
+	ThiefBackstabBonus  int
 	ThiefBackstabDamage string
-	GlamoursKnown      int
+	BardSkillTargets    engine.SkillTargets
+	BardSkillNames      []string
+	HunterSkillTargets  engine.SkillTargets
+	HunterSkillNames    []string
+	GlamoursKnown       int
 }
 
 type BankDepositView struct {
@@ -438,6 +446,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 
 	var thiefSkillTargets engine.SkillTargets
 	var thiefSkillNames []string
+	var bardSkillTargets engine.SkillTargets
+	var bardSkillNames []string
+	var hunterSkillTargets engine.SkillTargets
+	var hunterSkillNames []string
 	thiefBackstabBonus := 0
 	thiefBackstabDamage := ""
 	enchanterGlamours := 0
@@ -455,6 +467,14 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		thiefSkillNames = engine.ThiefSkillNames()
 		thiefBackstabBonus = engine.ThiefBackstabBonus()
 		thiefBackstabDamage = engine.ThiefBackstabDamage()
+	}
+	if strings.EqualFold(ch.Class, "Bard") {
+		bardSkillTargets = engine.BardSkillTargets(ch.Level)
+		bardSkillNames = engine.BardSkillNames()
+	}
+	if strings.EqualFold(ch.Class, "Hunter") {
+		hunterSkillTargets = engine.HunterSkillTargets(ch.Level)
+		hunterSkillNames = engine.HunterSkillNames()
 	}
 
 	return &CharacterView{
@@ -494,6 +514,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		ThiefSkillNames:         thiefSkillNames,
 		ThiefBackstabBonus:      thiefBackstabBonus,
 		ThiefBackstabDamage:     thiefBackstabDamage,
+		BardSkillTargets:        bardSkillTargets,
+		BardSkillNames:          bardSkillNames,
+		HunterSkillTargets:      hunterSkillTargets,
+		HunterSkillNames:        hunterSkillNames,
 		GlamoursKnown:           enchanterGlamours,
 		CombatTalentsTotal:      combatTalentsTotal,
 		HasCombatTalents:        hasCombatTalents,
@@ -893,7 +917,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		for i, item := range items {
 			engineItems[i] = dbItemToEngine(item)
 		}
-			ac, _ := engine.CharacterAC(retainer.Kindred, retainer.Class, retainer.Level, engineItems, retainer.DEX)
+		ac, _ := engine.CharacterAC(retainer.Kindred, retainer.Class, retainer.Level, engineItems, retainer.DEX)
 		attackBonus := engine.ClassAttackBonus(retainer.Class, retainer.Level)
 		saves := engine.ClassSaveTargets(retainer.Class, retainer.Level)
 		equipped, stowed, companionSlots := engine.CalculateEncumbrance(engineItems)
@@ -929,6 +953,10 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerThiefNames []string
 		var retainerThiefBonus int
 		var retainerThiefDamage string
+		var retainerBardTargets engine.SkillTargets
+		var retainerBardNames []string
+		var retainerHunterTargets engine.SkillTargets
+		var retainerHunterNames []string
 		retainerGlamours := 0
 		retainerCombatTalents := 0
 		hasRetainerCombatTalents := false
@@ -939,37 +967,48 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		if engine.IsEnchanterClass(retainer.Class) {
 			retainerGlamours = engine.EnchanterGlamours(retainer.Level)
 		}
-		if engine.IsThiefClass(retainer.Class) {
+		switch strings.ToLower(retainer.Class) {
+		case "thief":
 			retainerThiefTargets = engine.ThiefSkillTargets(retainer.Level)
 			retainerThiefNames = engine.ThiefSkillNames()
 			retainerThiefBonus = engine.ThiefBackstabBonus()
 			retainerThiefDamage = engine.ThiefBackstabDamage()
+		case "bard":
+			retainerBardTargets = engine.BardSkillTargets(retainer.Level)
+			retainerBardNames = engine.BardSkillNames()
+		case "hunter":
+			retainerHunterTargets = engine.HunterSkillTargets(retainer.Level)
+			retainerHunterNames = engine.HunterSkillNames()
 		}
 		retainers = append(retainers, RetainerView{
-			Contract:        contract,
-			Character:       retainer,
-			Items:           items,
-			EquippedItems:   equippedTree,
-			CompanionGroups: compGroups,
-			EquippedSlots:   equipped,
-			StowedSlots:     stowed,
-			StowedCapacity:  stowedCap,
-			MoveTargets:     moveTargets,
-			AC:              ac,
-			AttackBonus:     attackBonus,
-			Saves:           saves,
-			Speed:           speed,
-			Loyalty:         engine.RetainerLoyalty(engine.Modifier(ch.CHA)),
-			Weapons:         engine.EquippedWeapons(engineItems),
-			KindredTraits:   engine.KindredTraits(retainer.Kindred, retainer.Level),
-			ClassTraits:     engine.ClassTraits(retainer.Class, retainer.Level),
-			CombatTalentsTotal: retainerCombatTalents,
-			HasCombatTalents:   hasRetainerCombatTalents,
-			ThiefSkillTargets: retainerThiefTargets,
-			ThiefSkillNames: retainerThiefNames,
-			ThiefBackstabBonus: retainerThiefBonus,
+			Contract:            contract,
+			Character:           retainer,
+			Items:               items,
+			EquippedItems:       equippedTree,
+			CompanionGroups:     compGroups,
+			EquippedSlots:       equipped,
+			StowedSlots:         stowed,
+			StowedCapacity:      stowedCap,
+			MoveTargets:         moveTargets,
+			AC:                  ac,
+			AttackBonus:         attackBonus,
+			Saves:               saves,
+			Speed:               speed,
+			Loyalty:             engine.RetainerLoyalty(engine.Modifier(ch.CHA)),
+			Weapons:             engine.EquippedWeapons(engineItems),
+			KindredTraits:       engine.KindredTraits(retainer.Kindred, retainer.Level),
+			ClassTraits:         engine.ClassTraits(retainer.Class, retainer.Level),
+			CombatTalentsTotal:  retainerCombatTalents,
+			HasCombatTalents:    hasRetainerCombatTalents,
+			ThiefSkillTargets:   retainerThiefTargets,
+			ThiefSkillNames:     retainerThiefNames,
+			ThiefBackstabBonus:  retainerThiefBonus,
 			ThiefBackstabDamage: retainerThiefDamage,
-			GlamoursKnown: retainerGlamours,
+			BardSkillTargets:    retainerBardTargets,
+			BardSkillNames:      retainerBardNames,
+			HunterSkillTargets:  retainerHunterTargets,
+			HunterSkillNames:    retainerHunterNames,
+			GlamoursKnown:       retainerGlamours,
 		})
 	}
 	return retainers, nil

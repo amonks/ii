@@ -406,6 +406,56 @@ func TestGlamoursShownInTraits(t *testing.T) {
 	}
 }
 
+func TestRetainerSkillListsShown(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{
+		Name:      "Employer",
+		Class:     "Knight",
+		Kindred:   "Human",
+		Level:     1,
+		HPCurrent: 10,
+		HPMax:     10,
+	}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+
+	retainer := &db.Character{
+		Name:      "Lyra",
+		Class:     "Bard",
+		Kindred:   "Elf",
+		Level:     1,
+		HPCurrent: 6,
+		HPMax:     6,
+	}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("/characters/%d/", employer.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "Bard Skills") {
+		t.Errorf("response should include bard skills label")
+	}
+	if !strings.Contains(body, "Listen 5+") {
+		t.Errorf("response should include bard skill targets")
+	}
+}
+
 func TestRetainerCombatTalentsShown(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

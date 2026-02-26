@@ -2,18 +2,38 @@ package server
 
 import "fmt"
 
-templ ThiefSkillsSection(view *CharacterView) {
-	if len(view.ThiefSkillTargets) > 0 {
+templ SkillSection(title string, names []string, targets map[string]int) {
+	if len(targets) > 0 {
 		@CardSection() {
-			@SectionHeader() { Thief Skills }
+			@SectionHeader() { { title } }
 			@Grid(2) {
-				for _, name := range view.ThiefSkillNames {
+				for _, name := range names {
 					@Billboard() {
 						@LabelBlock() { { name } }
-						@ValueText() { { fmt.Sprintf("%d", view.ThiefSkillTargets[name]) }+ }
+						@ValueText() { { fmt.Sprintf("%d", targets[name]) }+ }
 					}
 				}
 			}
 		}
 	}
+}
+
+templ SkillList(title string, names []string, targets map[string]int) {
+	if len(targets) > 0 {
+		@LabelBlock() { { title } }
+		@Text() {
+			for i, name := range names {
+				if i > 0 {
+					@Text() { "," }
+				}
+				@Text() { { name } { fmt.Sprintf("%d", targets[name]) }+ }
+			}
+		}
+	}
+}
+
+templ ThiefSkillsSection(view *CharacterView) {
+	@SkillSection("Thief Skills", view.ThiefSkillNames, view.ThiefSkillTargets)
+	@SkillSection("Bard Skills", view.BardSkillNames, view.BardSkillTargets)
+	@SkillSection("Hunter Skills", view.HunterSkillNames, view.HunterSkillTargets)
 }
