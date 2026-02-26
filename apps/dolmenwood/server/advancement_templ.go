@@ -109,7 +109,7 @@ func AdvancementSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var7 string
 							templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(view.AdvancementTable.Title)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/advancement.templ`, Line: 13, Col: 52}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `advancement.templ`, Line: 13, Col: 52}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 							if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func AdvancementSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var12 string
 											templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(header)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/advancement.templ`, Line: 19, Col: 32}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `advancement.templ`, Line: 19, Col: 32}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 											if templ_7745c5c3_Err != nil {
@@ -233,7 +233,7 @@ func AdvancementSection(view *CharacterView) templ.Component {
 												var templ_7745c5c3_Var15 string
 												templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(cell)
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/advancement.templ`, Line: 28, Col: 17}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `advancement.templ`, Line: 28, Col: 17}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 												if templ_7745c5c3_Err != nil {
@@ -388,7 +388,7 @@ func AdvancementSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var22 string
 											templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/advancement.templ`, Line: 45, Col: 29}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `advancement.templ`, Line: 45, Col: 29}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 											if templ_7745c5c3_Err != nil {

@@ -161,7 +161,7 @@ type TurnUndeadEntry struct {
 }
 ```
 
-The turn undead table is a standard B/X-derived table. Data must be transcribed from the rules.
+The turn undead table values are derived from the Dolmenwood cleric/friar rules (2d6-based B/X table).
 
 **Server**: Display as a table in the character sheet (only for Clerics and Friars).
 

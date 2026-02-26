@@ -52,6 +52,10 @@ templ RetainersSection(view *CharacterView) {
 						if retainer.ThiefBackstabBonus != 0 && retainer.ThiefBackstabDamage != "" {
 							@LabelBlock() { Backstab +{ fmt.Sprintf("%d", retainer.ThiefBackstabBonus) } { retainer.ThiefBackstabDamage } }
 						}
+						if len(retainer.TurnUndeadTable) > 0 {
+							@LabelBlock() { Turn Undead }
+							@Text() { { formatTurnUndeadSummary(retainer.TurnUndeadTable) } }
+						}
 						@SkillList("Thief Skills", retainer.ThiefSkillNames, retainer.ThiefSkillTargets)
 						@SkillList("Bard Skills", retainer.BardSkillNames, retainer.BardSkillTargets)
 						@SkillList("Hunter Skills", retainer.HunterSkillNames, retainer.HunterSkillTargets)

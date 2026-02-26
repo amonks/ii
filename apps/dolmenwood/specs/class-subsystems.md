@@ -94,7 +94,7 @@ Glamours are fairy magic abilities. Enchanters learn glamours by level (count fr
 
 Clerics and Friars can attempt to turn (repel or destroy) undead creatures. Success depends on the undead's type and the character's level, using a Turn Undead table.
 
-**Implementation**: `TurnUndeadTarget(class, level, undeadHD) string` returns the target number (or "T" for automatic turn, "D" for automatic destroy, "-" for impossible).
+**Implementation**: `TurnUndeadTable(class, level)` returns the full row of target values (or T/D/-) for undead HD 1-11 at the given level.
 
 **UI**: A "Turn Undead" table showing targets by undead HD at the character's level.
 

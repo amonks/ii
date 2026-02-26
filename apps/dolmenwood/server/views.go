@@ -54,8 +54,9 @@ type CharacterView struct {
 	BardSkillNames          []string
 	HunterSkillTargets      engine.SkillTargets
 	HunterSkillNames        []string
-	GlamoursKnown           int
-	EnchantmentUsesTotal    int
+	GlamoursKnown        int
+	EnchantmentUsesTotal int
+	TurnUndeadTable      []engine.TurnUndeadEntry
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
 	BirthdayDays            []int
@@ -117,8 +118,9 @@ type RetainerView struct {
 	BardSkillNames      []string
 	HunterSkillTargets  engine.SkillTargets
 	HunterSkillNames    []string
-	GlamoursKnown           int
-	EnchantmentUsesTotal    int
+	GlamoursKnown        int
+	EnchantmentUsesTotal int
+	TurnUndeadTable      []engine.TurnUndeadEntry
 }
 
 type BankDepositView struct {
@@ -491,6 +493,10 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		hunterSkillTargets = engine.HunterSkillTargets(ch.Level)
 		hunterSkillNames = engine.HunterSkillNames()
 	}
+	var turnUndeadTable []engine.TurnUndeadEntry
+	if strings.EqualFold(ch.Class, "Cleric") || strings.EqualFold(ch.Class, "Friar") {
+		turnUndeadTable = engine.TurnUndeadTable(ch.Class, ch.Level)
+	}
 
 	return &CharacterView{
 		Character:               ch,
@@ -535,6 +541,7 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		HunterSkillNames:        hunterSkillNames,
 		GlamoursKnown:           enchanterGlamours,
 		EnchantmentUsesTotal:    bardEnchantmentUses,
+		TurnUndeadTable:         turnUndeadTable,
 		CombatTalentsTotal:      combatTalentsTotal,
 		HasCombatTalents:        hasCombatTalents,
 		SaveBonuses:             engine.ConditionalSaveBonuses(ch.Kindred, ch.Class, ch.Level, moonSign),
@@ -983,6 +990,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerBardNames []string
 		var retainerHunterTargets engine.SkillTargets
 		var retainerHunterNames []string
+		var retainerTurnUndead []engine.TurnUndeadEntry
 		retainerBardEnchantmentUses := 0
 		retainerGlamours := 0
 		retainerCombatTalents := 0
@@ -993,6 +1001,9 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		}
 		if engine.IsEnchanterClass(retainer.Class) {
 			retainerGlamours = engine.EnchanterGlamours(retainer.Level)
+		}
+		if strings.EqualFold(retainer.Class, "Cleric") || strings.EqualFold(retainer.Class, "Friar") {
+			retainerTurnUndead = engine.TurnUndeadTable(retainer.Class, retainer.Level)
 		}
 		switch strings.ToLower(retainer.Class) {
 		case "thief":
@@ -1038,6 +1049,7 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			HunterSkillNames:     retainerHunterNames,
 			GlamoursKnown:        retainerGlamours,
 			EnchantmentUsesTotal: retainerBardEnchantmentUses,
+			TurnUndeadTable:      retainerTurnUndead,
 		})
 	}
 	return retainers, nil

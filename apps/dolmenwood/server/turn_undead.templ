@@ -1,0 +1,58 @@
+package server
+
+import (
+	"fmt"
+	"strings"
+
+	"monks.co/apps/dolmenwood/engine"
+)
+
+var turnUndeadColumnHeaders = []string{
+	"HD 1",
+	"HD 2",
+	"HD 3",
+	"HD 4",
+	"HD 5",
+	"HD 6",
+	"HD 7",
+	"HD 8",
+	"HD 9",
+	"HD 10",
+	"HD 11",
+}
+
+templ TurnUndeadTable(entries []engine.TurnUndeadEntry) {
+	if len(entries) > 0 {
+		@DataTable() {
+			@StyledTable() {
+				<thead>
+					@THeadRow() {
+						@THeadCell() { Undead HD }
+						for _, header := range turnUndeadColumnHeaders {
+							@THeadCell() { { header } }
+						}
+					}
+				</thead>
+				<tbody>
+					@TRow(false) {
+						@TCell(true) { Target }
+						for _, entry := range entries {
+							@TCell(false) { { entry.Target } }
+						}
+					}
+				</tbody>
+			}
+		}
+	}
+}
+
+func formatTurnUndeadSummary(entries []engine.TurnUndeadEntry) string {
+	if len(entries) == 0 {
+		return ""
+	}
+	segments := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		segments = append(segments, fmt.Sprintf("%s:%s", entry.UndeadHD, entry.Target))
+	}
+	return strings.Join(segments, ", ")
+}
