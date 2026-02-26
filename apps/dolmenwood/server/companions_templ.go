@@ -125,7 +125,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var8 string
 									templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(comp.Breed)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 18, Col: 37}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 18, Col: 37}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 									if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var9 string
 								templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("companions/%d/delete/", comp.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 19, Col: 67}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 19, Col: 67}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 								if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var14 string
 										templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.HPCurrent))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 28, Col: 43}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 28, Col: 43}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 										if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var15 string
 										templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.HPMax))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 28, Col: 77}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 28, Col: 77}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 										if templ_7745c5c3_Err != nil {
@@ -325,7 +325,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var19 string
 										templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.AC))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 33, Col: 50}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 33, Col: 50}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 										if templ_7745c5c3_Err != nil {
@@ -400,7 +400,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var23 string
 										templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.Speed))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 37, Col: 53}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 37, Col: 53}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 										if templ_7745c5c3_Err != nil {
@@ -479,7 +479,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var27 string
 										templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.LoadCapacity))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 41, Col: 60}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 41, Col: 60}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 										if templ_7745c5c3_Err != nil {
@@ -527,7 +527,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var29 string
 									templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(comp.Attack)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 46, Col: 38}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 46, Col: 38}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 									if templ_7745c5c3_Err != nil {
@@ -621,7 +621,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var32 string
 								templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.Morale))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 57, Col: 45}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 57, Col: 45}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 								if templ_7745c5c3_Err != nil {
@@ -657,7 +657,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var34 string
 									templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", comp.Loyalty))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 61, Col: 48}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 61, Col: 48}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 									if templ_7745c5c3_Err != nil {
@@ -677,7 +677,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var35 string
 							templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("companions/%d/update/", comp.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 64, Col: 66}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 64, Col: 66}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 							if templ_7745c5c3_Err != nil {
@@ -1070,7 +1070,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var51 string
 								templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(breed)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 113, Col: 28}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 113, Col: 28}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 								if templ_7745c5c3_Err != nil {
@@ -1083,7 +1083,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var52 string
 								templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(breed)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 113, Col: 38}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 113, Col: 38}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 								if templ_7745c5c3_Err != nil {
@@ -1255,7 +1255,7 @@ func CompanionsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var60 string
 										templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/companions.templ`, Line: 128, Col: 28}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/companions.templ`, Line: 128, Col: 28}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 										if templ_7745c5c3_Err != nil {

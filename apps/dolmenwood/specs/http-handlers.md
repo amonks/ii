@@ -48,6 +48,8 @@ All routes are registered via `Mux()` on the `Server` struct, using Go 1.22+ met
 | POST | `/characters/{id}/retainers/` | `handleHireRetainer` | Create retainer Character + contract |
 | POST | `/characters/{id}/retainers/{contractID}/dismiss/` | `handleDismissRetainer` | Deactivate retainer contract |
 | POST | `/characters/{id}/retainers/{contractID}/update/` | `handleUpdateRetainerContract` | Update contract terms |
+| POST | `/characters/{id}/retainers/{contractID}/transfer/` | `handleTransferItem` | Transfer item to/from retainer |
+| POST | `/characters/{id}/retainers/{contractID}/items/` | `handleAddRetainerItem` | Add item directly to retainer inventory |
 
 ### Wealth
 | Method | Path | Handler | Description |

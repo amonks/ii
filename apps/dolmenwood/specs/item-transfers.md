@@ -32,10 +32,11 @@ The retainer's inventory appears within the retainer's section on the employer's
 - Items in the retainer's containers
 - Items on the retainer's own companions (if any)
 - Used slots / capacity indicators
+- An add-item form that creates items directly on the retainer
 
 ### Transfer UI
 
-Each item in the retainer's inventory (when viewed from the employer's sheet) has a "Take" button that transfers it to the employer. The employer's inventory has a "Give to [retainer name]" move target option.
+Each item in the retainer's inventory (when viewed from the employer's sheet) has a "Take" button that transfers it to the employer. The employer's inventory has a "Give to [retainer name]" move target option. The retainer inventory includes an add-item form that posts to `POST /characters/{id}/retainers/{contractID}/items/` and uses the same item parsing rules as the employer add-item flow.
 
 Transfer form values:
 - `item_id`: the item to transfer

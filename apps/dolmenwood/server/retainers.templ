@@ -99,12 +99,10 @@ templ RetainersSection(view *CharacterView) {
 								@inventoryItem(item, view.MoveTargets, 0, retainer.Contract.ID)
 							}
 						}
-						<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/transfer/", retainer.Contract.ID)) } hx-target="#inventory" hx-swap="outerHTML">
+						<form hx-post={ templ.SafeURL(retainerItemFormAction(retainer.Contract.ID)) } hx-target="#inventory" hx-swap="outerHTML">
 							@FormRow() {
-								<input type="hidden" name="direction" value="give"/>
-								@FormInput(templ.Attributes{"name": "item_id", "placeholder": "Item ID", "required": true})
-								@FormInput(templ.Attributes{"name": "quantity", "type": "number", "placeholder": "Qty (0=all)", "min": "0"})
-								@BtnPrimary() { Give }
+								@FormInput(templ.Attributes{"name": "name", "placeholder": "5x preserved rations", "required": true})
+								@BtnPrimary() { + }
 							}
 						</form>
 					}

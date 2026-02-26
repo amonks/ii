@@ -6011,6 +6011,56 @@ func TestTransferItemPartialToRetainer(t *testing.T) {
 	}
 }
 
+func TestAddItemToRetainer(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1, HPCurrent: 8, HPMax: 8}
+	d.CreateCharacter(employer)
+	retainer := &db.Character{Name: "Rowan", Class: "Fighter", Kindred: "Human", Level: 1, HPCurrent: 6, HPMax: 6}
+	d.CreateCharacter(retainer)
+
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	form := url.Values{}
+	form.Set("name", "Rope")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/items/", employer.ID, contract.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", w.Code, http.StatusOK, w.Body.String())
+	}
+
+	employerItems, _ := d.ListItems(employer.ID)
+	if len(employerItems) != 0 {
+		t.Fatalf("employer items = %d, want 0", len(employerItems))
+	}
+	retainerItems, _ := d.ListItems(retainer.ID)
+	if len(retainerItems) != 1 {
+		t.Fatalf("retainer items = %d, want 1", len(retainerItems))
+	}
+	if retainerItems[0].Name != "Rope" {
+		t.Errorf("retainer item name = %q, want Rope", retainerItems[0].Name)
+	}
+
+	retainerLog, _ := d.ListAuditLog(retainer.ID)
+	foundAdd := false
+	for _, entry := range retainerLog {
+		if entry.Action == "item_add" && strings.Contains(entry.Detail, "Rope") {
+			foundAdd = true
+			break
+		}
+	}
+	if !foundAdd {
+		t.Fatalf("expected item_add audit log entry for retainer")
+	}
+}
+
 func TestSplitItemMovesToRetainer(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()

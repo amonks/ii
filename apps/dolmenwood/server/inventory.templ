@@ -60,12 +60,6 @@ templ InventorySection(view *CharacterView) {
 }
 
 	templ inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, contractID ...uint) {
-		transferContractID := uint(0)
-		transferDirection := ""
-		if len(contractID) > 0 {
-			transferContractID = contractID[0]
-			transferDirection = "take"
-		}
 		@Indent(depth) {
 			@Row() {
 				@ClusterMin() {
@@ -112,7 +106,7 @@ templ InventorySection(view *CharacterView) {
 					if bonus := engine.BardingACBonus(item.Name); bonus > 0 {
 						@Accent("armor") { { fmt.Sprintf("+%d AC", bonus) } }
 					}
-					if transferContractID == 0 && !engine.IsCoinItem(item.Name) {
+					if len(contractID) == 0 && !engine.IsCoinItem(item.Name) {
 						<form hx-post={ fmt.Sprintf("items/%d/update/", item.ID) }
 							hx-target="#inventory" hx-swap="outerHTML">
 							<input type="hidden" name="has_notes" value="1"/>
@@ -123,17 +117,17 @@ templ InventorySection(view *CharacterView) {
 								"onchange": "this.form.requestSubmit()",
 							})
 						</form>
-					} else if transferContractID > 0 && item.Notes != "" && !engine.IsCoinItem(item.Name) {
+					} else if len(contractID) > 0 && item.Notes != "" && !engine.IsCoinItem(item.Name) {
 						@Label() { { item.Notes } }
 					}
 				}
 				@InlineActions() {
-					if transferContractID > 0 {
-						<form hx-post={ templ.SafeURL(transferFormAction(transferContractID)) }
+					if len(contractID) > 0 {
+						<form hx-post={ templ.SafeURL(transferFormAction(contractID[0])) }
 							hx-target="#inventory" hx-swap="outerHTML">
 							@InlineFormActions() {
 								<input type="hidden" name="item_id" value={ fmt.Sprintf("%d", item.ID) }/>
-								<input type="hidden" name="direction" value={ transferDirection }/>
+								<input type="hidden" name="direction" value="take"/>
 								if item.Quantity > 1 {
 									@SplitInput(templ.Attributes{
 										"type": "number",
@@ -145,11 +139,7 @@ templ InventorySection(view *CharacterView) {
 								} else {
 									<input type="hidden" name="quantity" value="0"/>
 								}
-								if transferDirection == "give" {
-									@BtnSecondary() { Give }
-								} else {
-									@BtnSecondary() { Take }
-								}
+								@BtnSecondary() { Take }
 							}
 						</form>
 					} else {
@@ -222,7 +212,7 @@ templ InventorySection(view *CharacterView) {
 			}
 		}
 		for _, child := range item.Children {
-			@inventoryItem(child, moveTargets, depth+1, transferContractID)
+			@inventoryItem(child, moveTargets, depth+1, contractID...)
 		}
 	}
 
@@ -295,6 +285,10 @@ templ EncumbranceSection(view *CharacterView) {
 
 func transferFormAction(contractID uint) string {
 	return fmt.Sprintf("retainers/%d/transfer/", contractID)
+}
+
+func retainerItemFormAction(contractID uint) string {
+	return fmt.Sprintf("retainers/%d/items/", contractID)
 }
 
 templ EncumbranceSummary(view *CharacterView) {

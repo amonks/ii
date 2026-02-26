@@ -1003,6 +1003,104 @@ func (s *Server) handleUpdateRetainerContract(w http.ResponseWriter, r *http.Req
 	s.renderRetainers(w, r, ch)
 }
 
+func (s *Server) handleAddRetainerItem(w http.ResponseWriter, r *http.Request) {
+	employer, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil {
+		http.Error(w, "Retainer contract not found", http.StatusNotFound)
+		return
+	}
+	if !contract.Active {
+		http.Error(w, "Retainer contract is inactive", http.StatusBadRequest)
+		return
+	}
+	if contract.EmployerID != employer.ID {
+		http.Error(w, "Retainer contract does not belong to this character", http.StatusBadRequest)
+		return
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+
+	r.ParseForm()
+	rawName := strings.TrimSpace(r.FormValue("name"))
+	if rawName == "" {
+		http.Error(w, "Item name required", http.StatusBadRequest)
+		return
+	}
+
+	if amounts, err := engine.ParseCoinExpression(rawName); err == nil {
+		coinMap := make(map[engine.CoinType]int)
+		totalCoins := 0
+		for _, a := range amounts {
+			coinMap[a.CoinType] += a.Amount
+			totalCoins += a.Amount
+		}
+		item := &db.Item{
+			CharacterID: retainer.ID,
+			Name:        engine.CoinItemNameStr,
+			Quantity:    totalCoins,
+			Notes:       engine.FormatCoinNotes(coinMap),
+			Location:    "stowed",
+		}
+		if err := s.combineStackableItems(retainer.ID, item, retainer.CurrentDay); err == nil {
+			s.renderInventoryAndRetainers(w, r, employer)
+			return
+		} else if !errors.Is(err, errNotCombined) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := s.db.CreateItem(item); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		s.addAuditLog(retainer, "item_add", fmt.Sprintf("add Coins (%s) in %s", item.Notes, s.itemLocationLabel(item)))
+		s.renderInventoryAndRetainers(w, r, employer)
+		return
+	}
+
+	name, qty := parseItemInput(rawName)
+	if qty < 0 {
+		deductQty := -qty
+		if err := s.deductItemQuantity(retainer, name, deductQty); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.addAuditLog(retainer, "item_deduct", fmt.Sprintf("deduct %s, qty %d", name, deductQty))
+		s.renderInventoryAndRetainers(w, r, employer)
+		return
+	}
+
+	isTiny, name := extractTinyFlag(name)
+	item := &db.Item{
+		CharacterID: retainer.ID,
+		Name:        name,
+		Quantity:    qty,
+		Location:    "stowed",
+		IsTiny:      isTiny,
+	}
+	if err := s.combineStackableItems(retainer.ID, item, retainer.CurrentDay); err == nil {
+		s.renderInventoryAndRetainers(w, r, employer)
+		return
+	} else if !errors.Is(err, errNotCombined) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := s.db.CreateItem(item); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(retainer, "item_add", fmt.Sprintf("add %s, qty %d in %s", item.Name, item.Quantity, s.itemLocationLabel(item)))
+	s.renderInventoryAndRetainers(w, r, employer)
+}
+
 func (s *Server) handleTransferItem(w http.ResponseWriter, r *http.Request) {
 	ch, err := s.getCharacter(r)
 	if err != nil {
