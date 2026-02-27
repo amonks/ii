@@ -33,6 +33,11 @@ func run() error {
 
 	flag.Parse()
 
+	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	db, err := NewDB()
 	if err != nil {
 		return err
@@ -53,11 +58,6 @@ func run() error {
 	// Migration has been completed, code removed
 
 	case "serve":
-		ctx := sigctx.New()
-		if err := tailnet.WaitReady(ctx); err != nil {
-			return fmt.Errorf("tailnet: %w", err)
-		}
-
 		if err := serveAir(ctx, db); err != nil {
 			errs = errors.Join(errs, err)
 		}

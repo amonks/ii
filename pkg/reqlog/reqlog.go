@@ -39,7 +39,7 @@ var logsClient *logsclient.Client
 // SetupLogging configures the default slog logger to output JSON to stderr
 // and ships logs to the logs service via the tailnet.
 func SetupLogging() {
-	logsClient = logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client())
+	logsClient = logsclient.New("http://monks-logs-fly-ord/ingest", tailnet.Client(), tailnet.ReadyChan())
 	w := io.MultiWriter(os.Stderr, logsClient)
 	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level: slog.LevelInfo,

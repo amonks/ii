@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync"
 
 	"monks.co/pkg/meta"
 	"tailscale.com/client/tailscale/apitype"
@@ -33,12 +34,26 @@ var server = &tsnet.Server{
 	AuthKey:  tailscaleAuthKey,
 }
 
+var (
+	readyCh   = make(chan struct{})
+	readyOnce sync.Once
+)
+
 // WaitReady blocks until the tailscale node is fully authenticated
 // and connected to the tailnet. Apps should call this early in startup,
 // before making any outbound tailnet connections.
 func WaitReady(ctx context.Context) error {
 	_, err := server.Up(ctx)
+	if err == nil {
+		readyOnce.Do(func() { close(readyCh) })
+	}
 	return err
+}
+
+// ReadyChan returns a channel that is closed when the tailnet is ready.
+// Use this to gate operations that depend on the tailnet without blocking.
+func ReadyChan() <-chan struct{} {
+	return readyCh
 }
 
 // ListenAndServe starts a tsnet server with hostname
