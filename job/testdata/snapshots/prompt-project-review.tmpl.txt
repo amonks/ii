@@ -9,13 +9,7 @@ Some jj commands that may be useful:
 - `jj diff --git --from 'fork_point(@|main)' --to @` to see the entire diff from the series
 - `jj show --summary <change_id>` to see the files modified in a specific change
 - `jj diff --git -r <change_id>` to see a diff of a specific change
-Review the series:
-- Does it complete the goal in the todo?
-- Is it free of defects?
-- Does it include proper test coverage?
-- Does it keep the relevant specs up to date?
-- Does it conform to the norms of the code areas it modifies?
-- Does it work?
+Review the series. Use the review questions from the system prompt as guidance.
 
 Todo
 

@@ -13,7 +13,7 @@ Change description
     Add snapshot tests for prompts and commit messages, ensuring wrapping for
     long lines and bulleted lists stays consistent.
 
-Review the change. Here are some questions to think about:
+Review the change. Use the review questions from the system prompt as guidance.
 
 Do not ask for needless refactoring: it's important that new things go in the
 right place, but it's also important that changes stay small and focused.

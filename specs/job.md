@@ -338,7 +338,7 @@ templates.
 The job system renders shared templates (workflow context, review questions) and
 loads context files once per run, supplying them alongside review instructions as
 project-level prompt content for every phase. Phase templates now contain only
-phase-specific instructions and do not inline shared templates.
+phase-specific instructions and do not inline shared templates or review questions.
 
 | File                             | Stage        | Mode   |
 | -------------------------------- | ------------ | ------ |
