@@ -28,7 +28,7 @@ func TestLoadPrompt_UsesOverride(t *testing.T) {
 		t.Fatalf("load prompt: %v", err)
 	}
 
-	if trimmedPromptOutput(loaded) != override {
+	if trimmedPromptOutputNoTrailingSpaces(loaded) != override {
 		t.Fatalf("expected override content, got %q", loaded)
 	}
 }
@@ -55,8 +55,10 @@ func TestRenderPrompt_InterpolatesFields(t *testing.T) {
 			Type:        todo.TypeTask,
 			Priority:    todo.PriorityHigh,
 		},
-		Feedback: "Needs more tests",
-		Message:  "Add coverage",
+		Feedback:        "Needs more tests",
+		Message:         "Add coverage",
+		WorkflowContext: "Workflow context",
+		ReviewQuestions: "Review questions",
 	}
 
 	rendered, err := RenderPrompt("", "{{.Todo.ID}} {{.Todo.Title}} {{.Feedback}} {{.Message}}", data)
@@ -65,52 +67,48 @@ func TestRenderPrompt_InterpolatesFields(t *testing.T) {
 	}
 
 	expected := "todo-123 Ship it Needs more tests Add coverage"
-	if trimmedPromptOutput(rendered) != expected {
+	if trimmedPromptOutputNoTrailingSpaces(rendered) != expected {
 		t.Fatalf("expected %q, got %q", expected, rendered)
 	}
 }
 
 func TestRenderPrompt_InterpolatesWorkspacePath(t *testing.T) {
-	data := PromptData{WorkspacePath: "/tmp/ws-123"}
+	data := PromptData{WorkspacePath: "/tmp/ws-123", WorkflowContext: "Workflow context", ReviewQuestions: "Review questions"}
 
 	rendered, err := RenderPrompt("", "{{.WorkspacePath}}", data)
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
 
-	if trimmedPromptOutput(rendered) != "/tmp/ws-123" {
+	if trimmedPromptOutputNoTrailingSpaces(rendered) != "/tmp/ws-123" {
 		t.Fatalf("expected workspace path to render, got %q", rendered)
 	}
 }
 
 func TestRenderPrompt_InterpolatesReviewInstructions(t *testing.T) {
-	data := PromptData{ReviewInstructions: "Follow the steps."}
+	data := PromptData{ReviewInstructions: "Follow the steps.", WorkflowContext: "Workflow context", ReviewQuestions: "Review questions"}
 
 	rendered, err := RenderPrompt("", "{{.ReviewInstructions}}", data)
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
 
-	if trimmedPromptOutput(rendered) != "Follow the steps." {
+	if trimmedPromptOutputNoTrailingSpaces(rendered) != "Follow the steps." {
 		t.Fatalf("expected review instructions to render, got %q", rendered)
 	}
 }
 
 func TestRenderPrompt_InterpolatesTodoBlock(t *testing.T) {
-	data := PromptData{TodoBlock: "Todo\n\n    id"}
+	data := PromptData{TodoBlock: "Todo\n\n    id", WorkflowContext: "Workflow context", ReviewQuestions: "Review questions"}
 
 	rendered, err := RenderPrompt("", "{{.TodoBlock}}", data)
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
 
-	if trimmedPromptOutput(rendered) != "Todo\n\n    id" {
+	if trimmedPromptOutputNoTrailingSpaces(rendered) != "Todo\n\n    id" {
 		t.Fatalf("expected todo block to render, got %q", rendered)
 	}
-}
-
-func trimmedPromptOutput(value string) string {
-	return internalstrings.TrimSpace(value)
 }
 
 func TestFormatTodoBlock_PreservesFieldLines(t *testing.T) {
@@ -161,7 +159,16 @@ func TestFormatFeedbackBlock_PreservesListItems(t *testing.T) {
 }
 
 func TestRenderPrompt_RendersReviewQuestionsTemplate(t *testing.T) {
-	rendered, err := RenderPrompt("", "{{template \"review_questions\"}}", PromptData{})
+	workflowTemplate, err := LoadPrompt("", reviewQuestionsTemplateName)
+	if err != nil {
+		t.Fatalf("load review questions: %v", err)
+	}
+	reviewQuestions, err := renderContextTemplate("review_questions", workflowTemplate)
+	if err != nil {
+		t.Fatalf("render review questions: %v", err)
+	}
+
+	rendered, err := RenderPrompt("", "{{template \"review_questions\"}}", PromptData{ReviewQuestions: reviewQuestions})
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
@@ -172,8 +179,16 @@ func TestRenderPrompt_RendersReviewQuestionsTemplate(t *testing.T) {
 }
 
 func TestRenderPrompt_RendersWorkflowContextTemplate(t *testing.T) {
-	workflowTemplate := "{{template \"workflow_context\"}}"
-	rendered, err := RenderPrompt("", workflowTemplate, PromptData{})
+	workflowTemplate, err := LoadPrompt("", workflowContextTemplateName)
+	if err != nil {
+		t.Fatalf("load workflow context: %v", err)
+	}
+	workflowContext, err := renderContextTemplate("workflow_context", workflowTemplate)
+	if err != nil {
+		t.Fatalf("render workflow context: %v", err)
+	}
+
+	rendered, err := RenderPrompt("", "{{template \"workflow_context\"}}", PromptData{WorkflowContext: workflowContext})
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
@@ -229,12 +244,17 @@ func TestRenderPrompt_UsesReviewQuestionsOverride(t *testing.T) {
 		t.Fatalf("write override: %v", err)
 	}
 
-	rendered, err := RenderPrompt(repoPath, "{{template \"review_questions\"}}", PromptData{})
+	reviewQuestions, err := renderContextTemplate("review_questions", override)
+	if err != nil {
+		t.Fatalf("render review questions: %v", err)
+	}
+
+	rendered, err := RenderPrompt(repoPath, "{{template \"review_questions\"}}", PromptData{ReviewQuestions: reviewQuestions})
 	if err != nil {
 		t.Fatalf("render prompt: %v", err)
 	}
 
-	if trimmedPromptOutput(rendered) != "- override" {
+	if trimmedPromptOutputNoTrailingSpaces(rendered) != "- override" {
 		t.Fatalf("expected override content, got %q", rendered)
 	}
 }

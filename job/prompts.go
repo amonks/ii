@@ -471,38 +471,16 @@ func RenderPrompt(repoPath, contents string, data PromptData) (string, error) {
 	var tmpl *template.Template
 	var err error
 	tmpl = template.New("prompt").Option("missingkey=error")
-	if data.WorkflowContext == "" && data.ReviewQuestions == "" {
-		reviewQuestionsTemplate, err := LoadPrompt(repoPath, reviewQuestionsTemplateName)
-		if err != nil {
-			return "", fmt.Errorf("load review questions template: %w", err)
-		}
-
-		workflowContextTemplate, err := LoadPrompt(repoPath, workflowContextTemplateName)
-		if err != nil {
-			return "", fmt.Errorf("load workflow context template: %w", err)
-		}
-
-		tmpl, err = tmpl.Parse(reviewQuestionsTemplate)
-		if err != nil {
-			return "", fmt.Errorf("parse review questions template: %w", err)
-		}
-
-		tmpl, err = tmpl.Parse(workflowContextTemplate)
+	if tmplText := contextTemplate("workflow_context", data.WorkflowContext); tmplText != "" {
+		tmpl, err = tmpl.Parse(tmplText)
 		if err != nil {
 			return "", fmt.Errorf("parse workflow context template: %w", err)
 		}
-	} else {
-		if tmplText := contextTemplate("workflow_context", data.WorkflowContext); tmplText != "" {
-			tmpl, err = tmpl.Parse(tmplText)
-			if err != nil {
-				return "", fmt.Errorf("parse workflow context template: %w", err)
-			}
-		}
-		if tmplText := contextTemplate("review_questions", data.ReviewQuestions); tmplText != "" {
-			tmpl, err = tmpl.Parse(tmplText)
-			if err != nil {
-				return "", fmt.Errorf("parse review questions template: %w", err)
-			}
+	}
+	if tmplText := contextTemplate("review_questions", data.ReviewQuestions); tmplText != "" {
+		tmpl, err = tmpl.Parse(tmplText)
+		if err != nil {
+			return "", fmt.Errorf("parse review questions template: %w", err)
 		}
 	}
 
@@ -516,6 +494,17 @@ func RenderPrompt(repoPath, contents string, data PromptData) (string, error) {
 		return "", fmt.Errorf("render prompt: %w", err)
 	}
 	return strings.TrimSpace(out.String()), nil
+}
+
+func trimmedPromptOutputNoTrailingSpaces(value string) string {
+	if internalstrings.IsBlank(value) {
+		return ""
+	}
+	lines := strings.Split(value, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, " ")
+	}
+	return strings.Join(lines, "\n")
 }
 
 func contextTemplate(name, contents string) string {

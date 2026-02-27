@@ -103,6 +103,9 @@ agent (global config first, then ancestor directories). Configured test commands
 included in the project-level system prompt content so each phase shares the same test
 command context.
 
+Job prompt logs include the tiered system prompt blocks followed by the user message,
+reflecting the cache hierarchy instead of a concatenated prompt string.
+
 ## Commit Message File
 
 The agent writes the generated commit message to `.incrementum-commit-message` in the

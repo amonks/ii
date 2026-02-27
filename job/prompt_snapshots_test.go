@@ -26,10 +26,11 @@ func TestPromptSnapshots(t *testing.T) {
 			if err != nil {
 				t.Fatalf("build prompt parts: %v", err)
 			}
-			prompt := parts.PhaseContent
-			if parts.UserContent != "" {
-				prompt += "\n\n" + parts.UserContent
+			promptContent := promptContentFromParts(parts)
+			if len(testCommands) > 0 {
+				promptContent.TestCommands = testCommands
 			}
+			prompt := renderPromptLog(promptContent)
 			snapshotName := name + ".txt"
 			requireSnapshot(t, snapshotName, prompt)
 		})

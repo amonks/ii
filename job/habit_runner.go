@@ -361,14 +361,6 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		if err != nil {
 			return Job{}, err
 		}
-		prompt := phase
-		if userContent != "" {
-			prompt += "\n\n" + userContent
-		}
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
-			return Job{}, err
-		}
-
 		updated := current
 		model := resolveHabitModel(ctx.opts.Config, ctx.opts.Model, ctx.habit.ImplementationModel, "implement")
 		runOpts := AgentRunOptions{
@@ -379,6 +371,10 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
 			Env:           agentRunEnv(),
+		}
+		prompt := renderPromptLog(runOpts.Prompt)
+		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
+			return Job{}, err
 		}
 		runAttempt := func() (AgentRunResult, error) {
 			result, err := runLLMWithEvents(ctx.opts.toRunOptions(), runOpts, "implement")
@@ -571,10 +567,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			return Job{}, err
 		}
 		promptContent := promptContentFromParts(parts)
-		prompt := parts.PhaseContent
-		if parts.UserContent != "" {
-			prompt += "\n\n" + parts.UserContent
-		}
+		prompt := renderPromptLog(promptContent)
 		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "review", Template: promptName, Prompt: prompt}); err != nil {
 			return Job{}, err
 		}

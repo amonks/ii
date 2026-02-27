@@ -1,15 +1,92 @@
-You are in the PROJECT REVIEW phase, evaluating the entire series of changes.
+System prompt blocks:
 
-The IMPLEMENTATION phase has indicated no further changes are needed. Review the
-complete series in the jujutsu working tree. These changes, taken together, are
-meant to resolve the todo below.
+Project context block 1:
+  ## Workflow Context
 
-Some jj commands that may be useful:
-- `jj log --revisions 'fork_point(@|main)..@'` to see the list of changes in the series
-- `jj diff --git --from 'fork_point(@|main)' --to @` to see the entire diff from the series
-- `jj show --summary <change_id>` to see the files modified in a specific change
-- `jj diff --git -r <change_id>` to see a diff of a specific change
-Review the series. Use the review questions from the system prompt as guidance.
+  You are part of an incremental code workflow designed to complete large projects
+  through small, focused changes. This approach is intentional: attempting large
+  projects in a single context leads to degraded output quality as context fills
+  up and costs increase. By breaking work into atomic changes, each phase operates
+  with fresh context and focused attention.
+
+  **Glossary**
+
+  - **change**: A jj change—the unit of work in the working tree, identified by a
+    change ID. One iteration produces one change.
+  - **series**: The sequence of changes that, together, resolve a todo. Evaluated
+    by project review at the end.
+  - **phase**: One of the four stages below (IMPLEMENTATION, TESTING, etc.).
+  - **iteration**: One cycle through the loop: implement a change, test it, review
+    it, commit it.
+
+  **The Loop**
+
+  1. IMPLEMENTATION — Make the next atomic change toward the todo. If nothing
+     remains to be done, make no changes.
+  2. TESTING — Tests run automatically. If they fail, control returns to
+     IMPLEMENTATION with the failure output as feedback.
+  3. CODE REVIEW — A reviewer evaluates the single change. Outcomes: ACCEPT
+     (proceed), REQUEST_CHANGES (return to IMPLEMENTATION with feedback), or
+     ABANDON (give up on the todo entirely).
+  4. COMMIT — The change is finalized and committed. The loop restarts at
+     IMPLEMENTATION for the next iteration.
+
+  When an IMPLEMENTATION phase makes no changes—indicating the todo is
+  satisfied—the loop exits and a PROJECT REVIEW evaluates the entire series
+  before marking the todo complete.
+
+  **Constraints**
+
+  - Tests must pass before code review. If tests fail after implementation, that
+    triggers another IMPLEMENTATION phase automatically—never a review of broken
+    code.
+  - The loop terminates only when implementation makes no changes AND the project
+    review accepts the series.
+  - This change need only resolve part of the todo. Incremental progress is the
+    point. Don't try to do everything at once.
+Project context block 2:
+  - Does it do what the change description says?
+  - Does it move us towards the goal in the todo?
+  - Is it _necessary_ for moving us towards the goal in the todo?
+  - Is it free of defects?
+  - Is the domain modeling coherent and sound?
+  - Are things in the right place?
+  - Does it include proper test coverage?
+  - Does it keep the relevant specs up to date?
+  - Does the change description describe the _entire_ change?
+  - Does it conform to the norms of the code areas it modifies?
+  - Does it work?
+Project context block 3:
+  Publish your review to the file ./.incrementum-feedback
+
+  Write one of the following allcaps words as the first line:
+  - `ACCEPT` -- if the changes pass review and should be merged
+  - `ABANDON` -- if the changes are so off-base as to be a lost cause
+  - `REQUEST_CHANGES` -- if some modifications could get the changes into shape
+
+  After the outcome, add a blank line and your review comments. For ACCEPT, briefly
+  note what looks good or any observations. For ABANDON or REQUEST_CHANGES, explain
+  the issues in detail.
+Context file block 1:
+  Project context.
+Test commands:
+  - go test ./...
+  - go vet ./...
+Phase content:
+  You are in the PROJECT REVIEW phase, evaluating the entire series of changes.
+
+  The IMPLEMENTATION phase has indicated no further changes are needed. Review the
+  complete series in the jujutsu working tree. These changes, taken together, are
+  meant to resolve the todo below.
+
+  Some jj commands that may be useful:
+  - `jj log --revisions 'fork_point(@|main)..@'` to see the list of changes in the series
+  - `jj diff --git --from 'fork_point(@|main)' --to @` to see the entire diff from the series
+  - `jj show --summary <change_id>` to see the files modified in a specific change
+  - `jj diff --git -r <change_id>` to see a diff of a specific change
+  Review the series. Use the review questions from the system prompt as guidance.
+
+User message:
 
 Todo
 

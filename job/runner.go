@@ -13,6 +13,7 @@ import (
 
 	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/internal/config"
+	internalagent "github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/jj"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/todo"
@@ -593,20 +594,12 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		}
 	}
 
+	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
+	var lastSessionID string
 	phase, userContent, err := renderPromptParts(item, current.Feedback, previousMessage, seriesLog, nil, promptName, workspacePath)
 	if err != nil {
 		return ImplementingStageResult{}, err
 	}
-	prompt := phase
-	if userContent != "" {
-		prompt += "\n\n" + userContent
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
-		return ImplementingStageResult{}, err
-	}
-
-	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
-	var lastSessionID string
 	runOpts := AgentRunOptions{
 		RepoPath:      repoPath,
 		WorkspacePath: workspacePath,
@@ -615,6 +608,10 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
 		Env:           agentRunEnv(),
+	}
+	prompt := renderPromptLog(runOpts.Prompt)
+	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
+		return ImplementingStageResult{}, err
 	}
 	runAttempt := func() (AgentRunResult, error) {
 		result, err := runLLMWithEvents(opts, runOpts, "implement")
@@ -872,15 +869,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	if len(testCommands) > 0 {
 		promptContent.TestCommands = testCommands
 	}
-	prompt := parts.PhaseContent
-	if parts.UserContent != "" {
-		prompt += "\n\n" + parts.UserContent
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: purpose, Template: promptName, Prompt: prompt}); err != nil {
-		return ReviewingStageResult{}, err
-	}
-
-	llmResult, err := runLLMWithEvents(opts, AgentRunOptions{
+	runOpts := AgentRunOptions{
 		RepoPath:      repoPath,
 		WorkspacePath: workspacePath,
 		Prompt:        promptContent,
@@ -888,7 +877,13 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
 		Env:           agentRunEnv(),
-	}, purpose)
+	}
+	prompt := renderPromptLog(promptContent)
+	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: purpose, Template: promptName, Prompt: prompt}); err != nil {
+		return ReviewingStageResult{}, err
+	}
+
+	llmResult, err := runLLMWithEvents(opts, runOpts, purpose)
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -1119,6 +1114,67 @@ func renderPromptParts(item todo.Todo, feedback, message, seriesLog string, tran
 	}
 	promptContent := promptContentFromParts(parts)
 	return promptContent.PhaseContent, promptContent.UserContent, nil
+}
+
+func renderPromptLog(prompt internalagent.PromptContent) string {
+	content := prompt.UserContent
+	if content == "" {
+		content = "(no user content)"
+	}
+	return fmt.Sprintf("System prompt blocks:\n\n%s\n\nUser message:\n\n%s", formatSystemPromptBlocks(prompt), content)
+}
+
+func formatSystemPromptBlocks(prompt internalagent.PromptContent) string {
+	lines := []string{}
+	appendBlocks := func(label string, blocks []string) {
+		for i, block := range blocks {
+			block = internalstrings.TrimTrailingNewlines(block)
+			if internalstrings.IsBlank(block) {
+				continue
+			}
+			lines = append(lines, fmt.Sprintf("%s %d:", label, i+1))
+			lines = append(lines, indentPromptBlock(internalstrings.TrimLeadingNewlines(block)))
+		}
+	}
+
+	appendBlocks("Project context block", prompt.ProjectContext)
+	appendBlocks("Context file block", prompt.ContextFiles)
+	if len(prompt.TestCommands) > 0 {
+		lines = append(lines, "Test commands:")
+		for _, command := range prompt.TestCommands {
+			command = internalstrings.TrimSpace(command)
+			if internalstrings.IsBlank(command) {
+				continue
+			}
+			lines = append(lines, fmt.Sprintf("  - %s", command))
+		}
+	}
+	if !internalstrings.IsBlank(prompt.PhaseContent) {
+		lines = append(lines, "Phase content:")
+		lines = append(lines, indentPromptBlock(prompt.PhaseContent))
+	}
+	if len(lines) == 0 {
+		return "(no system prompt content)"
+	}
+	return strings.Join(lines, "\n")
+}
+
+func indentPromptBlock(block string) string {
+	block = internalstrings.TrimTrailingNewlines(block)
+	block = internalstrings.TrimLeadingNewlines(block)
+	if internalstrings.IsBlank(block) {
+		return ""
+	}
+	lines := strings.Split(block, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimRight(line, " ")
+		if trimmed == "" {
+			lines[i] = ""
+			continue
+		}
+		lines[i] = "  " + trimmed
+	}
+	return strings.Join(lines, "\n")
 }
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {
