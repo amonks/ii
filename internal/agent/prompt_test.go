@@ -7,12 +7,17 @@ import (
 )
 
 func TestBuildSystemPrompt_UsesDateOnly(t *testing.T) {
-	prompt := BuildSystemPrompt("/workdir")
+	prompt := BuildSystemBlocks("/workdir", PromptContent{PhaseContent: "Phase content"})
 
 	var dateText string
-	for line := range strings.SplitSeq(prompt, "\n") {
-		if after, ok := strings.CutPrefix(line, "Current date and time: "); ok {
-			dateText = after
+	for _, block := range prompt {
+		for line := range strings.SplitSeq(block.Text, "\n") {
+			if after, ok := strings.CutPrefix(line, "Current date and time: "); ok {
+				dateText = after
+				break
+			}
+		}
+		if dateText != "" {
 			break
 		}
 	}

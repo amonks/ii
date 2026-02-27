@@ -593,9 +593,13 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		}
 	}
 
-	prompt, err := renderPromptTemplate(item, current.Feedback, previousMessage, seriesLog, nil, promptName, workspacePath)
+	phase, userContent, err := renderPromptParts(item, current.Feedback, previousMessage, seriesLog, nil, promptName, workspacePath)
 	if err != nil {
 		return ImplementingStageResult{}, err
+	}
+	prompt := phase
+	if userContent != "" {
+		prompt += "\n\n" + userContent
 	}
 	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
 		return ImplementingStageResult{}, err
@@ -606,7 +610,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 	runOpts := AgentRunOptions{
 		RepoPath:      repoPath,
 		WorkspacePath: workspacePath,
-		Prompt:        prompt,
+		Prompt:        buildPromptContent(phase, userContent, workspacePath, opts),
 		Model:         model,
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
@@ -848,24 +852,29 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 	promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-	cfg := opts.Config
-	if cfg == nil {
-		var err error
-		cfg, err = opts.LoadConfig(repoPath)
-		if err != nil {
-			return ReviewingStageResult{}, fmt.Errorf("load config: %w", err)
-		}
-		if cfg == nil {
-			cfg = &config.Config{}
-		}
-	}
-	testCommands := []string{}
-	if cfg != nil {
-		testCommands = cfg.Job.TestCommands
-	}
-	prompt, err := RenderPrompt(workspacePath, promptTemplate, newPromptData(item, "", message, "", nil, workspacePath, testCommands))
+	context, err := loadPromptContext(workspacePath)
 	if err != nil {
 		return ReviewingStageResult{}, err
+	}
+	parts, err := buildPromptParts(item, "", message, "", nil, workspacePath, nil, context, promptTemplate, false)
+	if err != nil {
+		return ReviewingStageResult{}, err
+	}
+	testCommands := []string{}
+	if opts.Config != nil {
+		testCommands = opts.Config.Job.TestCommands
+	} else if opts.LoadConfig != nil {
+		if cfg, cfgErr := opts.LoadConfig(repoPath); cfgErr == nil && cfg != nil {
+			testCommands = cfg.Job.TestCommands
+		}
+	}
+	promptContent := promptContentFromParts(parts)
+	if len(testCommands) > 0 {
+		promptContent.TestCommands = testCommands
+	}
+	prompt := parts.PhaseContent
+	if parts.UserContent != "" {
+		prompt += "\n\n" + parts.UserContent
 	}
 	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: purpose, Template: promptName, Prompt: prompt}); err != nil {
 		return ReviewingStageResult{}, err
@@ -874,7 +883,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	llmResult, err := runLLMWithEvents(opts, AgentRunOptions{
 		RepoPath:      repoPath,
 		WorkspacePath: workspacePath,
-		Prompt:        prompt,
+		Prompt:        promptContent,
 		Model:         model,
 		StartedAt:     opts.Now(),
 		EventLog:      opts.EventLog,
@@ -1095,12 +1104,21 @@ func diffStatHasChanges(diffStat string) bool {
 	return seenChangeLine
 }
 
-func renderPromptTemplate(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
+func renderPromptParts(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, name, workspacePath string) (string, string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath, nil))
+	context, err := loadPromptContext(workspacePath)
+	if err != nil {
+		return "", "", err
+	}
+	parts, err := buildPromptParts(item, feedback, message, seriesLog, transcripts, workspacePath, nil, context, prompt, false)
+	if err != nil {
+		return "", "", err
+	}
+	promptContent := promptContentFromParts(parts)
+	return promptContent.PhaseContent, promptContent.UserContent, nil
 }
 
 func buildLLMFailureMessage(purpose, promptName string, result AgentRunResult, runOpts AgentRunOptions, beforeCommitID, afterCommitID string, afterCommitErr error, restored bool, restoreErr error, retryCount int) string {

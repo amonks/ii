@@ -9,6 +9,20 @@ import (
 	"github.com/amonks/incrementum/internal/llm"
 )
 
+// PromptContent bundles the structured pieces used to assemble prompts.
+type PromptContent struct {
+	// ProjectContext contains rendered templates shared across phases.
+	ProjectContext []string
+	// ContextFiles contains AGENTS.md/CLAUDE.md contents.
+	ContextFiles []string
+	// TestCommands lists configured test commands.
+	TestCommands []string
+	// PhaseContent is the phase-specific instructions.
+	PhaseContent string
+	// UserContent is the todo/series/feedback content for the current iteration.
+	UserContent string
+}
+
 // AgentConfig configures an agent run.
 type AgentConfig struct {
 	// Model is the LLM model to use for completions.

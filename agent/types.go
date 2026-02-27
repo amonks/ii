@@ -134,8 +134,8 @@ type RunOptions struct {
 	// WorkDir is the working directory for tools.
 	WorkDir string
 
-	// Prompt is the user prompt to send to the agent.
-	Prompt string
+	// Prompt contains structured content for the agent.
+	Prompt internalagent.PromptContent
 
 	// Model is the model ID to use. If empty, resolved via priority chain.
 	Model string

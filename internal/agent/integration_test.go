@@ -100,7 +100,7 @@ func TestAgentRun_SimpleCompletion_Anthropic(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	handle, err := agent.Run(ctx, "What is 2+2? Just say the number, nothing else.", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestAgentRun_SimpleCompletion_OpenAI(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	handle, err := agent.Run(ctx, "What is 2+2? Just say the number, nothing else.", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestAgentRun_ToolCall_Anthropic(t *testing.T) {
 	defer cancel()
 
 	// Ask the agent to use the bash tool
-	handle, err := agent.Run(ctx, "Please run 'echo hello world' using the bash tool and tell me the output.", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "Please run 'echo hello world' using the bash tool and tell me the output."}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -292,7 +292,7 @@ func TestAgentRun_FileOperations_Anthropic(t *testing.T) {
 
 	// Ask the agent to create a file
 	testFile := filepath.Join(tmpDir, "test.txt")
-	handle, err := agent.Run(ctx, "Please create a file at "+testFile+" with the content 'Hello from the agent!'", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "Please create a file at " + testFile + " with the content 'Hello from the agent!'"}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -341,7 +341,7 @@ func TestAgentRun_PermissionDenied_Anthropic(t *testing.T) {
 	defer cancel()
 
 	// Ask the agent to run a command that's not allowed
-	handle, err := agent.Run(ctx, "Please run 'ls -la' using the bash tool.", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "Please run 'ls -la' using the bash tool."}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -399,7 +399,7 @@ func TestAgentRun_ContextCancellation(t *testing.T) {
 	// Create a context that we'll cancel shortly
 	ctx, cancel := context.WithCancel(context.Background())
 
-	handle, err := agent.Run(ctx, "Tell me a very long story about a dragon.", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "Tell me a very long story about a dragon."}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -440,7 +440,7 @@ func TestAgentRun_Events_Anthropic(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	handle, err := agent.Run(ctx, "What is 2+2?", config)
+	handle, err := agent.Run(ctx, agent.PromptContent{UserContent: "What is 2+2?"}, config)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}

@@ -95,6 +95,12 @@ Where `<OUTCOME>` (first line, trimmed) is one of:
 
 If the file doesn't exist after review, treat as `ACCEPT` with no comments.
 
+## Prompt Context
+
+Job prompt assembly renders the workflow context and review questions templates before
+sending them to the agent. Context files are loaded in the same order as the internal
+agent (global config first, then ancestor directories).
+
 ## Commit Message File
 
 The agent writes the generated commit message to `.incrementum-commit-message` in the
@@ -327,6 +333,11 @@ Bundled defaults via `//go:embed`, overridable by placing files in
 default template contents, override paths, and variable types for prompt
 templates.
 
+The job system renders shared templates (workflow context, review questions) and
+loads context files once per run, supplying them alongside review instructions as
+project-level prompt content for every phase. Phase templates now contain only
+phase-specific instructions and do not inline shared templates.
+
 | File                             | Stage        | Mode   |
 | -------------------------------- | ------------ | ------ |
 | `prompt-implementation.tmpl`     | implementing | todo   |
@@ -360,6 +371,9 @@ All prompt templates receive the same data:
   `prompt-feedback.tmpl` to give the agent context about work already completed.
 - `TestCommandsBlock` (`string`): formatted block listing the test commands that ran and passed
   before the review stage. Empty when no test commands are provided.
+- `WorkflowContext` (`string`): rendered workflow-context template shared across phases.
+- `ReviewQuestions` (`string`): rendered review-questions template shared across phases.
+- `ContextFilesBlock` (`string`): concatenated AGENTS.md/CLAUDE.md contents shared across phases.
 - `HabitName` (`string`): name of the habit (filename without extension). Empty for
   regular todo jobs.
 - `HabitInstructions` (`string`): full text of the habit instruction document,
@@ -367,10 +381,14 @@ All prompt templates receive the same data:
 
 Shared templates:
 
-- `review-questions.tmpl`: defines `review_questions`, the default review
-  question list. Overrides live at `.incrementum/templates/review-questions.tmpl`.
+- `workflow-context.tmpl`: defines `workflow_context`, the default workflow instructions.
+  Overrides live at `.incrementum/templates/workflow-context.tmpl`.
+- `review-questions.tmpl`: defines `review_questions`, the default review question list.
+  Overrides live at `.incrementum/templates/review-questions.tmpl`.
 - `review-instructions.tmpl`: embedded review output instructions block. This is
-  part of the internal API and is not overrideable.
+  part of the internal API and is not overrideable; repo templates do not apply.
+  It is always included in the tier-2 system prompt content so implementation and
+  review sessions share the same cached prefix.
 
 ## Commands
 
@@ -546,10 +564,18 @@ The job runner uses the `agent` package to run LLM sessions. The key types are:
 ### Types
 
 ```go
+type PromptContent struct {
+    ProjectContext []string
+    ContextFiles   []string
+    TestCommands   []string
+    PhaseContent   string
+    UserContent    string
+}
+
 type AgentRunOptions struct {
     RepoPath      string
     WorkspacePath string
-    Prompt        string
+    Prompt        PromptContent
     Model         string
     StartedAt     time.Time
     EventLog      *EventLog

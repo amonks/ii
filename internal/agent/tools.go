@@ -88,6 +88,30 @@ type TaskParams struct {
 	SubagentType string `json:"subagent_type" jsonschema:"description=The type of specialized agent to use for this task"`
 }
 
+// TaskWithContextParams contains parameters for the task_with_context tool.
+type TaskWithContextParams struct {
+	// Description is a short (3-5 word) description of the task.
+	Description string `json:"description" jsonschema:"description=A short (3-5 word) description of the task"`
+
+	// Prompt is the task for the agent to perform.
+	Prompt string `json:"prompt" jsonschema:"description=The task for the agent to perform"`
+
+	// SubagentType is the type of specialized agent to use.
+	SubagentType string `json:"subagent_type" jsonschema:"description=The type of specialized agent to use for this task"`
+
+	// ProjectContext is workflow context and review instructions.
+	ProjectContext []string `json:"project_context" jsonschema:"description=Project workflow context, review instructions, and other system guidance"`
+
+	// ContextFiles are paths to additional context files.
+	ContextFiles []string `json:"context_files" jsonschema:"description=Paths to additional context files"`
+
+	// TestCommands are the commands used for testing.
+	TestCommands []string `json:"test_commands" jsonschema:"description=Commands used to run tests"`
+
+	// PhaseContent describes the current workflow phase content.
+	PhaseContent string `json:"phase_content" jsonschema:"description=Workflow phase content"`
+}
+
 // builtInTools returns the list of built-in agent tools.
 // The task tool is not included until subagent spawning is implemented.
 func builtInTools() []llm.Tool {
@@ -127,6 +151,11 @@ func builtInToolsWithTask(includeTask bool) []llm.Tool {
 			Description: "Launch a subagent to handle a task. Use this for complex multi-step operations that benefit from focused context. The subagent runs synchronously and returns its result.",
 			Parameters:  TaskParams{},
 		})
+		tools = append(tools, llm.Tool{
+			Name:        "task_with_context",
+			Description: "Launch a subagent to handle a task using a full PromptContent payload (including project context, context files, test commands, and workflow phase content). The subagent runs synchronously and returns its result.",
+			Parameters:  TaskWithContextParams{},
+		})
 	}
 
 	return tools
@@ -159,6 +188,8 @@ func (e *toolExecutor) executeTool(ctx context.Context, toolCall llm.ToolCall) l
 		content, isError = e.executeEdit(toolCall.Arguments)
 	case "task":
 		content, isError = e.executeTask(ctx, toolCall.Arguments)
+	case "task_with_context":
+		content, isError = e.executeTaskWithContext(ctx, toolCall.Arguments)
 	default:
 		content = fmt.Sprintf("Unknown tool: %s", toolCall.Name)
 		isError = true
@@ -444,11 +475,89 @@ func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (st
 		return formatValidationError("task", "subagent_type", "string", args), true
 	}
 
+	_ = description
+
+	subPrompt := PromptContent{UserContent: prompt}
+
+	return e.runSubagent(ctx, "task", subagentType, subPrompt)
+}
+
+// executeTaskWithContext spawns a subagent with explicit prompt context.
+func (e *toolExecutor) executeTaskWithContext(ctx context.Context, args map[string]any) (string, bool) {
+	description, ok := args["description"].(string)
+	if !ok || description == "" {
+		return formatValidationError("task_with_context", "description", "string", args), true
+	}
+
+	prompt, ok := args["prompt"].(string)
+	if !ok || prompt == "" {
+		return formatValidationError("task_with_context", "prompt", "string", args), true
+	}
+
+	subagentType, ok := args["subagent_type"].(string)
+	if !ok || subagentType == "" {
+		return formatValidationError("task_with_context", "subagent_type", "string", args), true
+	}
+
+	_ = description
+
+	projectContext, ok := stringSliceArg(args, "project_context")
+	if !ok {
+		return formatValidationError("task_with_context", "project_context", "[]string", args), true
+	}
+	contextFiles, ok := stringSliceArg(args, "context_files")
+	if !ok {
+		return formatValidationError("task_with_context", "context_files", "[]string", args), true
+	}
+	testCommands, ok := stringSliceArg(args, "test_commands")
+	if !ok {
+		return formatValidationError("task_with_context", "test_commands", "[]string", args), true
+	}
+	phaseContent, ok := args["phase_content"].(string)
+	if !ok {
+		return formatValidationError("task_with_context", "phase_content", "string", args), true
+	}
+
+	subPrompt := PromptContent{
+		ProjectContext: projectContext,
+		ContextFiles:   contextFiles,
+		TestCommands:   testCommands,
+		PhaseContent:   phaseContent,
+		UserContent:    prompt,
+	}
+
+	return e.runSubagent(ctx, "task_with_context", subagentType, subPrompt)
+}
+
+func stringSliceArg(args map[string]any, key string) ([]string, bool) {
+	value, ok := args[key]
+	if !ok {
+		return nil, false
+	}
+
+	switch raw := value.(type) {
+	case []string:
+		return raw, true
+	case []any:
+		out := make([]string, 0, len(raw))
+		for _, entry := range raw {
+			str, ok := entry.(string)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, str)
+		}
+		return out, true
+	default:
+		return nil, false
+	}
+}
+
+func (e *toolExecutor) runSubagent(ctx context.Context, toolName string, subagentType string, subPrompt PromptContent) (string, bool) {
 	// Validate subagent type
 	validTypes := []string{"general", "explore", "bash"}
-	isValid := slices.Contains(validTypes, subagentType)
-	if !isValid {
-		return formatInvalidValueError("task", "subagent_type", subagentType, validTypes, args), true
+	if !slices.Contains(validTypes, subagentType) {
+		return formatInvalidValueError(toolName, "subagent_type", subagentType, validTypes, map[string]any{"subagent_type": subagentType}), true
 	}
 
 	// Check that we have config to spawn from (subagents don't have config, preventing recursion)
@@ -472,7 +581,7 @@ func (e *toolExecutor) executeTask(ctx context.Context, args map[string]any) (st
 	}
 
 	// Run the subagent synchronously
-	result, err := runSubagent(ctx, prompt, subConfig, tools)
+	result, err := runSubagent(ctx, subPrompt, subConfig, tools)
 	if err != nil {
 		return fmt.Sprintf("Subagent error: %v", err), true
 	}

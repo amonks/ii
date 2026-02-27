@@ -199,6 +199,22 @@ Parameters:
 - `prompt` (string, required): The task for the agent to perform
 - `subagent_type` (string, required): The type of specialized agent to use
 
+### task_with_context
+
+Spawns a subagent to handle a task while supplying the full prompt context payload
+(project workflow context, context file content, test commands, and workflow phase
+content). Use this when the caller already has prompt context assembled and wants
+subagents to inherit it without relying on repository fallback logic.
+
+Parameters:
+- `description` (string, required): A short (3-5 word) description of the task
+- `prompt` (string, required): The task for the agent to perform
+- `subagent_type` (string, required): The type of specialized agent to use
+- `project_context` (string[], required): Workflow context, review questions, and review instructions
+- `context_files` (string[], required): Context file contents to include
+- `test_commands` (string[], required): Test commands for the project
+- `phase_content` (string, required): Workflow phase content
+
 Supported subagent types:
 - `general`: General-purpose agent with full tool access (bash, read, write, edit) except task
 - `explore`: Read-only agent for exploring codebases with bash and read tools
@@ -214,6 +230,11 @@ The `toolExecutor.config` field controls task tool availability:
 - Parent agents have `config` set, enabling subagent spawning
 - Subagents have `config = nil`, preventing further spawning
 
+`task_with_context` should be used when the caller already has prompt context
+assembled and wants subagents to reuse it verbatim; `task` relies on repo fallback
+logic to load workflow context and context files when its prompt content fields
+are empty.
+
 ### Tool Validation Errors
 
 When a tool is called with missing or invalid arguments, a detailed validation
@@ -226,27 +247,32 @@ This allows the model to understand what went wrong and retry with correct param
 
 ## System Prompt
 
-The agent uses a dynamically generated system prompt that includes:
+The agent assembles a tiered system prompt with cache breakpoints to maximize
+prompt reuse across phases.
 
-- Current working directory
-- Current date and time (date-only, no time-of-day)
-- Task tool usage guidance (when to use/not use, subagent type descriptions)
-- Code editing best practices (read before edit, use precise edits, prefer edit over write)
-- Guidelines for handling tool errors gracefully
+Tiered structure:
 
-Tool definitions (name, description, parameter schemas) are provided in the request `tools` field instead of the system prompt.
+- **Tier 1 (global, cache breakpoint)**: role description, task tool guidance,
+  and editing guidelines.
+- **Tier 2 (project, cache breakpoint)**: workflow context template, review
+  questions template, default review instructions, context files (AGENTS.md/CLAUDE.md),
+  and configured test commands.
+- **Tier 3 (session, no breakpoint)**: working directory, current date (date-only),
+  and phase-specific instructions.
 
-The system prompt is built via `BuildSystemPrompt(workDir string)` and is not externally
-configurable. The working directory is included to help the model understand the context
-for relative path resolution. The built prompt is wrapped in a single `llm.SystemBlock`
-when constructing `llm.Request`.
+Tool definitions (name, description, parameter schemas) are provided in the
+request `tools` field instead of the system prompt.
 
-## AGENTS.md (agent prelude)
+The system prompt is built via `BuildSystemBlocks(workDir string, content PromptContent) []llm.SystemBlock`.
+The working directory is included to help the model understand the context for
+relative path resolution.
+
+## AGENTS.md (context files)
 
 Context files (`AGENTS.md` or `CLAUDE.md`) provide persistent, local instructions to the
 agent without changing the global system prompt. The agent discovers and loads these files
-following a specific order, concatenating their contents into a prelude for the first user
-message.
+following a specific order, returning their contents for inclusion in the tier-2 system
+prompt block.
 
 ### Discovery Order
 
@@ -274,7 +300,7 @@ only `AGENTS.md` is used).
 
 All discovered context files are concatenated in discovery order (global first, then
 ancestors from root to working directory), separated by blank lines. The combined
-content is prepended to the *first user message* in the session.
+content is appended to the tier-2 system prompt block.
 
 ### Example
 
@@ -290,7 +316,7 @@ Given this directory structure:
   (working directory, no context file)
 ```
 
-The agent prelude would be:
+The tier-2 context file block would be:
 ```
 Global instructions
 
@@ -299,7 +325,7 @@ Project-wide rules
 App-specific context
 ```
 
-If no context files are found, nothing is added to the user message.
+If no context files are found, no tier-2 context file block is added.
 
 ## Event Streaming
 
@@ -391,6 +417,14 @@ format to prevent sensitive credentials from appearing in event logs.
 ## Internal Package API (internal/agent)
 
 ```go
+type PromptContent struct {
+    ProjectContext []string // rendered templates: workflow context, review questions, review instructions
+    ContextFiles   []string // AGENTS.md/CLAUDE.md contents
+    TestCommands   []string // from config
+    PhaseContent   string   // phase-specific instructions
+    UserContent    string   // todo block, series log, feedback, commit message
+}
+
 type RunHandle struct {
     Events <-chan Event
 }
@@ -403,7 +437,7 @@ type RunResult struct {
     Error    error          // Non-nil if agent failed
 }
 
-func Run(ctx context.Context, prompt string, config AgentConfig) (*RunHandle, error)
+func Run(ctx context.Context, prompt PromptContent, config AgentConfig) (*RunHandle, error)
 ```
 
 ## Public Package API (agent/)
@@ -430,7 +464,7 @@ type Options struct {
 type RunOptions struct {
     RepoPath  string    // Source repository path (for config loading and session grouping)
     WorkDir   string    // Working directory for tool execution (may be a workspace within the repo)
-    Prompt    string
+    Prompt    PromptContent
     Model     string    // Model ID; resolved via priority chain
     StartedAt time.Time
     Version   string    // Version string (commit ID) included in User-Agent header

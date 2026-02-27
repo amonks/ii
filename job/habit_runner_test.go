@@ -169,15 +169,12 @@ func TestFormatHabitCommitMessageWithReviewComments(t *testing.T) {
 }
 
 func TestNewHabitPromptData(t *testing.T) {
-	data := newHabitPromptData("cleanup", "Clean up code.", "", "", nil, "/path/to/repo")
+	data := newHabitPromptData("cleanup", "Clean up code.", "", "", nil, "/path/to/repo", PromptContext{})
 
 	if data.HabitName != "cleanup" {
 		t.Errorf("HabitName = %q, want %q", data.HabitName, "cleanup")
 	}
 	if !strings.Contains(data.HabitInstructions, "Clean up code") {
 		t.Errorf("HabitInstructions should contain instructions, got: %s", data.HabitInstructions)
-	}
-	if data.ReviewInstructions == "" {
-		t.Error("ReviewInstructions should be set")
 	}
 }

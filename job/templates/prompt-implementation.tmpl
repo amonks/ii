@@ -1,6 +1,5 @@
 You are in the IMPLEMENTATION phase, creating the next change towards completing
 a todo.
-{{template "workflow_context"}}
 Make the highest-priority remaining change toward resolution of the todo. Dot
 'i's, cross 't's: this change should be complete and atomic; tests should pass,
 specs should be updated. Don't do additional work that does not move us towards
@@ -18,15 +17,5 @@ Example of a bad change:
 - Hard to review and understand
 - Should be separate changes
 
-Changes are reviewed according to these questions:
-
-{{template "review_questions"}}
-
 When you make changes, write a change description (jj's equivalent of a commit
 message) to `./.incrementum-commit-message`. Describe the what _and_ the why.
-
-{{.TodoBlock}}
-{{if .SeriesLogBlock}}
-
-{{.SeriesLogBlock}}
-{{end}}

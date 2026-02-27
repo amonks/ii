@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/template"
 
+	internalagent "github.com/amonks/incrementum/internal/agent"
+	"github.com/amonks/incrementum/internal/paths"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/todo"
 )
@@ -42,9 +44,14 @@ type PromptData struct {
 	// Habit fields (empty for regular todo jobs)
 	HabitName         string
 	HabitInstructions string
+
+	// Project context templates and files.
+	WorkflowContext   string
+	ReviewQuestions   string
+	ContextFilesBlock string
 }
 
-func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string) PromptData {
+func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string, context PromptContext) PromptData {
 	return PromptData{
 		Todo:               item,
 		Feedback:           feedback,
@@ -57,11 +64,32 @@ func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcri
 		CommitMessageBlock: formatPromptBlock("Change description", message),
 		SeriesLogBlock:     formatSeriesLogBlock(seriesLog),
 		TestCommandsBlock:  formatTestCommandsBlock(testCommands),
+		WorkflowContext:    context.WorkflowContext,
+		ReviewQuestions:    context.ReviewQuestions,
+		ContextFilesBlock:  formatContextFilesBlock(context.ContextFiles),
 	}
 }
 
+func formatContextFilesBlock(files []string) string {
+	if len(files) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(files))
+	for _, file := range files {
+		trimmed := internalstrings.TrimTrailingNewlines(file)
+		if internalstrings.IsBlank(trimmed) {
+			continue
+		}
+		parts = append(parts, trimmed)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, "\n\n")
+}
+
 // newHabitPromptData creates prompt data for a habit run.
-func newHabitPromptData(habitName, habitInstructions, feedback, message string, transcripts []AgentTranscript, workspacePath string) PromptData {
+func newHabitPromptData(habitName, habitInstructions, feedback, message string, transcripts []AgentTranscript, workspacePath string, context PromptContext) PromptData {
 	return PromptData{
 		Feedback:           feedback,
 		Message:            message,
@@ -73,7 +101,184 @@ func newHabitPromptData(habitName, habitInstructions, feedback, message string, 
 		TestCommandsBlock:  "",
 		HabitName:          habitName,
 		HabitInstructions:  formatHabitInstructions(habitInstructions),
+		WorkflowContext:    context.WorkflowContext,
+		ReviewQuestions:    context.ReviewQuestions,
+		ContextFilesBlock:  formatContextFilesBlock(context.ContextFiles),
 	}
+}
+
+// PromptContext holds rendered shared templates and context files.
+type PromptContext struct {
+	WorkflowContext string
+	ReviewQuestions string
+	ContextFiles    []string
+}
+
+type PromptParts struct {
+	ProjectContext []string
+	ContextFiles   []string
+	TestCommands   []string
+	PhaseContent   string
+	UserContent    string
+}
+
+func toPromptContent(phase, userContent string, context PromptContext, testCommands []string) internalagent.PromptContent {
+	content := internalagent.PromptContent{
+		ProjectContext: filterBlank([]string{context.WorkflowContext, context.ReviewQuestions, reviewInstructionsText}),
+		ContextFiles:   context.ContextFiles,
+		PhaseContent:   phase,
+		UserContent:    userContent,
+	}
+	if len(testCommands) > 0 {
+		content.TestCommands = testCommands
+	}
+	return content
+}
+
+func buildPromptParts(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string, context PromptContext, phaseContent string, habitMode bool) (PromptParts, error) {
+	data := newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath, testCommands, context)
+	phase, err := RenderPrompt(workspacePath, phaseContent, data)
+	if err != nil {
+		return PromptParts{}, err
+	}
+
+	userTemplate := "{{.TodoBlock}}"
+	if habitMode {
+		userTemplate = "{{.CommitMessageBlock}}"
+	} else if data.Feedback != "" {
+		userTemplate += "\n\n{{.FeedbackBlock}}"
+		if data.Message != "" {
+			userTemplate += "\n\nDraft change description (update to reflect your changes):\n{{.CommitMessageBlock}}"
+		}
+	} else if data.Message != "" {
+		userTemplate += "\n\n{{.CommitMessageBlock}}"
+	}
+	if data.SeriesLogBlock != "" {
+		userTemplate += "\n\n{{.SeriesLogBlock}}"
+	}
+	userTemplate = strings.TrimSpace(userTemplate)
+
+	userContent, err := RenderPrompt(workspacePath, userTemplate, data)
+	if err != nil {
+		return PromptParts{}, err
+	}
+
+	return PromptParts{
+		ProjectContext: filterBlank([]string{context.WorkflowContext, context.ReviewQuestions, reviewInstructionsText}),
+		ContextFiles:   context.ContextFiles,
+		TestCommands:   testCommands,
+		PhaseContent:   phase,
+		UserContent:    userContent,
+	}, nil
+}
+
+func promptContentFromParts(parts PromptParts) internalagent.PromptContent {
+	return internalagent.PromptContent{
+		ProjectContext: parts.ProjectContext,
+		ContextFiles:   parts.ContextFiles,
+		TestCommands:   parts.TestCommands,
+		PhaseContent:   parts.PhaseContent,
+		UserContent:    parts.UserContent,
+	}
+}
+
+func buildPromptContent(phase, userContent, workDir string, opts RunOptions) internalagent.PromptContent {
+	context, err := loadPromptContext(workDir)
+	if err != nil {
+		return internalagent.PromptContent{PhaseContent: phase, UserContent: userContent}
+	}
+	projectContext := []string{context.WorkflowContext, context.ReviewQuestions, reviewInstructionsText}
+	projectContext = filterBlank(projectContext)
+	content := internalagent.PromptContent{
+		ProjectContext: projectContext,
+		ContextFiles:   context.ContextFiles,
+		PhaseContent:   phase,
+		UserContent:    userContent,
+	}
+	testCommands := []string{}
+	if opts.Config != nil {
+		testCommands = opts.Config.Job.TestCommands
+	} else if opts.LoadConfig != nil {
+		if cfg, cfgErr := opts.LoadConfig(workDir); cfgErr == nil && cfg != nil {
+			testCommands = cfg.Job.TestCommands
+		}
+	}
+	if len(testCommands) > 0 {
+		content.TestCommands = testCommands
+	}
+	return content
+}
+
+func filterBlank(parts []string) []string {
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if internalstrings.IsBlank(part) {
+			continue
+		}
+		out = append(out, part)
+	}
+	return out
+}
+
+// loadPromptContext loads project-level shared templates and context files.
+func loadPromptContext(workspacePath string) (PromptContext, error) {
+	workflowTemplate, err := LoadPrompt(workspacePath, workflowContextTemplateName)
+	if err != nil {
+		return PromptContext{}, err
+	}
+	workflow, err := renderContextTemplate("workflow_context", workflowTemplate)
+	if err != nil {
+		return PromptContext{}, err
+	}
+	reviewTemplate, err := LoadPrompt(workspacePath, reviewQuestionsTemplateName)
+	if err != nil {
+		return PromptContext{}, err
+	}
+	reviewQuestions, err := renderContextTemplate("review_questions", reviewTemplate)
+	if err != nil {
+		return PromptContext{}, err
+	}
+	contextFiles, err := loadContextFiles(workspacePath)
+	if err != nil {
+		return PromptContext{}, err
+	}
+	return PromptContext{
+		WorkflowContext: "\n" + workflow + "\n",
+		ReviewQuestions: reviewQuestions + "\n",
+		ContextFiles:    contextFiles,
+	}, nil
+}
+
+func loadContextFiles(workspacePath string) ([]string, error) {
+	globalConfigDir, err := paths.DefaultConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	files, err := internalagent.LoadContextFiles(internalagent.LoadContextFilesOptions{WorkDir: workspacePath, GlobalConfigDir: globalConfigDir})
+	if err != nil {
+		return nil, err
+	}
+	var contents []string
+	for _, f := range files {
+		trimmed := internalstrings.TrimTrailingNewlines(f.Content)
+		if internalstrings.IsBlank(trimmed) {
+			continue
+		}
+		contents = append(contents, trimmed)
+	}
+	return contents, nil
+}
+
+func renderContextTemplate(name, contents string) (string, error) {
+	tmpl, err := template.New("context").Option("missingkey=error").Parse(contents)
+	if err != nil {
+		return "", fmt.Errorf("parse %s template: %w", name, err)
+	}
+	var out bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&out, name, nil); err != nil {
+		return "", fmt.Errorf("render %s template: %w", name, err)
+	}
+	return strings.TrimSpace(out.String()), nil
 }
 
 func formatHabitInstructions(instructions string) string {
@@ -277,24 +482,42 @@ func LoadPrompt(repoPath, name string) (string, error) {
 
 // RenderPrompt renders the prompt with provided data.
 func RenderPrompt(repoPath, contents string, data PromptData) (string, error) {
-	reviewQuestionsTemplate, err := LoadPrompt(repoPath, reviewQuestionsTemplateName)
-	if err != nil {
-		return "", fmt.Errorf("load review questions template: %w", err)
-	}
+	var tmpl *template.Template
+	var err error
+	tmpl = template.New("prompt").Option("missingkey=error")
+	if data.WorkflowContext == "" && data.ReviewQuestions == "" {
+		reviewQuestionsTemplate, err := LoadPrompt(repoPath, reviewQuestionsTemplateName)
+		if err != nil {
+			return "", fmt.Errorf("load review questions template: %w", err)
+		}
 
-	workflowContextTemplate, err := LoadPrompt(repoPath, workflowContextTemplateName)
-	if err != nil {
-		return "", fmt.Errorf("load workflow context template: %w", err)
-	}
+		workflowContextTemplate, err := LoadPrompt(repoPath, workflowContextTemplateName)
+		if err != nil {
+			return "", fmt.Errorf("load workflow context template: %w", err)
+		}
 
-	tmpl, err := template.New("prompt").Option("missingkey=error").Parse(reviewQuestionsTemplate)
-	if err != nil {
-		return "", fmt.Errorf("parse review questions template: %w", err)
-	}
+		tmpl, err = tmpl.Parse(reviewQuestionsTemplate)
+		if err != nil {
+			return "", fmt.Errorf("parse review questions template: %w", err)
+		}
 
-	tmpl, err = tmpl.Parse(workflowContextTemplate)
-	if err != nil {
-		return "", fmt.Errorf("parse workflow context template: %w", err)
+		tmpl, err = tmpl.Parse(workflowContextTemplate)
+		if err != nil {
+			return "", fmt.Errorf("parse workflow context template: %w", err)
+		}
+	} else {
+		if tmplText := contextTemplate("workflow_context", data.WorkflowContext); tmplText != "" {
+			tmpl, err = tmpl.Parse(tmplText)
+			if err != nil {
+				return "", fmt.Errorf("parse workflow context template: %w", err)
+			}
+		}
+		if tmplText := contextTemplate("review_questions", data.ReviewQuestions); tmplText != "" {
+			tmpl, err = tmpl.Parse(tmplText)
+			if err != nil {
+				return "", fmt.Errorf("parse review questions template: %w", err)
+			}
+		}
 	}
 
 	tmpl, err = tmpl.Parse(contents)
@@ -306,5 +529,13 @@ func RenderPrompt(repoPath, contents string, data PromptData) (string, error) {
 	if err := tmpl.Execute(&out, data); err != nil {
 		return "", fmt.Errorf("render prompt: %w", err)
 	}
-	return out.String(), nil
+	return strings.TrimSpace(out.String()), nil
 }
+
+func contextTemplate(name, contents string) string {
+	if internalstrings.IsBlank(contents) {
+		return ""
+	}
+	return fmt.Sprintf("{{define %q}}%s{{end}}", name, contents)
+}
+

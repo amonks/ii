@@ -12,6 +12,7 @@ import (
 
 	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/habit"
+	internalagent "github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/editor"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/internal/paths"
@@ -438,7 +439,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 	handle, err := store.Run(ctx, agent.RunOptions{
 		RepoPath:  opts.repoPath,
 		WorkDir:   opts.workspacePath,
-		Prompt:    opts.prompt,
+		Prompt: internalagent.PromptContent{UserContent: opts.prompt},
 		Model:     opts.model,
 		StartedAt: time.Now(),
 		Version:   buildCommitID,

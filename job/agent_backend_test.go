@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/llm"
 )
 
@@ -106,8 +106,8 @@ func TestRunLLMWithEvents_Success(t *testing.T) {
 	opts := RunOptions{
 		EventLog: log,
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
-			if runOpts.Prompt != "test prompt" {
-				t.Errorf("unexpected prompt: %q", runOpts.Prompt)
+			if runOpts.Prompt.UserContent != "test prompt" {
+				t.Errorf("unexpected prompt: %q", runOpts.Prompt.UserContent)
 			}
 			if runOpts.Model != "test-model" {
 				t.Errorf("unexpected model: %q", runOpts.Model)
@@ -122,7 +122,7 @@ func TestRunLLMWithEvents_Success(t *testing.T) {
 	runOpts := AgentRunOptions{
 		RepoPath:      "/test/repo",
 		WorkspacePath: tmpDir,
-		Prompt:        "test prompt",
+		Prompt:        agent.PromptContent{UserContent: "test prompt"},
 		Model:         "test-model",
 		StartedAt:     time.Now(),
 	}
@@ -173,7 +173,7 @@ func TestRunLLMWithEvents_Error(t *testing.T) {
 	runOpts := AgentRunOptions{
 		RepoPath:      "/test/repo",
 		WorkspacePath: tmpDir,
-		Prompt:        "test prompt",
+		Prompt:        agent.PromptContent{UserContent: "test prompt"},
 		Model:         "test-model",
 		StartedAt:     time.Now(),
 	}
@@ -216,8 +216,8 @@ func TestRunLLMWithEvents_CallsRunLLM(t *testing.T) {
 		EventLog: log,
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			llmCalled = true
-			if runOpts.Prompt != "test prompt" {
-				t.Errorf("unexpected prompt: %q", runOpts.Prompt)
+			if runOpts.Prompt.UserContent != "test prompt" {
+				t.Errorf("unexpected prompt: %q", runOpts.Prompt.UserContent)
 			}
 			if runOpts.Model != "test-model" {
 				t.Errorf("unexpected model: %q", runOpts.Model)
@@ -232,7 +232,7 @@ func TestRunLLMWithEvents_CallsRunLLM(t *testing.T) {
 	runOpts := AgentRunOptions{
 		RepoPath:      "/test/repo",
 		WorkspacePath: tmpDir,
-		Prompt:        "test prompt",
+		Prompt:        agent.PromptContent{UserContent: "test prompt"},
 		Model:         "test-model",
 		StartedAt:     time.Now(),
 	}

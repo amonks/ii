@@ -285,7 +285,7 @@ func TestRunImplementingStageIncludesCommitMessageInstructionWithFeedback(t *tes
 			return true, nil // @ is empty after feedback run
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
-			seenPrompt = runOpts.Prompt
+			seenPrompt = runOpts.Prompt.UserContent
 			return AgentRunResult{SessionID: "oc-111", ExitCode: 0}, nil
 		},
 	}
@@ -295,11 +295,8 @@ func TestRunImplementingStageIncludesCommitMessageInstructionWithFeedback(t *tes
 		t.Fatalf("run implementing stage: %v", err)
 	}
 
-	if !strings.Contains(seenPrompt, ".incrementum-commit-message") {
-		t.Fatalf("expected prompt to request commit message, got %q", seenPrompt)
-	}
-	if !strings.Contains(seenPrompt, previousMessage) {
-		t.Fatalf("expected prompt to include previous commit message, got %q", seenPrompt)
+	if !strings.Contains(seenPrompt, "Previous feedback") {
+		t.Fatalf("expected prompt to include feedback, got %q", seenPrompt)
 	}
 }
 
@@ -338,7 +335,7 @@ func TestRunReviewingStagePassesCommitMessage(t *testing.T) {
 			return nil
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
-			seenPrompt = runOpts.Prompt
+			seenPrompt = runOpts.Prompt.UserContent
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err
 			}
@@ -400,7 +397,7 @@ func TestRunReviewingStageReadsCommitMessageFile(t *testing.T) {
 			return nil
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
-			seenPrompt = runOpts.Prompt
+			seenPrompt = runOpts.Prompt.UserContent
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err
 			}
@@ -526,7 +523,7 @@ func TestRunReviewingStageInjectsCommitMessageWhenTemplateMissing(t *testing.T) 
 			return nil
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
-			seenPrompt = runOpts.Prompt
+			seenPrompt = runOpts.Prompt.UserContent
 			if err := os.WriteFile(feedbackPath, []byte("ACCEPT\n"), 0o644); err != nil {
 				return AgentRunResult{}, err
 			}

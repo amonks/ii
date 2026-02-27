@@ -37,7 +37,7 @@ func isRetryableStreamError(err error) bool {
 
 // Run starts an agent run with the given prompt and configuration.
 // It returns a RunHandle that provides access to events and the final result.
-func Run(ctx context.Context, prompt string, config AgentConfig) (*RunHandle, error) {
+func Run(ctx context.Context, prompt PromptContent, config AgentConfig) (*RunHandle, error) {
 	if config.CacheRetention == "" {
 		config.CacheRetention = llm.CacheShort
 	}
@@ -59,13 +59,30 @@ func Run(ctx context.Context, prompt string, config AgentConfig) (*RunHandle, er
 		result: result,
 	}
 
+	content, err := promptContextFromRepo(workDir, config.GlobalConfigDir)
+	if err != nil {
+		return nil, err
+	}
+	if len(prompt.ProjectContext) == 0 {
+		prompt.ProjectContext = content.ProjectContext
+	}
+	if len(prompt.ContextFiles) == 0 {
+		prompt.ContextFiles = content.ContextFiles
+	}
+	if len(prompt.TestCommands) == 0 {
+		prompt.TestCommands = content.TestCommands
+	}
+	if prompt.PhaseContent == "" {
+		prompt.PhaseContent = content.PhaseContent
+	}
+
 	// Start the agent loop in a goroutine
 	go runAgent(ctx, prompt, config, workDir, events, result)
 
 	return handle, nil
 }
 
-func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir string, events chan<- Event, result chan<- RunResult) {
+func runAgent(ctx context.Context, prompt PromptContent, config AgentConfig, workDir string, events chan<- Event, result chan<- RunResult) {
 	defer close(events)
 	defer close(result)
 
@@ -73,20 +90,16 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 	events <- AgentStartEvent{Config: config}
 
 	// Initialize conversation with user message
-	prelude, err := agentsPrelude(workDir, config.GlobalConfigDir)
-	if err != nil {
-		result <- RunResult{Error: err}
-		return
-	}
-
-	messages := []llm.Message{
-		llm.UserMessage{
+	userContent := prompt.UserContent
+	messages := []llm.Message{}
+	if strings.TrimSpace(userContent) != "" {
+		messages = append(messages, llm.UserMessage{
 			Role: "user",
 			Content: []llm.ContentBlock{
-				llm.TextContent{Type: "text", Text: prelude + prompt},
+				llm.TextContent{Type: "text", Text: userContent},
 			},
 			Timestamp: time.Now(),
-		},
+		})
 	}
 
 	// Create tool executor with config (enables task tool for spawning subagents)
@@ -117,7 +130,7 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 
 		// Build request (parent agents have the task tool)
 		req := llm.Request{
-			System:   []llm.SystemBlock{{Text: BuildSystemPrompt(workDir)}},
+			System:   BuildSystemBlocks(workDir, prompt),
 			Messages: messages,
 			Tools:    builtInToolsWithTask(true),
 		}
@@ -367,7 +380,7 @@ func extractToolCalls(msg llm.AssistantMessage) []llm.ToolCall {
 // runSubagent runs an agent synchronously with a custom set of tools.
 // Unlike runAgent, this blocks until completion and returns the result directly.
 // It does not emit events (subagent activity is internal to the parent).
-func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools []llm.Tool) (RunResult, error) {
+func runSubagent(ctx context.Context, prompt PromptContent, config AgentConfig, tools []llm.Tool) (RunResult, error) {
 	if config.CacheRetention == "" {
 		config.CacheRetention = llm.CacheShort
 	}
@@ -380,23 +393,36 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 		}
 	}
 
-	// Initialize conversation with user message
-	prelude, err := agentsPrelude(workDir, config.GlobalConfigDir)
+	content, err := promptContextFromRepo(workDir, config.GlobalConfigDir)
 	if err != nil {
 		return RunResult{}, err
 	}
-
-	messages := []llm.Message{
-		llm.UserMessage{
-			Role: "user",
-			Content: []llm.ContentBlock{
-				llm.TextContent{Type: "text", Text: prelude + prompt},
-			},
-			Timestamp: time.Now(),
-		},
+	if len(prompt.ProjectContext) == 0 {
+		prompt.ProjectContext = content.ProjectContext
+	}
+	if len(prompt.ContextFiles) == 0 {
+		prompt.ContextFiles = content.ContextFiles
+	}
+	if len(prompt.TestCommands) == 0 {
+		prompt.TestCommands = content.TestCommands
+	}
+	if prompt.PhaseContent == "" {
+		prompt.PhaseContent = content.PhaseContent
 	}
 
-	// Create tool executor WITHOUT config (subagents can't spawn further subagents)
+	// Initialize conversation with user message
+	userContent := prompt.UserContent
+	messages := []llm.Message{}
+	if strings.TrimSpace(userContent) != "" {
+		messages = append(messages, llm.UserMessage{
+			Role: "user",
+			Content: []llm.ContentBlock{
+				llm.TextContent{Type: "text", Text: userContent},
+			},
+			Timestamp: time.Now(),
+		})
+	}
+
 	executor := &toolExecutor{
 		workDir:     workDir,
 		permissions: config.Permissions,
@@ -419,7 +445,7 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 
 		// Build request with custom tools
 		req := llm.Request{
-			System:   []llm.SystemBlock{{Text: BuildSystemPrompt(workDir)}},
+			System:   BuildSystemBlocks(workDir, prompt),
 			Messages: messages,
 			Tools:    tools,
 		}

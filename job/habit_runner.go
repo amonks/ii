@@ -357,9 +357,13 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		if !internalstrings.IsBlank(current.Feedback) {
 			promptName = "prompt-feedback.tmpl"
 		}
-		prompt, err := renderHabitPromptTemplate(ctx.habit, current.Feedback, ctx.commitMessage, nil, promptName, ctx.workspacePath)
+		phase, userContent, err := renderHabitPromptParts(ctx.habit, current.Feedback, ctx.commitMessage, nil, promptName, ctx.workspacePath)
 		if err != nil {
 			return Job{}, err
+		}
+		prompt := phase
+		if userContent != "" {
+			prompt += "\n\n" + userContent
 		}
 		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
 			return Job{}, err
@@ -370,7 +374,7 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 		runOpts := AgentRunOptions{
 			RepoPath:      ctx.repoPath,
 			WorkspacePath: ctx.workspacePath,
-			Prompt:        prompt,
+			Prompt:        buildPromptContent(phase, userContent, ctx.workspacePath, ctx.opts.toRunOptions()),
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
@@ -559,10 +563,18 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			return Job{}, err
 		}
 		promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
-		data := newHabitPromptData(ctx.habit.Name, ctx.habit.Instructions, "", message, nil, ctx.workspacePath)
-		prompt, err := RenderPrompt(ctx.workspacePath, promptTemplate, data)
+		context, err := loadPromptContext(ctx.workspacePath)
 		if err != nil {
 			return Job{}, err
+		}
+		parts, err := buildPromptParts(todo.Todo{}, "", message, "", nil, ctx.workspacePath, nil, context, promptTemplate, true)
+		if err != nil {
+			return Job{}, err
+		}
+		promptContent := promptContentFromParts(parts)
+		prompt := parts.PhaseContent
+		if parts.UserContent != "" {
+			prompt += "\n\n" + parts.UserContent
 		}
 		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "review", Template: promptName, Prompt: prompt}); err != nil {
 			return Job{}, err
@@ -571,7 +583,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		llmResult, err := runLLMWithEvents(ctx.opts.toRunOptions(), AgentRunOptions{
 			RepoPath:      ctx.repoPath,
 			WorkspacePath: ctx.workspacePath,
-			Prompt:        prompt,
+			Prompt:        promptContent,
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
 			EventLog:      ctx.opts.EventLog,
@@ -775,12 +787,33 @@ func resolveHabitModel(cfg *config.Config, override, habitModel, purpose string)
 	return internalstrings.TrimSpace(model)
 }
 
-func renderHabitPromptTemplate(h *habit.Habit, feedback, message string, transcripts []AgentTranscript, name, workspacePath string) (string, error) {
+func renderHabitPromptParts(h *habit.Habit, feedback, message string, transcripts []AgentTranscript, name, workspacePath string) (string, string, error) {
 	prompt, err := LoadPrompt(workspacePath, name)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return RenderPrompt(workspacePath, prompt, newHabitPromptData(h.Name, h.Instructions, feedback, message, transcripts, workspacePath))
+	context, err := loadPromptContext(workspacePath)
+	if err != nil {
+		return "", "", err
+	}
+	data := newHabitPromptData(h.Name, h.Instructions, feedback, message, transcripts, workspacePath, context)
+	phase, err := RenderPrompt(workspacePath, prompt, data)
+	if err != nil {
+		return "", "", err
+	}
+	userTemplate := "{{.CommitMessageBlock}}"
+	if feedback != "" {
+		userTemplate = "{{.FeedbackBlock}}"
+		if message != "" {
+			userTemplate += "\n\nDraft change description (update to reflect your changes):\n{{.CommitMessageBlock}}"
+		}
+	}
+	userContent, err := RenderPrompt(workspacePath, userTemplate, data)
+	if err != nil {
+		return "", "", err
+	}
+	promptContent := toPromptContent(phase, userContent, context, nil)
+	return promptContent.PhaseContent, promptContent.UserContent, nil
 }
 
 // formatHabitCommitMessage formats a commit message for a habit commit.

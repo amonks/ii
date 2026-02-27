@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/agent"
+	internalagent "github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/paths"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
@@ -70,7 +71,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 	handle, err := store.Run(ctx, agent.RunOptions{
 		RepoPath:  repoPath,
 		WorkDir:   workDir,
-		Prompt:    prompt,
+		Prompt:    internalagent.PromptContent{UserContent: prompt},
 		Model:     agentRunModel,
 		StartedAt: time.Now(),
 		Version:   buildCommitID,

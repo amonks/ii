@@ -182,7 +182,8 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 	if now.IsZero() {
 		now = time.Now()
 	}
-	sessionID := internalids.GenerateWithTimestamp(opts.RepoPath+opts.Prompt, now, internalids.DefaultLength)
+	sessionSeed := opts.RepoPath + opts.Prompt.UserContent
+	sessionID := internalids.GenerateWithTimestamp(sessionSeed, now, internalids.DefaultLength)
 
 	// Create initial session record
 	session := Session{

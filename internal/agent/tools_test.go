@@ -594,14 +594,20 @@ func TestBuiltInToolsWithTask(t *testing.T) {
 	t.Run("with task tool", func(t *testing.T) {
 		tools := builtInToolsWithTask(true)
 		hasTask := false
+		hasTaskWithContext := false
 		for _, tool := range tools {
 			if tool.Name == "task" {
 				hasTask = true
-				break
+			}
+			if tool.Name == "task_with_context" {
+				hasTaskWithContext = true
 			}
 		}
 		if !hasTask {
 			t.Error("expected task tool when includeTask=true")
+		}
+		if !hasTaskWithContext {
+			t.Error("expected task_with_context tool when includeTask=true")
 		}
 	})
 
@@ -610,6 +616,9 @@ func TestBuiltInToolsWithTask(t *testing.T) {
 		for _, tool := range tools {
 			if tool.Name == "task" {
 				t.Error("did not expect task tool when includeTask=false")
+			}
+			if tool.Name == "task_with_context" {
+				t.Error("did not expect task_with_context tool when includeTask=false")
 			}
 		}
 		if len(tools) != 4 {
@@ -731,7 +740,35 @@ func TestToolExecutor_Task(t *testing.T) {
 	})
 }
 
-func TestSubagentTools(t *testing.T) {
+func TestToolExecutor_TaskWithContext(t *testing.T) {
+	tmpDir := t.TempDir()
+	executor := &toolExecutor{
+		workDir: tmpDir,
+		permissions: BashPermissions{
+			Rules: []BashRule{{Pattern: "*", Allow: true}},
+		},
+	}
+
+	t.Run("missing project_context", func(t *testing.T) {
+		tc := llm.ToolCall{
+			ID:   "tc1",
+			Name: "task_with_context",
+			Arguments: map[string]any{
+				"description":   "test task",
+				"prompt":        "do something",
+				"subagent_type": "general",
+			},
+		}
+		result := executor.executeTool(context.Background(), tc)
+		if !result.IsError {
+			t.Error("expected error for missing project_context")
+		}
+		text := getToolResultText(result)
+		if !strings.Contains(text, "Validation error") {
+			t.Errorf("expected 'Validation error' in message, got %q", text)
+		}
+	})
+
 	t.Run("general subagent gets all tools except task", func(t *testing.T) {
 		tools := subagentTools("general")
 		toolNames := make(map[string]bool)
@@ -746,9 +783,12 @@ func TestSubagentTools(t *testing.T) {
 				t.Errorf("general subagent missing tool: %s", name)
 			}
 		}
-		// Should NOT have task
+		// Should NOT have task tools
 		if toolNames["task"] {
 			t.Error("general subagent should not have task tool")
+		}
+		if toolNames["task_with_context"] {
+			t.Error("general subagent should not have task_with_context tool")
 		}
 	})
 
@@ -783,9 +823,12 @@ func TestSubagentTools(t *testing.T) {
 		if toolNames["edit"] {
 			t.Error("explore subagent should not have edit tool")
 		}
-		// Should NOT have task
+		// Should NOT have task tools
 		if toolNames["task"] {
 			t.Error("explore subagent should not have task tool")
+		}
+		if toolNames["task_with_context"] {
+			t.Error("explore subagent should not have task_with_context tool")
 		}
 	})
 }

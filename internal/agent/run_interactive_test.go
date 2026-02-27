@@ -68,7 +68,7 @@ func TestRunAgent_InteractiveInputContinues(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	handle, err := Run(ctx, "first prompt", AgentConfig{InputCh: inputCh})
+	handle, err := Run(ctx, PromptContent{UserContent: "first prompt"}, AgentConfig{InputCh: inputCh})
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestRunAgent_InteractiveInputClosedEnds(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	handle, err := Run(ctx, "first prompt", AgentConfig{InputCh: inputCh})
+	handle, err := Run(ctx, PromptContent{UserContent: "first prompt"}, AgentConfig{InputCh: inputCh})
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestRunAgent_RetriesUnexpectedEOF(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	handle, err := Run(ctx, "first prompt", AgentConfig{})
+	handle, err := Run(ctx, PromptContent{UserContent: "first prompt"}, AgentConfig{})
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}

@@ -141,9 +141,9 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 
 			// Extract the title from the prompt to observe what the implementation saw
 			// The prompt contains the todo title in a TodoBlock
-			if strings.Contains(opts.Prompt, "Original title") {
+			if strings.Contains(opts.Prompt.UserContent, "Original title") {
 				observedTitles = append(observedTitles, "Original title")
-			} else if strings.Contains(opts.Prompt, "Updated title") {
+			} else if strings.Contains(opts.Prompt.UserContent, "Updated title") {
 				observedTitles = append(observedTitles, "Updated title")
 			}
 
@@ -318,9 +318,9 @@ func TestRunContextReloadTodoUpdatesItem(t *testing.T) {
 			// The review prompt still uses the item loaded at the start of the
 			// implementing stage (before we updated it during the LLM callback)
 			if llmCount == 2 {
-				if strings.Contains(opts.Prompt, "Original") {
+				if strings.Contains(opts.Prompt.UserContent, "Original") {
 					capturedItem.Title = "Original"
-				} else if strings.Contains(opts.Prompt, "Updated") {
+				} else if strings.Contains(opts.Prompt.UserContent, "Updated") {
 					capturedItem.Title = "Updated"
 				}
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/agent"
+	internalagent "github.com/amonks/incrementum/internal/agent"
 	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
@@ -14,7 +15,7 @@ import (
 type AgentRunOptions struct {
 	RepoPath      string
 	WorkspacePath string
-	Prompt        string
+	Prompt        internalagent.PromptContent
 	Model         string
 	StartedAt     time.Time
 	EventLog      *EventLog

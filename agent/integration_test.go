@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/agent"
+	internalagent "github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/testsupport"
 	"github.com/amonks/incrementum/llm"
 )
@@ -79,7 +80,7 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    "What is 2+2? Just say the number, nothing else.",
+		Prompt: internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -202,7 +203,7 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    "What is 2+2? Just say the number, nothing else.",
+		Prompt: internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
 		Model:     "gpt-5.2",
 		StartedAt: time.Now(),
 	}
@@ -269,7 +270,7 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    "Please run 'echo hello world' using the bash tool and tell me the output.",
+		Prompt: internalagent.PromptContent{UserContent: "Please run 'echo hello world' using the bash tool and tell me the output."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -353,7 +354,7 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    "Please create a file at " + testFile + " with the content 'Hello from the agent!'",
+		Prompt: internalagent.PromptContent{UserContent: "Please create a file at " + testFile + " with the content 'Hello from the agent!'"},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -409,7 +410,7 @@ func TestAgentStoreRun_Transcript(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    "What is the capital of France? Just say the city name.",
+		Prompt: internalagent.PromptContent{UserContent: "What is the capital of France? Just say the city name."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}

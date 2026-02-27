@@ -213,6 +213,52 @@ func TestRenderPrompt_RendersReviewQuestionsTemplate(t *testing.T) {
 	}
 }
 
+func TestRenderPrompt_RendersWorkflowContextTemplate(t *testing.T) {
+	workflowTemplate := "{{template \"workflow_context\"}}"
+	rendered, err := RenderPrompt("", workflowTemplate, PromptData{})
+	if err != nil {
+		t.Fatalf("render prompt: %v", err)
+	}
+
+	if !strings.Contains(rendered, "## Workflow Context") {
+		t.Fatalf("expected workflow context to render, got %q", rendered)
+	}
+}
+
+func TestBuildPromptParts_SplitsPhaseAndUserContent(t *testing.T) {
+	context := PromptContext{WorkflowContext: "Workflow", ReviewQuestions: "Questions"}
+	parts, err := buildPromptParts(
+		todo.Todo{ID: "todo-1", Title: "Title", Type: todo.TypeTask, Priority: todo.PriorityHigh},
+		"",
+		"message",
+		"series",
+		nil,
+		"/tmp",
+		[]string{"go test ./..."},
+		context,
+		"{{.WorkflowContext}}\nPhase instructions\n{{.ReviewInstructions}}\n{{.ReviewQuestions}}",
+		false,
+	)
+	if err != nil {
+		t.Fatalf("build prompt parts: %v", err)
+	}
+	if parts.PhaseContent == "" || parts.UserContent == "" {
+		t.Fatalf("expected phase and user content, got %#v", parts)
+	}
+	if !strings.Contains(parts.PhaseContent, "Phase instructions") {
+		t.Fatalf("expected phase content to include instructions")
+	}
+	if !strings.Contains(parts.PhaseContent, "Workflow") {
+		t.Fatalf("expected workflow context in phase content")
+	}
+	if !strings.Contains(parts.PhaseContent, "Questions") {
+		t.Fatalf("expected review questions in phase content")
+	}
+	if len(parts.ProjectContext) == 0 || !strings.Contains(parts.ProjectContext[len(parts.ProjectContext)-1], "Publish your review") {
+		t.Fatalf("expected review instructions in project context")
+	}
+}
+
 func TestRenderPrompt_UsesReviewQuestionsOverride(t *testing.T) {
 	repoPath := t.TempDir()
 	promptDir := filepath.Join(repoPath, ".incrementum", "templates")
