@@ -129,6 +129,25 @@ func TestBufferTrimmedWhenNotReady(t *testing.T) {
 	}
 }
 
+func TestCloseBeforeReadyDoesNotFlush(t *testing.T) {
+	srv, getBatches := collectServer(t)
+	ready := make(chan struct{}) // never closed
+
+	c := New(srv.URL, srv.Client(), ready)
+
+	writeLine(t, c, "before-ready")
+
+	// Close without ever becoming ready.
+	c.Close()
+
+	// Give any in-flight request a moment to land.
+	time.Sleep(50 * time.Millisecond)
+
+	if batches := getBatches(); len(batches) != 0 {
+		t.Errorf("expected 0 batches when closed before ready, got %d", len(batches))
+	}
+}
+
 func TestNormalFlushAfterReady(t *testing.T) {
 	srv, getBatches := collectServer(t)
 	ready := make(chan struct{})

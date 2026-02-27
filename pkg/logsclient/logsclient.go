@@ -64,7 +64,9 @@ func (c *Client) Write(p []byte) (int, error) {
 func (c *Client) Close() error {
 	c.closeOnce.Do(func() {
 		close(c.done)
-		c.flush()
+		if c.isReady() {
+			c.flush()
+		}
 	})
 	return nil
 }

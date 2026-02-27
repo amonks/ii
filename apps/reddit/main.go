@@ -28,13 +28,13 @@ func main() {
 		if !errors.Is(err, context.Canceled) {
 			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
 		}
-		reqlog.Shutdown()
 		os.Exit(1)
 	}
 }
 
 func run() error {
 	reqlog.SetupLogging()
+	defer reqlog.Shutdown()
 
 	// If first argument is "update", run the archive update process
 	if len(os.Args) > 1 && os.Args[1] == "update" {
@@ -78,6 +78,11 @@ func runServer() error {
 }
 
 func runUpdate() error {
+	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	db, err := NewModel()
 	if err != nil {
 		return fmt.Errorf("constructing model: %w", err)
