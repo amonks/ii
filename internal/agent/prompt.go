@@ -17,49 +17,9 @@ Current date and time: %s
 
 ## Available Tools
 
-### bash
-Execute shell commands in the working directory. Commands are subject to permission rules.
+Tool definitions (name, description, and parameter schema) are provided in the "tools" field of each LLM request.
 
-Parameters:
-- command (string, required): The command to execute
-- timeout (int, optional): Timeout in seconds, default 120
-
-### read
-Read file contents with line numbers.
-
-Parameters:
-- path (string, required): Path to the file (absolute or relative to working directory)
-- offset (int, optional): Line offset (0-based), default 0
-- limit (int, optional): Number of lines to read, default 2000
-
-### write
-Write content to a file, creating parent directories as needed.
-
-Parameters:
-- path (string, required): Path to the file (absolute or relative to working directory)
-- content (string, required): Content to write
-
-### edit
-Perform text replacement in a file.
-
-Parameters:
-- path (string, required): Path to the file (absolute or relative to working directory)
-- old_string (string, required): Text to find
-- new_string (string, required): Replacement text
-- replace_all (bool, optional): Replace all occurrences, default false
-
-### task
-Launch a subagent to handle a complex, multi-step task autonomously. The subagent runs synchronously and returns its result.
-
-Parameters:
-- description (string, required): A short (3-5 word) description of the task
-- prompt (string, required): The task for the agent to perform
-- subagent_type (string, required): The type of specialized agent to use
-
-Available subagent types:
-- general: General-purpose agent with full tool access (bash, read, write, edit). Use for multi-step tasks requiring file edits or when you need to research complex questions and execute multi-step operations.
-- explore: Fast, read-only agent for exploring codebases (bash, read only). Use when you need to quickly find files, search code for keywords, or answer questions about the codebase. Cannot modify files.
-- bash: Command execution specialist for running bash commands only. Use for git operations, command execution, and other terminal tasks.
+## Task tool guidance
 
 When to use the task tool:
 - **Use for codebase exploration**: When exploring the codebase to gather context or answer questions that aren't simple file lookups, use explore subagent.
@@ -70,6 +30,11 @@ When NOT to use the task tool:
 - If you want to read a specific file path, use the read tool directly.
 - If you are searching for a specific class or function definition, use bash with grep directly.
 - If you are searching within a specific file or 2-3 files, use the read tool directly.
+
+Supported subagent types:
+- general: General-purpose agent with full tool access (bash, read, write, edit). Use for multi-step tasks requiring file edits or when you need to research complex questions and execute multi-step operations.
+- explore: Fast, read-only agent for exploring codebases (bash, read only). Use when you need to quickly find files, search code for keywords, or answer questions about the codebase. Cannot modify files.
+- bash: Command execution specialist for running bash commands only.
 
 Usage notes:
 - Provide clear, detailed prompts so the subagent can work autonomously.
