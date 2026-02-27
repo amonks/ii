@@ -1543,6 +1543,121 @@ func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 	s.renderNotes(w, r, ch)
 }
 
+// --- Enchantment handlers ---
+
+func (s *Server) handleUseEnchantment(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	if !strings.EqualFold(ch.Class, "Bard") {
+		http.Error(w, "Enchantment not available", http.StatusBadRequest)
+		return
+	}
+	if err := s.db.EnsureEnchantmentUseCapacity(ch.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	total, used, err := s.db.EnchantmentUsesCount(ch.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if used >= total {
+		http.Error(w, "No enchantment uses remaining", http.StatusBadRequest)
+		return
+	}
+	if err := s.db.CreateEnchantmentUse(ch.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "enchantment_use", "used enchantment")
+	s.renderTraits(w, r, ch)
+}
+func (s *Server) handleRestEnchantment(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.ResetEnchantmentUses(ch.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "enchantment_rest", "rested enchantment")
+	s.renderTraits(w, r, ch)
+}
+
+func (s *Server) handleUseRetainerEnchantment(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil || contract.EmployerID != ch.ID || !contract.Active {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+	if !strings.EqualFold(retainer.Class, "Bard") {
+		http.Error(w, "Enchantment not available", http.StatusBadRequest)
+		return
+	}
+	if err := s.db.EnsureEnchantmentUseCapacity(retainer.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	total, used, err := s.db.EnchantmentUsesCount(retainer.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if used >= total {
+		http.Error(w, "No enchantment uses remaining", http.StatusBadRequest)
+		return
+	}
+	if err := s.db.CreateEnchantmentUse(retainer.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "enchantment_use", fmt.Sprintf("used %s's enchantment", retainer.Name))
+	s.addAuditLog(retainer, "enchantment_use", "used enchantment")
+	s.renderRetainers(w, r, ch)
+}
+
+func (s *Server) handleRestRetainerEnchantment(w http.ResponseWriter, r *http.Request) {
+	ch, err := s.getCharacter(r)
+	if err != nil {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+	contractID := atoui(r.PathValue("contractID"))
+	contract, err := s.db.GetRetainerContract(contractID)
+	if err != nil || contract.EmployerID != ch.ID || !contract.Active {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+	retainer, err := s.db.GetCharacter(contract.RetainerID)
+	if err != nil {
+		http.Error(w, "Retainer not found", http.StatusNotFound)
+		return
+	}
+	if err := s.db.ResetEnchantmentUses(retainer.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.addAuditLog(ch, "enchantment_rest", fmt.Sprintf("rested %s's enchantment", retainer.Name))
+	s.addAuditLog(retainer, "enchantment_rest", "rested enchantment")
+	s.renderRetainers(w, r, ch)
+}
+
 // --- Bank / Day handlers ---
 
 func (s *Server) handleRestSpells(w http.ResponseWriter, r *http.Request) {
@@ -2045,6 +2160,16 @@ func (s *Server) renderNotes(w http.ResponseWriter, r *http.Request, ch *db.Char
 		return
 	}
 	NotesSection(view).Render(r.Context(), w)
+}
+
+func (s *Server) renderTraits(w http.ResponseWriter, r *http.Request, ch *db.Character) {
+	view, err := buildCharacterView(s.db, ch)
+	if err != nil {
+		slog.Error("renderTraits", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	TraitsSection(view).Render(r.Context(), w)
 }
 
 func (s *Server) renderSheetBody(w http.ResponseWriter, r *http.Request, ch *db.Character) {

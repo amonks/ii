@@ -401,8 +401,83 @@ func TestBardEnchantmentUsesShownInTraits(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 	body := w.Body.String()
-	if !strings.Contains(body, "Enchantment uses 4/day") {
+	if !strings.Contains(body, "Enchantment uses 4/4") {
 		t.Errorf("response should include enchantment uses")
+	}
+}
+
+func TestEnchantmentUsesLifecycle(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{Name: "Lyric", Class: "Bard", Kindred: "Human", Level: 2, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/characters/1/enchantment/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("use status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	req = httptest.NewRequest("GET", "/characters/1/", nil)
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("get status = %d, want %d", w.Code, http.StatusOK)
+	}
+	if !strings.Contains(w.Body.String(), "Enchantment uses 1/2") {
+		t.Errorf("expected remaining uses in sheet")
+	}
+
+	req = httptest.NewRequest("POST", "/characters/1/enchantment/rest/", nil)
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("rest status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	total, used, err := d.EnchantmentUsesCount(ch.ID)
+	if err != nil {
+		t.Fatalf("EnchantmentUsesCount: %v", err)
+	}
+	if total != 2 || used != 0 {
+		t.Fatalf("uses = %d/%d, want 2/0", used, total)
+	}
+}
+
+func TestRetainerEnchantmentUseEnsuresCapacity(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	employer := &db.Character{Name: "Employer", Class: "Fighter", Kindred: "Human", Level: 2, HPCurrent: 8, HPMax: 8}
+	if err := d.CreateCharacter(employer); err != nil {
+		t.Fatalf("CreateCharacter employer: %v", err)
+	}
+	retainer := &db.Character{Name: "Lyric", Class: "Bard", Kindred: "Human", Level: 2, HPCurrent: 6, HPMax: 6}
+	if err := d.CreateCharacter(retainer); err != nil {
+		t.Fatalf("CreateCharacter retainer: %v", err)
+	}
+	contract := &db.RetainerContract{EmployerID: employer.ID, RetainerID: retainer.ID, Active: true}
+	if err := d.CreateRetainerContract(contract); err != nil {
+		t.Fatalf("CreateRetainerContract: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/retainers/%d/enchantment/", employer.ID, contract.ID), nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("use status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	total, used, err := d.EnchantmentUsesCount(retainer.ID)
+	if err != nil {
+		t.Fatalf("EnchantmentUsesCount: %v", err)
+	}
+	if total != 2 || used != 1 {
+		t.Fatalf("uses = %d/%d, want 1/2", used, total)
 	}
 }
 

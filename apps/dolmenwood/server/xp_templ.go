@@ -142,7 +142,7 @@ func XPSection(view *CharacterView) templ.Component {
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.XPToNext))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 15, Col: 38}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 15, Col: 38}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func XPSection(view *CharacterView) templ.Component {
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Character.Level+1))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 15, Col: 96}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 15, Col: 96}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -191,7 +191,7 @@ func XPSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var11 string
 							templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.NewLevel))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 24, Col: 51}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 24, Col: 51}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 							if templ_7745c5c3_Err != nil {
@@ -440,7 +440,7 @@ func XPSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var22 string
 										templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Description)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 46, Col: 33}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 46, Col: 33}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 										if templ_7745c5c3_Err != nil {
@@ -469,7 +469,7 @@ func XPSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var24 string
 											templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", entry.Amount))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 47, Col: 62}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 47, Col: 62}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 											if templ_7745c5c3_Err != nil {
@@ -620,7 +620,7 @@ func XPSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var31 string
 										templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 62, Col: 28}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 62, Col: 28}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 										if templ_7745c5c3_Err != nil {
@@ -750,7 +750,7 @@ func XPSummary(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Character.TotalXP))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 79, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 79, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -763,7 +763,7 @@ func XPSummary(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(formatMod(view.XPModPercent))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `xp.templ`, Line: 79, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/xp.templ`, Line: 79, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {

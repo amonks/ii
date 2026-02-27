@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"strings"
 	"testing"
 
 	"monks.co/pkg/database"
@@ -27,6 +28,12 @@ func TestCompanionStatMigrationIgnoresExistingColumns(t *testing.T) {
 	}
 	for _, stmt := range migrationCompanionStats {
 		d.Exec(stmt)
+	}
+
+	if err := d.Error; err != nil {
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			t.Fatalf("migration error: %v", err)
+		}
 	}
 
 	type columnInfo struct {

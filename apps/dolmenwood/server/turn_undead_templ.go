@@ -129,7 +129,7 @@ func TurnUndeadTable(entries []engine.TurnUndeadEntry) templ.Component {
 								var templ_7745c5c3_Var7 string
 								templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(header)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `turn_undead.templ`, Line: 32, Col: 30}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/turn_undead.templ`, Line: 32, Col: 30}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 								if templ_7745c5c3_Err != nil {
@@ -202,7 +202,7 @@ func TurnUndeadTable(entries []engine.TurnUndeadEntry) templ.Component {
 								var templ_7745c5c3_Var11 string
 								templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Target)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `turn_undead.templ`, Line: 40, Col: 37}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/turn_undead.templ`, Line: 40, Col: 37}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 								if templ_7745c5c3_Err != nil {

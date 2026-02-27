@@ -305,6 +305,14 @@ CREATE TABLE IF NOT EXISTS prepared_spells (
 	used INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_prepared_spells_character ON prepared_spells(character_id);
+
+CREATE TABLE IF NOT EXISTS enchantment_uses (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	used INTEGER NOT NULL DEFAULT 0,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_enchantment_uses_character ON enchantment_uses(character_id);
 `
 
 const migrations = `
@@ -368,6 +376,16 @@ CREATE TABLE IF NOT EXISTS prepared_spells (
 	used INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_prepared_spells_character ON prepared_spells(character_id);
+`
+
+const migrationEnchantmentUses = `
+CREATE TABLE IF NOT EXISTS enchantment_uses (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	character_id INTEGER NOT NULL REFERENCES characters(id),
+	used INTEGER NOT NULL DEFAULT 0,
+	created_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_enchantment_uses_character ON enchantment_uses(character_id);
 `
 
 const migrationBirthday = `
@@ -446,6 +464,7 @@ func New() (*DB, error) {
 	d.Exec(migrationAuditLogGameDay)
 	d.Exec(migrationBankDeposits)
 	d.Exec(migrationPreparedSpells)
+	d.Exec(migrationEnchantmentUses)
 	d.Exec(migrationBirthday)
 	for _, stmt := range migrationCompanionStats {
 		d.Exec(stmt)
@@ -502,7 +521,10 @@ func (db *DB) CreateCharacter(ch *Character) error {
 	if ch.CalendarStartDay == 0 {
 		ch.CalendarStartDay = 1
 	}
-	return db.Create(ch).Error
+	if err := db.Create(ch).Error; err != nil {
+		return err
+	}
+	return db.ensureEnchantmentUseCapacity(ch.ID)
 }
 
 func (db *DB) GetCharacter(id uint) (*Character, error) {
@@ -533,6 +555,7 @@ func (db *DB) DeleteCharacter(id uint) error {
 	db.Where("character_id = ?", id).Delete(&XPLogEntry{})
 	db.Where("character_id = ?", id).Delete(&Note{})
 	db.Where("character_id = ?", id).Delete(&AuditLogEntry{})
+	db.Where("character_id = ?", id).Delete(&EnchantmentUse{})
 	db.Where("character_id = ?", id).Delete(&PreparedSpell{})
 	db.Where("character_id = ?", id).Delete(&BankDeposit{})
 	db.Where("employer_id = ?", id).Delete(&RetainerContract{})
@@ -908,7 +931,10 @@ func (db *DB) ListPreparedSpells(characterID uint) ([]PreparedSpell, error) {
 }
 
 func (db *DB) CreatePreparedSpell(spell *PreparedSpell) error {
-	return db.Create(spell).Error
+	if err := db.Create(spell).Error; err != nil {
+		return err
+	}
+	return db.ensureEnchantmentUseCapacity(spell.CharacterID)
 }
 
 func (db *DB) MarkSpellUsed(spellID uint) error {
@@ -916,7 +942,63 @@ func (db *DB) MarkSpellUsed(spellID uint) error {
 }
 
 func (db *DB) ResetSpells(characterID uint) error {
-	return db.Model(&PreparedSpell{}).Where("character_id = ?", characterID).Update("used", false).Error
+	if err := db.Model(&PreparedSpell{}).Where("character_id = ?", characterID).Update("used", false).Error; err != nil {
+		return err
+	}
+	return db.ResetEnchantmentUses(characterID)
+}
+
+func (db *DB) EnchantmentUsesCount(characterID uint) (int, int, error) {
+	var total int64
+	var used int64
+	if err := db.Model(&EnchantmentUse{}).Where("character_id = ?", characterID).Count(&total).Error; err != nil {
+		return 0, 0, err
+	}
+	if total == 0 {
+		return 0, 0, nil
+	}
+	if err := db.Model(&EnchantmentUse{}).Where("character_id = ? AND used = ?", characterID, true).Count(&used).Error; err != nil {
+		return 0, 0, err
+	}
+	return int(total), int(used), nil
+}
+
+func (db *DB) CreateEnchantmentUse(characterID uint) error {
+	var use EnchantmentUse
+	if err := db.Where("character_id = ? AND used = ?", characterID, false).Order("id asc").First(&use).Error; err != nil {
+		return err
+	}
+	return db.Model(&EnchantmentUse{}).Where("id = ?", use.ID).Update("used", true).Error
+}
+
+func (db *DB) ResetEnchantmentUses(characterID uint) error {
+	return db.Model(&EnchantmentUse{}).Where("character_id = ?", characterID).Update("used", false).Error
+}
+
+func (db *DB) EnsureEnchantmentUseCapacity(characterID uint) error {
+	return db.ensureEnchantmentUseCapacity(characterID)
+}
+
+func (db *DB) ensureEnchantmentUseCapacity(characterID uint) error {
+	var ch Character
+	if err := db.First(&ch, characterID).Error; err != nil {
+		return err
+	}
+	if !strings.EqualFold(ch.Class, "Bard") {
+		return nil
+	}
+	total, _, err := db.EnchantmentUsesCount(characterID)
+	if err != nil {
+		return err
+	}
+	needed := ch.Level - total
+	for range needed {
+		use := &EnchantmentUse{CharacterID: characterID, Used: false, CreatedAt: time.Now()}
+		if err := db.Create(use).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (db *DB) DeletePreparedSpell(spellID uint) error {

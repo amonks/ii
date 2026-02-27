@@ -36,7 +36,15 @@ templ TraitsSection(view *CharacterView) {
 					@LabelBlock() { Glamours known { fmt.Sprintf("%d", view.GlamoursKnown) } }
 				}
 				if view.EnchantmentUsesTotal > 0 {
-					@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", view.EnchantmentUsesTotal) }/day }
+					@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", view.EnchantmentUsesRemaining) }/{ fmt.Sprintf("%d", view.EnchantmentUsesTotal) } }
+					@InlineActions() {
+						<form hx-post="enchantment/" hx-target="#traits" hx-swap="outerHTML">
+							@BtnSecondary() { Use }
+						</form>
+						<form hx-post="enchantment/rest/" hx-target="#traits" hx-swap="outerHTML">
+							@BtnSecondary() { Rest }
+						</form>
+					}
 				}
 			}
 		}

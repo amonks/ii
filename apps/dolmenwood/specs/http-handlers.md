@@ -82,7 +82,15 @@ All routes are registered via `Mux()` on the `Server` struct, using Go 1.22+ met
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
 | POST | `/characters/{id}/calendar/` | `handleUpdateCalendar` | Set calendar date |
-| POST | `/characters/{id}/advance-day/` | `handleAdvanceDay` | Advance game day counter |
+| POST | `/characters/{id}/advance-day/` | `handleAdvanceDay` | Advance current day |
+
+### Enchantment (Bard)
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| POST | `/characters/{id}/enchantment/` | `handleUseEnchantment` | Spend one enchantment use |
+| POST | `/characters/{id}/enchantment/rest/` | `handleRestEnchantment` | Reset enchantment uses |
+| POST | `/characters/{id}/retainers/{contractID}/enchantment/` | `handleUseRetainerEnchantment` | Spend a retainer's enchantment use |
+| POST | `/characters/{id}/retainers/{contractID}/enchantment/rest/` | `handleRestRetainerEnchantment` | Reset a retainer's enchantment uses |
 
 ### Banking
 | Method | Path | Handler | Description |

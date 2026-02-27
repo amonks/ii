@@ -31,6 +31,12 @@ func TestCharacterViewBardSkillTargets(t *testing.T) {
 	if view.EnchantmentUsesTotal != 8 {
 		t.Errorf("EnchantmentUsesTotal = %d, want 8", view.EnchantmentUsesTotal)
 	}
+	if view.EnchantmentUsesUsed != 0 {
+		t.Errorf("EnchantmentUsesUsed = %d, want 0", view.EnchantmentUsesUsed)
+	}
+	if view.EnchantmentUsesRemaining != 8 {
+		t.Errorf("EnchantmentUsesRemaining = %d, want 8", view.EnchantmentUsesRemaining)
+	}
 	if view.GlamoursKnown != 0 {
 		t.Errorf("GlamoursKnown = %d, want 0", view.GlamoursKnown)
 	}

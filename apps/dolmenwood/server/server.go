@@ -51,6 +51,11 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /characters/{id}/spells/{spellID}/cast/{$}", s.handleCastSpell)
 	mux.HandleFunc("POST /characters/{id}/spells/{spellID}/forget/{$}", s.handleForgetSpell)
 	mux.HandleFunc("POST /characters/{id}/spells/rest/{$}", s.handleRestSpells)
+	// Enchantment handlers
+	mux.HandleFunc("POST /characters/{id}/enchantment/{$}", s.handleUseEnchantment)
+	mux.HandleFunc("POST /characters/{id}/enchantment/rest/{$}", s.handleRestEnchantment)
+	mux.HandleFunc("POST /characters/{id}/retainers/{contractID}/enchantment/{$}", s.handleUseRetainerEnchantment)
+	mux.HandleFunc("POST /characters/{id}/retainers/{contractID}/enchantment/rest/{$}", s.handleRestRetainerEnchantment)
 	mux.HandleFunc("GET /fonts/ATKyriosStandard-Medium.woff2", s.handleFontKyrios)
 	mux.HandleFunc("GET /fonts/martina-plantijn-bold.woff2", s.handleFontMartinaBold)
 	mux.HandleFunc("GET /fonts/martina-plantijn-regular.woff2", s.handleFontMartinaRegular)

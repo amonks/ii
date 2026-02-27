@@ -117,7 +117,7 @@ Friars can identify and prepare herbal remedies. Healing herbs restore double HP
 - **Enchantment**: Uses per day equal to the Bard's level. Enchanted performances affect listeners.
 - **Counter Charm**: Neutralize enchanted music within 30'.
 
-**Implementation**: Track enchantment uses per day (total = level, reset on rest). Counter Charm is passive/reactive — display as a trait.
+**Implementation**: Track enchantment uses per day (total = level, reset on rest). Counter Charm is passive/reactive — display as a trait. Enchantment use tracking persists in the `enchantment_uses` table; each use creates a row and rest resets usage.
 
 **UI**: Show enchantment uses remaining / total. "Use Enchantment" button. "Rest" resets uses.
 

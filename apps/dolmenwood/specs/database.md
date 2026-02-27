@@ -99,13 +99,26 @@ CRUD methods:
 - `ListPreparedSpells(characterID)` -- returns prepared spells for a character
 - `CreatePreparedSpell(spell)` -- create a prepared spell entry
 - `MarkSpellUsed(spellID)` -- set used = true
-- `ResetSpells(characterID)` -- set used = false for all prepared spells
+- `ResetSpells(characterID)` -- set used = false for all prepared spells (also resets enchantment uses)
 - `DeletePreparedSpell(spellID)` -- remove a prepared spell
+
+### `enchantment_uses`
+
+Tracks Bard enchantment uses. Each row represents a single use that can be marked used/reset.
+
+Fields:
+- `ID`, `CharacterID`, `Used`, `CreatedAt`
+
+CRUD methods:
+- `EnchantmentUsesCount(characterID)` -- returns total and used counts
+- `CreateEnchantmentUse(characterID)` -- consume a use
+- `ResetEnchantmentUses(characterID)` -- set used = false for all
+- `EnsureEnchantmentUseCapacity(characterID)` -- ensure rows exist up to bard level
 
 ## Cascade Behaviors
 
 ### `DeleteCharacter(id)`
-Deletes all related records: items, companions, transactions, XP log, notes, audit log, prepared spells, bank deposits. Also deletes any `retainer_contracts` where `employer_id` or `retainer_id` matches. When deleting an employer, retainer Characters remain as independent characters (just the contract is removed).
+Deletes all related records: items, companions, transactions, XP log, notes, audit log, prepared spells, enchantment uses, bank deposits. Also deletes any `retainer_contracts` where `employer_id` or `retainer_id` matches. When deleting an employer, retainer Characters remain as independent characters (just the contract is removed).
 
 ### `DeleteItem(id)`
 - Reparents child items: any item whose `ContainerID` points to the deleted item gets `ContainerID = nil`

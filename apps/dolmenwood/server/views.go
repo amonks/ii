@@ -58,7 +58,9 @@ type CharacterView struct {
 	AvailableSpellSlots     *engine.SpellSlots
 	PreparedSpells          []db.PreparedSpell
 	GlamoursKnown           int
-	EnchantmentUsesTotal    int
+	EnchantmentUsesTotal     int
+	EnchantmentUsesUsed      int
+	EnchantmentUsesRemaining int
 	TurnUndeadTable         []engine.TurnUndeadEntry
 	SaveBonuses             []engine.SaveBonus
 	BirthdayMonths          []engine.Month
@@ -122,7 +124,9 @@ type RetainerView struct {
 	HunterSkillTargets   engine.SkillTargets
 	HunterSkillNames     []string
 	GlamoursKnown        int
-	EnchantmentUsesTotal int
+	EnchantmentUsesTotal     int
+	EnchantmentUsesUsed      int
+	EnchantmentUsesRemaining int
 	TurnUndeadTable      []engine.TurnUndeadEntry
 }
 
@@ -469,6 +473,8 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	var hunterSkillTargets engine.SkillTargets
 	var hunterSkillNames []string
 	bardEnchantmentUses := 0
+	bardEnchantmentUsesUsed := 0
+	bardEnchantmentUsesRemaining := 0
 	thiefBackstabBonus := 0
 	thiefBackstabDamage := ""
 	enchanterGlamours := 0
@@ -490,7 +496,20 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 	if strings.EqualFold(ch.Class, "Bard") {
 		bardSkillTargets = engine.BardSkillTargets(ch.Level)
 		bardSkillNames = engine.BardSkillNames()
-		bardEnchantmentUses = ch.Level
+		var bardEnchantmentTotal int
+		var bardEnchantmentUsed int
+		if err := d.EnsureEnchantmentUseCapacity(ch.ID); err != nil {
+			return nil, err
+		}
+		total, used, err := d.EnchantmentUsesCount(ch.ID)
+		if err != nil {
+			return nil, err
+		}
+		bardEnchantmentTotal = total
+		bardEnchantmentUsed = used
+		bardEnchantmentUses = bardEnchantmentTotal
+		bardEnchantmentUsesUsed = bardEnchantmentUsed
+		bardEnchantmentUsesRemaining = max(bardEnchantmentTotal-bardEnchantmentUsed, 0)
 	}
 	if strings.EqualFold(ch.Class, "Hunter") {
 		hunterSkillTargets = engine.HunterSkillTargets(ch.Level)
@@ -562,7 +581,9 @@ func buildCharacterView(d *db.DB, ch *db.Character) (*CharacterView, error) {
 		HunterSkillTargets:      hunterSkillTargets,
 		HunterSkillNames:        hunterSkillNames,
 		GlamoursKnown:           enchanterGlamours,
-		EnchantmentUsesTotal:    bardEnchantmentUses,
+		EnchantmentUsesTotal:     bardEnchantmentUses,
+		EnchantmentUsesUsed:      bardEnchantmentUsesUsed,
+		EnchantmentUsesRemaining: bardEnchantmentUsesRemaining,
 		TurnUndeadTable:         turnUndeadTable,
 		SpellSlots:              spellSlots,
 		AvailableSpellSlots:     availableSpellSlots,
@@ -1017,6 +1038,8 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		var retainerHunterNames []string
 		var retainerTurnUndead []engine.TurnUndeadEntry
 		retainerBardEnchantmentUses := 0
+		retainerBardEnchantmentUsesUsed := 0
+		retainerBardEnchantmentUsesRemaining := 0
 		retainerGlamours := 0
 		retainerCombatTalents := 0
 		hasRetainerCombatTalents := false
@@ -1039,7 +1062,16 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 		case "bard":
 			retainerBardTargets = engine.BardSkillTargets(retainer.Level)
 			retainerBardNames = engine.BardSkillNames()
-			retainerBardEnchantmentUses = retainer.Level
+			if err := d.EnsureEnchantmentUseCapacity(retainer.ID); err != nil {
+				return nil, err
+			}
+			total, used, err := d.EnchantmentUsesCount(retainer.ID)
+			if err != nil {
+				return nil, err
+			}
+			retainerBardEnchantmentUses = total
+			retainerBardEnchantmentUsesUsed = used
+			retainerBardEnchantmentUsesRemaining = max(total-used, 0)
 		case "hunter":
 			retainerHunterTargets = engine.HunterSkillTargets(retainer.Level)
 			retainerHunterNames = engine.HunterSkillNames()
@@ -1073,7 +1105,9 @@ func buildRetainerViews(d *db.DB, ch *db.Character) ([]RetainerView, error) {
 			HunterSkillTargets:   retainerHunterTargets,
 			HunterSkillNames:     retainerHunterNames,
 			GlamoursKnown:        retainerGlamours,
-			EnchantmentUsesTotal: retainerBardEnchantmentUses,
+			EnchantmentUsesTotal:     retainerBardEnchantmentUses,
+			EnchantmentUsesUsed:      retainerBardEnchantmentUsesUsed,
+			EnchantmentUsesRemaining: retainerBardEnchantmentUsesRemaining,
 			TurnUndeadTable:      retainerTurnUndead,
 		})
 	}

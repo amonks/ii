@@ -63,7 +63,15 @@ templ RetainersSection(view *CharacterView) {
 							@LabelBlock() { Combat talents { fmt.Sprintf("%d", retainer.CombatTalentsTotal) } }
 						}
 						if retainer.EnchantmentUsesTotal > 0 {
-							@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", retainer.EnchantmentUsesTotal) }/day }
+							@LabelBlock() { Enchantment uses { fmt.Sprintf("%d", retainer.EnchantmentUsesRemaining) }/{ fmt.Sprintf("%d", retainer.EnchantmentUsesTotal) } }
+							@InlineActions() {
+								<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/enchantment/", retainer.Contract.ID)) } hx-target="#retainers" hx-swap="outerHTML">
+									@BtnSecondary() { Use }
+								</form>
+								<form hx-post={ templ.SafeURL(fmt.Sprintf("retainers/%d/enchantment/rest/", retainer.Contract.ID)) } hx-target="#retainers" hx-swap="outerHTML">
+									@BtnSecondary() { Rest }
+								</form>
+							}
 						}
 						if retainer.GlamoursKnown > 0 {
 							@LabelBlock() { Glamours known { fmt.Sprintf("%d", retainer.GlamoursKnown) } }

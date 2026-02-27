@@ -176,6 +176,43 @@ func TestCompanion(t *testing.T) {
 	}
 }
 
+func TestEnchantmentUseLifecycle(t *testing.T) {
+	db := newTestDB(t)
+
+	ch := &Character{Name: "Lyric", Class: "Bard", Kindred: "Human", Level: 3}
+	if err := db.CreateCharacter(ch); err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+	total, used, err := db.EnchantmentUsesCount(ch.ID)
+	if err != nil {
+		t.Fatalf("EnchantmentUsesCount: %v", err)
+	}
+	if total != 3 || used != 0 {
+		t.Fatalf("uses = %d/%d, want 3/0", used, total)
+	}
+	if err := db.CreateEnchantmentUse(ch.ID); err != nil {
+		t.Fatalf("CreateEnchantmentUse: %v", err)
+	}
+	total, used, err = db.EnchantmentUsesCount(ch.ID)
+	if err != nil {
+		t.Fatalf("EnchantmentUsesCount: %v", err)
+	}
+	if total != 3 || used != 1 {
+		t.Fatalf("uses = %d/%d, want 3/1", used, total)
+	}
+	if err := db.ResetEnchantmentUses(ch.ID); err != nil {
+		t.Fatalf("ResetEnchantmentUses: %v", err)
+	}
+	total, used, err = db.EnchantmentUsesCount(ch.ID)
+	if err != nil {
+		t.Fatalf("EnchantmentUsesCount: %v", err)
+	}
+	if total != 3 || used != 0 {
+		t.Fatalf("uses = %d/%d, want 3/0", used, total)
+	}
+}
+
+
 func TestCompanionDefaults(t *testing.T) {
 	db := newTestDB(t)
 
@@ -500,6 +537,7 @@ func TestCharacterCurrentDay(t *testing.T) {
 func TestRetainerContracts(t *testing.T) {
 	db := newTestDB(t)
 
+
 	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
 	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
 	if err := db.CreateCharacter(employer); err != nil {
@@ -546,6 +584,7 @@ func TestRetainerContracts(t *testing.T) {
 func TestListActiveRetainerContracts(t *testing.T) {
 	db := newTestDB(t)
 
+
 	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
 	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
 	if err := db.CreateCharacter(employer); err != nil {
@@ -574,6 +613,7 @@ func TestListActiveRetainerContracts(t *testing.T) {
 
 func TestDeactivateRetainerContract(t *testing.T) {
 	db := newTestDB(t)
+
 
 	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
 	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
@@ -604,6 +644,7 @@ func TestDeactivateRetainerContract(t *testing.T) {
 
 func TestDeleteCharacterCleansRetainerContracts(t *testing.T) {
 	db := newTestDB(t)
+
 
 	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
 	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
@@ -638,6 +679,7 @@ func TestDeleteCharacterCleansRetainerContracts(t *testing.T) {
 
 func TestDeleteRetainerCleansRetainerContracts(t *testing.T) {
 	db := newTestDB(t)
+
 
 	employer := &Character{Name: "Employer", Class: "Knight", Kindred: "Human", Level: 1}
 	retainer := &Character{Name: "Retainer", Class: "Friar", Kindred: "Human", Level: 1}
@@ -793,6 +835,7 @@ func TestPreparedSpellsCRUD(t *testing.T) {
 func TestTransferItemFull(t *testing.T) {
 	db := newTestDB(t)
 
+
 	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
 	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
 	if err := db.CreateCharacter(source); err != nil {
@@ -853,6 +896,7 @@ func TestTransferItemFull(t *testing.T) {
 func TestTransferItemPartial(t *testing.T) {
 	db := newTestDB(t)
 
+
 	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
 	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
 	if err := db.CreateCharacter(source); err != nil {
@@ -906,6 +950,7 @@ func TestTransferItemPartial(t *testing.T) {
 func TestTransferItemContainerMovesChildren(t *testing.T) {
 	db := newTestDB(t)
 
+
 	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
 	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
 	if err := db.CreateCharacter(source); err != nil {
@@ -939,6 +984,7 @@ func TestTransferItemContainerMovesChildren(t *testing.T) {
 
 func TestTransferItemContainerClearsCoinLocation(t *testing.T) {
 	db := newTestDB(t)
+
 
 	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
 	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}
@@ -990,6 +1036,7 @@ func TestTransferItemContainerClearsCoinLocation(t *testing.T) {
 
 func TestTransferItemCoinsPartial(t *testing.T) {
 	db := newTestDB(t)
+
 
 	source := &Character{Name: "Source", Class: "Knight", Kindred: "Human", Level: 1}
 	target := &Character{Name: "Target", Class: "Knight", Kindred: "Human", Level: 1}

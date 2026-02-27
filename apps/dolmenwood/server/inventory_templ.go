@@ -111,7 +111,7 @@ func InventorySection(view *CharacterView) templ.Component {
 						var templ_7745c5c3_Var7 string
 						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Equipped (%d / 10 slots)", view.EquippedSlots))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 15, Col: 83}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 15, Col: 83}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 						if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func InventorySection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var12 string
 							templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(companionInventoryLabel(cg))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 29, Col: 52}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 29, Col: 52}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 							if templ_7745c5c3_Err != nil {
@@ -264,7 +264,7 @@ func InventorySection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var14 string
 							templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("companion:%d", cg.Companion.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 35, Col: 94}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 35, Col: 94}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 							if templ_7745c5c3_Err != nil {
@@ -434,7 +434,7 @@ func InventorySection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var22 string
 										templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Detail)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 50, Col: 28}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 50, Col: 28}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 										if templ_7745c5c3_Err != nil {
@@ -563,7 +563,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var28 string
 							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 67, Col: 39}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 67, Col: 39}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 							if templ_7745c5c3_Err != nil {
@@ -595,7 +595,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var30 string
 								templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(item.CoinValueLabel)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 69, Col: 43}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 69, Col: 43}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 								if templ_7745c5c3_Err != nil {
@@ -626,7 +626,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var32 string
 								templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.Notes)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 70, Col: 30}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 70, Col: 30}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 								if templ_7745c5c3_Err != nil {
@@ -654,7 +654,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var34 string
 								templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(item.Notes)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 72, Col: 34}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 72, Col: 34}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 								if templ_7745c5c3_Err != nil {
@@ -683,7 +683,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var36 string
 							templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 75, Col: 27}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 75, Col: 27}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 							if templ_7745c5c3_Err != nil {
@@ -716,7 +716,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var38 string
 							templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%dx", item.Quantity))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 78, Col: 52}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 78, Col: 52}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 							if templ_7745c5c3_Err != nil {
@@ -772,7 +772,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var41 string
 							templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d slots", item.Slots))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 83, Col: 54}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 83, Col: 54}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 							if templ_7745c5c3_Err != nil {
@@ -806,7 +806,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var43 string
 								templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 87, Col: 77}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 87, Col: 77}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 								if templ_7745c5c3_Err != nil {
@@ -834,7 +834,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var45 string
 								templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", item.UsedSlots, item.Capacity))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 89, Col: 71}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 89, Col: 71}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 								if templ_7745c5c3_Err != nil {
@@ -869,7 +869,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var47 string
 								templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s+%d", w.Damage, mb))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 94, Col: 63}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 94, Col: 63}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 								if templ_7745c5c3_Err != nil {
@@ -897,7 +897,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var49 string
 								templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(w.Damage)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 96, Col: 37}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 96, Col: 37}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 								if templ_7745c5c3_Err != nil {
@@ -936,7 +936,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var51 string
 								templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", a.AC+mb))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 101, Col: 59}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 101, Col: 59}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 								if templ_7745c5c3_Err != nil {
@@ -968,7 +968,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 								var templ_7745c5c3_Var53 string
 								templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", a.AC))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 103, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 103, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 								if templ_7745c5c3_Err != nil {
@@ -1002,7 +1002,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var55 string
 							templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("+%d AC", bonus))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 107, Col: 55}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 107, Col: 55}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 							if templ_7745c5c3_Err != nil {
@@ -1027,7 +1027,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 						var templ_7745c5c3_Var56 string
 						templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/update/", item.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 110, Col: 62}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 110, Col: 62}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 						if templ_7745c5c3_Err != nil {
@@ -1066,7 +1066,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var58 string
 							templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(item.Notes)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 121, Col: 29}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 121, Col: 29}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 							if templ_7745c5c3_Err != nil {
@@ -1109,7 +1109,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 						var templ_7745c5c3_Var60 string
 						templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(transferFormAction(contractID[0])))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 126, Col: 70}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 126, Col: 70}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 						if templ_7745c5c3_Err != nil {
@@ -1138,7 +1138,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var62 string
 							templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 129, Col: 78}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 129, Col: 78}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 							if templ_7745c5c3_Err != nil {
@@ -1210,7 +1210,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var64 string
 							templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/split/", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 147, Col: 62}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 147, Col: 62}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 							if templ_7745c5c3_Err != nil {
@@ -1281,7 +1281,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 										var templ_7745c5c3_Var67 string
 										templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(target.Value)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 168, Col: 39}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 168, Col: 39}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 										if templ_7745c5c3_Err != nil {
@@ -1294,7 +1294,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 										var templ_7745c5c3_Var68 string
 										templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(target.Label)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 168, Col: 56}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 168, Col: 56}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 										if templ_7745c5c3_Err != nil {
@@ -1317,7 +1317,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 										var templ_7745c5c3_Var69 string
 										templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Sell (%s)", itemCostLabel(item.SellPriceCP, "")))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 171, Col: 95}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 171, Col: 95}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
 										if templ_7745c5c3_Err != nil {
@@ -1362,7 +1362,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var70 string
 							templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/update/", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 180, Col: 63}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 180, Col: 63}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 							if templ_7745c5c3_Err != nil {
@@ -1396,7 +1396,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 									var templ_7745c5c3_Var72 string
 									templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(target.Value)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 185, Col: 38}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 185, Col: 38}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 									if templ_7745c5c3_Err != nil {
@@ -1409,7 +1409,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 									var templ_7745c5c3_Var73 string
 									templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(target.Label)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 185, Col: 55}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 185, Col: 55}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
 									if templ_7745c5c3_Err != nil {
@@ -1453,7 +1453,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var74 string
 							templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/sell/", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 194, Col: 61}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 194, Col: 61}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 							if templ_7745c5c3_Err != nil {
@@ -1484,7 +1484,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var75 string
 							templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/decrement/", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 200, Col: 66}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 200, Col: 66}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 							if templ_7745c5c3_Err != nil {
@@ -1510,7 +1510,7 @@ func inventoryItem(item InventoryItem, moveTargets []MoveTarget, depth int, cont
 							var templ_7745c5c3_Var76 string
 							templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("items/%d/delete/", item.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 205, Col: 63}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 205, Col: 63}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 							if templ_7745c5c3_Err != nil {
@@ -1686,7 +1686,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 						var templ_7745c5c3_Var84 string
 						templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d / 10", view.EquippedSlots))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 231, Col: 54}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 231, Col: 54}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
 						if templ_7745c5c3_Err != nil {
@@ -1810,7 +1810,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var89 string
 							templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d / %d", view.TotalStowedSlots, view.StowedCapacity))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 245, Col: 79}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 245, Col: 79}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 							if templ_7745c5c3_Err != nil {
@@ -1828,7 +1828,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var90 string
 							templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.TotalStowedSlots))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 247, Col: 53}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 247, Col: 53}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
 							if templ_7745c5c3_Err != nil {
@@ -1878,7 +1878,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var92 string
 								templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(c.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 254, Col: 20}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 254, Col: 20}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
 								if templ_7745c5c3_Err != nil {
@@ -1891,7 +1891,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var93 string
 								templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", c.Slots))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 254, Col: 52}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 254, Col: 52}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 								if templ_7745c5c3_Err != nil {
@@ -2176,7 +2176,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var106 string
 									templ_7745c5c3_Var106, templ_7745c5c3_Err = templ.JoinStringErrs(cg.Companion.Name)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 276, Col: 36}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 276, Col: 36}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var106))
 									if templ_7745c5c3_Err != nil {
@@ -2195,7 +2195,7 @@ func EncumbranceSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var107 string
 								templ_7745c5c3_Var107, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d / %d", cg.UsedSlots, cg.Companion.LoadCapacity))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 277, Col: 77}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 277, Col: 77}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var107))
 								if templ_7745c5c3_Err != nil {
@@ -2317,7 +2317,7 @@ func EncumbranceSummary(view *CharacterView) templ.Component {
 				var templ_7745c5c3_Var112 string
 				templ_7745c5c3_Var112, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Speed))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `inventory.templ`, Line: 297, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/inventory.templ`, Line: 297, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var112))
 				if templ_7745c5c3_Err != nil {
