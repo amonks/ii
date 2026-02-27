@@ -84,6 +84,7 @@ func readDefaultPromptTemplate(name string) (string, error) {
 	return string(data), nil
 }
 
+// loadContextFileContents loads AGENTS.md or CLAUDE.md contents using LoadContextFiles.
 func loadContextFileContents(workDir, globalConfigDir string) ([]string, error) {
 	files, err := LoadContextFiles(LoadContextFilesOptions{WorkDir: workDir, GlobalConfigDir: globalConfigDir})
 	if err != nil {

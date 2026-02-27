@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // ContextFile represents a discovered AGENTS.md or CLAUDE.md file.
@@ -126,41 +125,4 @@ func LoadContextFiles(opts LoadContextFilesOptions) ([]ContextFile, error) {
 	// 5. Combine: global first, then ancestors from root to workDir
 	files = append(files, ancestorFiles...)
 	return files, nil
-}
-
-// agentsPrelude loads context files (AGENTS.md or CLAUDE.md) and returns their
-// combined contents formatted as a prelude to the user's first prompt.
-//
-// Context files are discovered in this order:
-//  1. Global config directory (if provided)
-//  2. Ancestor directories from filesystem root down to workDir
-//
-// Each file's content is trimmed and separated by blank lines.
-// If no files are found, it returns an empty string.
-func agentsPrelude(workDir string, globalConfigDir string) (string, error) {
-	files, err := LoadContextFiles(LoadContextFilesOptions{
-		WorkDir:         workDir,
-		GlobalConfigDir: globalConfigDir,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if len(files) == 0 {
-		return "", nil
-	}
-
-	var parts []string
-	for _, f := range files {
-		content := strings.TrimSpace(f.Content)
-		if content != "" {
-			parts = append(parts, content)
-		}
-	}
-
-	if len(parts) == 0 {
-		return "", nil
-	}
-
-	return strings.Join(parts, "\n\n") + "\n\n", nil
 }
