@@ -143,7 +143,7 @@ func TestAnthropicStream_Simple(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "claude-sonnet-4-5")
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant. Be concise.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant. Be concise."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:      "user",
@@ -223,7 +223,7 @@ func TestAnthropicStream_WithTool(t *testing.T) {
 	}
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant with access to a calculator. Use the calculator tool for math.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant with access to a calculator. Use the calculator tool for math."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:      "user",
@@ -287,7 +287,7 @@ func TestOpenAIStream_Simple(t *testing.T) {
 	model := requireModelFromRepoConfig(t, "gpt-5.2")
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant. Be concise.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant. Be concise."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:      "user",
@@ -349,7 +349,7 @@ func TestOpenAIStream_WithTool(t *testing.T) {
 	}
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant with access to a calculator. Use the calculator tool for math.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant with access to a calculator. Use the calculator tool for math."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:      "user",
@@ -519,7 +519,7 @@ func TestWellKnownModels_Integration(t *testing.T) {
 			model := llm.Model(m)
 
 			req := llm.Request{
-				SystemPrompt: "You are a helpful assistant. Be extremely concise.",
+				System: []llm.SystemBlock{{Text: "You are a helpful assistant. Be extremely concise."}},
 				Messages: []llm.Message{
 					llm.UserMessage{
 						Role:      "user",

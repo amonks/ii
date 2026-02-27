@@ -32,3 +32,9 @@ func GenerateSchema(v any) *Schema
 ```
 
 See [llm.md](./llm.md) for type definitions.
+
+## Request Conversion
+
+- Provider conversion now accepts `Request.System []SystemBlock` instead of a single system prompt string.
+- Anthropic maps each system block to a `system` array entry with cache control markers on blocks flagged for caching.
+- OpenAI concatenates system blocks into a single system message before sending.

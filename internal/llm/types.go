@@ -163,9 +163,15 @@ type Model struct {
 
 // Request contains the input for a completion.
 type Request struct {
-	SystemPrompt string
-	Messages     []Message // UserMessage, AssistantMessage, or ToolResultMessage
-	Tools        []Tool
+	System   []SystemBlock
+	Messages []Message // UserMessage, AssistantMessage, or ToolResultMessage
+	Tools    []Tool
+}
+
+// SystemBlock is a system prompt segment with optional cache breakpoint metadata.
+type SystemBlock struct {
+	Text            string
+	CacheBreakpoint bool
 }
 
 // Tool defines a tool that the model can call.

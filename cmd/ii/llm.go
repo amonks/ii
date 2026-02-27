@@ -232,8 +232,12 @@ func runLLMShow(cmd *cobra.Command, args []string) error {
 	// Print request
 	fmt.Println("## Request")
 	fmt.Println()
-	if completion.Request.SystemPrompt != "" {
-		fmt.Printf("**System:** %s\n\n", completion.Request.SystemPrompt)
+	if len(completion.Request.System) > 0 {
+		var parts []string
+		for _, block := range completion.Request.System {
+			parts = append(parts, block.Text)
+		}
+		fmt.Printf("**System:** %s\n\n", strings.Join(parts, "\n\n"))
 	}
 	for _, msg := range completion.Request.Messages {
 		printMessage(msg)

@@ -237,7 +237,8 @@ The agent uses a dynamically generated system prompt that includes:
 
 The system prompt is built via `BuildSystemPrompt(workDir string)` and is not externally
 configurable. The working directory is included to help the model understand the context
-for relative path resolution.
+for relative path resolution. The built prompt is wrapped in a single `llm.SystemBlock`
+when constructing `llm.Request`.
 
 ## AGENTS.md (agent prelude)
 

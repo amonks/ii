@@ -17,9 +17,14 @@ type completionJSON struct {
 }
 
 type completionRequestJSON struct {
-	SystemPrompt string        `json:"system_prompt,omitempty"`
-	Messages     []messageJSON `json:"messages"`
-	Tools        []toolJSON    `json:"tools,omitempty"`
+	System   []systemBlockJSON `json:"system,omitempty"`
+	Messages []messageJSON     `json:"messages"`
+	Tools    []toolJSON        `json:"tools,omitempty"`
+}
+
+type systemBlockJSON struct {
+	Text            string `json:"text"`
+	CacheBreakpoint bool   `json:"cache_breakpoint,omitempty"`
 }
 
 type messageJSON struct {
@@ -86,7 +91,9 @@ func (c Completion) MarshalJSON() ([]byte, error) {
 	}
 
 	// Convert Request
-	cj.Request.SystemPrompt = c.Request.SystemPrompt
+	for _, block := range c.Request.System {
+		cj.Request.System = append(cj.Request.System, systemBlockJSON{Text: block.Text, CacheBreakpoint: block.CacheBreakpoint})
+	}
 	for _, msg := range c.Request.Messages {
 		cj.Request.Messages = append(cj.Request.Messages, messageToJSON(msg))
 	}
@@ -140,7 +147,9 @@ func (c *Completion) UnmarshalJSON(data []byte) error {
 	c.CreatedAt = cj.CreatedAt
 
 	// Convert Request
-	c.Request.SystemPrompt = cj.Request.SystemPrompt
+	for _, block := range cj.Request.System {
+		c.Request.System = append(c.Request.System, SystemBlock{Text: block.Text, CacheBreakpoint: block.CacheBreakpoint})
+	}
 	for _, mj := range cj.Request.Messages {
 		c.Request.Messages = append(c.Request.Messages, messageFromJSON(mj))
 	}

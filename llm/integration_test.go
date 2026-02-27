@@ -73,7 +73,7 @@ func TestIntegration_StreamAnthropic(t *testing.T) {
 	defer cancel()
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant. Keep responses very brief.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant. Keep responses very brief."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:    "user",
@@ -154,7 +154,7 @@ func TestIntegration_StreamOpenAI(t *testing.T) {
 	defer cancel()
 
 	req := llm.Request{
-		SystemPrompt: "You are a helpful assistant. Keep responses very brief.",
+		System: []llm.SystemBlock{{Text: "You are a helpful assistant. Keep responses very brief."}},
 		Messages: []llm.Message{
 			llm.UserMessage{
 				Role:    "user",

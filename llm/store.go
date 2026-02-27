@@ -41,6 +41,7 @@ type (
 
 	// Request/Response types
 	Request       = internalllm.Request
+	SystemBlock   = internalllm.SystemBlock
 	Tool          = internalllm.Tool
 	StreamOptions = internalllm.StreamOptions
 	StreamHandle  = internalllm.StreamHandle

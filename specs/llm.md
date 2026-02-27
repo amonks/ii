@@ -287,9 +287,14 @@ func Stream(ctx context.Context, model Model, req Request, opts StreamOptions) (
 
 ```go
 type Request struct {
-    SystemPrompt string
-    Messages     []Message // UserMessage, AssistantMessage, or ToolResultMessage
-    Tools        []Tool
+    System   []SystemBlock
+    Messages []Message // UserMessage, AssistantMessage, or ToolResultMessage
+    Tools    []Tool
+}
+
+type SystemBlock struct {
+    Text            string
+    CacheBreakpoint bool
 }
 ```
 
@@ -315,7 +320,7 @@ const (
 
 - OpenAI caching is automatic; cached tokens are reported in response usage details.
 - Anthropic requires the prompt-caching-2024-07-31 beta header and cache_control markers on
-  the system prompt, tool definitions, and the last user message content block.
+  system blocks with `CacheBreakpoint: true`, the last tool definition, and the last user message content block.
 
 ```go
 type ThinkingLevel string
@@ -364,6 +369,17 @@ type UsageCost struct {
 - Unexpected EOFs during streaming are retried up to two additional attempts by the agent loop
 
 ## Provider Implementations
+
+### Anthropic
+
+- Each `SystemBlock` maps to one `anthropicContent` in the `system` array.
+- Blocks with `CacheBreakpoint: true` receive `cache_control: {"type": "ephemeral"}` when prompt caching is enabled.
+- The last tool definition and last user content block also receive `cache_control` markers.
+
+### OpenAI
+
+- `SystemBlock.Text` values are concatenated with double newlines into a single system message.
+- OpenAI caching is automatic; cached prompt tokens are parsed from response usage details.
 
 Each provider implements streaming by:
 

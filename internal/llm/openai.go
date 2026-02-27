@@ -189,7 +189,7 @@ func convertToOpenAIRequest(model Model, req Request, opts StreamOptions) openAI
 	}
 
 	// Convert messages
-	openAIReq.Messages = convertMessagesToOpenAI(req.SystemPrompt, req.Messages)
+	openAIReq.Messages = convertMessagesToOpenAI(req.System, req.Messages)
 
 	// Convert tools
 	for _, tool := range req.Tools {
@@ -206,14 +206,14 @@ func convertToOpenAIRequest(model Model, req Request, opts StreamOptions) openAI
 	return openAIReq
 }
 
-func convertMessagesToOpenAI(systemPrompt string, messages []Message) []openAIMessage {
+func convertMessagesToOpenAI(systemBlocks []SystemBlock, messages []Message) []openAIMessage {
 	var result []openAIMessage
 
-	// Add system message first
-	if systemPrompt != "" {
+	systemText := joinSystemBlocks(systemBlocks)
+	if systemText != "" {
 		result = append(result, openAIMessage{
 			Role:    "system",
-			Content: systemPrompt,
+			Content: systemText,
 		})
 	}
 
@@ -293,6 +293,20 @@ func convertContentBlocksToOpenAI(blocks []ContentBlock) any {
 		}
 	}
 	return parts
+}
+
+func joinSystemBlocks(blocks []SystemBlock) string {
+	if len(blocks) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(blocks))
+	for _, block := range blocks {
+		if strings.TrimSpace(block.Text) == "" {
+			continue
+		}
+		parts = append(parts, block.Text)
+	}
+	return strings.Join(parts, "\n\n")
 }
 
 func processOpenAIStream(ctx context.Context, body io.ReadCloser, model Model, events chan<- StreamEvent, done chan<- AssistantMessage, errCh chan<- error) {
@@ -623,8 +637,8 @@ func convertToResponsesRequest(model Model, req Request, opts StreamOptions) res
 	}
 
 	// Set instructions (system prompt)
-	if req.SystemPrompt != "" {
-		responsesReq.Instructions = req.SystemPrompt
+	if systemText := joinSystemBlocks(req.System); systemText != "" {
+		responsesReq.Instructions = systemText
 	}
 
 	// Convert messages to input

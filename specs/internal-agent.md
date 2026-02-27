@@ -5,6 +5,9 @@
 The `internal/agent` package provides the core agent loop without persistence.
 See [agent.md](./agent.md) for the full specification.
 
+Note: the agent wraps the generated system prompt in a single `llm.SystemBlock`
+when constructing `llm.Request`.
+
 ## Scope
 
 This package implements:

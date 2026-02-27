@@ -117,9 +117,9 @@ func runAgent(ctx context.Context, prompt string, config AgentConfig, workDir st
 
 		// Build request (parent agents have the task tool)
 		req := llm.Request{
-			SystemPrompt: BuildSystemPrompt(workDir),
-			Messages:     messages,
-			Tools:        builtInToolsWithTask(true),
+			System:   []llm.SystemBlock{{Text: BuildSystemPrompt(workDir)}},
+			Messages: messages,
+			Tools:    builtInToolsWithTask(true),
 		}
 
 		streamErrRetries := 0
@@ -419,9 +419,9 @@ func runSubagent(ctx context.Context, prompt string, config AgentConfig, tools [
 
 		// Build request with custom tools
 		req := llm.Request{
-			SystemPrompt: BuildSystemPrompt(workDir),
-			Messages:     messages,
-			Tools:        tools,
+			System:   []llm.SystemBlock{{Text: BuildSystemPrompt(workDir)}},
+			Messages: messages,
+			Tools:    tools,
 		}
 
 		streamErrRetries := 0

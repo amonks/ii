@@ -170,16 +170,11 @@ func convertToAnthropicRequest(model Model, req Request, opts StreamOptions) ant
 	anthropicReq := anthropicRequest{
 		Model:  model.ID,
 		Stream: true,
-		System: []anthropicContent{
-			{
-				Type: "text",
-				Text: req.SystemPrompt,
-			},
-		},
+		System: convertSystemBlocksToAnthropic(req.System),
 		Tools: make([]anthropicTool, 0, len(req.Tools)),
 	}
 
-	if req.SystemPrompt == "" {
+	if len(req.System) == 0 {
 		anthropicReq.System = nil
 	}
 
@@ -221,19 +216,24 @@ func convertToAnthropicRequest(model Model, req Request, opts StreamOptions) ant
 		})
 	}
 
-	applyAnthropicCaching(&anthropicReq, opts.CacheRetention)
+	applyAnthropicCaching(&anthropicReq, req.System, opts.CacheRetention)
 
 	return anthropicReq
 }
 
-func applyAnthropicCaching(req *anthropicRequest, retention CacheRetention) {
+func applyAnthropicCaching(req *anthropicRequest, blocks []SystemBlock, retention CacheRetention) {
 	if !shouldEnableAnthropicCaching(retention) {
 		return
 	}
 
 	cacheControl := &anthropicCacheControl{Type: "ephemeral"}
-	if len(req.System) > 0 {
-		req.System[len(req.System)-1].CacheControl = cacheControl
+	for i, block := range blocks {
+		if !block.CacheBreakpoint {
+			continue
+		}
+		if i < len(req.System) {
+			req.System[i].CacheControl = cacheControl
+		}
 	}
 	if len(req.Tools) > 0 {
 		req.Tools[len(req.Tools)-1].CacheControl = cacheControl
@@ -247,6 +247,21 @@ func applyAnthropicCaching(req *anthropicRequest, retention CacheRetention) {
 		msg.Content[len(msg.Content)-1].CacheControl = cacheControl
 		break
 	}
+}
+
+func convertSystemBlocksToAnthropic(blocks []SystemBlock) []anthropicContent {
+	if len(blocks) == 0 {
+		return nil
+	}
+	result := make([]anthropicContent, 0, len(blocks))
+	for _, block := range blocks {
+		content := anthropicContent{
+			Type: "text",
+			Text: block.Text,
+		}
+		result = append(result, content)
+	}
+	return result
 }
 
 func shouldEnableAnthropicCaching(retention CacheRetention) bool {

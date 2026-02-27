@@ -238,7 +238,7 @@ func TestConvertMessagesToAnthropic_EmptyAssistantMessageExcluded(t *testing.T) 
 
 func TestConvertToAnthropicRequest_AddsCacheControlMarkers(t *testing.T) {
 	req := Request{
-		SystemPrompt: "system prompt",
+		System:   []SystemBlock{{Text: "system prompt", CacheBreakpoint: true}},
 		Messages: []Message{
 			UserMessage{
 				Role: "user",
