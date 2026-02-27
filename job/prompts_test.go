@@ -160,48 +160,6 @@ func TestFormatFeedbackBlock_PreservesListItems(t *testing.T) {
 	}
 }
 
-func TestFormatTestCommandsBlock_Empty(t *testing.T) {
-	formatted := formatTestCommandsBlock(nil)
-
-	if formatted != "" {
-		t.Fatalf("expected empty test command block, got %q", formatted)
-	}
-}
-
-func TestFormatTestCommandsBlock_SingleCommand(t *testing.T) {
-	formatted := formatTestCommandsBlock([]string{"go test ./..."})
-
-	expected := strings.Join([]string{
-		"Passing test commands",
-		"",
-		"    The following test commands were run and all passed:",
-		"    - go test ./...",
-	}, "\n")
-
-	if internalstrings.TrimTrailingNewlines(formatted) != expected {
-		t.Fatalf("expected test command block, got %q", formatted)
-	}
-}
-
-func TestFormatTestCommandsBlock_MultipleCommands(t *testing.T) {
-	formatted := formatTestCommandsBlock([]string{
-		"go test ./...",
-		"go vet ./...",
-	})
-
-	expected := strings.Join([]string{
-		"Passing test commands",
-		"",
-		"    The following test commands were run and all passed:",
-		"    - go test ./...",
-		"    - go vet ./...",
-	}, "\n")
-
-	if internalstrings.TrimTrailingNewlines(formatted) != expected {
-		t.Fatalf("expected test commands block, got %q", formatted)
-	}
-}
-
 func TestRenderPrompt_RendersReviewQuestionsTemplate(t *testing.T) {
 	rendered, err := RenderPrompt("", "{{template \"review_questions\"}}", PromptData{})
 	if err != nil {
@@ -237,7 +195,6 @@ func TestBuildPromptParts_SplitsPhaseAndUserContent(t *testing.T) {
 		[]string{"go test ./..."},
 		context,
 		"{{.WorkflowContext}}\nPhase instructions\n{{.ReviewInstructions}}\n{{.ReviewQuestions}}",
-		false,
 	)
 	if err != nil {
 		t.Fatalf("build prompt parts: %v", err)

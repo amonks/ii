@@ -28,6 +28,7 @@ var defaultTemplates embed.FS
 var reviewInstructionsText = mustReadDefaultPromptTemplate(reviewInstructionsTemplateName)
 
 // PromptData supplies values for job prompt templates.
+// ContextFiles are loaded for system prompt assembly and are not used directly in templates.
 type PromptData struct {
 	Todo               todo.Todo
 	Feedback           string
@@ -39,19 +40,18 @@ type PromptData struct {
 	FeedbackBlock      string
 	CommitMessageBlock string
 	SeriesLogBlock     string
-	TestCommandsBlock  string
 
 	// Habit fields (empty for regular todo jobs)
 	HabitName         string
 	HabitInstructions string
 
 	// Project context templates and files.
-	WorkflowContext   string
-	ReviewQuestions   string
-	ContextFilesBlock string
+	WorkflowContext string
+	ReviewQuestions string
+	ContextFiles    []string
 }
 
-func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string, context PromptContext) PromptData {
+func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, context PromptContext) PromptData {
 	return PromptData{
 		Todo:               item,
 		Feedback:           feedback,
@@ -63,29 +63,10 @@ func newPromptData(item todo.Todo, feedback, message, seriesLog string, transcri
 		FeedbackBlock:      formatFeedbackBlock(feedback),
 		CommitMessageBlock: formatPromptBlock("Change description", message),
 		SeriesLogBlock:     formatSeriesLogBlock(seriesLog),
-		TestCommandsBlock:  formatTestCommandsBlock(testCommands),
 		WorkflowContext:    context.WorkflowContext,
 		ReviewQuestions:    context.ReviewQuestions,
-		ContextFilesBlock:  formatContextFilesBlock(context.ContextFiles),
+		ContextFiles:       context.ContextFiles,
 	}
-}
-
-func formatContextFilesBlock(files []string) string {
-	if len(files) == 0 {
-		return ""
-	}
-	parts := make([]string, 0, len(files))
-	for _, file := range files {
-		trimmed := internalstrings.TrimTrailingNewlines(file)
-		if internalstrings.IsBlank(trimmed) {
-			continue
-		}
-		parts = append(parts, trimmed)
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return strings.Join(parts, "\n\n")
 }
 
 // newHabitPromptData creates prompt data for a habit run.
@@ -98,12 +79,11 @@ func newHabitPromptData(habitName, habitInstructions, feedback, message string, 
 		ReviewInstructions: reviewInstructionsText,
 		FeedbackBlock:      formatFeedbackBlock(feedback),
 		CommitMessageBlock: formatPromptBlock("Change description", message),
-		TestCommandsBlock:  "",
 		HabitName:          habitName,
 		HabitInstructions:  formatHabitInstructions(habitInstructions),
 		WorkflowContext:    context.WorkflowContext,
 		ReviewQuestions:    context.ReviewQuestions,
-		ContextFilesBlock:  formatContextFilesBlock(context.ContextFiles),
+		ContextFiles:       context.ContextFiles,
 	}
 }
 
@@ -117,7 +97,6 @@ type PromptContext struct {
 type PromptParts struct {
 	ProjectContext []string
 	ContextFiles   []string
-	TestCommands   []string
 	PhaseContent   string
 	UserContent    string
 }
@@ -135,17 +114,15 @@ func toPromptContent(phase, userContent string, context PromptContext, testComma
 	return content
 }
 
-func buildPromptParts(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string, context PromptContext, phaseContent string, habitMode bool) (PromptParts, error) {
-	data := newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath, testCommands, context)
+func buildPromptParts(item todo.Todo, feedback, message, seriesLog string, transcripts []AgentTranscript, workspacePath string, testCommands []string, context PromptContext, phaseContent string) (PromptParts, error) {
+	data := newPromptData(item, feedback, message, seriesLog, transcripts, workspacePath, context)
 	phase, err := RenderPrompt(workspacePath, phaseContent, data)
 	if err != nil {
 		return PromptParts{}, err
 	}
 
 	userTemplate := "{{.TodoBlock}}"
-	if habitMode {
-		userTemplate = "{{.CommitMessageBlock}}"
-	} else if data.Feedback != "" {
+	if data.Feedback != "" {
 		userTemplate += "\n\n{{.FeedbackBlock}}"
 		if data.Message != "" {
 			userTemplate += "\n\nDraft change description (update to reflect your changes):\n{{.CommitMessageBlock}}"
@@ -166,7 +143,37 @@ func buildPromptParts(item todo.Todo, feedback, message, seriesLog string, trans
 	return PromptParts{
 		ProjectContext: filterBlank([]string{context.WorkflowContext, context.ReviewQuestions, reviewInstructionsText}),
 		ContextFiles:   context.ContextFiles,
-		TestCommands:   testCommands,
+		PhaseContent:   phase,
+		UserContent:    userContent,
+	}, nil
+}
+
+func buildHabitPromptParts(habitName, habitInstructions, feedback, message string, transcripts []AgentTranscript, workspacePath string, context PromptContext, phaseContent string) (PromptParts, error) {
+	data := newHabitPromptData(habitName, habitInstructions, feedback, message, transcripts, workspacePath, context)
+	phase, err := RenderPrompt(workspacePath, phaseContent, data)
+	if err != nil {
+		return PromptParts{}, err
+	}
+
+	userTemplate := ""
+	if data.Feedback != "" {
+		userTemplate = "{{.FeedbackBlock}}"
+		if data.Message != "" {
+			userTemplate += "\n\nDraft change description (update to reflect your changes):\n{{.CommitMessageBlock}}"
+		}
+	} else if data.Message != "" {
+		userTemplate = "{{.CommitMessageBlock}}"
+	}
+	userTemplate = strings.TrimSpace(userTemplate)
+
+	userContent, err := RenderPrompt(workspacePath, userTemplate, data)
+	if err != nil {
+		return PromptParts{}, err
+	}
+
+	return PromptParts{
+		ProjectContext: filterBlank([]string{context.WorkflowContext, context.ReviewQuestions, reviewInstructionsText}),
+		ContextFiles:   context.ContextFiles,
 		PhaseContent:   phase,
 		UserContent:    userContent,
 	}, nil
@@ -176,7 +183,6 @@ func promptContentFromParts(parts PromptParts) internalagent.PromptContent {
 	return internalagent.PromptContent{
 		ProjectContext: parts.ProjectContext,
 		ContextFiles:   parts.ContextFiles,
-		TestCommands:   parts.TestCommands,
 		PhaseContent:   parts.PhaseContent,
 		UserContent:    parts.UserContent,
 	}
@@ -336,26 +342,6 @@ func formatSeriesLogBlock(seriesLog string) string {
 		return ""
 	}
 	return fmt.Sprintf("Series so far (commits in this patch series):\n\n```\n%s\n```", seriesLog)
-}
-
-func formatTestCommandsBlock(commands []string) string {
-	if len(commands) == 0 {
-		return ""
-	}
-	items := make([]string, 0, len(commands))
-	for _, command := range commands {
-		command = internalstrings.TrimSpace(command)
-		if command == "" {
-			continue
-		}
-		items = append(items, fmt.Sprintf("- %s", command))
-	}
-	if len(items) == 0 {
-		return ""
-	}
-	lines := []string{"The following test commands were run and all passed:"}
-	lines = append(lines, items...)
-	return fmt.Sprintf("Passing test commands\n\n%s\n", IndentBlock(strings.Join(lines, "\n"), documentIndent))
 }
 
 func formatPromptMarkdownBlock(label, body string) string {
@@ -538,4 +524,3 @@ func contextTemplate(name, contents string) string {
 	}
 	return fmt.Sprintf("{{define %q}}%s{{end}}", name, contents)
 }
-

@@ -562,12 +562,11 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		if err != nil {
 			return Job{}, err
 		}
-		promptTemplate = ensureCommitMessageInPrompt(promptTemplate, message)
 		context, err := loadPromptContext(ctx.workspacePath)
 		if err != nil {
 			return Job{}, err
 		}
-		parts, err := buildPromptParts(todo.Todo{}, "", message, "", nil, ctx.workspacePath, nil, context, promptTemplate, true)
+		parts, err := buildHabitPromptParts(ctx.habit.Name, ctx.habit.Instructions, "", message, nil, ctx.workspacePath, context, promptTemplate)
 		if err != nil {
 			return Job{}, err
 		}

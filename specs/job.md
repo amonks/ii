@@ -99,7 +99,9 @@ If the file doesn't exist after review, treat as `ACCEPT` with no comments.
 
 Job prompt assembly renders the workflow context and review questions templates before
 sending them to the agent. Context files are loaded in the same order as the internal
-agent (global config first, then ancestor directories).
+agent (global config first, then ancestor directories). Configured test commands are
+included in the project-level system prompt content so each phase shares the same test
+command context.
 
 ## Commit Message File
 
@@ -359,6 +361,8 @@ All prompt templates receive the same data:
   sessions in this job.
 - `WorkspacePath` (`string`): absolute path to the job's workspace root.
 - `ReviewInstructions` (`string`): standard review output instructions block.
+- `WorkflowContext` (`string`): rendered workflow context template text.
+- `ReviewQuestions` (`string`): rendered review question list template text.
 - `TodoBlock` (`string`): formatted heading-and-indent block that includes ID, title,
   type, priority, and description; each field is on its own indented line and the
   description text is reflowed and indented one level deeper.
@@ -369,11 +373,7 @@ All prompt templates receive the same data:
   (commits from `fork_point(@|main)` to `@-`) with descriptions and diff stats. Empty when there
   are no commits in the series. Included in `prompt-implementation.tmpl` and
   `prompt-feedback.tmpl` to give the agent context about work already completed.
-- `TestCommandsBlock` (`string`): formatted block listing the test commands that ran and passed
-  before the review stage. Empty when no test commands are provided.
-- `WorkflowContext` (`string`): rendered workflow-context template shared across phases.
-- `ReviewQuestions` (`string`): rendered review-questions template shared across phases.
-- `ContextFilesBlock` (`string`): concatenated AGENTS.md/CLAUDE.md contents shared across phases.
+- `ContextFiles` (`[]string`): AGENTS.md/CLAUDE.md contents shared across phases for system prompt assembly.
 - `HabitName` (`string`): name of the habit (filename without extension). Empty for
   regular todo jobs.
 - `HabitInstructions` (`string`): full text of the habit instruction document,

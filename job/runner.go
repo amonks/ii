@@ -856,7 +856,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
-	parts, err := buildPromptParts(item, "", message, "", nil, workspacePath, nil, context, promptTemplate, false)
+	parts, err := buildPromptParts(item, "", message, "", nil, workspacePath, nil, context, promptTemplate)
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -1113,7 +1113,7 @@ func renderPromptParts(item todo.Todo, feedback, message, seriesLog string, tran
 	if err != nil {
 		return "", "", err
 	}
-	parts, err := buildPromptParts(item, feedback, message, seriesLog, transcripts, workspacePath, nil, context, prompt, false)
+	parts, err := buildPromptParts(item, feedback, message, seriesLog, transcripts, workspacePath, nil, context, prompt)
 	if err != nil {
 		return "", "", err
 	}

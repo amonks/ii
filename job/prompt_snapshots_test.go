@@ -22,7 +22,7 @@ func TestPromptSnapshots(t *testing.T) {
 			if err != nil {
 				t.Fatalf("load prompt: %v", err)
 			}
-			parts, err := buildPromptParts(data.Todo, data.Feedback, data.Message, seriesLog, data.AgentTranscripts, data.WorkspacePath, testCommands, context, contents, false)
+			parts, err := buildPromptParts(data.Todo, data.Feedback, data.Message, seriesLog, data.AgentTranscripts, data.WorkspacePath, testCommands, context, contents)
 			if err != nil {
 				t.Fatalf("build prompt parts: %v", err)
 			}
@@ -82,6 +82,6 @@ func promptSnapshotData(t *testing.T) (PromptData, PromptContext, []string, stri
 	}
 	context := PromptContext{WorkflowContext: "\n" + workflowContext + "\n", ReviewQuestions: reviewQuestions + "\n", ContextFiles: []string{"Project context."}}
 	testCommands := []string{"go test ./...", "go vet ./..."}
-	data := newPromptData(item, feedback, message, seriesLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"), testCommands, context)
+	data := newPromptData(item, feedback, message, seriesLog, nil, filepath.Join("/tmp", "workspaces", "snapshot-test"), context)
 	return data, context, testCommands, seriesLog
 }

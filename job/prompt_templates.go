@@ -67,6 +67,10 @@ func promptTemplateVariables() []PromptTemplateVariable {
 		{Name: "FeedbackBlock", Type: "string"},
 		{Name: "CommitMessageBlock", Type: "string"},
 		{Name: "SeriesLogBlock", Type: "string"},
-		{Name: "TestCommandsBlock", Type: "string"},
+		{Name: "WorkflowContext", Type: "string"},
+		{Name: "ReviewQuestions", Type: "string"},
+		{Name: "ContextFiles", Type: "[]string"},
+		{Name: "HabitName", Type: "string"},
+		{Name: "HabitInstructions", Type: "string"},
 	}
 }
