@@ -51,12 +51,9 @@ PreparedSpell {
 
 The Fighter gains combat talents at levels 2, 6, 10, and 14 (from advancement table "Combat Talents" column). There are 8 possible talents: Battle Rage, Cleave, Defender, Last Stand, Leader, Main Gauche, Slayer, Weapon Specialist.
 
-**Implementation**: Display the number of talents available from `ClassSpecificColumns("Fighter", level)["Combat Talents"]`. Track chosen talents via the existing notes system or a simple text list.
+**Implementation**: Display the number of talents available from `ClassSpecificColumns("Fighter", level)["Combat Talents"]`. Track chosen talents via the existing notes system.
 
-**UI**: A "Combat Talents" section in the Fighter's traits area showing:
-- Number of talents available at current level
-- List of chosen talents (editable text)
-- Descriptions of each talent's effects
+**UI**: Show "Combat talents N" in the Fighter's traits area. Players record chosen talents in Notes.
 
 ## Backstab (Thief)
 
