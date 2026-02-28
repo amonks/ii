@@ -52,10 +52,9 @@ Steps:
 ### 2. Job runner: fix `runJobStages` stage dispatch
 
 Currently `runJobStages` asserts `current.Stage == StageImplementing` at the
-top of the loop. Since resume always enters at implementing this isn't strictly
-blocking, but the assertion should become a proper stage dispatch so the code
-doesn't lie about what it supports. For now, resume sets stage to implementing
-before calling `runJobStages`, so the existing assertion holds.
+top of the loop. Replace the assertion with proper stage dispatch so the code
+respects whatever stage the job is in. Resume still sets stage to implementing
+before calling `runJobStages`, but the runner should be correct regardless.
 
 ### 3. Workspace safety checks
 

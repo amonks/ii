@@ -378,32 +378,9 @@ type runContext struct {
 func runJobStages(ctx *runContext, current Job, interrupts <-chan os.Signal) (Job, error) {
 	ctx.reviewScope = reviewScopeStep
 	for current.Status == StatusActive {
-		if current.Stage != StageImplementing {
-			return current, fmt.Errorf("invalid job stage: %s", current.Stage)
-		}
-
-		next, stageErr := ctx.runStageWithInterrupt(current, ctx.runImplementingStage(current), interrupts)
-		if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
-			return next, stageErr
-		}
-		current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
-		if stageErr != nil {
-			return current, stageErr
-		}
-		if current.Status != StatusActive {
-			break
-		}
-		if current.Stage == StageImplementing {
-			// Implementing stage requested retry (e.g., missing commit message).
-			ctx.reviewScope = reviewScopeStep
-			continue
-		}
-		if ctx.workComplete {
-			ctx.reviewScope = reviewScopeProject
-		}
-
-		if current.Stage == StageTesting {
-			next, stageErr = ctx.runStageWithInterrupt(current, ctx.runTestingStage(current), interrupts)
+		switch current.Stage {
+		case StageImplementing:
+			next, stageErr := ctx.runStageWithInterrupt(current, ctx.runImplementingStage(current), interrupts)
 			if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
 				return next, stageErr
 			}
@@ -418,34 +395,62 @@ func runJobStages(ctx *runContext, current Job, interrupts <-chan os.Signal) (Jo
 				ctx.reviewScope = reviewScopeStep
 				continue
 			}
-		}
-
-		next, stageErr = ctx.runStageWithInterrupt(current, ctx.runReviewingStage(current), interrupts)
-		if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
-			return next, stageErr
-		}
-		current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
-		if stageErr != nil {
-			return current, stageErr
+			if ctx.workComplete {
+				ctx.reviewScope = reviewScopeProject
+			}
+		case StageTesting:
+			next, stageErr := ctx.runStageWithInterrupt(current, ctx.runTestingStage(current), interrupts)
+			if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
+				return next, stageErr
+			}
+			current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
+			if stageErr != nil {
+				return current, stageErr
+			}
+			if current.Status != StatusActive {
+				break
+			}
+			if current.Stage == StageImplementing {
+				ctx.reviewScope = reviewScopeStep
+			}
+		case StageReviewing:
+			if current.CurrentCommit() == nil {
+				ctx.reviewScope = reviewScopeProject
+			}
+			next, stageErr := ctx.runStageWithInterrupt(current, ctx.runReviewingStage(current), interrupts)
+			if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
+				return next, stageErr
+			}
+			current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
+			if stageErr != nil {
+				return current, stageErr
+			}
+			if current.Status != StatusActive {
+				break
+			}
+			if current.Stage == StageImplementing {
+				ctx.reviewScope = reviewScopeStep
+			}
+		case StageCommitting:
+			next, stageErr := ctx.runStageWithInterrupt(current, ctx.runCommittingStage(current), interrupts)
+			if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
+				return next, stageErr
+			}
+			current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
+			if stageErr != nil {
+				return current, stageErr
+			}
+			if current.Status != StatusActive {
+				break
+			}
+			if current.Stage == StageImplementing {
+				ctx.reviewScope = reviewScopeStep
+			}
+		default:
+			return current, fmt.Errorf("invalid job stage: %s", current.Stage)
 		}
 		if current.Status != StatusActive {
 			break
-		}
-		if current.Stage == StageImplementing {
-			ctx.reviewScope = reviewScopeStep
-			continue
-		}
-		if ctx.reviewScope == reviewScopeProject {
-			continue
-		}
-
-		next, stageErr = ctx.runStageWithInterrupt(current, ctx.runCommittingStage(current), interrupts)
-		if stageErr != nil && errors.Is(stageErr, ErrJobInterrupted) {
-			return next, stageErr
-		}
-		current, stageErr = ctx.handleStageOutcome(current, next, stageErr)
-		if stageErr != nil {
-			return current, stageErr
 		}
 	}
 
