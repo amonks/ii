@@ -36,26 +36,26 @@ func Layout(title string, homePath string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/layout.templ`, Line: 9, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/layout.templ`, Line: 9, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Dolmenwood</title><style>\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Kyrios';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/ATKyriosStandard-Medium.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-regular.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-bold.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 700;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'At Textual';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/AtTextual-Retina.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t</style><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>\n\t\t\t\t\tinput, textarea {\n\t\t\t\t\t\tfont-family: 'At Textual', sans-serif !important;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure {\n\t\t\t\t\t\tborder-radius: 0.5rem;\n\t\t\t\t\t\tbackground: white;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-summary::-webkit-details-marker {\n\t\t\t\t\t\tdisplay: none;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-summary {\n\t\t\t\t\t\tlist-style: none;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-toggle {\n\t\t\t\t\t\tborder-bottom-left-radius: 0.5rem;\n\t\t\t\t\t\tborder-bottom-right-radius: 0.5rem;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure[open] .card-disclosure-toggle {\n\t\t\t\t\t\tborder-bottom-left-radius: 0;\n\t\t\t\t\t\tborder-bottom-right-radius: 0;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure[open] .card-disclosure-body {\n\t\t\t\t\t\tborder-bottom-left-radius: 0.5rem;\n\t\t\t\t\t\tborder-bottom-right-radius: 0.5rem;\n\t\t\t\t\t\tborder-top: 1px solid #e7e5e4;\n\t\t\t\t\t}\n\t\t\t\t\t\t.card-disclosure:not([open]) .card-disclosure-toggle {\n\t\t\t\t\t\tborder-top-left-radius: 0;\n\t\t\t\t\t\tborder-top-right-radius: 0;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure:not([open]) .card-disclosure-body {\n\t\t\t\t\t\tdisplay: none;\n\t\t\t\t\t}\n\t\t\t</style></head><body class=\"bg-stone-100 min-h-screen\" style=\"font-family: 'Martina Plantijn', serif;\"><nav class=\"bg-stone-800 text-stone-100 px-4 py-3\"><div class=\"max-w-lg mx-auto flex items-center justify-between\"><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Dolmenwood</title><style>\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Kyrios';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/ATKyriosStandard-Medium.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-regular.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'Martina Plantijn';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/martina-plantijn-bold.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 700;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t@font-face {\n\t\t\t\t\tfont-family: 'At Textual';\n\t\t\t\t\tsrc: url('/dolmenwood/fonts/AtTextual-Retina.woff2') format('woff2');\n\t\t\t\t\tfont-weight: 400;\n\t\t\t\t\tfont-style: normal;\n\t\t\t\t\tfont-display: swap;\n\t\t\t\t}\n\t\t\t\t</style><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>\n\t\t\t\t\tinput, textarea {\n\t\t\t\t\t\tfont-family: 'At Textual', sans-serif !important;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure {\n\t\t\t\t\t\tborder-radius: 0.5rem;\n\t\t\t\t\t\tbackground: white;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-summary::-webkit-details-marker {\n\t\t\t\t\t\tdisplay: none;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-summary {\n\t\t\t\t\t\tlist-style: none;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure-toggle {\n\t\t\t\t\t\tborder-bottom-left-radius: 0.5rem;\n\t\t\t\t\t\tborder-bottom-right-radius: 0.5rem;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure[open] .card-disclosure-toggle {\n\t\t\t\t\t\tborder-bottom-left-radius: 0;\n\t\t\t\t\t\tborder-bottom-right-radius: 0;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure[open] .card-disclosure-body {\n\t\t\t\t\t\tborder-bottom-left-radius: 0.5rem;\n\t\t\t\t\t\tborder-bottom-right-radius: 0.5rem;\n\t\t\t\t\t\tborder-top: 1px solid #e7e5e4;\n\t\t\t\t\t}\n\t\t\t\t\t\t.card-disclosure:not([open]) .card-disclosure-toggle {\n\t\t\t\t\t\tborder-top-left-radius: 0;\n\t\t\t\t\t\tborder-top-right-radius: 0;\n\t\t\t\t\t}\n\t\t\t\t\t.card-disclosure:not([open]) .card-disclosure-body {\n\t\t\t\t\t\tdisplay: none;\n\t\t\t\t\t}\n\t\t\t\t\thtml {\n\t\t\t\t\t\tscroll-behavior: smooth;\n\t\t\t\t\t}\n\t\t\t\t\t/* Scroll margin so anchored sections clear the nav bar */\n\t\t\t\t\t[id] {\n\t\t\t\t\t\tscroll-margin-top: 1rem;\n\t\t\t\t\t}\n\t\t\t\t\t.nav-link.active {\n\t\t\t\t\t\tcolor: #292524;\n\t\t\t\t\t\tfont-weight: 700;\n\t\t\t\t\t}\n\t\t\t</style></head><body class=\"bg-stone-100 min-h-screen\" style=\"font-family: 'Martina Plantijn', serif;\"><nav class=\"bg-stone-800 text-stone-100 px-4 py-3\"><div class=\"max-w-lg mx-auto flex items-center justify-between lg:max-w-3xl\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(homePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/layout.templ`, Line: 81, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/layout.templ`, Line: 92, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"font-bold text-lg\">Dolmenwood</a></div></nav><main class=\"max-w-lg mx-auto px-4 py-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"font-bold text-lg\">Dolmenwood</a></div></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -63,7 +63,7 @@ func Layout(title string, homePath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,151 @@
+package server
+
+type NavItem struct {
+	ID    string
+	Label string
+}
+
+var navItems = []NavItem{
+	{"day-counter", "Day"},
+	{"stats", "Stats"},
+	{"spells", "Spells"},
+	{"traits", "Traits"},
+	{"inventory", "Inventory"},
+	{"store", "Store"},
+	{"encumbrance", "Encumbrance"},
+	{"companions", "Companions"},
+	{"retainers", "Retainers"},
+	{"wealth", "Wealth"},
+	{"bank", "Bank"},
+	{"xp", "XP"},
+	{"advancement", "Advancement"},
+	{"notes", "Notes"},
+	{"full-log", "Log"},
+}
+
+// DesktopNav renders a fixed sidebar for desktop (lg+).
+templ DesktopNav() {
+	<aside class="hidden lg:block lg:w-40 lg:flex-shrink-0 lg:order-first">
+		<div class="sticky top-14 py-4 space-y-0.5 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+			for _, item := range navItems {
+				<a
+					href={ templ.SafeURL("#" + item.ID) }
+					class="nav-link block px-3 py-1.5 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-200 rounded transition-colors"
+					data-section={ item.ID }
+				>
+					{ item.Label }
+				</a>
+			}
+		</div>
+	</aside>
+}
+
+// MobileNav renders a floating button and slide-up drawer for mobile.
+templ MobileNav() {
+	<div class="lg:hidden" id="mobile-nav">
+		<!-- Backdrop -->
+		<div
+			id="nav-backdrop"
+			class="fixed inset-0 bg-black/30 z-40 hidden"
+			onclick="closeNav()"
+		></div>
+		<!-- Drawer -->
+		<div
+			id="nav-drawer"
+			class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg transform translate-y-full transition-transform duration-200 ease-out"
+		>
+			<div class="px-4 pt-4 pb-2">
+				<div class="text-xs font-bold text-stone-400 uppercase tracking-wider">Sections</div>
+			</div>
+			<div class="grid grid-cols-3 gap-px px-4 pb-6 max-h-[60vh] overflow-y-auto">
+				for _, item := range navItems {
+					<a
+						href={ templ.SafeURL("#" + item.ID) }
+						class="nav-link block px-3 py-2.5 text-sm text-stone-600 hover:bg-stone-100 rounded text-center"
+						data-section={ item.ID }
+						onclick="closeNav()"
+					>
+						{ item.Label }
+					</a>
+				}
+			</div>
+		</div>
+		<!-- Floating button -->
+		<button
+			id="nav-btn"
+			onclick="toggleNav()"
+			class="fixed bottom-4 right-4 z-30 w-12 h-12 bg-stone-800 text-white rounded-full shadow-lg flex items-center justify-center text-lg hover:bg-stone-700 active:bg-stone-900 transition-colors"
+			aria-label="Section navigation"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+		</button>
+	</div>
+}
+
+templ navScript() {
+	<script>
+		// Mobile nav toggle
+		function toggleNav() {
+			var drawer = document.getElementById('nav-drawer');
+			var backdrop = document.getElementById('nav-backdrop');
+			var isOpen = !drawer.classList.contains('translate-y-full');
+			if (isOpen) {
+				closeNav();
+			} else {
+				drawer.classList.remove('translate-y-full');
+				backdrop.classList.remove('hidden');
+			}
+		}
+		function closeNav() {
+			var drawer = document.getElementById('nav-drawer');
+			var backdrop = document.getElementById('nav-backdrop');
+			drawer.classList.add('translate-y-full');
+			backdrop.classList.add('hidden');
+		}
+
+		// Hide nav button when virtual keyboard is open
+		(function() {
+			var btn = document.getElementById('nav-btn');
+			if (!btn) return;
+			if (window.visualViewport) {
+				var initialHeight = window.visualViewport.height;
+				window.visualViewport.addEventListener('resize', function() {
+					// If viewport shrank by more than 150px, keyboard is probably open
+					if (initialHeight - window.visualViewport.height > 150) {
+						btn.style.display = 'none';
+						closeNav();
+					} else {
+						btn.style.display = '';
+					}
+				});
+			}
+		})();
+
+		// Highlight active section in sidebar nav
+		(function() {
+			var links = document.querySelectorAll('.nav-link');
+			if (!links.length) return;
+			var ids = [];
+			links.forEach(function(link) {
+				var id = link.getAttribute('data-section');
+				if (id) ids.push(id);
+			});
+			var observer = new IntersectionObserver(function(entries) {
+				entries.forEach(function(entry) {
+					var id = entry.target.id;
+					var link = document.querySelector('.nav-link[data-section="' + id + '"]');
+					if (!link) return;
+					if (entry.isIntersecting) {
+						link.classList.add('active');
+					} else {
+						link.classList.remove('active');
+					}
+				});
+			}, { rootMargin: '-10% 0px -80% 0px' });
+			ids.forEach(function(id) {
+				var el = document.getElementById(id);
+				if (el) observer.observe(el);
+			});
+		})();
+	</script>
+}

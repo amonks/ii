@@ -7,9 +7,16 @@ import (
 
 templ CharacterSheet(view *CharacterView) {
 	@Layout(view.Character.Name, "../../") {
-		<div id="sheet-body">
-			@SheetBody(view)
+		<div class="lg:max-w-3xl lg:mx-auto lg:flex lg:gap-6">
+			<main class="max-w-lg mx-auto px-4 py-4 lg:mx-0 lg:flex-1 min-w-0">
+				<div id="sheet-body">
+					@SheetBody(view)
+				</div>
+			</main>
+			@DesktopNav()
 		</div>
+		@MobileNav()
+		@navScript()
 	}
 }
 

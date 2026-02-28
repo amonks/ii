@@ -8,6 +8,7 @@ import (
 
 templ CharacterList(characters []db.Character, retainerEmployers map[uint]string) {
 	@Layout("Characters", ".") {
+		<main class="max-w-lg mx-auto px-4 py-4">
 		@VStack() {
 			@HeadingLg() { Characters }
 			if len(characters) > 0 {
@@ -110,5 +111,6 @@ templ CharacterList(characters []db.Character, retainerEmployers map[uint]string
 				</form>
 			}
 		}
+		</main>
 	}
 }

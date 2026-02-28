@@ -73,17 +73,26 @@ templ Layout(title string, homePath string) {
 					.card-disclosure:not([open]) .card-disclosure-body {
 						display: none;
 					}
+					html {
+						scroll-behavior: smooth;
+					}
+					/* Scroll margin so anchored sections clear the nav bar */
+					[id] {
+						scroll-margin-top: 1rem;
+					}
+					.nav-link.active {
+						color: #292524;
+						font-weight: 700;
+					}
 			</style>
 		</head>
 		<body class="bg-stone-100 min-h-screen" style="font-family: 'Martina Plantijn', serif;">
 			<nav class="bg-stone-800 text-stone-100 px-4 py-3">
-				<div class="max-w-lg mx-auto flex items-center justify-between">
+				<div class="max-w-lg mx-auto flex items-center justify-between lg:max-w-3xl">
 					<a href={ templ.SafeURL(homePath) } class="font-bold text-lg">Dolmenwood</a>
 				</div>
 			</nav>
-			<main class="max-w-lg mx-auto px-4 py-4">
-				{ children... }
-			</main>
+			{ children... }
 		</body>
 	</html>
 }

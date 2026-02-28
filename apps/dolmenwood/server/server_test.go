@@ -6984,3 +6984,65 @@ func TestWealthCardConsolidatesAllWealthLogs(t *testing.T) {
 		t.Error("bank card should not have its own 'Bank Log' — entries should be in wealth log")
 	}
 }
+
+func TestCharacterSheetHasNavigation(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	ch := &db.Character{
+		Name: "NavTest", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+	}
+	d.CreateCharacter(ch)
+
+	req := httptest.NewRequest("GET", "/characters/1/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+
+	// Desktop sidebar nav should be present
+	if !strings.Contains(body, `<aside`) {
+		t.Error("character sheet should contain desktop sidebar nav")
+	}
+
+	// Mobile nav button should be present
+	if !strings.Contains(body, `id="nav-btn"`) {
+		t.Error("character sheet should contain mobile nav button")
+	}
+
+	// Nav should contain anchor links to major sections
+	for _, section := range []string{"stats", "inventory", "wealth", "xp", "notes"} {
+		anchor := fmt.Sprintf(`href="#%s"`, section)
+		if !strings.Contains(body, anchor) {
+			t.Errorf("nav should contain anchor link to #%s", section)
+		}
+	}
+
+	// Nav script should be included
+	if !strings.Contains(body, "toggleNav") {
+		t.Error("character sheet should include nav script")
+	}
+}
+
+func TestCharacterListHasNoNavigation(t *testing.T) {
+	srv, _ := setupTest(t)
+	mux := srv.Mux()
+
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+
+	// Character list should NOT have section nav
+	if strings.Contains(body, `id="nav-btn"`) {
+		t.Error("character list should not contain mobile nav button")
+	}
+}
