@@ -23,7 +23,16 @@ The `internal/db` package owns the SQLite connection for incrementum state. It o
 ## Migrations
 Migration files live in `internal/db/migrations` and are embedded. Files are named with a numeric prefix (`001_*.sql`, `002_*.sql`, ...). The `schema_version` table tracks the current version.
 
-## Legacy JSON migration
+## Legacy JSON schema
+The legacy `state.json` file stores repository and job metadata to support migration into SQLite. It includes:
+
+- `repos`: map of repo names to `{source_path}`.
+- `workspaces`: map of workspace keys to workspace metadata.
+- `agent_sessions`: map of session keys to agent session metadata.
+- `jobs`: map of job IDs to job records, including changes, commits, and reviews.
+
+This schema is only used by the JSON migration routine; runtime access is exclusively through SQLite.
+
 If `OpenOptions.LegacyJSONPath` is set and the database file does not exist yet, `Open` prompts to migrate data from `state.json` unless `SkipConfirm` is true. When confirmed, it inserts data into the new schema and renames `state.json` to `state.json.bak`.
 
 ## Pragmas

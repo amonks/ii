@@ -9,17 +9,92 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/amonks/incrementum/internal/state"
 )
 
 const legacyMigrationPrompt = "Incrementum needs to migrate state from JSON to SQLite. Continue?"
 
 type legacyState struct {
-	Repos         map[string]state.RepoInfo    `json:"repos"`
-	Workspaces    map[string]legacyWorkspace   `json:"workspaces"`
+	Repos         map[string]legacyRepoInfo     `json:"repos"`
+	Workspaces    map[string]legacyWorkspace    `json:"workspaces"`
 	AgentSessions map[string]legacyAgentSession `json:"agent_sessions"`
-	Jobs          map[string]state.Job         `json:"jobs"`
+	Jobs          map[string]legacyJob          `json:"jobs"`
+}
+
+type legacyRepoInfo struct {
+	SourcePath string `json:"source_path"`
+}
+
+type legacyJobStage string
+
+type legacyJobStatus string
+
+type legacyReviewOutcome string
+
+const (
+	legacyJobStageImplementing legacyJobStage = "implementing"
+	legacyJobStageTesting      legacyJobStage = "testing"
+	legacyJobStageReviewing    legacyJobStage = "reviewing"
+	legacyJobStageCommitting   legacyJobStage = "committing"
+)
+
+const (
+	legacyJobStatusActive    legacyJobStatus = "active"
+	legacyJobStatusCompleted legacyJobStatus = "completed"
+	legacyJobStatusFailed    legacyJobStatus = "failed"
+	legacyJobStatusAbandoned legacyJobStatus = "abandoned"
+)
+
+const (
+	legacyReviewOutcomeAccept         legacyReviewOutcome = "ACCEPT"
+	legacyReviewOutcomeRequestChanges legacyReviewOutcome = "REQUEST_CHANGES"
+	legacyReviewOutcomeAbandon        legacyReviewOutcome = "ABANDON"
+)
+
+type legacyJobReview struct {
+	Outcome        legacyReviewOutcome `json:"outcome"`
+	Comments       string              `json:"comments,omitempty"`
+	AgentSessionID string              `json:"agent_session_id"`
+	ReviewedAt     time.Time           `json:"reviewed_at"`
+}
+
+type legacyJobCommit struct {
+	CommitID       string           `json:"commit_id"`
+	DraftMessage   string           `json:"draft_message"`
+	TestsPassed    *bool            `json:"tests_passed,omitempty"`
+	Review         *legacyJobReview `json:"review,omitempty"`
+	AgentSessionID string           `json:"agent_session_id"`
+	CreatedAt      time.Time        `json:"created_at"`
+}
+
+type legacyJobChange struct {
+	ChangeID  string            `json:"change_id"`
+	Commits   []legacyJobCommit `json:"commits"`
+	CreatedAt time.Time         `json:"created_at"`
+}
+
+type legacyJobAgentSession struct {
+	Purpose string `json:"purpose"`
+	ID      string `json:"id"`
+}
+
+type legacyJob struct {
+	ID                  string                 `json:"id"`
+	Repo                string                 `json:"repo"`
+	TodoID              string                 `json:"todo_id"`
+	Agent               string                 `json:"agent"`
+	ImplementationModel string                 `json:"implementation_model,omitempty"`
+	CodeReviewModel     string                 `json:"code_review_model,omitempty"`
+	ProjectReviewModel  string                 `json:"project_review_model,omitempty"`
+	Stage               legacyJobStage         `json:"stage"`
+	Feedback            string                 `json:"feedback,omitempty"`
+	AgentSessions       []legacyJobAgentSession `json:"agent_sessions,omitempty"`
+	Changes             []legacyJobChange       `json:"changes,omitempty"`
+	ProjectReview       *legacyJobReview        `json:"project_review,omitempty"`
+	Status              legacyJobStatus         `json:"status"`
+	CreatedAt           time.Time               `json:"created_at"`
+	StartedAt           time.Time               `json:"started_at"`
+	UpdatedAt           time.Time               `json:"updated_at"`
+	CompletedAt         time.Time               `json:"completed_at"`
 }
 
 type legacyAgentSession struct {
@@ -105,7 +180,7 @@ func loadLegacyState(path string) (*legacyState, error) {
 
 func ensureLegacyMaps(st *legacyState) {
 	if st.Repos == nil {
-		st.Repos = make(map[string]state.RepoInfo)
+		st.Repos = make(map[string]legacyRepoInfo)
 	}
 	if st.Workspaces == nil {
 		st.Workspaces = make(map[string]legacyWorkspace)
@@ -114,7 +189,7 @@ func ensureLegacyMaps(st *legacyState) {
 		st.AgentSessions = make(map[string]legacyAgentSession)
 	}
 	if st.Jobs == nil {
-		st.Jobs = make(map[string]state.Job)
+		st.Jobs = make(map[string]legacyJob)
 	}
 }
 
@@ -151,7 +226,7 @@ func insertLegacyState(db *sql.DB, st *legacyState) error {
 	return nil
 }
 
-func insertLegacyRepos(tx *sql.Tx, repos map[string]state.RepoInfo) error {
+func insertLegacyRepos(tx *sql.Tx, repos map[string]legacyRepoInfo) error {
 	stmt, err := tx.Prepare("INSERT INTO repos (name, source_path) VALUES (?, ?);")
 	if err != nil {
 		return fmt.Errorf("legacy migration: prepare repos: %w", err)
@@ -247,7 +322,7 @@ func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]legacyAgentSessio
 	return nil
 }
 
-func insertLegacyJobs(tx *sql.Tx, jobs map[string]state.Job) error {
+func insertLegacyJobs(tx *sql.Tx, jobs map[string]legacyJob) error {
 	stmt, err := tx.Prepare(`INSERT INTO jobs (
 		repo, id, todo_id, agent, implementation_model, code_review_model,
 		project_review_model, stage, status, feedback,
@@ -304,7 +379,7 @@ func insertLegacyJobs(tx *sql.Tx, jobs map[string]state.Job) error {
 	return nil
 }
 
-func insertLegacyJobSessions(tx *sql.Tx, job state.Job) error {
+func insertLegacyJobSessions(tx *sql.Tx, job legacyJob) error {
 	stmt, err := tx.Prepare(`INSERT INTO job_agent_sessions (
 		repo, job_id, session_id, purpose, position
 	) VALUES (?, ?, ?, ?, ?);`)
@@ -327,7 +402,7 @@ func insertLegacyJobSessions(tx *sql.Tx, job state.Job) error {
 	return nil
 }
 
-func insertLegacyJobChanges(tx *sql.Tx, job state.Job) error {
+func insertLegacyJobChanges(tx *sql.Tx, job legacyJob) error {
 	stmtChange, err := tx.Prepare(`INSERT INTO job_changes (
 		repo, job_id, change_id, created_at, position
 	) VALUES (?, ?, ?, ?, ?);`)
@@ -392,7 +467,7 @@ func insertLegacyJobChanges(tx *sql.Tx, job state.Job) error {
 	return nil
 }
 
-func legacyReviewFields(review *state.JobReview) (any, string, string, string) {
+func legacyReviewFields(review *legacyJobReview) (any, string, string, string) {
 	if review == nil {
 		return nil, "", "", ""
 	}

@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	state "github.com/amonks/incrementum/internal/state"
 )
 
 func TestOpenMigratesAndPragmas(t *testing.T) {
@@ -82,7 +80,7 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 
 	repoPath := filepath.Join(tmpDir, "repo")
 	legacyState := legacyState{
-		Repos: map[string]state.RepoInfo{
+		Repos: map[string]legacyRepoInfo{
 			"repo": {SourcePath: repoPath},
 		},
 		Workspaces: map[string]legacyWorkspace{
@@ -116,7 +114,7 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 				Cost:            0.5,
 			},
 		},
-		Jobs: map[string]state.Job{
+		Jobs: map[string]legacyJob{
 			"repo/job-1": {
 				ID:                  "job-1",
 				Repo:                "repo",
@@ -125,23 +123,23 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 				ImplementationModel: "impl",
 				CodeReviewModel:     "review",
 				ProjectReviewModel:  "project",
-				Stage:               state.JobStageReviewing,
+				Stage:               legacyJobStageReviewing,
 				Feedback:            "feedback",
-				AgentSessions: []state.JobAgentSession{
+				AgentSessions: []legacyJobAgentSession{
 					{Purpose: "implementation", ID: "abc123"},
 				},
-				Changes: []state.JobChange{
+				Changes: []legacyJobChange{
 					{
 						ChangeID:  "change-1",
 						CreatedAt: time.Date(2026, 1, 1, 3, 0, 0, 0, time.UTC),
-						Commits: []state.JobCommit{
+						Commits: []legacyJobCommit{
 							{
 								CommitID:       "commit-1",
 								DraftMessage:   "draft",
 								TestsPassed:    boolPointer(true),
 								AgentSessionID: "abc123",
-								Review: &state.JobReview{
-									Outcome:        state.ReviewOutcomeAccept,
+								Review: &legacyJobReview{
+									Outcome:        legacyReviewOutcomeAccept,
 									Comments:       "looks good",
 									AgentSessionID: "abc123",
 									ReviewedAt:     time.Date(2026, 1, 1, 4, 0, 0, 0, time.UTC),
@@ -151,13 +149,13 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 						},
 					},
 				},
-				ProjectReview: &state.JobReview{
-					Outcome:        state.ReviewOutcomeRequestChanges,
+				ProjectReview: &legacyJobReview{
+					Outcome:        legacyReviewOutcomeRequestChanges,
 					Comments:       "needs more",
 					AgentSessionID: "abc123",
 					ReviewedAt:     time.Date(2026, 1, 2, 4, 0, 0, 0, time.UTC),
 				},
-				Status:      state.JobStatusActive,
+				Status:      legacyJobStatusActive,
 				CreatedAt:   time.Date(2026, 1, 1, 2, 30, 0, 0, time.UTC),
 				StartedAt:   time.Time{},
 				UpdatedAt:   time.Date(2026, 1, 1, 2, 40, 0, 0, time.UTC),
@@ -421,21 +419,21 @@ func assertLegacyJob(t *testing.T, db *sql.DB, st legacyState) {
 	assertLegacyJobChanges(t, db, job)
 }
 
-func assertLegacyJobSessions(t *testing.T, db *sql.DB, job state.Job) {
+func assertLegacyJobSessions(t *testing.T, db *sql.DB, job legacyJob) {
 	rows, err := db.Query(`SELECT session_id, purpose, position FROM job_agent_sessions WHERE repo = ? AND job_id = ? ORDER BY position;`, job.Repo, job.ID)
 	if err != nil {
 		t.Fatalf("query job sessions: %v", err)
 	}
 	defer rows.Close()
 
-	var sessions []state.JobAgentSession
+	var sessions []legacyJobAgentSession
 	for rows.Next() {
 		var sessionID, purpose string
 		var position int
 		if err := rows.Scan(&sessionID, &purpose, &position); err != nil {
 			t.Fatalf("scan job session: %v", err)
 		}
-		sessions = append(sessions, state.JobAgentSession{ID: sessionID, Purpose: purpose})
+		sessions = append(sessions, legacyJobAgentSession{ID: sessionID, Purpose: purpose})
 		if position != len(sessions)-1 {
 			t.Fatalf("job session position mismatch")
 		}
@@ -448,7 +446,7 @@ func assertLegacyJobSessions(t *testing.T, db *sql.DB, job state.Job) {
 	}
 }
 
-func assertLegacyJobChanges(t *testing.T, db *sql.DB, job state.Job) {
+func assertLegacyJobChanges(t *testing.T, db *sql.DB, job legacyJob) {
 	rows, err := db.Query(`SELECT id, change_id, created_at, position FROM job_changes WHERE repo = ? AND job_id = ? ORDER BY position;`, job.Repo, job.ID)
 	if err != nil {
 		t.Fatalf("query job changes: %v", err)
@@ -478,7 +476,7 @@ func assertLegacyJobChanges(t *testing.T, db *sql.DB, job state.Job) {
 	}
 }
 
-func assertLegacyJobCommits(t *testing.T, db *sql.DB, changeID int64, change state.JobChange) {
+func assertLegacyJobCommits(t *testing.T, db *sql.DB, changeID int64, change legacyJobChange) {
 	rows, err := db.Query(`SELECT commit_id, draft_message, tests_passed, agent_session_id,
 		review_outcome, review_comments, review_agent_session_id, review_reviewed_at,
 		created_at, position FROM job_commits WHERE job_change_id = ? ORDER BY position;`, changeID)
@@ -487,7 +485,7 @@ func assertLegacyJobCommits(t *testing.T, db *sql.DB, changeID int64, change sta
 	}
 	defer rows.Close()
 
-	var commits []state.JobCommit
+	var commits []legacyJobCommit
 	for rows.Next() {
 		var commitID, draftMessage, agentSessionID string
 		var testsPassed sql.NullInt64
@@ -500,9 +498,9 @@ func assertLegacyJobCommits(t *testing.T, db *sql.DB, changeID int64, change sta
 		}
 		if testsPassed.Valid {
 			value := testsPassed.Int64 == 1
-			commits = append(commits, state.JobCommit{TestsPassed: &value})
+			commits = append(commits, legacyJobCommit{TestsPassed: &value})
 		} else {
-			commits = append(commits, state.JobCommit{})
+			commits = append(commits, legacyJobCommit{})
 		}
 		if position != len(commits)-1 {
 			t.Fatalf("job commit position mismatch")

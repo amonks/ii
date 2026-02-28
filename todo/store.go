@@ -19,7 +19,7 @@ import (
 	internalids "github.com/amonks/incrementum/internal/ids"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/internal/paths"
-	statestore "github.com/amonks/incrementum/internal/state"
+	"github.com/amonks/incrementum/internal/db"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/workspace"
 	"golang.org/x/term"
@@ -822,7 +822,7 @@ func acquireTodoLock(repoPath string) (*os.File, error) {
 	if err := os.MkdirAll(stateDir, 0o755); err != nil {
 		return nil, fmt.Errorf("create todo lock dir: %w", err)
 	}
-	lockName := fmt.Sprintf("todo-%s.lock", statestore.SanitizeRepoName(repoPath))
+	lockName := fmt.Sprintf("todo-%s.lock", db.SanitizeRepoName(repoPath))
 	lockPath := filepath.Join(stateDir, lockName)
 	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {

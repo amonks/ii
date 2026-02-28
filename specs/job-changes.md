@@ -29,7 +29,7 @@ This state is lost on crash and unavailable to other processes. We want to:
 
 ### Job (extended)
 
-Add to the existing `Job` struct in `internal/state/types.go`:
+Add to the existing `Job` struct in `job/types.go`:
 
 ```go
 type Job struct {

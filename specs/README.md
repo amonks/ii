@@ -68,7 +68,6 @@
 | [internal-markdown.md](./internal-markdown.md)         | [internal/markdown/](../internal/markdown/)         | Markdown rendering helpers for terminal output       |
 | [internal-paths.md](./internal-paths.md)               | [internal/paths/](../internal/paths/)               | Default state and workspace paths                    |
 | [internal-db.md](./internal-db.md)                     | [internal/db/](../internal/db/)                     | SQLite state database connection and repo/workspace helpers |
-| [internal-state.md](./internal-state.md)               | [internal/state/](../internal/state/)               | Legacy JSON state store for migration into SQLite        |
 | [internal-strings.md](./internal-strings.md)           | [internal/strings/](../internal/strings/)           | Shared whitespace normalization helpers              |
 | [internal-testsupport.md](./internal-testsupport.md)   | [internal/testsupport/](../internal/testsupport/)   | Integration test helpers for ii/testscript           |
 | [internal-ui.md](./internal-ui.md)                     | [internal/ui/](../internal/ui/)                     | CLI formatting helpers for durations and IDs         |
