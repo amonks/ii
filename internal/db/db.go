@@ -2,12 +2,16 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
+
+// ErrLegacyMigrationDeclined is returned when the user declines to migrate from the legacy JSON state.
+var ErrLegacyMigrationDeclined = errors.New("legacy json migration declined")
 
 // DB wraps the sqlite database connection.
 type DB struct {
@@ -23,7 +27,7 @@ type OpenOptions struct {
 }
 
 // Open opens (or creates) the database at path, applies migrations, and configures pragmas.
-func Open(path string, _ OpenOptions) (*DB, error) {
+func Open(path string, opts OpenOptions) (*DB, error) {
 	if path == "" {
 		return nil, fmt.Errorf("open db: path is required")
 	}
@@ -31,6 +35,29 @@ func Open(path string, _ OpenOptions) (*DB, error) {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("open db: create dir %q: %w", dir, err)
+	}
+
+	dbExists, err := fileExists(path)
+	if err != nil {
+		return nil, fmt.Errorf("open db: stat db: %w", err)
+	}
+
+	legacyExists := opts.LegacyJSONPath != ""
+	if legacyExists {
+		legacyExists, err = fileExists(opts.LegacyJSONPath)
+		if err != nil {
+			return nil, fmt.Errorf("open db: stat legacy json: %w", err)
+		}
+	}
+
+	if !dbExists && legacyExists && !opts.SkipConfirm {
+		confirmed, err := confirmLegacyMigration()
+		if err != nil {
+			return nil, fmt.Errorf("open db: prompt: %w", err)
+		}
+		if !confirmed {
+			return nil, ErrLegacyMigrationDeclined
+		}
 	}
 
 	sqlDB, err := sql.Open("sqlite", path)
@@ -51,6 +78,13 @@ func Open(path string, _ OpenOptions) (*DB, error) {
 	if err := migrate(sqlDB); err != nil {
 		_ = sqlDB.Close()
 		return nil, err
+	}
+
+	if !dbExists && legacyExists {
+		if err := importLegacyState(sqlDB, opts.LegacyJSONPath); err != nil {
+			_ = sqlDB.Close()
+			return nil, err
+		}
 	}
 
 	return &DB{sql: sqlDB}, nil
