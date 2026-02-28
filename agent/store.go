@@ -3,7 +3,9 @@ package agent
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,19 +15,31 @@ import (
 
 	internalagent "github.com/amonks/incrementum/internal/agent"
 	"github.com/amonks/incrementum/internal/config"
+	"github.com/amonks/incrementum/internal/db"
 	internalids "github.com/amonks/incrementum/internal/ids"
 	"github.com/amonks/incrementum/internal/paths"
-	"github.com/amonks/incrementum/internal/state"
 	"github.com/amonks/incrementum/llm"
 )
 
 // Store provides access to agent functionality with session persistence
 // and event logging.
 type Store struct {
-	stateStore *state.Store
-	eventsDir  string
-	llmStore   *llm.Store
-	config     *config.Config
+	// closeDB closes any owned database connection.
+	closeDB func() error
+	// sqlDB is the sqlite handle used for persistence.
+	sqlDB *sql.DB
+	// eventsDir is the directory for event logs.
+	eventsDir string
+	llmStore  *llm.Store
+	config    *config.Config
+}
+
+// SetCloseFunc configures the close callback for the store.
+func (s *Store) SetCloseFunc(closeFn func() error) {
+	if s == nil {
+		return
+	}
+	s.closeDB = closeFn
 }
 
 // Options configures how the store is opened.
@@ -33,6 +47,10 @@ type Options struct {
 	// StateDir is the directory for state files.
 	// Default: ~/.local/state/incrementum
 	StateDir string
+
+	// DB is an existing SQLite database connection to use.
+	// If set, StateDir is ignored for persistence (events still use EventsDir).
+	DB *sql.DB
 
 	// EventsDir is the directory for event logs.
 	// Default: ~/.local/share/incrementum/agent/events
@@ -43,7 +61,11 @@ type Options struct {
 	RepoPath string
 }
 
-// Open opens the agent store with default options.
+// OpenWithDB opens an agent store using an existing SQLite handle.
+func OpenWithDB(dbHandle *sql.DB, opts Options) (*Store, error) {
+	opts.DB = dbHandle
+	return OpenWithOptions(opts)
+}
 // Only loads global configuration (no project-specific config).
 func Open() (*Store, error) {
 	return OpenWithOptions(Options{})
@@ -51,9 +73,13 @@ func Open() (*Store, error) {
 
 // OpenWithOptions opens the agent store with the given options.
 func OpenWithOptions(opts Options) (*Store, error) {
-	stateDir, err := paths.ResolveWithDefault(opts.StateDir, paths.DefaultStateDir)
-	if err != nil {
-		return nil, fmt.Errorf("resolve state dir: %w", err)
+	stateDir := opts.StateDir
+	if opts.DB == nil {
+		var err error
+		stateDir, err = paths.ResolveWithDefault(opts.StateDir, paths.DefaultStateDir)
+		if err != nil {
+			return nil, fmt.Errorf("resolve state dir: %w", err)
+		}
 	}
 
 	eventsDir, err := paths.ResolveWithDefault(opts.EventsDir, defaultEventsDir)
@@ -72,19 +98,27 @@ func OpenWithOptions(opts Options) (*Store, error) {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
 
-	// Open LLM store for model resolution
-	llmStore, err := llm.OpenWithOptions(llm.Options{
-		RepoPath: opts.RepoPath,
-	})
+	// Load LLM store for model resolution
+	llmStoreOpts := llm.Options{RepoPath: opts.RepoPath}
+	if stateDir != "" {
+		llmStoreOpts.StateDir = stateDir
+	}
+	llmStore, err := llm.OpenWithOptions(llmStoreOpts)
 	if err != nil {
 		return nil, fmt.Errorf("open llm store: %w", err)
 	}
 
+	sqlDB, closeFn, err := openAgentDB(opts, stateDir)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Store{
-		stateStore: state.NewStore(stateDir),
-		eventsDir:  eventsDir,
-		llmStore:   llmStore,
-		config:     cfg,
+		sqlDB:    sqlDB,
+		closeDB:  closeFn,
+		eventsDir: eventsDir,
+		llmStore:  llmStore,
+		config:    cfg,
 	}, nil
 }
 
@@ -94,6 +128,55 @@ func defaultEventsDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, ".local", "share", "incrementum", "agent", "events"), nil
+}
+
+func openAgentDB(opts Options, stateDir string) (*sql.DB, func() error, error) {
+	if opts.DB != nil {
+		return opts.DB, func() error { return nil }, nil
+	}
+
+	dbPath, err := resolveDBPath(stateDir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	store, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return store.SqlDB(), store.Close, nil
+}
+
+func resolveDBPath(stateDir string) (string, error) {
+	if stateDir != "" {
+		return filepath.Join(stateDir, "state.db"), nil
+	}
+	return paths.DefaultDBPath()
+}
+
+// Close closes any owned database connection.
+func (s *Store) Close() error {
+	if s == nil || s.closeDB == nil {
+		return nil
+	}
+	return s.closeDB()
+}
+
+// RepoNameForPath returns the repo name for the given path, if present.
+func (s *Store) RepoNameForPath(path string) (string, error) {
+	if s == nil {
+		return "", fmt.Errorf("repo name for path: store is nil")
+	}
+	return db.RepoNameForPath(s.sqlDB, path)
+}
+
+// GetOrCreateRepoName returns the repo name for the given path, creating one if needed.
+func (s *Store) GetOrCreateRepoName(path string) (string, error) {
+	if s == nil {
+		return "", fmt.Errorf("get repo name: store is nil")
+	}
+	return db.GetOrCreateRepoName(s.sqlDB, path)
 }
 
 // ResolveModel resolves a model using the priority chain:
@@ -172,7 +255,7 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 	}
 
 	// Get repo name for session storage
-	repoName, err := s.getRepoName(opts.RepoPath)
+	repoName, err := s.GetOrCreateRepoName(opts.RepoPath)
 	if err != nil {
 		return nil, fmt.Errorf("get repo name: %w", err)
 	}
@@ -349,19 +432,9 @@ func (s *Store) ListSessions(repoPath string) ([]Session, error) {
 		return nil, nil // No sessions for unknown repo
 	}
 
-	st, err := s.stateStore.Load()
+	sessions, err := s.listSessionsByRepo(repoName)
 	if err != nil {
-		return nil, fmt.Errorf("load state: %w", err)
-	}
-
-	var sessions []Session
-	prefix := repoName + "/"
-	for key, rawSession := range st.AgentSessions {
-		if !strings.HasPrefix(key, prefix) {
-			continue
-		}
-		session := sessionFromState(rawSession)
-		sessions = append(sessions, session)
+		return nil, err
 	}
 
 	// Sort by created time, most recent first
@@ -383,45 +456,26 @@ func (s *Store) FindSession(repoPath, sessionID string) (Session, error) {
 		return Session{}, fmt.Errorf("session not found: %s", sessionID)
 	}
 
-	st, err := s.stateStore.Load()
-	if err != nil {
-		return Session{}, fmt.Errorf("load state: %w", err)
-	}
-
-	// Try exact match first. The canonical state key is "<repoName>/<sessionID>".
-	key := repoName + "/" + sessionID
-	if rawSession, ok := st.AgentSessions[key]; ok {
-		return sessionFromState(rawSession), nil
+	// Try exact match first.
+	if session, found, err := s.findSessionByID(repoName, sessionID); err != nil {
+		return Session{}, err
+	} else if found {
+		return session, nil
 	}
 
 	// Some call sites may pass the full state key as the session ID ("<repo>/<id>").
-	// Accept that form as well.
-	if rawSession, ok := st.AgentSessions[sessionID]; ok {
-		return sessionFromState(rawSession), nil
-	}
-
-	// Try prefix match
-	var matches []Session
-	sessionIDLower := strings.ToLower(sessionID)
-	prefix := repoName + "/"
-	for stateKey, rawSession := range st.AgentSessions {
-		if !strings.HasPrefix(stateKey, prefix) {
-			continue
-		}
-		id := strings.TrimPrefix(stateKey, prefix)
-		if strings.HasPrefix(strings.ToLower(id), sessionIDLower) {
-			matches = append(matches, sessionFromState(rawSession))
+	// Accept that form as well by attempting a lookup when a repo-prefixed value is used.
+	if strings.HasPrefix(sessionID, repoName+"/") {
+		trimmed := strings.TrimPrefix(sessionID, repoName+"/")
+		if session, found, err := s.findSessionByID(repoName, trimmed); err != nil {
+			return Session{}, err
+		} else if found {
+			return session, nil
 		}
 	}
 
-	if len(matches) == 0 {
-		return Session{}, fmt.Errorf("session not found: %s", sessionID)
-	}
-	if len(matches) > 1 {
-		return Session{}, fmt.Errorf("ambiguous session ID: %s matches %d sessions", sessionID, len(matches))
-	}
-
-	return matches[0], nil
+	// Try prefix match (case-insensitive)
+	return s.findSessionByPrefix(repoName, sessionID)
 }
 
 // Logs returns the raw event log for a session.
@@ -555,76 +609,267 @@ func (s *Store) eventLogPath(sessionID string) string {
 	return filepath.Join(s.eventsDir, sessionID+".jsonl")
 }
 
-// saveSession saves a session to state.
 func (s *Store) saveSession(session Session) error {
-	return s.stateStore.Update(func(st *state.State) error {
-		if st.AgentSessions == nil {
-			st.AgentSessions = make(map[string]state.AgentSession)
-		}
-		key := session.Repo + "/" + session.ID
-		st.AgentSessions[key] = sessionToState(session)
-		return nil
-	})
+	if s == nil || s.sqlDB == nil {
+		return fmt.Errorf("save session: db is nil")
+	}
+
+	_, err := s.sqlDB.Exec(`INSERT INTO agent_sessions (
+		repo, id, status, model, created_at, started_at, updated_at,
+		completed_at, exit_code, duration_seconds, tokens_used, cost
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	ON CONFLICT(repo, id) DO UPDATE SET
+		status = excluded.status,
+		model = excluded.model,
+		created_at = excluded.created_at,
+		started_at = excluded.started_at,
+		updated_at = excluded.updated_at,
+		completed_at = excluded.completed_at,
+		exit_code = excluded.exit_code,
+		duration_seconds = excluded.duration_seconds,
+		tokens_used = excluded.tokens_used,
+		cost = excluded.cost;`,
+		session.Repo,
+		session.ID,
+		string(session.Status),
+		session.Model,
+		formatSessionTime(session.CreatedAt),
+		formatOptionalSessionTime(session.StartedAt),
+		formatSessionTime(session.UpdatedAt),
+		formatOptionalSessionTime(session.CompletedAt),
+		sqlNullIntPointer(session.ExitCode),
+		session.DurationSeconds,
+		session.TokensUsed,
+		session.Cost,
+	)
+	if err != nil {
+		return fmt.Errorf("save session: %w", err)
+	}
+	return nil
 }
 
-// getRepoName gets or creates a repo name for the given path.
-func (s *Store) getRepoName(repoPath string) (string, error) {
-	return s.stateStore.GetOrCreateRepoName(repoPath)
+func (s *Store) listSessionsByRepo(repoName string) ([]Session, error) {
+	if s == nil || s.sqlDB == nil {
+		return nil, fmt.Errorf("list sessions: db is nil")
+	}
+
+	rows, err := s.sqlDB.Query(`SELECT id, status, model, created_at, started_at, updated_at,
+		completed_at, exit_code, duration_seconds, tokens_used, cost
+		FROM agent_sessions WHERE repo = ?;`, repoName)
+	if err != nil {
+		return nil, fmt.Errorf("list sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var sessions []Session
+	for rows.Next() {
+		session, err := scanSessionRows(rows, repoName)
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, session)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list sessions: %w", err)
+	}
+	return sessions, nil
+}
+
+func (s *Store) findSessionByID(repoName, sessionID string) (Session, bool, error) {
+	if s == nil || s.sqlDB == nil {
+		return Session{}, false, fmt.Errorf("find session: db is nil")
+	}
+
+	row := s.sqlDB.QueryRow(`SELECT id, status, model, created_at, started_at, updated_at,
+		completed_at, exit_code, duration_seconds, tokens_used, cost
+		FROM agent_sessions WHERE repo = ? AND id = ?;`, repoName, sessionID)
+	session, err := scanSessionRow(row, repoName)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Session{}, false, nil
+		}
+		return Session{}, false, fmt.Errorf("find session: %w", err)
+	}
+	return session, true, nil
+}
+
+func (s *Store) findSessionByPrefix(repoName, prefix string) (Session, error) {
+	if s == nil || s.sqlDB == nil {
+		return Session{}, fmt.Errorf("find session: db is nil")
+	}
+
+	rows, err := s.sqlDB.Query(`SELECT id, status, model, created_at, started_at, updated_at,
+		completed_at, exit_code, duration_seconds, tokens_used, cost
+		FROM agent_sessions WHERE repo = ? AND lower(id) LIKE ?
+		ORDER BY id;`, repoName, strings.ToLower(prefix)+"%")
+	if err != nil {
+		return Session{}, fmt.Errorf("find session: %w", err)
+	}
+	defer rows.Close()
+
+	var matches []Session
+	for rows.Next() {
+		session, err := scanSessionRows(rows, repoName)
+		if err != nil {
+			return Session{}, err
+		}
+		matches = append(matches, session)
+	}
+	if err := rows.Err(); err != nil {
+		return Session{}, fmt.Errorf("find session: %w", err)
+	}
+
+	if len(matches) == 0 {
+		return Session{}, fmt.Errorf("session not found: %s", prefix)
+	}
+	if len(matches) > 1 {
+		return Session{}, fmt.Errorf("ambiguous session ID: %s matches %d sessions", prefix, len(matches))
+	}
+	return matches[0], nil
+}
+
+func scanSessionRow(row *sql.Row, repoName string) (Session, error) {
+	var session Session
+	var status string
+	var createdAt string
+	var startedAt string
+	var updatedAt string
+	var completedAt string
+	var exitCode sql.NullInt64
+	if err := row.Scan(
+		&session.ID,
+		&status,
+		&session.Model,
+		&createdAt,
+		&startedAt,
+		&updatedAt,
+		&completedAt,
+		&exitCode,
+		&session.DurationSeconds,
+		&session.TokensUsed,
+		&session.Cost,
+	); err != nil {
+		return Session{}, err
+	}
+	parsed, err := hydrateSession(repoName, session.ID, status, session.Model, createdAt, startedAt, updatedAt, completedAt, exitCode, session.DurationSeconds, session.TokensUsed, session.Cost)
+	if err != nil {
+		return Session{}, err
+	}
+	return parsed, nil
+}
+
+func scanSessionRows(rows *sql.Rows, repoName string) (Session, error) {
+	var sessionID string
+	var status string
+	var model string
+	var createdAt string
+	var startedAt string
+	var updatedAt string
+	var completedAt string
+	var exitCode sql.NullInt64
+	var duration int
+	var tokens int
+	var cost float64
+	if err := rows.Scan(
+		&sessionID,
+		&status,
+		&model,
+		&createdAt,
+		&startedAt,
+		&updatedAt,
+		&completedAt,
+		&exitCode,
+		&duration,
+		&tokens,
+		&cost,
+	); err != nil {
+		return Session{}, fmt.Errorf("scan session: %w", err)
+	}
+	return hydrateSession(repoName, sessionID, status, model, createdAt, startedAt, updatedAt, completedAt, exitCode, duration, tokens, cost)
+}
+
+func hydrateSession(repoName, id, status, model, createdAt, startedAt, updatedAt, completedAt string, exitCode sql.NullInt64, duration, tokens int, cost float64) (Session, error) {
+	createdAtTime, err := parseSessionTime(createdAt)
+	if err != nil {
+		return Session{}, fmt.Errorf("scan session created_at: %w", err)
+	}
+	startedAtTime, err := parseOptionalSessionTime(startedAt)
+	if err != nil {
+		return Session{}, fmt.Errorf("scan session started_at: %w", err)
+	}
+	updatedAtTime, err := parseSessionTime(updatedAt)
+	if err != nil {
+		return Session{}, fmt.Errorf("scan session updated_at: %w", err)
+	}
+	completedAtTime, err := parseOptionalSessionTime(completedAt)
+	if err != nil {
+		return Session{}, fmt.Errorf("scan session completed_at: %w", err)
+	}
+
+	session := Session{
+		ID:              id,
+		Repo:            repoName,
+		Status:          SessionStatus(status),
+		Model:           model,
+		CreatedAt:       createdAtTime,
+		StartedAt:       startedAtTime,
+		UpdatedAt:       updatedAtTime,
+		CompletedAt:     completedAtTime,
+		DurationSeconds: duration,
+		TokensUsed:      tokens,
+		Cost:            cost,
+	}
+	if exitCode.Valid {
+		exit := int(exitCode.Int64)
+		session.ExitCode = &exit
+	}
+	if session.Status == "" {
+		session.Status = SessionActive
+	}
+	return session, nil
+}
+
+func parseSessionTime(value string) (time.Time, error) {
+	if strings.TrimSpace(value) == "" {
+		return time.Time{}, nil
+	}
+	return time.Parse(time.RFC3339Nano, value)
+}
+
+func parseOptionalSessionTime(value string) (time.Time, error) {
+	if strings.TrimSpace(value) == "" {
+		return time.Time{}, nil
+	}
+	return time.Parse(time.RFC3339Nano, value)
+}
+
+func formatSessionTime(value time.Time) string {
+	if value.IsZero() {
+		return time.Time{}.UTC().Format(time.RFC3339Nano)
+	}
+	return value.UTC().Format(time.RFC3339Nano)
+}
+
+func formatOptionalSessionTime(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format(time.RFC3339Nano)
+}
+
+func sqlNullIntPointer(value *int) any {
+	if value == nil {
+		return nil
+	}
+	return *value
 }
 
 // getRepoNameIfExists gets the repo name if it exists, or returns empty string.
 func (s *Store) getRepoNameIfExists(repoPath string) (string, error) {
-	st, err := s.stateStore.Load()
-	if err != nil {
-		return "", err
+	if s == nil {
+		return "", fmt.Errorf("get repo name: store is nil")
 	}
-
-	// Normalize paths for comparison to handle symlink differences (e.g., /var vs /private/var)
-	normalizedRepoPath := paths.NormalizePath(repoPath)
-
-	for name, info := range st.Repos {
-		if paths.NormalizePath(info.SourcePath) == normalizedRepoPath {
-			return name, nil
-		}
-	}
-
-	return "", nil
-}
-
-// sessionToState converts a Session to state.AgentSession.
-func sessionToState(session Session) state.AgentSession {
-	return state.AgentSession{
-		ID:              session.ID,
-		Repo:            session.Repo,
-		Status:          state.AgentSessionStatus(session.Status),
-		Model:           session.Model,
-		CreatedAt:       session.CreatedAt,
-		StartedAt:       session.StartedAt,
-		UpdatedAt:       session.UpdatedAt,
-		CompletedAt:     session.CompletedAt,
-		ExitCode:        session.ExitCode,
-		DurationSeconds: session.DurationSeconds,
-		TokensUsed:      session.TokensUsed,
-		Cost:            session.Cost,
-	}
-}
-
-// sessionFromState converts a state.AgentSession to Session.
-func sessionFromState(stateSession state.AgentSession) Session {
-	return Session{
-		ID:              stateSession.ID,
-		Repo:            stateSession.Repo,
-		Status:          SessionStatus(stateSession.Status),
-		Model:           stateSession.Model,
-		CreatedAt:       stateSession.CreatedAt,
-		StartedAt:       stateSession.StartedAt,
-		UpdatedAt:       stateSession.UpdatedAt,
-		CompletedAt:     stateSession.CompletedAt,
-		ExitCode:        stateSession.ExitCode,
-		DurationSeconds: stateSession.DurationSeconds,
-		TokensUsed:      stateSession.TokensUsed,
-		Cost:            stateSession.Cost,
-	}
+	return s.RepoNameForPath(repoPath)
 }
 
 // defaultBashPermissions returns the default bash permissions.

@@ -88,6 +88,7 @@ func TestRepoPathForWorkspace(t *testing.T) {
 	}
 }
 
+
 func TestRepoPathForWorkspaceMissingRepo(t *testing.T) {
 	db := openTestDB(t)
 
@@ -110,6 +111,31 @@ func TestRepoPathForWorkspaceMissingRepo(t *testing.T) {
 	}
 	if err == nil {
 		t.Fatal("expected error for missing repo path")
+	}
+}
+
+func TestRepoNameForPath(t *testing.T) {
+	db := openTestDB(t)
+
+	repoName, err := GetOrCreateRepoName(db, "/Users/test/my-project")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
+
+	name, err := RepoNameForPath(db, "/Users/test/my-project")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if name != repoName {
+		t.Fatalf("expected repo name %q, got %q", repoName, name)
+	}
+
+	name, err = RepoNameForPath(db, "/Users/test/missing")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if name != "" {
+		t.Fatalf("expected empty name, got %q", name)
 	}
 }
 

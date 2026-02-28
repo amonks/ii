@@ -2,31 +2,81 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"os"
+	"path/filepath"
 
 	"github.com/amonks/incrementum/agent"
+	"github.com/amonks/incrementum/internal/db"
+	"github.com/amonks/incrementum/internal/paths"
 	jobpkg "github.com/amonks/incrementum/job"
 )
 
-func openAgentStoreAndRepoPath() (*agent.Store, string, error) {
+func openAgentStoreAndRepoPath() (*agent.Store, func() error, string, error) {
 	repoPath, err := getRepoPath()
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 
-	store, err := agent.OpenWithOptions(agent.Options{
-		RepoPath:  repoPath,
-		StateDir:  os.Getenv("INCREMENTUM_STATE_DIR"),
+	store, closeFn, err := openAgentStoreForRepo(repoPath)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	return store, closeFn, repoPath, nil
+}
+
+func openAgentStore() (*agent.Store, func() error, error) {
+	sqlDB, closeFn, stateDir, err := openAgentDB()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	store, err := agent.OpenWithDB(sqlDB, agent.Options{
+		StateDir: stateDir,
 		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
 	})
 	if err != nil {
-		return nil, "", err
+		_ = closeFn()
+		return nil, nil, err
 	}
 
-	return store, repoPath, nil
+	return store, closeFn, nil
 }
 
-var makeAgentRunnerFunc = makeAgentRunner
+func openAgentStoreForRepo(repoPath string) (*agent.Store, func() error, error) {
+	sqlDB, closeFn, stateDir, err := openAgentDB()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	store, err := agent.OpenWithDB(sqlDB, agent.Options{
+		StateDir: stateDir,
+		RepoPath:  repoPath,
+		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
+	})
+	if err != nil {
+		_ = closeFn()
+		return nil, nil, err
+	}
+
+	return store, closeFn, nil
+}
+
+func openAgentDB() (*sql.DB, func() error, string, error) {
+	stateDir, err := paths.ResolveWithDefault(os.Getenv("INCREMENTUM_STATE_DIR"), paths.DefaultStateDir)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	path := filepath.Join(stateDir, "state.db")
+	store, err := db.Open(path, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	return store.SqlDB(), store.Close, stateDir, nil
+}
 
 // makeRunLLMFunc creates an LLM run function for use with job.RunOptions.RunLLM.
 func makeRunLLMFunc(repoPath string, store *agent.Store) (func(jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error), error) {
@@ -79,10 +129,11 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 			return nil, nil
 		}
 
-		store, err := agent.Open()
+		store, closeFn, err := openAgentStore()
 		if err != nil {
 			return nil, err
 		}
+		defer closeFn()
 
 		transcripts := make([]jobpkg.AgentTranscript, 0, len(sessions))
 		for _, session := range sessions {
@@ -104,9 +155,14 @@ func makeTranscriptsFunc() func(string, []jobpkg.AgentSession) ([]jobpkg.AgentTr
 }
 
 func makeAgentRunner(repoPath string) (*agent.Store, error) {
-	return agent.OpenWithOptions(agent.Options{
-		RepoPath:  repoPath,
-		StateDir:  os.Getenv("INCREMENTUM_STATE_DIR"),
-		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
-	})
+	store, closeFn, err := openAgentStoreForRepo(repoPath)
+	if err != nil {
+		return nil, err
+	}
+	store.SetCloseFunc(closeFn)
+	return store, nil
+}
+
+func makeAgentRunnerFunc(repoPath string) (*agent.Store, error) {
+	return makeAgentRunner(repoPath)
 }

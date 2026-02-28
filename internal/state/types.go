@@ -1,9 +1,8 @@
-// Package state manages the shared incrementum state file.
+// Package state manages the legacy JSON state file.
 //
-// The state file (~/.local/state/incrementum/state.json) stores persistent
-// state for workspaces, agent sessions, and jobs. All access is
-// serialized through file locking to allow safe concurrent access from
-// multiple processes.
+// The legacy state file (~/.local/state/incrementum/state.json) stores persistent
+// state for repositories and jobs only. Workspace and agent session data are now
+// stored in the SQLite database.
 package state
 
 import (
@@ -14,42 +13,13 @@ import (
 
 // State represents the persisted state file.
 type State struct {
-	Repos         map[string]RepoInfo     `json:"repos"`
-	AgentSessions map[string]AgentSession `json:"agent_sessions"`
-	Jobs          map[string]Job          `json:"jobs"`
+	Repos map[string]RepoInfo `json:"repos"`
+	Jobs  map[string]Job      `json:"jobs"`
 }
 
 // RepoInfo stores information about a tracked repository.
 type RepoInfo struct {
 	SourcePath string `json:"source_path"`
-}
-
-// AgentSessionStatus represents the state of an agent session.
-type AgentSessionStatus string
-
-const (
-	// AgentSessionActive indicates the session is active.
-	AgentSessionActive AgentSessionStatus = "active"
-	// AgentSessionCompleted indicates the session completed successfully.
-	AgentSessionCompleted AgentSessionStatus = "completed"
-	// AgentSessionFailed indicates the session failed.
-	AgentSessionFailed AgentSessionStatus = "failed"
-)
-
-// AgentSession stores agent session state for a repo.
-type AgentSession struct {
-	ID              string             `json:"id"`
-	Repo            string             `json:"repo"`
-	Status          AgentSessionStatus `json:"status"`
-	Model           string             `json:"model"`
-	CreatedAt       time.Time          `json:"created_at"`
-	StartedAt       time.Time          `json:"started_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
-	CompletedAt     time.Time          `json:"completed_at"`
-	ExitCode        *int               `json:"exit_code,omitempty"`
-	DurationSeconds int                `json:"duration_seconds,omitempty"`
-	TokensUsed      int                `json:"tokens_used,omitempty"`
-	Cost            float64            `json:"cost,omitempty"`
 }
 
 // JobStage represents the current workflow stage for a job.

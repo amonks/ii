@@ -1,6 +1,10 @@
-package agent
+package agent_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/amonks/incrementum/agent"
+)
 
 func TestJSONLTailDiff(t *testing.T) {
 	cases := []struct {
@@ -43,7 +47,7 @@ func TestJSONLTailDiff(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := JSONLTailDiff(tc.prev, tc.curr); got != tc.want {
+			if got := agent.JSONLTailDiff(tc.prev, tc.curr); got != tc.want {
 				t.Fatalf("diff mismatch\nprev=%q\ncurr=%q\n got=%q\nwant=%q", tc.prev, tc.curr, got, tc.want)
 			}
 		})

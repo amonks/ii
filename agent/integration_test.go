@@ -73,6 +73,7 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -196,6 +197,7 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -262,6 +264,7 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -345,6 +348,7 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -403,6 +407,7 @@ func TestAgentStoreRun_Transcript(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()

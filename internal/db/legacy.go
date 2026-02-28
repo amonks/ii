@@ -16,10 +16,25 @@ import (
 const legacyMigrationPrompt = "Incrementum needs to migrate state from JSON to SQLite. Continue?"
 
 type legacyState struct {
-	Repos         map[string]state.RepoInfo     `json:"repos"`
-	Workspaces    map[string]legacyWorkspace    `json:"workspaces"`
-	AgentSessions map[string]state.AgentSession `json:"agent_sessions"`
-	Jobs          map[string]state.Job          `json:"jobs"`
+	Repos         map[string]state.RepoInfo    `json:"repos"`
+	Workspaces    map[string]legacyWorkspace   `json:"workspaces"`
+	AgentSessions map[string]legacyAgentSession `json:"agent_sessions"`
+	Jobs          map[string]state.Job         `json:"jobs"`
+}
+
+type legacyAgentSession struct {
+	ID              string    `json:"id"`
+	Repo            string    `json:"repo"`
+	Status          string    `json:"status"`
+	Model           string    `json:"model"`
+	CreatedAt       time.Time `json:"created_at"`
+	StartedAt       time.Time `json:"started_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	CompletedAt     time.Time `json:"completed_at"`
+	ExitCode        *int      `json:"exit_code,omitempty"`
+	DurationSeconds int       `json:"duration_seconds,omitempty"`
+	TokensUsed      int       `json:"tokens_used,omitempty"`
+	Cost            float64   `json:"cost,omitempty"`
 }
 
 type legacyWorkspace struct {
@@ -96,7 +111,7 @@ func ensureLegacyMaps(st *legacyState) {
 		st.Workspaces = make(map[string]legacyWorkspace)
 	}
 	if st.AgentSessions == nil {
-		st.AgentSessions = make(map[string]state.AgentSession)
+		st.AgentSessions = make(map[string]legacyAgentSession)
 	}
 	if st.Jobs == nil {
 		st.Jobs = make(map[string]state.Job)
@@ -189,7 +204,7 @@ func insertLegacyWorkspaces(tx *sql.Tx, workspaces map[string]legacyWorkspace) e
 	return nil
 }
 
-func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]state.AgentSession) error {
+func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]legacyAgentSession) error {
 	stmt, err := tx.Prepare(`INSERT INTO agent_sessions (
 		repo, id, status, model, created_at, started_at, updated_at,
 		completed_at, exit_code, duration_seconds, tokens_used, cost
@@ -215,7 +230,7 @@ func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]state.AgentSessio
 		if _, err := stmt.Exec(
 			session.Repo,
 			session.ID,
-			string(session.Status),
+			session.Status,
 			session.Model,
 			formatLegacyTime(session.CreatedAt),
 			startedAt,

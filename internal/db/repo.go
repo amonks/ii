@@ -109,6 +109,26 @@ func GetOrCreateRepoName(db *sql.DB, sourcePath string) (string, error) {
 	return name, nil
 }
 
+// RepoNameForPath returns the repo name for the given source path.
+// Returns empty string when no repo matches the path.
+func RepoNameForPath(db *sql.DB, sourcePath string) (string, error) {
+	if db == nil {
+		return "", fmt.Errorf("repo name for path: db is nil")
+	}
+
+	normalizedPath := normalizeRepoPath(sourcePath)
+
+	var name string
+	err := db.QueryRow("SELECT name FROM repos WHERE source_path = ?;", normalizedPath).Scan(&name)
+	if err == nil {
+		return name, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return "", fmt.Errorf("repo name for path: %w", err)
+}
+
 // RepoPathForWorkspace returns the source repo path for a workspace path.
 func RepoPathForWorkspace(db *sql.DB, wsPath string) (string, bool, error) {
 	if db == nil {

@@ -24,18 +24,14 @@ type Store struct {
 
 func newState() *State {
 	return &State{
-		Repos:         make(map[string]RepoInfo),
-		AgentSessions: make(map[string]AgentSession),
-		Jobs:          make(map[string]Job),
+		Repos: make(map[string]RepoInfo),
+		Jobs:  make(map[string]Job),
 	}
 }
 
 func ensureStateMaps(st *State) {
 	if st.Repos == nil {
 		st.Repos = make(map[string]RepoInfo)
-	}
-	if st.AgentSessions == nil {
-		st.AgentSessions = make(map[string]AgentSession)
 	}
 	if st.Jobs == nil {
 		st.Jobs = make(map[string]Job)

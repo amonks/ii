@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/state"
+	"github.com/amonks/incrementum/internal/db"
 	"github.com/amonks/incrementum/internal/testsupport"
 )
 
@@ -19,6 +19,7 @@ func TestOpen_NoConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	defer store.Close()
 
 	// Should be able to open without config
 	if store == nil {
@@ -40,6 +41,7 @@ func TestOpenWithOptions_CustomDirs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
 	}
+	defer store.Close()
 
 	// Verify store was created
 	if store == nil {
@@ -70,6 +72,7 @@ models = ["claude-haiku-4-5-20251001"]
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	model, err := store.ResolveModel("claude-haiku-4-5-20251001", "")
 	if err != nil {
@@ -106,6 +109,7 @@ models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// With no explicit model, should use env var
 	model, err := store.ResolveModel("", "")
@@ -141,6 +145,7 @@ models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// With task model specified, should use that
 	model, err := store.ResolveModel("", "claude-haiku-4-5")
@@ -179,6 +184,7 @@ model = "claude-haiku-4-5-20251001"
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// With no explicit model or env var, should use agent.model from config
 	model, err := store.ResolveModel("", "")
@@ -217,6 +223,7 @@ model = "claude-haiku-4-5-20251001"
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// With no explicit model, env var, or agent.model, should fallback to llm.model
 	model, err := store.ResolveModel("", "")
@@ -258,6 +265,7 @@ model = "claude-haiku-4-5-20251001"
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// ResolveImplementationModel should use job.implementation-model over agent.model
 	model, err := store.ResolveImplementationModel("")
@@ -299,6 +307,7 @@ model = "claude-haiku-4-5-20251001"
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// ResolveCodeReviewModel should use job.code-review-model over agent.model
 	model, err := store.ResolveCodeReviewModel("")
@@ -340,6 +349,7 @@ model = "claude-haiku-4-5-20251001"
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// ResolveProjectReviewModel should use job.project-review-model over agent.model
 	model, err := store.ResolveProjectReviewModel("")
@@ -359,6 +369,7 @@ func TestResolveModel_NoModelConfigured(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// With no model anywhere, should error
 	_, err = store.ResolveModel("", "")
@@ -377,6 +388,7 @@ func TestListSessions_Empty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	sessions, err := store.ListSessions("/some/repo/path")
 	if err != nil {
@@ -392,33 +404,20 @@ func TestListSessions_WithSessions(t *testing.T) {
 	homeDir := testsupport.SetupTestHome(t)
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 
-	// Create state with sessions
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
-			ID:        "12345678",
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		st.AgentSessions["test-repo/87654321"] = state.AgentSession{
-			ID:        "87654321",
-			Repo:        "test-repo",
-			Status:      state.AgentSessionCompleted,
-			Model:       "claude-haiku-4-5-20251001",
-			CreatedAt:   time.Now().Add(-time.Hour),
-			StartedAt:   time.Now().Add(-time.Hour),
-			UpdatedAt:   time.Now().Add(-time.Hour),
-			CompletedAt: time.Now().Add(-30 * time.Minute),
-		}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	repoName, err := db.GetOrCreateRepoName(sqlDB, "/path/to/repo")
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
+	}
+
+	now := time.Now()
+	err = insertAgentSession(sqlDB, repoName, "12345678", agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
+	}
+	err = insertAgentSession(sqlDB, repoName, "87654321", agent.SessionCompleted, "claude-haiku-4-5-20251001", now.Add(-time.Hour), now.Add(-time.Hour), now.Add(-time.Hour), now.Add(-30*time.Minute), nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
@@ -427,6 +426,7 @@ func TestListSessions_WithSessions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	sessions, err := store.ListSessions("/path/to/repo")
 	if err != nil {
@@ -447,23 +447,16 @@ func TestFindSession_ExactMatch(t *testing.T) {
 	homeDir := testsupport.SetupTestHome(t)
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 
-	// Create state with session
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
-			ID:        "12345678",
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	repoName, err := db.GetOrCreateRepoName(sqlDB, "/path/to/repo")
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
+	}
+
+	now := time.Now()
+	err = insertAgentSession(sqlDB, repoName, "12345678", agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
@@ -472,6 +465,7 @@ func TestFindSession_ExactMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	session, err := store.FindSession("/path/to/repo", "12345678")
 	if err != nil {
@@ -487,23 +481,16 @@ func TestFindSession_PrefixMatch(t *testing.T) {
 	homeDir := testsupport.SetupTestHome(t)
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 
-	// Create state with session
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
-			ID:        "12345678",
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	repoName, err := db.GetOrCreateRepoName(sqlDB, "/path/to/repo")
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
+	}
+
+	now := time.Now()
+	err = insertAgentSession(sqlDB, repoName, "12345678", agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
@@ -512,6 +499,7 @@ func TestFindSession_PrefixMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// Should find session by prefix
 	session, err := store.FindSession("/path/to/repo", "123")
@@ -528,14 +516,10 @@ func TestFindSession_NotFound(t *testing.T) {
 	homeDir := testsupport.SetupTestHome(t)
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 
-	// Create state with repo but no sessions
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	_, err := db.GetOrCreateRepoName(sqlDB, "/path/to/repo")
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
@@ -544,6 +528,7 @@ func TestFindSession_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	_, err = store.FindSession("/path/to/repo", "nonexistent")
 	if err == nil {
@@ -555,32 +540,20 @@ func TestFindSession_Ambiguous(t *testing.T) {
 	homeDir := testsupport.SetupTestHome(t)
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
 
-	// Create state with sessions that have the same prefix
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: "/path/to/repo"}
-		st.AgentSessions["test-repo/12345678"] = state.AgentSession{
-			ID:        "12345678",
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		st.AgentSessions["test-repo/12367890"] = state.AgentSession{
-			ID:        "12367890",
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	repoName, err := db.GetOrCreateRepoName(sqlDB, "/path/to/repo")
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
+	}
+
+	now := time.Now()
+	err = insertAgentSession(sqlDB, repoName, "12345678", agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
+	}
+	err = insertAgentSession(sqlDB, repoName, "12367890", agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
 	}
 
 	store, err := agent.OpenWithOptions(agent.Options{
@@ -589,6 +562,7 @@ func TestFindSession_Ambiguous(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// Should fail with ambiguous prefix
 	_, err = store.FindSession("/path/to/repo", "123")
@@ -644,6 +618,7 @@ func TestTranscriptSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	transcript, err := store.TranscriptSnapshot(sessionID)
 	if err != nil {
@@ -672,6 +647,7 @@ func TestTranscriptSnapshot_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	_, err = store.TranscriptSnapshot("nonexistent")
 	if err == nil {
@@ -707,6 +683,7 @@ func TestTranscriptSnapshot_IncludesToolOutput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	transcript, err := store.TranscriptSnapshot(sessionID)
 	if err != nil {
@@ -737,23 +714,16 @@ func TestTranscript_ExcludesToolOutput(t *testing.T) {
 		t.Fatalf("failed to create events dir: %v", err)
 	}
 
-	// Create state with a session for this repo
-	stateStore := state.NewStore(stateDir)
-	err := stateStore.Update(func(st *state.State) error {
-		st.Repos["test-repo"] = state.RepoInfo{SourcePath: repoPath}
-		st.AgentSessions["test-repo/"+sessionID] = state.AgentSession{
-			ID:        sessionID,
-			Repo:      "test-repo",
-			Status:    state.AgentSessionActive,
-			Model:     "claude-haiku-4-5-20251001",
-			CreatedAt: time.Now(),
-			StartedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		return nil
-	})
+	sqlDB := openAgentTestDB(t, stateDir)
+	repoName, err := db.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
-		t.Fatalf("setup state failed: %v", err)
+		t.Fatalf("create repo: %v", err)
+	}
+
+	now := time.Now()
+	err = insertAgentSession(sqlDB, repoName, sessionID, agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
+	if err != nil {
+		t.Fatalf("insert session: %v", err)
 	}
 
 	// Write event log with tool output to that session's event log
@@ -775,6 +745,7 @@ func TestTranscript_ExcludesToolOutput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
+	defer store.Close()
 
 	// Call Transcript (not TranscriptSnapshot) - should exclude tool output
 	transcript, err := store.Transcript(repoPath, sessionID)
@@ -795,3 +766,4 @@ func TestTranscript_ExcludesToolOutput(t *testing.T) {
 		t.Error("expected transcript to contain second assistant message")
 	}
 }
+

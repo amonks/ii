@@ -1,23 +1,18 @@
 # Internal State
 
 ## Overview
-The state package manages the legacy JSON state file (`~/.local/state/incrementum/state.json`) for agent sessions and jobs. Workspace data now lives in SQLite via `internal/db`.
+The state package manages the legacy JSON state file (`~/.local/state/incrementum/state.json`) that persists repo metadata and job history. Agent sessions are now stored in SQLite via `internal/db` and are referenced from jobs by ID.
 
 ## State File Structure
 The state file contains:
-- `repos`: maps repo names to source paths (used by agent/job)
-- `agent_sessions`: maps session keys to agent session records
+- `repos`: maps repo names to source paths (used by job tracking)
 - `jobs`: maps job ids to job records
 
 ## Types
 
-### AgentSession
-- `id`, `repo`, `status`, `model`, `created_at`, `started_at`, `updated_at`, `completed_at`, `exit_code`, `duration_seconds`, `tokens_used`, `cost`
-- Status: `active`, `completed`, or `failed`
-- Note: Prompts are not stored to keep the state file small; they can be reconstructed from job/todo context
-
 ### Job
 - `id`, `repo`, `todo_id`, `stage`, `feedback`, `agent`, `agent_sessions`, `status`, `created_at`, `started_at`, `updated_at`, `completed_at`
+- `agent_sessions`: list of session references (`JobAgentSession`) with purpose and session ID
 - `changes`: list of `JobChange` tracking changes created during the job
 - `project_review`: final project review outcome (`JobReview`)
 - Stage: `implementing`, `testing`, `reviewing`, or `committing`
@@ -33,5 +28,5 @@ All state updates use advisory file locking via `state.lock` to serialize concur
 - `Load()`: read current state
 - `Save(state)`: write state atomically, skipping disk writes when no changes
 - `Update(fn)`: read-modify-write with locking
-- `GetOrCreateRepoName(path)`: get or create repo name for path; normalizes paths (resolves symlinks) for consistent matching across platforms. Workspace resolution now happens in SQLite.
+- `GetOrCreateRepoName(path)`: get or create repo name for path; normalizes paths (resolves symlinks) for consistent matching across platforms
 - `SanitizeRepoName(path)`: convert path to safe repo name

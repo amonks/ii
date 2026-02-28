@@ -44,8 +44,16 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	store, err := agent.OpenWithOptions(agent.Options{
-		RepoPath: repoPath,
+	sqlDB, closeFn, stateDir, err := openAgentDB()
+	if err != nil {
+		return err
+	}
+	defer closeFn()
+
+	store, err := agent.OpenWithDB(sqlDB, agent.Options{
+		StateDir: stateDir,
+		RepoPath:  repoPath,
+		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
 	})
 	if err != nil {
 		return err

@@ -100,11 +100,11 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 				AcquiredAt:    time.Date(2026, 1, 3, 1, 2, 3, 0, time.UTC),
 			},
 		},
-		AgentSessions: map[string]state.AgentSession{
+		AgentSessions: map[string]legacyAgentSession{
 			"repo/abc123": {
 				ID:              "abc123",
 				Repo:            "repo",
-				Status:          state.AgentSessionCompleted,
+				Status:          "completed",
 				Model:           "test",
 				CreatedAt:       time.Date(2026, 1, 1, 2, 0, 0, 0, time.UTC),
 				StartedAt:       time.Time{},

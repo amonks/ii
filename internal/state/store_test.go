@@ -24,10 +24,6 @@ func TestStore_LoadEmpty(t *testing.T) {
 		t.Errorf("expected 0 repos, got %d", len(st.Repos))
 	}
 
-	if len(st.AgentSessions) != 0 {
-		t.Errorf("expected 0 agent sessions, got %d", len(st.AgentSessions))
-	}
-
 	if len(st.Jobs) != 0 {
 		t.Errorf("expected 0 jobs, got %d", len(st.Jobs))
 	}

@@ -55,10 +55,11 @@ func init() {
 }
 
 func runAgentList(cmd *cobra.Command, args []string) error {
-	store, repoPath, err := openAgentStoreAndRepoPath()
+	store, closeFn, repoPath, err := openAgentStoreAndRepoPath()
 	if err != nil {
 		return err
 	}
+	defer closeFn()
 
 	sessions, err := store.ListSessions(repoPath)
 	if err != nil {
@@ -83,10 +84,11 @@ func runAgentList(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentLogs(cmd *cobra.Command, args []string) error {
-	store, repoPath, err := openAgentStoreAndRepoPath()
+	store, closeFn, repoPath, err := openAgentStoreAndRepoPath()
 	if err != nil {
 		return err
 	}
+	defer closeFn()
 
 	if agentLogsJSON {
 		logContent, err := store.Logs(repoPath, args[0])
@@ -107,10 +109,11 @@ func runAgentLogs(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentTail(cmd *cobra.Command, args []string) error {
-	store, repoPath, err := openAgentStoreAndRepoPath()
+	store, closeFn, repoPath, err := openAgentStoreAndRepoPath()
 	if err != nil {
 		return err
 	}
+	defer closeFn()
 
 	if agentTailJSON {
 		// Follow-mode JSONL: poll the stored event log and emit only newly appended lines.
