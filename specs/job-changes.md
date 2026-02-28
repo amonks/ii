@@ -329,10 +329,6 @@ change history is preserved for debugging, and the new job starts fresh.
 
 ## Out of Scope
 
-- **Resumption**: This spec enables resumption but does not implement it.
-  Resumption would load the last incomplete change/commit and resume from the
-  appropriate stage.
-
 - **SQLite writes**: Job changes are persisted via the SQLite store; write atomicity is handled by SQLite transactions.
 
 - **Test output storage**: Test logs are intentionally excluded from the job

@@ -488,7 +488,7 @@ Behavior:
 
 1. Load the job by ID (prefix-matching allowed).
 2. Refuse to resume if the job is active and not stale, or if its status is not
-   `failed`.
+   `failed` or `active`.
 3. Verify the working copy is empty (`jj log -r @ -T empty` returns `true`).
 4. Ensure all completed change IDs recorded in the job exist in
    `ancestors(@)` (change IDs only, not commit IDs).
