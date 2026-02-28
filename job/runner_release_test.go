@@ -1,6 +1,7 @@
 package job
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,4 +81,67 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 	if workspaceErr != nil {
 		t.Fatalf("%v", workspaceErr)
 	}
+}
+
+func TestStartTodoReopensOnReleaseError(t *testing.T) {
+	repoPath := setupJobRepo(t)
+
+	store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: true, PromptToCreate: false})
+	if err != nil {
+		t.Fatalf("open todo store: %v", err)
+	}
+	created, err := store.Create("Release todo store", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
+	if err != nil {
+		store.Release()
+		t.Fatalf("create todo: %v", err)
+	}
+	if err := store.Release(); err != nil {
+		t.Fatalf("release todo store: %v", err)
+	}
+
+	originalOpen := openTodoStore
+	defer func() {
+		openTodoStore = originalOpen
+	}()
+
+	releaseErr := errors.New("release failure")
+	openTodoStore = func(repoPath string, opts todo.OpenOptions) (todoStore, error) {
+		realStore, err := todo.Open(repoPath, opts)
+		if err != nil {
+			return nil, err
+		}
+		return &releaseFailingStore{inner: realStore, releaseErr: releaseErr}, nil
+	}
+
+	err = startTodo(repoPath, created.ID)
+	if !errors.Is(err, releaseErr) {
+		t.Fatalf("expected release error, got %v", err)
+	}
+
+	store, err = todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
+	if err != nil {
+		t.Fatalf("reopen todo store: %v", err)
+	}
+	defer store.Release()
+	items, err := store.Show([]string{created.ID})
+	if err != nil {
+		t.Fatalf("show todo: %v", err)
+	}
+	if items[0].Status != todo.StatusOpen {
+		t.Fatalf("expected todo to be reopened, got %q", items[0].Status)
+	}
+}
+
+type releaseFailingStore struct {
+	inner      *todo.Store
+	releaseErr error
+}
+
+func (s *releaseFailingStore) Start(ids []string) ([]todo.Todo, error) {
+	return s.inner.Start(ids)
+}
+
+func (s *releaseFailingStore) Release() error {
+	innerErr := s.inner.Release()
+	return errors.Join(s.releaseErr, innerErr)
 }

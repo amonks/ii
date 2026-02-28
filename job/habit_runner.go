@@ -38,6 +38,9 @@ type HabitRunOptions struct {
 	// Model overrides model selection for all stages when set.
 	Model              string
 	CurrentCommitID    func(string) (string, error)
+	CurrentChangeID    func(string) (string, error)
+	ChangeIDAt         func(string, string) (string, error)
+	ChangeIDsForRevset func(string, string) ([]string, error)
 	CurrentChangeEmpty func(string) (bool, error)
 	DiffStat           func(string, string, string) (string, error)
 	CommitIDAt         func(string, string) (string, error)
@@ -703,6 +706,9 @@ func (opts *HabitRunOptions) toRunOptions() RunOptions {
 		RunLLM:             opts.RunLLM,
 		Model:              opts.Model,
 		CurrentCommitID:    opts.CurrentCommitID,
+		CurrentChangeID:    opts.CurrentChangeID,
+		ChangeIDAt:         opts.ChangeIDAt,
+		ChangeIDsForRevset: opts.ChangeIDsForRevset,
 		CurrentChangeEmpty: opts.CurrentChangeEmpty,
 		DiffStat:           opts.DiffStat,
 		CommitIDAt:         opts.CommitIDAt,
@@ -725,6 +731,9 @@ func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 		RunLLM:             opts.RunLLM,
 		Model:              opts.Model,
 		CurrentCommitID:    opts.CurrentCommitID,
+		CurrentChangeID:    opts.CurrentChangeID,
+		ChangeIDAt:         opts.ChangeIDAt,
+		ChangeIDsForRevset: opts.ChangeIDsForRevset,
 		CurrentChangeEmpty: opts.CurrentChangeEmpty,
 		DiffStat:           opts.DiffStat,
 		CommitIDAt:         opts.CommitIDAt,
@@ -742,6 +751,9 @@ func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 	opts.RunTests = runOpts.RunTests
 	opts.RunLLM = runOpts.RunLLM
 	opts.CurrentCommitID = runOpts.CurrentCommitID
+	opts.CurrentChangeID = runOpts.CurrentChangeID
+	opts.ChangeIDAt = runOpts.ChangeIDAt
+	opts.ChangeIDsForRevset = runOpts.ChangeIDsForRevset
 	opts.CurrentChangeEmpty = runOpts.CurrentChangeEmpty
 	opts.DiffStat = runOpts.DiffStat
 	opts.CommitIDAt = runOpts.CommitIDAt

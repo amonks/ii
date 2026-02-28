@@ -258,6 +258,9 @@ func TestRunImplementingStageLogsPromptAndCommitMessage(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-log", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-log"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -345,6 +348,9 @@ func TestRunImplementingStageUsesFeedbackPrompt(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-feedback", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-feedback"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -426,6 +432,9 @@ func TestRunImplementingStageRecordsEventLog(t *testing.T) {
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-events", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-events"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil

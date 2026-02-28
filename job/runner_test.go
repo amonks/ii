@@ -132,6 +132,12 @@ func TestRunImplementingStageReadsCommitMessage(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-789", nil
 		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-789", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-789"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -209,6 +215,12 @@ func TestRunImplementingStageNoChangesSkipsTesting(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-790", nil
 		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-790", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-790"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil // @ is empty (no uncommitted work)
 		},
@@ -280,6 +292,12 @@ func TestRunImplementingStageIncludesCommitMessageInstructionWithFeedback(t *tes
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-111", nil
+		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-111", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-111"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil // @ is empty after feedback run
@@ -881,6 +899,12 @@ func TestRunImplementingStageCreatesJobChange(t *testing.T) {
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-abc123", nil
+		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-abc123", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-abc123"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil

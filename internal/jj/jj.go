@@ -201,12 +201,25 @@ func (c *Client) ChangeIDAt(workspacePath, rev string) (string, error) {
 	return logFieldAt(workspacePath, rev, "change_id")
 }
 
+// ChangeIDsForRevset returns change IDs for the given revset.
+func (c *Client) ChangeIDsForRevset(workspacePath, revset string) ([]string, error) {
+	if internalstrings.IsBlank(revset) {
+		return nil, fmt.Errorf("revset is required")
+	}
+	cmd := exec.Command("jj", "log", "--no-graph", "-r", revset, "-T", "change_id")
+	cmd.Dir = workspacePath
+	output, err := commandOutput(cmd, "jj log change ids")
+	if err != nil {
+		return nil, err
+	}
+	return splitTrimmedLines(output), nil
+}
+
 // CommitIDAt returns the commit ID at the given revision.
 func (c *Client) CommitIDAt(workspacePath, rev string) (string, error) {
 	return logFieldAt(workspacePath, rev, "commit_id")
 }
 
-// DiffStat returns the diff stat between two revisions.
 func (c *Client) DiffStat(workspacePath, from, to string) (string, error) {
 	cmd := exec.Command("jj", "diff", "--from", from, "--to", to, "--stat")
 	cmd.Dir = workspacePath

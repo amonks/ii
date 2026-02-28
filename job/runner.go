@@ -51,6 +51,10 @@ type RunOptions struct {
 	Model              string
 	CurrentCommitID    func(string) (string, error)
 	CurrentChangeID    func(string) (string, error)
+	// ChangeIDAt returns the change ID at the given revision.
+	ChangeIDAt func(string, string) (string, error)
+	// ChangeIDsForRevset returns change IDs matching the revset expression.
+	ChangeIDsForRevset func(string, string) ([]string, error)
 	CurrentChangeEmpty func(string) (bool, error)
 	DiffStat           func(string, string, string) (string, error)
 	CommitIDAt         func(string, string) (string, error)
@@ -91,8 +95,147 @@ type ReviewingStageResult struct {
 	ReviewComments string
 }
 
+// Resume continues an interrupted job.
+func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
+	if internalstrings.IsBlank(jobID) {
+		return nil, fmt.Errorf("job id is required")
+	}
+
+	opts = normalizeRunOptions(opts)
+	if opts.EventStream != nil {
+		defer close(opts.EventStream)
+	}
+	result := &RunResult{}
+	repoPath = filepath.Clean(repoPath)
+	if abs, absErr := filepath.Abs(repoPath); absErr == nil {
+		repoPath = abs
+	}
+	workspacePath := repoPath
+	if !internalstrings.IsBlank(opts.WorkspacePath) {
+		workspacePath = opts.WorkspacePath
+	}
+	workspacePath = filepath.Clean(workspacePath)
+	workspaceAbs := workspacePath
+	if abs, absErr := filepath.Abs(workspacePath); absErr == nil {
+		workspaceAbs = abs
+	}
+	workspacePath = workspaceAbs
+
+	manager, err := Open(repoPath, OpenOptions{})
+	if err != nil {
+		return result, err
+	}
+	if opts.Config == nil {
+		cfg, err := opts.LoadConfig(repoPath)
+		if err != nil {
+			return result, fmt.Errorf("load config: %w", err)
+		}
+		if cfg == nil {
+			cfg = &config.Config{}
+		}
+		opts.Config = cfg
+	}
+	current, err := manager.Find(jobID)
+	if err != nil {
+		return result, err
+	}
+	item, err := reloadTodo(repoPath, current.TodoID)
+	if err != nil {
+		return result, err
+	}
+	if current.Status == StatusActive {
+		if !IsJobStale(current, opts.Now()) {
+			return result, fmt.Errorf("job %s is active and may still be running", current.ID)
+		}
+	} else if current.Status != StatusFailed {
+		return result, fmt.Errorf("job %s is not resumable (status %s)", current.ID, current.Status)
+	}
+	if err := checkWorkspaceForResume(workspacePath, current.Changes, opts); err != nil {
+		return result, err
+	}
+	if err := startTodo(repoPath, item.ID); err != nil {
+		return result, err
+	}
+
+	status := StatusActive
+	stage := StageImplementing
+	updated, err := manager.Update(current.ID, UpdateOptions{Status: &status, Stage: &stage}, opts.Now())
+	if err != nil {
+		reopenErr := reopenTodo(repoPath, item.ID)
+		return result, errors.Join(err, reopenErr)
+	}
+	result.Job = updated
+
+	if opts.OnStart != nil {
+		opts.OnStart(StartInfo{JobID: updated.ID, Workdir: workspaceAbs, Todo: item})
+	}
+
+	createdEventLog := false
+	if opts.EventLog == nil {
+		eventLog, err := OpenEventLogAppend(updated.ID, opts.EventLogOptions)
+		if err != nil {
+			status := StatusFailed
+			updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
+			result.Job = updated
+			finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+			return result, errors.Join(err, updateErr, finalizeErr)
+		}
+		opts.EventLog = eventLog
+		createdEventLog = true
+	}
+	if createdEventLog {
+		defer func() {
+			_ = opts.EventLog.Close()
+		}()
+	}
+	if opts.EventStream != nil {
+		opts.EventLog.SetStream(opts.EventStream)
+	}
+	if err := appendJobEvent(opts.EventLog, jobEventStage, stageEventData{Stage: stage}); err != nil {
+		status := StatusFailed
+		updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
+		result.Job = updated
+		finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+		return result, errors.Join(err, updateErr, finalizeErr)
+	}
+	if opts.OnStageChange != nil {
+		opts.OnStageChange(stage)
+	}
+
+	interrupts := opts.Interrupts
+	if interrupts == nil {
+		localInterrupts := make(chan os.Signal, 1)
+		signal.Notify(localInterrupts, os.Interrupt)
+		defer signal.Stop(localInterrupts)
+		interrupts = localInterrupts
+	}
+
+	runCtx := runContext{
+		repoPath:      repoPath,
+		workspacePath: workspacePath,
+		item:          item,
+		opts:          opts,
+		manager:       manager,
+		result:        result,
+	}
+	finalJob, err := runJobStages(&runCtx, updated, interrupts)
+	result.Job = finalJob
+	statusErr := finalizeTodo(repoPath, item.ID, finalJob.Status)
+	if err != nil {
+		return result, errors.Join(err, statusErr)
+	}
+	if statusErr != nil {
+		return result, statusErr
+	}
+	return result, nil
+}
+
 // Run creates and executes a job for the given todo.
 func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
+	return runJob(repoPath, todoID, opts)
+}
+
+func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	if internalstrings.IsBlank(todoID) {
 		return nil, fmt.Errorf("todo id is required")
 	}
@@ -106,48 +249,6 @@ func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	if abs, absErr := filepath.Abs(repoPath); absErr == nil {
 		repoPath = abs
 	}
-	if opts.Config == nil {
-		cfg, err := opts.LoadConfig(repoPath)
-		if err != nil {
-			return result, fmt.Errorf("load config: %w", err)
-		}
-		if cfg == nil {
-			cfg = &config.Config{}
-		}
-		opts.Config = cfg
-	}
-
-	store, err := todo.Open(repoPath, todo.OpenOptions{
-		CreateIfMissing: true,
-		PromptToCreate:  true,
-		Purpose:         fmt.Sprintf("todo store (job run %s)", todoID),
-	})
-	if err != nil {
-		return result, err
-	}
-
-	items, err := store.Show([]string{todoID})
-	if err != nil {
-		releaseErr := store.Release()
-		return result, errors.Join(err, releaseErr)
-	}
-	if len(items) == 0 {
-		releaseErr := store.Release()
-		return result, errors.Join(fmt.Errorf("todo not found: %s", todoID), releaseErr)
-	}
-	item := items[0]
-	_, err = store.Start([]string{item.ID})
-	releaseErr := store.Release()
-	if err != nil {
-		return result, errors.Join(err, releaseErr)
-	}
-	if releaseErr != nil {
-		// Start() succeeded but Release() failed. The todo is now in_progress
-		// but we can't continue, so reopen it to avoid leaving it stuck.
-		reopenErr := reopenTodo(repoPath, item.ID)
-		return result, errors.Join(releaseErr, reopenErr)
-	}
-	startedAt := opts.Now()
 	workspacePath := repoPath
 	if !internalstrings.IsBlank(opts.WorkspacePath) {
 		workspacePath = opts.WorkspacePath
@@ -158,18 +259,36 @@ func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 		workspaceAbs = abs
 	}
 	workspacePath = workspaceAbs
+
 	manager, err := Open(repoPath, OpenOptions{})
 	if err != nil {
-		reopenErr := reopenTodo(repoPath, item.ID)
-		return result, errors.Join(err, reopenErr)
+		return result, err
+	}
+	if opts.Config == nil {
+		cfg, err := opts.LoadConfig(repoPath)
+		if err != nil {
+			return result, fmt.Errorf("load config: %w", err)
+		}
+		if cfg == nil {
+			cfg = &config.Config{}
+		}
+		opts.Config = cfg
+	}
+	item, err := reloadTodo(repoPath, todoID)
+	if err != nil {
+		return result, err
+	}
+	if err := startTodo(repoPath, item.ID); err != nil {
+		return result, err
 	}
 
-	implementModel := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
+	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
+	implementationModel := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
 	codeReviewModel := resolveModelForPurpose(opts.Config, opts.Model, "review", item)
 	projectReviewModel := resolveModelForPurpose(opts.Config, opts.Model, "project-review", item)
-	created, err := manager.Create(item.ID, startedAt, CreateOptions{
-		Agent:               implementModel,
-		ImplementationModel: implementModel,
+	created, err := manager.Create(item.ID, opts.Now(), CreateOptions{
+		Agent:               model,
+		ImplementationModel: implementationModel,
 		CodeReviewModel:     codeReviewModel,
 		ProjectReviewModel:  projectReviewModel,
 	})
@@ -180,11 +299,7 @@ func Run(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	result.Job = created
 
 	if opts.OnStart != nil {
-		opts.OnStart(StartInfo{
-			JobID:   created.ID,
-			Workdir: workspaceAbs,
-			Todo:    item,
-		})
+		opts.OnStart(StartInfo{JobID: created.ID, Workdir: workspaceAbs, Todo: item})
 	}
 
 	createdEventLog := false
@@ -479,6 +594,12 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 	}
 	if opts.CurrentChangeID == nil {
 		opts.CurrentChangeID = getJJ().CurrentChangeID
+	}
+	if opts.ChangeIDAt == nil {
+		opts.ChangeIDAt = getJJ().ChangeIDAt
+	}
+	if opts.ChangeIDsForRevset == nil {
+		opts.ChangeIDsForRevset = getJJ().ChangeIDsForRevset
 	}
 	if opts.CurrentChangeEmpty == nil {
 		opts.CurrentChangeEmpty = getJJ().CurrentChangeEmpty
@@ -1421,6 +1542,15 @@ func reloadTodo(repoPath, todoID string) (todo.Todo, error) {
 	return items[0], nil
 }
 
+type todoStore interface {
+	Start([]string) ([]todo.Todo, error)
+	Release() error
+}
+
+var openTodoStore = func(repoPath string, opts todo.OpenOptions) (todoStore, error) {
+	return todo.Open(repoPath, opts)
+}
+
 func updateTodoStatus(repoPath, todoID string, update func(*todo.Store, string) ([]todo.Todo, error)) error {
 	store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
 	if err != nil {
@@ -1434,6 +1564,26 @@ func updateTodoStatus(repoPath, todoID string, update func(*todo.Store, string) 
 	return releaseErr
 }
 
+func startTodo(repoPath, todoID string) error {
+	store, err := openTodoStore(repoPath, todo.OpenOptions{
+		CreateIfMissing: false,
+		PromptToCreate:  false,
+		Purpose:         fmt.Sprintf("todo store (job start %s)", todoID),
+	})
+	if err != nil {
+		return err
+	}
+	_, startErr := store.Start([]string{todoID})
+	releaseErr := store.Release()
+	if startErr != nil {
+		return errors.Join(startErr, releaseErr)
+	}
+	if releaseErr == nil {
+		return nil
+	}
+	return errors.Join(reopenTodo(repoPath, todoID), releaseErr)
+}
+
 func finishTodo(repoPath, todoID string) error {
 	return updateTodoStatus(repoPath, todoID, func(store *todo.Store, id string) ([]todo.Todo, error) {
 		return store.Finish([]string{id})
@@ -1445,3 +1595,52 @@ func reopenTodo(repoPath, todoID string) error {
 		return store.Reopen([]string{id})
 	})
 }
+
+func checkWorkspaceForResume(workspacePath string, changes []JobChange, opts RunOptions) error {
+	if opts.CurrentChangeEmpty == nil {
+		return fmt.Errorf("current change empty check is required")
+	}
+	currentEmpty, err := opts.CurrentChangeEmpty(workspacePath)
+	if err != nil {
+		return fmt.Errorf("check working copy: %w", err)
+	}
+	if !currentEmpty {
+		return fmt.Errorf("working copy is not empty; run jj abandon first")
+	}
+
+	completedIDs := make([]string, 0)
+	for _, change := range changes {
+		if change.IsComplete() {
+			completedIDs = append(completedIDs, change.ChangeID)
+		}
+	}
+	if len(completedIDs) == 0 {
+		return nil
+	}
+	if opts.ChangeIDsForRevset == nil {
+		return fmt.Errorf("change id lookup is required")
+	}
+	revset := fmt.Sprintf("ancestors(@) & (%s)", strings.Join(completedIDs, " | "))
+	found, err := opts.ChangeIDsForRevset(workspacePath, revset)
+	if err != nil {
+		return fmt.Errorf("check change history: %w", err)
+	}
+	if len(found) == 0 {
+		return fmt.Errorf("missing completed changes: %s", strings.Join(completedIDs, ", "))
+	}
+	foundSet := make(map[string]struct{}, len(found))
+	for _, id := range found {
+		foundSet[id] = struct{}{}
+	}
+	missing := make([]string, 0)
+	for _, id := range completedIDs {
+		if _, ok := foundSet[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing completed changes: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
+

@@ -210,8 +210,11 @@ func TestRunReloadsTodoBetweenImplementationRuns(t *testing.T) {
 			commitIdx++
 			return id, nil
 		},
-		CurrentChangeID: func(string) (string, error) {
+		ChangeIDAt: func(string, string) (string, error) {
 			return "change-1", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-1"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			// First two implementations make changes, third does not
@@ -351,8 +354,11 @@ func TestRunContextReloadTodoUpdatesItem(t *testing.T) {
 			commitIdx++
 			return id, nil
 		},
-		CurrentChangeID: func(string) (string, error) {
+		ChangeIDAt: func(string, string) (string, error) {
 			return "change-1", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-1"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			// First implementation makes changes, second does not

@@ -45,6 +45,12 @@ func TestRunImplementingStage_MissingCommitMessageRetries(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-123", nil
 		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-123", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-123"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -117,6 +123,12 @@ func TestRunImplementingStageFailedAgentRestoresRetriesAndReportsContext(t *test
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-restore", nil
+		},
+		ChangeIDAt: func(string, string) (string, error) {
+			return "change-restore", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-restore"}, nil
 		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			runCalls++
@@ -218,6 +230,9 @@ func TestRunImplementingStageRetriesAgentAfterRestore(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-retry", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-retry"}, nil
+		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			runCalls++
 			if runCalls == 1 {
@@ -292,6 +307,9 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChange(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-456", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-456"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil
 		},
@@ -351,6 +369,9 @@ func TestRunImplementingStageTreatsEmptyChangeAsNoChangeAfterCommit(t *testing.T
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-789", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-789"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil
@@ -412,6 +433,9 @@ func TestRunImplementingStageDetectsUncommittedWorkFromPreviousRun(t *testing.T)
 		CurrentChangeID: func(string) (string, error) {
 			return "change-prior", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-prior"}, nil
+		},
 		// But @ is NOT empty because of work from a previous run
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
@@ -467,6 +491,9 @@ func TestRunImplementingStageIncludesErrorInFailureMessage(t *testing.T) {
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-error", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-error"}, nil
 		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			return AgentRunResult{
@@ -528,6 +555,9 @@ func TestRunImplementingStageRetriesOnContextOverflow(t *testing.T) {
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-overflow", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-overflow"}, nil
 		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil // No changes after retry
@@ -604,6 +634,9 @@ func TestRunImplementingStageRetriesUnexpectedEOF(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-eof", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-eof"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return true, nil
 		},
@@ -667,6 +700,9 @@ func TestRunImplementingStageContextOverflowStaysInImplementingAfterRetry(t *tes
 		},
 		CurrentChangeID: func(string) (string, error) {
 			return "change-overflow-fail", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-overflow-fail"}, nil
 		},
 		RunLLM: func(AgentRunOptions) (AgentRunResult, error) {
 			runCalls++

@@ -303,6 +303,8 @@ without proper cleanup.
 - Before running, mark the todo `in_progress`.
 - When a job completes successfully, mark the todo `done`.
 - When a job fails or is abandoned, reopen the todo (`open`).
+- If the todo store `Start` succeeds but releasing the store fails, reopen the todo
+  back to `open` and return both errors.
 
 ## Config
 
@@ -476,6 +478,22 @@ When `--habit` is provided, the workflow differs from regular todos:
 
 Habits skip the project review stage. The commit message includes the full habit
 instructions text.
+
+### `ii job resume <job-id>`
+
+Resume an interrupted job from the implementing stage, reusing the existing job
+record and event log.
+
+Behavior:
+
+1. Load the job by ID (prefix-matching allowed).
+2. Refuse to resume if the job is active and not stale, or if its status is not
+   `failed`.
+3. Verify the working copy is empty (`jj log -r @ -T empty` returns `true`).
+4. Ensure all completed change IDs recorded in the job exist in
+   `ancestors(@)` (change IDs only, not commit IDs).
+5. Set the job status to `active`, stage to `implementing`, append a stage event
+   to the existing event log, and run the normal job loop.
 
 ### `ii job do-all [--priority <n>] [--type <type>]`
 

@@ -3,7 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
+
+	"github.com/amonks/incrementum/internal/jj"
+	"github.com/amonks/incrementum/internal/paths"
 
 	"github.com/amonks/incrementum/internal/listflags"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
@@ -31,6 +36,13 @@ var jobListCmd = &cobra.Command{
 	RunE:  runJobList,
 }
 
+var jobResumeCmd = &cobra.Command{
+	Use:   "resume <job-id>",
+	Short: "Resume a job",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runJobResume,
+}
+
 var jobLogsCmd = &cobra.Command{
 	Use:     "logs <job-id>",
 	Aliases: []string{"log"},
@@ -39,7 +51,10 @@ var jobLogsCmd = &cobra.Command{
 	RunE:    runJobLogs,
 }
 
-var jobOpen = jobpkg.Open
+var (
+	jobOpen   = jobpkg.Open
+	jobResume = jobpkg.Resume
+)
 
 var (
 	jobListJSON   bool
@@ -49,7 +64,7 @@ var (
 
 func init() {
 	rootCmd.AddCommand(jobCmd)
-	jobCmd.AddCommand(jobShowCmd, jobListCmd, jobLogsCmd)
+	jobCmd.AddCommand(jobShowCmd, jobListCmd, jobResumeCmd, jobLogsCmd)
 
 	jobListCmd.Flags().BoolVar(&jobListJSON, "json", false, "Output as JSON")
 	jobListCmd.Flags().StringVar(&jobListStatus, "status", "", "Filter by status")
@@ -153,6 +168,89 @@ func runJobList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+
+func runJobResume(cmd *cobra.Command, args []string) error {
+	repoPath, err := getRepoPath()
+	if err != nil {
+		return err
+	}
+	workspacePath, err := resolveWorkspaceRoot()
+	if err != nil {
+		return err
+	}
+
+	runner, err := makeAgentRunnerFunc(repoPath)
+	if err != nil {
+		return err
+	}
+	runLLM, err := makeRunLLMFunc(repoPath, runner)
+	if err != nil {
+		return err
+	}
+	transcripts := makeTranscriptsFunc()
+
+	logger := jobpkg.NewConsoleLogger(os.Stdout)
+	reporter := newJobStageReporter(logger)
+	onStageChange := reporter.OnStageChange
+	onStart := func(info jobpkg.StartInfo) {
+		printJobStart(info)
+	}
+	eventStream := make(chan jobpkg.Event, 128)
+	eventErrs := make(chan error, 1)
+	eventDone := make(chan struct{})
+	go func() {
+		formatter := jobpkg.NewEventFormatterWithRepoPath(repoPath)
+		var streamErr error
+		for {
+			select {
+			case event, ok := <-eventStream:
+				if !ok {
+					eventErrs <- streamErr
+					return
+				}
+				if strings.HasPrefix(event.Name, "job.") {
+					continue
+				}
+				if err := appendAndPrintEvent(formatter, event); err != nil {
+					if streamErr == nil {
+						streamErr = err
+					}
+				}
+			case <-eventDone:
+				eventErrs <- streamErr
+				return
+			}
+		}
+	}()
+
+	result, err := jobResume(repoPath, args[0], jobpkg.RunOptions{
+		OnStart:       onStart,
+		OnStageChange: onStageChange,
+		Logger:        logger,
+		EventStream:   eventStream,
+		RunLLM:        runLLM,
+		Transcripts:   transcripts,
+		WorkspacePath: workspacePath,
+	})
+	close(eventDone)
+	streamErr := <-eventErrs
+	if err != nil {
+		var abandonedErr *jobpkg.AbandonedError
+		if errors.As(err, &abandonedErr) {
+			fmt.Printf("\n%s\n", formatAbandonReasonOutput(abandonedErr.Reason))
+			return err
+		}
+		return err
+	}
+	if streamErr != nil {
+		return streamErr
+	}
+
+	if !internalstrings.IsBlank(result.CommitMessage) {
+		fmt.Printf("\n%s\n", formatCommitMessageOutput(result.CommitMessage))
+	}
+	return nil
+}
 func runJobLogs(cmd *cobra.Command, args []string) error {
 	repoPath, err := getRepoPath()
 	if err != nil {
@@ -176,6 +274,20 @@ func runJobLogs(cmd *cobra.Command, args []string) error {
 
 	fmt.Print(snapshot)
 	return nil
+}
+
+
+func resolveWorkspaceRoot() (string, error) {
+	cwd, err := paths.WorkingDir()
+	if err != nil {
+		return "", err
+	}
+	client := jj.New()
+	root, err := client.WorkspaceRoot(cwd)
+	if err != nil {
+		return "", formatRepoRootError(err)
+	}
+	return root, nil
 }
 
 func jobIDPrefixLengths(jobs []jobpkg.Job) map[string]int {

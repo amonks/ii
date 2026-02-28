@@ -54,6 +54,9 @@ func TestRunImplementingStageUpdatesStaleWorkspace(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-stale", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-stale"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -131,6 +134,9 @@ func TestRunImplementingStageSnapshotsWorkspaceBeforeAgent(t *testing.T) {
 		CurrentChangeID: func(string) (string, error) {
 			return "change-snapshot", nil
 		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-snapshot"}, nil
+		},
 		CurrentChangeEmpty: func(string) (bool, error) {
 			return false, nil
 		},
@@ -196,6 +202,12 @@ func TestRunReviewingStageUpdatesStaleWorkspace(t *testing.T) {
 			updateCalled = true
 			return errors.New("not stale")
 		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-review", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-review"}, nil
+		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !updateCalled {
 				return AgentRunResult{}, fmt.Errorf("expected update-stale before agent")
@@ -258,6 +270,12 @@ func TestRunReviewingStageSnapshotsWorkspaceBeforeAgent(t *testing.T) {
 			}
 			snapshotCalled = true
 			return nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-review-snapshot", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-review-snapshot"}, nil
 		},
 		RunLLM: func(runOpts AgentRunOptions) (AgentRunResult, error) {
 			if !snapshotCalled {
