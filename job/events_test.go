@@ -41,6 +41,45 @@ func TestEventLogAppendsEvents(t *testing.T) {
 	}
 }
 
+func TestEventLogAppendAppendsEvents(t *testing.T) {
+	eventsDir := t.TempDir()
+	log, err := OpenEventLog("job-append", EventLogOptions{EventsDir: eventsDir})
+	if err != nil {
+		t.Fatalf("open event log: %v", err)
+	}
+	if err := log.Append(Event{Name: "job.stage", Data: "{\"stage\":\"implementing\"}"}); err != nil {
+		_ = log.Close()
+		t.Fatalf("append event: %v", err)
+	}
+	if err := log.Close(); err != nil {
+		t.Fatalf("close event log: %v", err)
+	}
+
+	appendLog, err := OpenEventLogAppend("job-append", EventLogOptions{EventsDir: eventsDir})
+	if err != nil {
+		t.Fatalf("open event log append: %v", err)
+	}
+	if err := appendLog.Append(Event{ID: "2", Name: "job.prompt", Data: "prompt"}); err != nil {
+		_ = appendLog.Close()
+		t.Fatalf("append event: %v", err)
+	}
+	if err := appendLog.Close(); err != nil {
+		t.Fatalf("close append event log: %v", err)
+	}
+
+	path := filepath.Join(eventsDir, "job-append.jsonl")
+	events := readEventLogFile(t, path)
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events, got %d", len(events))
+	}
+	if events[0].Name != "job.stage" {
+		t.Fatalf("unexpected first event: %#v", events[0])
+	}
+	if events[1].ID != "2" || events[1].Name != "job.prompt" || events[1].Data != "prompt" {
+		t.Fatalf("unexpected second event: %#v", events[1])
+	}
+}
+
 func TestEventSnapshotReadsEvents(t *testing.T) {
 	eventsDir := t.TempDir()
 	log, err := OpenEventLog("job-snapshot", EventLogOptions{EventsDir: eventsDir})

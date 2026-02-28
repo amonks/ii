@@ -36,6 +36,8 @@ Follow our usual testing practice:
 - Job records track LLM sessions created during the job.
 - Job event logs are stored as JSONL at
   `~/.local/share/incrementum/jobs/events/<job-id>.jsonl`.
+- Event logs are append-only JSONL files; resuming a job reopens the existing log
+  in append mode to continue recording new events.
 - Job event entries use a unified event shape (`id`, `name`, `data`) and include
   both agent events and job-specific events (stage changes, prompts, transcripts,
   test results, review feedback, commit messages, session boundaries, errors).

@@ -65,6 +65,22 @@ func OpenEventLog(jobID string, opts EventLogOptions) (*EventLog, error) {
 	return &EventLog{path: path, file: file, encoder: json.NewEncoder(file)}, nil
 }
 
+// OpenEventLogAppend opens a job event log for appending.
+func OpenEventLogAppend(jobID string, opts EventLogOptions) (*EventLog, error) {
+	path, err := eventLogPath(jobID, opts)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, fmt.Errorf("create job events dir: %w", err)
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("open job event log: %w", err)
+	}
+	return &EventLog{path: path, file: file, encoder: json.NewEncoder(file)}, nil
+}
+
 // SetStream attaches an event channel for streaming events.
 func (log *EventLog) SetStream(stream chan<- Event) {
 	if log == nil {
