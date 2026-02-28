@@ -32,7 +32,7 @@ var navItems = []NavItem{
 }
 
 // DesktopNav renders a fixed sidebar for desktop (lg+).
-func DesktopNav() templ.Component {
+func DesktopNav(homePath string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -102,7 +102,20 @@ func DesktopNav() templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></aside>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<hr class=\"my-2 border-stone-200\"><a href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 templ.SafeURL
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(homePath))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 41, Col: 34}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"block px-3 py-1.5 text-sm text-stone-500 hover:text-stone-800 hover:bg-stone-200 rounded transition-colors\">All Characters</a></div></aside>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -111,7 +124,7 @@ func DesktopNav() templ.Component {
 }
 
 // MobileNav renders a floating button and slide-up drawer for mobile.
-func MobileNav() templ.Component {
+func MobileNav(homePath string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -127,61 +140,74 @@ func MobileNav() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"lg:hidden\" id=\"mobile-nav\"><!-- Backdrop --><div id=\"nav-backdrop\" class=\"fixed inset-0 bg-black/30 z-40 hidden\" onclick=\"closeNav()\"></div><!-- Drawer --><div id=\"nav-drawer\" class=\"fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg transform translate-y-full transition-transform duration-200 ease-out\"><div class=\"px-4 pt-4 pb-2\"><div class=\"text-xs font-bold text-stone-400 uppercase tracking-wider\">Sections</div></div><div class=\"grid grid-cols-3 gap-px px-4 pb-6 max-h-[60vh] overflow-y-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"lg:hidden\" id=\"mobile-nav\"><!-- Backdrop --><div id=\"nav-backdrop\" class=\"fixed inset-0 bg-black/30 z-40 hidden\" onclick=\"closeNav()\"></div><!-- Drawer --><div id=\"nav-drawer\" class=\"fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg transform translate-y-full transition-transform duration-200 ease-out\"><div class=\"px-4 pt-4 pb-2\"><div class=\"text-xs font-bold text-stone-400 uppercase tracking-wider\">Sections</div></div><div class=\"grid grid-cols-3 gap-px px-4 max-h-[60vh] overflow-y-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, item := range navItems {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 templ.SafeURL
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("#" + item.ID))
+			var templ_7745c5c3_Var7 templ.SafeURL
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("#" + item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 63, Col: 41}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"nav-link block px-3 py-2.5 text-sm text-stone-600 hover:bg-stone-100 rounded text-center\" data-section=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 65, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 70, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" onclick=\"closeNav()\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"nav-link block px-3 py-2.5 text-sm text-stone-600 hover:bg-stone-100 rounded text-center\" data-section=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 68, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 72, Col: 28}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" onclick=\"closeNav()\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 75, Col: 18}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div></div><!-- Floating button --><button id=\"nav-btn\" onclick=\"toggleNav()\" class=\"fixed bottom-4 right-4 z-30 w-12 h-12 bg-stone-800 text-white rounded-full shadow-lg flex items-center justify-center text-lg hover:bg-stone-700 active:bg-stone-900 transition-colors\" aria-label=\"Section navigation\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"></line><line x1=\"3\" y1=\"12\" x2=\"21\" y2=\"12\"></line><line x1=\"3\" y1=\"18\" x2=\"21\" y2=\"18\"></line></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><hr class=\"mx-4 my-2 border-stone-200\"><div class=\"px-4 pb-6\"><a href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 templ.SafeURL
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(homePath))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/nav.templ`, Line: 82, Col: 35}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"block px-3 py-2.5 text-sm text-stone-600 hover:bg-stone-100 rounded text-center\">All Characters</a></div></div><!-- Floating button --><button id=\"nav-btn\" onclick=\"toggleNav()\" class=\"fixed bottom-4 right-4 z-30 w-12 h-12 bg-stone-800 text-white rounded-full shadow-lg flex items-center justify-center text-lg hover:bg-stone-700 active:bg-stone-900 transition-colors\" aria-label=\"Section navigation\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"></line><line x1=\"3\" y1=\"12\" x2=\"21\" y2=\"12\"></line><line x1=\"3\" y1=\"18\" x2=\"21\" y2=\"18\"></line></svg></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -205,12 +231,12 @@ func navScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var9 == nil {
-			templ_7745c5c3_Var9 = templ.NopComponent
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<script>\n\t\t// Mobile nav toggle\n\t\tfunction toggleNav() {\n\t\t\tvar drawer = document.getElementById('nav-drawer');\n\t\t\tvar backdrop = document.getElementById('nav-backdrop');\n\t\t\tvar isOpen = !drawer.classList.contains('translate-y-full');\n\t\t\tif (isOpen) {\n\t\t\t\tcloseNav();\n\t\t\t} else {\n\t\t\t\tdrawer.classList.remove('translate-y-full');\n\t\t\t\tbackdrop.classList.remove('hidden');\n\t\t\t}\n\t\t}\n\t\tfunction closeNav() {\n\t\t\tvar drawer = document.getElementById('nav-drawer');\n\t\t\tvar backdrop = document.getElementById('nav-backdrop');\n\t\t\tdrawer.classList.add('translate-y-full');\n\t\t\tbackdrop.classList.add('hidden');\n\t\t}\n\n\t\t// Hide nav button when virtual keyboard is open\n\t\t(function() {\n\t\t\tvar btn = document.getElementById('nav-btn');\n\t\t\tif (!btn) return;\n\t\t\tif (window.visualViewport) {\n\t\t\t\tvar initialHeight = window.visualViewport.height;\n\t\t\t\twindow.visualViewport.addEventListener('resize', function() {\n\t\t\t\t\t// If viewport shrank by more than 150px, keyboard is probably open\n\t\t\t\t\tif (initialHeight - window.visualViewport.height > 150) {\n\t\t\t\t\t\tbtn.style.display = 'none';\n\t\t\t\t\t\tcloseNav();\n\t\t\t\t\t} else {\n\t\t\t\t\t\tbtn.style.display = '';\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\n\t\t// Highlight active section in sidebar nav\n\t\t(function() {\n\t\t\tvar links = document.querySelectorAll('.nav-link');\n\t\t\tif (!links.length) return;\n\t\t\tvar ids = [];\n\t\t\tlinks.forEach(function(link) {\n\t\t\t\tvar id = link.getAttribute('data-section');\n\t\t\t\tif (id) ids.push(id);\n\t\t\t});\n\t\t\tvar observer = new IntersectionObserver(function(entries) {\n\t\t\t\tentries.forEach(function(entry) {\n\t\t\t\t\tvar id = entry.target.id;\n\t\t\t\t\tvar link = document.querySelector('.nav-link[data-section=\"' + id + '\"]');\n\t\t\t\t\tif (!link) return;\n\t\t\t\t\tif (entry.isIntersecting) {\n\t\t\t\t\t\tlink.classList.add('active');\n\t\t\t\t\t} else {\n\t\t\t\t\t\tlink.classList.remove('active');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}, { rootMargin: '-10% 0px -80% 0px' });\n\t\t\tids.forEach(function(id) {\n\t\t\t\tvar el = document.getElementById(id);\n\t\t\t\tif (el) observer.observe(el);\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<script>\n\t\t// Mobile nav toggle\n\t\tfunction toggleNav() {\n\t\t\tvar drawer = document.getElementById('nav-drawer');\n\t\t\tvar backdrop = document.getElementById('nav-backdrop');\n\t\t\tvar isOpen = !drawer.classList.contains('translate-y-full');\n\t\t\tif (isOpen) {\n\t\t\t\tcloseNav();\n\t\t\t} else {\n\t\t\t\tdrawer.classList.remove('translate-y-full');\n\t\t\t\tbackdrop.classList.remove('hidden');\n\t\t\t}\n\t\t}\n\t\tfunction closeNav() {\n\t\t\tvar drawer = document.getElementById('nav-drawer');\n\t\t\tvar backdrop = document.getElementById('nav-backdrop');\n\t\t\tdrawer.classList.add('translate-y-full');\n\t\t\tbackdrop.classList.add('hidden');\n\t\t}\n\n\t\t// Hide nav button when virtual keyboard is open\n\t\t(function() {\n\t\t\tvar btn = document.getElementById('nav-btn');\n\t\t\tif (!btn) return;\n\t\t\tif (window.visualViewport) {\n\t\t\t\tvar initialHeight = window.visualViewport.height;\n\t\t\t\twindow.visualViewport.addEventListener('resize', function() {\n\t\t\t\t\t// If viewport shrank by more than 150px, keyboard is probably open\n\t\t\t\t\tif (initialHeight - window.visualViewport.height > 150) {\n\t\t\t\t\t\tbtn.style.display = 'none';\n\t\t\t\t\t\tcloseNav();\n\t\t\t\t\t} else {\n\t\t\t\t\t\tbtn.style.display = '';\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\n\t\t// Highlight active section in sidebar nav\n\t\t(function() {\n\t\t\tvar links = document.querySelectorAll('.nav-link');\n\t\t\tif (!links.length) return;\n\t\t\tvar ids = [];\n\t\t\tlinks.forEach(function(link) {\n\t\t\t\tvar id = link.getAttribute('data-section');\n\t\t\t\tif (id) ids.push(id);\n\t\t\t});\n\t\t\tvar observer = new IntersectionObserver(function(entries) {\n\t\t\t\tentries.forEach(function(entry) {\n\t\t\t\t\tvar id = entry.target.id;\n\t\t\t\t\tvar link = document.querySelector('.nav-link[data-section=\"' + id + '\"]');\n\t\t\t\t\tif (!link) return;\n\t\t\t\t\tif (entry.isIntersecting) {\n\t\t\t\t\t\tlink.classList.add('active');\n\t\t\t\t\t} else {\n\t\t\t\t\t\tlink.classList.remove('active');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}, { rootMargin: '-10% 0px -80% 0px' });\n\t\t\tids.forEach(function(id) {\n\t\t\t\tvar el = document.getElementById(id);\n\t\t\t\tif (el) observer.observe(el);\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
