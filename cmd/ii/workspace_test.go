@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/amonks/incrementum/internal/db"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/workspace"
 )
@@ -44,10 +45,22 @@ func withCwd(t *testing.T, dir string, fn func()) {
 }
 
 func TestResolveWorkspaceNameFromArgs(t *testing.T) {
-	pool, err := workspace.Open()
+	stateDir := t.TempDir()
+	workspacesDir := t.TempDir()
+	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
+
+	dbPath := filepath.Join(stateDir, "state.db")
+	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
 	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
+		t.Fatalf("failed to open db: %v", err)
 	}
+	t.Cleanup(func() {
+		if err := dbStore.Close(); err != nil {
+			t.Fatalf("close db: %v", err)
+		}
+	})
+
+	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
 
 	name, err := resolveWorkspaceName([]string{"ws-123"}, pool)
 	if err != nil {
@@ -91,18 +104,23 @@ func TestValidateWorkspaceAcquirePurpose(t *testing.T) {
 }
 
 func TestResolveWorkspaceNameFromCwd(t *testing.T) {
-	repoPath := setupTestRepo(t)
+	stateDir := t.TempDir()
 	workspacesDir := t.TempDir()
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
-	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
-		StateDir:      stateDir,
-		WorkspacesDir: workspacesDir,
-	})
+	dbPath := filepath.Join(stateDir, "state.db")
+	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
 	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
+		t.Fatalf("failed to open db: %v", err)
 	}
+	t.Cleanup(func() {
+		if err := dbStore.Close(); err != nil {
+			t.Fatalf("close db: %v", err)
+		}
+	})
+
+	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	repoPath := setupTestRepo(t)
 
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: "workspace test"})
 	if err != nil {
@@ -122,18 +140,23 @@ func TestResolveWorkspaceNameFromCwd(t *testing.T) {
 }
 
 func TestResolveWorkspaceNameFromCwd_NotInWorkspace(t *testing.T) {
-	repoPath := setupTestRepo(t)
+	stateDir := t.TempDir()
 	workspacesDir := t.TempDir()
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
-	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
-		StateDir:      stateDir,
-		WorkspacesDir: workspacesDir,
-	})
+	dbPath := filepath.Join(stateDir, "state.db")
+	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
 	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
+		t.Fatalf("failed to open db: %v", err)
 	}
+	t.Cleanup(func() {
+		if err := dbStore.Close(); err != nil {
+			t.Fatalf("close db: %v", err)
+		}
+	})
+
+	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	repoPath := setupTestRepo(t)
 
 	withCwd(t, repoPath, func() {
 		_, err := resolveWorkspaceName(nil, pool)

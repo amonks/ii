@@ -8,12 +8,40 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/amonks/incrementum/internal/db"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/internal/paths"
-	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/workspace"
 )
+
+func requirePool(t *testing.T, pool *workspace.Pool) *workspace.Pool {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := pool.Close(); err != nil {
+			t.Fatalf("close pool: %v", err)
+		}
+	})
+	return pool
+}
+
+func openPool(t *testing.T, opts workspace.Options) *workspace.Pool {
+	t.Helper()
+	pool, err := workspace.OpenWithOptions(opts)
+	if err != nil {
+		t.Fatalf("failed to open pool: %v", err)
+	}
+	return requirePool(t, pool)
+}
+
+func openDefaultPool(t *testing.T) *workspace.Pool {
+	t.Helper()
+	pool, err := workspace.Open()
+	if err != nil {
+		t.Fatalf("failed to open pool: %v", err)
+	}
+	return requirePool(t, pool)
+}
 
 func setupTestRepo(t *testing.T) string {
 	t.Helper()
@@ -54,13 +82,10 @@ func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath, err := pool.Acquire(repoPath, acquireOptions())
 	if err != nil {
@@ -97,13 +122,10 @@ func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
 }
 
 func TestPool_RepoSlug(t *testing.T) {
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      t.TempDir(),
 		WorkspacesDir: t.TempDir(),
 	})
-	if err != nil {
-		t.Fatalf("open pool: %v", err)
-	}
 
 	repoPath := "/tmp/my-repo"
 	slug, err := pool.RepoSlug(repoPath)
@@ -111,8 +133,8 @@ func TestPool_RepoSlug(t *testing.T) {
 		t.Fatalf("get repo slug: %v", err)
 	}
 
-	if slug != statestore.SanitizeRepoName(repoPath) {
-		t.Fatalf("expected slug %q, got %q", statestore.SanitizeRepoName(repoPath), slug)
+	if slug != db.SanitizeRepoName(repoPath) {
+		t.Fatalf("expected slug %q, got %q", db.SanitizeRepoName(repoPath), slug)
 	}
 }
 
@@ -122,15 +144,12 @@ func TestPool_Acquire_RequiresPurpose(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
-	_, err = pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: ""})
+	_, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: ""})
 	if err == nil {
 		t.Fatal("expected error for empty purpose")
 	}
@@ -142,15 +161,12 @@ func TestPool_Acquire_RejectsMultilinePurpose(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
-	_, err = pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: "line 1\nline 2"})
+	_, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: "line 1\nline 2"})
 	if err == nil {
 		t.Fatal("expected error for multiline purpose")
 	}
@@ -163,13 +179,10 @@ func TestPool_Acquire_MissingChangeIDFallsBackToMain(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
 		Purpose: "test purpose",
@@ -214,13 +227,10 @@ func TestPool_Acquire_ReusesAvailableWorkspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Claim and release a workspace
 	wsPath1, err := pool.Acquire(repoPath, acquireOptions())
@@ -267,13 +277,10 @@ func TestPool_Acquire_ImmutableRevisionCreatesNewChange(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	message := "staging for todo test"
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
@@ -348,13 +355,10 @@ func TestPool_Acquire_RevAtResolvesInSourceRepo(t *testing.T) {
 		t.Fatalf("get source @ change id: %v", err)
 	}
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Acquire with --rev=@ (the default)
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
@@ -386,13 +390,10 @@ func TestPool_Acquire_CreatesMultipleWorkspaces(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Claim two workspaces without releasing
 	wsPath1, err := pool.Acquire(repoPath, acquireOptions())
@@ -440,13 +441,10 @@ func TestPool_Release(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath, err := pool.Acquire(repoPath, acquireOptions())
 	if err != nil {
@@ -473,13 +471,10 @@ func TestPool_List(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Initially empty
 	list, err := pool.List(repoPath)
@@ -529,13 +524,10 @@ func TestPool_List_SortsByStatusThenName(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath1, err := pool.Acquire(repoPath, acquireOptions())
 	if err != nil {
@@ -587,10 +579,7 @@ func TestPool_List_SortsByStatusThenName(t *testing.T) {
 
 func TestPool_DefaultOptions(t *testing.T) {
 	// Just verify Open() doesn't error
-	pool, err := workspace.Open()
-	if err != nil {
-		t.Fatalf("failed to open pool with defaults: %v", err)
-	}
+	pool := openDefaultPool(t)
 	if pool == nil {
 		t.Error("expected non-nil pool")
 	}
@@ -625,13 +614,10 @@ func TestRepoRootFromPath_Workspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath, err := pool.Acquire(repoPath, acquireOptions())
 	if err != nil {
@@ -681,13 +667,10 @@ func TestPool_DestroyAll(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Acquire two workspaces
 	wsPath1, err := pool.Acquire(repoPath, acquireOptions())
@@ -737,13 +720,10 @@ func TestPool_DestroyAll_NoWorkspaces(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	// Destroy all when there are no workspaces should not error
 	if err := pool.DestroyAll(repoPath); err != nil {
@@ -757,13 +737,10 @@ func TestPool_WorkspaceNameForPath(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool, err := workspace.OpenWithOptions(workspace.Options{
+	pool := openPool(t, workspace.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
 
 	wsPath, err := pool.Acquire(repoPath, acquireOptions())
 	if err != nil {
@@ -780,12 +757,9 @@ func TestPool_WorkspaceNameForPath(t *testing.T) {
 }
 
 func TestPool_WorkspaceNameForPath_NotInWorkspace(t *testing.T) {
-	pool, err := workspace.Open()
-	if err != nil {
-		t.Fatalf("failed to open pool: %v", err)
-	}
+	pool := openDefaultPool(t)
 
-	_, err = pool.WorkspaceNameForPath(t.TempDir())
+	_, err := pool.WorkspaceNameForPath(t.TempDir())
 	if err == nil {
 		t.Fatal("expected error for non-workspace directory")
 	}

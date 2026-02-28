@@ -13,6 +13,7 @@
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+//	defer pool.Close()
 //
 //	wsPath, err := pool.Acquire("/path/to/repo", workspace.AcquireOptions{
 //	    Rev: "main",
@@ -25,6 +26,26 @@
 //
 //	// Use the workspace at wsPath...
 //
+// Open a pool with an existing SQLite connection:
+//
+//	stateDir, err := paths.ResolveWithDefault("", paths.DefaultStateDir)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	workspacesDir, err := paths.DefaultWorkspacesDir()
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	dbPath := filepath.Join(stateDir, "state.db")
+//
+//	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	defer dbStore.Close()
+//
+//	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+
 // # Configuration
 //
 // Repositories can include an incrementum.toml or .incrementum/config.toml file to
@@ -39,8 +60,5 @@
 // state is stored in ~/.local/state/incrementum/. These locations follow the XDG
 // Base Directory Specification.
 //
-// # Concurrency
-//
-// The pool uses file locking to safely handle concurrent access from multiple
-// processes. Workspaces remain acquired until they are released.
+// The pool coordinates concurrent access through SQLite state rather than lock files.
 package workspace

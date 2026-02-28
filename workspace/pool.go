@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,9 +10,9 @@ import (
 	"time"
 
 	"github.com/amonks/incrementum/internal/config"
+	"github.com/amonks/incrementum/internal/db"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/internal/paths"
-	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 )
 
@@ -19,16 +20,17 @@ import (
 //
 // A Pool maintains workspaces in a shared location and tracks which workspaces
 // are currently acquired. Multiple processes can safely use the same Pool
-// concurrently through file-based locking.
+// concurrently through SQLite coordination.
 type Pool struct {
-	stateStore    *statestore.Store
+	store         *Store
 	workspacesDir string
 	jj            *jj.Client
+	close         func() error
 }
 
 // Options configures a workspace pool.
 type Options struct {
-	// StateDir is the directory where pool state is stored.
+	// StateDir is the directory where the SQLite database is stored.
 	// Defaults to ~/.local/state/incrementum if empty.
 	StateDir string
 
@@ -56,16 +58,41 @@ func OpenWithOptions(opts Options) (*Pool, error) {
 		return nil, err
 	}
 
+	dbPath, err := resolveDBPath(stateDir)
+	if err != nil {
+		return nil, err
+	}
+
+	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+	if err != nil {
+		return nil, err
+	}
+
+	pool := NewPool(dbStore.SqlDB(), workspacesDir)
+	pool.SetCloseFunc(dbStore.Close)
+	return pool, nil
+}
+
+// NewPool constructs a pool using an existing database connection.
+func NewPool(sqlDB *sql.DB, workspacesDir string) *Pool {
 	return &Pool{
-		stateStore:    statestore.NewStore(stateDir),
+		store:         NewStore(sqlDB),
 		workspacesDir: workspacesDir,
 		jj:            jj.New(),
-	}, nil
+	}
+}
+
+// SetCloseFunc configures the close callback for a pool.
+func (p *Pool) SetCloseFunc(closeFn func() error) {
+	if p == nil {
+		return
+	}
+	p.close = closeFn
 }
 
 // RepoSlug returns the repo slug used for state storage.
 func (p *Pool) RepoSlug(repoPath string) (string, error) {
-	repoName, err := p.stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
 		return "", fmt.Errorf("get repo name: %w", err)
 	}
@@ -123,8 +150,7 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 		return "", err
 	}
 
-	// Get the repo name (creates entry if needed)
-	repoName, err := p.stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
 		return "", fmt.Errorf("get repo name: %w", err)
 	}
@@ -134,57 +160,47 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 	var needsCreate bool
 	var needsProvision bool
 
-	// Find or create a workspace
-	err = p.stateStore.Update(func(st *statestore.State) error {
-		now := time.Now()
-
-		// Find an available workspace
-		for key, ws := range st.Workspaces {
-			if ws.Repo == repoName && ws.Status == statestore.WorkspaceStatusAvailable {
-				wsPath = paths.NormalizePath(ws.Path)
-				wsName = ws.Name
-				needsProvision = !ws.Provisioned
-
-				// Acquire it
-				ws.Status = statestore.WorkspaceStatusAcquired
-				ws.Purpose = opts.Purpose
-				ws.Rev = opts.Rev
-				ws.AcquiredByPID = os.Getpid()
-				ws.AcquiredAt = now
-				ws.CreatedAt = now
-				ws.UpdatedAt = now
-				// Update Path to normalized form for consistency
-				ws.Path = wsPath
-				st.Workspaces[key] = ws
-				return nil
-			}
+	now := time.Now()
+	available, err := p.store.AcquireAvailableWorkspace(repoName, WorkspaceInfo{
+		Repo:          repoName,
+		Purpose:       opts.Purpose,
+		Rev:           opts.Rev,
+		Status:        StatusAcquired,
+		AcquiredByPID: os.Getpid(),
+		AcquiredAt:    now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	})
+	if err != nil {
+		return "", err
+	}
+	if available != nil {
+		wsPath = paths.NormalizePath(available.Path)
+		wsName = available.Name
+		needsProvision = !available.Provisioned
+	} else {
+		wsName, err = p.store.NextWorkspaceName(repoName)
+		if err != nil {
+			return "", err
 		}
-
-		// No available workspace - create a new one
-		wsName = p.nextWorkspaceName(st, repoName)
 		wsPath = paths.NormalizePath(filepath.Join(p.workspacesDir, repoName, wsName))
 		needsCreate = true
 		needsProvision = true
-
-		wsKey := repoName + "/" + wsName
-		st.Workspaces[wsKey] = statestore.WorkspaceInfo{
+		if err := p.store.InsertWorkspace(WorkspaceInfo{
 			Name:          wsName,
 			Repo:          repoName,
 			Path:          wsPath,
 			Purpose:       opts.Purpose,
 			Rev:           opts.Rev,
-			Status:        statestore.WorkspaceStatusAcquired,
+			Status:        StatusAcquired,
 			AcquiredByPID: os.Getpid(),
 			AcquiredAt:    now,
 			CreatedAt:     now,
 			UpdatedAt:     now,
 			Provisioned:   false,
+		}); err != nil {
+			return "", err
 		}
-
-		return nil
-	})
-	if err != nil {
-		return "", err
 	}
 
 	// Create the workspace directory if needed
@@ -195,10 +211,9 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 
 		if err := p.jj.WorkspaceAdd(repoPath, wsName, wsPath); err != nil {
 			// Clean up state on failure
-			p.stateStore.Update(func(st *statestore.State) error {
-				delete(st.Workspaces, repoName+"/"+wsName)
-				return nil
-			})
+			if deleteErr := p.store.DeleteWorkspace(repoName, wsName); deleteErr != nil {
+				return "", fmt.Errorf("jj workspace add: %w; cleanup failed: %v", err, deleteErr)
+			}
 			return "", fmt.Errorf("jj workspace add: %w", err)
 		}
 	}
@@ -233,15 +248,7 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 	}
 
 	if actualRev != opts.Rev {
-		if err := p.stateStore.Update(func(st *statestore.State) error {
-			wsKey := repoName + "/" + wsName
-			if ws, ok := st.Workspaces[wsKey]; ok {
-				ws.Rev = actualRev
-				ws.UpdatedAt = time.Now()
-				st.Workspaces[wsKey] = ws
-			}
-			return nil
-		}); err != nil {
+		if err := p.store.UpdateWorkspaceRevision(repoName, wsName, actualRev, time.Now()); err != nil {
 			p.Release(wsPath)
 			return "", fmt.Errorf("update workspace rev: %w", err)
 		}
@@ -262,14 +269,9 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 
 		// Mark as provisioned if needed
 		if needsProvision {
-			p.stateStore.Update(func(st *statestore.State) error {
-				wsKey := repoName + "/" + wsName
-				if ws, ok := st.Workspaces[wsKey]; ok {
-					ws.Provisioned = true
-					st.Workspaces[wsKey] = ws
-				}
-				return nil
-			})
+			if err := p.store.MarkWorkspaceProvisioned(repoName, wsName); err != nil {
+				return "", fmt.Errorf("mark workspace provisioned: %w", err)
+			}
 		}
 	}
 
@@ -289,40 +291,23 @@ func (p *Pool) releaseToAvailable(wsPath string) error {
 		return fmt.Errorf("jj new root(): %w", err)
 	}
 
-	return p.stateStore.Update(func(st *statestore.State) error {
-		now := time.Now()
-		for key, ws := range st.Workspaces {
-			if ws.Path == wsPath {
-				ws.Status = statestore.WorkspaceStatusAvailable
-				ws.Purpose = ""
-				ws.Rev = ""
-				ws.AcquiredByPID = 0
-				ws.AcquiredAt = time.Time{}
-				ws.UpdatedAt = now
-				st.Workspaces[key] = ws
-				return nil
-			}
-		}
-		return fmt.Errorf("workspace not found: %s", wsPath)
-	})
+	wsPath = paths.NormalizePath(wsPath)
+	if err := p.store.ReleaseWorkspace(wsPath, time.Now()); err != nil {
+		return fmt.Errorf("release workspace: %w", err)
+	}
+	return nil
 }
 
 // ReleaseByName returns a workspace to the pool by name.
 func (p *Pool) ReleaseByName(repoPath, wsName string) error {
-	repoName, err := p.stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
 		return fmt.Errorf("get repo name: %w", err)
 	}
 
-	st, err := p.stateStore.Load()
+	ws, err := p.store.GetWorkspaceByName(repoName, wsName)
 	if err != nil {
-		return fmt.Errorf("load state: %w", err)
-	}
-
-	key := repoName + "/" + wsName
-	ws, ok := st.Workspaces[key]
-	if !ok {
-		return fmt.Errorf("workspace not found: %s", wsName)
+		return fmt.Errorf("get workspace: %w", err)
 	}
 
 	return p.releaseToAvailable(ws.Path)
@@ -365,23 +350,19 @@ type Info struct {
 // The returned slice includes both available and acquired workspaces.
 
 func (p *Pool) List(repoPath string) ([]Info, error) {
-	repoName, err := p.stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("get repo name: %w", err)
 	}
 
-	st, err := p.stateStore.Load()
+	workspaces, err := p.store.ListWorkspaces(repoName)
 	if err != nil {
 		return nil, fmt.Errorf("load state: %w", err)
 	}
 
 	var items []Info
 
-	for _, ws := range st.Workspaces {
-		if ws.Repo != repoName {
-			continue
-		}
-
+	for _, ws := range workspaces {
 		item := Info{
 			Name:          ws.Name,
 			Path:          ws.Path,
@@ -457,6 +438,13 @@ func RepoRoot(path string) (string, error) {
 	return paths.NormalizePath(root), nil
 }
 
+func resolveDBPath(stateDir string) (string, error) {
+	if stateDir != "" {
+		return filepath.Join(stateDir, "state.db"), nil
+	}
+	return paths.DefaultDBPath()
+}
+
 // RepoRootFromPath returns the source repo root for a workspace or repo path.
 // If the path is a workspace, it resolves to the original repo using state.
 func RepoRootFromPath(path string) (string, error) {
@@ -476,20 +464,15 @@ func (p *Pool) WorkspaceNameForPath(path string) (string, error) {
 		return "", ErrWorkspaceRootNotFound
 	}
 
-	st, err := p.stateStore.Load()
-	if err != nil {
-		return "", fmt.Errorf("load state: %w", err)
-	}
-
 	root = filepath.Clean(root)
-	for _, ws := range st.Workspaces {
-		// Normalize paths for comparison to handle macOS /private symlinks
-		if paths.NormalizePath(filepath.Clean(ws.Path)) == root {
-			return ws.Name, nil
-		}
+	ws, err := p.store.GetWorkspaceByPath(root)
+	if err != nil {
+		return "", err
 	}
-
-	return "", ErrRepoPathNotFound
+	if ws == nil {
+		return "", ErrRepoPathNotFound
+	}
+	return ws.Name, nil
 }
 
 func repoRootFromPathWithOptions(path string, opts Options) (string, error) {
@@ -502,8 +485,9 @@ func repoRootFromPathWithOptions(path string, opts Options) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("open workspace pool: %w", err)
 	}
+	defer pool.Close()
 
-	repoPath, found, err := pool.stateStore.RepoPathForWorkspace(root)
+	repoPath, found, err := pool.store.RepoPathForWorkspace(root)
 	if err != nil {
 		return "", err
 	}
@@ -523,52 +507,18 @@ func repoRootFromPathWithOptions(path string, opts Options) (string, error) {
 	return root, nil
 }
 
-// nextWorkspaceName returns the next sequential workspace name for the repo.
-func (p *Pool) nextWorkspaceName(st *statestore.State, repoName string) string {
-	maxNum := 0
-	for _, ws := range st.Workspaces {
-		if ws.Repo == repoName {
-			var num int
-			if _, err := fmt.Sscanf(ws.Name, "ws-%d", &num); err == nil {
-				if num > maxNum {
-					maxNum = num
-				}
-			}
-		}
-	}
-	return fmt.Sprintf("ws-%03d", maxNum+1)
-}
-
 // DestroyAll removes all workspaces for the given repository.
 //
 // This deletes both the state entries and the workspace directories on disk.
 // It also runs "jj workspace forget" to unregister each workspace from the
 // source repository.
 func (p *Pool) DestroyAll(repoPath string) error {
-	repoName, err := p.stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
 		return fmt.Errorf("get repo name: %w", err)
 	}
 
-	var workspaces []statestore.WorkspaceInfo
-	var repoSourcePath string
-
-	// Collect workspaces to destroy and get the source repo path
-	err = p.stateStore.Update(func(st *statestore.State) error {
-		// Get the source repo path
-		if repo, ok := st.Repos[repoName]; ok {
-			repoSourcePath = repo.SourcePath
-		}
-
-		for key, ws := range st.Workspaces {
-			if ws.Repo == repoName {
-				workspaces = append(workspaces, ws)
-				delete(st.Workspaces, key)
-			}
-		}
-
-		return nil
-	})
+	workspaces, repoSourcePath, err := p.store.DeleteWorkspaces(repoName)
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,6 @@ type Store struct {
 func newState() *State {
 	return &State{
 		Repos:         make(map[string]RepoInfo),
-		Workspaces:    make(map[string]WorkspaceInfo),
 		AgentSessions: make(map[string]AgentSession),
 		Jobs:          make(map[string]Job),
 	}
@@ -34,9 +33,6 @@ func newState() *State {
 func ensureStateMaps(st *State) {
 	if st.Repos == nil {
 		st.Repos = make(map[string]RepoInfo)
-	}
-	if st.Workspaces == nil {
-		st.Workspaces = make(map[string]WorkspaceInfo)
 	}
 	if st.AgentSessions == nil {
 		st.AgentSessions = make(map[string]AgentSession)
@@ -162,29 +158,6 @@ func (s *Store) Update(fn func(st *State) error) error {
 
 	// Save updated state
 	return s.Save(st)
-}
-
-// RepoPathForWorkspace returns the source repo path for a workspace path.
-func (s *Store) RepoPathForWorkspace(wsPath string) (string, bool, error) {
-	st, err := s.Load()
-	if err != nil {
-		return "", false, err
-	}
-
-	// Normalize the input path for comparison to handle macOS /private symlinks
-	wsPath = paths.NormalizePath(filepath.Clean(wsPath))
-	for _, ws := range st.Workspaces {
-		if paths.NormalizePath(filepath.Clean(ws.Path)) != wsPath {
-			continue
-		}
-		repo, ok := st.Repos[ws.Repo]
-		if !ok || repo.SourcePath == "" {
-			return "", true, ErrRepoPathNotFound
-		}
-		return repo.SourcePath, true, nil
-	}
-
-	return "", false, nil
 }
 
 // GetOrCreateRepoName returns the repo name for the given source path,

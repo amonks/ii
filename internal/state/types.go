@@ -14,50 +14,14 @@ import (
 
 // State represents the persisted state file.
 type State struct {
-	Repos         map[string]RepoInfo      `json:"repos"`
-	Workspaces    map[string]WorkspaceInfo `json:"workspaces"`
-	AgentSessions map[string]AgentSession  `json:"agent_sessions"`
-	Jobs          map[string]Job           `json:"jobs"`
+	Repos         map[string]RepoInfo     `json:"repos"`
+	AgentSessions map[string]AgentSession `json:"agent_sessions"`
+	Jobs          map[string]Job          `json:"jobs"`
 }
 
 // RepoInfo stores information about a tracked repository.
 type RepoInfo struct {
 	SourcePath string `json:"source_path"`
-}
-
-// WorkspaceStatus represents the state of a workspace.
-type WorkspaceStatus string
-
-const (
-	// WorkspaceStatusAvailable indicates the workspace is free to be acquired.
-	WorkspaceStatusAvailable WorkspaceStatus = "available"
-	// WorkspaceStatusAcquired indicates the workspace is currently in use.
-	WorkspaceStatusAcquired WorkspaceStatus = "acquired"
-)
-
-// ValidWorkspaceStatuses returns all valid workspace status values.
-func ValidWorkspaceStatuses() []WorkspaceStatus {
-	return []WorkspaceStatus{WorkspaceStatusAvailable, WorkspaceStatusAcquired}
-}
-
-// IsValid returns true if the status is a known value.
-func (s WorkspaceStatus) IsValid() bool {
-	return validation.IsValidValue(s, ValidWorkspaceStatuses())
-}
-
-// WorkspaceInfo stores information about a workspace.
-type WorkspaceInfo struct {
-	Name          string          `json:"name"`
-	Repo          string          `json:"repo"`
-	Path          string          `json:"path"`
-	Purpose       string          `json:"purpose,omitempty"`
-	Rev           string          `json:"rev,omitempty"`
-	Status        WorkspaceStatus `json:"status"`
-	AcquiredByPID int             `json:"acquired_by_pid,omitempty"`
-	CreatedAt     time.Time       `json:"created_at"`
-	UpdatedAt     time.Time       `json:"updated_at"`
-	AcquiredAt    time.Time       `json:"acquired_at"`
-	Provisioned   bool            `json:"provisioned"`
 }
 
 // AgentSessionStatus represents the state of an agent session.

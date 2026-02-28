@@ -60,6 +60,15 @@ func DefaultStateDir() (string, error) {
 	return defaultHomeDirPath(".local", "state", "incrementum")
 }
 
+// DefaultDBPath returns the default SQLite state database path.
+func DefaultDBPath() (string, error) {
+	stateDir, err := DefaultStateDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(stateDir, "state.db"), nil
+}
+
 // DefaultWorkspacesDir returns the default incrementum workspaces directory.
 func DefaultWorkspacesDir() (string, error) {
 	return defaultHomeDirPath(".local", "share", "incrementum", "workspaces")

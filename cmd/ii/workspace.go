@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/amonks/incrementum/internal/db"
 	"github.com/amonks/incrementum/internal/listflags"
+	"github.com/amonks/incrementum/internal/paths"
 	"github.com/amonks/incrementum/internal/ui"
 	"github.com/amonks/incrementum/workspace"
 	"github.com/spf13/cobra"
@@ -57,16 +61,30 @@ func init() {
 }
 
 func openWorkspacePoolAndRepoPath() (*workspace.Pool, string, error) {
-	pool, err := workspace.Open()
-	if err != nil {
-		return nil, "", err
-	}
-
 	repoPath, err := getRepoPath()
 	if err != nil {
 		return nil, "", err
 	}
 
+	stateDir := os.Getenv("INCREMENTUM_STATE_DIR")
+	resolvedStateDir, err := paths.ResolveWithDefault(stateDir, paths.DefaultStateDir)
+	if err != nil {
+		return nil, "", err
+	}
+
+	workspacesDir, err := paths.ResolveWithDefault("", paths.DefaultWorkspacesDir)
+	if err != nil {
+		return nil, "", err
+	}
+
+	dbPath := filepath.Join(resolvedStateDir, "state.db")
+	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(resolvedStateDir, "state.json")})
+	if err != nil {
+		return nil, "", err
+	}
+
+	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	pool.SetCloseFunc(dbStore.Close)
 	return pool, repoPath, nil
 }
 
@@ -79,6 +97,7 @@ func runWorkspaceAcquire(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer pool.Close()
 
 	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
 		Rev:     workspaceAcquireRev,
@@ -97,6 +116,7 @@ func runWorkspaceRelease(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer pool.Close()
 
 	// If no args provided, resolve from current directory
 	if len(args) == 0 {
@@ -121,6 +141,7 @@ func runWorkspaceList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer pool.Close()
 
 	items, err := pool.List(repoPath)
 	if err != nil {
@@ -162,6 +183,7 @@ func runWorkspaceDestroyAll(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer pool.Close()
 
 	return pool.DestroyAll(repoPath)
 }

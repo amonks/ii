@@ -15,6 +15,9 @@ The `internal/db` package owns the SQLite connection for incrementum state. It o
 - `DB.Close()` closes the connection.
 - `DB.Tx(fn)` runs a callback in a transaction.
 - `DB.SqlDB()` exposes the underlying `*sql.DB` for domain stores.
+- `GetOrCreateRepoName(db, path)` normalizes and stores repo slugs in the `repos` table, handling collisions.
+- `RepoPathForWorkspace(db, wsPath)` resolves a workspace path back to its source repo using the `workspaces` table.
+- `SanitizeRepoName(path)` converts paths into slug-safe repo names.
 
 ## Migrations
 Migration files live in `internal/db/migrations` and are embedded. Files are named with a numeric prefix (`001_*.sql`, `002_*.sql`, ...). The `schema_version` table tracks the current version.

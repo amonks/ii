@@ -47,6 +47,20 @@ func TestDefaultWorkspacesDirUsesHome(t *testing.T) {
 	}
 }
 
+func TestDefaultDBPathUsesHome(t *testing.T) {
+	t.Setenv("HOME", filepath.Join("/tmp", "test-home"))
+
+	path, err := DefaultDBPath()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expected := filepath.Join("/tmp", "test-home", ".local", "state", "incrementum", "state.db")
+	if path != expected {
+		t.Fatalf("expected %s, got %s", expected, path)
+	}
+}
+
 func TestWorkingDirReturnsCurrentDir(t *testing.T) {
 	currentDir, err := os.Getwd()
 	if err != nil {

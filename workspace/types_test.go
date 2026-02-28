@@ -2,12 +2,10 @@ package workspace
 
 import (
 	"testing"
-
-	statestore "github.com/amonks/incrementum/internal/state"
 )
 
 func TestWorkspaceTypesAliasModel(t *testing.T) {
-	var status Status = statestore.WorkspaceStatusAvailable
+	var status Status = StatusAvailable
 	if status != StatusAvailable {
 		t.Fatalf("expected workspace status alias to match model")
 	}
@@ -15,8 +13,8 @@ func TestWorkspaceTypesAliasModel(t *testing.T) {
 
 func TestValidStatusesReturnsModelValues(t *testing.T) {
 	statuses := ValidStatuses()
-	if len(statuses) != len(statestore.ValidWorkspaceStatuses()) {
-		t.Fatalf("expected %d statuses, got %d", len(statestore.ValidWorkspaceStatuses()), len(statuses))
+	if len(statuses) != 2 {
+		t.Fatalf("expected 2 statuses, got %d", len(statuses))
 	}
 }
 

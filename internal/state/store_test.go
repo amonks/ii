@@ -2,7 +2,6 @@ package state
 
 import (
 	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -25,10 +24,6 @@ func TestStore_LoadEmpty(t *testing.T) {
 		t.Errorf("expected 0 repos, got %d", len(st.Repos))
 	}
 
-	if len(st.Workspaces) != 0 {
-		t.Errorf("expected 0 workspaces, got %d", len(st.Workspaces))
-	}
-
 	if len(st.AgentSessions) != 0 {
 		t.Errorf("expected 0 agent sessions, got %d", len(st.AgentSessions))
 	}
@@ -46,17 +41,7 @@ func TestStore_SaveLoad(t *testing.T) {
 	st.Repos = map[string]RepoInfo{
 		"my-project": {SourcePath: "/Users/test/my-project"},
 	}
-	st.Workspaces = map[string]WorkspaceInfo{
-		"my-project/ws-001": {
-			Name:        "ws-001",
-			Repo:        "my-project",
-			Path:        "/Users/test/.local/share/incrementum/workspaces/my-project/ws-001",
-			Purpose:     "initial sync",
-			Rev:         "@",
-			Status:      WorkspaceStatusAcquired,
-			Provisioned: true,
-		},
-	}
+
 	st.Jobs = map[string]Job{
 		"job-123": {
 			ID:     "job-123",
@@ -82,24 +67,6 @@ func TestStore_SaveLoad(t *testing.T) {
 
 	if loaded.Repos["my-project"].SourcePath != "/Users/test/my-project" {
 		t.Error("repo source path mismatch")
-	}
-
-	if len(loaded.Workspaces) != 1 {
-		t.Errorf("expected 1 workspace, got %d", len(loaded.Workspaces))
-	}
-
-	ws := loaded.Workspaces["my-project/ws-001"]
-	if ws.Name != "ws-001" {
-		t.Errorf("expected name ws-001, got %s", ws.Name)
-	}
-	if ws.Purpose != "initial sync" {
-		t.Errorf("expected purpose to persist, got %q", ws.Purpose)
-	}
-	if ws.Rev != "@" {
-		t.Errorf("expected rev to persist, got %q", ws.Rev)
-	}
-	if ws.Status != WorkspaceStatusAcquired {
-		t.Errorf("expected status acquired, got %s", ws.Status)
 	}
 
 	if len(loaded.Jobs) != 1 {
@@ -256,71 +223,5 @@ func TestStore_GetOrCreateRepoName(t *testing.T) {
 
 	if name3 == name1 {
 		t.Error("collision not handled - different paths got same name")
-	}
-}
-
-func TestStore_RepoPathForWorkspace(t *testing.T) {
-	tmpDir := t.TempDir()
-	store := NewStore(tmpDir)
-
-	repoName, err := store.GetOrCreateRepoName("/Users/test/my-project")
-	if err != nil {
-		t.Fatalf("failed to create repo: %v", err)
-	}
-
-	wsPath := filepath.Join("/tmp/workspaces", repoName, "ws-001")
-	if err := store.Update(func(st *State) error {
-		st.Workspaces[repoName+"/ws-001"] = WorkspaceInfo{
-			Name: "ws-001",
-			Repo: repoName,
-			Path: wsPath,
-		}
-		return nil
-	}); err != nil {
-		t.Fatalf("failed to add workspace: %v", err)
-	}
-
-	resolved, found, err := store.RepoPathForWorkspace(wsPath)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !found {
-		t.Fatal("expected workspace to be found")
-	}
-	if resolved != "/Users/test/my-project" {
-		t.Fatalf("expected repo path, got %q", resolved)
-	}
-
-	_, found, err = store.RepoPathForWorkspace(filepath.Join("/tmp/workspaces", repoName, "ws-999"))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if found {
-		t.Fatal("expected workspace to be missing")
-	}
-}
-
-func TestStore_RepoPathForWorkspace_MissingRepo(t *testing.T) {
-	tmpDir := t.TempDir()
-	store := NewStore(tmpDir)
-
-	wsPath := filepath.Join("/tmp/workspaces", "missing", "ws-001")
-	if err := store.Update(func(st *State) error {
-		st.Workspaces["missing/ws-001"] = WorkspaceInfo{
-			Name: "ws-001",
-			Repo: "missing",
-			Path: wsPath,
-		}
-		return nil
-	}); err != nil {
-		t.Fatalf("failed to add workspace: %v", err)
-	}
-
-	_, found, err := store.RepoPathForWorkspace(wsPath)
-	if !found {
-		t.Fatal("expected workspace to be found")
-	}
-	if err == nil {
-		t.Fatal("expected error for missing repo path")
 	}
 }

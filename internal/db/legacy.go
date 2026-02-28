@@ -10,10 +10,31 @@ import (
 	"strings"
 	"time"
 
-	statestore "github.com/amonks/incrementum/internal/state"
+	"github.com/amonks/incrementum/internal/state"
 )
 
 const legacyMigrationPrompt = "Incrementum needs to migrate state from JSON to SQLite. Continue?"
+
+type legacyState struct {
+	Repos         map[string]state.RepoInfo     `json:"repos"`
+	Workspaces    map[string]legacyWorkspace    `json:"workspaces"`
+	AgentSessions map[string]state.AgentSession `json:"agent_sessions"`
+	Jobs          map[string]state.Job          `json:"jobs"`
+}
+
+type legacyWorkspace struct {
+	Name          string    `json:"name"`
+	Repo          string    `json:"repo"`
+	Path          string    `json:"path"`
+	Purpose       string    `json:"purpose"`
+	Rev           string    `json:"rev"`
+	Status        string    `json:"status"`
+	AcquiredByPID int       `json:"acquired_by_pid"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	AcquiredAt    time.Time `json:"acquired_at"`
+	Provisioned   bool      `json:"provisioned"`
+}
 
 func confirmLegacyMigration() (bool, error) {
 	fmt.Fprintf(os.Stderr, "%s [Y/n]: ", legacyMigrationPrompt)
@@ -54,12 +75,12 @@ func importLegacyState(db *sql.DB, legacyPath string) error {
 	return nil
 }
 
-func loadLegacyState(path string) (*statestore.State, error) {
+func loadLegacyState(path string) (*legacyState, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("legacy migration: read %q: %w", path, err)
 	}
-	var st statestore.State
+	var st legacyState
 	if err := json.Unmarshal(data, &st); err != nil {
 		return nil, fmt.Errorf("legacy migration: decode %q: %w", path, err)
 	}
@@ -67,22 +88,22 @@ func loadLegacyState(path string) (*statestore.State, error) {
 	return &st, nil
 }
 
-func ensureLegacyMaps(st *statestore.State) {
+func ensureLegacyMaps(st *legacyState) {
 	if st.Repos == nil {
-		st.Repos = make(map[string]statestore.RepoInfo)
+		st.Repos = make(map[string]state.RepoInfo)
 	}
 	if st.Workspaces == nil {
-		st.Workspaces = make(map[string]statestore.WorkspaceInfo)
+		st.Workspaces = make(map[string]legacyWorkspace)
 	}
 	if st.AgentSessions == nil {
-		st.AgentSessions = make(map[string]statestore.AgentSession)
+		st.AgentSessions = make(map[string]state.AgentSession)
 	}
 	if st.Jobs == nil {
-		st.Jobs = make(map[string]statestore.Job)
+		st.Jobs = make(map[string]state.Job)
 	}
 }
 
-func insertLegacyState(db *sql.DB, st *statestore.State) error {
+func insertLegacyState(db *sql.DB, st *legacyState) error {
 	if st == nil {
 		return fmt.Errorf("legacy migration: state is nil")
 	}
@@ -115,7 +136,7 @@ func insertLegacyState(db *sql.DB, st *statestore.State) error {
 	return nil
 }
 
-func insertLegacyRepos(tx *sql.Tx, repos map[string]statestore.RepoInfo) error {
+func insertLegacyRepos(tx *sql.Tx, repos map[string]state.RepoInfo) error {
 	stmt, err := tx.Prepare("INSERT INTO repos (name, source_path) VALUES (?, ?);")
 	if err != nil {
 		return fmt.Errorf("legacy migration: prepare repos: %w", err)
@@ -130,7 +151,7 @@ func insertLegacyRepos(tx *sql.Tx, repos map[string]statestore.RepoInfo) error {
 	return nil
 }
 
-func insertLegacyWorkspaces(tx *sql.Tx, workspaces map[string]statestore.WorkspaceInfo) error {
+func insertLegacyWorkspaces(tx *sql.Tx, workspaces map[string]legacyWorkspace) error {
 	stmt, err := tx.Prepare(`INSERT INTO workspaces (
 		repo, name, path, purpose, rev, status, acquired_by_pid, provisioned,
 		created_at, updated_at, acquired_at
@@ -155,7 +176,7 @@ func insertLegacyWorkspaces(tx *sql.Tx, workspaces map[string]statestore.Workspa
 			ws.Path,
 			ws.Purpose,
 			ws.Rev,
-			string(ws.Status),
+			ws.Status,
 			acquiredBy,
 			boolToSQLite(ws.Provisioned),
 			formatLegacyTime(ws.CreatedAt),
@@ -168,7 +189,7 @@ func insertLegacyWorkspaces(tx *sql.Tx, workspaces map[string]statestore.Workspa
 	return nil
 }
 
-func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]statestore.AgentSession) error {
+func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]state.AgentSession) error {
 	stmt, err := tx.Prepare(`INSERT INTO agent_sessions (
 		repo, id, status, model, created_at, started_at, updated_at,
 		completed_at, exit_code, duration_seconds, tokens_used, cost
@@ -211,7 +232,7 @@ func insertLegacyAgentSessions(tx *sql.Tx, sessions map[string]statestore.AgentS
 	return nil
 }
 
-func insertLegacyJobs(tx *sql.Tx, jobs map[string]statestore.Job) error {
+func insertLegacyJobs(tx *sql.Tx, jobs map[string]state.Job) error {
 	stmt, err := tx.Prepare(`INSERT INTO jobs (
 		repo, id, todo_id, agent, implementation_model, code_review_model,
 		project_review_model, stage, status, feedback,
@@ -268,7 +289,7 @@ func insertLegacyJobs(tx *sql.Tx, jobs map[string]statestore.Job) error {
 	return nil
 }
 
-func insertLegacyJobSessions(tx *sql.Tx, job statestore.Job) error {
+func insertLegacyJobSessions(tx *sql.Tx, job state.Job) error {
 	stmt, err := tx.Prepare(`INSERT INTO job_agent_sessions (
 		repo, job_id, session_id, purpose, position
 	) VALUES (?, ?, ?, ?, ?);`)
@@ -291,7 +312,7 @@ func insertLegacyJobSessions(tx *sql.Tx, job statestore.Job) error {
 	return nil
 }
 
-func insertLegacyJobChanges(tx *sql.Tx, job statestore.Job) error {
+func insertLegacyJobChanges(tx *sql.Tx, job state.Job) error {
 	stmtChange, err := tx.Prepare(`INSERT INTO job_changes (
 		repo, job_id, change_id, created_at, position
 	) VALUES (?, ?, ?, ?, ?);`)
@@ -356,7 +377,7 @@ func insertLegacyJobChanges(tx *sql.Tx, job statestore.Job) error {
 	return nil
 }
 
-func legacyReviewFields(review *statestore.JobReview) (any, string, string, string) {
+func legacyReviewFields(review *state.JobReview) (any, string, string, string) {
 	if review == nil {
 		return nil, "", "", ""
 	}
