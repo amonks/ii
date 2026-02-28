@@ -361,6 +361,14 @@ func (ctx *runContext) runStageWithInterrupt(current Job, stageFn func() (Job, e
 func (ctx *runContext) handleInterrupt(current Job) (Job, error) {
 	status := StatusFailed
 	updated, updateErr := ctx.manager.Update(current.ID, UpdateOptions{Status: &status}, ctx.opts.Now())
+	if updateErr != nil {
+		fallback := current
+		fallback.Status = status
+		now := ctx.opts.Now()
+		fallback.UpdatedAt = now
+		fallback.CompletedAt = now
+		return fallback, errors.Join(ErrJobInterrupted, updateErr)
+	}
 	return updated, errors.Join(ErrJobInterrupted, updateErr)
 }
 

@@ -16,16 +16,15 @@ exec jj git init
 cp $WORK/incrementum.toml incrementum.toml
 
 # Create a fake agent store layout.
-# (State file contains the session record; events file is JSONL.)
+# (SQLite state for session; events file is JSONL.)
 mkdir -p state
 mkdir -p share/agent/events
 
 env INCREMENTUM_STATE_DIR=$WORK/repo/state
 env INCREMENTUM_AGENT_EVENTS_DIR=$WORK/repo/share/agent/events
 
-# Create active session record.
-# (Write JSON using printf with interpreted escape sequences.)
-exec sh -c 'printf "{\n  \"repos\": {\n    \"repo\": {\n      \"source_path\": \"'$WORK'/repo\"\n    }\n  },\n  \"workspaces\": {},\n  \"agent_sessions\": {\n    \"repo/abc123\": {\n      \"id\": \"abc123\",\n      \"repo\": \"repo\",\n      \"status\": \"active\",\n      \"model\": \"test\",\n      \"created_at\": \"2026-01-01T00:00:00Z\",\n      \"started_at\": \"2026-01-01T00:00:00Z\",\n      \"updated_at\": \"2026-01-01T00:00:00Z\",\n      \"completed_at\": \"0001-01-01T00:00:00Z\",\n      \"exit_code\": null,\n      \"duration_seconds\": 0,\n      \"tokens_used\": 0,\n      \"cost\": 0\n    }\n  },\n  \"jobs\": {}\n}\n" > state/state.json'
+# Create active session record in SQLite.
+agent-session $WORK/repo abc123 active 2026-01-01T00:00:00Z 2026-01-01T00:00:00Z - -
 
 # Start with an empty log file.
 exec sh -c ': > share/agent/events/abc123.jsonl'
@@ -55,7 +54,7 @@ exec grep -c '"type":"a"' $WORK/TAILPID.stdout
 stdout '1'
 
 # End the session by marking it completed, then stop the tail process.
-exec sh -c 'printf "{\n  \"repos\": {\n    \"repo\": {\n      \"source_path\": \"'$WORK'/repo\"\n    }\n  },\n  \"workspaces\": {},\n  \"agent_sessions\": {\n    \"repo/abc123\": {\n      \"id\": \"abc123\",\n      \"repo\": \"repo\",\n      \"status\": \"completed\",\n      \"model\": \"test\",\n      \"created_at\": \"2026-01-01T00:00:00Z\",\n      \"started_at\": \"2026-01-01T00:00:00Z\",\n      \"updated_at\": \"2026-01-01T00:00:01Z\",\n      \"completed_at\": \"2026-01-01T00:00:01Z\",\n      \"exit_code\": 0,\n      \"duration_seconds\": 1,\n      \"tokens_used\": 0,\n      \"cost\": 0\n    }\n  },\n  \"jobs\": {}\n}\n" > state/state.json'
+agent-session $WORK/repo abc123 completed 2026-01-01T00:00:00Z 2026-01-01T00:00:01Z 2026-01-01T00:00:01Z 0
 
 # Give the tail process time to detect the status change and attempt to exit.
 # The tail command polls every 500ms, so wait at least that long.

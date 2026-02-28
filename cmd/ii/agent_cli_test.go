@@ -28,6 +28,7 @@ func TestAgentCLI(t *testing.T) {
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
 			"runbg": testsupport.CmdRunBG,
+			"agent-session": testsupport.CmdAgentSession,
 		},
 	})
 }

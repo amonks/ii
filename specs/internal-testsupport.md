@@ -13,3 +13,4 @@ The testsupport package provides helpers for integration tests and testscript sc
 - `SetupScriptEnv` provisions test home/state/workspace directories and sets `II` and `HOME`.
 - `CmdEnvSet` captures a file's trimmed contents into an env var.
 - `CmdTodoID` looks up a todo by title in a JSON list and exports its ID.
+- `CmdAgentSession` inserts or updates an agent session in SQLite for testscript fixtures.

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -751,6 +752,10 @@ func resolveDB(opts OpenOptions) (*sql.DB, func() error, error) {
 	stateDir, err := paths.ResolveWithDefault(opts.StateDir, paths.DefaultStateDir)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		return nil, nil, fmt.Errorf("create state dir: %w", err)
 	}
 
 	path := filepath.Join(stateDir, "state.db")
