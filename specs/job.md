@@ -217,6 +217,8 @@ any stage -> failed (unrecoverable error)
    - If the commit message is required for the step review and missing, fail with
      a descriptive error that calls out the implementation prompt and expected
      `.incrementum-commit-message` location.
+   - When resuming a job, the runner restores the current commit message from the
+     latest recorded draft message so review prompts and logs remain consistent.
 6. Template instructs the agent to inspect changes and write outcome to
    `.incrementum-feedback`.
 7. Run agent to completion.

@@ -377,6 +377,14 @@ type runContext struct {
 
 func runJobStages(ctx *runContext, current Job, interrupts <-chan os.Signal) (Job, error) {
 	ctx.reviewScope = reviewScopeStep
+	if internalstrings.IsBlank(ctx.commitMessage) {
+		if commit := current.CurrentCommit(); commit != nil {
+			message := internalstrings.TrimSpace(commit.DraftMessage)
+			if message != "" {
+				ctx.commitMessage = message
+			}
+		}
+	}
 	for current.Status == StatusActive {
 		switch current.Stage {
 		case StageImplementing:
