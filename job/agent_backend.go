@@ -6,7 +6,6 @@ import (
 
 	"github.com/amonks/incrementum/agent"
 	internalagent "github.com/amonks/incrementum/internal/agent"
-	statestore "github.com/amonks/incrementum/internal/state"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/internal/todoenv"
 )
@@ -45,8 +44,8 @@ func agentRunEnv() []string {
 }
 
 // AgentSession identifies an LLM session within a job.
-// This is an alias to state.JobAgentSession for compatibility with Job.AgentSessions.
-type AgentSession = statestore.JobAgentSession
+// This is an alias to JobAgentSession for compatibility with Job.AgentSessions.
+type AgentSession = JobAgentSession
 
 // AgentTranscript contains the transcript for an LLM session.
 type AgentTranscript struct {

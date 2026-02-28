@@ -560,12 +560,11 @@ func (s *Store) ResolveModel(explicit string, taskModel string) (llm.Model, erro
 
 ## State Model
 
-Agent state is stored in the shared state file alongside workspace and
-job state. It adds one top-level collection:
+Agent state is stored in SQLite via `internal/db` and the `agent` package's
+store. Agent sessions live in the `agent_sessions` table and are keyed by repo
+slug and session ID.
 
-- `agent_sessions`: map of `repo-slug/session-id` to session info
-
-### Session Fields (JSON keys)
+### Session Fields (DB columns)
 
 - `id`: session id (e.g., `<generated>`)
 - `repo`: repo slug
@@ -582,9 +581,10 @@ job state. It adds one top-level collection:
 
 ## Storage
 
-- Session state is stored in `~/.local/state/incrementum/state.json`
-- Event logs are stored under `~/.local/share/incrementum/agent/events/<session-id>.jsonl`
-- Events are written as newline-delimited JSON (one SSE event per line)
+- Session state is stored in the SQLite database under
+  `~/.local/state/incrementum/state.db`.
+- Event logs are stored under `~/.local/share/incrementum/agent/events/<session-id>.jsonl`.
+- Events are written as newline-delimited JSON (one SSE event per line).
 
 ## Commands
 

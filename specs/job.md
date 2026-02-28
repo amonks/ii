@@ -30,8 +30,7 @@ Follow our usual testing practice:
 
 ## Storage
 
-- Job state stored in `~/.local/state/incrementum/state.json` alongside other
-  state.
+- Job state is stored in the SQLite database under `~/.local/state/incrementum/state.db`.
 - Jobs are scoped per repo using the same repo slug as other state.
 - Jobs do not create sessions or workspaces.
 - Job records track LLM sessions created during the job.

@@ -1,20 +1,19 @@
 package job
 
 import (
+	"database/sql"
 	"errors"
+	"path/filepath"
 	"testing"
 	"time"
 
-	statestore "github.com/amonks/incrementum/internal/state"
+	internaldb "github.com/amonks/incrementum/internal/db"
 )
 
 func TestManager_CreateAndFind(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/my-repo"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
 	startedAt := time.Date(2025, 4, 10, 8, 30, 0, 0, time.UTC)
 	created, err := manager.Create("todo-123", startedAt, CreateOptions{})
@@ -27,14 +26,13 @@ func TestManager_CreateAndFind(t *testing.T) {
 		t.Fatalf("expected job id %q, got %q", expectedID, created.ID)
 	}
 
-	stateStore := statestore.NewStore(tmpDir)
-	repoSlug, err := stateStore.GetOrCreateRepoName(repoPath)
+	repoName, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
 
-	if created.Repo != repoSlug {
-		t.Fatalf("expected repo %q, got %q", repoSlug, created.Repo)
+	if created.Repo != repoName {
+		t.Fatalf("expected repo %q, got %q", repoName, created.Repo)
 	}
 	if created.TodoID != "todo-123" {
 		t.Fatalf("expected todo id todo-123, got %q", created.TodoID)
@@ -67,43 +65,39 @@ func TestManager_CreateAndFind(t *testing.T) {
 func TestManager_Find_PrefixAmbiguous(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/ambiguous"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
-	store := statestore.NewStore(tmpDir)
-	repoSlug, err := store.GetOrCreateRepoName(repoPath)
+	repoSlug, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
 
 	startedAt := time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC)
-	jobA := statestore.Job{
+	jobA := Job{
 		ID:        "alpha-123",
 		Repo:      repoSlug,
 		TodoID:    "todo-1",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: startedAt,
 		StartedAt: startedAt,
 		UpdatedAt: startedAt,
 	}
-	jobB := statestore.Job{
+	jobB := Job{
 		ID:        "alpha-456",
 		Repo:      repoSlug,
 		TodoID:    "todo-2",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: startedAt.Add(2 * time.Minute),
 		StartedAt: startedAt.Add(2 * time.Minute),
 		UpdatedAt: startedAt.Add(2 * time.Minute),
 	}
 
-	if err := insertJob(store, repoSlug, jobA); err != nil {
+	if err := insertJob(sqlDB, jobA); err != nil {
 		t.Fatalf("insert jobA: %v", err)
 	}
-	if err := insertJob(store, repoSlug, jobB); err != nil {
+	if err := insertJob(sqlDB, jobB); err != nil {
 		t.Fatalf("insert jobB: %v", err)
 	}
 
@@ -119,61 +113,57 @@ func TestManager_Find_PrefixAmbiguous(t *testing.T) {
 func TestManager_List_Filtering(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/listing"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
-	store := statestore.NewStore(tmpDir)
-	repoSlug, err := store.GetOrCreateRepoName(repoPath)
+	repoSlug, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
-	otherRepo, err := store.GetOrCreateRepoName("/Users/test/other")
+	otherRepo, err := internaldb.GetOrCreateRepoName(sqlDB, "/Users/test/other")
 	if err != nil {
 		t.Fatalf("other repo slug: %v", err)
 	}
 
 	startedAt := time.Date(2025, 5, 10, 9, 0, 0, 0, time.UTC)
-	activeJob := statestore.Job{
+	activeJob := Job{
 		ID:        "job-active",
 		Repo:      repoSlug,
 		TodoID:    "todo-active",
-		Stage:     statestore.JobStageTesting,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageTesting,
+		Status:    StatusActive,
 		CreatedAt: startedAt,
 		StartedAt: startedAt,
 		UpdatedAt: startedAt,
 	}
-	completedJob := statestore.Job{
+	completedJob := Job{
 		ID:          "job-completed",
 		Repo:        repoSlug,
 		TodoID:      "todo-completed",
-		Stage:       statestore.JobStageCommitting,
-		Status:      statestore.JobStatusCompleted,
+		Stage:       StageCommitting,
+		Status:      StatusCompleted,
 		CreatedAt:   startedAt.Add(2 * time.Hour),
 		StartedAt:   startedAt.Add(2 * time.Hour),
 		UpdatedAt:   startedAt.Add(2 * time.Hour),
 		CompletedAt: startedAt.Add(3 * time.Hour),
 	}
-	otherJob := statestore.Job{
+	otherJob := Job{
 		ID:        "job-other",
 		Repo:      otherRepo,
 		TodoID:    "todo-other",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: startedAt.Add(30 * time.Minute),
 		StartedAt: startedAt.Add(30 * time.Minute),
 		UpdatedAt: startedAt.Add(30 * time.Minute),
 	}
 
-	if err := insertJob(store, repoSlug, activeJob); err != nil {
+	if err := insertJob(sqlDB, activeJob); err != nil {
 		t.Fatalf("insert active job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, completedJob); err != nil {
+	if err := insertJob(sqlDB, completedJob); err != nil {
 		t.Fatalf("insert completed job: %v", err)
 	}
-	if err := insertJob(store, otherRepo, otherJob); err != nil {
+	if err := insertJob(sqlDB, otherJob); err != nil {
 		t.Fatalf("insert other job: %v", err)
 	}
 
@@ -209,9 +199,14 @@ func TestManager_List_Filtering(t *testing.T) {
 func TestManager_Update(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/update"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
+
+	repoName, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
-		t.Fatalf("open manager: %v", err)
+		t.Fatalf("repo slug: %v", err)
+	}
+	if err := ensureAgentSessions(sqlDB, repoName, []JobAgentSession{{ID: "oc-123", Purpose: "implement"}}); err != nil {
+		t.Fatalf("ensure agent session: %v", err)
 	}
 
 	startedAt := time.Date(2025, 6, 1, 9, 30, 0, 0, time.UTC)
@@ -270,10 +265,7 @@ func TestManager_Update(t *testing.T) {
 func TestManager_Update_InvalidStage(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/update-invalid"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	startedAt := time.Date(2025, 6, 2, 11, 0, 0, 0, time.UTC)
 	created, err := manager.Create("todo-789", startedAt, CreateOptions{})
@@ -294,10 +286,7 @@ func TestManager_Update_InvalidStage(t *testing.T) {
 func TestManager_Update_InvalidStatus(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/update-invalid-status"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	startedAt := time.Date(2025, 6, 2, 12, 0, 0, 0, time.UTC)
 	created, err := manager.Create("todo-790", startedAt, CreateOptions{})
@@ -318,10 +307,7 @@ func TestManager_Update_InvalidStatus(t *testing.T) {
 func TestManager_ChangeTrackingLifecycle(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/changes"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	now := time.Date(2026, 1, 15, 10, 0, 0, 0, time.UTC)
 	created, err := manager.Create("todo-changes", now, CreateOptions{})
@@ -395,10 +381,7 @@ func TestManager_ChangeTrackingLifecycle(t *testing.T) {
 func TestManager_ChangeTrackingInvariants(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/changes-invariants"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	now := time.Date(2026, 1, 16, 10, 0, 0, 0, time.UTC)
 	created, err := manager.Create("todo-changes-invariants", now, CreateOptions{})
@@ -463,10 +446,7 @@ func TestManager_ChangeTrackingInvariants(t *testing.T) {
 func TestManager_ChangeTracking_RequestChangesKeepsCurrentChange(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/changes-request-changes"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	now := time.Date(2026, 1, 17, 10, 0, 0, 0, time.UTC)
 	created, err := manager.Create("todo-changes-request-changes", now, CreateOptions{})
@@ -522,23 +502,163 @@ func TestManager_ChangeTracking_RequestChangesKeepsCurrentChange(t *testing.T) {
 	}
 }
 
-func insertJob(store *statestore.Store, repoSlug string, item statestore.Job) error {
-	return store.Update(func(st *statestore.State) error {
-		st.Jobs[repoSlug+"/"+item.ID] = item
-		return nil
+func openTestManager(t *testing.T, repoPath, stateDir string) (*Manager, *sql.DB) {
+	t.Helper()
+
+	statePath := filepath.Join(stateDir, "state.db")
+	legacyPath := filepath.Join(stateDir, "state.json")
+	store, err := internaldb.Open(statePath, internaldb.OpenOptions{
+		LegacyJSONPath: legacyPath,
+		SkipConfirm:     true,
 	})
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = store.Close()
+	})
+
+	manager, err := Open(repoPath, OpenOptions{DB: store.SqlDB()})
+	if err != nil {
+		t.Fatalf("open manager: %v", err)
+	}
+
+	return manager, store.SqlDB()
+}
+
+func ensureAgentSessions(db *sql.DB, repo string, sessions []JobAgentSession) error {
+	now := time.Now()
+	for _, session := range sessions {
+		if session.ID == "" {
+			continue
+		}
+		if _, err := db.Exec(`INSERT OR IGNORE INTO agent_sessions (
+			repo, id, status, model, created_at, started_at, updated_at, completed_at,
+			exit_code, duration_seconds, tokens_used, cost
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+			repo,
+			session.ID,
+			string(StatusActive),
+			"",
+			formatJobTime(now),
+			"",
+			formatJobTime(now),
+			"",
+			nil,
+			0,
+			0,
+			0,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertJob(db *sql.DB, item Job) error {
+	if db == nil {
+		return errors.New("insert job: db is nil")
+	}
+
+	projectOutcome, projectComments, projectAgentID, projectReviewedAt := reviewFields(item.ProjectReview)
+	_, err := db.Exec(`INSERT INTO jobs (
+		repo, id, todo_id, agent, implementation_model, code_review_model,
+		project_review_model, stage, status, feedback,
+		project_review_outcome, project_review_comments,
+		project_review_agent_session_id, project_review_reviewed_at,
+		created_at, started_at, updated_at, completed_at
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+		item.Repo,
+		item.ID,
+		item.TodoID,
+		item.Agent,
+		item.ImplementationModel,
+		item.CodeReviewModel,
+		item.ProjectReviewModel,
+		string(item.Stage),
+		string(item.Status),
+		item.Feedback,
+		projectOutcome,
+		projectComments,
+		projectAgentID,
+		projectReviewedAt,
+		formatJobTime(item.CreatedAt),
+		formatOptionalJobTime(item.StartedAt),
+		formatJobTime(item.UpdatedAt),
+		formatOptionalJobTime(item.CompletedAt),
+	)
+	if err != nil {
+		return err
+	}
+
+
+	if err := ensureAgentSessions(db, item.Repo, item.AgentSessions); err != nil {
+		return err
+	}
+	for index, session := range item.AgentSessions {
+		if _, err := db.Exec(`INSERT INTO job_agent_sessions (
+			repo, job_id, session_id, purpose, position
+		) VALUES (?, ?, ?, ?, ?);`,
+			item.Repo,
+			item.ID,
+			session.ID,
+			session.Purpose,
+			index,
+		); err != nil {
+			return err
+		}
+	}
+
+	for changeIndex, change := range item.Changes {
+		result, err := db.Exec(`INSERT INTO job_changes (
+			repo, job_id, change_id, created_at, position
+		) VALUES (?, ?, ?, ?, ?);`,
+			item.Repo,
+			item.ID,
+			change.ChangeID,
+			formatJobTime(change.CreatedAt),
+			changeIndex,
+		)
+		if err != nil {
+			return err
+		}
+		changeRowID, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		for commitIndex, commit := range change.Commits {
+			reviewOutcome, reviewComments, reviewAgentID, reviewReviewedAt := reviewFields(commit.Review)
+			if _, err := db.Exec(`INSERT INTO job_commits (
+				job_change_id, commit_id, draft_message, tests_passed, agent_session_id,
+				review_outcome, review_comments, review_agent_session_id, review_reviewed_at,
+				created_at, position
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+				changeRowID,
+				commit.CommitID,
+				commit.DraftMessage,
+				boolPointerToSQLite(commit.TestsPassed),
+				commit.AgentSessionID,
+				reviewOutcome,
+				reviewComments,
+				reviewAgentID,
+				reviewReviewedAt,
+				formatJobTime(commit.CreatedAt),
+				commitIndex,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func TestManager_MarkStaleJobsFailed(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/stale"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
-	store := statestore.NewStore(tmpDir)
-	repoSlug, err := store.GetOrCreateRepoName(repoPath)
+	repoSlug, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
@@ -547,45 +667,45 @@ func TestManager_MarkStaleJobsFailed(t *testing.T) {
 	staleTime := now.Add(-15 * time.Minute) // 15 minutes ago (> 10 min threshold)
 	recentTime := now.Add(-5 * time.Minute) // 5 minutes ago (< 10 min threshold)
 
-	staleJob := statestore.Job{
+	staleJob := Job{
 		ID:        "stale-job",
 		Repo:      repoSlug,
 		TodoID:    "habit:cleanup",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: staleTime.Add(-time.Hour),
 		StartedAt: staleTime.Add(-time.Hour),
 		UpdatedAt: staleTime,
 	}
-	recentJob := statestore.Job{
+	recentJob := Job{
 		ID:        "recent-job",
 		Repo:      repoSlug,
 		TodoID:    "todo-123",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: recentTime.Add(-time.Hour),
 		StartedAt: recentTime.Add(-time.Hour),
 		UpdatedAt: recentTime,
 	}
-	completedJob := statestore.Job{
+	completedJob := Job{
 		ID:          "completed-job",
 		Repo:        repoSlug,
 		TodoID:      "todo-456",
-		Stage:       statestore.JobStageCommitting,
-		Status:      statestore.JobStatusCompleted,
+		Stage:       StageCommitting,
+		Status:      StatusCompleted,
 		CreatedAt:   staleTime.Add(-2 * time.Hour),
 		StartedAt:   staleTime.Add(-2 * time.Hour),
 		UpdatedAt:   staleTime,
 		CompletedAt: staleTime,
 	}
 
-	if err := insertJob(store, repoSlug, staleJob); err != nil {
+	if err := insertJob(sqlDB, staleJob); err != nil {
 		t.Fatalf("insert stale job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, recentJob); err != nil {
+	if err := insertJob(sqlDB, recentJob); err != nil {
 		t.Fatalf("insert recent job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, completedJob); err != nil {
+	if err := insertJob(sqlDB, completedJob); err != nil {
 		t.Fatalf("insert completed job: %v", err)
 	}
 
@@ -629,17 +749,13 @@ func TestManager_MarkStaleJobsFailed_OnlyAffectsCurrentRepo(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/stale-repo"
 	otherRepoPath := "/Users/test/other-repo"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
-	store := statestore.NewStore(tmpDir)
-	repoSlug, err := store.GetOrCreateRepoName(repoPath)
+	repoSlug, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
-	otherSlug, err := store.GetOrCreateRepoName(otherRepoPath)
+	otherSlug, err := internaldb.GetOrCreateRepoName(sqlDB, otherRepoPath)
 	if err != nil {
 		t.Fatalf("other repo slug: %v", err)
 	}
@@ -647,31 +763,31 @@ func TestManager_MarkStaleJobsFailed_OnlyAffectsCurrentRepo(t *testing.T) {
 	now := time.Date(2025, 5, 10, 12, 0, 0, 0, time.UTC)
 	staleTime := now.Add(-15 * time.Minute)
 
-	staleJobOurs := statestore.Job{
+	staleJobOurs := Job{
 		ID:        "stale-ours",
 		Repo:      repoSlug,
 		TodoID:    "todo-ours",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: staleTime.Add(-time.Hour),
 		StartedAt: staleTime.Add(-time.Hour),
 		UpdatedAt: staleTime,
 	}
-	staleJobOther := statestore.Job{
+	staleJobOther := Job{
 		ID:        "stale-other",
 		Repo:      otherSlug,
 		TodoID:    "todo-other",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: staleTime.Add(-time.Hour),
 		StartedAt: staleTime.Add(-time.Hour),
 		UpdatedAt: staleTime,
 	}
 
-	if err := insertJob(store, repoSlug, staleJobOurs); err != nil {
+	if err := insertJob(sqlDB, staleJobOurs); err != nil {
 		t.Fatalf("insert stale job ours: %v", err)
 	}
-	if err := insertJob(store, otherSlug, staleJobOther); err != nil {
+	if err := insertJob(sqlDB, staleJobOther); err != nil {
 		t.Fatalf("insert stale job other: %v", err)
 	}
 
@@ -683,13 +799,12 @@ func TestManager_MarkStaleJobsFailed_OnlyAffectsCurrentRepo(t *testing.T) {
 		t.Fatalf("expected 1 job marked, got %d", marked)
 	}
 
-	st, err := store.Load()
-	if err != nil {
-		t.Fatalf("load state: %v", err)
+	var otherStatus string
+	if err := sqlDB.QueryRow("SELECT status FROM jobs WHERE repo = ? AND id = ?;", otherSlug, staleJobOther.ID).Scan(&otherStatus); err != nil {
+		t.Fatalf("load other repo job: %v", err)
 	}
-	otherJob := st.Jobs[otherSlug+"/"+staleJobOther.ID]
-	if otherJob.Status != statestore.JobStatusActive {
-		t.Fatalf("expected other repo job unchanged, got status %q", otherJob.Status)
+	if otherStatus != string(StatusActive) {
+		t.Fatalf("expected other repo job unchanged, got status %q", otherStatus)
 	}
 }
 
@@ -756,18 +871,14 @@ func TestIsJobStale(t *testing.T) {
 func TestManager_CountByHabit(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/count-repo"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, sqlDB := openTestManager(t, repoPath, tmpDir)
 
-	store := statestore.NewStore(tmpDir)
-	repoSlug, err := store.GetOrCreateRepoName(repoPath)
+	repoSlug, err := internaldb.GetOrCreateRepoName(sqlDB, repoPath)
 	if err != nil {
 		t.Fatalf("repo slug: %v", err)
 	}
 	otherRepoPath := "/Users/test/other-repo"
-	otherSlug, err := store.GetOrCreateRepoName(otherRepoPath)
+	otherSlug, err := internaldb.GetOrCreateRepoName(sqlDB, otherRepoPath)
 	if err != nil {
 		t.Fatalf("other repo slug: %v", err)
 	}
@@ -775,72 +886,72 @@ func TestManager_CountByHabit(t *testing.T) {
 	now := time.Date(2025, 5, 10, 12, 0, 0, 0, time.UTC)
 
 	// Create habit jobs
-	habitJob1 := statestore.Job{
+	habitJob1 := Job{
 		ID:        "habit-job-1",
 		Repo:      repoSlug,
 		TodoID:    "habit:cleanup",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusCompleted,
+		Stage:     StageImplementing,
+		Status:    StatusCompleted,
 		CreatedAt: now,
 		StartedAt: now,
 		UpdatedAt: now,
 	}
-	habitJob2 := statestore.Job{
+	habitJob2 := Job{
 		ID:        "habit-job-2",
 		Repo:      repoSlug,
 		TodoID:    "habit:cleanup",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusActive,
+		Stage:     StageImplementing,
+		Status:    StatusActive,
 		CreatedAt: now,
 		StartedAt: now,
 		UpdatedAt: now,
 	}
-	habitJob3 := statestore.Job{
+	habitJob3 := Job{
 		ID:        "habit-job-3",
 		Repo:      repoSlug,
 		TodoID:    "habit:docs",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusCompleted,
+		Stage:     StageImplementing,
+		Status:    StatusCompleted,
 		CreatedAt: now,
 		StartedAt: now,
 		UpdatedAt: now,
 	}
 	// Non-habit job
-	todoJob := statestore.Job{
+	todoJob := Job{
 		ID:        "todo-job-1",
 		Repo:      repoSlug,
 		TodoID:    "todo-123",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusCompleted,
+		Stage:     StageImplementing,
+		Status:    StatusCompleted,
 		CreatedAt: now,
 		StartedAt: now,
 		UpdatedAt: now,
 	}
 	// Job in different repo
-	otherRepoJob := statestore.Job{
+	otherRepoJob := Job{
 		ID:        "other-habit-job",
 		Repo:      otherSlug,
 		TodoID:    "habit:cleanup",
-		Stage:     statestore.JobStageImplementing,
-		Status:    statestore.JobStatusCompleted,
+		Stage:     StageImplementing,
+		Status:    StatusCompleted,
 		CreatedAt: now,
 		StartedAt: now,
 		UpdatedAt: now,
 	}
 
-	if err := insertJob(store, repoSlug, habitJob1); err != nil {
+	if err := insertJob(sqlDB, habitJob1); err != nil {
 		t.Fatalf("insert job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, habitJob2); err != nil {
+	if err := insertJob(sqlDB, habitJob2); err != nil {
 		t.Fatalf("insert job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, habitJob3); err != nil {
+	if err := insertJob(sqlDB, habitJob3); err != nil {
 		t.Fatalf("insert job: %v", err)
 	}
-	if err := insertJob(store, repoSlug, todoJob); err != nil {
+	if err := insertJob(sqlDB, todoJob); err != nil {
 		t.Fatalf("insert job: %v", err)
 	}
-	if err := insertJob(store, otherSlug, otherRepoJob); err != nil {
+	if err := insertJob(sqlDB, otherRepoJob); err != nil {
 		t.Fatalf("insert job: %v", err)
 	}
 
@@ -863,10 +974,7 @@ func TestManager_CountByHabit(t *testing.T) {
 func TestManager_CountByHabit_EmptyRepo(t *testing.T) {
 	tmpDir := t.TempDir()
 	repoPath := "/Users/test/empty-repo"
-	manager, err := Open(repoPath, OpenOptions{StateDir: tmpDir})
-	if err != nil {
-		t.Fatalf("open manager: %v", err)
-	}
+	manager, _ := openTestManager(t, repoPath, tmpDir)
 
 	counts, err := manager.CountByHabit()
 	if err != nil {

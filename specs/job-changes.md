@@ -333,8 +333,7 @@ change history is preserved for debugging, and the new job starts fresh.
   Resumption would load the last incomplete change/commit and resume from the
   appropriate stage.
 
-- **Atomic writes**: The state file should use write-then-rename for atomicity,
-  but that's a separate concern from this data model.
+- **SQLite writes**: Job changes are persisted via the SQLite store; write atomicity is handled by SQLite transactions.
 
 - **Test output storage**: Test logs are intentionally excluded from the job
   record to avoid unbounded growth. They remain in the event log.
@@ -346,7 +345,7 @@ change history is preserved for debugging, and the new job starts fresh.
 
 This spec is fully implemented. The following components are in place:
 
-- **Data model**: `JobChange`, `JobCommit`, `JobReview` in `internal/state/types.go`
+- **Data model**: `JobChange`, `JobCommit`, `JobReview` in `job/types.go`
 - **Derived state**: `CurrentChange()`, `CurrentCommit()`, `IsComplete()` methods on Job
 - **Manager API**: `AppendChange`, `AppendCommitToCurrentChange`, `UpdateCurrentCommit`,
   `SetProjectReview` methods in `job/manager.go`

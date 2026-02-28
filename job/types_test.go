@@ -1,23 +1,19 @@
 package job
 
-import (
-	"testing"
-
-	statestore "github.com/amonks/incrementum/internal/state"
-)
+import "testing"
 
 func TestAliasesMatchJobModel(t *testing.T) {
-	var status Status = statestore.JobStatusActive
+	var status Status = StatusActive
 	if status != StatusActive {
 		t.Fatalf("expected status alias to match model")
 	}
 
-	var stage Stage = statestore.JobStageImplementing
+	var stage Stage = StageImplementing
 	if stage != StageImplementing {
 		t.Fatalf("expected stage alias to match model")
 	}
 
-	var item Job = statestore.Job{}
+	var item Job
 	if item.ID != "" {
 		t.Fatalf("expected job alias to match model")
 	}
@@ -25,14 +21,14 @@ func TestAliasesMatchJobModel(t *testing.T) {
 
 func TestValidStagesReturnsModelValues(t *testing.T) {
 	stages := ValidStages()
-	if len(stages) != len(statestore.ValidJobStages()) {
-		t.Fatalf("expected %d stages, got %d", len(statestore.ValidJobStages()), len(stages))
+	if len(stages) != 4 {
+		t.Fatalf("expected 4 stages, got %d", len(stages))
 	}
 }
 
 func TestValidStatusesReturnsModelValues(t *testing.T) {
 	statuses := ValidStatuses()
-	if len(statuses) != len(statestore.ValidJobStatuses()) {
-		t.Fatalf("expected %d statuses, got %d", len(statestore.ValidJobStatuses()), len(statuses))
+	if len(statuses) != 4 {
+		t.Fatalf("expected 4 statuses, got %d", len(statuses))
 	}
 }
