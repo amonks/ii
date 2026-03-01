@@ -34,6 +34,13 @@ Use this document for additional CLI-specific guidance when it is not already co
 - `--workers` defaults to `[pool].workers` from config.
 - The command runs until interrupted; each worker polls for ready todos and queues successful jobs for merge.
 
+## Serve Command
+
+- `ii serve [--workers <count>] [--onto <bookmark>]` runs pooled workers alongside a merge loop.
+- `--workers` defaults to `[pool].workers` from config.
+- `--onto` defaults to `[merge].target` from config; falls back to `main` when unset.
+- The command runs until interrupted; completed todos are merged onto the target bookmark.
+
 ## Version Flag
 
 - `ii -version` prints the build identifiers instead of a semantic version.

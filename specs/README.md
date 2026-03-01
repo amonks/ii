@@ -54,6 +54,7 @@
 | [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |
 | [merge.md](./merge.md)             | [merge/](../merge/)         | Change merge workflow: rebase changes onto a target bookmark with conflict resolution                         |
 | [pool.md](./pool.md)               | [pool/](../pool/)           | Pooled worker runner: execute job workers across pooled workspaces                                            |
+| [serve.md](./serve.md)             | [serve/](../serve/)         | Serve runner: pooled workers plus merge loop                                                                  |
 
 ## Internal Packages
 
