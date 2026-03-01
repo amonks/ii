@@ -165,6 +165,20 @@ func (c *Client) BookmarkCreate(workspacePath, name, rev string) error {
 	return runCombinedOutput(cmd, "jj bookmark create")
 }
 
+// BookmarkSet moves (or creates) a bookmark to the specified revision.
+func (c *Client) BookmarkSet(workspacePath, name, rev string) error {
+	cmd := exec.Command("jj", "bookmark", "set", name, "-r", rev, "--allow-backwards")
+	cmd.Dir = workspacePath
+	return runCombinedOutput(cmd, "jj bookmark set")
+}
+
+// Rebase rebases the branch rooted at rev onto dest.
+func (c *Client) Rebase(workspacePath, rev, dest string) error {
+	cmd := exec.Command("jj", "rebase", "-b", rev, "-d", dest)
+	cmd.Dir = workspacePath
+	return runCombinedOutput(cmd, "jj rebase")
+}
+
 // NewChange creates a new change with the given parent revision.
 // Returns the change ID of the newly created change.
 // Note: This moves the working copy to the new change.
@@ -296,6 +310,39 @@ func isFileNotFoundOutput(output []byte) bool {
 		"path does not exist",
 		"path doesn't exist",
 	)
+}
+
+// ConflictedInRange returns change IDs with conflicts in the given revset.
+func (c *Client) ConflictedInRange(workspacePath, revset string) ([]string, error) {
+	if internalstrings.IsBlank(revset) {
+		return nil, fmt.Errorf("revset is required")
+	}
+	cmd := exec.Command("jj", "log", "--no-graph", "-r", revset, "-T", "if(conflict, change_id)")
+	cmd.Dir = workspacePath
+	output, err := commandOutput(cmd, "jj log conflicts")
+	if err != nil {
+		return nil, err
+	}
+	return splitTrimmedLines(output), nil
+}
+
+// HasConflicts reports whether the revision has any conflicts.
+func (c *Client) HasConflicts(workspacePath, rev string) (bool, error) {
+	cmd := exec.Command("jj", "log", "--no-graph", "-r", rev, "-T", "conflict")
+	cmd.Dir = workspacePath
+	output, err := commandOutputString(cmd, "jj log conflict")
+	if err != nil {
+		return false, err
+	}
+	output = internalstrings.TrimSpace(output)
+	return output == "true", nil
+}
+
+// Squash squashes the current change into its parent.
+func (c *Client) Squash(workspacePath string) error {
+	cmd := exec.Command("jj", "squash")
+	cmd.Dir = workspacePath
+	return runCombinedOutput(cmd, "jj squash")
 }
 
 // SeriesLog returns the jj log for the patch series from fork_point(@|main) to @-.

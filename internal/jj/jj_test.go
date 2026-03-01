@@ -229,6 +229,37 @@ func TestBookmarkCreate_WithSlash(t *testing.T) {
 	}
 }
 
+func TestBookmarkSet(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	if err := client.BookmarkCreate(tmpDir, "test-bookmark", "@"); err != nil {
+		t.Fatalf("failed to create bookmark: %v", err)
+	}
+
+	changeID, err := client.NewChange(tmpDir, "root()")
+	if err != nil {
+		t.Fatalf("failed to create new change: %v", err)
+	}
+
+	if err := client.BookmarkSet(tmpDir, "test-bookmark", changeID); err != nil {
+		t.Fatalf("failed to set bookmark: %v", err)
+	}
+
+	changeAtBookmark, err := client.ChangeIDAt(tmpDir, "test-bookmark")
+	if err != nil {
+		t.Fatalf("failed to read bookmark change: %v", err)
+	}
+
+	if changeAtBookmark != changeID {
+		t.Fatalf("expected bookmark at %q, got %q", changeID, changeAtBookmark)
+	}
+}
+
 func TestNewChange(t *testing.T) {
 	tmpDir := t.TempDir()
 	client := jj.New()
@@ -270,6 +301,137 @@ func TestSnapshot(t *testing.T) {
 	// Snapshot should succeed
 	if err := client.Snapshot(tmpDir); err != nil {
 		t.Fatalf("failed to snapshot: %v", err)
+	}
+}
+
+func TestRebase(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	if err := client.BookmarkCreate(tmpDir, "main", "@"); err != nil {
+		t.Fatalf("failed to create main bookmark: %v", err)
+	}
+
+	baseChange, err := client.NewChange(tmpDir, "main")
+	if err != nil {
+		t.Fatalf("failed to create base change: %v", err)
+	}
+
+	filePath := filepath.Join(tmpDir, "base.txt")
+	if err := os.WriteFile(filePath, []byte("base"), 0644); err != nil {
+		t.Fatalf("failed to write base file: %v", err)
+	}
+
+	if err := client.Snapshot(tmpDir); err != nil {
+		t.Fatalf("failed to snapshot base change: %v", err)
+	}
+
+	if err := client.Commit(tmpDir, "base change"); err != nil {
+		t.Fatalf("failed to commit base change: %v", err)
+	}
+
+	tipChange, err := client.CurrentChangeID(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to read tip change: %v", err)
+	}
+
+	if err := client.BookmarkSet(tmpDir, "main", tipChange); err != nil {
+		t.Fatalf("failed to advance main: %v", err)
+	}
+
+	if err := client.Edit(tmpDir, baseChange); err != nil {
+		t.Fatalf("failed to edit base change: %v", err)
+	}
+
+	if err := client.Rebase(tmpDir, baseChange, "main"); err != nil {
+		t.Fatalf("failed to rebase: %v", err)
+	}
+}
+
+func TestHasConflicts(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	conflicts, err := client.HasConflicts(tmpDir, "@")
+	if err != nil {
+		t.Fatalf("failed to check conflicts: %v", err)
+	}
+	if conflicts {
+		t.Fatalf("expected no conflicts in empty repo")
+	}
+}
+
+func TestConflictedInRange(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	conflicts, err := client.ConflictedInRange(tmpDir, "@")
+	if err != nil {
+		t.Fatalf("failed to list conflicts: %v", err)
+	}
+
+	if len(conflicts) != 0 {
+		t.Fatalf("expected no conflicts, got %v", conflicts)
+	}
+}
+
+func TestConflictedInRange_EmptyRevset(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	_, err := client.ConflictedInRange(tmpDir, " ")
+	if err == nil {
+		t.Fatalf("expected error for blank revset")
+	}
+}
+
+func TestSquash(t *testing.T) {
+	tmpDir := t.TempDir()
+	client := jj.New()
+
+	if err := client.Init(tmpDir); err != nil {
+		t.Fatalf("failed to init jj repo: %v", err)
+	}
+
+	filePath := filepath.Join(tmpDir, "squash.txt")
+	if err := os.WriteFile(filePath, []byte("one"), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	if err := client.Snapshot(tmpDir); err != nil {
+		t.Fatalf("failed to snapshot: %v", err)
+	}
+
+	if _, err := client.NewChange(tmpDir, "@"); err != nil {
+		t.Fatalf("failed to create new change: %v", err)
+	}
+
+	if err := os.WriteFile(filePath, []byte("two"), 0644); err != nil {
+		t.Fatalf("failed to update file: %v", err)
+	}
+
+	if err := client.Snapshot(tmpDir); err != nil {
+		t.Fatalf("failed to snapshot change: %v", err)
+	}
+
+	if err := client.Squash(tmpDir); err != nil {
+		t.Fatalf("failed to squash: %v", err)
 	}
 }
 
