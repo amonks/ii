@@ -34,6 +34,7 @@ func (s *Server) Mux() *http.ServeMux {
 	mux.HandleFunc("POST /maps/{id}/walls/{$}", s.handleUpsertWall)
 	mux.HandleFunc("POST /maps/{id}/markers/{$}", s.handleUpsertMarker)
 	mux.HandleFunc("POST /maps/{id}/markers/delete/{$}", s.handleDeleteMarker)
+	mux.HandleFunc("POST /maps/{id}/cells/delete/{$}", s.handleDeleteCells)
 
 	return mux
 }

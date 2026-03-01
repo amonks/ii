@@ -10,7 +10,11 @@ export interface AppState {
   walls: Map<string, Wall>;
   markers: Map<string, Marker>;
   selectedRooms: Set<number>;
+  selectedHexes: Set<string>;
+  shiftDown: boolean;
   hoveredEdge: { x1: number; y1: number; x2: number; y2: number } | null;
+  hoveredEdgeValid: boolean;
+  hoveredCell: { x: number; y: number } | null;
   camera: Camera;
   canvas: HTMLCanvasElement;
   requestRender: () => void;
@@ -87,14 +91,37 @@ class SelectTool implements Tool {
         list.push(cell);
       }
 
-      // Find rooms fully enclosed by the selection box
-      state.selectedRooms.clear();
-      for (const [roomID, cells] of roomCells) {
-        const allInside = cells.every(
-          (c) => c.x >= x1 && c.x <= x2 && c.y >= y1 && c.y <= y2,
-        );
-        if (allInside) {
-          state.selectedRooms.add(roomID);
+      const isSingleCell = x1 === x2 && y1 === y2;
+
+      if (state.shiftDown && isSingleCell) {
+        // Shift-click: toggle the clicked room in the existing selection
+        const clicked = state.cells.get(cellKey(x1, y1));
+        if (clicked?.room_id != null) {
+          if (state.selectedRooms.has(clicked.room_id)) {
+            state.selectedRooms.delete(clicked.room_id);
+          } else {
+            state.selectedRooms.add(clicked.room_id);
+          }
+        }
+      } else {
+        state.selectedRooms.clear();
+
+        if (isSingleCell) {
+          // Click: select the room the clicked cell belongs to
+          const clicked = state.cells.get(cellKey(x1, y1));
+          if (clicked?.room_id != null) {
+            state.selectedRooms.add(clicked.room_id);
+          }
+        } else {
+          // Drag: find rooms fully enclosed by the selection box
+          for (const [roomID, cells] of roomCells) {
+            const allInside = cells.every(
+              (c) => c.x >= x1 && c.x <= x2 && c.y >= y1 && c.y <= y2,
+            );
+            if (allInside) {
+              state.selectedRooms.add(roomID);
+            }
+          }
         }
       }
 
@@ -114,6 +141,8 @@ class SelectTool implements Tool {
       const [col, row] = pixelToHex(wx, wy);
       const key = cellKey(col, row);
       state.selectedRooms.clear();
+      state.selectedHexes.clear();
+      state.selectedHexes.add(key);
       let cell = state.cells.get(key);
       if (!cell) {
         cell = {
@@ -174,7 +203,32 @@ class BoxTool implements Tool {
 
     state.dragPreview = null;
 
+    // Check if the drawn box is adjacent to or overlaps the selected room.
+    // Adjacent means at least one cell in the box shares an edge (not diagonal)
+    // with a cell belonging to the selected room.
+    let adjacentToSelected = false;
     if (state.selectedRooms.size > 0) {
+      for (let x = x1; x <= x2 && !adjacentToSelected; x++) {
+        for (let y = y1; y <= y2 && !adjacentToSelected; y++) {
+          // Check if this cell itself belongs to a selected room (overlap)
+          const here = state.cells.get(cellKey(x, y));
+          if (here?.room_id != null && state.selectedRooms.has(here.room_id)) {
+            adjacentToSelected = true;
+            break;
+          }
+          // Check 4 cardinal neighbors for selected room cells
+          for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+            const neighbor = state.cells.get(cellKey(x + dx, y + dy));
+            if (neighbor?.room_id != null && state.selectedRooms.has(neighbor.room_id)) {
+              adjacentToSelected = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (state.selectedRooms.size > 0 && adjacentToSelected) {
       // Merge mode: assign all cells in drawn box to the first selected room
       const selectedRoomId = state.selectedRooms.values().next().value!;
       const cells: Partial<Cell>[] = [];
@@ -249,8 +303,16 @@ class DoorTool implements Tool {
         x2: edge.neighborX,
         y2: edge.neighborY,
       };
+      // Valid = this edge is a room boundary (different rooms, or room vs empty)
+      const cellA = state.cells.get(cellKey(edge.cellX, edge.cellY));
+      const cellB = state.cells.get(cellKey(edge.neighborX, edge.neighborY));
+      const roomA = cellA?.room_id ?? null;
+      const roomB = cellB?.room_id ?? null;
+      // At least one side must have a room, and they must differ
+      state.hoveredEdgeValid = (roomA != null || roomB != null) && roomA !== roomB;
     } else {
       state.hoveredEdge = null;
+      state.hoveredEdgeValid = false;
     }
     state.requestRender();
   }
@@ -259,11 +321,18 @@ class DoorTool implements Tool {
     const edge = nearestWallEdge(wx, wy);
     if (!edge) return;
 
+    // Only allow doors on room boundaries
+    const cellA = state.cells.get(cellKey(edge.cellX, edge.cellY));
+    const cellB = state.cells.get(cellKey(edge.neighborX, edge.neighborY));
+    const roomA = cellA?.room_id ?? null;
+    const roomB = cellB?.room_id ?? null;
+    const isBoundary = (roomA != null || roomB != null) && roomA !== roomB;
+    if (!isBoundary) return;
+
     const wk = wallKey(edge.cellX, edge.cellY, edge.neighborX, edge.neighborY);
     const existing = state.walls.get(wk);
 
     if (existing?.type === "door") {
-      // Toggle off: remove the wall override
       state.walls.delete(wk);
       state.requestRender();
       return;
@@ -287,9 +356,16 @@ class DoorTool implements Tool {
 
 class LetterTool implements Tool {
   name: ToolName = "letter";
+  private inputEl: HTMLInputElement | null = null;
 
   onPointerDown() {}
-  onPointerMove() {}
+
+  onPointerMove(state: AppState, wx: number, wy: number) {
+    const gx = Math.floor(wx / CELL_SIZE);
+    const gy = Math.floor(wy / CELL_SIZE);
+    state.hoveredCell = { x: gx, y: gy };
+    state.requestRender();
+  }
 
   async onPointerUp(state: AppState, wx: number, wy: number) {
     const gx = Math.floor(wx / CELL_SIZE);
@@ -299,25 +375,60 @@ class LetterTool implements Tool {
     const existing = state.markers.get(key);
 
     if (existing) {
-      // Remove existing marker
       await api.deleteMarker(state.mapID, gx, gy);
       state.markers.delete(key);
       state.requestRender();
       return;
     }
 
-    const letter = prompt("Enter a letter:");
-    if (!letter || letter.length === 0) return;
+    // Show inline input positioned over the cell
+    this.removeInput();
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 1;
+    input.style.cssText = "position:absolute;width:32px;height:32px;font-size:18px;font-weight:bold;text-align:center;background:rgba(30,25,20,0.9);color:#fbbf24;border:2px solid #fbbf24;border-radius:4px;outline:none;padding:0;text-transform:uppercase;z-index:10;";
 
-    const marker: Partial<Marker> = {
-      x: gx,
-      y: gy,
-      letter: letter[0].toUpperCase(),
+    // Position the input over the cell using screen coordinates
+    const cam = state.camera;
+    const [screenX, screenY] = cam.worldToScreen(
+      gx * CELL_SIZE + CELL_SIZE / 2,
+      gy * CELL_SIZE + CELL_SIZE / 2,
+    );
+    const canvasRect = state.canvas.getBoundingClientRect();
+    input.style.left = `${canvasRect.left + screenX - 16}px`;
+    input.style.top = `${canvasRect.top + screenY - 16}px`;
+
+    const commit = async () => {
+      const letter = input.value.trim();
+      this.removeInput();
+      if (!letter) return;
+
+      const marker: Partial<Marker> = {
+        x: gx,
+        y: gy,
+        letter: letter[0].toUpperCase(),
+      };
+      const result = await api.upsertMarker(state.mapID, marker);
+      state.markers.set(cellKey(result.x, result.y), result);
+      state.requestRender();
     };
 
-    const result = await api.upsertMarker(state.mapID, marker);
-    state.markers.set(cellKey(result.x, result.y), result);
-    state.requestRender();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") commit();
+      if (e.key === "Escape") this.removeInput();
+    });
+    input.addEventListener("blur", () => commit());
+
+    document.body.appendChild(input);
+    input.focus();
+    this.inputEl = input;
+  }
+
+  private removeInput() {
+    if (this.inputEl) {
+      this.inputEl.remove();
+      this.inputEl = null;
+    }
   }
 }
 

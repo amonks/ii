@@ -130,7 +130,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var8 string
 									templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(retainer.Character.Name)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 20, Col: 52}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 20, Col: 52}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 									if templ_7745c5c3_Err != nil {
@@ -161,7 +161,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var10 string
 									templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.Character.Level))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 22, Col: 60}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 22, Col: 60}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 									if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var11 string
 									templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(retainer.Character.Kindred)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 22, Col: 91}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 22, Col: 91}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 									if templ_7745c5c3_Err != nil {
@@ -187,7 +187,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var12 string
 									templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(retainer.Character.Class)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 22, Col: 120}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 22, Col: 120}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 									if templ_7745c5c3_Err != nil {
@@ -206,7 +206,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var13 templ.SafeURL
 								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/characters/%d/", retainer.Character.ID)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 25, Col: 126}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 25, Col: 126}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -291,7 +291,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var18 string
 										templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", retainer.Character.HPCurrent, retainer.Character.HPMax))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 30, Col: 101}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 30, Col: 101}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 										if templ_7745c5c3_Err != nil {
@@ -366,7 +366,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var22 string
 										templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.AC))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 34, Col: 55}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 34, Col: 55}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 										if templ_7745c5c3_Err != nil {
@@ -441,7 +441,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var26 string
 										templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(formatMod(retainer.AttackBonus))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 38, Col: 56}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 38, Col: 56}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 										if templ_7745c5c3_Err != nil {
@@ -516,7 +516,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var30 string
 										templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.Speed))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 42, Col: 58}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 42, Col: 58}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 										if templ_7745c5c3_Err != nil {
@@ -626,7 +626,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var33 string
 									templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.ThiefBackstabBonus))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 53, Col: 81}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 53, Col: 81}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 									if templ_7745c5c3_Err != nil {
@@ -639,7 +639,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var34 string
 									templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(retainer.ThiefBackstabDamage)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 53, Col: 114}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 53, Col: 114}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 									if templ_7745c5c3_Err != nil {
@@ -698,7 +698,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var37 string
 									templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(formatTurnUndeadSummary(retainer.TurnUndeadTable))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 57, Col: 68}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 57, Col: 68}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 									if templ_7745c5c3_Err != nil {
@@ -759,7 +759,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var39 string
 									templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.CombatTalentsTotal))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 63, Col: 86}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 63, Col: 86}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 									if templ_7745c5c3_Err != nil {
@@ -796,7 +796,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var41 string
 									templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.EnchantmentUsesRemaining))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 66, Col: 94}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 66, Col: 94}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 									if templ_7745c5c3_Err != nil {
@@ -809,7 +809,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var42 string
 									templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.EnchantmentUsesTotal))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 66, Col: 147}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 66, Col: 147}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 									if templ_7745c5c3_Err != nil {
@@ -844,7 +844,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var44 string
 									templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("retainers/%d/enchantment/", retainer.Contract.ID)))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 68, Col: 101}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 68, Col: 101}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 									if templ_7745c5c3_Err != nil {
@@ -883,7 +883,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var46 string
 									templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("retainers/%d/enchantment/rest/", retainer.Contract.ID)))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 71, Col: 106}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 71, Col: 106}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 									if templ_7745c5c3_Err != nil {
@@ -950,7 +950,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var49 string
 									templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.GlamoursKnown))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 77, Col: 81}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 77, Col: 81}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 									if templ_7745c5c3_Err != nil {
@@ -986,7 +986,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var51 string
 								templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", retainer.Loyalty))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 79, Col: 67}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 79, Col: 67}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 								if templ_7745c5c3_Err != nil {
@@ -1055,7 +1055,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var55 string
 									templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", retainer.Contract.LootSharePct))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 82, Col: 72}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 82, Col: 72}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 									if templ_7745c5c3_Err != nil {
@@ -1112,7 +1112,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var58 string
 									templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", retainer.Contract.XPSharePct))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 84, Col: 70}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 84, Col: 70}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 									if templ_7745c5c3_Err != nil {
@@ -1169,7 +1169,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var61 string
 									templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cp", retainer.Contract.DailyWageCP))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 86, Col: 70}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 86, Col: 70}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 									if templ_7745c5c3_Err != nil {
@@ -1194,7 +1194,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var62 string
 							templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("retainers/%d/update/", retainer.Contract.ID)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 88, Col: 94}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 88, Col: 94}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 							if templ_7745c5c3_Err != nil {
@@ -1353,7 +1353,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var68 string
 							templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("retainers/%d/dismiss/", retainer.Contract.ID)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 99, Col: 95}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 99, Col: 95}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 							if templ_7745c5c3_Err != nil {
@@ -1495,7 +1495,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var75 string
 											templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(weapon.Name)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 111, Col: 32}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 111, Col: 32}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 											if templ_7745c5c3_Err != nil {
@@ -1538,7 +1538,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var77 string
 								templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d kindred, %d class", len(retainer.KindredTraits), len(retainer.ClassTraits)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 116, Col: 108}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 116, Col: 108}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
 								if templ_7745c5c3_Err != nil {
@@ -1595,7 +1595,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 								var templ_7745c5c3_Var80 string
 								templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Equipped %d / 10 slots", retainer.EquippedSlots))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 119, Col: 85}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 119, Col: 85}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 								if templ_7745c5c3_Err != nil {
@@ -1633,7 +1633,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var82 string
 									templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Stowed %d / %d slots", retainer.StowedSlots, retainer.StowedCapacity))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 125, Col: 92}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 125, Col: 92}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 									if templ_7745c5c3_Err != nil {
@@ -1643,7 +1643,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var83 string
 									templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Stowed %d slots", retainer.StowedSlots))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 127, Col: 62}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 127, Col: 62}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 									if templ_7745c5c3_Err != nil {
@@ -1672,7 +1672,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var85 string
 									templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(companionInventoryLabel(cg))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 131, Col: 52}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 131, Col: 52}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 									if templ_7745c5c3_Err != nil {
@@ -1698,7 +1698,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 							var templ_7745c5c3_Var86 string
 							templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(retainerItemFormAction(retainer.Contract.ID)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 136, Col: 81}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 136, Col: 81}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 							if templ_7745c5c3_Err != nil {
@@ -1945,7 +1945,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var97 string
 									templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.JoinStringErrs(class)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 162, Col: 31}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 162, Col: 31}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var97))
 									if templ_7745c5c3_Err != nil {
@@ -1958,7 +1958,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var98 string
 									templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(class)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 162, Col: 41}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 162, Col: 41}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 									if templ_7745c5c3_Err != nil {
@@ -2025,7 +2025,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var101 string
 									templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.JoinStringErrs(kindred)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 171, Col: 33}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 171, Col: 33}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var101))
 									if templ_7745c5c3_Err != nil {
@@ -2038,7 +2038,7 @@ func RetainersSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var102 string
 									templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.JoinStringErrs(kindred)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/retainers.templ`, Line: 171, Col: 45}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/retainers.templ`, Line: 171, Col: 45}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var102))
 									if templ_7745c5c3_Err != nil {

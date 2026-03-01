@@ -49,3 +49,11 @@ export async function deleteMarker(mapID: number, x: number, y: number): Promise
     body: JSON.stringify({ x, y }),
   });
 }
+
+export async function deleteCells(mapID: number, coords: { x: number; y: number }[]): Promise<void> {
+  await fetch(`${basePath()}/cells/delete/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(coords),
+  });
+}

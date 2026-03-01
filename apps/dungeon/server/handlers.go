@@ -231,6 +231,40 @@ func (s *Server) handleDeleteMarker(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *Server) handleDeleteCells(w http.ResponseWriter, r *http.Request) {
+	id, err := parseID(r, "id")
+	if err != nil {
+		http.Error(w, "invalid map id", http.StatusBadRequest)
+		return
+	}
+
+	var coords []struct {
+		X int `json:"x"`
+		Y int `json:"y"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&coords); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	pairs := make([][2]int, len(coords))
+	for i, c := range coords {
+		pairs[i] = [2]int{c.X, c.Y}
+	}
+	orphanedWalls, err := s.db.DeleteCellsAndCleanWalls(id, pairs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.hub.Publish(id, "cells_delete", coords)
+	if len(orphanedWalls) > 0 {
+		s.hub.Publish(id, "walls_delete", orphanedWalls)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func parseID(r *http.Request, name string) (uint, error) {
 	s := r.PathValue(name)
 	n, err := strconv.ParseUint(s, 10, 64)

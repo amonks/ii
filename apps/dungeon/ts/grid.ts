@@ -14,23 +14,40 @@ export function drawDungeonGrid(
   selectedRooms: Set<number> | null,
   dragPreview: { x1: number; y1: number; x2: number; y2: number } | null,
   hoveredEdge: { x1: number; y1: number; x2: number; y2: number } | null,
+  hoveredEdgeValid: boolean,
+  hoveredCell: { x: number; y: number } | null,
 ) {
   ctx.save();
   camera.apply(ctx);
 
-  // Draw floor dots only inside rooms
-  const dotPositions = new Set<string>();
+  // Determine visible range using CSS pixel screen bounds
+  const [tlx, tly] = camera.screenToWorld(0, 0);
+  const [brx, bry] = camera.screenToWorld(camera.logicalWidth, camera.logicalHeight);
+  const minGX = Math.floor(tlx / CELL_SIZE) - 1;
+  const minGY = Math.floor(tly / CELL_SIZE) - 1;
+  const maxGX = Math.ceil(brx / CELL_SIZE) + 1;
+  const maxGY = Math.ceil(bry / CELL_SIZE) + 1;
+
+  // Draw background grid dots
+  ctx.fillStyle = "#57534e";
+  for (let gx = minGX; gx <= maxGX; gx++) {
+    for (let gy = minGY; gy <= maxGY; gy++) {
+      ctx.fillRect(gx * CELL_SIZE - 1, gy * CELL_SIZE - 1, 2, 2);
+    }
+  }
+
+  // Draw brighter floor dots inside rooms (on top of background)
+  const roomDotPositions = new Set<string>();
   for (const cell of cells.values()) {
     if (cell.room_id == null) continue;
-    // Add all 4 corners of this cell
     for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
       const gx = cell.x + dx;
       const gy = cell.y + dy;
-      dotPositions.add(`${gx},${gy}`);
+      roomDotPositions.add(`${gx},${gy}`);
     }
   }
-  ctx.fillStyle = "#44403c";
-  for (const key of dotPositions) {
+  ctx.fillStyle = "#78716c";
+  for (const key of roomDotPositions) {
     const [gxs, gys] = key.split(",");
     const gx = parseInt(gxs, 10);
     const gy = parseInt(gys, 10);
@@ -44,7 +61,7 @@ export function drawDungeonGrid(
 
     const isSelected = cell.room_id != null && (selectedRooms?.has(cell.room_id) ?? false);
     if (cell.room_id != null) {
-      const hue = cell.hue ?? 30;
+      const hue = cell.hue ?? 40;
       if (isSelected) {
         ctx.fillStyle = `hsla(${hue}, 60%, 55%, 1)`;
       } else if (cell.is_explored) {
@@ -87,17 +104,6 @@ export function drawDungeonGrid(
     drawWallEdge(ctx, cells, walls, cell, cell.x + 1, cell.y, px + CELL_SIZE, py, px + CELL_SIZE, py + CELL_SIZE);
     // Bottom wall
     drawWallEdge(ctx, cells, walls, cell, cell.x, cell.y + 1, px, py + CELL_SIZE, px + CELL_SIZE, py + CELL_SIZE);
-  }
-
-  // Draw markers
-  ctx.font = `bold ${CELL_SIZE * 0.5}px monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#fbbf24";
-  for (const marker of markers.values()) {
-    const px = marker.x * CELL_SIZE + CELL_SIZE / 2;
-    const py = marker.y * CELL_SIZE + CELL_SIZE / 2;
-    ctx.fillText(marker.letter, px, py);
   }
 
   // Draw drag preview
@@ -147,7 +153,9 @@ export function drawDungeonGrid(
       lx2 = lx1 + CELL_SIZE;
       ly2 = ly1;
     }
-    ctx.strokeStyle = "rgba(251, 191, 36, 0.6)";
+    ctx.strokeStyle = hoveredEdgeValid
+      ? "rgba(74, 222, 128, 0.7)"   // green — valid boundary
+      : "rgba(248, 113, 113, 0.5)"; // red — not a boundary
     ctx.lineWidth = 5;
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -156,7 +164,28 @@ export function drawDungeonGrid(
     ctx.stroke();
   }
 
+  // Draw hovered cell highlight (for letter tool)
+  if (hoveredCell) {
+    const px = hoveredCell.x * CELL_SIZE;
+    const py = hoveredCell.y * CELL_SIZE;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+  }
+
   ctx.restore();
+
+  // Draw markers in screen space (outside camera transform) for crisp text
+  ctx.font = "bold 16px monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fbbf24";
+  for (const marker of markers.values()) {
+    const [sx, sy] = camera.worldToScreen(
+      marker.x * CELL_SIZE + CELL_SIZE / 2,
+      marker.y * CELL_SIZE + CELL_SIZE / 2,
+    );
+    ctx.fillText(marker.letter, sx, sy);
+  }
 }
 
 function drawWallEdge(
@@ -241,21 +270,20 @@ function drawWallEdge(
 export const HEX_SIZE = 30;
 
 function hexCorner(cx: number, cy: number, i: number): [number, number] {
-  const angle = (Math.PI / 180) * (60 * i - 30);
+  const angle = (Math.PI / 180) * (60 * i);
   return [cx + HEX_SIZE * Math.cos(angle), cy + HEX_SIZE * Math.sin(angle)];
 }
 
 export function hexToPixel(col: number, row: number): [number, number] {
-  const x = HEX_SIZE * Math.sqrt(3) * (col + 0.5 * (row & 1));
-  const y = HEX_SIZE * 1.5 * row;
+  const x = HEX_SIZE * 1.5 * col;
+  const y = HEX_SIZE * Math.sqrt(3) * (row + 0.5 * (col & 1));
   return [x, y];
 }
 
 export function pixelToHex(px: number, py: number): [number, number] {
-  // Offset coordinates: convert pixel to fractional hex, then round.
-  // Use cube coordinate rounding for accuracy.
-  const q = (px * Math.sqrt(3) / 3 - py / 3) / HEX_SIZE;
-  const r = (py * 2 / 3) / HEX_SIZE;
+  // Flat-top: pixel to fractional axial coordinates.
+  const q = (px * 2 / 3) / HEX_SIZE;
+  const r = (-px / 3 + py * Math.sqrt(3) / 3) / HEX_SIZE;
 
   // Convert axial (q, r) to cube (x, y, z)
   let cx = q;
@@ -279,17 +307,9 @@ export function pixelToHex(px: number, py: number): [number, number] {
     rz = -rx - ry;
   }
 
-  // Convert axial (rx, rz) back to offset coordinates
-  const col = rx + Math.floor(rz / 2);  // using even-r offset
-  // Actually, we need to match hexToPixel's offset convention.
-  // hexToPixel uses: x = sqrt(3) * (col + 0.5*(row&1)), y = 1.5*row
-  // This is "odd-r" offset (odd rows shifted right).
-  // Reverse: row = rz, col = rx + floor((rz - (rz&1)) / 2)
-  // Simplified: col = rx + floor(rz/2) when rz is even, col = rx + floor(rz/2) when rz is odd
-  // Wait, let me derive properly.
-  // From axial (q, r) to odd-r offset: col = q + (r - (r&1)) / 2, row = r
-  const offsetCol = rx + (rz - (rz & 1)) / 2;
-  const offsetRow = rz;
+  // Axial to odd-q offset: col = q, row = r + (q - (q&1)) / 2
+  const offsetCol = rx;
+  const offsetRow = rz + (rx - (rx & 1)) / 2;
 
   return [offsetCol, offsetRow];
 }
@@ -317,8 +337,8 @@ export function drawHexGrid(
   // Determine visible range
   const [tlx, tly] = camera.screenToWorld(0, 0);
   const [brx, bry] = camera.screenToWorld(camera.logicalWidth, camera.logicalHeight);
-  const hexW = HEX_SIZE * Math.sqrt(3);
-  const hexH = HEX_SIZE * 1.5;
+  const hexW = HEX_SIZE * 1.5;
+  const hexH = HEX_SIZE * Math.sqrt(3);
   const minCol = Math.floor(tlx / hexW) - 2;
   const maxCol = Math.ceil(brx / hexW) + 2;
   const minRow = Math.floor(tly / hexH) - 2;
@@ -331,9 +351,20 @@ export function drawHexGrid(
     for (let col = minCol; col <= maxCol; col++) {
       const cell = cells.get(cellKey(col, row));
       if (cell && cellHasData(cell)) continue;
+      const key = cellKey(col, row);
       const [hx, hy] = hexToPixel(col, row);
       drawHexOutline(ctx, hx, hy);
-      ctx.stroke();
+      if (selection?.has(key)) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.fill();
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.strokeStyle = "#44403c";
+        ctx.lineWidth = 1;
+      } else {
+        ctx.stroke();
+      }
     }
   }
 
@@ -341,7 +372,7 @@ export function drawHexGrid(
   for (const cell of cells.values()) {
     if (!cellHasData(cell)) continue;
     const [hx, hy] = hexToPixel(cell.x, cell.y);
-    const hue = cell.hue ?? 140;
+    const hue = cell.hue ?? 40;
     const isSelected = selection?.has(cellKey(cell.x, cell.y));
 
     if (isSelected) {
@@ -357,27 +388,37 @@ export function drawHexGrid(
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Draw text
-    if (cell.text) {
-      ctx.font = `${HEX_SIZE * 0.35}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = cell.is_explored ? "#e7e5e4" : "#a8a29e";
-      ctx.fillText(cell.text, hx, hy, HEX_SIZE * 1.5);
+  }
+
+  ctx.restore();
+
+  // Draw text in screen space (outside camera transform) for crisp rendering
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const lineHeight = 14;
+  for (const cell of cells.values()) {
+    if (!cellHasData(cell) || !cell.text) continue;
+    const [hx, hy] = hexToPixel(cell.x, cell.y);
+    const [sx, sy] = camera.worldToScreen(hx, hy);
+    ctx.fillStyle = cell.is_explored ? "#e7e5e4" : "#a8a29e";
+    const lines = cell.text.split("\n");
+    const topY = sy - (lines.length - 1) * lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], sx, topY + i * lineHeight);
     }
   }
 
-  // Draw markers
-  ctx.font = `bold ${HEX_SIZE * 0.6}px monospace`;
+  // Draw markers in screen space
+  ctx.font = "bold 16px monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fbbf24";
   for (const marker of markers.values()) {
     const [hx, hy] = hexToPixel(marker.x, marker.y);
-    ctx.fillText(marker.letter, hx, hy);
+    const [sx, sy] = camera.worldToScreen(hx, hy);
+    ctx.fillText(marker.letter, sx, sy);
   }
-
-  ctx.restore();
 }
 
 // --- Shared Utilities ---

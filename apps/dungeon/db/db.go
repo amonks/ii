@@ -195,6 +195,53 @@ func (db *DB) NextRoomID(mapID uint) (uint, error) {
 	return *maxRoom + 1, nil
 }
 
+func (db *DB) DeleteCells(mapID uint, coords [][2]int) error {
+	for _, c := range coords {
+		if err := db.Where("map_id = ? AND x = ? AND y = ?", mapID, c[0], c[1]).Delete(&Cell{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteCellsAndCleanWalls deletes cells and removes any walls where neither
+// endpoint has a room cell anymore. Returns the walls that were cleaned up.
+func (db *DB) DeleteCellsAndCleanWalls(mapID uint, coords [][2]int) ([]Wall, error) {
+	if err := db.DeleteCells(mapID, coords); err != nil {
+		return nil, err
+	}
+
+	// Find walls where neither endpoint has a room cell
+	var orphaned []Wall
+	err := db.Raw(`
+		SELECT w.* FROM walls w
+		WHERE w.map_id = ?
+		AND NOT EXISTS (
+			SELECT 1 FROM cells c
+			WHERE c.map_id = w.map_id AND c.x = w.x1 AND c.y = w.y1 AND c.room_id IS NOT NULL
+		)
+		AND NOT EXISTS (
+			SELECT 1 FROM cells c
+			WHERE c.map_id = w.map_id AND c.x = w.x2 AND c.y = w.y2 AND c.room_id IS NOT NULL
+		)
+	`, mapID).Scan(&orphaned).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(orphaned) > 0 {
+		ids := make([]uint, len(orphaned))
+		for i, w := range orphaned {
+			ids[i] = w.ID
+		}
+		if err := db.Where("id IN ?", ids).Delete(&Wall{}).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return orphaned, nil
+}
+
 // --- Wall CRUD ---
 
 func (db *DB) UpsertWall(w *Wall) error {

@@ -36,7 +36,10 @@ function makeState(cells: Cell[] = []): AppState {
     walls: new Map(),
     markers: new Map(),
     selectedRooms: new Set(),
+    shiftDown: false,
     hoveredEdge: null,
+    hoveredEdgeValid: false,
+    hoveredCell: null,
     camera: { logicalWidth: 800, logicalHeight: 600 } as any,
     canvas: {} as any,
     requestRender: vi.fn(),
@@ -88,6 +91,82 @@ describe("SelectTool", () => {
 
     expect(state.selectedRooms.size).toBe(0);
     expect(state.hideProperties).toHaveBeenCalled();
+  });
+
+  it("selects a room by clicking on one of its cells", () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(0, 1, 1), makeCell(1, 1, 1),
+      makeCell(5, 5, 2),
+    ]);
+
+    // Click cell (0,0) — start and end in the same cell
+    select.onPointerDown(state, ...toWorld(0, 0));
+    select.onPointerUp(state, ...toWorld(0, 0));
+
+    expect(state.selectedRooms.has(1)).toBe(true);
+    expect(state.selectedRooms.has(2)).toBe(false);
+    expect(state.showProperties).toHaveBeenCalled();
+    // All 4 cells of room 1 should be passed to showProperties
+    const calls = (state.showProperties as any).mock.calls;
+    const passedCells = calls[calls.length - 1][0] as Cell[];
+    expect(passedCells.length).toBe(4);
+  });
+
+  it("clicking empty space deselects", () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+    ]);
+
+    // Click empty cell (5,5)
+    select.onPointerDown(state, ...toWorld(5, 5));
+    select.onPointerUp(state, ...toWorld(5, 5));
+
+    expect(state.selectedRooms.size).toBe(0);
+    expect(state.hideProperties).toHaveBeenCalled();
+  });
+
+  it("shift-click adds a room to the existing selection", () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(5, 0, 2), makeCell(6, 0, 2),
+    ]);
+
+    // Click room 1
+    select.onPointerDown(state, ...toWorld(0, 0));
+    select.onPointerUp(state, ...toWorld(0, 0));
+    expect(state.selectedRooms.has(1)).toBe(true);
+    expect(state.selectedRooms.size).toBe(1);
+
+    // Shift-click room 2
+    state.shiftDown = true;
+    select.onPointerDown(state, ...toWorld(5, 0));
+    select.onPointerUp(state, ...toWorld(5, 0));
+    state.shiftDown = false;
+
+    // Both rooms should be selected
+    expect(state.selectedRooms.has(1)).toBe(true);
+    expect(state.selectedRooms.has(2)).toBe(true);
+  });
+
+  it("shift-click on already-selected room deselects it", () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(5, 0, 2), makeCell(6, 0, 2),
+    ]);
+
+    // Select both rooms
+    state.selectedRooms.add(1);
+    state.selectedRooms.add(2);
+
+    // Shift-click room 1 to deselect it
+    state.shiftDown = true;
+    select.onPointerDown(state, ...toWorld(0, 0));
+    select.onPointerUp(state, ...toWorld(0, 0));
+    state.shiftDown = false;
+
+    expect(state.selectedRooms.has(1)).toBe(false);
+    expect(state.selectedRooms.has(2)).toBe(true);
   });
 
   it("selects multiple rooms when all are fully enclosed", () => {
@@ -185,6 +264,80 @@ describe("BoxTool", () => {
     // Total room 1 cells should be 8
     const room1Cells = Array.from(state.cells.values()).filter(c => c.room_id === 1);
     expect(room1Cells.length).toBe(8);
+  });
+
+  it("creates new room when drawn box is not adjacent to selected room", async () => {
+    // Room 1 at (0,0)-(1,1)
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(0, 1, 1), makeCell(1, 1, 1),
+    ]);
+
+    // Select room 1
+    state.selectedRooms.add(1);
+
+    // Draw box at (5,5)-(6,6) — far away, not adjacent
+    box.onPointerDown(state, ...toWorld(5, 5));
+    await box.onPointerUp(state, ...toWorld(6, 6));
+
+    // New cells should be a new room (room 2), not room 1
+    const cell55 = state.cells.get(cellKey(5, 5))!;
+    expect(cell55.room_id).toBe(2);
+
+    // Room 1 should still have 4 cells
+    const room1Cells = Array.from(state.cells.values()).filter(c => c.room_id === 1);
+    expect(room1Cells.length).toBe(4);
+  });
+
+  it("merges when drawn box shares an edge with selected room", async () => {
+    // Room 1 at (0,0)-(1,0) — a horizontal 2-cell room
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+    ]);
+
+    state.selectedRooms.add(1);
+
+    // Draw box at (0,1)-(1,1) — directly below, shares edge
+    box.onPointerDown(state, ...toWorld(0, 1));
+    await box.onPointerUp(state, ...toWorld(1, 1));
+
+    // Should merge into room 1
+    const cell01 = state.cells.get(cellKey(0, 1))!;
+    expect(cell01.room_id).toBe(1);
+    const room1Cells = Array.from(state.cells.values()).filter(c => c.room_id === 1);
+    expect(room1Cells.length).toBe(4);
+  });
+
+  it("merges when drawn box overlaps selected room", async () => {
+    // Room 1 at (0,0)-(2,0)
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1), makeCell(2, 0, 1),
+    ]);
+
+    state.selectedRooms.add(1);
+
+    // Draw box at (1,0)-(3,0) — overlaps cell (1,0) and (2,0)
+    box.onPointerDown(state, ...toWorld(1, 0));
+    await box.onPointerUp(state, ...toWorld(3, 0));
+
+    // (3,0) should be room 1
+    const cell30 = state.cells.get(cellKey(3, 0))!;
+    expect(cell30.room_id).toBe(1);
+  });
+
+  it("creates new room for diagonal-only adjacency (no shared edge)", async () => {
+    // Room 1 at (0,0) — single cell
+    const state = makeState([makeCell(0, 0, 1)]);
+
+    state.selectedRooms.add(1);
+
+    // Draw box at (1,1) — diagonally adjacent, no shared edge
+    box.onPointerDown(state, ...toWorld(1, 1));
+    await box.onPointerUp(state, ...toWorld(1, 1));
+
+    // Should be a new room, not merged
+    const cell11 = state.cells.get(cellKey(1, 1))!;
+    expect(cell11.room_id).toBe(2);
   });
 
   it("reassigns cells from other rooms in merge mode", async () => {

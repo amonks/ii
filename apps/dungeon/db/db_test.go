@@ -292,6 +292,69 @@ func TestDeleteMarker(t *testing.T) {
 	}
 }
 
+func TestDeleteCells(t *testing.T) {
+	db := newTestDB(t)
+
+	m := &Map{Name: "Test", Type: "dungeon"}
+	db.CreateMap(m)
+
+	roomID := uint(1)
+	db.UpsertCell(&Cell{MapID: m.ID, X: 0, Y: 0, IsExplored: true, RoomID: &roomID})
+	db.UpsertCell(&Cell{MapID: m.ID, X: 1, Y: 0, IsExplored: true, RoomID: &roomID})
+	db.UpsertCell(&Cell{MapID: m.ID, X: 2, Y: 0, IsExplored: true, RoomID: &roomID})
+
+	if err := db.DeleteCells(m.ID, [][2]int{{0, 0}, {1, 0}}); err != nil {
+		t.Fatalf("DeleteCells: %v", err)
+	}
+
+	cells, _ := db.ListCells(m.ID)
+	if len(cells) != 1 {
+		t.Fatalf("got %d cells after delete, want 1", len(cells))
+	}
+	if cells[0].X != 2 || cells[0].Y != 0 {
+		t.Errorf("remaining cell at (%d,%d), want (2,0)", cells[0].X, cells[0].Y)
+	}
+}
+
+func TestDeleteCellsCleansOrphanedWalls(t *testing.T) {
+	db := newTestDB(t)
+
+	m := &Map{Name: "Test", Type: "dungeon"}
+	db.CreateMap(m)
+
+	room1 := uint(1)
+	room2 := uint(2)
+	db.UpsertCell(&Cell{MapID: m.ID, X: 0, Y: 0, IsExplored: true, RoomID: &room1})
+	db.UpsertCell(&Cell{MapID: m.ID, X: 1, Y: 0, IsExplored: true, RoomID: &room1})
+	db.UpsertCell(&Cell{MapID: m.ID, X: 2, Y: 0, IsExplored: true, RoomID: &room2})
+
+	// Door between room1 and room2
+	db.UpsertWall(&Wall{MapID: m.ID, X1: 1, Y1: 0, X2: 2, Y2: 0, Type: "door"})
+	// Door from room1 into dead space (above)
+	db.UpsertWall(&Wall{MapID: m.ID, X1: 0, Y1: 0, X2: 0, Y2: -1, Type: "door"})
+
+	// Delete room1 — door between rooms should survive (room2 still has a cell),
+	// but the door into dead space should be cleaned up
+	deleted, err := db.DeleteCellsAndCleanWalls(m.ID, [][2]int{{0, 0}, {1, 0}})
+	if err != nil {
+		t.Fatalf("DeleteCellsAndCleanWalls: %v", err)
+	}
+
+	walls, _ := db.ListWalls(m.ID)
+	if len(walls) != 1 {
+		t.Fatalf("got %d walls, want 1 (the door between rooms)", len(walls))
+	}
+	if walls[0].X1 != 1 || walls[0].X2 != 2 {
+		t.Errorf("remaining wall at (%d,%d)-(%d,%d), want (1,0)-(2,0)",
+			walls[0].X1, walls[0].Y1, walls[0].X2, walls[0].Y2)
+	}
+
+	// Should report the orphaned wall that was deleted
+	if len(deleted) != 1 {
+		t.Fatalf("got %d deleted walls, want 1", len(deleted))
+	}
+}
+
 func TestMapState(t *testing.T) {
 	db := newTestDB(t)
 

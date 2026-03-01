@@ -24,6 +24,7 @@ function init() {
   const walls = new Map<string, Wall>();
   const markers = new Map<string, Marker>();
   const selectedRooms = new Set<number>();
+  const selectedHexes = new Set<string>();
 
   let currentTool: Tool = TOOLS.select;
   let renderRequested = false;
@@ -35,7 +36,11 @@ function init() {
     walls,
     markers,
     selectedRooms,
+    selectedHexes,
+    shiftDown: false,
     hoveredEdge: null,
+    hoveredEdgeValid: false,
+    hoveredCell: null,
     camera,
     canvas,
     dragPreview: null,
@@ -75,9 +80,9 @@ function init() {
     ctx.clearRect(0, 0, camera.logicalWidth, camera.logicalHeight);
 
     if (mapType === "dungeon") {
-      drawDungeonGrid(ctx, camera, cells, walls, markers, selectedRooms, state.dragPreview, state.hoveredEdge);
+      drawDungeonGrid(ctx, camera, cells, walls, markers, selectedRooms, state.dragPreview, state.hoveredEdge, state.hoveredEdgeValid, state.hoveredCell);
     } else {
-      drawHexGrid(ctx, camera, cells, markers, null);
+      drawHexGrid(ctx, camera, cells, markers, selectedHexes);
     }
   }
 
@@ -110,11 +115,12 @@ function init() {
     lastPointerX = e.clientX;
     lastPointerY = e.clientY;
 
-    if (e.pointerType !== "touch" && (e.button === 1 || e.button === 2 || e.shiftKey)) {
+    if (e.pointerType !== "touch" && (e.button === 1 || e.button === 2)) {
       isPanning = true;
       return;
     }
 
+    state.shiftDown = e.shiftKey;
     const [sx, sy] = canvasCoords(e);
     const [wx, wy] = camera.screenToWorld(sx, sy);
     currentTool.onPointerDown(state, wx, wy);
@@ -231,6 +237,8 @@ function init() {
       if (!TOOLS[toolName]) return;
       currentTool = TOOLS[toolName];
       state.hoveredEdge = null;
+      state.hoveredEdgeValid = false;
+      state.hoveredCell = null;
       document.querySelectorAll(".tool-btn[data-tool]").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       state.requestRender();
@@ -240,6 +248,7 @@ function init() {
   // Properties close button
   document.getElementById("prop-close")?.addEventListener("click", () => {
     selectedRooms.clear();
+    selectedHexes.clear();
     hideProperties();
     state.requestRender();
   });
@@ -266,6 +275,20 @@ function init() {
       case "marker_delete": {
         const { x, y } = event.data as { x: number; y: number };
         markers.delete(cellKey(x, y));
+        break;
+      }
+      case "cells_delete": {
+        const deleted = event.data as { x: number; y: number }[];
+        for (const { x, y } of deleted) {
+          cells.delete(cellKey(x, y));
+        }
+        break;
+      }
+      case "walls_delete": {
+        const deleted = event.data as Wall[];
+        for (const w of deleted) {
+          walls.delete(wallKey(w.x1, w.y1, w.x2, w.y2));
+        }
         break;
       }
     }
