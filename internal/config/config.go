@@ -17,6 +17,7 @@ import (
 type Config struct {
 	Workspace Workspace `toml:"workspace"`
 	Job       Job       `toml:"job"`
+	Pool      Pool      `toml:"pool"`
 	Merge     Merge     `toml:"merge"`
 	LLM       LLM       `toml:"llm"`
 	Agent     Agent     `toml:"agent"`
@@ -76,6 +77,12 @@ type Job struct {
 	CodeReviewModel string `toml:"code-review-model"`
 	// ProjectReviewModel selects the model for final project review.
 	ProjectReviewModel string `toml:"project-review-model"`
+}
+
+// Pool contains pool-related configuration.
+type Pool struct {
+	// Workers is the default number of pool workers.
+	Workers int `toml:"workers"`
 }
 
 // Merge contains merge-related configuration.
@@ -203,6 +210,7 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 	} else if globalMeta.IsDefined("job", "test-commands") {
 		merged.Job.TestCommands = append([]string(nil), globalCfg.Job.TestCommands...)
 	}
+	merged.Pool.Workers = mergeInt(projectMeta.IsDefined("pool", "workers"), projectCfg.Pool.Workers, globalCfg.Pool.Workers)
 	merged.Merge.Target = mergeString(projectMeta.IsDefined("merge", "target"), projectCfg.Merge.Target, globalCfg.Merge.Target)
 
 	// Merge LLM config
@@ -253,6 +261,14 @@ func mergeString(projectDefined bool, projectValue, globalValue string) string {
 		value = projectValue
 	}
 	return internalstrings.TrimSpace(value)
+}
+
+func mergeInt(projectDefined bool, projectValue, globalValue int) int {
+	value := globalValue
+	if projectDefined {
+		value = projectValue
+	}
+	return value
 }
 
 // RunScript executes a script in the given directory.

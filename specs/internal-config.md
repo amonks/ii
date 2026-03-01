@@ -4,10 +4,11 @@
 The config package loads project and global configuration files and runs hook scripts.
 
 ## Configuration Model
-- `Config` holds workspace, job, merge, agent, and LLM configuration.
+- `Config` holds workspace, job, pool, merge, agent, and LLM configuration.
 - `Workspace` defines `on-create` and `on-acquire` scripts.
 - `Job` defines `test-commands`, the optional default `model`, and optional per-stage
   models (`implementation-model`, `code-review-model`, `project-review-model`).
+- `Pool` defines the default number of pool workers (`workers`).
 - `Merge` defines the default merge target bookmark (`target`).
 - `Agent` defines agent defaults like the model and prompt cache retention (`cache-retention`).
 - `LLM` defines LLM providers available for use.
@@ -29,6 +30,15 @@ Each provider has:
 - `base-url`: API endpoint
 - `api-key-command`: Command to run to get API key (optional; if empty, no auth is used)
 - `models`: List of model IDs available through this provider
+
+## Pool Configuration
+
+```toml
+[pool]
+workers = 4
+```
+
+- `workers` sets the default number of pool workers.
 
 ## Merge Configuration
 

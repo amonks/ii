@@ -53,6 +53,7 @@
 | [job-changes.md](./job-changes.md) | [job/](../job/)             | Job change tracking: persistent state for changes, commits, and reviews within a job                         |
 | [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |
 | [merge.md](./merge.md)             | [merge/](../merge/)         | Change merge workflow: rebase changes onto a target bookmark with conflict resolution                         |
+| [pool.md](./pool.md)               | [pool/](../pool/)           | Pooled worker runner: execute job workers across pooled workspaces                                            |
 
 ## Internal Packages
 

@@ -315,6 +315,9 @@ test-commands = ["go test ./..."]
 
 [merge]
 target = "main"
+
+[pool]
+workers = 5
 `
 
 	globalPath := filepath.Join(configDir, "config.toml")
@@ -349,6 +352,9 @@ target = "main"
 	if cfg.Merge.Target != "main" {
 		t.Fatalf("Merge.Target = %q, expected %q", cfg.Merge.Target, "main")
 	}
+	if cfg.Pool.Workers != 5 {
+		t.Fatalf("Pool.Workers = %d, expected %d", cfg.Pool.Workers, 5)
+	}
 	if len(cfg.Job.TestCommands) != 1 || cfg.Job.TestCommands[0] != "go test ./..." {
 		t.Fatalf("expected global test commands to load")
 	}
@@ -377,6 +383,9 @@ test-commands = ["global command"]
 
 [merge]
 target = "main"
+
+[pool]
+workers = 2
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
@@ -399,6 +408,9 @@ test-commands = ["project command"]
 
 [merge]
 target = "release"
+
+[pool]
+workers = 4
 `
 
 	repoDir := t.TempDir()
@@ -438,6 +450,9 @@ target = "release"
 	if cfg.Merge.Target != "release" {
 		t.Fatalf("Merge.Target = %q, expected %q", cfg.Merge.Target, "release")
 	}
+	if cfg.Pool.Workers != 4 {
+		t.Fatalf("Pool.Workers = %d, expected %d", cfg.Pool.Workers, 4)
+	}
 }
 
 func TestLoad_ProjectEmptyOverridesGlobal(t *testing.T) {
@@ -464,6 +479,9 @@ test-commands = ["global command"]
 
 [merge]
 target = "main"
+
+[pool]
+workers = 6
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
@@ -487,6 +505,9 @@ test-commands = []
 
 [merge]
 target = ""
+
+[pool]
+workers = 0
 `
 
 	repoDir := t.TempDir()
@@ -522,6 +543,9 @@ target = ""
 	}
 	if cfg.Merge.Target != "" {
 		t.Fatalf("Merge.Target = %q, expected empty string", cfg.Merge.Target)
+	}
+	if cfg.Pool.Workers != 0 {
+		t.Fatalf("Pool.Workers = %d, expected %d", cfg.Pool.Workers, 0)
 	}
 	if cfg.Agent.CacheRetention != "short" {
 		t.Fatalf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "short")

@@ -28,6 +28,12 @@ Use this document for additional CLI-specific guidance when it is not already co
 - The command runs in the current jj workspace and updates the target bookmark on success.
 - On success, the command prints `Merged <change-id> onto <target>`.
 
+## Pool Command
+
+- `ii pool [--workers <count>]` runs job workers in pooled workspaces.
+- `--workers` defaults to `[pool].workers` from config.
+- The command runs until interrupted; each worker polls for ready todos and queues successful jobs for merge.
+
 ## Version Flag
 
 - `ii -version` prints the build identifiers instead of a semantic version.
