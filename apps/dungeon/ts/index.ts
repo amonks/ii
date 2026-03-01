@@ -18,6 +18,9 @@ function init() {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   const ctx = canvas.getContext("2d")!;
   const camera = new Camera();
+  if (mapType === "dungeon") {
+    camera.zoom = 0.5;
+  }
 
   // State
   const cells = new Map<string, Cell>();
@@ -95,6 +98,7 @@ function init() {
 
   // Track touches for pinch-zoom
   const activeTouches = new Map<number, { x: number; y: number }>();
+  let gestureWasPan = false;
 
   // Convert a pointer event to CSS pixel coordinates relative to the canvas.
   function canvasCoords(e: { clientX: number; clientY: number }): [number, number] {
@@ -107,6 +111,7 @@ function init() {
       activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (activeTouches.size >= 2) {
         isPanning = true;
+        gestureWasPan = true;
         return;
       }
     }
@@ -165,6 +170,12 @@ function init() {
       }
       if (activeTouches.size === 0) {
         pointerDown = false;
+        if (!gestureWasPan) {
+          const [sx, sy] = canvasCoords(e);
+          const [wx, wy] = camera.screenToWorld(sx, sy);
+          currentTool.onPointerUp(state, wx, wy);
+        }
+        gestureWasPan = false;
       }
       return;
     }

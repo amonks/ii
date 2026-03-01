@@ -46,7 +46,7 @@ In-memory pub/sub with per-map subscriber channels. Subscribers connect via `GET
 
 ### Frontend
 
-HTML5 Canvas rendering with TypeScript. Pan/zoom via two-finger touch or mouse wheel. Tool system with state machine pattern. SSE client for receiving real-time updates. HTTP POST for sending mutations.
+HTML5 Canvas rendering with TypeScript. Pan/zoom via two-finger touch or mouse wheel. Tool system with state machine pattern. SSE client for receiving real-time updates. HTTP POST for sending mutations. Default zoom level differs by map type: dungeon starts zoomed out (0.5×) to show many rooms at once; hex starts zoomed in (4×) since sessions explore only a few hexes.
 
 ## API Routes
 
