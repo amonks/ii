@@ -222,7 +222,7 @@ func init() {
 	// todo update flags
 	todoUpdateCmd.Flags().StringVar(&todoUpdateTitle, "title", "", "New title")
 	todoUpdateCmd.Flags().StringVarP(&todoUpdateDescription, "description", "d", "", "New description (use '-' to read from stdin)")
-	todoUpdateCmd.Flags().StringVar(&todoUpdateStatus, "status", "", "New status (open, proposed, queued, in_progress, closed, done, waiting, stuck, tombstone)")
+	todoUpdateCmd.Flags().StringVar(&todoUpdateStatus, "status", "", "New status (open, proposed, queued, in_progress, queued_for_merge, merging, merge_failed, closed, done, waiting, stuck, tombstone)")
 	todoUpdateCmd.Flags().IntVar(&todoUpdatePriority, "priority", 0, "New priority (0-4)")
 	todoUpdateCmd.Flags().StringVar(&todoUpdateType, "type", "", "New type (task, bug, feature, design)")
 	todoUpdateCmd.Flags().StringVar(&todoUpdateImplementationModel, "implementation-model", "", "LLM model for implementation")

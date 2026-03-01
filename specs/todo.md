@@ -220,9 +220,6 @@ The CLI mirrors the store API:
 - `todo close` -> `Store.Close`
 - `todo finish` (`todo done`) -> `Store.Finish`
 - `todo queue` -> `Store.Queue`
-- `todo queue-for-merge` -> `Store.QueueForMerge`
-- `todo merge` -> `Store.Merge`
-- `todo merge-failed` -> `Store.MergeFailed`
 - `todo reopen` -> `Store.Reopen`
 - `todo delete` (`todo destroy`) -> `Store.Delete`
 - `todo show` -> `Store.Show`
