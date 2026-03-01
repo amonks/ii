@@ -112,6 +112,10 @@ function init() {
       if (activeTouches.size >= 2) {
         isPanning = true;
         gestureWasPan = true;
+        state.dragPreview = null;
+        const touches = Array.from(activeTouches.values());
+        lastPointerX = touches.reduce((s, t) => s + t.x, 0) / touches.length;
+        lastPointerY = touches.reduce((s, t) => s + t.y, 0) / touches.length;
         return;
       }
     }
@@ -147,6 +151,7 @@ function init() {
         lastPointerY = cy;
         return;
       }
+      if (gestureWasPan) return;
     }
 
     if (isPanning && pointerDown) {
@@ -174,6 +179,9 @@ function init() {
           const [sx, sy] = canvasCoords(e);
           const [wx, wy] = camera.screenToWorld(sx, sy);
           currentTool.onPointerUp(state, wx, wy);
+        } else {
+          state.dragPreview = null;
+          state.requestRender();
         }
         gestureWasPan = false;
       }
