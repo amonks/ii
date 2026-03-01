@@ -9,7 +9,7 @@ Apps run on different hosts but share a tailnet. The proxy app (`apps/proxy`) ha
 ### Hosts
 
 - **fly** (fly.io, Chicago ORD): dogs, homepage, map, writing, traffic, logs
-- **brigid** (local server): sms, calendar, directory, golink, ping, scrobbles, youtube
+- **brigid** (local server): sms, calendar, directory, dungeon, golink, ping, scrobbles, youtube
 - **thor** (local server): air, movies, reddit
 
 ### Deployment
@@ -24,7 +24,7 @@ fly deploy -c apps/$app/fly.toml
 
 Routing is configured through tailscale capability grants. Access is tiered:
 
-- **Public** (autogroup:danger-all): dogs, homepage, map, writing
+- **Public** (autogroup:danger-all): dogs, dungeon, homepage, map, writing
 - **Tailnet members** (autogroup:member): air, movies
 - **Services** (tag:service): traffic, logs, sms
 - **Private** (ajm@passkey): calendar, directory, golink, ping, scrobbles, logs, youtube, reddit
@@ -49,6 +49,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [directory](directory.md) | [apps/directory/](../apps/directory/) | Internal service directory showing apps × machines |
 | [dogs](dogs.md) | [apps/dogs/](../apps/dogs/) | Hot dog eating contest photo gallery |
 | [dolmenwood](dolmenwood/index.md) | [apps/dolmenwood/](../apps/dolmenwood/) | Dolmenwood RPG character sheet manager |
+| [dungeon](dungeon.md) | [apps/dungeon/](../apps/dungeon/) | Player-facing TTRPG mapping tool |
 | [golink](golink.md) | [apps/golink/](../apps/golink/) | URL shortener / go links for the tailnet |
 | [homepage](homepage.md) | [apps/homepage/](../apps/homepage/) | Personal homepage with Letterboxd integration |
 | [logs](logs.md) | [apps/logs/](../apps/logs/) | Centralized observability dashboard |
