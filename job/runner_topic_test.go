@@ -90,6 +90,85 @@ func TestRunMarksTodoInProgress(t *testing.T) {
 	}
 }
 
+func TestRunSkipFinalizeLeavesTodoOpen(t *testing.T) {
+	repoPath := setupJobRepo(t)
+
+	store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: true, PromptToCreate: false})
+	if err != nil {
+		t.Fatalf("open todo store: %v", err)
+	}
+	created, err := store.Create("Skip finalize", todo.CreateOptions{Priority: new(todo.PriorityMedium)})
+	if err != nil {
+		store.Release()
+		t.Fatalf("create todo: %v", err)
+	}
+	store.Release()
+
+	now := time.Date(2026, 1, 5, 6, 7, 8, 0, time.UTC)
+	llmCount := 0
+
+	_, err = Run(repoPath, created.ID, RunOptions{
+		SkipFinalize: true,
+		Now:          func() time.Time { return now },
+		Config:       &config.Config{Job: config.Job{TestCommands: []string{"go test ./..."}}},
+		RunTests: func(string, []string) ([]TestCommandResult, error) {
+			return nil, fmt.Errorf("unexpected RunTests call")
+		},
+		UpdateStale: func(string) error { return nil },
+		SeriesLog:   func(string) (string, error) { return "", nil },
+		CurrentCommitID: func(string) (string, error) {
+			return "same", nil
+		},
+		CurrentChangeID: func(string) (string, error) {
+			return "change-skip", nil
+		},
+		ChangeIDsForRevset: func(string, string) ([]string, error) {
+			return []string{"change-skip"}, nil
+		},
+		CurrentChangeEmpty: func(string) (bool, error) {
+			return true, nil
+		},
+		RunLLM: func(opts AgentRunOptions) (AgentRunResult, error) {
+			llmCount++
+			return AgentRunResult{SessionID: fmt.Sprintf("session-%d", llmCount), ExitCode: 0}, nil
+		},
+		OnStart: func(StartInfo) {
+			store, err := todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
+			if err != nil {
+				t.Fatalf("open todo store: %v", err)
+			}
+			items, err := store.Show([]string{created.ID})
+			if err != nil {
+				store.Release()
+				t.Fatalf("show todo: %v", err)
+			}
+			status := items[0].Status
+			store.Release()
+			if status != todo.StatusOpen {
+				t.Fatalf("expected todo open, got %q", status)
+			}
+		},
+	})
+	if err != nil {
+		t.Fatalf("run job: %v", err)
+	}
+
+	store, err = todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false})
+	if err != nil {
+		t.Fatalf("open todo store: %v", err)
+	}
+	items, err := store.Show([]string{created.ID})
+	if err != nil {
+		store.Release()
+		t.Fatalf("show todo: %v", err)
+	}
+	status := items[0].Status
+	store.Release()
+	if status != todo.StatusOpen {
+		t.Fatalf("expected todo to remain open, got %q", status)
+	}
+}
+
 func TestRunStoresModelInJobState(t *testing.T) {
 	repoPath := setupJobRepo(t)
 

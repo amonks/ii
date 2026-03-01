@@ -302,9 +302,11 @@ without proper cleanup.
 
 ## Todo Status Updates
 
-- Before running, mark the todo `in_progress`.
-- When a job completes successfully, mark the todo `done`.
-- When a job fails or is abandoned, reopen the todo (`open`).
+- Before running, mark the todo `in_progress` unless `SkipFinalize` is set.
+- When a job completes successfully, mark the todo `done` unless `SkipFinalize`
+  is set.
+- When a job fails or is abandoned, reopen the todo (`open`) unless
+  `SkipFinalize` is set.
 - If the todo store `Start` succeeds but releasing the store fails, reopen the todo
   back to `open` and return both errors.
 
@@ -647,6 +649,8 @@ type AgentTranscript struct {
 - `Transcripts`: Retrieves transcripts for sessions. Defaults to using
   `agent.Store.TranscriptSnapshot`.
 - `Model`: Overrides model selection for all stages when set.
+- `SkipFinalize`: When true, skip starting and finalizing todos; callers manage
+  todo status changes externally.
 
 ### Job Events
 

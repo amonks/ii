@@ -28,6 +28,9 @@ var promptMessagePattern = regexp.MustCompile(`\{\{[^}]*\.(Message|CommitMessage
 
 // RunOptions configures job execution.
 type RunOptions struct {
+	// SkipFinalize disables todo lifecycle updates (start/finalize) so callers can
+	// manage todo status changes externally.
+	SkipFinalize bool
 	OnStart       func(StartInfo)
 	OnStageChange func(Stage)
 	// EventStream receives job events as they are recorded. The channel is closed
@@ -153,15 +156,19 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 	if err := checkWorkspaceForResume(workspacePath, current.Changes, opts); err != nil {
 		return result, err
 	}
-	if err := startTodo(repoPath, item.ID); err != nil {
-		return result, err
+	if !opts.SkipFinalize {
+		if err := startTodo(repoPath, item.ID); err != nil {
+			return result, err
+		}
 	}
-
 	status := StatusActive
 	stage := StageImplementing
 	updated, err := manager.Update(current.ID, UpdateOptions{Status: &status, Stage: &stage}, opts.Now())
 	if err != nil {
 		reopenErr := reopenTodo(repoPath, item.ID)
+		if opts.SkipFinalize {
+			reopenErr = nil
+		}
 		return result, errors.Join(err, reopenErr)
 	}
 	result.Job = updated
@@ -177,7 +184,10 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 			status := StatusFailed
 			updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
 			result.Job = updated
-			finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+			var finalizeErr error
+			if !opts.SkipFinalize {
+				finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
+			}
 			return result, errors.Join(err, updateErr, finalizeErr)
 		}
 		opts.EventLog = eventLog
@@ -195,7 +205,10 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 		status := StatusFailed
 		updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
 		result.Job = updated
-		finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+		var finalizeErr error
+		if !opts.SkipFinalize {
+			finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
+		}
 		return result, errors.Join(err, updateErr, finalizeErr)
 	}
 	if opts.OnStageChange != nil {
@@ -220,7 +233,10 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 	}
 	finalJob, err := runJobStages(&runCtx, updated, interrupts)
 	result.Job = finalJob
-	statusErr := finalizeTodo(repoPath, item.ID, finalJob.Status)
+	var statusErr error
+	if !opts.SkipFinalize {
+		statusErr = finalizeTodo(repoPath, item.ID, finalJob.Status)
+	}
 	if err != nil {
 		return result, errors.Join(err, statusErr)
 	}
@@ -278,8 +294,10 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	if err != nil {
 		return result, err
 	}
-	if err := startTodo(repoPath, item.ID); err != nil {
-		return result, err
+	if !opts.SkipFinalize {
+		if err := startTodo(repoPath, item.ID); err != nil {
+			return result, err
+		}
 	}
 
 	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
@@ -294,6 +312,9 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	})
 	if err != nil {
 		reopenErr := reopenTodo(repoPath, item.ID)
+		if opts.SkipFinalize {
+			reopenErr = nil
+		}
 		return result, errors.Join(err, reopenErr)
 	}
 	result.Job = created
@@ -309,7 +330,10 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 			status := StatusFailed
 			updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
 			result.Job = updated
-			finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+			var finalizeErr error
+			if !opts.SkipFinalize {
+				finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
+			}
 			return result, errors.Join(err, updateErr, finalizeErr)
 		}
 		opts.EventLog = eventLog
@@ -327,7 +351,10 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 		status := StatusFailed
 		updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
 		result.Job = updated
-		finalizeErr := finalizeTodo(repoPath, item.ID, StatusFailed)
+		var finalizeErr error
+		if !opts.SkipFinalize {
+			finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
+		}
 		return result, errors.Join(err, updateErr, finalizeErr)
 	}
 	if opts.OnStageChange != nil {
@@ -352,7 +379,10 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	}
 	finalJob, err := runJobStages(&runCtx, created, interrupts)
 	result.Job = finalJob
-	statusErr := finalizeTodo(repoPath, item.ID, finalJob.Status)
+	var statusErr error
+	if !opts.SkipFinalize {
+		statusErr = finalizeTodo(repoPath, item.ID, finalJob.Status)
+	}
 	if err != nil {
 		return result, errors.Join(err, statusErr)
 	}
