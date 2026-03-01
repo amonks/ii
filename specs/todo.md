@@ -20,9 +20,13 @@ across workspaces without polluting the code history.
 - All writes are guarded by exclusive file locks, written to a temp file
   and atomically renamed. Each write snapshots the jj workspace to persist
   the change.
-- Cross-process coordination uses a lock file in the state directory
-  (`~/.local/state/incrementum/todo-<repo-name>.lock`). Lock files are
-  removed on release to avoid accumulating stale files.
+- Cross-process coordination uses an exclusive `flock(2)` on a lock file
+  in the state directory (`~/.local/state/incrementum/todo-<repo-name>.lock`).
+  The lock is acquired before opening the workspace and held for the entire
+  `Store` lifetime, serializing all todo operations across processes.
+  Lock files are intentionally NOT removed on release; removing the path
+  would allow a new opener to create a different inode, breaking
+  inode-based mutual exclusion.
 - `todo.Open` can create the store when missing, optionally prompting the
   user before creating the bookmark.
 - `todo.Open` acquires a workspace with a purpose string from
