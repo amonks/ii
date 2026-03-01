@@ -174,6 +174,43 @@ export function drawDungeonGrid(
 
   ctx.restore();
 
+  // Draw room notes in screen space (outside camera transform) for crisp text.
+  // Group cells by room_id and render text at each room's centroid.
+  const roomCellGroups = new Map<number, Cell[]>();
+  for (const cell of cells.values()) {
+    if (cell.room_id == null || !cell.text) continue;
+    let group = roomCellGroups.get(cell.room_id);
+    if (!group) {
+      group = [];
+      roomCellGroups.set(cell.room_id, group);
+    }
+    group.push(cell);
+  }
+
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const lineHeight = 14;
+  for (const [, roomCells] of roomCellGroups) {
+    const text = roomCells[0].text;
+    if (!text) continue;
+    // Compute centroid of the room
+    let cx = 0, cy = 0;
+    for (const c of roomCells) {
+      cx += c.x;
+      cy += c.y;
+    }
+    cx = cx / roomCells.length + 0.5;
+    cy = cy / roomCells.length + 0.5;
+    const [sx, sy] = camera.worldToScreen(cx * CELL_SIZE, cy * CELL_SIZE);
+    ctx.fillStyle = "#e7e5e4";
+    const lines = text.split("\n");
+    const topY = sy - (lines.length - 1) * lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], sx, topY + i * lineHeight);
+    }
+  }
+
   // Draw markers in screen space (outside camera transform) for crisp text
   ctx.font = "bold 16px monospace";
   ctx.textAlign = "center";
