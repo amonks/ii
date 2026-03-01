@@ -212,7 +212,7 @@ func (s *Store) ResolveModel(explicit string, taskModel string) (llm.Model, erro
 		return s.llmStore.GetModel(defaultModel)
 	}
 
-	return llm.Model{}, fmt.Errorf("no model configured: specify --model, set INCREMENTUM_AGENT_MODEL, or configure agent.model or llm.model in config")
+	return llm.Model{}, fmt.Errorf("%w: specify --model, set INCREMENTUM_AGENT_MODEL, or configure agent.model or llm.model in config", ErrNoModelConfigured)
 }
 
 // ResolveImplementationModel resolves a model for implementation tasks.

@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var mergeRun = merge.Merge
+
 var mergeCmd = &cobra.Command{
 	Use:   "merge <change-id>",
 	Short: "Merge a change onto a target bookmark",
@@ -65,7 +67,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
 		Target:        target,
 		RunLLM:        runLLM,
 	}
-	if err := merge.Merge(context.Background(), opts); err != nil {
+	if err := mergeRun(context.Background(), opts); err != nil {
 		return err
 	}
 

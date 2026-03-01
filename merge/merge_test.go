@@ -89,6 +89,38 @@ func TestMergeResolvesConflicts(t *testing.T) {
 	}
 }
 
+func TestMergeFailsWhenResolutionFails(t *testing.T) {
+	repoPath, branchChange := createConflictRepo(t)
+
+	runLLM := func(opts jobpkg.AgentRunOptions) (jobpkg.AgentRunResult, error) {
+		return jobpkg.AgentRunResult{ExitCode: 1, Error: "cannot resolve"}, nil
+	}
+
+	err := Merge(context.Background(), Options{
+		RepoPath:      repoPath,
+		WorkspacePath: repoPath,
+		ChangeID:      branchChange,
+		Target:        "main",
+		RunLLM:        runLLM,
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "conflict resolution failed") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify bookmark was not advanced.
+	client := jj.New()
+	mainChange, err := client.ChangeIDAt(repoPath, "main")
+	if err != nil {
+		t.Fatalf("read main: %v", err)
+	}
+	if mainChange == branchChange {
+		t.Fatalf("main should not have advanced to branch change")
+	}
+}
+
 func createConflictRepo(t *testing.T) (string, string) {
 	t.Helper()
 

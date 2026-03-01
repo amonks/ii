@@ -88,7 +88,7 @@ Fields (JSON keys):
   `delete_reason` is allowed only when tombstoned.
 - `started_at` is only set for `in_progress`, `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
 - `completed_at` is only set for `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
-- `job_id` is only set for `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
+- `job_id` is allowed on `queued_for_merge`, `merging`, `merge_failed`, or `done` todos; it is cleared when finishing from a merge status unless explicitly set.
 - `waiting` represents todos blocked on external factors (upstream PRs, API
   availability, etc.). Unlike dependency blocking (for internal task ordering),
   waiting is for external factors. The reason for waiting lives in the

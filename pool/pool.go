@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/amonks/incrementum/agent"
 	"github.com/amonks/incrementum/internal/config"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/job"
@@ -224,7 +224,7 @@ func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
 			if err := reopenTodo(opts.RepoPath, item.ID); err != nil {
 				return errors.Join(runErr, err)
 			}
-			if errors.Is(runErr, job.ErrJobInterrupted) || errors.Is(runErr, job.ErrJobAbandoned) || isResolveModelError(runErr) {
+			if errors.Is(runErr, job.ErrJobInterrupted) || errors.Is(runErr, job.ErrJobAbandoned) || errors.Is(runErr, agent.ErrNoModelConfigured) {
 				return runErr
 			}
 			continue
@@ -254,12 +254,6 @@ func reopenTodo(repoPath, todoID string) error {
 	return errors.Join(err, releaseErr)
 }
 
-func isResolveModelError(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "resolve model") || strings.Contains(err.Error(), "no model configured")
-}
 
 func sleepOrDone(ctx context.Context, d time.Duration) error {
 	if d <= 0 {
