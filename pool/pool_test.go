@@ -38,6 +38,7 @@ type fakeStore struct {
 	startIDs      []string
 	queueIDs      []string
 	queueJobID    string
+	updateCalls   int
 	updateStatus  *todo.Status
 	releaseCalls  int
 }
@@ -63,6 +64,7 @@ func (s *fakeStore) QueueForMerge(ids []string, jobID string) ([]todo.Todo, erro
 
 func (s *fakeStore) Update(ids []string, opts todo.UpdateOptions) ([]todo.Todo, error) {
 	if opts.Status != nil {
+		s.updateCalls++
 		s.updateStatus = opts.Status
 	}
 	return nil, nil
@@ -124,9 +126,11 @@ func TestRunWorkerQueuesForMerge(t *testing.T) {
 
 	oldOpenTodoStore := openTodoStore
 	oldRunJob := runJob
+	oldUpdateWorkspaceStale := updateWorkspaceStale
 	t.Cleanup(func() {
 		openTodoStore = oldOpenTodoStore
 		runJob = oldRunJob
+		updateWorkspaceStale = oldUpdateWorkspaceStale
 	})
 
 	openTodoStore = func(repoPath, purpose string) (todoStore, error) {
@@ -142,9 +146,15 @@ func TestRunWorkerQueuesForMerge(t *testing.T) {
 		}
 	}
 
-	runJob = func(repoPath, todoID string, opts job.RunOptions) (*job.RunResult, error) {
-		return &job.RunResult{Job: job.Job{ID: "job-1"}}, nil
+	stalePath := ""
+	updateWorkspaceStale = func(wsPath string) error {
+		stalePath = wsPath
+		return nil
 	}
+
+	runJob = jobRunnerFunc(func(repoPath, todoID string, opts job.RunOptions) (*job.RunResult, error) {
+		return &job.RunResult{Job: job.Job{ID: "job-1"}}, nil
+	})
 
 	pool := &fakePool{}
 	opts := normalizeOptions(Options{
@@ -163,21 +173,30 @@ func TestRunWorkerQueuesForMerge(t *testing.T) {
 	if queueStore.queueJobID != "job-1" {
 		t.Fatalf("expected queue job id to be job-1, got %q", queueStore.queueJobID)
 	}
+	if stalePath != "ws-1" {
+		t.Fatalf("expected stale update for ws-1, got %q", stalePath)
+	}
 }
 
 func TestRunWorkerReopensOnFailure(t *testing.T) {
 	errJob := errors.New("job failed")
+	errStop := errors.New("stop")
 	readyStore := &fakeStore{readyFn: func(call int) ([]todo.Todo, error) {
-		return []todo.Todo{{ID: "todo-2"}}, nil
+		if call == 1 {
+			return []todo.Todo{{ID: "todo-2"}}, nil
+		}
+		return nil, errStop
 	}}
 	reopenStore := &fakeStore{}
 	startStore := &fakeStore{}
 
 	oldOpenTodoStore := openTodoStore
 	oldRunJob := runJob
+	oldUpdateWorkspaceStale := updateWorkspaceStale
 	t.Cleanup(func() {
 		openTodoStore = oldOpenTodoStore
 		runJob = oldRunJob
+		updateWorkspaceStale = oldUpdateWorkspaceStale
 	})
 
 	openTodoStore = func(repoPath, purpose string) (todoStore, error) {
@@ -193,9 +212,15 @@ func TestRunWorkerReopensOnFailure(t *testing.T) {
 		}
 	}
 
-	runJob = func(repoPath, todoID string, opts job.RunOptions) (*job.RunResult, error) {
-		return &job.RunResult{}, errJob
+	stalePath := ""
+	updateWorkspaceStale = func(wsPath string) error {
+		stalePath = wsPath
+		return nil
 	}
+
+	runJob = jobRunnerFunc(func(repoPath, todoID string, opts job.RunOptions) (*job.RunResult, error) {
+		return &job.RunResult{}, errJob
+	})
 
 	pool := &fakePool{}
 	opts := normalizeOptions(Options{
@@ -205,11 +230,17 @@ func TestRunWorkerReopensOnFailure(t *testing.T) {
 	})
 
 	err := runWorker(context.Background(), pool, opts)
-	if !errors.Is(err, errJob) {
-		t.Fatalf("expected job error, got %v", err)
+	if !errors.Is(err, errStop) {
+		t.Fatalf("expected stop error, got %v", err)
+	}
+	if reopenStore.updateCalls != 1 {
+		t.Fatalf("expected reopen to be called once, got %d", reopenStore.updateCalls)
 	}
 	if reopenStore.updateStatus == nil || *reopenStore.updateStatus != todo.StatusOpen {
 		t.Fatalf("expected reopen to set status open")
+	}
+	if stalePath != "ws-1" {
+		t.Fatalf("expected stale update for ws-1, got %q", stalePath)
 	}
 }
 

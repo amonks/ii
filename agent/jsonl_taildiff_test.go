@@ -20,16 +20,28 @@ func TestJSONLTailDiff(t *testing.T) {
 			want: "{\"a\":1}\n",
 		},
 		{
+			name: "initial prints complete lines before trailing fragment",
+			prev: "",
+			curr: "{\"a\":1}\n{\"b\":2}",
+			want: "{\"a\":1}\n",
+		},
+		{
 			name: "initial prints nothing when incomplete",
 			prev: "",
 			curr: "{\"a\":1}",
 			want: "",
 		},
 		{
-			name: "append prints only new lines when complete",
+			name: "append prints new complete lines before trailing fragment",
 			prev: "{\"a\":1}\n",
-			curr: "{\"a\":1}\n{\"b\":2}\n",
+			curr: "{\"a\":1}\n{\"b\":2}\n{\"c\":3}",
 			want: "{\"b\":2}\n",
+		},
+		{
+			name: "append completes prior partial line",
+			prev: "{\"a\":1}",
+			curr: "{\"a\":1}\n",
+			want: "{\"a\":1}\n",
 		},
 		{
 			name: "append prints nothing when trailing line incomplete",

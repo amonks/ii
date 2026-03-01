@@ -7,32 +7,33 @@ import "strings"
 //
 // Contract:
 //   - Only emits *whole newly appended lines*.
-//   - If the current snapshot extends the previous snapshot and ends with a
-//     trailing newline, the returned diff is the newly appended bytes.
-//   - If the current snapshot extends the previous snapshot but the trailing
-//     line is incomplete (no final newline), returns an empty string (buffers
+//   - If the current snapshot extends the previous snapshot and contains one or
+//     more complete lines, the returned diff is the newly appended complete lines.
+//   - If the current snapshot extends the previous snapshot but adds no complete
+//     lines (no new trailing newline), returns an empty string (buffers
 //     implicitly by keeping the last snapshot outside this function).
-//   - If prev is empty, returns curr only if curr ends with a newline; otherwise
-//     returns empty.
+//   - If prev is empty, returns curr only up to the last newline (if any).
 //   - If curr is not prefixed by prev (non-append fallback), returns curr only
 //     up to the last newline (dropping any incomplete trailing line).
 func JSONLTailDiff(prev, curr string) string {
 	// Fast path: append-only
 	if prev == "" {
-		if strings.HasSuffix(curr, "\n") {
-			return curr
-		}
-		return ""
+		return lastCompleteLine(curr)
 	}
 
 	if strings.HasPrefix(curr, prev) {
-		if !strings.HasSuffix(curr, "\n") {
+		lastLine := lastCompleteLine(curr)
+		base := lastCompleteLine(prev)
+		if len(lastLine) <= len(base) {
 			return ""
 		}
-		return strings.TrimPrefix(curr, prev)
+		return lastLine[len(base):]
 	}
 
-	// Non-append fallback: print only complete lines.
+	return lastCompleteLine(curr)
+}
+
+func lastCompleteLine(curr string) string {
 	idx := strings.LastIndex(curr, "\n")
 	if idx == -1 {
 		return ""

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,6 +40,10 @@ type todoStore interface {
 	Release() error
 }
 
+type jobRunner interface {
+	Run(string, string, job.RunOptions) (*job.RunResult, error)
+}
+
 var openWorkspacePool = func() (workspacePool, error) {
 	return workspace.Open()
 }
@@ -47,9 +52,19 @@ var openTodoStore = func(repoPath, purpose string) (todoStore, error) {
 	return todo.Open(repoPath, todo.OpenOptions{CreateIfMissing: false, PromptToCreate: false, Purpose: purpose})
 }
 
-var runJob = job.Run
+var updateWorkspaceStale = func(wsPath string) error {
+	return jj.New().WorkspaceUpdateStale(wsPath)
+}
+
+var runJob jobRunner = jobRunnerFunc(job.Run)
 
 var runWorkerFn = runWorker
+
+type jobRunnerFunc func(string, string, job.RunOptions) (*job.RunResult, error)
+
+func (runner jobRunnerFunc) Run(repoPath, todoID string, opts job.RunOptions) (*job.RunResult, error) {
+	return runner(repoPath, todoID, opts)
+}
 
 // RunLLMFunc runs an LLM session for job execution.
 // This matches job.RunOptions.RunLLM.
@@ -161,6 +176,10 @@ func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
 			return ctx.Err()
 		}
 
+		if err := updateWorkspaceStale(wsPath); err != nil {
+			return err
+		}
+
 		store, err := openTodoStore(opts.RepoPath, poolPurpose)
 		if err != nil {
 			return err
@@ -188,7 +207,7 @@ func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
 			return errors.Join(err, releaseErr)
 		}
 
-		result, runErr := runJob(opts.RepoPath, item.ID, job.RunOptions{
+		result, runErr := runJob.Run(opts.RepoPath, item.ID, job.RunOptions{
 			SkipFinalize:  true,
 			WorkspacePath: wsPath,
 			RunLLM:        opts.RunLLM,
@@ -205,7 +224,10 @@ func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
 			if err := reopenTodo(opts.RepoPath, item.ID); err != nil {
 				return errors.Join(runErr, err)
 			}
-			return runErr
+			if errors.Is(runErr, job.ErrJobInterrupted) || errors.Is(runErr, job.ErrJobAbandoned) || isResolveModelError(runErr) {
+				return runErr
+			}
+			continue
 		}
 
 		jobID := result.Job.ID
@@ -230,6 +252,13 @@ func reopenTodo(repoPath, todoID string) error {
 	_, err = store.Update([]string{todoID}, todo.UpdateOptions{Status: &status})
 	releaseErr := store.Release()
 	return errors.Join(err, releaseErr)
+}
+
+func isResolveModelError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "resolve model") || strings.Contains(err.Error(), "no model configured")
 }
 
 func sleepOrDone(ctx context.Context, d time.Duration) error {

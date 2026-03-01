@@ -34,12 +34,14 @@ func Run(ctx context.Context, opts Options) error
 - `PollInterval` defaults to one second.
 - Each worker:
   - Acquires a workspace for the repo.
+  - Marks the worker workspace stale before checking for ready todos.
   - Polls for ready todos (`todo.Ready(1)`); sleeps for `PollInterval` when none are available.
   - Marks the todo as `in_progress` before running a job.
   - Runs `job.Run` with `SkipFinalize` so the caller manages todo status.
   - On success, marks the todo as `queued_for_merge` and stores the job ID.
-  - On failure, reopens the todo to `open`.
+  - On failure, reopens the todo to `open` and continues polling.
 - The pool exits when the context is cancelled or a worker returns an error; when a
   worker returns a non-cancellation error, the pool cancels the context so other
   workers exit promptly.
 - Workspaces are released when workers exit.
+- Worker runs treat interrupt/abandon errors or model resolution failures as fatal while other job failures reopen todos and continue.
