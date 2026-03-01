@@ -594,6 +594,7 @@ func TestWriteJSONL_RoundTripTodos(t *testing.T) {
 			ClosedAt:     &closedAt,
 			StartedAt:    &startedAt,
 			CompletedAt:  &completedAt,
+			JobID:        "job-rt",
 			DeletedAt:    &deletedAt,
 			DeleteReason: "all done",
 			Source:       "habit:cleanup",
@@ -656,6 +657,7 @@ func assertTodoEqual(t *testing.T, got, want Todo) {
 		got.Status != want.Status ||
 		got.Priority != want.Priority ||
 		got.Type != want.Type ||
+		got.JobID != want.JobID ||
 		got.DeleteReason != want.DeleteReason ||
 		got.Source != want.Source {
 		t.Fatalf("todo mismatch: %+v", got)

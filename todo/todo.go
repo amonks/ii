@@ -46,6 +46,9 @@ type Todo struct {
 	// CompletedAt is when the todo completed (nil when not completed).
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 
+	// JobID is the ID of the job that produced the mergeable change.
+	JobID string `json:"job_id,omitempty"`
+
 	// DeletedAt is when the todo was soft-deleted (nil if not deleted).
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 

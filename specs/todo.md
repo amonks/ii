@@ -47,16 +47,17 @@ Fields (JSON keys):
 - `id`: 8-character lowercase base32 identifier.
 - `title`: required; must include non-whitespace characters; max length 500 characters.
 - `description`: optional free text.
-- `status`: `open`, `proposed`, `queued`, `in_progress`, `closed`, `done`, `waiting`, `stuck`, or `tombstone`.
+- `status`: `open`, `proposed`, `queued`, `in_progress`, `queued_for_merge`, `merging`, `merge_failed`, `closed`, `done`, `waiting`, `stuck`, or `tombstone`.
 - `priority`: integer 0..4 (0 = critical, 4 = backlog).
 - `type`: `task`, `bug`, or `feature`.
+- `job_id`: optional job identifier populated after implementation when queued for merge.
 - `implementation_model`: optional model override for implementation.
 - `code_review_model`: optional model override for commit review.
 - `project_review_model`: optional model override for project review.
 - `created_at`, `updated_at`: timestamps.
 - `closed_at`: timestamp if closed or done.
 - `started_at`: timestamp when entering `in_progress`.
-- `completed_at`: timestamp when finishing from `in_progress` to `done`.
+- `completed_at`: timestamp when finishing work (set when transitioning from `in_progress` to `done` or `queued_for_merge`).
 - `deleted_at`: timestamp if tombstoned.
 - `delete_reason`: optional reason when tombstoned.
 - `source`: optional origin tracker; empty means user-created, `habit:<name>` means created by a habit.
@@ -80,16 +81,14 @@ Fields (JSON keys):
 
 ### Status + Timestamp Rules
 
-- `open`/`proposed`/`queued`/`in_progress`/`waiting`/`stuck`: `closed_at` must be empty; `deleted_at` must be empty.
-- `queued` indicates the todo is scheduled for batch processing by `job do` when
-  multiple todos are specified. The CLI marks all specified todos as `queued`
-  before starting work, then processes each one. Queued todos that are not
-  reached (due to early exit or interruption) must be reset to `open` by the CLI.
+- `open`/`proposed`/`queued`/`in_progress`/`waiting`/`stuck`: `closed_at` must be empty; `completed_at` must be empty; `deleted_at` must be empty.
+- `queued_for_merge`/`merging`/`merge_failed`: `closed_at` must be empty; `completed_at` must be set; `deleted_at` must be empty.
 - `closed`/`done`: `closed_at` must be set; `deleted_at` must be empty.
 - `tombstone`: `deleted_at` must be set; `closed_at` must be empty;
   `delete_reason` is allowed only when tombstoned.
-- `started_at` is only set for `in_progress` or `done` todos.
-- `completed_at` is only set for `done` todos.
+- `started_at` is only set for `in_progress`, `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
+- `completed_at` is only set for `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
+- `job_id` is only set for `queued_for_merge`, `merging`, `merge_failed`, or `done` todos.
 - `waiting` represents todos blocked on external factors (upstream PRs, API
   availability, etc.). Unlike dependency blocking (for internal task ordering),
   waiting is for external factors. The reason for waiting lives in the
@@ -124,13 +123,16 @@ Fields (JSON keys):
 - CLI description input via `--description -` / `--desc -` trims trailing CR/LF characters.
 - Status transitions automatically adjust timestamps:
   - `closed`/`done` sets `closed_at` and clears delete markers.
-- `open`/`proposed`/`in_progress` clears `closed_at`, `completed_at`, and delete markers.
+- `open`/`proposed`/`queued`/`in_progress`: clears `closed_at`, `completed_at`, and delete markers.
   - `in_progress` sets `started_at` when the status changes.
+- `queued_for_merge`/`merging`/`merge_failed`: clears `closed_at` and delete markers, preserving `started_at`/`completed_at`.
+  - `queued_for_merge` preserves `started_at` and sets `completed_at` when moving from `in_progress`.
   - `done` preserves `started_at` and sets `completed_at` only when moving from `in_progress`.
   - `tombstone` clears `closed_at`; `deleted_at` must be set.
 - Status and type inputs are case-insensitive and stored as lowercase.
 - Updating `deleted_at` without `delete_reason` preserves any existing delete reason; clear it explicitly when needed.
 - Reapplying the current status does not reset timestamps unless explicitly provided.
+- `job_id` is cleared automatically when transitioning out of merge-related statuses unless explicitly set.
 - `updated_at` always changes when a todo is updated.
 
 ### Close / Reopen / Start / Queue / Delete
@@ -139,6 +141,9 @@ Fields (JSON keys):
 - `reopen` sets status to `open` and clears `closed_at`.
 - `start` sets status to `in_progress`, clears `closed_at`, and sets `started_at`.
 - `queue` sets status to `queued` and clears `closed_at`.
+- `queue_for_merge` sets status to `queued_for_merge`, preserves `started_at`, sets `completed_at`, and stores `job_id`.
+- `merge` sets status to `merging` (preserves `started_at`, `completed_at`, `job_id`).
+- `merge_failed` sets status to `merge_failed` (preserves `started_at`, `completed_at`, `job_id`).
 - `finish` sets status to `done` and sets `completed_at` when transitioning from `in_progress`.
 - `delete` sets status to `tombstone`, sets `deleted_at`, clears `closed_at`,
   and optionally records a delete reason.
@@ -172,7 +177,7 @@ Fields (JSON keys):
 - `UPDATED` uses `now - updated_at`.
 - CLI table output includes a `DURATION` column for active/finished work.
 - `DURATION` uses `now - started_at` for `in_progress` todos.
-- `DURATION` uses `completed_at - started_at` for `done` todos.
+- `DURATION` uses `completed_at - started_at` for `done`, `queued_for_merge`, `merging`, and `merge_failed` todos.
 - When the todo store is missing, CLI `todo list` does not prompt to create it
   and returns an empty list.
 
@@ -214,6 +219,10 @@ The CLI mirrors the store API:
 - `todo start` -> `Store.Start`
 - `todo close` -> `Store.Close`
 - `todo finish` (`todo done`) -> `Store.Finish`
+- `todo queue` -> `Store.Queue`
+- `todo queue-for-merge` -> `Store.QueueForMerge`
+- `todo merge` -> `Store.Merge`
+- `todo merge-failed` -> `Store.MergeFailed`
 - `todo reopen` -> `Store.Reopen`
 - `todo delete` (`todo destroy`) -> `Store.Delete`
 - `todo show` -> `Store.Show`

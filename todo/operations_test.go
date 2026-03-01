@@ -676,6 +676,112 @@ func TestStore_Queue(t *testing.T) {
 	if queued[0].ClosedAt != nil {
 		t.Error("expected ClosedAt to be nil")
 	}
+	if queued[0].JobID != "" {
+		t.Errorf("expected JobID to be empty, got %q", queued[0].JobID)
+	}
+}
+
+func TestStore_QueueForMerge(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	created, _ := store.Create("Queue for merge", CreateOptions{})
+	started, err := store.Start([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to start: %v", err)
+	}
+	if started[0].StartedAt == nil {
+		t.Fatal("expected StartedAt to be set")
+	}
+	startedAt := *started[0].StartedAt
+
+	queued, err := store.QueueForMerge([]string{created.ID}, "job-123")
+	if err != nil {
+		t.Fatalf("failed to queue for merge: %v", err)
+	}
+
+	if len(queued) != 1 {
+		t.Fatalf("expected 1 queued todo, got %d", len(queued))
+	}
+	if queued[0].Status != StatusQueuedForMerge {
+		t.Errorf("expected status 'queued_for_merge', got %q", queued[0].Status)
+	}
+	if queued[0].ClosedAt != nil {
+		t.Error("expected ClosedAt to be nil")
+	}
+	if queued[0].JobID != "job-123" {
+		t.Errorf("expected JobID 'job-123', got %q", queued[0].JobID)
+	}
+	if queued[0].StartedAt == nil || !queued[0].StartedAt.Equal(startedAt) {
+		t.Fatalf("expected StartedAt to be preserved")
+	}
+	if queued[0].CompletedAt == nil {
+		t.Fatal("expected CompletedAt to be set")
+	}
+}
+
+func TestStore_MergeAndMergeFailed(t *testing.T) {
+	store, err := openTestStore(t)
+	if err != nil {
+		t.Fatalf("failed to open store: %v", err)
+	}
+	defer store.Release()
+
+	created, _ := store.Create("Merge this", CreateOptions{})
+	started, err := store.Start([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to start: %v", err)
+	}
+	if started[0].StartedAt == nil {
+		t.Fatal("expected StartedAt to be set")
+	}
+	startedAt := *started[0].StartedAt
+
+	queued, err := store.QueueForMerge([]string{created.ID}, "job-merge")
+	if err != nil {
+		t.Fatalf("failed to queue for merge: %v", err)
+	}
+	if queued[0].CompletedAt == nil {
+		t.Fatal("expected CompletedAt to be set")
+	}
+	completedAt := *queued[0].CompletedAt
+
+	merging, err := store.Merge([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to merge: %v", err)
+	}
+	if merging[0].Status != StatusMerging {
+		t.Errorf("expected status 'merging', got %q", merging[0].Status)
+	}
+	if merging[0].JobID != "job-merge" {
+		t.Errorf("expected JobID 'job-merge', got %q", merging[0].JobID)
+	}
+	if merging[0].StartedAt == nil || !merging[0].StartedAt.Equal(startedAt) {
+		t.Fatalf("expected StartedAt to be preserved")
+	}
+	if merging[0].CompletedAt == nil || !merging[0].CompletedAt.Equal(completedAt) {
+		t.Fatalf("expected CompletedAt to be preserved")
+	}
+
+	failed, err := store.MergeFailed([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to mark merge failed: %v", err)
+	}
+	if failed[0].Status != StatusMergeFailed {
+		t.Errorf("expected status 'merge_failed', got %q", failed[0].Status)
+	}
+	if failed[0].JobID != "job-merge" {
+		t.Errorf("expected JobID to be preserved, got %q", failed[0].JobID)
+	}
+	if failed[0].StartedAt == nil || !failed[0].StartedAt.Equal(startedAt) {
+		t.Fatalf("expected StartedAt to be preserved")
+	}
+	if failed[0].CompletedAt == nil || !failed[0].CompletedAt.Equal(completedAt) {
+		t.Fatalf("expected CompletedAt to be preserved")
+	}
 }
 
 func TestStore_Queue_ClearsClosedAt(t *testing.T) {
@@ -707,6 +813,9 @@ func TestStore_Queue_ClearsClosedAt(t *testing.T) {
 	if queued[0].ClosedAt != nil {
 		t.Errorf("expected ClosedAt to be cleared when queueing from closed, got %v", queued[0].ClosedAt)
 	}
+	if queued[0].JobID != "" {
+		t.Errorf("expected JobID to be cleared when queueing, got %q", queued[0].JobID)
+	}
 }
 
 func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
@@ -737,6 +846,9 @@ func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
 	if closed[0].CompletedAt != nil {
 		t.Error("expected CompletedAt to be cleared when closing")
 	}
+	if closed[0].JobID != "" {
+		t.Error("expected JobID to be cleared when closing")
+	}
 
 	startedAgain, err := store.Start([]string{created.ID})
 	if err != nil {
@@ -759,6 +871,25 @@ func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
 	}
 	if finished[0].StartedAt == nil || !finished[0].StartedAt.Equal(secondStartedAt) {
 		t.Fatalf("expected StartedAt to be preserved on finish")
+	}
+	if finished[0].JobID != "" {
+		t.Errorf("expected JobID to be cleared on finish, got %q", finished[0].JobID)
+	}
+
+	mergeQueued, err := store.QueueForMerge([]string{created.ID}, "job-done")
+	if err != nil {
+		t.Fatalf("failed to queue for merge: %v", err)
+	}
+	if mergeQueued[0].JobID != "job-done" {
+		t.Fatalf("expected JobID to be set, got %q", mergeQueued[0].JobID)
+	}
+
+	finishedMerge, err := store.Finish([]string{created.ID})
+	if err != nil {
+		t.Fatalf("failed to finish todo after merge: %v", err)
+	}
+	if finishedMerge[0].JobID != "" {
+		t.Errorf("expected JobID to be cleared after finishing merge, got %q", finishedMerge[0].JobID)
 	}
 }
 
@@ -999,7 +1130,7 @@ func TestStore_List_InvalidFilters(t *testing.T) {
 	invalidStatus := Status("maybe")
 	if _, err := store.List(ListFilter{Status: &invalidStatus}); err == nil || !errors.Is(err, ErrInvalidStatus) {
 		t.Fatalf("expected invalid status error, got %v", err)
-	} else if !strings.Contains(err.Error(), "valid: open, proposed, queued, in_progress, closed, done, waiting, stuck, tombstone") {
+	} else if !strings.Contains(err.Error(), "valid: open, proposed, queued, in_progress, queued_for_merge, merging, merge_failed, closed, done, waiting, stuck, tombstone") {
 		t.Fatalf("expected valid status hint, got %v", err)
 	}
 

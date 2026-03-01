@@ -71,10 +71,16 @@ var (
 	ErrTombstoneHasClosedAt = errors.New("tombstone todo cannot have closed_at timestamp")
 
 	// ErrStartedAtRequiresActiveStatus is returned when started_at is set for a non-active todo.
-	ErrStartedAtRequiresActiveStatus = errors.New("started_at requires in_progress or done status")
+	ErrStartedAtRequiresActiveStatus = errors.New("started_at requires in_progress, queued_for_merge, merging, merge_failed, or done status")
 
-	// ErrCompletedAtRequiresDoneStatus is returned when completed_at is set for a non-done todo.
-	ErrCompletedAtRequiresDoneStatus = errors.New("completed_at requires done status")
+	// ErrCompletedAtRequiresDoneStatus is returned when completed_at is set for a non-complete todo.
+	ErrCompletedAtRequiresDoneStatus = errors.New("completed_at requires queued_for_merge, merging, merge_failed, or done status")
+
+	// ErrMergeStatusMissingCompletedAt is returned when a merge status is missing completed_at.
+	ErrMergeStatusMissingCompletedAt = errors.New("merge statuses require completed_at")
+
+	// ErrJobIDRequiresMergeStatus is returned when job_id is set for a non-merge todo.
+	ErrJobIDRequiresMergeStatus = errors.New("job_id requires queued_for_merge, merging, merge_failed, or done status")
 )
 
 // ValidateTitle checks if the title is valid.
@@ -127,6 +133,9 @@ func ValidateTodo(t *Todo) error {
 	if err := validateCompletedAt(t); err != nil {
 		return err
 	}
+	if err := validateJobID(t); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -170,8 +179,20 @@ func validateDeletedAt(t *Todo) error {
 	return nil
 }
 
+func validateJobID(t *Todo) error {
+	if t.JobID == "" {
+		return nil
+	}
+	switch t.Status {
+	case StatusQueuedForMerge, StatusMerging, StatusMergeFailed, StatusDone:
+		return nil
+	default:
+		return ErrJobIDRequiresMergeStatus
+	}
+}
+
 func validateStartedAt(t *Todo) error {
-	if t.Status != StatusInProgress && t.Status != StatusDone {
+	if t.Status != StatusInProgress && t.Status != StatusQueuedForMerge && t.Status != StatusMerging && t.Status != StatusMergeFailed && t.Status != StatusDone {
 		if t.StartedAt != nil {
 			return ErrStartedAtRequiresActiveStatus
 		}
@@ -180,7 +201,14 @@ func validateStartedAt(t *Todo) error {
 }
 
 func validateCompletedAt(t *Todo) error {
-	if t.Status != StatusDone {
+	switch t.Status {
+	case StatusQueuedForMerge, StatusMerging, StatusMergeFailed:
+		if t.CompletedAt == nil {
+			return ErrMergeStatusMissingCompletedAt
+		}
+	case StatusDone:
+		return nil
+	default:
 		if t.CompletedAt != nil {
 			return ErrCompletedAtRequiresDoneStatus
 		}

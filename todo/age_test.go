@@ -96,6 +96,65 @@ func TestDurationDataDoneUsesCompletedAt(t *testing.T) {
 	}
 }
 
+func TestDurationDataQueuedForMergeUsesCompletedAt(t *testing.T) {
+	startedAt := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)
+	completedAt := startedAt.Add(30 * time.Minute)
+
+	item := Todo{
+		Status:      StatusQueuedForMerge,
+		StartedAt:   &startedAt,
+		CompletedAt: &completedAt,
+	}
+
+	duration, ok := DurationData(item, completedAt.Add(2*time.Minute))
+	if !ok {
+		t.Fatalf("expected duration data")
+	}
+	if duration != 30*time.Minute {
+		t.Fatalf("expected duration 30m, got %s", duration)
+	}
+}
+
+func TestDurationDataMergingUsesCompletedAt(t *testing.T) {
+	startedAt := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)
+	completedAt := startedAt.Add(15 * time.Minute)
+
+	item := Todo{
+		Status:      StatusMerging,
+		StartedAt:   &startedAt,
+		CompletedAt: &completedAt,
+		JobID:       "job-merge",
+	}
+
+	duration, ok := DurationData(item, completedAt.Add(10*time.Minute))
+	if !ok {
+		t.Fatalf("expected duration data")
+	}
+	if duration != 15*time.Minute {
+		t.Fatalf("expected duration 15m, got %s", duration)
+	}
+}
+
+func TestDurationDataMergeFailedUsesCompletedAt(t *testing.T) {
+	startedAt := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)
+	completedAt := startedAt.Add(8 * time.Minute)
+
+	item := Todo{
+		Status:      StatusMergeFailed,
+		StartedAt:   &startedAt,
+		CompletedAt: &completedAt,
+		JobID:       "job-merge",
+	}
+
+	duration, ok := DurationData(item, completedAt.Add(10*time.Minute))
+	if !ok {
+		t.Fatalf("expected duration data")
+	}
+	if duration != 8*time.Minute {
+		t.Fatalf("expected duration 8m, got %s", duration)
+	}
+}
+
 func TestDurationDataDoneRequiresTimes(t *testing.T) {
 	item := Todo{Status: StatusDone}
 

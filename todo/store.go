@@ -16,10 +16,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/amonks/incrementum/internal/db"
 	internalids "github.com/amonks/incrementum/internal/ids"
 	"github.com/amonks/incrementum/internal/jj"
 	"github.com/amonks/incrementum/internal/paths"
-	"github.com/amonks/incrementum/internal/db"
 	internalstrings "github.com/amonks/incrementum/internal/strings"
 	"github.com/amonks/incrementum/workspace"
 	"golang.org/x/term"
@@ -72,15 +72,15 @@ var jsonlDependencyBufPool = sync.Pool{
 // Store provides access to the todo data for a jujutsu repository.
 // It manages workspace acquisition and file locking for concurrent access.
 type Store struct {
-	repoPath     string
-	wsPath       string
-	pool         *workspace.Pool
-	snapshot     Snapshotter
-	prompter     Prompter
-	client       *jj.Client
-	readOnly     bool
-	wsRelease    func() error
-	lockFile *os.File
+	repoPath  string
+	wsPath    string
+	pool      *workspace.Pool
+	snapshot  Snapshotter
+	prompter  Prompter
+	client    *jj.Client
+	readOnly  bool
+	wsRelease func() error
+	lockFile  *os.File
 }
 
 // Snapshotter records workspace changes.
@@ -612,6 +612,10 @@ func appendTodoJSONLine(buf []byte, todo *Todo) []byte {
 	buf, hasField = appendOptionalJSONTime(buf, "closed_at", todo.ClosedAt, hasField)
 	buf, hasField = appendOptionalJSONTime(buf, "started_at", todo.StartedAt, hasField)
 	buf, hasField = appendOptionalJSONTime(buf, "completed_at", todo.CompletedAt, hasField)
+	if todo.JobID != "" {
+		buf, hasField = appendJSONFieldPrefix(buf, "job_id", hasField)
+		buf = appendJSONString(buf, todo.JobID)
+	}
 	buf, hasField = appendOptionalJSONTime(buf, "deleted_at", todo.DeletedAt, hasField)
 	if todo.DeleteReason != "" {
 		buf, hasField = appendJSONFieldPrefix(buf, "delete_reason", hasField)

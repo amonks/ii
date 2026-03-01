@@ -31,6 +31,15 @@ const (
 	// StatusInProgress indicates the todo is currently being worked on.
 	StatusInProgress Status = "in_progress"
 
+	// StatusQueuedForMerge indicates implementation finished and the todo is queued for merging.
+	StatusQueuedForMerge Status = "queued_for_merge"
+
+	// StatusMerging indicates the todo is being merged onto the target bookmark.
+	StatusMerging Status = "merging"
+
+	// StatusMergeFailed indicates the merge failed and needs manual intervention.
+	StatusMergeFailed Status = "merge_failed"
+
 	// StatusClosed indicates the todo has been completed.
 	StatusClosed Status = "closed"
 
@@ -54,7 +63,7 @@ const (
 
 // ValidStatuses returns all valid status values.
 func ValidStatuses() []Status {
-	return []Status{StatusOpen, StatusProposed, StatusQueued, StatusInProgress, StatusClosed, StatusDone, StatusWaiting, StatusStuck, StatusTombstone}
+	return []Status{StatusOpen, StatusProposed, StatusQueued, StatusInProgress, StatusQueuedForMerge, StatusMerging, StatusMergeFailed, StatusClosed, StatusDone, StatusWaiting, StatusStuck, StatusTombstone}
 }
 
 // IsValid returns true if the status is a known valid value.

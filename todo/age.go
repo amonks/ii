@@ -31,7 +31,7 @@ func DurationData(item Todo, now time.Time) (time.Duration, bool) {
 	if item.Status == StatusInProgress {
 		return internalage.DurationData(startedAt, time.Time{}, 0, true, now)
 	}
-	if item.Status == StatusDone {
+	if item.Status == StatusDone || item.Status == StatusQueuedForMerge || item.Status == StatusMerging || item.Status == StatusMergeFailed {
 		return internalage.DurationData(startedAt, completedAt, 0, false, now)
 	}
 	return 0, false
