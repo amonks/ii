@@ -21,6 +21,13 @@ Use this document for additional CLI-specific guidance when it is not already co
 5. `package.json` present -> `npm test`
 6. none -> leave `job.test-commands` unset
 
+## Merge Command
+
+- `ii merge <change-id> [--onto <bookmark>]` rebases a change onto the target bookmark and resolves conflicts with an agent.
+- `--onto` defaults to `[merge].target` from config; falls back to `main` when unset.
+- The command runs in the current jj workspace and updates the target bookmark on success.
+- On success, the command prints `Merged <change-id> onto <target>`.
+
 ## Version Flag
 
 - `ii -version` prints the build identifiers instead of a semantic version.

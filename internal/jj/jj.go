@@ -4,6 +4,7 @@ package jj
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -340,8 +341,13 @@ func (c *Client) HasConflicts(workspacePath, rev string) (bool, error) {
 
 // Squash squashes the current change into its parent.
 func (c *Client) Squash(workspacePath string) error {
-	cmd := exec.Command("jj", "squash")
+	cmd := exec.Command("jj", "squash", "-m", "squash")
 	cmd.Dir = workspacePath
+	cmd.Env = append(os.Environ(),
+		"JJ_EDITOR=true",
+		"EDITOR=true",
+		"VISUAL=true",
+	)
 	return runCombinedOutput(cmd, "jj squash")
 }
 

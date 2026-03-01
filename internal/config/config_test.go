@@ -312,6 +312,9 @@ implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
 test-commands = ["go test ./..."]
+
+[merge]
+target = "main"
 `
 
 	globalPath := filepath.Join(configDir, "config.toml")
@@ -343,6 +346,9 @@ test-commands = ["go test ./..."]
 	if cfg.Agent.CacheRetention != "long" {
 		t.Errorf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "long")
 	}
+	if cfg.Merge.Target != "main" {
+		t.Fatalf("Merge.Target = %q, expected %q", cfg.Merge.Target, "main")
+	}
 	if len(cfg.Job.TestCommands) != 1 || cfg.Job.TestCommands[0] != "go test ./..." {
 		t.Fatalf("expected global test commands to load")
 	}
@@ -368,6 +374,9 @@ implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
 test-commands = ["global command"]
+
+[merge]
+target = "main"
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
@@ -387,6 +396,9 @@ implementation-model = "project-implement"
 code-review-model = "project-review"
 project-review-model = "project-project"
 test-commands = ["project command"]
+
+[merge]
+target = "release"
 `
 
 	repoDir := t.TempDir()
@@ -423,6 +435,9 @@ test-commands = ["project command"]
 	if cfg.Agent.CacheRetention != "long" {
 		t.Fatalf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "long")
 	}
+	if cfg.Merge.Target != "release" {
+		t.Fatalf("Merge.Target = %q, expected %q", cfg.Merge.Target, "release")
+	}
 }
 
 func TestLoad_ProjectEmptyOverridesGlobal(t *testing.T) {
@@ -446,6 +461,9 @@ implementation-model = "global-implement"
 code-review-model = "global-review"
 project-review-model = "global-project"
 test-commands = ["global command"]
+
+[merge]
+target = "main"
 `
 	globalPath := filepath.Join(configDir, "config.toml")
 	if err := os.WriteFile(globalPath, []byte(globalContent), 0o644); err != nil {
@@ -466,6 +484,9 @@ implementation-model = ""
 code-review-model = ""
 project-review-model = ""
 test-commands = []
+
+[merge]
+target = ""
 `
 
 	repoDir := t.TempDir()
@@ -498,6 +519,9 @@ test-commands = []
 	}
 	if len(cfg.Job.TestCommands) != 0 {
 		t.Fatalf("expected empty test commands, got %d", len(cfg.Job.TestCommands))
+	}
+	if cfg.Merge.Target != "" {
+		t.Fatalf("Merge.Target = %q, expected empty string", cfg.Merge.Target)
 	}
 	if cfg.Agent.CacheRetention != "short" {
 		t.Fatalf("CacheRetention = %q, expected %q", cfg.Agent.CacheRetention, "short")

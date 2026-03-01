@@ -17,6 +17,7 @@ import (
 type Config struct {
 	Workspace Workspace `toml:"workspace"`
 	Job       Job       `toml:"job"`
+	Merge     Merge     `toml:"merge"`
 	LLM       LLM       `toml:"llm"`
 	Agent     Agent     `toml:"agent"`
 }
@@ -75,6 +76,12 @@ type Job struct {
 	CodeReviewModel string `toml:"code-review-model"`
 	// ProjectReviewModel selects the model for final project review.
 	ProjectReviewModel string `toml:"project-review-model"`
+}
+
+// Merge contains merge-related configuration.
+type Merge struct {
+	// Target is the default bookmark name to merge onto.
+	Target string `toml:"target"`
 }
 
 // Load loads configuration from the repo root and the global config file.
@@ -196,6 +203,7 @@ func mergeConfigs(globalCfg, projectCfg *Config, globalMeta, projectMeta toml.Me
 	} else if globalMeta.IsDefined("job", "test-commands") {
 		merged.Job.TestCommands = append([]string(nil), globalCfg.Job.TestCommands...)
 	}
+	merged.Merge.Target = mergeString(projectMeta.IsDefined("merge", "target"), projectCfg.Merge.Target, globalCfg.Merge.Target)
 
 	// Merge LLM config
 	merged.LLM.Providers = mergeLLMProviders(globalCfg.LLM.Providers, projectCfg.LLM.Providers)

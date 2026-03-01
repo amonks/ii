@@ -52,6 +52,7 @@
 | [job.md](./job.md)                 | [job/](../job/)             | Jobs system: workflow management for LLM-based todo completion, with acceptance testing                      |
 | [job-changes.md](./job-changes.md) | [job/](../job/)             | Job change tracking: persistent state for changes, commits, and reviews within a job                         |
 | [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |
+| [merge.md](./merge.md)             | [merge/](../merge/)         | Change merge workflow: rebase changes onto a target bookmark with conflict resolution                         |
 
 ## Internal Packages
 
