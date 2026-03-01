@@ -573,7 +573,11 @@ func EventToSSE(event Event) SSEEvent {
 		data = AgentStartEvent{Config: redactedConfig}
 	case AgentEndEvent:
 		name = "agent.end"
-		data = e
+		// Omit Messages to avoid duplicating the full conversation history
+		// already captured by individual turn.end / message.end events.
+		data = struct {
+			Usage llm.Usage `json:"Usage"`
+		}{Usage: e.Usage}
 	case TurnStartEvent:
 		name = "turn.start"
 		data = e
