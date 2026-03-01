@@ -9,12 +9,13 @@ import (
 
 // UserAgent returns the HTTP User-Agent header value to use for LLM API requests.
 //
-// Normal runtime:
+// Installed builds:
 //
-//	incrementum [$version] $dirname
+//	incrementum [$changeID:$commitID] $dirname
 //
-// Where $version is the `commit_id` shown by `ii -v` and $dirname is the base
-// name of the repository root.
+// Dev builds (bin/ii):
+//
+//	incrementum [dev] $dirname
 //
 // During `go test` it is overridden to:
 //

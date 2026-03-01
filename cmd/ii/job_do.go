@@ -442,7 +442,7 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 		Prompt: internalagent.PromptContent{UserContent: opts.prompt},
 		Model:     opts.model,
 		StartedAt: time.Now(),
-		Version:   buildCommitID,
+		Version:   buildVersion(),
 		Env:       []string{todoenv.ProposerEnvVar + "=true"},
 		InputCh:   inputCh,
 	})

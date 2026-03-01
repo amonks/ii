@@ -89,7 +89,7 @@ func makeRunLLMFunc(repoPath string, store *agent.Store) (func(jobpkg.AgentRunOp
 			Prompt:    opts.Prompt,
 			Model:     opts.Model,
 			StartedAt: opts.StartedAt,
-			Version:   buildCommitID,
+			Version:   buildVersion(),
 			Env:       opts.Env,
 		})
 		if err != nil {

@@ -82,7 +82,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 		Prompt:    internalagent.PromptContent{UserContent: prompt},
 		Model:     agentRunModel,
 		StartedAt: time.Now(),
-		Version:   buildCommitID,
+		Version:   buildVersion(),
 		Env:       []string{todoenv.ProposerEnvVar + "=true"},
 	})
 	if err != nil {

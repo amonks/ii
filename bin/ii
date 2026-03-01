@@ -4,6 +4,6 @@ set -euo pipefail
 
 change_id=$(jj log -r @ -T change_id --no-graph)
 commit_id=$(jj log -r @ -T commit_id --no-graph)
-ldflags="-X main.buildChangeID=${change_id:0:6} -X main.buildCommitID=${commit_id:0:6}"
+ldflags="-X main.buildChangeID=${change_id:0:6} -X main.buildCommitID=${commit_id:0:6} -X main.buildDev=true"
 
 go run -ldflags "$ldflags" ./cmd/ii "$@"
