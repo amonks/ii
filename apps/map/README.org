@@ -14,5 +14,5 @@
 
 - move =Takeout/Maps (your places)/Saved Places.json= to =./saved_places.json=
 - move =Takeout/Saved/People.csv= to =./people.csv=
-- run =go run ./cmd/mapctl -operation=import-saved-places=
-- run =go run ./cmd/mapctl -operation=annotate-peoples-places=
+- run =go run ./apps/map/cmd/mapctl -operation=import-saved-places=
+- run =go run ./apps/map/cmd/mapctl -operation=annotate-peoples-places=

@@ -9,14 +9,14 @@ Code: [apps/map/](../apps/map/)
 
 ## Data Import (Offline)
 
-Data is imported via CLI commands in `cmd/mapctl`, not through the running
+Data is imported via CLI commands in `apps/map/cmd/mapctl`, not through the running
 server:
 
 1. Download Google Takeout export ("Maps - Your Places - Saved").
-2. `go run ./cmd/mapctl -operation=import-saved-places`: calls Google Places
+2. `go run ./apps/map/cmd/mapctl -operation=import-saved-places`: calls Google Places
    API per place to enrich with business details. Skips places that already
    have both a `GoogleMapsPlaceID` and `EditorialSummary`.
-3. `go run ./cmd/mapctl -operation=annotate-peoples-places`: reads
+3. `go run ./apps/map/cmd/mapctl -operation=annotate-peoples-places`: reads
    `people.csv` to annotate places with "X was here" notes.
 
 ## Data Model
