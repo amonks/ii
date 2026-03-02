@@ -79,7 +79,7 @@
 [[task]]
   id = 'gofix'
   type = 'short'
-  cmd = 'test -z "$(go fix -diff monks.co/...)"'
+  cmd = 'diff=$(go fix -diff monks.co/...); if [ -n "$diff" ]; then echo "$diff"; exit 1; fi'
 
 [[task]]
   id = 'govulncheck'

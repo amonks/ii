@@ -38,7 +38,7 @@ var baseTasks = []*task{
 	{
 		Id:   "gofix",
 		Type: "short",
-		Cmd:  "test -z \"$(go fix -diff monks.co/...)\"",
+		Cmd:  "diff=$(go fix -diff monks.co/...); if [ -n \"$diff\" ]; then echo \"$diff\"; exit 1; fi",
 	},
 	{
 		Id:   "staticcheck",
