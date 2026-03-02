@@ -11,6 +11,7 @@ use (
 	./apps/dogs
 	./apps/dolmenwood
 	./apps/dungeon
+	./apps/gods-teeth
 	./apps/golink
 	./apps/homepage
 	./apps/logs
