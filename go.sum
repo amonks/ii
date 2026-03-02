@@ -25,6 +25,8 @@ github.com/alecthomas/repr v0.5.1 h1:E3G4t2QbHTSNpPKBgMTln5KLkZHLOcU7r37J4pXBuIg
 github.com/alecthomas/repr v0.5.1/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
 github.com/amonks/run v1.0.0-beta.34 h1:e+759U0LQCNINVevQDbtHWQ3PP4TgKFS8Pn3mmXKQfU=
 github.com/amonks/run v1.0.0-beta.34/go.mod h1:f5TyjV6YihkrpEQ5iVeP1ktSFCVsinMaaKLuubEIT2U=
+github.com/amonks/run v1.0.0-beta.35 h1:s2ow5kQ3EWt+j1BeNEe2XKvwqKwJkWTT9N8ut3KhcIc=
+github.com/amonks/run v1.0.0-beta.35/go.mod h1:f5TyjV6YihkrpEQ5iVeP1ktSFCVsinMaaKLuubEIT2U=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
 github.com/andybalholm/brotli v1.2.0/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=

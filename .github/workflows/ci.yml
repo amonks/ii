@@ -24,7 +24,7 @@ jobs:
           node-version: "lts/*"
 
       - name: Generate
-        run: go tool run generate
+        run: go tool run -skip=compress-statics generate
 
       - name: Test
         run: go tool run test

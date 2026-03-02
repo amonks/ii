@@ -13,7 +13,7 @@ require (
 	github.com/a-h/templ v0.3.977 // indirect
 	github.com/agnivade/levenshtein v1.2.0 // indirect
 	github.com/alecthomas/chroma/v2 v2.20.0 // indirect
-	github.com/amonks/run v1.0.0-beta.34 // indirect
+	github.com/amonks/run v1.0.0-beta.35 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
