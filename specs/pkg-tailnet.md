@@ -40,7 +40,7 @@ Code: [pkg/tailnet/](../pkg/tailnet/)
 
 | Env Var | Purpose |
 |---------|---------|
-| `TS_AUTHKEY` | Tailscale auth key for the tsnet node |
+| `TS_AUTHKEY` | Tailscale auth key for the tsnet node (read lazily on first use, not at import time) |
 | `MONKS_DATA` | Parent directory for tsnet state storage |
 | `MONKS_APP_NAME` | App name component of the tailnet hostname |
 

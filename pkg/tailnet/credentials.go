@@ -2,4 +2,4 @@ package tailnet
 
 import "monks.co/pkg/requireenv"
 
-var tailscaleAuthKey = requireenv.Require("TS_AUTHKEY")
+var authKey = requireenv.Lazy("TS_AUTHKEY")

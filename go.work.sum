@@ -2,6 +2,7 @@
 4d63.com/gochecknoglobals v0.2.1/go.mod h1:KRE8wtJB3CXCsb1xy421JfTHIIbmT3U5ruxw2Qu8fSU=
 9fans.net/go v0.0.8-0.20250307142834-96bdba94b63f/go.mod h1:hHyrZRryGqVdqrknjq5OWDLGCTJ2NeEvtrpR96mjraM=
 al.essio.dev/pkg/shellescape v1.5.1/go.mod h1:6sIqp7X2P6mThCQ7twERpZTuigpr6KbZWtls1U8I890=
+braces.dev/errtrace v0.4.0/go.mod h1:Zor2Jn83tkhfEdiioKa4efFy62DYcOH06qoIea9QDYs=
 cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
 dario.cat/mergo v1.0.1/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 filippo.io/mkcert v1.4.4/go.mod h1:VyvOchVuAye3BoUsPUOOofKygVwLV2KQMVFJNRq+1dA=
@@ -161,6 +162,7 @@ github.com/evanw/esbuild v0.19.11/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBf
 github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f/go.mod h1:OSYXu++VVOHnXeitef/D8n/6y4QV8uLHSFXX4NeXMGc=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/firefart/nonamedreturns v1.0.4/go.mod h1:TDhe/tjI1BXo48CmYbUduTV7BdIga8MAO/xbKdcVsGI=
+github.com/fluhus/godoc-tricks v1.6.0/go.mod h1:G7Ba4sWpZ/RvzDCS2+WWVGAnuzy+2wf5QAUrOP05FtU=
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fxamacker/cbor/v2 v2.9.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
@@ -488,6 +490,7 @@ gitlab.com/bosi/decorder v0.4.1/go.mod h1:jecSqWUew6Yle1pCr2eLWTensJMmsxHsBwt+PV
 gitlab.com/digitalxero/go-conventional-commit v1.0.7/go.mod h1:05Xc2BFsSyC5tKhK0y+P3bs0AwUtNuTp+mTpbCU/DZ0=
 go-simpler.org/musttag v0.9.0/go.mod h1:gA9nThnalvNSKpEoyp3Ko4/vCX2xTpqKoUtNqXOnVR4=
 go-simpler.org/sloglint v0.5.0/go.mod h1:EUknX5s8iXqf18KQxKnaBHUPVriiPnOrPjjJcsaTcSQ=
+go.abhg.dev/doc2go v0.12.0/go.mod h1:7IolkjYYTWAqAT7HFDd3ZLjwD9nRua/mY0T+WLclPKs=
 go.abhg.dev/goldmark/anchor v0.2.0/go.mod h1:Ym74zBV+QBKxK9ITOty680N9FT8otgGYvtYXroJUWms=
 go.abhg.dev/goldmark/frontmatter v0.3.0/go.mod h1:W3KXvVveKKxU1FIFZ7fgFFQrlkcolnDcOVmu19cCO9U=
 go.etcd.io/bbolt v1.4.2/go.mod h1:Is8rSHO/b4f3XigBC0lL0+4FwAQv3HXEEIgFMuKHceM=

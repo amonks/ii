@@ -34,7 +34,7 @@ func main() {
 func run() error {
 	reqlog.SetupLogging()
 
-	lfm := lastfm.New(lastFmAPIKey)
+	lfm := lastfm.New(lastFmAPIKey())
 
 	db, err := NewDB()
 	if err != nil {

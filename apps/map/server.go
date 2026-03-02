@@ -105,7 +105,7 @@ func (s *server) placesList(w http.ResponseWriter, req *http.Request) {
 
 	googleMapsImportURL := fmt.Sprintf(
 		"https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap&v=beta&libraries=marker",
-		placesBrowserAPIKey,
+		placesBrowserAPIKey(),
 	)
 
 	placesJSON, err := json.Marshal(places)

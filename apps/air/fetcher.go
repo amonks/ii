@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"monks.co/pkg/meta"
@@ -98,17 +99,27 @@ func fetchTsnetDir() string {
 	return filepath.Join(os.TempDir(), "tsnet-"+fetchHostname())
 }
 
-var fetchServer = &tsnet.Server{
-	Hostname: fetchHostname(),
-	Dir:      fetchTsnetDir(),
-	AuthKey:  requireenv.Require("TS_AUTHKEY"),
+var (
+	fetchServerOnce sync.Once
+	fetchServer     *tsnet.Server
+)
+
+func getFetchServer() *tsnet.Server {
+	fetchServerOnce.Do(func() {
+		fetchServer = &tsnet.Server{
+			Hostname: fetchHostname(),
+			Dir:      fetchTsnetDir(),
+			AuthKey:  requireenv.Require("TS_AUTHKEY"),
+		}
+	})
+	return fetchServer
 }
 
 func fetchClient() (*http.Client, error) {
-	if _, err := fetchServer.Up(context.Background()); err != nil {
+	if _, err := getFetchServer().Up(context.Background()); err != nil {
 		return nil, fmt.Errorf("fetch tsnet up: %w", err)
 	}
-	return fetchServer.HTTPClient(), nil
+	return getFetchServer().HTTPClient(), nil
 }
 
 // AranetDevice represents the data from an Aranet device

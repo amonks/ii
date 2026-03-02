@@ -47,7 +47,7 @@ func GetPlaceDetailsByCID(cid string) (Place, error) {
 }
 
 func getPlaceDetails(key, value string) (Place, error) {
-	apiKey := placesBackendAPIKey
+	apiKey := placesBackendAPIKey()
 	fieldList := strings.Join([]string{
 		"place_id",
 		"formatted_address",

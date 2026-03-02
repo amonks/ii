@@ -3,6 +3,6 @@ package email
 import "monks.co/pkg/requireenv"
 
 var (
-	smtpUsername = requireenv.Require("SMTP_USERNAME")
-	smtpPassword = requireenv.Require("SMTP_PASSWORD")
+	smtpUsername = requireenv.Lazy("SMTP_USERNAME")
+	smtpPassword = requireenv.Lazy("SMTP_PASSWORD")
 )

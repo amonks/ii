@@ -24,7 +24,7 @@ func EmailMe(message Message) error {
 func SendEmail(from string, message Message) error {
 	return smtp.SendMail(
 		"email-smtp.us-east-1.amazonaws.com:25",
-		&loginAuth{smtpUsername, smtpPassword},
+		&loginAuth{smtpUsername(), smtpPassword()},
 		extractAddress(from),
 		[]string{extractAddress(message.To)},
 		[]byte(strings.Join([]string{

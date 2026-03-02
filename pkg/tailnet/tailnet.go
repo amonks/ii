@@ -28,22 +28,30 @@ func tsnetDir() string {
 	return filepath.Join(os.TempDir(), "tsnet-"+hostname())
 }
 
-var server = &tsnet.Server{
-	Hostname: hostname(),
-	Dir:      tsnetDir(),
-	AuthKey:  tailscaleAuthKey,
-}
-
 var (
+	serverOnce sync.Once
+	server     *tsnet.Server
+
 	readyCh   = make(chan struct{})
 	readyOnce sync.Once
 )
+
+func getServer() *tsnet.Server {
+	serverOnce.Do(func() {
+		server = &tsnet.Server{
+			Hostname: hostname(),
+			Dir:      tsnetDir(),
+			AuthKey:  authKey(),
+		}
+	})
+	return server
+}
 
 // WaitReady blocks until the tailscale node is fully authenticated
 // and connected to the tailnet. Apps should call this early in startup,
 // before making any outbound tailnet connections.
 func WaitReady(ctx context.Context) error {
-	_, err := server.Up(ctx)
+	_, err := getServer().Up(ctx)
 	if err == nil {
 		readyOnce.Do(func() { close(readyCh) })
 	}
@@ -59,7 +67,7 @@ func ReadyChan() <-chan struct{} {
 // ListenAndServe starts a tsnet server with hostname
 // monks-{app}-{machine}, listens on :80, and serves HTTP.
 func ListenAndServe(ctx context.Context, handler http.Handler) error {
-	ln, err := server.Listen("tcp", ":80")
+	ln, err := getServer().Listen("tcp", ":80")
 	if err != nil {
 		return fmt.Errorf("tsnet listen: %w", err)
 	}
@@ -84,17 +92,17 @@ func ListenAndServe(ctx context.Context, handler http.Handler) error {
 // On non-Fly machines, returns http.DefaultClient.
 // Lazily starts a client-only tsnet node on first call.
 func Client() *http.Client {
-	return server.HTTPClient()
+	return getServer().HTTPClient()
 }
 
 // Listen creates a listener on the tsnet server.
 func Listen(network, addr string) (net.Listener, error) {
-	return server.Listen(network, addr)
+	return getServer().Listen(network, addr)
 }
 
 // WhoIs identifies a peer by remote address.
 func WhoIs(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
-	lc, err := server.LocalClient()
+	lc, err := getServer().LocalClient()
 	if err != nil {
 		return nil, fmt.Errorf("tailnet local client: %w", err)
 	}
@@ -107,10 +115,10 @@ func AnonCaps(ctx context.Context) (tailcfg.PeerCapMap, error) {
 	// Ensure the server is fully connected and has its netmap before
 	// querying filter rules. Start() is non-blocking and Listen()
 	// doesn't guarantee the netmap is ready.
-	if _, err := server.Up(ctx); err != nil {
+	if _, err := getServer().Up(ctx); err != nil {
 		return nil, fmt.Errorf("tailnet up: %w", err)
 	}
-	lc, err := server.LocalClient()
+	lc, err := getServer().LocalClient()
 	if err != nil {
 		return nil, fmt.Errorf("tailnet local client: %w", err)
 	}

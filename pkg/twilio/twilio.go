@@ -4,27 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	twilio "github.com/twilio/twilio-go"
 	api "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
-var client *twilio.RestClient
+var (
+	clientOnce sync.Once
+	client     *twilio.RestClient
+)
 
-func init() {
-	client = twilio.NewRestClientWithParams(twilio.ClientParams{
-		Username: twilioAccountSID,
-		Password: twilioAuthToken,
+func getClient() *twilio.RestClient {
+	clientOnce.Do(func() {
+		client = twilio.NewRestClientWithParams(twilio.ClientParams{
+			Username: twilioAccountSID(),
+			Password: twilioAuthToken(),
+		})
 	})
+	return client
 }
 
 func SMSMe(msg string) error {
 	params := &api.CreateMessageParams{}
-	params.SetTo(twilioPhoneNumberMe)
-	params.SetFrom(twilioPhoneNumberFrom)
+	params.SetTo(twilioPhoneNumberMe())
+	params.SetFrom(twilioPhoneNumberFrom())
 	params.SetBody(msg)
 
-	resp, err := client.Api.CreateMessage(params)
+	resp, err := getClient().Api.CreateMessage(params)
 	if err != nil {
 		return fmt.Errorf("error sending sms message: %w", err)
 	}
