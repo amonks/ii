@@ -43,5 +43,5 @@ jobs:
       - name: Publish
         run: go run ./cmd/publish
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
           MONKS_ROOT: ${{ github.workspace }}
