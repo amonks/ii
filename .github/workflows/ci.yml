@@ -23,15 +23,17 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Download and build dependencies
+      - name: Download modules and build tools
         run: |
           go mod download
-          go build ./...
           go tool templ version
           go tool staticcheck --version
 
       - name: Generate
         run: go tool run -skip=compress-statics generate
+
+      - name: Build all packages
+        run: go build all
 
       - name: Test
         run: go tool run test
