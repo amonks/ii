@@ -1,0 +1,18 @@
+Label: test
+Name: Test Product
+Pint Mass: 387g
+
+Nutrition Facts:
+  Serving Size: 129g
+  Calories: 320
+  Total Fat: 21g
+  Protein: 6g
+  Sodium: 75mg
+
+Ingredients:
+  Cream [cream_fat=0.18..0.50]:
+    cream_fat
+    cream_serum
+  skim_milk
+  natural_flavor {water:0.6, other_solids:0.4}
+  egg_yolk

@@ -1,0 +1,93 @@
+package fdaparser
+
+type fdaParser Peg {
+    label Label
+    currentGroup *FDAGroup
+    boundKey string
+    boundLo float64
+    currentIngredient *LabelIngredient
+    componentKey string
+}
+
+File <- LabelLine NameLine PintMassLine BlankLine NutritionSection BlankLine IngredientsSection !.
+
+LabelLine <- 'Label:' Spacing Identifier Newline { p.label.ID = text }
+
+NameLine <- 'Name:' Spacing TextValue Newline { p.label.Name = text }
+
+PintMassLine <- 'Pint Mass:' Spacing Number 'g' Newline { p.label.PintMassGrams = p.parseFloat(text) }
+
+BlankLine <- Spacing Newline
+
+NutritionSection <- 'Nutrition Facts:' Newline NutritionFact+
+
+NutritionFact <- Indent NutritionFactLine
+
+NutritionFactLine <- ServingSizeLine
+                   / CaloriesLine
+                   / TotalFatLine
+                   / SaturatedFatLine
+                   / TransFatLine
+                   / CholesterolLine
+                   / TotalCarbLine
+                   / TotalSugarsLine
+                   / AddedSugarsLine
+                   / ProteinLine
+                   / SodiumLine
+
+ServingSizeLine <- 'Serving Size:' Spacing Number 'g' Newline { p.label.Facts.ServingSizeGrams = p.parseFloat(text) }
+CaloriesLine <- 'Calories:' Spacing Number Newline { p.label.Facts.Calories = p.parseFloat(text) }
+TotalFatLine <- 'Total Fat:' Spacing Number 'g' Newline { p.label.Facts.TotalFatGrams = p.parseFloat(text) }
+SaturatedFatLine <- 'Saturated Fat:' Spacing Number 'g' Newline { p.label.Facts.SaturatedFatGrams = p.parseFloat(text) }
+TransFatLine <- 'Trans Fat:' Spacing Number 'g' Newline { p.label.Facts.TransFatGrams = p.parseFloat(text) }
+CholesterolLine <- 'Cholesterol:' Spacing Number 'mg' Newline { p.label.Facts.CholesterolMg = p.parseFloat(text) }
+TotalCarbLine <- 'Total Carbohydrate:' Spacing Number 'g' Newline { p.label.Facts.TotalCarbGrams = p.parseFloat(text) }
+TotalSugarsLine <- 'Total Sugars:' Spacing Number 'g' Newline { p.label.Facts.TotalSugarsGrams = p.parseFloat(text) }
+AddedSugarsLine <- 'Added Sugars:' Spacing Number 'g' Newline { p.label.Facts.AddedSugarsGrams = p.parseFloat(text) }
+ProteinLine <- 'Protein:' Spacing Number 'g' Newline { p.label.Facts.ProteinGrams = p.parseFloat(text) }
+SodiumLine <- 'Sodium:' Spacing Number 'mg' Newline { p.label.Facts.SodiumMg = p.parseFloat(text) }
+
+IngredientsSection <- 'Ingredients:' Newline IngredientItem+
+
+IngredientItem <- CompoundIngredient / SimpleIngredientWithOverride / SimpleIngredient
+
+SimpleIngredient <- '  ' Identifier Newline { p.addIngredient(text) }
+
+SimpleIngredientWithOverride <- '  ' IngredientID Spacing ComponentOverrides Newline { p.finishIngredient() }
+
+IngredientID <- Identifier { p.startIngredient(text) }
+
+ComponentOverrides <- '{' ComponentOverride (',' Spacing ComponentOverride)* '}'
+
+ComponentOverride <- ComponentKey ':' ComponentValue
+
+ComponentKey <- Identifier { p.componentKey = text }
+
+ComponentValue <- Number { p.setComponent(p.parseFloat(text)) }
+
+CompoundIngredient <- '  ' GroupName Spacing '[' GroupAnnotation ']' ':' Newline SubIngredient+ { p.finishGroup() }
+
+GroupName <- < [A-Za-z][A-Za-z0-9_ ]* > { p.startGroup(text) }
+
+GroupAnnotation <- FractionBound / OrderAnnotation
+
+FractionBound <- BoundKey '=' BoundLo '..' BoundHi
+
+BoundKey <- Identifier { p.boundKey = text }
+BoundLo <- Number { p.boundLo = p.parseFloat(text) }
+BoundHi <- Number { p.setFractionBound(p.parseFloat(text)) }
+
+OrderAnnotation <- 'order' { p.setGroupOrder() }
+
+SubIngredient <- '    ' Identifier Newline { p.addSubIngredient(text) }
+
+Identifier <- < [a-z_][a-z0-9_]* >
+
+TextValue <- < [^\n]+ >
+
+Number <- < [0-9]+ ('.' [0-9]+)? >
+
+Indent <- '  '+
+Spacing <- ' '*
+Newline <- '\n' / EOF
+EOF <- !.

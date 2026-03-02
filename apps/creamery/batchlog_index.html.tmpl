@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Batch Log · Creamery Console</title>
+  <style>
+{{template "baseStyles"}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Creamery Console</div>
+    <nav class="site-nav">
+      <a href="/">Overview</a>
+      <a href="/labels">Labels</a>
+      <a href="/recipes">Recipes</a>
+      <a href="/batchlog" class="active">Batch Log</a>
+    </nav>
+  </header>
+  <main class="page">
+    <section class="summary-grid">
+      <div class="summary-card">
+        <p class="summary-label">Total batches</p>
+        <p class="summary-value">{{.Analytics.Summary.TotalBatches}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Valid snapshots</p>
+        <p class="summary-value">{{.Analytics.Summary.ValidSnapshots}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Entries with issues</p>
+        <p class="summary-value">{{.Analytics.Summary.EntriesWithIssues}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Timeline</p>
+        <p class="summary-value">{{formatDate .Analytics.Summary.EarliestDate}} – {{formatDate .Analytics.Summary.LatestDate}}</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Top Ingredients</h2>
+      <table>
+        {{range .Analytics.Summary.IngredientTotals}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td>{{printf "%.2f kg" .TotalMassKg}}</td>
+          <td>{{.BatchCount}} batches</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="3" class="muted">No ingredient data yet.</td></tr>
+        {{end}}
+      </table>
+    </section>
+
+    {{range .Analytics.Entries}}
+    <article class="card {{if .Issues}}issue{{end}}">
+      <div class="card-header">
+        <div>
+          <h2>{{.Entry.Label}}</h2>
+          <p class="meta">{{if .Entry.Recipe}}{{.Entry.Recipe}}{{end}}</p>
+        </div>
+      </div>
+      {{if .Issues}}
+      <div class="alert">
+        <strong>Issues:</strong> {{join .Issues "; "}}
+      </div>
+      {{end}}
+      <div class="grid multi">
+        <div class="panel">
+          <h3>Ingredients</h3>
+          {{if .Entry.Ingredients}}
+          <table class="ingredients-table">
+            {{range .Entry.Ingredients}}
+            <tr>
+              <td>{{.Key}}</td>
+              <td>{{.RawMass}}</td>
+              <td>{{if .PrecisionDisplay}}±{{.PrecisionDisplay}}{{else}}{{end}}</td>
+            </tr>
+            {{end}}
+          </table>
+          {{else}}<p class="muted">No ingredients recorded.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Process Notes</h3>
+          {{if .Entry.ProcessNotes}}
+          <ul class="notes-list">{{range .Entry.ProcessNotes}}<li>{{.}}</li>{{end}}</ul>
+          {{else}}<p class="muted">None logged.</p>{{end}}
+          <h3>Tasting</h3>
+          {{if .Entry.TastingNotes}}
+          <ul class="notes-list">{{range .Entry.TastingNotes}}<li>{{.}}</li>{{end}}</ul>
+          {{else}}<p class="muted">No tasting notes recorded.</p>{{end}}
+        </div>
+        {{if .Snapshot}}
+        <div class="panel">
+          <h3>Composition</h3>
+          <table>
+            <tr><td>Total Mass</td><td>{{printf "%.2f kg" .Snapshot.TotalMassKg}}</td></tr>
+            <tr><td>Water</td><td>{{formatPercent .Snapshot.WaterPct}}</td></tr>
+            <tr><td>Solids</td><td>{{formatPercent .Snapshot.SolidsPct}}</td></tr>
+            <tr><td>Fat</td><td>{{formatPercent .Snapshot.FatPct}}</td></tr>
+            <tr><td>Protein</td><td>{{formatPercent .Snapshot.ProteinPct}}</td></tr>
+            <tr><td>Lactose</td><td>{{formatPercent .Snapshot.LactosePct}}</td></tr>
+            <tr><td>Total sugars</td><td>{{formatPercent .Snapshot.TotalSugarsPct}}</td></tr>
+            <tr><td>Added sugars</td><td>{{formatPercent .Snapshot.AddedSugarsPct}}</td></tr>
+            <tr><td>Cost</td><td>{{formatCurrencyPerKg .Snapshot.CostPerKg}}</td></tr>
+          </table>
+        </div>
+        {{end}}
+        {{if .Process}}
+        <div class="panel">
+          <h3>Physics</h3>
+          <table>
+            <tr><td>Freezing point</td><td>{{printf "%.2f °C" .Process.FreezingPointC}}</td></tr>
+            <tr><td>Ice fraction</td><td>{{formatPercent .Process.IceFractionAtServe}}</td></tr>
+            <tr><td>Viscosity</td><td>{{printf "%.4f Pa·s" .Process.ViscosityAtServe}}</td></tr>
+            <tr><td>Overrun</td><td>{{formatPercent .Process.OverrunEstimate}}</td></tr>
+            <tr><td>Hardness</td><td>{{printf "%.2f" .Process.HardnessIndex}}</td></tr>
+            <tr><td>Meltdown</td><td>{{printf "%.2f" .Process.MeltdownIndex}}</td></tr>
+            <tr><td>Lactose supersat.</td><td>{{printf "%.2f×" .Process.LactoseSupersaturation}}</td></tr>
+            <tr><td>Freezer load</td><td>{{printf "%.1f kJ" .Process.FreezerLoadKJ}}</td></tr>
+          </table>
+        </div>
+        {{end}}
+      </div>
+    </article>
+    {{else}}
+    <p class="muted">No entries found.</p>
+    {{end}}
+  </main>
+</body>
+</html>

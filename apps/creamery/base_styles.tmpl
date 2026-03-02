@@ -1,0 +1,199 @@
+{{define "baseStyles"}}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2933;
+  background: #f7fafc;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f7fafc;
+  color: #1f2933;
+  line-height: 1.5;
+}
+a {
+  color: #0369a1;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.site-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 12px 24px -18px rgba(15,23,42,0.45);
+  z-index: 10;
+}
+.logo {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+}
+.site-nav a {
+  margin-left: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  color: #475569;
+  font-weight: 500;
+}
+.site-nav a.active {
+  background: #e0f2fe;
+  color: #035388;
+}
+main.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.card {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px -20px rgba(15,23,42,0.45);
+}
+.card.issue {
+  border-color: #fecaca;
+  box-shadow: 0 14px 32px -20px rgba(190,18,60,0.35);
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.summary-card {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 20px -16px rgba(15,23,42,0.35);
+}
+.summary-label {
+  color: #64748b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.summary-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.grid.multi {
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+}
+.panel {
+  background: #f8fafc;
+  border-radius: 0.6rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+.panel h3 {
+  margin-top: 0;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+table td {
+  padding: 0.4rem 0;
+  border-top: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+table tr:first-child td {
+  border-top: none;
+}
+.status {
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+}
+.status-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.status-idle {
+  background: #fef3c7;
+  color: #92400e;
+}
+.alert {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 0.6rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.meta {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+.badge-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.25rem 0 1rem;
+}
+.badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+}
+.fractions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fractions-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+.fractions-list li:last-child {
+  border-bottom: none;
+}
+.muted {
+  color: #64748b;
+}
+.notes-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.ingredients-table td:first-child {
+  font-weight: 600;
+  padding-right: 0.5rem;
+}
+{{end}}

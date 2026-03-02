@@ -1,0 +1,25 @@
+Label: jenis
+Name: Jeni's Sweet Cream
+Pint Mass: 372g
+
+Nutrition Facts:
+  Serving Size: 124g
+  Calories: 316
+  Total Fat: 20g
+    Saturated Fat: 11g
+    Trans Fat: 1g
+  Cholesterol: 55mg
+  Total Carbohydrate: 28g
+    Total Sugars: 23g
+      Added Sugars: 16g
+  Protein: 6g
+  Sodium: 75mg
+
+Ingredients:
+  milk
+  Cream [cream_fat=0.18..0.50]:
+    cream_fat
+    cream_serum
+  cane_sugar
+  nonfat_milk
+  tapioca_syrup

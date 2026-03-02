@@ -1,0 +1,20 @@
+[[task]]
+  id = "test"
+  type = "short"
+  cmd = "go test ./..."
+
+[[task]]
+  id = "dev"
+  type = "long"
+  watch = ["*.go", "cmd/*.go", "*.tmpl"]
+  dependencies = ["compile-pegs"]
+  cmd = "go run ./cmd serve"
+
+[[task]]
+  id = "compile-pegs"
+  type = "short"
+  watch = ["batchparser/*.peg", "fdaparser/*.peg"]
+  cmd = """
+    go tool peg -inline batchparser/batch.peg || exit 1
+    go tool peg -inline fdaparser/fda.peg || exit 1
+  """

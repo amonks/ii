@@ -1,0 +1,111 @@
+{{define "recipes"}}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recipe Catalog · Creamery Console</title>
+  <style>
+{{template "baseStyles"}}
+  .card.recipe h2 {
+    margin-bottom: 0.2rem;
+  }
+  .issues-list {
+    margin: 0.4rem 0 0;
+    padding-left: 1rem;
+  }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Creamery Console</div>
+    <nav class="site-nav">
+      <a href="/">Overview</a>
+      <a href="/labels">Labels</a>
+      <a href="/recipes" class="active">Recipes</a>
+      <a href="/batchlog">Batch Log</a>
+    </nav>
+  </header>
+  <main class="page">
+    <section class="summary-grid">
+      <div class="summary-card">
+        <p class="summary-label">Total batches</p>
+        <p class="summary-value">{{.Summary.TotalBatches}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Valid snapshots</p>
+        <p class="summary-value">{{.Summary.ValidSnapshots}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Entries with issues</p>
+        <p class="summary-value">{{.Summary.EntriesWithIssues}}</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">Timeline</p>
+        <p class="summary-value">{{formatDate .Summary.EarliestDate}} – {{formatDate .Summary.LatestDate}}</p>
+      </div>
+    </section>
+    {{range .Entries}}
+    <article class="card recipe {{if .HasIssues}}issue{{end}}">
+      <div class="card-header">
+        <div>
+          <h2>{{.Label}}</h2>
+          <p class="meta">{{if .Date}}Batched {{.Date}}{{else}}Date unavailable{{end}}</p>
+        </div>
+      </div>
+      {{if .HasIssues}}
+      <div class="alert">
+        <strong>Issues:</strong>
+        <ul class="issues-list">{{range .Issues}}<li>{{.}}</li>{{end}}</ul>
+      </div>
+      {{end}}
+      <div class="grid multi">
+        <div class="panel">
+          <h3>Ingredients</h3>
+          {{if .Ingredients}}
+          <table class="ingredients-table">
+            {{range .Ingredients}}<tr><td>{{.Name}}</td><td>{{.Mass}}</td><td>{{.Percent}}</td></tr>{{end}}
+          </table>
+          {{else}}<p class="muted">No ingredient weights recorded.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Process Notes</h3>
+          {{if .ProcessNotes}}
+          <ul class="notes-list">{{range .ProcessNotes}}<li>{{.}}</li>{{end}}</ul>
+          {{else}}<p class="muted">None logged.</p>{{end}}
+          <h3>Tasting</h3>
+          {{if .TastingNotes}}
+          <ul class="notes-list">{{range .TastingNotes}}<li>{{.}}</li>{{end}}</ul>
+          {{else}}<p class="muted">No tasting notes recorded.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Composition</h3>
+          {{if .Composition}}
+          <table>{{range .Composition}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Snapshot unavailable.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Physics</h3>
+          {{if .Physics}}
+          <table>{{range .Physics}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Not computed.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Nutrition Facts (⅔ cup)</h3>
+          {{if .NutritionFacts}}
+          <table>{{range .NutritionFacts}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Not computed.</p>{{end}}
+        </div>
+        <div class="panel">
+          <h3>Sweetener</h3>
+          {{if .Sweetener}}
+          <table>{{range .Sweetener}}<tr><td>{{.Label}}</td><td>{{.Value}}</td></tr>{{end}}</table>
+          {{else}}<p class="muted">Not computed.</p>{{end}}
+        </div>
+      </div>
+    </article>
+    {{end}}
+  </main>
+</body>
+</html>
+{{end}}

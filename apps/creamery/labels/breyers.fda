@@ -1,0 +1,25 @@
+Label: breyers
+Name: Breyers Vanilla
+Pint Mass: 264g
+
+Nutrition Facts:
+  Serving Size: 88g
+  Calories: 170
+  Total Fat: 9g
+    Saturated Fat: 6g
+  Cholesterol: 25mg
+  Total Carbohydrate: 19g
+    Total Sugars: 19g
+      Added Sugars: 14g
+  Protein: 3g
+  Sodium: 50mg
+
+Ingredients:
+  milk
+  Cream [cream_fat=0.18..0.50]:
+    cream_fat
+    cream_serum
+  sugar
+  skim_milk
+  tara_gum
+  natural_flavor
