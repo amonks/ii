@@ -17,6 +17,7 @@ import (
 type proxy struct {
 	rewrites  map[string]string
 	transport http.RoundTripper
+	vanity    func(http.ResponseWriter, *http.Request) bool
 }
 
 // routesFromCaps builds a route table from Tailscale-Cap-* headers.
@@ -50,6 +51,11 @@ func routesFromCaps(req *http.Request) map[string]string {
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Handle vanity import paths for public Go modules.
+	if p.vanity != nil && p.vanity(w, req) {
+		return
+	}
+
 	if to, hasRewrite := p.rewrites[req.URL.Path]; hasRewrite {
 		req.URL.Path = to
 	}

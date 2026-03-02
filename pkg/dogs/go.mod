@@ -1,0 +1,15 @@
+module monks.co/pkg/dogs
+
+go 1.26.0
+
+require (
+	github.com/PuerkitoBio/goquery v1.11.0
+	github.com/a-h/templ v0.3.977
+	gorm.io/gorm v1.31.1
+)
+
+require (
+	github.com/andybalholm/cascadia v1.3.3 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
+)

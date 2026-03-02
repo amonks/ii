@@ -11,6 +11,7 @@ import (
 	"github.com/amonks/run/pkg/run"
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
+	"monks.co/pkg/env"
 )
 
 func main() {
@@ -21,6 +22,13 @@ func main() {
 }
 
 func start() error {
+	root := env.InMonksRoot()
+
+	// generate go.mod and go.work files
+	if err := generateModuleFiles(root); err != nil {
+		return fmt.Errorf("generating module files: %w", err)
+	}
+
 	var tasks []*task
 
 	// add base tasks
@@ -48,6 +56,28 @@ func start() error {
 		return fmt.Errorf("finding generator tasks: %w", err)
 	}
 	generate.Dependencies = append(generate.Dependencies, generators...)
+
+	// add discovered test tasks from apps to top-level test task
+	redundant, err := loadRedundantCommands(root)
+	if err != nil {
+		return fmt.Errorf("loading redundant commands: %w", err)
+	}
+	appTests, err := findAppTestTasks(root, redundant)
+	if err != nil {
+		return fmt.Errorf("finding app test tasks: %w", err)
+	}
+	if len(appTests) > 0 {
+		var testTask *task
+		for _, t := range tasks {
+			if t.Id == "test" {
+				testTask = t
+				break
+			}
+		}
+		if testTask != nil {
+			testTask.Dependencies = append(testTask.Dependencies, appTests...)
+		}
+	}
 
 	if err := writeTasks("tasks.toml", tasks); err != nil {
 		return fmt.Errorf("writing finished tasks.toml: %w", err)

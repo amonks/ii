@@ -1,0 +1,333 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+// topoSort returns the public directories in dependency order
+// (dependencies before dependents).
+func topoSort(publicDirs map[string]bool, graph map[string][]string) ([]string, error) {
+	// Build the subgraph of only public packages.
+	inDegree := map[string]int{}
+	edges := map[string][]string{}
+	for dir := range publicDirs {
+		inDegree[dir] = 0
+	}
+	for dir := range publicDirs {
+		for _, dep := range graph[dir] {
+			if publicDirs[dep] {
+				edges[dep] = append(edges[dep], dir)
+				inDegree[dir]++
+			}
+		}
+	}
+
+	// Kahn's algorithm.
+	var queue []string
+	for dir := range publicDirs {
+		if inDegree[dir] == 0 {
+			queue = append(queue, dir)
+		}
+	}
+	sort.Strings(queue)
+
+	var result []string
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		result = append(result, node)
+
+		dependents := edges[node]
+		sort.Strings(dependents)
+		for _, dep := range dependents {
+			inDegree[dep]--
+			if inDegree[dep] == 0 {
+				queue = append(queue, dep)
+			}
+		}
+	}
+
+	if len(result) != len(publicDirs) {
+		return nil, fmt.Errorf("cycle detected in public dependency graph")
+	}
+	return result, nil
+}
+
+// gitEnv returns environment variables for running git commands
+// with jj's git backend.
+func gitEnv(root string) []string {
+	gitDir := filepath.Join(root, ".jj", "repo", "store", "git")
+	// Check if jj's git dir exists; if not, assume normal git.
+	if _, err := os.Stat(gitDir); err != nil {
+		return os.Environ()
+	}
+	env := os.Environ()
+	env = append(env, "GIT_DIR="+gitDir, "GIT_WORK_TREE="+root)
+	return env
+}
+
+// cloneSource returns the path to clone from. For jj repos this is the
+// internal git dir; for regular git repos it's the root.
+func cloneSource(root string) string {
+	gitDir := filepath.Join(root, ".jj", "repo", "store", "git")
+	if _, err := os.Stat(gitDir); err == nil {
+		return gitDir
+	}
+	return root
+}
+
+// subtreeSplit runs git subtree split for a directory prefix,
+// returning the SHA of the split commit.
+func subtreeSplit(root, dir string) (string, error) {
+	cmd := exec.Command("git", "subtree", "split", "--prefix="+dir)
+	cmd.Dir = root
+	cmd.Env = gitEnv(root)
+	out, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("git subtree split %s: %s", dir, string(exitErr.Stderr))
+		}
+		return "", fmt.Errorf("git subtree split %s: %w", dir, err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// mirrorExists checks if a GitHub repo exists using gh.
+func mirrorExists(mirror string) bool {
+	cmd := exec.Command("gh", "repo", "view", mirror, "--json", "name")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	return cmd.Run() == nil
+}
+
+// createMirror creates a public GitHub repo.
+func createMirror(mirror string) error {
+	parts := strings.SplitN(mirror, "/", 3)
+	if len(parts) < 3 {
+		return fmt.Errorf("invalid mirror: %s", mirror)
+	}
+	// github.com/org/name -> org/name
+	repoSlug := parts[1] + "/" + parts[2]
+	cmd := exec.Command("gh", "repo", "create", repoSlug, "--public", "--confirm")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// pushToMirror pushes a split SHA to a mirror repo's main branch.
+func pushToMirror(root, sha, mirror string) error {
+	url := "https://" + mirror + ".git"
+	cmd := exec.Command("git", "push", url, sha+":refs/heads/main", "--force")
+	cmd.Dir = root
+	cmd.Env = gitEnv(root)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// pushTagToMirror pushes a tag to a mirror repo.
+func pushTagToMirror(root, sha, tag, mirror string) error {
+	url := "https://" + mirror + ".git"
+	cmd := exec.Command("git", "push", url, sha+":refs/tags/"+tag, "--force")
+	cmd.Dir = root
+	cmd.Env = gitEnv(root)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// findMonorepoTags returns tags for a directory prefix.
+// E.g., for dir "pkg/serve", finds tags like "pkg/serve/v1.0.0".
+func findMonorepoTags(root, dir string) ([]string, error) {
+	prefix := dir + "/v"
+	cmd := exec.Command("git", "tag", "-l", prefix+"*")
+	cmd.Dir = root
+	cmd.Env = gitEnv(root)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	var tags []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if line != "" {
+			tags = append(tags, line)
+		}
+	}
+	return tags, nil
+}
+
+// mirrorTag converts a monorepo tag to a mirror tag.
+// "pkg/serve/v1.0.0" -> "v1.0.0"
+func mirrorTag(monorepoTag, dir string) string {
+	return strings.TrimPrefix(monorepoTag, dir+"/")
+}
+
+// filterRepo clones the repo to a temp dir, runs git-filter-repo to
+// keep only the specified paths, and pushes the result to the mirror.
+func filterRepo(root string, dirs []string, mirror string) error {
+	if _, err := exec.LookPath("git-filter-repo"); err != nil {
+		return fmt.Errorf("git-filter-repo not found; install with: pip install git-filter-repo")
+	}
+
+	tmpDir, err := os.MkdirTemp("", "publish-filter-*")
+	if err != nil {
+		return fmt.Errorf("creating temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Clone the repo.
+	src := cloneSource(root)
+	cloneCmd := exec.Command("git", "clone", "--no-local", src, tmpDir)
+	cloneCmd.Stdout = os.Stdout
+	cloneCmd.Stderr = os.Stderr
+	if err := cloneCmd.Run(); err != nil {
+		return fmt.Errorf("cloning repo: %w", err)
+	}
+
+	// Build filter-repo args.
+	args := []string{"filter-repo"}
+	for _, dir := range dirs {
+		args = append(args, "--path", dir)
+	}
+	args = append(args, "--force")
+
+	filterCmd := exec.Command("git", args...)
+	filterCmd.Dir = tmpDir
+	filterCmd.Stdout = os.Stdout
+	filterCmd.Stderr = os.Stderr
+	if err := filterCmd.Run(); err != nil {
+		return fmt.Errorf("git filter-repo: %w", err)
+	}
+
+	// Push to the mirror.
+	url := "https://" + mirror + ".git"
+	pushCmd := exec.Command("git", "push", url, "HEAD:refs/heads/main", "--force")
+	pushCmd.Dir = tmpDir
+	pushCmd.Stdout = os.Stdout
+	pushCmd.Stderr = os.Stderr
+	if err := pushCmd.Run(); err != nil {
+		return fmt.Errorf("pushing to %s: %w", mirror, err)
+	}
+
+	// Push tags that match public package prefixes.
+	for _, dir := range dirs {
+		tagsCmd := exec.Command("git", "tag", "-l", dir+"/v*")
+		tagsCmd.Dir = tmpDir
+		out, err := tagsCmd.Output()
+		if err != nil {
+			continue
+		}
+		for _, tag := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			if tag == "" {
+				continue
+			}
+			fmt.Printf("  pushing tag %s\n", tag)
+			tagPush := exec.Command("git", "push", url, "refs/tags/"+tag+":refs/tags/"+tag, "--force")
+			tagPush.Dir = tmpDir
+			tagPush.Stdout = os.Stdout
+			tagPush.Stderr = os.Stderr
+			if err := tagPush.Run(); err != nil {
+				return fmt.Errorf("pushing tag %s: %w", tag, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// publish runs the full publish flow for all public packages.
+func publish(root string, cfg *PublishConfig, dryRun bool) error {
+	graph, err := BuildDepGraph(root)
+	if err != nil {
+		return fmt.Errorf("building dep graph: %w", err)
+	}
+
+	publicDirs := cfg.PublicDirs()
+	order, err := topoSort(publicDirs, graph)
+	if err != nil {
+		return err
+	}
+
+	// Separate packages into explicit-mirror and default-mirror groups.
+	var defaultMirrorDirs []string
+	var explicitPkgs []PublishPackage
+	for _, dir := range order {
+		pkg := cfg.PackageByDir(dir)
+		if pkg != nil && pkg.Mirror != "" {
+			explicitPkgs = append(explicitPkgs, *pkg)
+		} else {
+			defaultMirrorDirs = append(defaultMirrorDirs, dir)
+		}
+	}
+
+	// Publish packages with explicit mirrors via subtree split.
+	for _, pkg := range explicitPkgs {
+		fmt.Printf("publishing %s -> %s (subtree split)\n", pkg.Dir, pkg.Mirror)
+
+		if dryRun {
+			fmt.Printf("  [dry-run] would split, create repo if needed, push\n")
+			continue
+		}
+
+		if !mirrorExists(pkg.Mirror) {
+			fmt.Printf("  creating mirror repo %s\n", pkg.Mirror)
+			if err := createMirror(pkg.Mirror); err != nil {
+				return fmt.Errorf("creating mirror %s: %w", pkg.Mirror, err)
+			}
+		}
+
+		fmt.Printf("  splitting %s...\n", pkg.Dir)
+		sha, err := subtreeSplit(root, pkg.Dir)
+		if err != nil {
+			return fmt.Errorf("splitting %s: %w", pkg.Dir, err)
+		}
+		fmt.Printf("  split SHA: %s\n", sha)
+
+		fmt.Printf("  pushing to %s\n", pkg.Mirror)
+		if err := pushToMirror(root, sha, pkg.Mirror); err != nil {
+			return fmt.Errorf("pushing %s: %w", pkg.Dir, err)
+		}
+
+		tags, err := findMonorepoTags(root, pkg.Dir)
+		if err != nil {
+			return fmt.Errorf("finding tags for %s: %w", pkg.Dir, err)
+		}
+		for _, tag := range tags {
+			mTag := mirrorTag(tag, pkg.Dir)
+			fmt.Printf("  pushing tag %s -> %s\n", tag, mTag)
+			if err := pushTagToMirror(root, sha, mTag, pkg.Mirror); err != nil {
+				return fmt.Errorf("pushing tag %s: %w", tag, err)
+			}
+		}
+	}
+
+	// Publish default-mirror packages via git-filter-repo.
+	if len(defaultMirrorDirs) > 0 && cfg.DefaultMirror != "" {
+		fmt.Printf("publishing %d packages -> %s (filter-repo)\n", len(defaultMirrorDirs), cfg.DefaultMirror)
+		for _, dir := range defaultMirrorDirs {
+			fmt.Printf("  %s\n", dir)
+		}
+
+		if dryRun {
+			fmt.Printf("  [dry-run] would clone, filter, push\n")
+		} else {
+			if !mirrorExists(cfg.DefaultMirror) {
+				fmt.Printf("  creating mirror repo %s\n", cfg.DefaultMirror)
+				if err := createMirror(cfg.DefaultMirror); err != nil {
+					return fmt.Errorf("creating mirror %s: %w", cfg.DefaultMirror, err)
+				}
+			}
+
+			if err := filterRepo(root, defaultMirrorDirs, cfg.DefaultMirror); err != nil {
+				return fmt.Errorf("filter-repo: %w", err)
+			}
+		}
+	}
+
+	return nil
+}

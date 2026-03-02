@@ -1,0 +1,4 @@
+default_mirror = "github.com/amonks/go"
+
+[[package]]
+dir = "pkg/set"

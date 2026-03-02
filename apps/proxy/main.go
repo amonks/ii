@@ -181,7 +181,16 @@ func (s *Service) listenAndServeHTTPS(ctx context.Context) error {
 		slog.Info("started", "addr", s.service.Addr, "tailauth.caps", capNames(anonCaps))
 	}
 
-	p := &proxy{s.service.Rewrites, tsClient.Transport}
+	vanityMods, defaultMirror, err := loadVanityModules()
+	if err != nil {
+		slog.Warn("vanity import handler disabled", "error", err)
+	}
+
+	p := &proxy{
+		rewrites:  s.service.Rewrites,
+		transport: tsClient.Transport,
+		vanity:    vanityHandler(vanityMods, defaultMirror),
+	}
 
 	// Public handler: reqlog → anon caps → redirector → proxy
 	publicMW := middleware.Combine(reqlog.Middleware(), anonCapsMiddleware{anonCaps}, RedirectorMiddleware(s.redirects))

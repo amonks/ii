@@ -38,21 +38,21 @@ var baseTasks = []*task{
 	{
 		Id:   "gofix",
 		Type: "short",
-		Cmd:  "test -z \"$(go fix -diff ./...)\"",
+		Cmd:  "test -z \"$(go fix -diff monks.co/...)\"",
 	},
 	{
 		Id:   "staticcheck",
 		Type: "short",
-		Cmd:  "go tool staticcheck ./...",
+		Cmd:  "go tool staticcheck monks.co/...",
 	},
 	{
 		Id:   "govulncheck",
 		Type: "short",
-		Cmd:  "go tool govulncheck ./...",
+		Cmd:  "go tool govulncheck monks.co/...",
 	},
 	{
 		Id:   "go-test",
 		Type: "short",
-		Cmd:  "go test ./...",
+		Cmd:  "go test monks.co/...",
 	},
 }

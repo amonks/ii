@@ -38,6 +38,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [tailnet-routing](tailnet-routing.md) | How apps join the tailnet, capability-based routing, access tiers, the proxy's dual-listener architecture |
 | [observability](observability.md) | The reqlog → logsclient → logs pipeline, request tracing, uptime monitoring, Prometheus metrics |
 | [app-boilerplate](app-boilerplate.md) | Standard app startup pattern, shared packages, environment variables, deployment, templating |
+| [publish](publish.md) | Publishing monorepo subtrees as public GitHub mirrors, validation, vanity imports |
 
 ## Apps
 

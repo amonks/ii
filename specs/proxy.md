@@ -37,6 +37,26 @@ Middleware: reqlog → `tailscaleAuthMiddleware` → proxy.
 `tailscaleAuthMiddleware` calls `WhoIs` to identify the peer and sets
 `Tailscale-User` and `Tailscale-Cap-*` headers from actual capabilities.
 
+## Vanity Import Paths
+
+Before route matching, the proxy checks if the request path matches a
+public Go module declared in `config/publish.toml`. If so:
+
+- `?go-get=1` requests get a `<meta name="go-import">` tag pointing at
+  the GitHub mirror, enabling `go get monks.co/pkg/foo`.
+- Human visitors get a redirect to the GitHub mirror.
+
+For packages in the shared default mirror, the go-import prefix is
+`monks.co` (the VCS root), so Go can find modules in subdirectories.
+The root path `/?go-get=1` also serves this meta tag for Go's VCS root
+verification. For packages with explicit mirrors, the go-import prefix
+is the module path itself.
+
+Multi-segment paths (`/pkg/serve`, `/cmd/run/runner`) are vanity candidates.
+Single-segment paths (`/dogs`, `/map`) are app routes and are not matched.
+
+See `apps/proxy/vanity.go`.
+
 ## Routing
 
 Routes come from Tailscale capability grants (not hardcoded). The

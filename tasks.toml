@@ -54,39 +54,39 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/writing/templ',
+    'apps/dogs/templ',
     'apps/dungeon/templ',
     'apps/dungeon/build-css',
     'apps/dungeon/build-js',
     'apps/homepage/templ',
-    'apps/dolmenwood/templ',
-    'apps/reddit/templ',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/dogs/templ',
+    'apps/reddit/templ',
+    'apps/youtube/templ',
     'apps/directory/templ',
-    'apps/youtube/templ'
+    'apps/dolmenwood/templ',
+    'apps/writing/templ'
   ]
 
 [[task]]
   id = 'go-test'
   type = 'short'
-  cmd = 'go test ./...'
+  cmd = 'go test monks.co/...'
 
 [[task]]
   id = 'gofix'
   type = 'short'
-  cmd = 'test -z "$(go fix -diff ./...)"'
+  cmd = 'test -z "$(go fix -diff monks.co/...)"'
 
 [[task]]
   id = 'govulncheck'
   type = 'short'
-  cmd = 'go tool govulncheck ./...'
+  cmd = 'go tool govulncheck monks.co/...'
 
 [[task]]
   id = 'staticcheck'
   type = 'short'
-  cmd = 'go tool staticcheck ./...'
+  cmd = 'go tool staticcheck monks.co/...'
 
 [[task]]
   id = 'taskmaker'
