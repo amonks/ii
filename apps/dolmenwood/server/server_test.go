@@ -1222,10 +1222,11 @@ func TestAddXPAddsLogAndAudit(t *testing.T) {
 	srv, d := setupTest(t)
 	mux := srv.Mux()
 
+	// Human Knight with STR=10 CHA=10: prime mod 0% + human 10% = +10%
 	ch := &db.Character{
 		Name: "Test", Class: "Knight", Kindred: "Human",
 		Level: 1, HPCurrent: 8, HPMax: 8,
-		TotalXP: 100,
+		TotalXP: 100, STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10,
 	}
 	d.CreateCharacter(ch)
 
@@ -1241,12 +1242,13 @@ func TestAddXPAddsLogAndAudit(t *testing.T) {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
+	// 250 base * 110% = 275
 	updated, err := d.GetCharacter(ch.ID)
 	if err != nil {
 		t.Fatalf("GetCharacter: %v", err)
 	}
-	if updated.TotalXP != 350 {
-		t.Errorf("TotalXP = %d, want 350", updated.TotalXP)
+	if updated.TotalXP != 375 {
+		t.Errorf("TotalXP = %d, want 375", updated.TotalXP)
 	}
 
 	entries, err := d.ListXPLog(ch.ID)
@@ -1256,11 +1258,11 @@ func TestAddXPAddsLogAndAudit(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("got %d xp log entries, want 1", len(entries))
 	}
-	if entries[0].Amount != 250 {
-		t.Errorf("XP log amount = %d, want 250", entries[0].Amount)
+	if entries[0].Amount != 275 {
+		t.Errorf("XP log amount = %d, want 275", entries[0].Amount)
 	}
-	if entries[0].Description != "quest reward" {
-		t.Errorf("XP log description = %q, want %q", entries[0].Description, "quest reward")
+	if entries[0].Description != "quest reward (250 base +10%)" {
+		t.Errorf("XP log description = %q, want %q", entries[0].Description, "quest reward (250 base +10%)")
 	}
 
 	audit, err := d.ListAuditLog(ch.ID)
@@ -1273,8 +1275,87 @@ func TestAddXPAddsLogAndAudit(t *testing.T) {
 	if audit[0].Action != "xp_add" {
 		t.Errorf("audit action = %q, want %q", audit[0].Action, "xp_add")
 	}
-	if audit[0].Detail != "+250 XP (quest reward)" {
-		t.Errorf("audit detail = %q, want %q", audit[0].Detail, "+250 XP (quest reward)")
+	if audit[0].Detail != "+275 XP: quest reward (250 base +10%)" {
+		t.Errorf("audit detail = %q, want %q", audit[0].Detail, "+275 XP: quest reward (250 base +10%)")
+	}
+}
+
+func TestAddXPRoundsUp(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	// Human Knight with STR=10 CHA=10: +10% total XP modifier
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Human",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		TotalXP: 0, STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("xp_amount", "9")
+	form.Set("description", "goblin fight")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/xp/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// 9 base * 110% = 9.9 → rounds up to 10
+	updated, err := d.GetCharacter(ch.ID)
+	if err != nil {
+		t.Fatalf("GetCharacter: %v", err)
+	}
+	if updated.TotalXP != 10 {
+		t.Errorf("TotalXP = %d, want 10", updated.TotalXP)
+	}
+
+	entries, err := d.ListXPLog(ch.ID)
+	if err != nil {
+		t.Fatalf("ListXPLog: %v", err)
+	}
+	if entries[0].Amount != 10 {
+		t.Errorf("XP log amount = %d, want 10", entries[0].Amount)
+	}
+}
+
+func TestAddXPNoModifier(t *testing.T) {
+	srv, d := setupTest(t)
+	mux := srv.Mux()
+
+	// Elf Knight with average scores: 0% modifier
+	ch := &db.Character{
+		Name: "Test", Class: "Knight", Kindred: "Elf",
+		Level: 1, HPCurrent: 8, HPMax: 8,
+		TotalXP: 0, STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10,
+	}
+	d.CreateCharacter(ch)
+
+	form := url.Values{}
+	form.Set("xp_amount", "100")
+	form.Set("description", "quest")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/characters/%d/xp/", ch.ID), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	// With 0% modifier, description should not include the math
+	updated, _ := d.GetCharacter(ch.ID)
+	if updated.TotalXP != 100 {
+		t.Errorf("TotalXP = %d, want 100", updated.TotalXP)
+	}
+
+	entries, _ := d.ListXPLog(ch.ID)
+	if entries[0].Description != "quest" {
+		t.Errorf("XP log description = %q, want %q", entries[0].Description, "quest")
+	}
+
+	audit, _ := d.ListAuditLog(ch.ID)
+	if audit[0].Detail != "+100 XP: quest" {
+		t.Errorf("audit detail = %q, want %q", audit[0].Detail, "+100 XP: quest")
 	}
 }
 

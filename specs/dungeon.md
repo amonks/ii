@@ -69,10 +69,15 @@ HTML5 Canvas rendering with TypeScript. Pan/zoom via two-finger touch or mouse w
 - **Box** — drag to draw a rectangle; if a room is selected, drawn cells merge into that room (merge mode); if no room is selected, only unoccupied cells become a new room (subtract mode), enabling ring-shaped rooms by drawing concentric boxes
 - **Door** — hover highlights the nearest wall edge; tap to place/toggle a door
 - **Letter** — tap a cell to place/remove a letter marker
+- **Subtract** — drag to draw a rectangle eraser; deletes cells (and orphaned walls) in the rectangle; if rooms are selected, only deletes cells belonging to those rooms
 
 ### Hex Mode
 - **Select** — tap a hex to select; opens properties panel
 - **Paint** — tap/drag to toggle explored state
+
+## Undo/Redo
+
+Client-side undo stack tracks mutations to cells, walls, and markers. Each undo entry snapshots the previous state of affected keys before a mutation occurs. Undo restores previous state via API calls (upsertCells/deleteCells, upsertWall, upsertMarker/deleteMarker). Redo re-applies the undone change. All tool mutations and panel mutations push undo entries. Keyboard shortcuts: Ctrl/Cmd+Z (undo), Ctrl/Cmd+Shift+Z (redo). Toolbar buttons also available.
 
 ## Properties Panel
 

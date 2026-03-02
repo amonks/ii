@@ -8,6 +8,7 @@ import { TOOLS, AppState, Tool } from "./tools";
 import { connectSSE } from "./sse";
 import { fetchMapState } from "./api";
 import { showProperties, hideProperties } from "./panel";
+import { UndoStack } from "./undo";
 
 function init() {
   const appEl = document.getElementById("app");
@@ -31,6 +32,7 @@ function init() {
 
   let currentTool: Tool = TOOLS.select;
   let renderRequested = false;
+  const undoStack = new UndoStack();
 
   const state: AppState = {
     mapID,
@@ -47,6 +49,10 @@ function init() {
     camera,
     canvas,
     dragPreview: null,
+    pushUndo(entry) {
+      undoStack.push(entry);
+      updateUndoButtons();
+    },
     requestRender() {
       if (!renderRequested) {
         renderRequested = true;
@@ -271,6 +277,38 @@ function init() {
     hideProperties();
     state.requestRender();
   });
+
+  // --- Undo/Redo ---
+
+  function updateUndoButtons() {
+    const undoBtn = document.getElementById("undo-btn");
+    const redoBtn = document.getElementById("redo-btn");
+    if (undoBtn) (undoBtn as HTMLButtonElement).disabled = !undoStack.canUndo;
+    if (redoBtn) (redoBtn as HTMLButtonElement).disabled = !undoStack.canRedo;
+  }
+
+  document.getElementById("undo-btn")?.addEventListener("click", async () => {
+    await undoStack.undo(state);
+    updateUndoButtons();
+  });
+
+  document.getElementById("redo-btn")?.addEventListener("click", async () => {
+    await undoStack.redo(state);
+    updateUndoButtons();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+      e.preventDefault();
+      undoStack.undo(state).then(updateUndoButtons);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+      e.preventDefault();
+      undoStack.redo(state).then(updateUndoButtons);
+    }
+  });
+
+  updateUndoButtons();
 
   // --- SSE ---
 

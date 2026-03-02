@@ -15,14 +15,20 @@ vi.mock("./api", () => ({
       })),
     ),
   ),
-  upsertWall: vi.fn(),
-  upsertMarker: vi.fn(),
-  deleteMarker: vi.fn(),
+  upsertWall: vi.fn((mapID: number, wall: any) =>
+    Promise.resolve({ id: 1, map_id: mapID, ...wall }),
+  ),
+  upsertMarker: vi.fn((mapID: number, marker: any) =>
+    Promise.resolve({ id: 1, map_id: mapID, ...marker }),
+  ),
+  deleteMarker: vi.fn(() => Promise.resolve()),
+  deleteCells: vi.fn(() => Promise.resolve()),
 }));
 
 import { TOOLS, AppState } from "./tools";
-import { cellKey, CELL_SIZE } from "./grid";
-import { Cell } from "./types";
+import { cellKey, wallKey, CELL_SIZE } from "./grid";
+import { Cell, Wall } from "./types";
+import { UndoStack, UndoEntry } from "./undo";
 
 function makeState(cells: Cell[] = []): AppState {
   const cellMap = new Map<string, Cell>();
@@ -36,6 +42,7 @@ function makeState(cells: Cell[] = []): AppState {
     walls: new Map(),
     markers: new Map(),
     selectedRooms: new Set(),
+    selectedHexes: new Set(),
     shiftDown: false,
     hoveredEdge: null,
     hoveredEdgeValid: false,
@@ -46,6 +53,7 @@ function makeState(cells: Cell[] = []): AppState {
     showProperties: vi.fn(),
     hideProperties: vi.fn(),
     dragPreview: null,
+    pushUndo: vi.fn(),
   };
 }
 
@@ -359,5 +367,250 @@ describe("BoxTool", () => {
     expect(cell20.room_id).toBe(1);
     const cell30 = state.cells.get(cellKey(3, 0))!;
     expect(cell30.room_id).toBe(1);
+  });
+
+  it("pushes undo entry before creating cells", async () => {
+    const state = makeState();
+
+    box.onPointerDown(state, ...toWorld(0, 0));
+    await box.onPointerUp(state, ...toWorld(1, 1));
+
+    expect(state.pushUndo).toHaveBeenCalledTimes(1);
+    const entry = (state.pushUndo as any).mock.calls[0][0] as UndoEntry;
+    // All 4 cells should be null (didn't exist before)
+    expect(entry.cells.size).toBe(4);
+    for (const val of entry.cells.values()) {
+      expect(val).toBeNull();
+    }
+  });
+});
+
+describe("SubtractTool", () => {
+  const subtract = TOOLS.subtract;
+
+  it("deletes all cells in the rectangle when no rooms selected", async () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(0, 1, 1), makeCell(1, 1, 1),
+    ]);
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    await subtract.onPointerUp(state, ...toWorld(1, 1));
+
+    expect(state.cells.size).toBe(0);
+    expect(state.hideProperties).toHaveBeenCalled();
+    expect(state.selectedRooms.size).toBe(0);
+  });
+
+  it("only deletes cells from selected rooms", async () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+      makeCell(0, 1, 2), makeCell(1, 1, 2),
+    ]);
+
+    // Select room 1 only
+    state.selectedRooms.add(1);
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    await subtract.onPointerUp(state, ...toWorld(1, 1));
+
+    // Room 1 cells should be deleted, room 2 cells should remain
+    expect(state.cells.has(cellKey(0, 0))).toBe(false);
+    expect(state.cells.has(cellKey(1, 0))).toBe(false);
+    expect(state.cells.has(cellKey(0, 1))).toBe(true);
+    expect(state.cells.has(cellKey(1, 1))).toBe(true);
+  });
+
+  it("does nothing when rectangle contains no cells", async () => {
+    const state = makeState();
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    await subtract.onPointerUp(state, ...toWorld(1, 1));
+
+    expect(state.cells.size).toBe(0);
+    expect(state.pushUndo).not.toHaveBeenCalled();
+  });
+
+  it("cleans up orphaned walls after deletion", async () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 2),
+    ]);
+
+    // Add a door wall between the two cells
+    const wk = wallKey(0, 0, 1, 0);
+    state.walls.set(wk, { id: 1, map_id: 1, x1: 0, y1: 0, x2: 1, y2: 0, type: "door" });
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    await subtract.onPointerUp(state, ...toWorld(1, 0));
+
+    // Both cells deleted, wall should be orphaned and cleaned up
+    expect(state.cells.size).toBe(0);
+    expect(state.walls.size).toBe(0);
+  });
+
+  it("pushes undo entry with affected cells and walls", async () => {
+    const state = makeState([
+      makeCell(0, 0, 1), makeCell(1, 0, 1),
+    ]);
+
+    const wk = wallKey(0, 0, 1, 0);
+    const wall: Wall = { id: 1, map_id: 1, x1: 0, y1: 0, x2: 1, y2: 0, type: "door" };
+    state.walls.set(wk, wall);
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    await subtract.onPointerUp(state, ...toWorld(1, 0));
+
+    expect(state.pushUndo).toHaveBeenCalledTimes(1);
+    const entry = (state.pushUndo as any).mock.calls[0][0] as UndoEntry;
+    // Should have 2 cells snapshotted
+    expect(entry.cells.size).toBe(2);
+    // Should have the wall snapshotted
+    expect(entry.walls.size).toBe(1);
+    expect(entry.walls.get(wk)).toEqual(wall);
+  });
+
+  it("shows drag preview during drag", () => {
+    const state = makeState();
+
+    subtract.onPointerDown(state, ...toWorld(0, 0));
+    expect(state.dragPreview).not.toBeNull();
+
+    subtract.onPointerMove(state, ...toWorld(2, 3));
+    expect(state.dragPreview).toEqual({
+      x1: 0, y1: 0, x2: 2, y2: 3,
+    });
+  });
+});
+
+describe("UndoStack", () => {
+  function makeUndoState(cells: Cell[] = []): AppState {
+    const cellMap = new Map<string, Cell>();
+    for (const c of cells) {
+      cellMap.set(cellKey(c.x, c.y), c);
+    }
+    const stack = new UndoStack();
+    const state: AppState = {
+      mapID: 1,
+      mapType: "dungeon",
+      cells: cellMap,
+      walls: new Map(),
+      markers: new Map(),
+      selectedRooms: new Set(),
+      selectedHexes: new Set(),
+      shiftDown: false,
+      hoveredEdge: null,
+      hoveredEdgeValid: false,
+      hoveredCell: null,
+      camera: { logicalWidth: 800, logicalHeight: 600 } as any,
+      canvas: {} as any,
+      requestRender: vi.fn(),
+      showProperties: vi.fn(),
+      hideProperties: vi.fn(),
+      dragPreview: null,
+      pushUndo: (entry) => stack.push(entry),
+    };
+    return state;
+  }
+
+  it("reports canUndo and canRedo correctly", () => {
+    const stack = new UndoStack();
+    expect(stack.canUndo).toBe(false);
+    expect(stack.canRedo).toBe(false);
+
+    stack.push({ cells: new Map(), walls: new Map(), markers: new Map() });
+    expect(stack.canUndo).toBe(true);
+    expect(stack.canRedo).toBe(false);
+  });
+
+  it("undoes a cell creation", async () => {
+    const stack = new UndoStack();
+    const state = makeUndoState();
+
+    // Simulate: snapshot that cell (0,0) didn't exist, then create it
+    const undoEntry: UndoEntry = {
+      cells: new Map([[cellKey(0, 0), null]]),
+      walls: new Map(),
+      markers: new Map(),
+    };
+    stack.push(undoEntry);
+
+    // Now add the cell (simulating what BoxTool does after push)
+    state.cells.set(cellKey(0, 0), makeCell(0, 0, 1));
+
+    // Undo should remove the cell
+    await stack.undo(state);
+    expect(state.cells.has(cellKey(0, 0))).toBe(false);
+    expect(stack.canUndo).toBe(false);
+    expect(stack.canRedo).toBe(true);
+  });
+
+  it("redoes after undo", async () => {
+    const stack = new UndoStack();
+    const state = makeUndoState();
+
+    // Snapshot: cell didn't exist
+    stack.push({
+      cells: new Map([[cellKey(0, 0), null]]),
+      walls: new Map(),
+      markers: new Map(),
+    });
+
+    // Create the cell
+    const cell = makeCell(0, 0, 1);
+    state.cells.set(cellKey(0, 0), cell);
+
+    // Undo removes the cell
+    await stack.undo(state);
+    expect(state.cells.has(cellKey(0, 0))).toBe(false);
+
+    // Redo restores the cell
+    await stack.redo(state);
+    expect(state.cells.has(cellKey(0, 0))).toBe(true);
+    const restored = state.cells.get(cellKey(0, 0))!;
+    expect(restored.room_id).toBe(1);
+  });
+
+  it("clears redo stack on new push", async () => {
+    const stack = new UndoStack();
+    const state = makeUndoState();
+
+    stack.push({
+      cells: new Map([[cellKey(0, 0), null]]),
+      walls: new Map(),
+      markers: new Map(),
+    });
+    state.cells.set(cellKey(0, 0), makeCell(0, 0, 1));
+
+    await stack.undo(state);
+    expect(stack.canRedo).toBe(true);
+
+    // New action clears redo
+    stack.push({
+      cells: new Map([[cellKey(1, 1), null]]),
+      walls: new Map(),
+      markers: new Map(),
+    });
+    expect(stack.canRedo).toBe(false);
+  });
+
+  it("undoes cell deletion (restores cells)", async () => {
+    const stack = new UndoStack();
+    const cell = makeCell(0, 0, 1);
+    const state = makeUndoState([cell]);
+
+    // Snapshot: cell existed before deletion
+    stack.push({
+      cells: new Map([[cellKey(0, 0), { ...cell }]]),
+      walls: new Map(),
+      markers: new Map(),
+    });
+
+    // Delete the cell
+    state.cells.delete(cellKey(0, 0));
+
+    // Undo should restore the cell
+    await stack.undo(state);
+    expect(state.cells.has(cellKey(0, 0))).toBe(true);
+    expect(state.cells.get(cellKey(0, 0))!.room_id).toBe(1);
   });
 });

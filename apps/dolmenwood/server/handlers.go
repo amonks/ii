@@ -1481,26 +1481,39 @@ func (s *Server) handleAddXP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	xpAmount := atoi(r.FormValue("xp_amount"))
+	baseXP := atoi(r.FormValue("xp_amount"))
 	description := r.FormValue("description")
-	if xpAmount == 0 {
+	if baseXP == 0 {
 		http.Error(w, "XP amount must be non-zero", http.StatusBadRequest)
 		return
 	}
+
+	scores := map[string]int{
+		"str": ch.STR, "dex": ch.DEX, "con": ch.CON,
+		"int": ch.INT, "wis": ch.WIS, "cha": ch.CHA,
+	}
+	xpMod := engine.TotalXPModifier(ch.Kindred, scores, engine.ClassPrimes(ch.Class))
+	xpGained := engine.ApplyXPModifiers(baseXP, xpMod)
+
+	logDesc := description
+	if xpMod != 0 {
+		logDesc = fmt.Sprintf("%s (%d base %+d%%)", description, baseXP, xpMod)
+	}
+
 	if err := s.db.CreateXPLogEntry(&db.XPLogEntry{
 		CharacterID: ch.ID,
-		Amount:      xpAmount,
-		Description: description,
+		Amount:      xpGained,
+		Description: logDesc,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	ch.TotalXP += xpAmount
+	ch.TotalXP += xpGained
 	if err := s.db.UpdateCharacter(ch); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.addAuditLog(ch, "xp_add", fmt.Sprintf("+%d XP (%s)", xpAmount, description))
+	s.addAuditLog(ch, "xp_add", fmt.Sprintf("+%d XP: %s", xpGained, logDesc))
 	s.renderSheetBody(w, r, ch)
 }
 

@@ -12,6 +12,9 @@ func TestApplyXPModifiers(t *testing.T) {
 		{"positive modifier", 1000, 15, 1150},
 		{"negative modifier", 1000, -10, 900},
 		{"zero modifier", 1000, 0, 1000},
+		{"rounds up", 9, 10, 10},
+		{"rounds up small", 1, 10, 2},
+		{"rounds up negative mod", 9, -10, 9},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

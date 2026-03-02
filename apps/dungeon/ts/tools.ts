@@ -2,6 +2,7 @@ import { Cell, Wall, Marker, ToolName } from "./types";
 import { Camera } from "./camera";
 import { CELL_SIZE, cellKey, wallKey, nearestWallEdge, pixelToHex } from "./grid";
 import * as api from "./api";
+import { UndoEntry } from "./undo";
 
 export interface AppState {
   mapID: number;
@@ -21,6 +22,7 @@ export interface AppState {
   showProperties: (cells: Cell[]) => void;
   hideProperties: () => void;
   dragPreview: { x1: number; y1: number; x2: number; y2: number } | null;
+  pushUndo: (entry: UndoEntry) => void;
 }
 
 export interface Tool {
@@ -203,6 +205,16 @@ class BoxTool implements Tool {
 
     state.dragPreview = null;
 
+    // Snapshot cells for undo before mutation
+    const undoCells = new Map<string, Cell | null>();
+    for (let x = x1; x <= x2; x++) {
+      for (let y = y1; y <= y2; y++) {
+        const key = cellKey(x, y);
+        undoCells.set(key, state.cells.get(key) ?? null);
+      }
+    }
+    state.pushUndo({ cells: undoCells, walls: new Map(), markers: new Map() });
+
     // Check if the drawn box is adjacent to or overlaps the selected room.
     // Adjacent means at least one cell in the box shares an edge (not diagonal)
     // with a cell belonging to the selected room.
@@ -332,6 +344,11 @@ class DoorTool implements Tool {
     const wk = wallKey(edge.cellX, edge.cellY, edge.neighborX, edge.neighborY);
     const existing = state.walls.get(wk);
 
+    // Snapshot wall for undo
+    const undoWalls = new Map<string, Wall | null>();
+    undoWalls.set(wk, existing ?? null);
+    state.pushUndo({ cells: new Map(), walls: undoWalls, markers: new Map() });
+
     if (existing?.type === "door") {
       state.walls.delete(wk);
       state.requestRender();
@@ -375,6 +392,11 @@ class LetterTool implements Tool {
     const existing = state.markers.get(key);
 
     if (existing) {
+      // Snapshot marker for undo
+      const undoMarkers = new Map<string, Marker | null>();
+      undoMarkers.set(key, existing);
+      state.pushUndo({ cells: new Map(), walls: new Map(), markers: undoMarkers });
+
       await api.deleteMarker(state.mapID, gx, gy);
       state.markers.delete(key);
       state.requestRender();
@@ -403,6 +425,11 @@ class LetterTool implements Tool {
       this.removeInput();
       if (!letter) return;
 
+      // Snapshot marker for undo (null = didn't exist before)
+      const undoMarkers = new Map<string, Marker | null>();
+      undoMarkers.set(key, state.markers.get(key) ?? null);
+      state.pushUndo({ cells: new Map(), walls: new Map(), markers: undoMarkers });
+
       const marker: Partial<Marker> = {
         x: gx,
         y: gy,
@@ -429,6 +456,110 @@ class LetterTool implements Tool {
       this.inputEl.remove();
       this.inputEl = null;
     }
+  }
+}
+
+// --- Subtract Tool (Dungeon Mode) ---
+
+class SubtractTool implements Tool {
+  name: ToolName = "subtract";
+  private startX = 0;
+  private startY = 0;
+  private dragging = false;
+
+  onPointerDown(state: AppState, wx: number, wy: number) {
+    this.dragging = true;
+    this.startX = Math.floor(wx / CELL_SIZE);
+    this.startY = Math.floor(wy / CELL_SIZE);
+    state.dragPreview = { x1: this.startX, y1: this.startY, x2: this.startX, y2: this.startY };
+    state.requestRender();
+  }
+
+  onPointerMove(state: AppState, wx: number, wy: number) {
+    if (!this.dragging) return;
+    const gx = Math.floor(wx / CELL_SIZE);
+    const gy = Math.floor(wy / CELL_SIZE);
+    state.dragPreview = {
+      x1: Math.min(this.startX, gx),
+      y1: Math.min(this.startY, gy),
+      x2: Math.max(this.startX, gx),
+      y2: Math.max(this.startY, gy),
+    };
+    state.requestRender();
+  }
+
+  async onPointerUp(state: AppState, wx: number, wy: number) {
+    this.dragging = false;
+    const gx = Math.floor(wx / CELL_SIZE);
+    const gy = Math.floor(wy / CELL_SIZE);
+    const x1 = Math.min(this.startX, gx);
+    const y1 = Math.min(this.startY, gy);
+    const x2 = Math.max(this.startX, gx);
+    const y2 = Math.max(this.startY, gy);
+
+    state.dragPreview = null;
+
+    // Collect cells to delete
+    const coords: { x: number; y: number }[] = [];
+    const cellKeysToDelete: string[] = [];
+    for (let x = x1; x <= x2; x++) {
+      for (let y = y1; y <= y2; y++) {
+        const key = cellKey(x, y);
+        const cell = state.cells.get(key);
+        if (!cell) continue;
+        if (state.selectedRooms.size > 0) {
+          // Only delete cells belonging to selected rooms
+          if (cell.room_id != null && state.selectedRooms.has(cell.room_id)) {
+            coords.push({ x, y });
+            cellKeysToDelete.push(key);
+          }
+        } else {
+          // Delete all cells in the rectangle
+          coords.push({ x, y });
+          cellKeysToDelete.push(key);
+        }
+      }
+    }
+
+    if (coords.length === 0) {
+      state.requestRender();
+      return;
+    }
+
+    // Snapshot for undo: cells + their walls
+    const undoCells = new Map<string, Cell | null>();
+    const undoWalls = new Map<string, Wall | null>();
+    const affectedCoords = new Set(cellKeysToDelete);
+    for (const key of cellKeysToDelete) {
+      undoCells.set(key, state.cells.get(key) ?? null);
+    }
+    for (const [wk, wall] of state.walls) {
+      const keyA = cellKey(wall.x1, wall.y1);
+      const keyB = cellKey(wall.x2, wall.y2);
+      if (affectedCoords.has(keyA) || affectedCoords.has(keyB)) {
+        undoWalls.set(wk, wall);
+      }
+    }
+    state.pushUndo({ cells: undoCells, walls: undoWalls, markers: new Map() });
+
+    // Delete cells via API
+    await api.deleteCells(state.mapID, coords);
+    for (const key of cellKeysToDelete) {
+      state.cells.delete(key);
+    }
+
+    // Clean up orphaned walls locally
+    for (const [wk, wall] of state.walls) {
+      const cellA = state.cells.get(cellKey(wall.x1, wall.y1));
+      const cellB = state.cells.get(cellKey(wall.x2, wall.y2));
+      if ((cellA?.room_id == null) && (cellB?.room_id == null)) {
+        state.walls.delete(wk);
+      }
+    }
+
+    state.selectedRooms.clear();
+    state.hideProperties();
+    state.requestRender();
   }
 }
 
@@ -493,5 +624,6 @@ export const TOOLS: Record<ToolName, Tool> = {
   box: new BoxTool(),
   door: new DoorTool(),
   letter: new LetterTool(),
+  subtract: new SubtractTool(),
   paint: new PaintTool(),
 };

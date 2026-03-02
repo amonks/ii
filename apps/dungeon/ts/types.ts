@@ -45,4 +45,4 @@ export interface SSEEvent {
   data: any;
 }
 
-export type ToolName = "select" | "box" | "door" | "letter" | "paint";
+export type ToolName = "select" | "box" | "door" | "letter" | "paint" | "subtract";

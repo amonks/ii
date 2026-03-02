@@ -4,7 +4,7 @@
 
 ### XP Modifiers
 
-`ApplyXPModifiers(base, modPercent)` -- Applies a percentage modifier to base XP: `base + (base * modPercent / 100)`. Uses integer arithmetic.
+`ApplyXPModifiers(base, modPercent)` -- Applies a percentage modifier to base XP using ceiling division (always rounds up). For example, 9 base with +10% yields 10, not 9.
 
 The total XP modifier comes from `TotalXPModifier(kindred, scores, primes)` in `traits.go`, which combines:
 - Prime ability XP modifier (from ability scores, -20% to +10%)
@@ -20,7 +20,9 @@ The total XP modifier comes from `TotalXPModifier(kindred, scores, primes)` in `
 
 XP is gained from:
 1. **Found treasure returned to safety** -- GP value of found treasure, modified by XP percentage modifier
-2. **Manual XP grants** -- Direct XP additions via the "Add XP" form
+2. **Manual XP grants** -- Direct XP additions via the "Add XP" form, also modified by XP percentage modifier
+
+Both sources apply the character's XP modifier (prime ability + kindred bonuses). When a modifier is applied, the XP log and audit log show the math, e.g. "quest reward (9 base +10%)".
 
 ## Advancement Tables (`engine/advancement.go`)
 

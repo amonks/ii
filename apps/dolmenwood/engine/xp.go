@@ -1,9 +1,14 @@
 package engine
 
-// ApplyXPModifiers applies a percentage modifier to base XP.
+// ApplyXPModifiers applies a percentage modifier to base XP, rounding up.
 // modPercent is an integer percentage, e.g. 15 means +15%.
 func ApplyXPModifiers(base, modPercent int) int {
-	return base + (base * modPercent / 100)
+	n := base * (100 + modPercent)
+	// Ceiling division: round up for positive results.
+	if n > 0 {
+		return (n + 99) / 100
+	}
+	return n / 100
 }
 
 // DetectLevelUp checks if the current XP qualifies for a higher level.

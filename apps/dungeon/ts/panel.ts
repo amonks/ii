@@ -1,7 +1,8 @@
-import { Cell } from "./types";
+import { Cell, Wall } from "./types";
 import { cellKey, wallKey } from "./grid";
 import * as api from "./api";
 import { AppState } from "./tools";
+import { UndoEntry } from "./undo";
 
 const HUE_SWATCHES = [
   { label: "Red", hue: 0 },
@@ -46,6 +47,13 @@ export function showProperties(state: AppState, cells: Cell[]) {
     mergeBtn.textContent = "Merge Rooms";
     mergeBtn.style.cssText = "width:100%;padding:6px 12px;background:#d97706;color:#1c1917;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;";
     mergeBtn.addEventListener("click", async () => {
+      // Snapshot for undo
+      const undoCells = new Map<string, Cell | null>();
+      for (const c of cells) {
+        undoCells.set(cellKey(c.x, c.y), { ...c });
+      }
+      state.pushUndo({ cells: undoCells, walls: new Map(), markers: new Map() });
+
       const targetRoomId = Math.min(...roomIds);
       const updates: Partial<Cell>[] = cells
         .filter((c) => c.room_id !== targetRoomId)
@@ -80,6 +88,13 @@ export function showProperties(state: AppState, cells: Cell[]) {
   exploredCheck.checked = cells.every((c) => c.is_explored);
   exploredCheck.style.cssText = "width:18px;height:18px;accent-color:#d97706;cursor:pointer;";
   exploredCheck.addEventListener("change", async () => {
+    // Snapshot for undo
+    const undoCells = new Map<string, Cell | null>();
+    for (const c of cells) {
+      undoCells.set(cellKey(c.x, c.y), { ...c });
+    }
+    state.pushUndo({ cells: undoCells, walls: new Map(), markers: new Map() });
+
     const updates: Partial<Cell>[] = cells.map((c) => ({
       x: c.x,
       y: c.y,
@@ -122,6 +137,13 @@ export function showProperties(state: AppState, cells: Cell[]) {
     }
     btn.title = sw.label;
     btn.addEventListener("click", async () => {
+      // Snapshot for undo
+      const undoCells = new Map<string, Cell | null>();
+      for (const c of cells) {
+        undoCells.set(cellKey(c.x, c.y), { ...c });
+      }
+      state.pushUndo({ cells: undoCells, walls: new Map(), markers: new Map() });
+
       const updates: Partial<Cell>[] = cells.map((c) => ({
         x: c.x, y: c.y, is_explored: c.is_explored, text: c.text,
         hue: sw.hue, room_id: c.room_id,
@@ -161,20 +183,33 @@ export function showProperties(state: AppState, cells: Cell[]) {
   textInput.placeholder = "Add notes...";
   textInput.style.cssText = "width:100%;background:#44403c;border:1px solid #57534e;border-radius:4px;padding:4px 8px;font-size:14px;color:#e7e5e4;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;";
   let textTimeout: ReturnType<typeof setTimeout>;
+  let textUndoPushed = false;
   textInput.addEventListener("input", () => {
     clearTimeout(textTimeout);
-    textTimeout = setTimeout(async () => {
-      const updates: Partial<Cell>[] = cells.map((c) => ({
-        x: c.x, y: c.y, is_explored: c.is_explored, text: textInput.value,
-        hue: c.hue, room_id: c.room_id,
-      }));
-      const result = await api.upsertCells(state.mapID, updates);
-      for (const cell of result) {
-        state.cells.set(cellKey(cell.x, cell.y), cell);
+    // Snapshot for undo once per editing session
+    if (!textUndoPushed) {
+      const undoCells = new Map<string, Cell | null>();
+      for (const c of cells) {
+        undoCells.set(cellKey(c.x, c.y), { ...c });
       }
-      state.requestRender();
-    }, 300);
+      state.pushUndo({ cells: undoCells, walls: new Map(), markers: new Map() });
+      textUndoPushed = true;
+    }
+    textTimeout = setTimeout(flushText, 300);
   });
+  async function flushText() {
+    clearTimeout(textTimeout);
+    const updates: Partial<Cell>[] = cells.map((c) => ({
+      x: c.x, y: c.y, is_explored: c.is_explored, text: textInput.value,
+      hue: c.hue, room_id: c.room_id,
+    }));
+    const result = await api.upsertCells(state.mapID, updates);
+    for (const cell of result) {
+      state.cells.set(cellKey(cell.x, cell.y), cell);
+    }
+    state.requestRender();
+  }
+  textInput.addEventListener("blur", () => flushText());
   textDiv.appendChild(textLabel);
   textDiv.appendChild(textInput);
   content.appendChild(textDiv);
@@ -185,6 +220,24 @@ export function showProperties(state: AppState, cells: Cell[]) {
     deleteBtn.textContent = roomIds.size === 1 ? "Delete Room" : "Delete Rooms";
     deleteBtn.style.cssText = "width:100%;padding:6px 12px;background:#dc2626;color:#fef2f2;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;";
     deleteBtn.addEventListener("click", async () => {
+      // Snapshot for undo: cells + their walls
+      const undoCells = new Map<string, Cell | null>();
+      const undoWalls = new Map<string, Wall | null>();
+      const affectedKeys = new Set<string>();
+      for (const c of cells) {
+        const key = cellKey(c.x, c.y);
+        undoCells.set(key, { ...c });
+        affectedKeys.add(key);
+      }
+      for (const [wk, wall] of state.walls) {
+        const keyA = cellKey(wall.x1, wall.y1);
+        const keyB = cellKey(wall.x2, wall.y2);
+        if (affectedKeys.has(keyA) || affectedKeys.has(keyB)) {
+          undoWalls.set(wk, { ...wall });
+        }
+      }
+      state.pushUndo({ cells: undoCells, walls: undoWalls, markers: new Map() });
+
       const coords = cells.map((c) => ({ x: c.x, y: c.y }));
       await api.deleteCells(state.mapID, coords);
       for (const c of cells) {
