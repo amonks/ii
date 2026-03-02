@@ -49,6 +49,11 @@ These run as part of `go test monks.co/...`:
 - Every public package has a `LICENSE` file.
 - Every public package's `go.mod` has the correct module path.
 
+The dependency graph resolves `monks.co/*` import paths to module
+directories by reading `go.mod` files and using longest prefix match.
+This handles modules whose path doesn't match their directory (e.g.,
+`monks.co/beetman` at `cmd/beetman`).
+
 ## Publish Flow
 
 `go run ./cmd/publish [--dry-run]`

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/beetman/internal/albums"
-	"github.com/amonks/beetman/internal/beet"
-	"github.com/amonks/beetman/internal/database"
-	"github.com/amonks/beetman/internal/log"
+	"monks.co/beetman/internal/albums"
+	"monks.co/beetman/internal/beet"
+	"monks.co/beetman/internal/database"
+	"monks.co/beetman/internal/log"
 )
 
 const permissions = 0700

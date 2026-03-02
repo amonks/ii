@@ -61,9 +61,75 @@ func (c *PublishConfig) ExpectedModulePath(dir string) string {
 	return "monks.co/" + dir
 }
 
+// readModulePath reads the module path from a go.mod file.
+func readModulePath(goModPath string) string {
+	bs, err := os.ReadFile(goModPath)
+	if err != nil {
+		return ""
+	}
+	for line := range strings.SplitSeq(string(bs), "\n") {
+		line = strings.TrimSpace(line)
+		if after, ok := strings.CutPrefix(line, "module "); ok {
+			return after
+		}
+	}
+	return ""
+}
+
+// buildModuleMap scans all {apps,pkg,cmd}/* directories for go.mod files
+// and returns a map from monks.co/* module path to directory.
+func buildModuleMap(root string) (map[string]string, error) {
+	modPathToDir := map[string]string{}
+	for _, prefix := range []string{"apps", "pkg", "cmd"} {
+		prefixDir := filepath.Join(root, prefix)
+		entries, err := os.ReadDir(prefixDir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, err
+		}
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			dir := filepath.Join(prefix, e.Name())
+			modPath := readModulePath(filepath.Join(root, dir, "go.mod"))
+			if modPath != "" && strings.HasPrefix(modPath, "monks.co/") {
+				modPathToDir[modPath] = dir
+			}
+		}
+	}
+	return modPathToDir, nil
+}
+
+// resolveImportDir finds the module directory for a monks.co/* import path
+// using longest prefix match against known module paths.
+func resolveImportDir(importPath string, modPathToDir map[string]string) (string, bool) {
+	bestMatch := ""
+	bestDir := ""
+	for modPath, dir := range modPathToDir {
+		if importPath == modPath || strings.HasPrefix(importPath, modPath+"/") {
+			if len(modPath) > len(bestMatch) {
+				bestMatch = modPath
+				bestDir = dir
+			}
+		}
+	}
+	if bestMatch == "" {
+		return "", false
+	}
+	return bestDir, true
+}
+
 // BuildDepGraph builds a dependency graph of monks.co/* imports
 // for all {apps,pkg,cmd}/* directories.
 func BuildDepGraph(root string) (map[string][]string, error) {
+	modPathToDir, err := buildModuleMap(root)
+	if err != nil {
+		return nil, fmt.Errorf("building module map: %w", err)
+	}
+
 	graph := map[string][]string{}
 
 	for _, prefix := range []string{"apps", "pkg", "cmd"} {
@@ -83,7 +149,7 @@ func BuildDepGraph(root string) (map[string][]string, error) {
 			dir := filepath.Join(prefix, e.Name())
 			absDir := filepath.Join(root, dir)
 
-			deps, err := findInternalImports(absDir)
+			deps, err := findInternalImports(absDir, modPathToDir)
 			if err != nil {
 				return nil, fmt.Errorf("scanning %s: %w", dir, err)
 			}
@@ -95,9 +161,8 @@ func BuildDepGraph(root string) (map[string][]string, error) {
 }
 
 // findInternalImports scans .go files in a directory tree for monks.co/* imports,
-// returning the top-level directory each import belongs to
-// (e.g., "monks.co/pkg/serve/foo" -> "pkg/serve").
-func findInternalImports(dir string) ([]string, error) {
+// resolving each to its module directory via longest prefix match.
+func findInternalImports(dir string, modPathToDir map[string]string) ([]string, error) {
 	seen := map[string]bool{}
 
 	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
@@ -113,11 +178,9 @@ func findInternalImports(dir string) ([]string, error) {
 			return err
 		}
 
-		// Simple import scanning: find "monks.co/..." strings.
 		content := string(bs)
 		for line := range strings.SplitSeq(content, "\n") {
 			line = strings.TrimSpace(line)
-			// Match import lines like: "monks.co/pkg/serve"
 			idx := strings.Index(line, `"monks.co/`)
 			if idx < 0 {
 				continue
@@ -129,13 +192,7 @@ func findInternalImports(dir string) ([]string, error) {
 			}
 			importPath := before
 
-			// Convert import path to directory.
-			// "monks.co/pkg/serve" -> "pkg/serve"
-			// "monks.co/pkg/serve/something" -> "pkg/serve"
-			withoutPrefix := strings.TrimPrefix(importPath, "monks.co/")
-			parts := strings.SplitN(withoutPrefix, "/", 3)
-			if len(parts) >= 2 {
-				modDir := parts[0] + "/" + parts[1]
+			if modDir, ok := resolveImportDir(importPath, modPathToDir); ok {
 				seen[modDir] = true
 			}
 		}

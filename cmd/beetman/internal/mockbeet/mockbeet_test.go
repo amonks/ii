@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/beetman/internal/fixtures"
+	"monks.co/beetman/internal/fixtures"
 )
 
 func setupTestDir(t *testing.T) (string, func()) {

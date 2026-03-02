@@ -27,6 +27,7 @@ use (
 	./apps/template
 	./apps/writing
 	./apps/youtube
+	./cmd/beetman
 	./cmd/compressor
 	./cmd/publish
 	./cmd/taskmaker

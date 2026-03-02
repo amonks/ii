@@ -2,3 +2,8 @@ default_mirror = "github.com/amonks/go"
 
 [[package]]
 dir = "pkg/set"
+
+[[package]]
+dir = "cmd/beetman"
+module_path = "monks.co/beetman"
+mirror = "github.com/amonks/beetman"

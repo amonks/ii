@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/amonks/beetman"
+	"monks.co/beetman"
 )
 
 // printUsage prints the application usage information

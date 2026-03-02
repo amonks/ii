@@ -133,6 +133,90 @@ func TestTransitiveDeps(t *testing.T) {
 	}
 }
 
+func TestResolveImportDir(t *testing.T) {
+	modPathToDir := map[string]string{
+		"monks.co/pkg/serve": "pkg/serve",
+		"monks.co/beetman":   "cmd/beetman",
+	}
+
+	tests := []struct {
+		importPath string
+		wantDir    string
+		wantOK     bool
+	}{
+		{"monks.co/pkg/serve", "pkg/serve", true},
+		{"monks.co/pkg/serve/something", "pkg/serve", true},
+		{"monks.co/beetman", "cmd/beetman", true},
+		{"monks.co/beetman/internal/foo", "cmd/beetman", true},
+		{"monks.co/unknown/pkg", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.importPath, func(t *testing.T) {
+			dir, ok := resolveImportDir(tt.importPath, modPathToDir)
+			if ok != tt.wantOK {
+				t.Fatalf("resolveImportDir(%q) ok = %v, want %v", tt.importPath, ok, tt.wantOK)
+			}
+			if dir != tt.wantDir {
+				t.Errorf("resolveImportDir(%q) = %q, want %q", tt.importPath, dir, tt.wantDir)
+			}
+		})
+	}
+}
+
+func TestBuildDepGraphNonStandardModulePath(t *testing.T) {
+	// monks.co/beetman lives at cmd/beetman. Intra-module imports like
+	// monks.co/beetman/internal/foo should resolve to cmd/beetman (self),
+	// not produce a bogus "beetman/internal" dep.
+	root := t.TempDir()
+
+	// cmd/beetman: module monks.co/beetman, imports its own internal pkg
+	// and also imports monks.co/pkg/util.
+	beetDir := filepath.Join(root, "cmd", "beetman")
+	os.MkdirAll(beetDir, 0755)
+	os.WriteFile(filepath.Join(beetDir, "go.mod"),
+		[]byte("module monks.co/beetman\n\ngo 1.26.0\n"), 0644)
+	os.WriteFile(filepath.Join(beetDir, "main.go"), []byte(`package beetman
+
+import (
+	"monks.co/beetman/internal/foo"
+	"monks.co/pkg/util"
+)
+
+var _ = foo.X
+var _ = util.Y
+`), 0644)
+
+	// pkg/util: standard module path.
+	utilDir := filepath.Join(root, "pkg", "util")
+	os.MkdirAll(utilDir, 0755)
+	os.WriteFile(filepath.Join(utilDir, "go.mod"),
+		[]byte("module monks.co/pkg/util\n\ngo 1.26.0\n"), 0644)
+	os.WriteFile(filepath.Join(utilDir, "util.go"),
+		[]byte("package util\n"), 0644)
+
+	graph, err := BuildDepGraph(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	deps := graph["cmd/beetman"]
+
+	// Should depend on pkg/util.
+	hasUtil := false
+	for _, dep := range deps {
+		if dep == "pkg/util" {
+			hasUtil = true
+		}
+		if dep == "beetman/internal" {
+			t.Errorf("dep graph should not contain bogus dir %q", dep)
+		}
+	}
+	if !hasUtil {
+		t.Errorf("expected cmd/beetman to depend on pkg/util, got %v", deps)
+	}
+}
+
 func TestBuildDepGraphReal(t *testing.T) {
 	root := env.InMonksRoot()
 	graph, err := BuildDepGraph(root)
