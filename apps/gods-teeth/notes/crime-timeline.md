@@ -1,0 +1,25 @@
+# Timeline
+
+- 8th - 15th aug 2016
+  - GLENDA (Glenda c.), elderly resident of meyers pt. trailer park repeatedly calls sheriff to report stolen cats
+- Mon 15 Aug:
+  - ECKSTEIN (Casey Eckstein) dispatched to drive through meyers pt, notices graffiti, kicked-in door, finds decaying body of KILLIAN (Crystal KILLIAN), calls it in
+- Wed 17 Aug:
+  - ECKSTEIN calls maryland PD, asks about CORNUCOPIA HOUSE, mentions agents' names, qs are in pursuit of homicide
+  - this trips DG voice recognition thing, flags the finding as high-priority
+- Thurs 18 Aug:
+  - md st trooper SAWYER (Vivian Sawyer) drives to MD CORRECTION 3, formerly CORNUCOPIA HOUSE, finds HOUGHTON (Kerry Houghton) dead and mutilated, calls for backup, sees dog digging up human skull, requests k9 unit
+- Fri 19 Aug:
+  - search and rescue dogs descend, bring in forensic science, st troopers, msp colonel is briefed, informs public safety
+- Mon 22 Aug:
+  - md st pol forensic consultant arrives with equipment truck, joins county forensics, ground-penetrating radar finds many bodies, calls in all personel, briefs the governor
+  - md governor is HOGAN (Larry Hogan, r)
+  - FBI (program) representatives from MIAMI meet with ECKSTEIN offering services, really the point is to question ECKSTEIN about program operatives
+  - The MIAMI contingent of the FBI discovers that ECKSTEIN has already closed down the investigation as natural causes, which is suss
+  - governor asks FBI for help, swifit response
+- Tuesday 23 Aug
+  - program realizes that maryland site is now mass grave on international news, scrambles to contain
+  - US ATTNY office claims jurisdiction, kicks out state pol, recruits Harvard Consultants
+  - WORKING GROUP MASTICATE formed under PIZZA
+- thursday 25 aug
+  - we meet PIZZA

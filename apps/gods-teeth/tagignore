@@ -1,0 +1,30 @@
+# ALLCAPS tokens that should not generate tags
+A
+B
+CCTV
+DG
+EMT
+HR
+ID
+I
+IOP
+JVC
+MA
+MD
+NC
+NOC
+PD
+PTSD
+TV
+USB
+US
+VCR
+VHS
+BRT
+SUV
+MKULTRA
+O
+OD
+
+# LOWERCASE tokens that are allowed to shadow tags
+animals
