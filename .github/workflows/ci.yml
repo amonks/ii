@@ -37,6 +37,8 @@ jobs:
 
       - name: Test
         run: go tool run test
+        env:
+          MONKS_ROOT: ${{ github.workspace }}
 
       - name: Publish
         run: go run ./cmd/publish

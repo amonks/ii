@@ -116,15 +116,23 @@ func TestWalk(t *testing.T) {
 		})
 	}
 
-	// Test cancellation
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		cancel()
-	}()
+	// Test cancellation deterministically: pre-cancel the context and use
+	// enough files to overflow the jobs channel buffer (workers*2). With
+	// the context already canceled, workers exit immediately without
+	// draining the channel, so the walk callback eventually blocks on
+	// the full channel and must take the ctx.Done() branch.
+	cancelDir := t.TempDir()
+	for i := range 20 {
+		p := filepath.Join(cancelDir, fmt.Sprintf("file%d.txt", i))
+		if err := os.WriteFile(p, []byte("x"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cancelCtx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	err = walk(ctx, dir, 1, false, logger)
-	if err != ctx.Err() {
-		t.Errorf("expected context cancellation error, got %v", err)
+	err = walk(cancelCtx, cancelDir, 1, false, logger)
+	if err != context.Canceled {
+		t.Errorf("expected context.Canceled, got %v", err)
 	}
 }
