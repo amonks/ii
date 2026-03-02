@@ -1,5 +1,7 @@
 package creamery
 
+import "maps"
+
 import "sync"
 
 // IngredientCatalog exposes canonical ingredient defs and their default lots.
@@ -96,9 +98,7 @@ func (c IngredientCatalog) InstanceByKey(key string) (Lot, bool) {
 // Instances returns a copy of the default instances keyed by ingredient ID.
 func (c IngredientCatalog) Instances() map[IngredientID]Lot {
 	copy := make(map[IngredientID]Lot, len(c.lots))
-	for id, inst := range c.lots {
-		copy[id] = inst
-	}
+	maps.Copy(copy, c.lots)
 	return copy
 }
 

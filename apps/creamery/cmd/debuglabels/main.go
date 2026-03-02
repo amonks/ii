@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/amonks/creamery"
+	"monks.co/apps/creamery"
 )
 
 func main() {

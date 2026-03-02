@@ -3,7 +3,7 @@ package creamery
 import (
 	"path/filepath"
 
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 // ParseLabel parses an FDA label from the given content string.

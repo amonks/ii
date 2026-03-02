@@ -36,16 +36,6 @@ type ingredientBatch struct {
 	AddedSugarsMax     float64
 }
 
-func cloneBatch(base ingredientBatch, overrides func(*ingredientBatch)) ingredientBatch {
-	copy := base
-	overrides(&copy)
-	if copy.Name == "" {
-		copy.Name = base.Name
-	}
-	copy.ID = NewIngredientID(copy.Name)
-	return copy
-}
-
 // ingredientBatchTable returns a map of rich ingredient definitions keyed by name.
 func IngredientProfileTable() map[string]ConstituentProfile {
 	batches := ingredientBatchTable()

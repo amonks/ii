@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/amonks/creamery"
+	"monks.co/apps/creamery"
 )
 
 // TestWorkflow2_FormulationToRecipe demonstrates finding recipes to hit a target formulation.

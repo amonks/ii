@@ -2,8 +2,8 @@ package creamery
 
 import (
 	"fmt"
+	"monks.co/apps/creamery/fdaparser"
 	"strings"
-	"github.com/amonks/creamery/fdaparser"
 )
 
 const notebookIntervalEpsilon = 1e-4
@@ -73,7 +73,7 @@ func Notebook() error {
 	} else {
 		fmt.Println("  Candidate formulations:")
 		limit := minInt(2, len(labelSamples))
-		for i := 0; i < limit; i++ {
+		for i := range limit {
 			s := labelSamples[i]
 			fmt.Printf("    Option %d:\n", i+1)
 			for _, spec := range labelProblem.Specs() {

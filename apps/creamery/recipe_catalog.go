@@ -54,9 +54,7 @@ func LoadRecipeCatalogFromFiles(paths []string, catalog IngredientCatalog) (Reci
 		if len(entries) == 0 {
 			continue
 		}
-		for _, entry := range entries {
-			allEntries = append(allEntries, entry)
-		}
+		allEntries = append(allEntries, entries...)
 		usedPaths = append(usedPaths, path)
 	}
 

@@ -492,7 +492,7 @@ func (s *Solver) FindBounds() (*Bounds, error) {
 	bounds.Feasible = true
 
 	// For each ingredient, find min and max
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// Minimize w_i
 		minObj := make([]float64, n)
 		minObj[i] = 1

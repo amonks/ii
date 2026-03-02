@@ -2,6 +2,7 @@ package creamery
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -306,9 +307,7 @@ func (p *Problem) Validate() error {
 // AddConstraint appends a linear constraint of the form lower <= sum(coeff_i * w_i) <= upper.
 func (p *Problem) AddConstraint(coeffs map[IngredientID]float64, lower, upper float64, note string) {
 	copied := make(map[IngredientID]float64, len(coeffs))
-	for k, v := range coeffs {
-		copied[k] = v
-	}
+	maps.Copy(copied, coeffs)
 	p.Constraints = append(p.Constraints, LinearConstraint{
 		Coeffs: copied,
 		Lower:  lower,
@@ -353,14 +352,15 @@ func (s Solution) String() string {
 		}
 		return 0
 	})
-	result := "Recipe:\n"
+	var result strings.Builder
+	result.WriteString("Recipe:\n")
 	for _, e := range entries {
 		if e.weight > 0.001 {
-			result += fmt.Sprintf("  %s: %.2f%%\n", e.name, e.weight*100)
+			result.WriteString(fmt.Sprintf("  %s: %.2f%%\n", e.name, e.weight*100))
 		}
 	}
-	result += fmt.Sprintf("Achieved: %s", ComponentSummary(s.Achieved))
-	return result
+	result.WriteString(fmt.Sprintf("Achieved: %s", ComponentSummary(s.Achieved)))
+	return result.String()
 }
 
 // RecipeComponents converts the solution weights to recipe components scaled

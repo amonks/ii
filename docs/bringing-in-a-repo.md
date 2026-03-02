@@ -1,174 +1,162 @@
 # Bringing an External Repo into the Monorepo
 
-Lab notes for importing `~/git/amonks/beetman` → `./cmd/beetman`.
+Guide and lab notes from importing beetman, gods-teeth, and creamery.
 
-## System inventory
+## Procedure
 
-### How publishing works
+### 1. Clean working tree
 
-Two modes in `config/publish.toml`:
+`git subtree add` requires a clean git working tree. In a jj
+colocated repo, run `jj new` to achieve this.
 
-1. **Default mirror** (git-filter-repo): packages without an explicit
-   `mirror` go to the shared `github.com/amonks/go` repo. Currently
-   only `pkg/set` uses this.
-
-2. **Explicit mirror** (git subtree split): packages with a `mirror`
-   field get their own GitHub repo. `git subtree split --prefix=<dir>`
-   extracts the subtree, then pushes to the mirror. Tags are stripped
-   of the directory prefix. This is what we want for beetman.
-
-Config example from the spec:
-```toml
-[[package]]
-dir = "cmd/run"
-module_path = "github.com/amonks/run"
-mirror = "github.com/amonks/run"
-```
-
-### How go.work is managed
-
-`cmd/taskmaker` auto-discovers modules by scanning `{apps,pkg,cmd}/*`
-for directories containing `.go` files. It generates `go.work` and
-creates `go.mod` for any module that doesn't have one. If
-`publish.toml` specifies a `module_path` override, taskmaker uses
-that instead of the default `monks.co/<dir>`.
-
-### Validation (runs in CI via `go test`)
-
-- Every public package's transitive `monks.co/*` deps must also be public
-- Every public package must have a LICENSE file
-- Every public package's `go.mod` must have the expected module path
-
-### What beetman looks like
-
-- Module: `github.com/amonks/beetman`, Go 1.24.0
-- Deps: `github.com/mattn/go-sqlite3`
-- Structure: root package is the library (`package beetman`),
-  `beetman/main.go` is the CLI, `internal/` has sub-packages
-- 31 commits, has tests, no CI
-- No internal `monks.co/*` dependencies (standalone)
-
-## Plan
-
-### Step 1: git subtree add
+### 2. git subtree add
 
 ```sh
-git subtree add --prefix=cmd/beetman ~/git/amonks/beetman main
+git subtree add --prefix=<target-dir> <source-repo-path> main
 ```
 
-This creates a merge commit that brings in beetman's full history
-under `cmd/beetman/`. The history is preserved (as separate commits
-visible in `git log`).
+This creates a merge commit bringing in the full history. Commit
+hashes will differ from the source repo.
 
-Note: hashes in the monorepo will differ from the original repo. The
-user confirmed this is fine.
+### 3. Update go.mod and imports
 
-### Step 2: Update go.mod
+- Change the module path to `monks.co/<dir>` (or a vanity path if
+  publishing with an explicit mirror).
+- Bump Go version to match the monorepo (currently 1.26.0).
+- Update all internal imports: `find <dir> -name '*.go' -exec sed -i '' 's|old/path|new/path|g' {} +`
 
-Change module path and Go version:
-- `github.com/amonks/beetman` → `monks.co/beetman` (vanity path)
-- Go version: `1.24.0` → `1.26.0`
-- Update all internal imports from `github.com/amonks/beetman` to
-  `monks.co/beetman`
+Taskmaker will create go.mod for modules that don't have one, but
+it **won't overwrite existing go.mod files** — you must update
+the module path manually.
 
-### Step 3: Add to publish.toml
+### 4. If publishing: update publish.toml and add LICENSE
+
+For packages published to their own GitHub mirror:
 
 ```toml
 [[package]]
-dir = "cmd/beetman"
-module_path = "monks.co/beetman"
-mirror = "github.com/amonks/beetman"
+dir = "cmd/example"
+module_path = "monks.co/example"
+mirror = "github.com/amonks/example"
 ```
 
-The vanity module path (`monks.co/beetman`) will be served by the
-proxy via go-import meta tags, pointing at the GitHub mirror.
+Every public package needs a LICENSE file (enforced by validation).
 
-### Step 4: Add LICENSE file
+### 5. If the app runs on a machine: update config/<machine>.toml
 
-MIT license, Andrew Monks <a@monks.co> 2026.
+Add the app name to the `apps` list for the appropriate machine.
+This controls which apps appear in the machine's dev task.
 
-### Step 5: Run taskmaker
+### 6. App tasks.toml
+
+The monorepo expects at least `build` and `dev` tasks for apps that
+appear in a machine config. Check existing apps (e.g.,
+`apps/ping/tasks.toml`) for the standard pattern:
+
+```toml
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go"]
+  cmd = "go build -o ../../bin/<app> ."
+
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = ["build"]
+  cmd = "../../bin/<app>"
+```
+
+If the imported repo has a `tasks.toml`, adapt it to include at
+least `build` (with `go build -o ../../bin/`).
+
+### 7. Run taskmaker
 
 ```sh
 go run ./cmd/taskmaker
 ```
 
-This regenerates `go.work` to include `./cmd/beetman`.
+Regenerates `go.work` (auto-discovers `{apps,pkg,cmd}/*`) and
+`tasks.toml` (machine dev tasks, build aggregation).
 
-### Step 6: Verify
-
-Run the full CI check suite and publish dry-run:
+### 8. Run the full CI check suite
 
 ```sh
 go tool run test
+```
+
+This runs `go-test`, `gofix`, and `staticcheck` across the entire
+workspace. Common issues with imported code:
+
+- **gofix**: older Go idioms get auto-fixed (`strings.Split` →
+  `strings.SplitSeq`, manual min → `min` builtin, `for i := 0; i < n`
+  → `for i := range n`, manual map copy → `maps.Copy`, etc.)
+  Apply fixes with `go fix ./path/...`.
+- **staticcheck**: unused variables, etc.
+- **cgo dependencies**: if the imported code uses cgo with
+  pkg-config (like nlopt), ensure the system library is available
+  both locally (via `.envrc`) and in CI (via `apt-get install` in
+  the GitHub Actions workflow).
+
+### 9. If publishing: verify
+
+```sh
 go run ./cmd/publish --dry-run
 ```
 
-The `test` task runs `go-test`, `gofix`, and `staticcheck`. The
-imported code may need fixes for newer Go idioms (e.g.,
-`strings.SplitSeq`, `min` builtin).
+## Gotchas
 
-## Log
+### jj colocation
 
-### Step 1: git subtree add
+`git subtree add` requires a clean git working tree. Don't use
+`git stash` in a jj colocated repo — it doesn't work well. Use
+`jj new` instead. Avoid other direct git operations (checkout,
+reset, etc.) in jj repos.
 
-Used `jj new` to get a clean git working tree (jj colocated repo),
-then ran:
+### Module paths that don't match directory layout
 
-```
-git subtree add --prefix=cmd/beetman ~/git/amonks/beetman main
-```
+If a module's import path doesn't follow the `monks.co/<dir>`
+convention (e.g., `monks.co/beetman` at `cmd/beetman`), the
+publish validation dep graph still works correctly — it reads
+go.mod files and resolves imports via longest prefix match.
 
-Brought in 31 commits under `cmd/beetman/`.
+### direnv / .envrc
 
-### Step 2–4: Module path, publish config, LICENSE
+External repos may have `.envrc` files with environment variables
+needed for cgo builds. These don't automatically apply in the
+monorepo. Add needed variables to the monorepo's root `.envrc`
+and to `.github/workflows/ci.yml`.
 
-- Changed `go.mod` module path to `monks.co/beetman`, Go 1.26.0
-- `sed` across all .go files to swap `github.com/amonks/beetman` →
-  `monks.co/beetman`
-- Added `cmd/beetman` entry to `config/publish.toml` with explicit
-  mirror `github.com/amonks/beetman`
-- Created `cmd/beetman/LICENSE` (MIT, Andrew Monks, 2026)
+### Stale tests
 
-### Step 5: taskmaker
+Imported repos may have tests that were already failing (stale
+counts, outdated expectations). These weren't caught because the
+original repo may not have had CI. Fix or update them.
 
-`go run ./cmd/taskmaker` — regenerated `go.work`, updated
-`go-sqlite3` dep from v1.14.24 to v1.14.34.
+### taskmaker won't overwrite existing go.mod
 
-### Step 6: Verify
+If the imported repo already has a `go.mod`, taskmaker preserves
+it. You must manually update the module path. If there's no
+`go.mod`, taskmaker creates one with the default path
+(`monks.co/<dir>`).
 
-Beetman tests: all 8 packages pass.
+## History
 
-Publish validation: **initially failed**. `BuildDepGraph` uses a
-2-component heuristic to map import paths to module directories
-(`monks.co/X/Y/...` → `X/Y`). For `monks.co/beetman/internal/foo`,
-this produces `beetman/internal` — a nonexistent module.
+### beetman (cmd/beetman)
 
-**First attempt**: added a filtering step that drops deps pointing to
-directories not present in the graph. This worked but was lossy — if
-another module imported `monks.co/beetman`, that dep would be
-silently dropped.
+Published to `github.com/amonks/beetman` with vanity path
+`monks.co/beetman`. Required fixing the publish dep graph to use
+module-path-aware import resolution instead of a 2-component
+directory heuristic.
 
-**Proper fix**: replaced the 2-component heuristic entirely.
-`BuildDepGraph` now reads `go.mod` files from all module directories
-to build a `module_path → directory` map, then resolves imports via
-longest prefix match (same algorithm `go` itself uses). This
-correctly maps `monks.co/beetman/internal/foo` → `cmd/beetman`
-(self-reference, excluded by `TransitiveDeps`), and would also
-correctly resolve cross-module deps like `monks.co/beetman` →
-`cmd/beetman` from other modules.
+### gods-teeth (apps/gods-teeth)
 
-New functions: `readModulePath`, `buildModuleMap`, `resolveImportDir`.
-New tests: `TestResolveImportDir`, `TestBuildDepGraphNonStandardModulePath`.
+Simple import from `~/git/amonks/delta-green`. No publishing, no
+machine config. Clean import with no issues.
 
-Dry-run output confirms beetman publishes via subtree split:
-```
-publishing cmd/beetman -> github.com/amonks/beetman (subtree split)
-```
+### creamery (apps/creamery)
 
-### Remaining concerns
-
-- The proxy needs to serve vanity import meta tags for
-  `monks.co/beetman`. The proxy loads `publish.toml` and serves
-  go-import tags for explicit-mirror packages. This should work
-  automatically once deployed, but should be verified.
+Runs on brigid. Required adding nlopt system dependency to
+`.envrc` and CI. Needed a `build` task added to its `tasks.toml`.
+gofix had many changes (maps.Copy, range-over-int, etc.). Had a
+pre-existing test failure (stale batch count).

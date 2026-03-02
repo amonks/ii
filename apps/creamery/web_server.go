@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 // UnifiedServer renders labels, recipes, and batch-log analytics from one host.

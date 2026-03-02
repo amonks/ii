@@ -71,56 +71,12 @@ func polyolMW(f ConstituentFunctionals) float64 {
 	return defaultPolyolMW
 }
 
-type sugarShare struct {
-	sucrose      float64
-	glucose      float64
-	fructose     float64
-	maltodextrin float64
-	polyols      float64
-}
-
 type sugarMasses struct {
 	sucrose      float64
 	glucose      float64
 	fructose     float64
 	maltodextrin float64
 	polyols      float64
-}
-
-func sugarShareForProfile(profile ConstituentProfile) sugarShare {
-	comps := profile.Components
-	values := []float64{
-		comps.Sucrose.Mid(),
-		comps.Glucose.Mid(),
-		comps.Fructose.Mid(),
-		comps.Maltodextrin.Mid(),
-		comps.Polyols.Mid(),
-	}
-	total := 0.0
-	for _, v := range values {
-		total += v
-	}
-	if total <= 0 {
-		return sugarShare{sucrose: 1}
-	}
-	inv := 1 / total
-	return sugarShare{
-		sucrose:      values[0] * inv,
-		glucose:      values[1] * inv,
-		fructose:     values[2] * inv,
-		maltodextrin: values[3] * inv,
-		polyols:      values[4] * inv,
-	}
-}
-
-func (s sugarShare) scale(total float64) sugarMasses {
-	return sugarMasses{
-		sucrose:      total * s.sucrose,
-		glucose:      total * s.glucose,
-		fructose:     total * s.fructose,
-		maltodextrin: total * s.maltodextrin,
-		polyols:      total * s.polyols,
-	}
 }
 
 func addedPODFromMasses(m sugarMasses) float64 {
@@ -146,17 +102,6 @@ func addedPACFromMasses(m sugarMasses, funcs ConstituentFunctionals) float64 {
 func lactosePACFromMass(lactose float64, funcs ConstituentFunctionals) float64 {
 	moles := lactose * 1000.0 / mwLactose
 	return moles * pacPerMole * osmoticFactor(funcs)
-}
-
-func sweetnessFromSample(profile ConstituentProfile, msnf, sugar float64) (float64, float64) {
-	share := sugarShareForProfile(profile)
-	masses := share.scale(sugar)
-	addedPOD := addedPODFromMasses(masses)
-	addedPAC := addedPACFromMasses(masses, profile.Functionals)
-	lactose := msnf * LactoseFractionOfMSNF
-	lactosePOD := lactose * LactosePOD
-	lactosePAC := lactosePACFromMass(lactose, profile.Functionals)
-	return addedPOD + lactosePOD, addedPAC + lactosePAC
 }
 
 func profileAddedPOD(profile ConstituentProfile) Interval {

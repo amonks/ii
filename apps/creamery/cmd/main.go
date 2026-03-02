@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/creamery"
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 func main() {

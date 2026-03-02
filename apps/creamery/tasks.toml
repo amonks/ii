@@ -1,14 +1,20 @@
 [[task]]
-  id = "test"
-  type = "short"
-  cmd = "go test ./..."
-
-[[task]]
   id = "dev"
   type = "long"
-  watch = ["*.go", "cmd/*.go", "*.tmpl"]
+  dependencies = ["build"]
+  cmd = "../../bin/creamery serve"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/creamery serve"
+
+[[task]]
+  id = "build"
+  type = "short"
+  watch = ["**/*.go", "*.go", "*.tmpl"]
   dependencies = ["compile-pegs"]
-  cmd = "go run ./cmd serve"
+  cmd = "go build -o ../../bin/creamery ./cmd"
 
 [[task]]
   id = "compile-pegs"

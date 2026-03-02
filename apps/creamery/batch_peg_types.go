@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/amonks/creamery/batchparser"
+	"monks.co/apps/creamery/batchparser"
 )
 
 // convertParsedBatch converts a batchparser.ParsedBatch to a BatchLogEntry,

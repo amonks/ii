@@ -1,9 +1,10 @@
 package creamery
 
 import (
+	"maps"
 	"sync"
 
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 const (
@@ -33,9 +34,7 @@ func FDALabelByKey(key string) (fdaparser.Label, bool) {
 func AllFDALabels() map[string]fdaparser.Label {
 	labelDefsOnce.Do(loadLabelDefinitions)
 	result := make(map[string]fdaparser.Label, len(fdaLabels))
-	for k, v := range fdaLabels {
-		result[k] = v
-	}
+	maps.Copy(result, fdaLabels)
 	return result
 }
 

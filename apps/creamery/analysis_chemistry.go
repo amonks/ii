@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 // MixOptions configures the physics calculations.

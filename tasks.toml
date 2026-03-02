@@ -6,6 +6,7 @@
   dependencies = [
     'apps/aranet/dev',
     'apps/calendar/dev',
+    'apps/creamery/dev',
     'apps/directory/dev',
     'apps/dolmenwood/dev',
     'apps/dungeon/dev',
@@ -26,6 +27,7 @@
     'apps/air/build',
     'apps/aranet/build',
     'apps/calendar/build',
+    'apps/creamery/build',
     'apps/directory/build',
     'apps/dogs/build',
     'apps/dolmenwood/build',
@@ -52,6 +54,7 @@
   id = 'generate'
   type = 'short'
   dependencies = [
+    'apps/creamery/compile-pegs',
     'apps/directory/templ',
     'apps/dogs/templ',
     'apps/dolmenwood/templ',

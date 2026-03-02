@@ -60,8 +60,8 @@ func parseMassValue(input string) (massMeasurement, error) {
 }
 
 func stripInlineComment(input string) string {
-	if idx := strings.Index(input, "#"); idx >= 0 {
-		return input[:idx]
+	if before, _, ok := strings.Cut(input, "#"); ok {
+		return before
 	}
 	return input
 }

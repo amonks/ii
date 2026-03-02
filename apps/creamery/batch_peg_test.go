@@ -54,21 +54,23 @@ func TestLoadBatchesFromDir(t *testing.T) {
 		t.Fatalf("LoadBatchesFromDir failed: %v", err)
 	}
 
-	if len(batches) != 3 {
-		t.Errorf("len(batches) = %d, want 3", len(batches))
+	if len(batches) != 5 {
+		t.Errorf("len(batches) = %d, want 5", len(batches))
 	}
 
-	// Check that batches are sorted by date
+	// Check that batches are sorted by date (newest first for display)
 	for i := 1; i < len(batches); i++ {
-		if batches[i].Date.Before(batches[i-1].Date) {
-			t.Errorf("batches not sorted by date: %v before %v", batches[i].Date, batches[i-1].Date)
+		if batches[i].Date.After(batches[i-1].Date) {
+			t.Errorf("batches not sorted newest-first: %v after %v", batches[i].Date, batches[i-1].Date)
 		}
 	}
 
-	// Check sequence numbers
+	// Check sequence numbers (1 = oldest batch, N = newest)
+	n := len(batches)
 	for i, batch := range batches {
-		if batch.Sequence != i+1 {
-			t.Errorf("batch[%d].Sequence = %d, want %d", i, batch.Sequence, i+1)
+		want := n - i
+		if batch.Sequence != want {
+			t.Errorf("batch[%d].Sequence = %d, want %d", i, batch.Sequence, want)
 		}
 	}
 }

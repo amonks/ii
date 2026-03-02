@@ -144,12 +144,6 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 		Hi: math.Min(1, addedSugarGrams.Hi/serving),
 	}
 
-	// Total sugar fraction (includes lactose)
-	totalSugarFrac := Interval{
-		Lo: math.Max(0, sugarGrams.Lo/serving),
-		Hi: math.Min(1, sugarGrams.Hi/serving),
-	}
-
 	// Other: hard to estimate from label, use wide range
 	// Could be 0-5% typically
 	otherFrac := Range(0, 0.05)
@@ -161,7 +155,6 @@ func (l NutritionLabel) ToTarget() FormulationTarget {
 	msnfFrac = widenInterval(msnfFrac, labelPercentEPS)
 	lactoseFrac = widenInterval(lactoseFrac, derivedComponentSlack)
 	addedSugarFrac = widenInterval(addedSugarFrac, labelPercentEPS)
-	totalSugarFrac = widenInterval(totalSugarFrac, labelPercentEPS)
 
 	fractions := CompositionRange{
 		Fat:         fatFrac,

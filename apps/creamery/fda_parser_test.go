@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 func TestParseLabel_WithSimpleIngredients(t *testing.T) {

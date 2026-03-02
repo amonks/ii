@@ -2,8 +2,9 @@ package creamery
 
 import (
 	"fmt"
+	"maps"
 	"math"
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 const (
@@ -91,9 +92,7 @@ func (s *scenarioIngredients) Lots() []Lot {
 
 func (s *scenarioIngredients) Batches() map[IngredientID]Lot {
 	copy := make(map[IngredientID]Lot, len(s.batches))
-	for id, batch := range s.batches {
-		copy[id] = batch
-	}
+	maps.Copy(copy, s.batches)
 	return copy
 }
 
@@ -112,14 +111,6 @@ func (s *scenarioIngredients) id(name string) IngredientID {
 		return id
 	}
 	return NewIngredientID(name)
-}
-
-func (s *scenarioIngredients) idList(names ...string) []IngredientID {
-	result := make([]IngredientID, 0, len(names))
-	for _, name := range names {
-		result = append(result, s.id(name))
-	}
-	return result
 }
 
 // SolveBenAndJerryVanilla recreates the Ben & Jerry's Vanilla label problem.
@@ -265,9 +256,7 @@ func SolveFDALabel(label fdaparser.Label, catalog IngredientCatalog) (*LabelScen
 	}
 
 	batchDetails := make(map[IngredientID]Lot, len(solution.Lots))
-	for id, lot := range solution.Lots {
-		batchDetails[id] = lot
-	}
+	maps.Copy(batchDetails, solution.Lots)
 
 	return &LabelScenarioResult{
 		Name:             label.Name,

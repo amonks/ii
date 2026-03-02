@@ -201,7 +201,7 @@ func (lpp *lpProblem) initialGuess() []float64 {
 	guess := make([]float64, n)
 	base := 1.0 / math.Max(1, float64(n))
 	sum := 0.0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		guess[i] = clampFloat(base, lpp.lower[i], lpp.upper[i])
 		sum += guess[i]
 	}
@@ -209,7 +209,7 @@ func (lpp *lpProblem) initialGuess() []float64 {
 		sum = 1
 	}
 	scale := 1 / sum
-	for i := 0; i < n; i++ {
+	for i := range n {
 		guess[i] = clampFloat(guess[i]*scale, lpp.lower[i], lpp.upper[i])
 	}
 	return guess

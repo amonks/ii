@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/amonks/creamery/fdaparser"
+	"monks.co/apps/creamery/fdaparser"
 )
 
 // NutritionFacts extends LabelFacts with computed percentage values.
@@ -156,10 +156,6 @@ func (r *Recipe) batch() Batch {
 
 func (r *Recipe) aggregateTotals() (BatchSnapshot, error) {
 	return r.batch().Snapshot()
-}
-
-func (r *Recipe) mixSnapshot(opts MixOptions) (BatchSnapshot, ProcessProperties, error) {
-	return BuildProperties(r.massComponents(), opts)
 }
 
 // Formulation summarizes composition into the Formulation struct.

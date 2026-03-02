@@ -24,8 +24,11 @@ jobs:
           restore-keys: |
             go-build-${{ runner.os }}-
 
-      - name: Install git-filter-repo
-        run: pip install git-filter-repo
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnlopt-dev
+          pip install git-filter-repo
 
       - uses: actions/setup-node@v4
         with:

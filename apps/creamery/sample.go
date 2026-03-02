@@ -21,7 +21,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 	n := len(names)
 	solutions := make([]*Solution, 0, count)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		var lpp *lpProblem
 
 		if varyCoeffs {
@@ -54,7 +54,7 @@ func (s *Solver) Sample(count int, varyCoeffs bool, rng *rand.Rand) ([]*Solution
 
 		// Random objective to get different corners of the polytope
 		objective := make([]float64, n)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			objective[j] = rng.Float64()*2 - 1 // uniform in [-1, 1]
 		}
 
@@ -195,7 +195,7 @@ func (s *Solver) ExtremePoints() ([]*Solution, error) {
 
 	solutions := make([]*Solution, 0, 2*n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// Minimize w_i
 		minObj := make([]float64, n)
 		minObj[i] = 1
@@ -395,10 +395,8 @@ func (s *Solver) OptimizeWithPreference(pref RecipePreference) (*Solution, error
 	opts.NLoptAlgorithm = nlopt.LN_COBYLA
 
 	_, weights, err := lpp.solveWithObjective(opts, func(x, grad []float64) float64 {
-		if grad != nil {
-			for i := range grad {
-				grad[i] = 0
-			}
+		for i := range grad {
+			grad[i] = 0
 		}
 		snapshot, process, snapErr := s.snapshotFromWeights(x, mixOpts)
 		if snapErr != nil {
