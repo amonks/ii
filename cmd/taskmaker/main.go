@@ -8,7 +8,7 @@ import (
 
 	"bytes"
 
-	"github.com/amonks/run/pkg/run"
+	"github.com/amonks/run/taskfile"
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
 	"monks.co/pkg/env"
@@ -168,7 +168,7 @@ func findGenerateTaskIDs(tasks []*task) ([]string, error) {
 	if err := writeTasks("tasks.toml", tasks); err != nil {
 		return nil, err
 	}
-	loaded, err := run.Load(".")
+	loaded, err := taskfile.Load(".")
 	if err != nil {
 		return nil, err
 	}

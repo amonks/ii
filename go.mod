@@ -12,8 +12,8 @@ require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/a-h/templ v0.3.977 // indirect
 	github.com/agnivade/levenshtein v1.2.0 // indirect
-	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
-	github.com/amonks/run v1.0.0-beta.33 // indirect
+	github.com/alecthomas/chroma/v2 v2.20.0 // indirect
+	github.com/amonks/run v1.0.0-beta.34 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/dlclark/regexp2 v1.11.4 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -98,7 +98,6 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/sqlc-dev/sqlc v1.30.0 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
@@ -141,7 +140,7 @@ require (
 
 tool (
 	github.com/a-h/templ/cmd/templ
-	github.com/amonks/run/cmd/run
+	github.com/amonks/run
 	github.com/sqlc-dev/sqlc/cmd/sqlc
 	golang.org/x/vuln/cmd/govulncheck
 	honnef.co/go/tools/cmd/staticcheck
