@@ -192,6 +192,9 @@ func writeTasks(filename string, tasks []*task) error {
 	sort.Slice(tasks, func(a, b int) bool {
 		return tasks[a].Id < tasks[b].Id
 	})
+	for _, t := range tasks {
+		sort.Strings(t.Dependencies)
+	}
 
 	var buf bytes.Buffer
 	enc := toml.NewEncoder(&buf)

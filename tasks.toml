@@ -52,20 +52,20 @@
   id = 'generate'
   type = 'short'
   dependencies = [
-    'templ',
-    'compress-statics',
-    'apps/youtube/templ',
-    'apps/dungeon/templ',
+    'apps/directory/templ',
+    'apps/dogs/templ',
+    'apps/dolmenwood/templ',
     'apps/dungeon/build-css',
     'apps/dungeon/build-js',
-    'apps/reddit/templ',
-    'apps/directory/templ',
-    'apps/dolmenwood/templ',
-    'apps/writing/templ',
+    'apps/dungeon/templ',
     'apps/homepage/templ',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/dogs/templ'
+    'apps/reddit/templ',
+    'apps/writing/templ',
+    'apps/youtube/templ',
+    'compress-statics',
+    'templ'
   ]
 
 [[task]]
@@ -110,9 +110,9 @@
   id = 'test'
   type = 'short'
   dependencies = [
-    'staticcheck',
     'go-test',
-    'gofix'
+    'gofix',
+    'staticcheck'
   ]
 
 [[task]]
