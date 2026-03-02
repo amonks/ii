@@ -19,6 +19,13 @@ jobs:
       - name: Install git-filter-repo
         run: pip install git-filter-repo
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Generate
+        run: go tool run generate
+
       - name: Test
         run: go tool run test
 
