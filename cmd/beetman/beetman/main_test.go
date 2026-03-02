@@ -205,7 +205,7 @@ func TestSetupWithFlags(t *testing.T) {
 	}
 
 	// Test invalid cutoff time
-	output, err = runBinary(env.homeDir,
+	_, err = runBinary(env.homeDir,
 		"--data-dir", env.dataDir,
 		"--flac-dir", env.albumsDir,
 		"setup",
@@ -216,7 +216,7 @@ func TestSetupWithFlags(t *testing.T) {
 	}
 
 	// Test non-existent log file
-	output, err = runBinary(env.homeDir,
+	_, err = runBinary(env.homeDir,
 		"--data-dir", env.dataDir,
 		"--flac-dir", env.albumsDir,
 		"setup",

@@ -423,10 +423,7 @@ func (m *BeetImportManager) processAlbumBatches(
 			return fmt.Errorf("%s cancelled: %w", operation, err)
 		}
 
-		end := i + batchSize
-		if end > len(albums) {
-			end = len(albums)
-		}
+		end := min(i+batchSize, len(albums))
 		batch := albums[i:end]
 
 		fmt.Printf("%s: processing batch of %d albums\n", operation, len(batch))

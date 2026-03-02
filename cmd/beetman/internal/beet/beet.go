@@ -204,8 +204,8 @@ func (e *ImportError) FailedAlbums() []string {
 
 // containsErrorLine checks if the output contains any lines starting with "error"
 func containsErrorLine(output string) bool {
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(output, "\n")
+	for line := range lines {
 		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(line)), "error") {
 			return true
 		}

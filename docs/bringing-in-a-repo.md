@@ -97,9 +97,16 @@ This regenerates `go.work` to include `./cmd/beetman`.
 
 ### Step 6: Verify
 
-- `go test ./cmd/beetman/...` — tests pass
-- `go test ./cmd/publish/...` — publish validation passes
-- `go run ./cmd/publish --dry-run` — shows beetman in the plan
+Run the full CI check suite and publish dry-run:
+
+```sh
+go tool run test
+go run ./cmd/publish --dry-run
+```
+
+The `test` task runs `go-test`, `gofix`, and `staticcheck`. The
+imported code may need fixes for newer Go idioms (e.g.,
+`strings.SplitSeq`, `min` builtin).
 
 ## Log
 
