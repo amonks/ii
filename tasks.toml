@@ -54,18 +54,18 @@
   dependencies = [
     'templ',
     'compress-statics',
-    'apps/dogs/templ',
+    'apps/youtube/templ',
     'apps/dungeon/templ',
     'apps/dungeon/build-css',
     'apps/dungeon/build-js',
+    'apps/reddit/templ',
+    'apps/directory/templ',
+    'apps/dolmenwood/templ',
+    'apps/writing/templ',
     'apps/homepage/templ',
     'apps/map/build-css',
     'apps/map/build-js',
-    'apps/reddit/templ',
-    'apps/youtube/templ',
-    'apps/directory/templ',
-    'apps/dolmenwood/templ',
-    'apps/writing/templ'
+    'apps/dogs/templ'
   ]
 
 [[task]]

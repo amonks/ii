@@ -3,6 +3,7 @@ module monks.co/apps/proxy
 go 1.26.0
 
 require (
+	github.com/BurntSushi/toml v1.6.0
 	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2
 	tailscale.com v1.94.1
