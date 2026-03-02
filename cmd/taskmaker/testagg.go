@@ -24,7 +24,7 @@ func loadRedundantCommands(root string) (map[string]bool, error) {
 	}
 
 	cmds := map[string]bool{}
-	for _, line := range strings.Split(string(bs), "\n") {
+	for line := range strings.SplitSeq(string(bs), "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
 			cmds[line] = true

@@ -43,12 +43,12 @@ func (h *Hub) Unsubscribe(mapID uint, ch chan []byte) {
 
 // Event represents an SSE event sent to subscribers.
 type Event struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
+	Type string `json:"type"`
+	Data any    `json:"data"`
 }
 
 // Publish sends an event to all subscribers of a map.
-func (h *Hub) Publish(mapID uint, eventType string, data interface{}) {
+func (h *Hub) Publish(mapID uint, eventType string, data any) {
 	evt := Event{Type: eventType, Data: data}
 	bs, err := json.Marshal(evt)
 	if err != nil {

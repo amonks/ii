@@ -115,7 +115,7 @@ func findInternalImports(dir string) ([]string, error) {
 
 		// Simple import scanning: find "monks.co/..." strings.
 		content := string(bs)
-		for _, line := range strings.Split(content, "\n") {
+		for line := range strings.SplitSeq(content, "\n") {
 			line = strings.TrimSpace(line)
 			// Match import lines like: "monks.co/pkg/serve"
 			idx := strings.Index(line, `"monks.co/`)
@@ -123,11 +123,11 @@ func findInternalImports(dir string) ([]string, error) {
 				continue
 			}
 			rest := line[idx+1:]
-			end := strings.Index(rest, `"`)
-			if end < 0 {
+			before, _, ok := strings.Cut(rest, `"`)
+			if !ok {
 				continue
 			}
-			importPath := rest[:end]
+			importPath := before
 
 			// Convert import path to directory.
 			// "monks.co/pkg/serve" -> "pkg/serve"
@@ -222,10 +222,10 @@ func ValidateGoModPaths(root string, cfg *PublishConfig) []string {
 
 		expected := cfg.ExpectedModulePath(pkg.Dir)
 		// Parse first line: "module monks.co/pkg/serve"
-		for _, line := range strings.Split(string(bs), "\n") {
+		for line := range strings.SplitSeq(string(bs), "\n") {
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "module ") {
-				actual := strings.TrimPrefix(line, "module ")
+			if after, ok := strings.CutPrefix(line, "module "); ok {
+				actual := after
 				if actual != expected {
 					errs = append(errs, fmt.Sprintf("%s: go.mod has module %s, expected %s", pkg.Dir, actual, expected))
 				}

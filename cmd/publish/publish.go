@@ -153,7 +153,7 @@ func findMonorepoTags(root, dir string) ([]string, error) {
 		return nil, err
 	}
 	var tags []string
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		if line != "" {
 			tags = append(tags, line)
 		}
@@ -222,7 +222,7 @@ func filterRepo(root string, dirs []string, mirror string) error {
 		if err != nil {
 			continue
 		}
-		for _, tag := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		for tag := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 			if tag == "" {
 				continue
 			}
