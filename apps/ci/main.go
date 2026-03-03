@@ -45,7 +45,7 @@ func run() error {
 
 	// Dashboard routes.
 	mux.HandleFunc("GET /", dashboardIndex(model))
-	mux.HandleFunc("GET /runs/{id}", dashboardRun(model))
+	mux.HandleFunc("GET /runs/{id}", dashboardRun(model, outputDir))
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
 	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
 	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir))
@@ -110,7 +110,7 @@ func dashboardIndex(model *Model) http.HandlerFunc {
 	}
 }
 
-func dashboardRun(model *Model) http.HandlerFunc {
+func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -125,6 +125,22 @@ func dashboardRun(model *Model) http.HandlerFunc {
 			return
 		}
 
+		// Collect output streams for each job.
+		streams := map[string][]string{}
+		for _, j := range jobs {
+			if j.OutputPath == nil {
+				continue
+			}
+			dir := filepath.Join(outputDir, idStr, j.Name)
+			entries, err := os.ReadDir(dir)
+			if err != nil {
+				continue
+			}
+			for _, e := range entries {
+				streams[j.Name] = append(streams[j.Name], strings.TrimSuffix(e.Name(), ".log"))
+			}
+		}
+
 		var logs []LogEvent
 		if fetchedLogs, err := FetchRunLogs(run); err != nil {
 			slog.Warn("failed to fetch run logs", "error", err, "run_id", id)
@@ -133,7 +149,7 @@ func dashboardRun(model *Model) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		runPage(run, jobs, logs).Render(r.Context(), w)
+		runPage(run, jobs, streams, logs).Render(r.Context(), w)
 	}
 }
 

@@ -100,7 +100,7 @@ templ indexPage(runs []Run, deployments []Deployment) {
 	}
 }
 
-templ runPage(run *Run, jobs []Job, logs []LogEvent) {
+templ runPage(run *Run, jobs []Job, streams map[string][]string, logs []LogEvent) {
 	@layout(fmt.Sprintf("Run #%d", run.ID)) {
 		<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
 		<p>
@@ -151,8 +151,11 @@ templ runPage(run *Run, jobs []Job, logs []LogEvent) {
 								}
 							</td>
 							<td>
-								if j.OutputPath != nil {
-									<a href={ templ.SafeURL(fmt.Sprintf("output/%d/%s", run.ID, j.Name)) }>view</a>
+								for i, s := range streams[j.Name] {
+									if i > 0 {
+										{ " " }
+									}
+									<a href={ templ.SafeURL(fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s)) }>{ s }</a>
 								}
 							</td>
 						</tr>
