@@ -1,7 +1,7 @@
 FROM golang:1.26-alpine
 
 RUN apk add --no-cache build-base gcc cmake git bash nodejs npm \
-    python3 py3-pip sqlite ca-certificates curl
+    python3 py3-pip sqlite ca-certificates curl pkgconf
 
 # NLopt 2.10.0
 RUN curl -L https://github.com/stevengj/nlopt/archive/refs/tags/v2.10.0.tar.gz | tar xz && \
@@ -41,6 +41,6 @@ COPY . .
 # Build the builder binary
 RUN go build -o /usr/local/bin/ci-builder ./apps/ci/cmd/builder
 
-ENV MONKS_ROOT=/app
+ENV MONKS_ROOT=/data/repo
 ENV MONKS_DATA=/data
 CMD ["/usr/local/bin/ci-builder"]
