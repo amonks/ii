@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
@@ -24,14 +26,19 @@ func run() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	reporter := NewReporter(cfg.OrchestratorURL, cfg.RunID)
+	ctx := context.Background()
+
+	// Join the tailnet so we can reach the orchestrator.
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
+	reporter := NewReporter(cfg.OrchestratorURL, cfg.RunID, tailnet.Client())
 
 	pipeline := &Pipeline{
 		Config:   cfg,
 		Reporter: reporter,
 	}
-
-	ctx := context.Background()
 
 	status := "success"
 	var pipelineErr error
@@ -67,6 +74,7 @@ type Config struct {
 	Root            string
 	DataDir         string
 	BaseImageRef    string
+	RepoURL         string
 }
 
 func loadConfig() (*Config, error) {
@@ -89,6 +97,7 @@ func loadConfig() (*Config, error) {
 		Root:            envOr("MONKS_ROOT", "/app"),
 		DataDir:         envOr("MONKS_DATA", "/data"),
 		BaseImageRef:    envOr("CI_BASE_IMAGE", "registry.fly.io/monks-ci-base:deployment-01KJS54RSKCKTZM364MVVDQWBG"),
+		RepoURL:         repoURL(os.Getenv("GH_TOKEN")),
 	}
 	return cfg, nil
 }
@@ -100,6 +109,13 @@ func requireEnv(key string) string {
 		os.Exit(1)
 	}
 	return v
+}
+
+func repoURL(ghToken string) string {
+	if ghToken != "" {
+		return "https://x-access-token:" + ghToken + "@github.com/amonks/monks.co.git"
+	}
+	return "https://github.com/amonks/monks.co.git"
 }
 
 func envOr(key, fallback string) string {

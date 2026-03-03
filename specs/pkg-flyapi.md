@@ -25,6 +25,8 @@ Creates a client with default base URL. The token is sent as
   GET /apps/{app}/machines/{id}/wait?state={state}&timeout={seconds}
 - `GetMachine(ctx, machineID) (*MachineInfo, error)` —
   GET /apps/{app}/machines/{id}
+- `ListMachines(ctx) ([]MachineInfo, error)` —
+  GET /apps/{app}/machines
 - `StopMachine(ctx, machineID) error` —
   POST /apps/{app}/machines/{id}/stop
 

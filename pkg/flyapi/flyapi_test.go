@@ -265,6 +265,41 @@ func TestStopMachine(t *testing.T) {
 	}
 }
 
+func TestListMachines(t *testing.T) {
+	machines := []MachineInfo{
+		{ID: "m1", Name: "ci-builder-1", State: "stopped", Config: MachineConfig{Image: "registry.fly.io/monks-ci-builder:deploy-abc"}},
+		{ID: "m2", Name: "ci-builder-2", State: "started", Config: MachineConfig{Image: "registry.fly.io/monks-ci-builder:deploy-def"}},
+	}
+
+	var gotPath string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		if r.Header.Get("Authorization") != "Bearer list-token" {
+			t.Errorf("unexpected auth: %s", r.Header.Get("Authorization"))
+		}
+		json.NewEncoder(w).Encode(machines)
+	}))
+	defer srv.Close()
+
+	c := NewClient("list-token", "monks-ci-builder")
+	c.BaseURL = srv.URL
+
+	got, err := c.ListMachines(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/apps/monks-ci-builder/machines" {
+		t.Errorf("path = %q, want /apps/monks-ci-builder/machines", gotPath)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 machines, got %d", len(got))
+	}
+	if got[0].Config.Image != "registry.fly.io/monks-ci-builder:deploy-abc" {
+		t.Errorf("unexpected image: %s", got[0].Config.Image)
+	}
+}
+
 func TestStopMachineError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)

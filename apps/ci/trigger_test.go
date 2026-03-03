@@ -14,8 +14,14 @@ func testTriggerHandler(t *testing.T) (*Model, *TriggerHandler) {
 	t.Helper()
 	m := testModel(t)
 
-	// Mock fly API server that accepts machine creation.
+	// Mock fly API server that handles machine listing and creation.
 	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/apps/monks-ci-builder/machines" {
+			json.NewEncoder(w).Encode([]map[string]any{
+				{"id": "m1", "config": map[string]any{"image": "test-image"}},
+			})
+			return
+		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"id":    "mock-machine-123",
 			"state": "created",
@@ -30,8 +36,8 @@ func testTriggerHandler(t *testing.T) (*Model, *TriggerHandler) {
 		model: m,
 		fly:   flyClient,
 		builderConfig: BuilderConfig{
-			Image:  "test-image",
-			Region: "ord",
+			FallbackImage: "test-image-fallback",
+			Region:        "ord",
 		},
 	}
 	return m, handler

@@ -89,7 +89,7 @@ func TestReporterIntegration(t *testing.T) {
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 1)
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 
 	// Start a job.
 	if err := reporter.StartJob("go-test", "test"); err != nil {
@@ -132,7 +132,7 @@ cmd = "echo hello from task"
 `
 	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
 
-	reporter := NewReporter(srv.URL, 1)
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -199,7 +199,7 @@ cmd = "echo output-from-b"
 `
 	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
 
-	reporter := NewReporter(srv.URL, 1)
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

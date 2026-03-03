@@ -20,7 +20,7 @@ func TestReporterStartJob(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 42)
+	reporter := NewReporter(srv.URL, 42, http.DefaultClient)
 	if err := reporter.StartJob("go-test", "test"); err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestReporterFinishJob(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 1)
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 	err := reporter.FinishJob("go-test", FinishJobResult{
 		Status:     "success",
 		DurationMs: 1500,
@@ -76,7 +76,7 @@ func TestReporterFinishRun(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 5)
+	reporter := NewReporter(srv.URL, 5, http.DefaultClient)
 	if err := reporter.FinishRun("failed", "tests failed"); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestReporterGetBaseSHA(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 3)
+	reporter := NewReporter(srv.URL, 3, http.DefaultClient)
 	sha, err := reporter.GetBaseSHA()
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +127,7 @@ func TestReporterRecordDeployment(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 7)
+	reporter := NewReporter(srv.URL, 7, http.DefaultClient)
 	err := reporter.RecordDeployment("dogs", "sha1", "registry.fly.io/monks-dogs:sha1", 1024)
 	if err != nil {
 		t.Fatal(err)
@@ -151,7 +151,7 @@ func TestReporterErrorOnBadStatus(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 1)
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 	err := reporter.StartJob("test", "test")
 	if err == nil {
 		t.Fatal("expected error on 500 response")

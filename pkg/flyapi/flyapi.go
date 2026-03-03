@@ -206,6 +206,34 @@ func (c *Client) StopMachine(ctx context.Context, machineID string) error {
 	return nil
 }
 
+// ListMachines returns all machines for the app.
+// GET /apps/{app}/machines
+func (c *Client) ListMachines(ctx context.Context) ([]MachineInfo, error) {
+	url := fmt.Sprintf("%s/apps/%s/machines", c.BaseURL, c.AppName)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+c.Token)
+
+	resp, err := c.httpClient().Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, readAPIError(resp)
+	}
+
+	var machines []MachineInfo
+	if err := json.NewDecoder(resp.Body).Decode(&machines); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+	return machines, nil
+}
+
 func (c *Client) httpClient() *http.Client {
 	if c.HTTPClient != nil {
 		return c.HTTPClient

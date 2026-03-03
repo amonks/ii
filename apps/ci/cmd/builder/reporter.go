@@ -16,11 +16,11 @@ type Reporter struct {
 }
 
 // NewReporter creates a reporter that talks to the orchestrator.
-func NewReporter(baseURL string, runID int64) *Reporter {
+func NewReporter(baseURL string, runID int64, client *http.Client) *Reporter {
 	return &Reporter{
 		baseURL: baseURL,
 		runID:   runID,
-		client:  http.DefaultClient,
+		client:  client,
 	}
 }
 

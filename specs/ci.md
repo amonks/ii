@@ -20,8 +20,9 @@ persistent volume.
 
 **monks-ci-builder** (builder): Ephemeral Fly machine
 (`performance-4x`, 4GB, `auto_destroy: true`). Fat image with all
-build deps. Persistent volume for caches. Joins tailnet. Streams
-output to orchestrator in real time.
+build deps. Persistent volume at `/data` for caches and repo clone.
+Joins tailnet as `monks-ci-builder-fly-ord`. Communicates with
+orchestrator via `tailnet.Client()`. Streams output in real time.
 
 ## Trigger
 
@@ -33,6 +34,8 @@ Behavior:
 - Rejects if a run is already in progress (returns 409)
 - Looks up base SHA from last successful run (all-zeros if none)
 - Creates run row in SQLite
+- Resolves current builder image by listing `monks-ci-builder` machines
+  via the Fly API (falls back to a hardcoded default if none found)
 - Creates builder machine via `pkg/flyapi`
 - Returns 202 with run ID, head SHA, base SHA
 
@@ -96,8 +99,10 @@ Uses `tailnet.Client()` to POST to
 
 ## Builder Pipeline
 
-1. Join tailnet
-2. Fetch latest code (streams output)
+1. Join tailnet (via `tailnet.WaitReady`; uses `TS_AUTHKEY` from env)
+2. Clone or fetch repo onto persistent volume at `/data/repo`
+   (`jj git clone --colocate` on first run, `jj git fetch` on
+   subsequent runs, then `jj new` the head SHA)
 3. Get base SHA from orchestrator
 4. Diff changed files
 5. Run generate + test (per-task output streams via run library)

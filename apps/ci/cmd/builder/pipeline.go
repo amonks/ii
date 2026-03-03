@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 )
 
@@ -16,13 +18,13 @@ type Pipeline struct {
 
 // Run executes the pipeline steps in order.
 func (p *Pipeline) Run(ctx context.Context) error {
-	root := p.Config.Root
-
-	// Step 1: Fetch latest code.
+	// Step 1: Fetch latest code (updates p.Config.Root to persistent volume).
 	slog.Info("fetching latest code")
 	if err := p.fetchCode(); err != nil {
 		return fmt.Errorf("fetching code: %w", err)
 	}
+
+	root := p.Config.Root
 
 	// Step 2: Run generate + test.
 	slog.Info("running tests")
@@ -58,12 +60,24 @@ func (p *Pipeline) fetchCode() error {
 	w := p.Reporter.StreamWriter("fetch", "output")
 	defer w.Close()
 
-	// Try jj first, fall back to git.
-	fmt.Fprintf(w, "=== fetching code\n")
-	err := p.tryFetch(w, "jj", "git", "fetch")
-	if err != nil {
-		fmt.Fprintf(w, "jj fetch failed, trying git: %v\n", err)
-		err = p.tryFetch(w, "git", "fetch", "origin")
+	repoDir := filepath.Join(p.Config.DataDir, "repo")
+
+	var err error
+	if _, statErr := os.Stat(filepath.Join(repoDir, ".jj")); os.IsNotExist(statErr) {
+		fmt.Fprintf(w, "=== cloning repo to %s\n", repoDir)
+		err = p.runCmd(w, "", "jj", "git", "clone", p.Config.RepoURL, repoDir, "--colocate")
+	} else {
+		fmt.Fprintf(w, "=== fetching latest code in %s\n", repoDir)
+		err = p.runCmd(w, repoDir, "jj", "git", "fetch")
+	}
+
+	if err == nil {
+		fmt.Fprintf(w, "=== checking out %s\n", p.Config.HeadSHA)
+		err = p.runCmd(w, repoDir, "jj", "new", p.Config.HeadSHA)
+	}
+
+	if err == nil {
+		p.Config.Root = repoDir
 	}
 
 	duration := time.Since(start).Milliseconds()
@@ -86,9 +100,11 @@ func (p *Pipeline) fetchCode() error {
 	return err
 }
 
-func (p *Pipeline) tryFetch(w *StreamWriter, name string, args ...string) error {
+func (p *Pipeline) runCmd(w *StreamWriter, dir string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
-	cmd.Dir = p.Config.Root
+	if dir != "" {
+		cmd.Dir = dir
+	}
 	cmd.Stdout = w
 	cmd.Stderr = w
 	return cmd.Run()

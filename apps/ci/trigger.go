@@ -20,7 +20,7 @@ type TriggerHandler struct {
 
 // BuilderConfig holds the configuration for creating builder machines.
 type BuilderConfig struct {
-	Image            string
+	FallbackImage    string
 	Region           string
 	OrchestratorURL  string
 	FlyAPIToken      string
@@ -104,6 +104,21 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *TriggerHandler) resolveBuilderImage() string {
+	machines, err := h.fly.ListMachines(context.Background())
+	if err != nil {
+		slog.Warn("failed to list builder machines, using fallback image", "error", err)
+		return h.builderConfig.FallbackImage
+	}
+	for _, m := range machines {
+		if m.Config.Image != "" {
+			return m.Config.Image
+		}
+	}
+	slog.Warn("no builder machines found, using fallback image")
+	return h.builderConfig.FallbackImage
+}
+
 func (h *TriggerHandler) createBuilderMachine(run *Run) {
 	env := map[string]string{
 		"CI_RUN_ID":           fmt.Sprintf("%d", run.ID),
@@ -113,6 +128,7 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 		"FLY_API_TOKEN":       h.builderConfig.FlyAPIToken,
 		"GH_TOKEN":            h.builderConfig.GHToken,
 		"TS_AUTHKEY":          h.builderConfig.TSAuthKey,
+		"MONKS_APP_NAME":      "ci-builder",
 	}
 	if h.builderConfig.AWSAccessKeyID != "" {
 		env["AWS_ACCESS_KEY_ID"] = h.builderConfig.AWSAccessKeyID
@@ -127,7 +143,7 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 		Name:   fmt.Sprintf("ci-builder-%d", run.ID),
 		Region: h.builderConfig.Region,
 		Config: flyapi.MachineConfig{
-			Image: h.builderConfig.Image,
+			Image: h.resolveBuilderImage(),
 			Guest: flyapi.Guest{
 				CPUKind:  "performance",
 				CPUs:     4,

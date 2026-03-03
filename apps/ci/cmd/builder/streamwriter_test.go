@@ -117,7 +117,7 @@ func TestReporterStreamWriter(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	reporter := NewReporter(srv.URL, 42)
+	reporter := NewReporter(srv.URL, 42, http.DefaultClient)
 	sw := reporter.StreamWriter("deploy-dogs", "output")
 	sw.Write([]byte("test"))
 	sw.Close()

@@ -61,7 +61,7 @@ func run() error {
 		model: model,
 		fly:   flyClient,
 		builderConfig: BuilderConfig{
-			Image:           envOr("CI_BUILDER_IMAGE", "registry.fly.io/monks-ci-builder:deployment-01KJS6B9YA7BYXTBRZV5TS4WSW"),
+			FallbackImage:   "registry.fly.io/monks-ci-builder:deployment-01KJS6B9YA7BYXTBRZV5TS4WSW",
 			Region:          "ord",
 			OrchestratorURL: "http://monks-ci-fly-ord",
 			FlyAPIToken:     flyToken,
