@@ -124,7 +124,7 @@ jobs:
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
 
-      - uses: superfly/flyctl-action/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy changed apps
         run: go run ./cmd/deploy --base ${{ github.event.before }}
