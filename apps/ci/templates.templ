@@ -23,11 +23,13 @@ templ layout(title string) {
 				.status-failed { color: #cb2431; }
 				.status-running { color: #dbab09; }
 				.status-pending { color: #6a737d; }
+				.status-dead { color: #6a737d; }
 				nav { margin-bottom: 1rem; }
 				nav a { margin-right: 1rem; }
 				h1 { margin-bottom: 0.5rem; }
 				.mono { font-family: monospace; }
 				.small { font-size: 0.875rem; color: #6a737d; }
+				pre { margin: 0; padding: 0.25rem 0.5rem; white-space: pre-wrap; word-break: break-word; }
 			</style>
 		</head>
 		<body>
@@ -98,7 +100,7 @@ templ indexPage(runs []Run, deployments []Deployment) {
 	}
 }
 
-templ runPage(run *Run, jobs []Job) {
+templ runPage(run *Run, jobs []Job, logs []LogEvent) {
 	@layout(fmt.Sprintf("Run #%d", run.ID)) {
 		<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
 		<p>
@@ -117,6 +119,11 @@ templ runPage(run *Run, jobs []Job) {
 				<br/>Error: <span class="status-failed">{ *run.Error }</span>
 			}
 		</p>
+		if run.Status == "running" {
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("../runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
+				<button type="submit" onclick="return confirm('Mark this run as dead?')">Mark Dead</button>
+			</form>
+		}
 
 		<h2>Jobs</h2>
 		if len(jobs) == 0 {
@@ -148,6 +155,43 @@ templ runPage(run *Run, jobs []Job) {
 									<a href={ templ.SafeURL(fmt.Sprintf("output/%d/%s", run.ID, j.Name)) }>view</a>
 								}
 							</td>
+						</tr>
+						if j.Error != nil {
+							<tr>
+								<td colspan="5">
+									<pre class="status-failed small">{ *j.Error }</pre>
+								</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+		}
+
+		<h2>Logs</h2>
+		if len(logs) == 0 {
+			<p class="small">No log events found for this run.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Time</th>
+						<th>Level</th>
+						<th>Path</th>
+						<th>Status</th>
+						<th>Duration</th>
+						<th>Detail</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, l := range logs {
+						<tr>
+							<td class="small mono">{ formatLogTime(l.Time) }</td>
+							<td class={ logLevelClass(l.Level) }>{ l.Level }</td>
+							<td class="mono">{ l.Method } { l.Path }</td>
+							<td>{ fmt.Sprintf("%d", l.Status) }</td>
+							<td>{ fmt.Sprintf("%.0fms", l.DurationMs) }</td>
+							<td class="small">{ logDetail(l) }</td>
 						</tr>
 					}
 				</tbody>
@@ -195,4 +239,35 @@ func shortSHA(sha string) string {
 
 func statusClass(status string) string {
 	return "status-" + status
+}
+
+func logLevelClass(level string) string {
+	switch level {
+	case "ERROR":
+		return "status-failed"
+	case "WARN":
+		return "status-running"
+	default:
+		return ""
+	}
+}
+
+func formatLogTime(t string) string {
+	if len(t) > 19 {
+		return t[11:19] // HH:MM:SS
+	}
+	return t
+}
+
+func logDetail(l LogEvent) string {
+	if l.ErrorMessage != "" {
+		return l.ErrorMessage
+	}
+	if l.APIJobName != "" {
+		return "job: " + l.APIJobName
+	}
+	if l.TriggerSHA != "" {
+		return "sha: " + shortSHA(l.TriggerSHA)
+	}
+	return ""
 }

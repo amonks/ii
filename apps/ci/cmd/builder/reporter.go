@@ -104,6 +104,12 @@ func (r *Reporter) FinishRun(status, errMsg string) error {
 	return r.put(fmt.Sprintf("/api/runs/%d/done", r.runID), body)
 }
 
+// StreamWriter returns an io.WriteCloser that streams output to the
+// orchestrator for the given job and stream name.
+func (r *Reporter) StreamWriter(jobName, stream string) *StreamWriter {
+	return NewStreamWriter(r.client, r.baseURL, r.runID, jobName, stream)
+}
+
 // GetBaseSHA retrieves the base SHA for this run from the orchestrator.
 func (r *Reporter) GetBaseSHA() (string, error) {
 	url := r.baseURL + fmt.Sprintf("/api/runs/%d/base-sha", r.runID)

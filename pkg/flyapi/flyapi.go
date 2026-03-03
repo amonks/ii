@@ -41,11 +41,11 @@ type MachineCreateInput struct {
 type MachineConfig struct {
 	Image       string            `json:"image"`
 	Cmd         []string          `json:"cmd,omitempty"`
-	Guest       Guest             `json:"guest,omitempty"`
+	Guest       Guest             `json:"guest"`
 	Env         map[string]string `json:"env,omitempty"`
 	Mounts      []Mount           `json:"mounts,omitempty"`
 	AutoDestroy bool              `json:"auto_destroy"`
-	Restart     RestartPolicy     `json:"restart,omitempty"`
+	Restart     RestartPolicy     `json:"restart"`
 }
 
 // Guest describes the VM resources for a machine.

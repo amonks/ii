@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"monks.co/pkg/flyapi"
 	"monks.co/pkg/gzip"
@@ -40,11 +41,14 @@ func run() error {
 
 	mux := serve.NewMux()
 
+	outputDir := filepath.Join(envOr("MONKS_DATA", "/data"), "output", "runs")
+
 	// Dashboard routes.
 	mux.HandleFunc("GET /", dashboardIndex(model))
 	mux.HandleFunc("GET /runs/{id}", dashboardRun(model))
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
-	mux.HandleFunc("GET /output/{runID}/{jobName}", serveOutput)
+	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
+	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir))
 
 	// Trigger endpoint.
 	flyToken := os.Getenv("FLY_API_TOKEN")
@@ -72,7 +76,7 @@ func run() error {
 	mux.Handle("POST /trigger", trigger)
 
 	// Builder callback API.
-	RegisterAPI(mux, model, func(msg string) {
+	RegisterAPI(mux, model, outputDir, func(msg string) {
 		sendSMS(msg)
 	})
 
@@ -121,8 +125,15 @@ func dashboardRun(model *Model) http.HandlerFunc {
 			return
 		}
 
+		var logs []LogEvent
+		if fetchedLogs, err := FetchRunLogs(run); err != nil {
+			slog.Warn("failed to fetch run logs", "error", err, "run_id", id)
+		} else {
+			logs = fetchedLogs
+		}
+
 		w.Header().Set("Content-Type", "text/html")
-		runPage(run, jobs).Render(r.Context(), w)
+		runPage(run, jobs, logs).Render(r.Context(), w)
 	}
 }
 
@@ -137,21 +148,51 @@ func dashboardDeployments(model *Model) http.HandlerFunc {
 	}
 }
 
-func serveOutput(w http.ResponseWriter, r *http.Request) {
-	runID := r.PathValue("runID")
-	jobName := r.PathValue("jobName")
+func serveJobStreams(outputDir string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		runID := r.PathValue("runID")
+		jobName := r.PathValue("jobName")
 
-	// Sanitize path components.
-	outputPath := filepath.Join("/data/output/runs", runID, jobName+".log")
-	outputPath = filepath.Clean(outputPath)
+		dir := filepath.Clean(filepath.Join(outputDir, runID, jobName))
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			http.Error(w, "output not found", http.StatusNotFound)
+			return
+		}
 
-	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		http.Error(w, "output not found", http.StatusNotFound)
-		return
+		// If there's exactly one stream, redirect directly to it.
+		if len(entries) == 1 {
+			name := strings.TrimSuffix(entries[0].Name(), ".log")
+			http.Redirect(w, r, fmt.Sprintf("%s/%s", r.URL.Path, name), http.StatusFound)
+			return
+		}
+
+		// List streams as plain text with links.
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, "<h2>Streams for %s</h2><ul>", jobName)
+		for _, e := range entries {
+			name := strings.TrimSuffix(e.Name(), ".log")
+			fmt.Fprintf(w, `<li><a href="%s/%s">%s</a></li>`, r.URL.Path, name, name)
+		}
+		fmt.Fprintf(w, "</ul>")
 	}
+}
 
-	w.Header().Set("Content-Type", "text/plain")
-	http.ServeFile(w, r, outputPath)
+func serveStream(outputDir string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		runID := r.PathValue("runID")
+		jobName := r.PathValue("jobName")
+		stream := r.PathValue("stream")
+
+		filePath := filepath.Clean(filepath.Join(outputDir, runID, jobName, stream+".log"))
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			http.Error(w, "stream not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/plain")
+		http.ServeFile(w, r, filePath)
+	}
 }
 
 func envOr(key, fallback string) string {

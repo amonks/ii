@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"monks.co/pkg/oci"
 )
@@ -214,27 +213,4 @@ func TestImageConfigRoundtrip(t *testing.T) {
 	if imgCfg.Config.WorkingDir != "/opt" {
 		t.Errorf("WorkDir roundtrip failed: got %q", imgCfg.Config.WorkingDir)
 	}
-}
-
-// layerEntries is a helper that reads all tar entries from a layer.
-func layerEntries(t *testing.T, l v1.Layer) map[string]*tar.Header {
-	t.Helper()
-	rc, err := l.Uncompressed()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer rc.Close()
-	result := make(map[string]*tar.Header)
-	tr := tar.NewReader(rc)
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
-		result[hdr.Name] = hdr
-	}
-	return result
 }

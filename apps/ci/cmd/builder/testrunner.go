@@ -1,56 +1,100 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log/slog"
-	"os/exec"
+	"io"
 	"time"
+
+	"github.com/amonks/run/runner"
+	"github.com/amonks/run/taskfile"
 )
 
-// RunTests runs the generate and test tasks.
-func RunTests(root string, reporter *Reporter) error {
-	// Run generate first.
-	if err := runTask(root, "generate", reporter); err != nil {
+// RunTests runs the generate and test tasks using the run library
+// programmatically, streaming per-task output to the orchestrator.
+func RunTests(ctx context.Context, root string, reporter *Reporter) error {
+	if err := runTask(ctx, root, "generate", reporter); err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
-
-	// Run test.
-	if err := runTask(root, "test", reporter); err != nil {
+	if err := runTask(ctx, root, "test", reporter); err != nil {
 		return fmt.Errorf("test: %w", err)
 	}
-
 	return nil
 }
 
-func runTask(root, taskName string, reporter *Reporter) error {
-	jobName := taskName
-	reporter.StartJob(jobName, "task")
-
+func runTask(ctx context.Context, root, taskName string, reporter *Reporter) error {
+	reporter.StartJob(taskName, "task")
 	start := time.Now()
 
-	cmd := exec.Command("go", "tool", "run", taskName)
-	cmd.Dir = root
-	cmd.Env = append(cmd.Environ(), "MONKS_ROOT="+root)
+	tasks, err := taskfile.Load(root)
+	if err != nil {
+		errMsg := fmt.Sprintf("loading taskfile: %v", err)
+		reporter.FinishJob(taskName, FinishJobResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("loading taskfile: %w", err)
+	}
 
-	output, err := cmd.CombinedOutput()
+	mw := &streamMultiWriter{
+		reporter: reporter,
+		jobName:  taskName,
+		writers:  make(map[string]*StreamWriter),
+	}
+
+	run, err := runner.New(runner.RunTypeShort, root, tasks, taskName, mw)
+	if err != nil {
+		errMsg := fmt.Sprintf("creating runner: %v", err)
+		reporter.FinishJob(taskName, FinishJobResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		mw.CloseAll()
+		return fmt.Errorf("creating runner: %w", err)
+	}
+
+	err = run.Start(ctx)
 	duration := time.Since(start).Milliseconds()
+
+	mw.CloseAll()
 
 	status := "success"
 	errMsg := ""
 	if err != nil {
 		status = "failed"
 		errMsg = err.Error()
-		slog.Error("task failed", "task", taskName, "error", err, "output", string(output))
 	}
 
-	reporter.FinishJob(jobName, FinishJobResult{
+	reporter.FinishJob(taskName, FinishJobResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,
 	})
 
 	if err != nil {
-		return fmt.Errorf("%s: %w\n%s", taskName, err, string(output))
+		return fmt.Errorf("%s: %w", taskName, err)
 	}
 	return nil
+}
+
+// streamMultiWriter implements runner.MultiWriter, returning a StreamWriter
+// per task ID so each task's output is streamed separately.
+type streamMultiWriter struct {
+	reporter *Reporter
+	jobName  string
+	writers  map[string]*StreamWriter
+}
+
+func (m *streamMultiWriter) Writer(id string) io.Writer {
+	sw := m.reporter.StreamWriter(m.jobName, id)
+	m.writers[id] = sw
+	return sw
+}
+
+func (m *streamMultiWriter) CloseAll() {
+	for _, sw := range m.writers {
+		sw.Close()
+	}
 }

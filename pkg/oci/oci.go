@@ -31,7 +31,7 @@ type ImageConfig struct {
 // the leading slash is stripped for the tar entry name.
 func BinaryLayer(binaryPath, destPath string) (v1.Layer, error) {
 	if binaryPath == "" {
-		return tarball.LayerFromReader(emptyTar())
+		return layerFromTar(emptyTar())
 	}
 
 	data, err := os.ReadFile(binaryPath)
@@ -57,7 +57,7 @@ func BinaryLayer(binaryPath, destPath string) (v1.Layer, error) {
 		return nil, fmt.Errorf("closing tar writer: %w", err)
 	}
 
-	return tarball.LayerFromReader(&buf)
+	return layerFromTar(buf.Bytes())
 }
 
 // FilesLayer creates a tar layer with multiple files. Keys in mappings are
@@ -65,7 +65,7 @@ func BinaryLayer(binaryPath, destPath string) (v1.Layer, error) {
 // (leading slashes are stripped for tar entry names).
 func FilesLayer(mappings map[string]string) (v1.Layer, error) {
 	if len(mappings) == 0 {
-		return tarball.LayerFromReader(emptyTar())
+		return layerFromTar(emptyTar())
 	}
 
 	var buf bytes.Buffer
@@ -94,7 +94,7 @@ func FilesLayer(mappings map[string]string) (v1.Layer, error) {
 		return nil, fmt.Errorf("closing tar writer: %w", err)
 	}
 
-	return tarball.LayerFromReader(&buf)
+	return layerFromTar(buf.Bytes())
 }
 
 // BuildAppImage composes a container image from a base image, a binary layer,
@@ -158,10 +158,17 @@ func Push(img v1.Image, ref string, opts ...remote.Option) error {
 	return remote.Write(r, img, opts...)
 }
 
-// emptyTar returns a reader for an empty but valid tar archive.
-func emptyTar() io.Reader {
+// layerFromTar creates a layer from tar bytes using LayerFromOpener.
+func layerFromTar(data []byte) (v1.Layer, error) {
+	return tarball.LayerFromOpener(func() (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(data)), nil
+	})
+}
+
+// emptyTar returns the bytes of an empty but valid tar archive.
+func emptyTar() []byte {
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
 	tw.Close()
-	return &buf
+	return buf.Bytes()
 }

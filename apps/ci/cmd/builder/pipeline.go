@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -14,7 +15,7 @@ type Pipeline struct {
 }
 
 // Run executes the pipeline steps in order.
-func (p *Pipeline) Run() error {
+func (p *Pipeline) Run(ctx context.Context) error {
 	root := p.Config.Root
 
 	// Step 1: Fetch latest code.
@@ -25,7 +26,7 @@ func (p *Pipeline) Run() error {
 
 	// Step 2: Run generate + test.
 	slog.Info("running tests")
-	if err := RunTests(root, p.Reporter); err != nil {
+	if err := RunTests(ctx, root, p.Reporter); err != nil {
 		return fmt.Errorf("tests failed: %w", err)
 	}
 
@@ -54,10 +55,15 @@ func (p *Pipeline) fetchCode() error {
 	start := time.Now()
 	p.Reporter.StartJob("fetch", "fetch")
 
+	w := p.Reporter.StreamWriter("fetch", "output")
+	defer w.Close()
+
 	// Try jj first, fall back to git.
-	err := p.tryJJFetch()
+	fmt.Fprintf(w, "=== fetching code\n")
+	err := p.tryFetch(w, "jj", "git", "fetch")
 	if err != nil {
-		err = p.tryGitFetch()
+		fmt.Fprintf(w, "jj fetch failed, trying git: %v\n", err)
+		err = p.tryFetch(w, "git", "fetch", "origin")
 	}
 
 	duration := time.Since(start).Milliseconds()
@@ -66,6 +72,9 @@ func (p *Pipeline) fetchCode() error {
 	if err != nil {
 		status = "failed"
 		errMsg = err.Error()
+		fmt.Fprintf(w, "=== fetch failed: %s\n", errMsg)
+	} else {
+		fmt.Fprintf(w, "=== fetched in %dms\n", duration)
 	}
 
 	p.Reporter.FinishJob("fetch", FinishJobResult{
@@ -77,14 +86,10 @@ func (p *Pipeline) fetchCode() error {
 	return err
 }
 
-func (p *Pipeline) tryJJFetch() error {
-	cmd := exec.Command("jj", "git", "fetch")
+func (p *Pipeline) tryFetch(w *StreamWriter, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
 	cmd.Dir = p.Config.Root
-	return cmd.Run()
-}
-
-func (p *Pipeline) tryGitFetch() error {
-	cmd := exec.Command("git", "fetch", "origin")
-	cmd.Dir = p.Config.Root
+	cmd.Stdout = w
+	cmd.Stderr = w
 	return cmd.Run()
 }

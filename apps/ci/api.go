@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"monks.co/pkg/reqlog"
@@ -11,19 +14,22 @@ import (
 )
 
 // RegisterAPI registers the builder callback API routes.
-func RegisterAPI(mux *serve.Mux, model *Model, smsFunc func(string)) {
-	api := &apiHandler{model: model, sendSMS: smsFunc}
+func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(string)) {
+	api := &apiHandler{model: model, outputDir: outputDir, sendSMS: smsFunc}
 
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/start", api.startJob)
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/done", api.finishJob)
+	mux.HandleFunc("POST /api/runs/{runID}/jobs/{name}/output/{stream}", api.appendOutput)
 	mux.HandleFunc("PUT /api/runs/{runID}/done", api.finishRun)
+	mux.HandleFunc("POST /runs/{runID}/mark-dead", api.markDead)
 	mux.HandleFunc("GET /api/runs/{runID}/base-sha", api.getBaseSHA)
 	mux.HandleFunc("POST /api/runs/{runID}/deployments", api.recordDeployment)
 }
 
 type apiHandler struct {
-	model   *Model
-	sendSMS func(string)
+	model     *Model
+	outputDir string
+	sendSMS   func(string)
 }
 
 func (a *apiHandler) parseRunID(r *http.Request) (int64, error) {
@@ -51,7 +57,8 @@ func (a *apiHandler) startJob(w http.ResponseWriter, r *http.Request) {
 	reqlog.Set(r.Context(), "api.run_id", runID)
 	reqlog.Set(r.Context(), "api.job_name", name)
 
-	job, err := a.model.StartJob(runID, req.Kind, name)
+	outputPath := filepath.Join(a.outputDir, fmt.Sprintf("%d", runID), name)
+	job, err := a.model.StartJob(runID, req.Kind, name, outputPath)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("starting job: %v", err), http.StatusInternalServerError)
 		return
@@ -61,6 +68,36 @@ func (a *apiHandler) startJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]any{
 		"job_id": job.ID,
 	})
+}
+
+func (a *apiHandler) appendOutput(w http.ResponseWriter, r *http.Request) {
+	runID, err := a.parseRunID(r)
+	if err != nil {
+		http.Error(w, "invalid run ID", http.StatusBadRequest)
+		return
+	}
+	name := r.PathValue("name")
+	stream := r.PathValue("stream")
+
+	dir := filepath.Join(a.outputDir, fmt.Sprintf("%d", runID), name)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		http.Error(w, fmt.Sprintf("creating output dir: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	f, err := os.OpenFile(filepath.Join(dir, stream+".log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("opening output file: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	if _, err := io.Copy(f, r.Body); err != nil {
+		http.Error(w, fmt.Sprintf("writing output: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type finishJobRequest struct {
@@ -208,6 +245,32 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (a *apiHandler) markDead(w http.ResponseWriter, r *http.Request) {
+	runID, err := a.parseRunID(r)
+	if err != nil {
+		http.Error(w, "invalid run ID", http.StatusBadRequest)
+		return
+	}
+
+	run, _, err := a.model.RunWithJobs(runID)
+	if err != nil {
+		http.Error(w, "run not found", http.StatusNotFound)
+		return
+	}
+
+	if run.Status != "running" {
+		http.Error(w, "can only mark running runs as dead", http.StatusBadRequest)
+		return
+	}
+
+	if err := a.model.FinishRun(runID, "dead", "manually marked as dead"); err != nil {
+		http.Error(w, fmt.Sprintf("marking run dead: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("runs/%d", runID), http.StatusFound)
 }
 
 func (a *apiHandler) getBaseSHA(w http.ResponseWriter, r *http.Request) {

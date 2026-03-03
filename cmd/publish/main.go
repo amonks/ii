@@ -35,5 +35,5 @@ func run() error {
 		return nil
 	}
 
-	return publish.Run(root, cfg, *dryRun)
+	return publish.Run(os.Stdout, root, cfg, *dryRun)
 }

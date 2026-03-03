@@ -164,7 +164,7 @@ func TestJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job, err := m.StartJob(run.ID, "test", "go-test")
+	job, err := m.StartJob(run.ID, "test", "go-test", "/output/1/go-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func TestJobs(t *testing.T) {
 		t.Errorf("expected status in_progress, got %s", job.Status)
 	}
 
-	if err := m.FinishJob(job.ID, "success", 1234, "", "/output/test.log"); err != nil {
+	if err := m.FinishJob(job.ID, "success", 1234, "", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -199,7 +199,7 @@ func TestDeployJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job, err := m.StartJob(run.ID, "deploy", "deploy-dogs")
+	job, err := m.StartJob(run.ID, "deploy", "deploy-dogs", "/output/1/deploy-dogs")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -30,9 +31,11 @@ func run() error {
 		Reporter: reporter,
 	}
 
+	ctx := context.Background()
+
 	status := "success"
 	var pipelineErr error
-	if err := pipeline.Run(); err != nil {
+	if err := pipeline.Run(ctx); err != nil {
 		status = "failed"
 		pipelineErr = err
 		slog.Error("pipeline failed", "error", err)

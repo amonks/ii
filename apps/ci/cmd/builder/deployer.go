@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -62,12 +63,15 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	jobName := "deploy-" + app
 	reporter.StartJob(jobName, "deploy")
 
+	w := reporter.StreamWriter(jobName, "output")
+	defer w.Close()
+
 	start := time.Now()
 
 	// Special case: if apps/ci itself is affected, use fly deploy
 	// with the builder Dockerfile (which needs remote builder).
 	if app == "ci" {
-		err := deployCIBuilder(root)
+		err := deployCIBuilder(root, w)
 		duration := time.Since(start).Milliseconds()
 		status := "success"
 		errMsg := ""
@@ -87,6 +91,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	imageRef := fmt.Sprintf("registry.fly.io/monks-%s:%s", app, sha)
 
 	// Step 1: Compile the binary.
+	fmt.Fprintf(w, "=== compiling %s\n", app)
 	compileStart := time.Now()
 	binaryPath := filepath.Join(os.TempDir(), "bin", app)
 	os.MkdirAll(filepath.Dir(binaryPath), 0755)
@@ -94,21 +99,27 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	cmd := exec.Command("go", "build", "-o", binaryPath, fmt.Sprintf("./apps/%s", app))
 	cmd.Dir = root
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=1", "MONKS_ROOT="+root)
-	if output, err := cmd.CombinedOutput(); err != nil {
+	cmd.Stdout = w
+	cmd.Stderr = w
+	if err := cmd.Run(); err != nil {
+		errMsg := fmt.Sprintf("compile: %v", err)
+		fmt.Fprintf(w, "=== compile failed: %s\n", errMsg)
 		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
-			Error:      fmt.Sprintf("compile: %v\n%s", err, string(output)),
+			Error:      errMsg,
 		})
 		return fmt.Errorf("compiling %s: %w", app, err)
 	}
 	compileMs = time.Since(compileStart).Milliseconds()
+	fmt.Fprintf(w, "=== compiled in %dms\n", compileMs)
 
 	if info, err := os.Stat(binaryPath); err == nil {
 		binaryBytes = info.Size()
 	}
 
 	// Step 2: Build OCI image.
+	fmt.Fprintf(w, "=== building OCI image\n")
 	appCfg := cfg.Apps[app]
 
 	files := map[string]string{}
@@ -144,33 +155,40 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 		oci.FlyAuthOption(flyToken),
 	)
 	if err != nil {
-		slog.Warn("failed to pull base image, using empty", "error", err)
+		fmt.Fprintf(w, "=== warning: failed to pull base image, using empty: %v\n", err)
 		baseImage = emptyImage()
 	}
 
 	img, err := oci.BuildAppImage(baseImage, binaryPath, files, imgCfg)
 	if err != nil {
+		errMsg := fmt.Sprintf("building image: %v", err)
+		fmt.Fprintf(w, "=== image build failed: %s\n", errMsg)
 		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
-			Error:      fmt.Sprintf("building image: %v", err),
+			Error:      errMsg,
 		})
 		return fmt.Errorf("building image for %s: %w", app, err)
 	}
 
 	// Step 3: Push to registry.
+	fmt.Fprintf(w, "=== pushing %s\n", imageRef)
 	pushStart := time.Now()
 	if err := oci.Push(img, imageRef, oci.FlyAuthOption(flyToken)); err != nil {
+		errMsg := fmt.Sprintf("pushing image: %v", err)
+		fmt.Fprintf(w, "=== push failed: %s\n", errMsg)
 		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
-			Error:      fmt.Sprintf("pushing image: %v", err),
+			Error:      errMsg,
 		})
 		return fmt.Errorf("pushing image for %s: %w", app, err)
 	}
 	pushMs = time.Since(pushStart).Milliseconds()
+	fmt.Fprintf(w, "=== pushed in %dms\n", pushMs)
 
 	// Step 4: Deploy via flyctl.
+	fmt.Fprintf(w, "=== deploying %s\n", app)
 	deployStart := time.Now()
 	tomlPath := filepath.Join("apps", app, "fly.toml")
 	deployCmd := exec.Command("fly", "deploy",
@@ -178,15 +196,20 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 		"-c", tomlPath,
 	)
 	deployCmd.Dir = root
-	if output, err := deployCmd.CombinedOutput(); err != nil {
+	deployCmd.Stdout = w
+	deployCmd.Stderr = w
+	if err := deployCmd.Run(); err != nil {
+		errMsg := fmt.Sprintf("fly deploy: %v", err)
+		fmt.Fprintf(w, "=== deploy failed: %s\n", errMsg)
 		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
-			Error:      fmt.Sprintf("fly deploy: %v\n%s", err, string(output)),
+			Error:      errMsg,
 		})
 		return fmt.Errorf("deploying %s: %w", app, err)
 	}
 	deployMs = time.Since(deployStart).Milliseconds()
+	fmt.Fprintf(w, "=== deployed in %dms\n", deployMs)
 
 	totalDuration := time.Since(start).Milliseconds()
 
@@ -206,15 +229,16 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 
 	reporter.RecordDeployment(app, sha, imageRef, binaryBytes)
 
-	slog.Info("deployed", "app", app, "sha", sha[:7], "duration_ms", totalDuration)
+	fmt.Fprintf(w, "=== done (%dms total)\n", totalDuration)
 	return nil
 }
 
-func deployCIBuilder(root string) error {
+func deployCIBuilder(root string, w io.Writer) error {
+	fmt.Fprintf(w, "=== deploying CI builder (remote build)\n")
 	cmd := exec.Command("fly", "deploy", "-c", "apps/ci/builder.fly.toml")
 	cmd.Dir = root
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = w
+	cmd.Stderr = w
 	return cmd.Run()
 }
 

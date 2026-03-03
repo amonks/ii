@@ -190,14 +190,15 @@ func (m *Model) HasRunningRun() (bool, error) {
 }
 
 // StartJob creates a new job and marks it as in_progress.
-func (m *Model) StartJob(runID int64, kind, name string) (*Job, error) {
+func (m *Model) StartJob(runID int64, kind, name, outputPath string) (*Job, error) {
 	t := now()
 	job := Job{
-		RunID:     runID,
-		Kind:      kind,
-		Name:      name,
-		StartedAt: &t,
-		Status:    "in_progress",
+		RunID:      runID,
+		Kind:       kind,
+		Name:       name,
+		StartedAt:  &t,
+		Status:     "in_progress",
+		OutputPath: &outputPath,
 	}
 	if err := m.db.Create(&job).Error; err != nil {
 		return nil, err
