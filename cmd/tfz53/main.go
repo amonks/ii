@@ -63,12 +63,12 @@ func generateForZone(domain, zoneFilePath string) string {
 			lastComment = ""
 			continue
 		}
-		if strings.HasPrefix(line, ";;") {
-			lastComment = strings.TrimSpace(strings.TrimPrefix(line, ";;"))
+		if after, ok := strings.CutPrefix(line, ";;"); ok {
+			lastComment = strings.TrimSpace(after)
 			continue
 		}
-		if strings.HasPrefix(line, ";") {
-			lastComment = strings.TrimSpace(strings.TrimPrefix(line, ";"))
+		if after, ok := strings.CutPrefix(line, ";"); ok {
+			lastComment = strings.TrimSpace(after)
 			continue
 		}
 

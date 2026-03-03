@@ -98,6 +98,40 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
           MONKS_ROOT: ${{ github.workspace }}
 
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.0"
+          cache: false
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
+          restore-keys: |
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ runner.os }}-
+
+      - uses: superfly/flyctl-action/setup-flyctl@master
+
+      - name: Deploy changed apps
+        run: go run ./cmd/deploy --base ${{ github.event.before }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          MONKS_ROOT: ${{ github.workspace }}
+
   terraform:
     needs: test
     runs-on: ubuntu-latest

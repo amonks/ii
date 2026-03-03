@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"monks.co/pkg/depgraph"
 )
 
 // topoSort returns the public directories in dependency order
@@ -242,7 +244,7 @@ func filterRepo(root string, dirs []string, mirror string) error {
 
 // publish runs the full publish flow for all public packages.
 func publish(root string, cfg *PublishConfig, dryRun bool) error {
-	graph, err := BuildDepGraph(root)
+	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
 		return fmt.Errorf("building dep graph: %w", err)
 	}

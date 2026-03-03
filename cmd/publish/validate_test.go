@@ -6,15 +6,16 @@ import (
 	"strings"
 	"testing"
 
+	"monks.co/pkg/depgraph"
 	"monks.co/pkg/env"
 )
 
 func TestValidatePublicDeps(t *testing.T) {
 	graph := map[string][]string{
-		"pkg/serve":    {"pkg/middleware"},
+		"pkg/serve":      {"pkg/middleware"},
 		"pkg/middleware": {"pkg/reqlog"},
-		"pkg/reqlog":   {},
-		"pkg/set":      {},
+		"pkg/reqlog":     {},
+		"pkg/set":        {},
 	}
 
 	t.Run("all deps public", func(t *testing.T) {
@@ -124,7 +125,7 @@ func TestTransitiveDeps(t *testing.T) {
 		"pkg/c": {},
 	}
 
-	deps := TransitiveDeps(graph, "pkg/a")
+	deps := depgraph.TransitiveDeps(graph, "pkg/a")
 	if !deps["pkg/b"] || !deps["pkg/c"] {
 		t.Errorf("expected pkg/b and pkg/c, got %v", deps)
 	}
@@ -153,12 +154,12 @@ func TestResolveImportDir(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.importPath, func(t *testing.T) {
-			dir, ok := resolveImportDir(tt.importPath, modPathToDir)
+			dir, ok := depgraph.ResolveImportDir(tt.importPath, modPathToDir)
 			if ok != tt.wantOK {
-				t.Fatalf("resolveImportDir(%q) ok = %v, want %v", tt.importPath, ok, tt.wantOK)
+				t.Fatalf("ResolveImportDir(%q) ok = %v, want %v", tt.importPath, ok, tt.wantOK)
 			}
 			if dir != tt.wantDir {
-				t.Errorf("resolveImportDir(%q) = %q, want %q", tt.importPath, dir, tt.wantDir)
+				t.Errorf("ResolveImportDir(%q) = %q, want %q", tt.importPath, dir, tt.wantDir)
 			}
 		})
 	}
@@ -195,7 +196,7 @@ var _ = util.Y
 	os.WriteFile(filepath.Join(utilDir, "util.go"),
 		[]byte("package util\n"), 0644)
 
-	graph, err := BuildDepGraph(root)
+	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +243,7 @@ import "monks.co/mylib"
 var _ = mylib.X
 `), 0644)
 
-	graph, err := BuildDepGraph(root)
+	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +257,7 @@ var _ = mylib.X
 
 func TestBuildDepGraphReal(t *testing.T) {
 	root := env.InMonksRoot()
-	graph, err := BuildDepGraph(root)
+	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +302,7 @@ func TestPublishInvariants(t *testing.T) {
 
 	publicDirs := cfg.PublicDirs()
 
-	graph, err := BuildDepGraph(root)
+	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
 		t.Fatal(err)
 	}

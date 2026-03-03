@@ -14,7 +14,10 @@ Apps run on different hosts but share a tailnet. The proxy app (`apps/proxy`) ha
 
 ### Deployment
 
-Deploy apps from the repo root:
+Fly apps are automatically deployed by CI on pushes to `main`. Only
+apps affected by the change are deployed — see [deploy spec](deploy.md).
+
+Manual deployment from the repo root:
 
 ```
 fly deploy -c apps/$app/fly.toml
@@ -39,6 +42,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [observability](observability.md) | The reqlog → logsclient → logs pipeline, request tracing, uptime monitoring, Prometheus metrics |
 | [app-boilerplate](app-boilerplate.md) | Standard app startup pattern, shared packages, environment variables, deployment, templating |
 | [publish](publish.md) | Publishing monorepo subtrees as public GitHub mirrors, validation, vanity imports |
+| [deploy](deploy.md) | Automated Fly.io deployment with change detection and dependency graph |
 | [terraform](terraform.md) | AWS infrastructure: DNS for 15 domains, SES email, CloudFront CDN, IAM, remote state |
 
 ## Apps
@@ -81,6 +85,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [pkg-serve](pkg-serve.md) | [pkg/serve/](../pkg/serve/) | HTTP mux with base-path awareness, error helpers, JSON encoding |
 | [pkg-tls](pkg-tls.md) | [pkg/tls/](../pkg/tls/) | ACME TLS certificate management via CertMagic |
 | [pkg-logs](pkg-logs.md) | [pkg/logs/](../pkg/logs/) | SQLite log storage and adaptive query engine |
+| [pkg-depgraph](pkg-depgraph.md) | [pkg/depgraph/](../pkg/depgraph/) | Dependency graph builder for monks.co/* modules |
 
 ### Domain-Specific
 

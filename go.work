@@ -31,8 +31,10 @@ use (
 	./apps/youtube
 	./cmd/beetman
 	./cmd/compressor
+	./cmd/deploy
 	./cmd/publish
 	./cmd/taskmaker
+	./cmd/tfz53
 	./pkg/aranet4
 	./pkg/aschrome
 	./pkg/auth
@@ -41,6 +43,7 @@ use (
 	./pkg/config
 	./pkg/crdt
 	./pkg/database
+	./pkg/depgraph
 	./pkg/dogs
 	./pkg/email
 	./pkg/emailclient
