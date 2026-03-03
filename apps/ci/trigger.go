@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -141,7 +142,7 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 		},
 	}
 
-	info, err := h.fly.CreateMachine(nil, input)
+	info, err := h.fly.CreateMachine(context.Background(), input)
 	if err != nil {
 		slog.Error("creating builder machine", "error", err, "run_id", run.ID)
 		h.model.FinishRun(run.ID, "failed")

@@ -60,7 +60,7 @@ func layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " — CI</title><style>\n\t\t\t\tbody { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }\n\t\t\t\ttable { border-collapse: collapse; width: 100%; }\n\t\t\t\tth, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }\n\t\t\t\tth { font-weight: 600; }\n\t\t\t\ta { color: #0066cc; }\n\t\t\t\t.status-success { color: #22863a; }\n\t\t\t\t.status-failed { color: #cb2431; }\n\t\t\t\t.status-running { color: #dbab09; }\n\t\t\t\t.status-pending { color: #6a737d; }\n\t\t\t\tnav { margin-bottom: 1rem; }\n\t\t\t\tnav a { margin-right: 1rem; }\n\t\t\t\th1 { margin-bottom: 0.5rem; }\n\t\t\t\t.mono { font-family: monospace; }\n\t\t\t\t.small { font-size: 0.875rem; color: #6a737d; }\n\t\t\t</style></head><body><nav><a href=\"/\">Runs</a> <a href=\"/deployments\">Deployments</a></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " — CI</title><style>\n\t\t\t\tbody { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }\n\t\t\t\ttable { border-collapse: collapse; width: 100%; }\n\t\t\t\tth, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }\n\t\t\t\tth { font-weight: 600; }\n\t\t\t\ta { color: #0066cc; }\n\t\t\t\t.status-success { color: #22863a; }\n\t\t\t\t.status-failed { color: #cb2431; }\n\t\t\t\t.status-running { color: #dbab09; }\n\t\t\t\t.status-pending { color: #6a737d; }\n\t\t\t\tnav { margin-bottom: 1rem; }\n\t\t\t\tnav a { margin-right: 1rem; }\n\t\t\t\th1 { margin-bottom: 0.5rem; }\n\t\t\t\t.mono { font-family: monospace; }\n\t\t\t\t.small { font-size: 0.875rem; color: #6a737d; }\n\t\t\t</style></head><body><nav><a href=\"./\">Runs</a> <a href=\"deployments\">Deployments</a></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -193,9 +193,9 @@ func indexPage(runs []Run, deployments []Deployment) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var9 templ.SafeURL
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/runs/%d", r.ID)))
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("runs/%d", r.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 88, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 88, Col: 64}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -208,7 +208,7 @@ func indexPage(runs []Run, deployments []Deployment) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#%d", r.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 88, Col: 94}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 88, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -584,9 +584,9 @@ func runPage(run *Run, jobs []Job) templ.Component {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var35 templ.SafeURL
-						templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/output/%d/%s", run.ID, j.Name)))
+						templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("output/%d/%s", run.ID, j.Name)))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 145, Col: 78}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 145, Col: 77}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 						if templ_7745c5c3_Err != nil {

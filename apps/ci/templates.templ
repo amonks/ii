@@ -32,8 +32,8 @@ templ layout(title string) {
 		</head>
 		<body>
 			<nav>
-				<a href="/">Runs</a>
-				<a href="/deployments">Deployments</a>
+				<a href="./">Runs</a>
+				<a href="deployments">Deployments</a>
 			</nav>
 			{ children... }
 		</body>
@@ -85,7 +85,7 @@ templ indexPage(runs []Run, deployments []Deployment) {
 				<tbody>
 					for _, r := range runs {
 						<tr>
-							<td><a href={ templ.SafeURL(fmt.Sprintf("/runs/%d", r.ID)) }>{ fmt.Sprintf("#%d", r.ID) }</a></td>
+							<td><a href={ templ.SafeURL(fmt.Sprintf("runs/%d", r.ID)) }>{ fmt.Sprintf("#%d", r.ID) }</a></td>
 							<td class={ statusClass(r.Status) }>{ r.Status }</td>
 							<td class="mono">{ shortSHA(r.HeadSHA) }</td>
 							<td>{ r.Trigger }</td>
@@ -142,7 +142,7 @@ templ runPage(run *Run, jobs []Job) {
 							</td>
 							<td>
 								if j.OutputPath != nil {
-									<a href={ templ.SafeURL(fmt.Sprintf("/output/%d/%s", run.ID, j.Name)) }>view</a>
+									<a href={ templ.SafeURL(fmt.Sprintf("output/%d/%s", run.ID, j.Name)) }>view</a>
 								}
 							</td>
 						</tr>
