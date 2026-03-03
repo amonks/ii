@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"monks.co/pkg/flyapi"
 	"monks.co/pkg/gzip"
@@ -40,6 +41,7 @@ func run() error {
 	}
 
 	mux := serve.NewMux()
+	hub := NewOutputHub()
 
 	outputDir := filepath.Join(envOr("MONKS_DATA", "/data"), "output", "runs")
 
@@ -48,7 +50,7 @@ func run() error {
 	mux.HandleFunc("GET /runs/{id}", dashboardRun(model, outputDir))
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
 	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
-	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir))
+	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))
 
 	// Trigger endpoint.
 	flyToken := os.Getenv("FLY_API_TOKEN")
@@ -78,7 +80,7 @@ func run() error {
 	// Builder callback API.
 	RegisterAPI(mux, model, outputDir, func(msg string) {
 		sendSMS(msg)
-	})
+	}, hub)
 
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
@@ -110,6 +112,12 @@ func dashboardIndex(model *Model) http.HandlerFunc {
 	}
 }
 
+// StreamInfo holds metadata about a single output stream for template rendering.
+type StreamInfo struct {
+	Name     string
+	LastLine string
+}
+
 func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
@@ -126,7 +134,7 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 		}
 
 		// Collect output streams for each job.
-		streams := map[string][]string{}
+		streams := map[string][]StreamInfo{}
 		for _, j := range jobs {
 			if j.OutputPath == nil {
 				continue
@@ -137,7 +145,9 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 				continue
 			}
 			for _, e := range entries {
-				streams[j.Name] = append(streams[j.Name], strings.TrimSuffix(e.Name(), ".log"))
+				name := strings.TrimSuffix(e.Name(), ".log")
+				lastLine := readLastLine(filepath.Join(dir, e.Name()))
+				streams[j.Name] = append(streams[j.Name], StreamInfo{Name: name, LastLine: lastLine})
 			}
 		}
 
@@ -151,6 +161,25 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html")
 		runPage(run, jobs, streams, logs).Render(r.Context(), w)
 	}
+}
+
+// readLastLine returns the last non-empty line of a file, truncated to 120 chars.
+func readLastLine(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil || len(data) == 0 {
+		return ""
+	}
+	s := strings.TrimRight(string(data), "\n")
+	idx := strings.LastIndex(s, "\n")
+	line := s
+	if idx >= 0 {
+		line = s[idx+1:]
+	}
+	if utf8.RuneCountInString(line) > 120 {
+		runes := []rune(line)
+		line = string(runes[:120]) + "..."
+	}
+	return line
 }
 
 func dashboardDeployments(model *Model) http.HandlerFunc {
@@ -194,20 +223,53 @@ func serveJobStreams(outputDir string) http.HandlerFunc {
 	}
 }
 
-func serveStream(outputDir string) http.HandlerFunc {
+func serveStream(outputDir string, hub *OutputHub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		runID := r.PathValue("runID")
 		jobName := r.PathValue("jobName")
 		stream := r.PathValue("stream")
 
 		filePath := filepath.Clean(filepath.Join(outputDir, runID, jobName, stream+".log"))
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			http.Error(w, "stream not found", http.StatusNotFound)
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+
+		// Write existing file content.
+		if data, err := os.ReadFile(filePath); err == nil && len(data) > 0 {
+			w.Write(data)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		}
+
+		// If not streaming requested, return now.
+		if r.URL.Query().Get("stream") != "1" {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/plain")
-		http.ServeFile(w, r, filePath)
+		// Subscribe to live updates.
+		key := fmt.Sprintf("%s/%s/%s", runID, jobName, stream)
+		ch, unsub := hub.Subscribe(key)
+		defer unsub()
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			return
+		}
+
+		ctx := r.Context()
+		for {
+			select {
+			case data, ok := <-ch:
+				if !ok {
+					return
+				}
+				w.Write(data)
+				flusher.Flush()
+			case <-ctx.Done():
+				return
+			}
+		}
 	}
 }
 

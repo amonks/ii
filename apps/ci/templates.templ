@@ -100,7 +100,7 @@ templ indexPage(runs []Run, deployments []Deployment) {
 	}
 }
 
-templ runPage(run *Run, jobs []Job, streams map[string][]string, logs []LogEvent) {
+templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogEvent) {
 	@layout(fmt.Sprintf("Run #%d", run.ID)) {
 		<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
 		<p>
@@ -136,7 +136,6 @@ templ runPage(run *Run, jobs []Job, streams map[string][]string, logs []LogEvent
 						<th>Kind</th>
 						<th>Status</th>
 						<th>Duration</th>
-						<th>Output</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -150,19 +149,27 @@ templ runPage(run *Run, jobs []Job, streams map[string][]string, logs []LogEvent
 									{ fmt.Sprintf("%dms", *j.DurationMs) }
 								}
 							</td>
-							<td>
-								for i, s := range streams[j.Name] {
-									if i > 0 {
-										{ " " }
-									}
-									<a href={ templ.SafeURL(fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s)) }>{ s }</a>
-								}
-							</td>
 						</tr>
 						if j.Error != nil {
 							<tr>
-								<td colspan="5">
+								<td colspan="4">
 									<pre class="status-failed small">{ *j.Error }</pre>
+								</td>
+							</tr>
+						}
+						for _, s := range streams[j.Name] {
+							<tr>
+								<td colspan="4" style="padding: 0 0.5rem;">
+									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) }>
+										<summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
+											<span class={ statusClass(j.Status) }>&#x25cf;</span>
+											{ " " }{ s.Name }
+											if s.LastLine != "" {
+												<span class="stream-last-line" style="color: #6a737d; margin-left: 0.5rem;">{ s.LastLine }</span>
+											}
+										</summary>
+										<pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>
+									</details>
 								</td>
 							</tr>
 						}
@@ -200,7 +207,70 @@ templ runPage(run *Run, jobs []Job, streams map[string][]string, logs []LogEvent
 				</tbody>
 			</table>
 		}
+
+		if run.Status == "running" {
+			@streamScript()
+		} else {
+			@staticStreamScript()
+		}
 	}
+}
+
+templ streamScript() {
+	<script>
+		document.querySelectorAll('.stream-viewer').forEach(function(details) {
+			var url = details.dataset.streamUrl;
+			var pre = details.querySelector('.stream-output');
+			var lastLineEl = details.querySelector('.stream-last-line');
+			var loaded = false;
+
+			details.addEventListener('toggle', function() {
+				if (!details.open || loaded) return;
+				loaded = true;
+				fetch(url + '?stream=1').then(function(resp) {
+					var reader = resp.body.getReader();
+					var decoder = new TextDecoder();
+					function read() {
+						reader.read().then(function(result) {
+							if (result.done) return;
+							var text = decoder.decode(result.value, {stream: true});
+							pre.textContent += text;
+							pre.scrollTop = pre.scrollHeight;
+							var lines = text.split('\n');
+							for (var i = lines.length - 1; i >= 0; i--) {
+								if (lines[i].trim() !== '') {
+									if (lastLineEl) lastLineEl.textContent = lines[i].length > 120 ? lines[i].substring(0, 120) + '...' : lines[i];
+									break;
+								}
+							}
+							read();
+						});
+					}
+					read();
+				});
+			});
+		});
+	</script>
+}
+
+templ staticStreamScript() {
+	<script>
+		document.querySelectorAll('.stream-viewer').forEach(function(details) {
+			var url = details.dataset.streamUrl;
+			var pre = details.querySelector('.stream-output');
+			var loaded = false;
+
+			details.addEventListener('toggle', function() {
+				if (!details.open || loaded) return;
+				loaded = true;
+				fetch(url).then(function(resp) {
+					return resp.text();
+				}).then(function(text) {
+					pre.textContent = text;
+				});
+			});
+		});
+	</script>
 }
 
 templ deploymentsPage(deployments []Deployment) {

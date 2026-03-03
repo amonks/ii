@@ -76,15 +76,37 @@ templ, etc).
 progress messages both write to the same `StreamWriter`. Deploy
 jobs log progress ("compiling X", "pushing image", "deploying").
 
+## Live Output Hub
+
+An in-memory pub/sub (`OutputHub` in `notify.go`) enables live-tailing
+of build output. Keys are `"runID/jobName/stream"`.
+
+- `appendOutput` API handler publishes bytes to the hub after writing
+  to disk
+- `finishJob` API handler calls `CloseAll(prefix)` to close all
+  subscriber channels for that job, signaling EOF
+- `serveStream` with `?stream=1` query param writes existing file
+  content then subscribes to the hub for live updates, flushing each
+  chunk as it arrives. The connection stays open until the channel
+  closes (job finished) or the client disconnects.
+
 ## Dashboard
 
 - `GET /` — recent runs, current deployments per app
-- `GET /runs/{id}` — jobs for this run with inline error messages,
-  output links, and a "Mark Dead" button for running runs
+- `GET /runs/{id}` — jobs for this run with inline output viewers.
+  Each stream is a collapsible `<details>` showing a status dot,
+  stream name, and last line preview. Expanding loads the stream
+  content. For running runs, JS uses `fetch()` with `getReader()`
+  to live-tail the `?stream=1` endpoint, auto-scrolling and updating
+  the last-line preview. For finished runs, a simple fetch loads the
+  full content on expand.
 - `GET /deployments` — deployment history
 - `GET /output/{runID}/{jobName}` — redirects to single stream or
   lists available streams for multi-stream jobs
-- `GET /output/{runID}/{jobName}/{stream}` — raw stream log file
+- `GET /output/{runID}/{jobName}/{stream}` — stream log content.
+  Without `?stream=1`, returns current file content. With `?stream=1`,
+  returns current content then live-tails new data until the job
+  finishes.
 
 ## Database
 

@@ -14,8 +14,8 @@ import (
 )
 
 // RegisterAPI registers the builder callback API routes.
-func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(string)) {
-	api := &apiHandler{model: model, outputDir: outputDir, sendSMS: smsFunc}
+func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(string), hub *OutputHub) {
+	api := &apiHandler{model: model, outputDir: outputDir, sendSMS: smsFunc, hub: hub}
 
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/start", api.startJob)
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/done", api.finishJob)
@@ -30,6 +30,7 @@ type apiHandler struct {
 	model     *Model
 	outputDir string
 	sendSMS   func(string)
+	hub       *OutputHub
 }
 
 func (a *apiHandler) parseRunID(r *http.Request) (int64, error) {
@@ -92,9 +93,20 @@ func (a *apiHandler) appendOutput(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	if _, err := io.Copy(f, r.Body); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("reading body: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := f.Write(body); err != nil {
 		http.Error(w, fmt.Sprintf("writing output: %v", err), http.StatusInternalServerError)
 		return
+	}
+
+	if a.hub != nil {
+		key := fmt.Sprintf("%d/%s/%s", runID, name, stream)
+		a.hub.Publish(key, body)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -171,6 +183,11 @@ func (a *apiHandler) finishJob(w http.ResponseWriter, r *http.Request) {
 	if err := a.model.FinishJob(jobID, req.Status, req.DurationMs, req.Error, req.OutputPath); err != nil {
 		http.Error(w, fmt.Sprintf("finishing job: %v", err), http.StatusInternalServerError)
 		return
+	}
+
+	if a.hub != nil {
+		prefix := fmt.Sprintf("%d/%s/", runID, name)
+		a.hub.CloseAll(prefix)
 	}
 
 	// Store kind-specific data.

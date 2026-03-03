@@ -17,7 +17,7 @@ func setupAPI(t *testing.T) (*Model, *serve.Mux, string) {
 	m := testModel(t)
 	mux := serve.NewMux()
 	outputDir := filepath.Join(t.TempDir(), "output")
-	RegisterAPI(mux, m, outputDir, nil)
+	RegisterAPI(mux, m, outputDir, nil, NewOutputHub())
 	return m, mux, outputDir
 }
 
@@ -111,7 +111,7 @@ func TestAPIFinishRunSMSOnFailure(t *testing.T) {
 	var smsMessage string
 	RegisterAPI(mux, m, outputDir, func(msg string) {
 		smsMessage = msg
-	})
+	}, NewOutputHub())
 
 	m.CreateRun("sha1", "base1", "webhook")
 
@@ -273,6 +273,134 @@ func TestAPIGetBaseSHA(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&resp)
 	if resp["base_sha"] != "base1" {
 		t.Errorf("expected base1, got %s", resp["base_sha"])
+	}
+}
+
+func TestAPIAppendOutputPublishesToHub(t *testing.T) {
+	m := testModel(t)
+	mux := serve.NewMux()
+	outputDir := filepath.Join(t.TempDir(), "output")
+	hub := NewOutputHub()
+	RegisterAPI(mux, m, outputDir, nil, hub)
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
+
+	// Subscribe before appending.
+	ch, unsub := hub.Subscribe("1/go-test/default")
+	defer unsub()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/runs/1/jobs/go-test/output/default", strings.NewReader("hello\n"))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", w.Code)
+	}
+
+	select {
+	case data := <-ch:
+		if string(data) != "hello\n" {
+			t.Errorf("expected %q, got %q", "hello\n", string(data))
+		}
+	default:
+		t.Error("expected data on hub channel")
+	}
+}
+
+func TestAPIFinishJobClosesHub(t *testing.T) {
+	m := testModel(t)
+	mux := serve.NewMux()
+	outputDir := filepath.Join(t.TempDir(), "output")
+	hub := NewOutputHub()
+	RegisterAPI(mux, m, outputDir, nil, hub)
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
+
+	// Subscribe to a stream for this job.
+	ch, _ := hub.Subscribe("1/go-test/default")
+
+	body := `{"status":"success","duration_ms":100}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/jobs/go-test/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Channel should be closed.
+	_, ok := <-ch
+	if ok {
+		t.Error("expected hub channel to be closed after finishJob")
+	}
+}
+
+func TestServeStreamReturnsExistingContent(t *testing.T) {
+	outputDir := t.TempDir()
+	hub := NewOutputHub()
+
+	// Create a stream file.
+	dir := filepath.Join(outputDir, "1", "go-test")
+	os.MkdirAll(dir, 0755)
+	os.WriteFile(filepath.Join(dir, "stdout.log"), []byte("line one\nline two\n"), 0644)
+
+	mux := serve.NewMux()
+	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))
+
+	req := httptest.NewRequest(http.MethodGet, "/output/1/go-test/stdout", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if w.Body.String() != "line one\nline two\n" {
+		t.Errorf("expected file content, got %q", w.Body.String())
+	}
+}
+
+func TestServeStreamEmptyFile(t *testing.T) {
+	outputDir := t.TempDir()
+	hub := NewOutputHub()
+
+	mux := serve.NewMux()
+	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))
+
+	// No file exists at all.
+	req := httptest.NewRequest(http.MethodGet, "/output/1/go-test/stdout", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestReadLastLine(t *testing.T) {
+	dir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{"single line", "hello", "hello"},
+		{"with trailing newline", "hello\n", "hello"},
+		{"multiple lines", "line1\nline2\nline3\n", "line3"},
+		{"empty", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(dir, tt.name+".log")
+			os.WriteFile(path, []byte(tt.content), 0644)
+			got := readLastLine(path)
+			if got != tt.want {
+				t.Errorf("readLastLine(%q) = %q, want %q", tt.content, got, tt.want)
+			}
+		})
 	}
 }
 
