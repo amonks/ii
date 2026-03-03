@@ -96,7 +96,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	binaryPath := filepath.Join(os.TempDir(), "bin", app, "app")
 	os.MkdirAll(filepath.Dir(binaryPath), 0755)
 
-	cmd := exec.Command("go", "build", "-ldflags", `-extldflags "-static"`, "-o", binaryPath, fmt.Sprintf("./apps/%s", app))
+	cmd := exec.Command("go", "build", "-o", binaryPath, fmt.Sprintf("./apps/%s", app))
 	cmd.Dir = root
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=1", "MONKS_ROOT="+root)
 	cmd.Stdout = w
