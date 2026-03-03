@@ -96,7 +96,7 @@ func loadConfig() (*Config, error) {
 		GHToken:         os.Getenv("GH_TOKEN"),
 		Root:            envOr("MONKS_ROOT", "/app"),
 		DataDir:         envOr("MONKS_DATA", "/data"),
-		BaseImageRef:    envOr("CI_BASE_IMAGE", "registry.fly.io/monks-ci-base:deployment-01KJT6Q0B6TT472BD19VH1EJB3"),
+		BaseImageRef:    envOr("CI_BASE_IMAGE", "registry.fly.io/monks-ci-base:deployment-01KJTTP8MXP6TJZ0QJKSE0D6R7"),
 		RepoURL:         repoURL(os.Getenv("GH_TOKEN")),
 	}
 	return cfg, nil
