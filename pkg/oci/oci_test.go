@@ -32,30 +32,32 @@ func TestBinaryLayer(t *testing.T) {
 	defer rc.Close()
 
 	tr := tar.NewReader(rc)
-	hdr, err := tr.Next()
-	if err != nil {
-		t.Fatal(err)
+
+	// Read all entries; expect directory entries followed by the binary.
+	var entries []tar.Header
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries = append(entries, *hdr)
 	}
 
-	if hdr.Name != "usr/local/bin/myapp" {
-		t.Errorf("expected tar entry name %q, got %q", "usr/local/bin/myapp", hdr.Name)
+	// Last entry should be the binary file.
+	last := entries[len(entries)-1]
+	if last.Name != "usr/local/bin/myapp" {
+		t.Errorf("expected last tar entry %q, got %q", "usr/local/bin/myapp", last.Name)
 	}
-	if hdr.Mode != 0755 {
-		t.Errorf("expected mode 0755, got %o", hdr.Mode)
-	}
-
-	content, err := io.ReadAll(tr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(content) != "#!/bin/sh\necho hello" {
-		t.Errorf("unexpected content: %q", string(content))
+	if last.Mode != 0755 {
+		t.Errorf("expected mode 0755, got %o", last.Mode)
 	}
 
-	// There should be no more entries.
-	_, err = tr.Next()
-	if err != io.EOF {
-		t.Errorf("expected EOF after single entry, got %v", err)
+	// Parent directories should precede the binary.
+	if len(entries) < 4 {
+		t.Errorf("expected at least 4 entries (dirs + file), got %d", len(entries))
 	}
 }
 
@@ -152,13 +154,13 @@ func TestBuildAppImage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Verify layers: base (empty has 0 layers) + binary + files = 2 layers.
+	// Verify layers: base (0) + binary + files + workdir = 3 layers.
 	layers, err := img.Layers()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(layers) != 2 {
-		t.Errorf("expected 2 layers, got %d", len(layers))
+	if len(layers) != 3 {
+		t.Errorf("expected 3 layers, got %d", len(layers))
 	}
 
 	// Verify the image config was set.

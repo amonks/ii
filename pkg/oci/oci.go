@@ -44,6 +44,12 @@ func BinaryLayer(binaryPath, destPath string) (v1.Layer, error) {
 
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
+
+	// Add parent directory entries so container runtimes can extract properly.
+	if err := writeDirEntries(tw, entryName); err != nil {
+		return nil, fmt.Errorf("writing dir entries: %w", err)
+	}
+
 	if err := tw.WriteHeader(&tar.Header{
 		Name: entryName,
 		Mode: 0755,
@@ -133,6 +139,18 @@ func BuildAppImage(base v1.Image, binary string, files map[string]string, cfg Im
 		}
 	}
 
+	// Add a directory layer for WorkDir if specified.
+	if cfg.WorkDir != "" {
+		dirLayer, err := dirLayer(cfg.WorkDir)
+		if err != nil {
+			return nil, fmt.Errorf("creating workdir layer: %w", err)
+		}
+		img, err = mutate.AppendLayers(img, dirLayer)
+		if err != nil {
+			return nil, fmt.Errorf("appending workdir layer: %w", err)
+		}
+	}
+
 	// Apply container config and platform.
 	imgCfg, err := img.ConfigFile()
 	if err != nil {
@@ -167,6 +185,47 @@ func layerFromTar(data []byte) (v1.Layer, error) {
 	return tarball.LayerFromOpener(func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}, tarball.WithMediaType(types.OCILayer))
+}
+
+// writeDirEntries adds tar directory entries for all parent directories of path.
+func writeDirEntries(tw *tar.Writer, path string) error {
+	parts := strings.Split(filepath.Dir(path), "/")
+	for i := range parts {
+		if parts[i] == "." || parts[i] == "" {
+			continue
+		}
+		dir := strings.Join(parts[:i+1], "/") + "/"
+		if err := tw.WriteHeader(&tar.Header{
+			Typeflag: tar.TypeDir,
+			Name:     dir,
+			Mode:     0755,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// dirLayer creates a tar layer containing directory entries for the given path
+// and all its parents.
+func dirLayer(dirPath string) (v1.Layer, error) {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	entryName := strings.TrimPrefix(dirPath, "/") + "/"
+	if err := writeDirEntries(tw, entryName); err != nil {
+		return nil, err
+	}
+	if err := tw.WriteHeader(&tar.Header{
+		Typeflag: tar.TypeDir,
+		Name:     entryName,
+		Mode:     0755,
+	}); err != nil {
+		return nil, err
+	}
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+	return layerFromTar(buf.Bytes())
 }
 
 // emptyTar returns the bytes of an empty but valid tar archive.
