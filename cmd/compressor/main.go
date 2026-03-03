@@ -191,7 +191,7 @@ func compressFile(path string, stats *stats, force bool, logger *log.Logger) err
 		// Check if compressed file exists and is newer, unless force is true
 		if !force {
 			if compressedInfo, err := os.Stat(compressedPath); err == nil {
-				if compressedInfo.ModTime().After(info.ModTime()) {
+				if !compressedInfo.ModTime().Before(info.ModTime()) {
 					logger.Printf("Skipping %s compression for %s (already up to date)", c.name, path)
 					continue
 				}

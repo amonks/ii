@@ -76,6 +76,59 @@ func TestCompressFile(t *testing.T) {
 	}
 }
 
+func TestCompressFileSkipsUpToDate(t *testing.T) {
+	dir := t.TempDir()
+
+	path := filepath.Join(dir, "hello.txt")
+	if err := os.WriteFile(path, []byte("Hello, World!"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	logger := log.New(io.Discard, "", 0)
+
+	// First compression: should create .gz and .br files.
+	stats1 := &stats{start: time.Now()}
+	if err := compressFile(path, stats1, false, logger); err != nil {
+		t.Fatal(err)
+	}
+	if stats1.filesProcessed.Load() != 1 {
+		t.Fatalf("expected 1 file processed on first run, got %d", stats1.filesProcessed.Load())
+	}
+
+	// Record mtime of compressed files.
+	gzBefore, err := os.Stat(path + ".gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	brBefore, err := os.Stat(path + ".br")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Second compression without force: should skip because compressed
+	// files are up to date.
+	stats2 := &stats{start: time.Now()}
+	if err := compressFile(path, stats2, false, logger); err != nil {
+		t.Fatal(err)
+	}
+
+	// The compressed files should not have been rewritten.
+	gzAfter, err := os.Stat(path + ".gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	brAfter, err := os.Stat(path + ".br")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !gzAfter.ModTime().Equal(gzBefore.ModTime()) {
+		t.Errorf(".gz file was rewritten (mtime changed from %v to %v)", gzBefore.ModTime(), gzAfter.ModTime())
+	}
+	if !brAfter.ModTime().Equal(brBefore.ModTime()) {
+		t.Errorf(".br file was rewritten (mtime changed from %v to %v)", brBefore.ModTime(), brAfter.ModTime())
+	}
+}
+
 func TestWalk(t *testing.T) {
 	dir, err := os.MkdirTemp("", "walk_test")
 	if err != nil {

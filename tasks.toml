@@ -48,7 +48,7 @@
 [[task]]
   id = 'compress-statics'
   type = 'short'
-  cmd = 'go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -force -v'
+  cmd = 'go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -v'
 
 [[task]]
   id = 'generate'
