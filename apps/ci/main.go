@@ -53,6 +53,7 @@ func run() error {
 	// Dashboard routes.
 	mux.HandleFunc("GET /", dashboardIndex(model))
 	mux.HandleFunc("GET /runs/{id}", dashboardRun(model, outputDir))
+	mux.HandleFunc("GET /runs/{id}/events", sseHandler(model, outputDir, hub))
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
 	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
 	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))

@@ -105,34 +105,39 @@ templ indexPage(runs []Run, deployments []Deployment) {
 
 templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogEvent) {
 	@layout(fmt.Sprintf("Run #%d", run.ID)) {
-		<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
-		<p>
-			Status: <span class={ statusClass(run.Status) }>{ run.Status }</span><br/>
-			Head: <span class="mono">{ run.HeadSHA }</span><br/>
-			Base: <span class="mono">{ run.BaseSHA }</span><br/>
-			Trigger: { run.Trigger }<br/>
-			Started: { run.StartedAt }
-			if run.FinishedAt != nil {
-				<br/>Finished: { *run.FinishedAt }
+		<div id="run-page" data-run-id={ fmt.Sprintf("%d", run.ID) } data-run-status={ run.Status }>
+			<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
+			<p>
+				Status: <span id="run-status" class={ statusClass(run.Status) }>{ run.Status }</span><br/>
+				Head: <span class="mono">{ run.HeadSHA }</span><br/>
+				Base: <span class="mono">{ run.BaseSHA }</span><br/>
+				Trigger: { run.Trigger }<br/>
+				Started: { run.StartedAt }
+				if run.FinishedAt != nil {
+					<br/>Finished: <span id="run-finished">{ *run.FinishedAt }</span>
+				} else {
+					<span id="run-finished" style="display: none;"></span>
+				}
+				if run.MachineID != nil {
+					<br/>Machine: <span class="mono">{ *run.MachineID }</span>
+				}
+				if run.Error != nil {
+					<br/>Error: <span id="run-error" class="status-failed">{ *run.Error }</span>
+				} else {
+					<span id="run-error" class="status-failed" style="display: none;"></span>
+				}
+			</p>
+			if run.Status == "running" {
+				<form id="mark-dead-form" method="POST" action={ templ.SafeURL(fmt.Sprintf("runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
+					<button type="submit" onclick="return confirm('Mark this run as dead?')">Mark Dead</button>
+				</form>
 			}
-			if run.MachineID != nil {
-				<br/>Machine: <span class="mono">{ *run.MachineID }</span>
-			}
-			if run.Error != nil {
-				<br/>Error: <span class="status-failed">{ *run.Error }</span>
-			}
-		</p>
-		if run.Status == "running" {
-			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
-				<button type="submit" onclick="return confirm('Mark this run as dead?')">Mark Dead</button>
-			</form>
-		}
 
-		<h2>Jobs</h2>
-		if len(jobs) == 0 {
-			<p class="small">No jobs yet.</p>
-		} else {
-			<table>
+			<h2>Jobs</h2>
+			if len(jobs) == 0 {
+				<p id="no-jobs" class="small">No jobs yet.</p>
+			}
+			<table id="jobs-table">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -141,9 +146,9 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 						<th>Duration</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody id="jobs-tbody">
 					for _, j := range jobs {
-						<tr>
+						<tr data-job-name={ j.Name }>
 							<td>{ j.Name }</td>
 							<td>{ j.Kind }</td>
 							<td class={ statusClass(j.Status) }>{ j.Status }</td>
@@ -154,7 +159,7 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 							</td>
 						</tr>
 						if j.Error != nil {
-							<tr>
+							<tr id={ fmt.Sprintf("job-error-%s", j.Name) }>
 								<td colspan="4">
 									<pre class="status-failed small">{ *j.Error }</pre>
 								</td>
@@ -177,116 +182,40 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 					}
 				</tbody>
 			</table>
-		}
 
-		<h2>Logs</h2>
-		if len(logs) == 0 {
-			<p class="small">No log events found for this run.</p>
-		} else {
-			<table>
-				<thead>
-					<tr>
-						<th>Time</th>
-						<th>Level</th>
-						<th>Path</th>
-						<th>Status</th>
-						<th>Duration</th>
-						<th>Detail</th>
-					</tr>
-				</thead>
-				<tbody>
-					for _, l := range logs {
+			<h2>Logs</h2>
+			if len(logs) == 0 {
+				<p class="small">No log events found for this run.</p>
+			} else {
+				<table>
+					<thead>
 						<tr>
-							<td class="small mono">{ formatLogTime(l.Time) }</td>
-							<td class={ logLevelClass(l.Level) }>{ l.Level }</td>
-							<td class="mono">{ l.Method } { l.Path }</td>
-							<td>{ fmt.Sprintf("%d", l.Status) }</td>
-							<td>{ fmt.Sprintf("%.0fms", l.DurationMs) }</td>
-							<td class="small">{ logDetail(l) }</td>
+							<th>Time</th>
+							<th>Level</th>
+							<th>Path</th>
+							<th>Status</th>
+							<th>Duration</th>
+							<th>Detail</th>
 						</tr>
-					}
-				</tbody>
-			</table>
-		}
+					</thead>
+					<tbody>
+						for _, l := range logs {
+							<tr>
+								<td class="small mono">{ formatLogTime(l.Time) }</td>
+								<td class={ logLevelClass(l.Level) }>{ l.Level }</td>
+								<td class="mono">{ l.Method } { l.Path }</td>
+								<td>{ fmt.Sprintf("%d", l.Status) }</td>
+								<td>{ fmt.Sprintf("%.0fms", l.DurationMs) }</td>
+								<td class="small">{ logDetail(l) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
 
-		<script src="static/ansi_up.js"></script>
-		if run.Status == "running" {
-			@streamScript()
-		} else {
-			@staticStreamScript()
-		}
+			<script src="static/index.js"></script>
+		</div>
 	}
-}
-
-templ streamScript() {
-	<script>
-		document.querySelectorAll('.stream-viewer').forEach(function(details) {
-			var url = details.dataset.streamUrl;
-			var pre = details.querySelector('.stream-output');
-			var lastLineEl = details.querySelector('.stream-last-line');
-			var loaded = false;
-			var ansi = new AnsiUp();
-			var lastLineAnsi = new AnsiUp();
-
-			if (details.dataset.lastLine) {
-				lastLineEl.innerHTML = lastLineAnsi.ansi_to_html(details.dataset.lastLine);
-			}
-
-			details.addEventListener('toggle', function() {
-				if (!details.open || loaded) return;
-				loaded = true;
-				fetch(url + '?stream=1').then(function(resp) {
-					var reader = resp.body.getReader();
-					var decoder = new TextDecoder();
-					function read() {
-						reader.read().then(function(result) {
-							if (result.done) return;
-							var text = decoder.decode(result.value, {stream: true});
-							pre.innerHTML += ansi.ansi_to_html(text);
-							pre.scrollTop = pre.scrollHeight;
-							var lines = text.split('\n');
-							for (var i = lines.length - 1; i >= 0; i--) {
-								if (lines[i].trim() !== '') {
-									lastLineAnsi = new AnsiUp();
-									lastLineEl.innerHTML = lastLineAnsi.ansi_to_html(lines[i].substring(0, 120));
-									break;
-								}
-							}
-							read();
-						});
-					}
-					read();
-				});
-			});
-		});
-	</script>
-}
-
-templ staticStreamScript() {
-	<script>
-		document.querySelectorAll('.stream-viewer').forEach(function(details) {
-			var url = details.dataset.streamUrl;
-			var pre = details.querySelector('.stream-output');
-			var lastLineEl = details.querySelector('.stream-last-line');
-			var loaded = false;
-
-			if (details.dataset.lastLine) {
-				var initAnsi = new AnsiUp();
-				lastLineEl.innerHTML = initAnsi.ansi_to_html(details.dataset.lastLine);
-			}
-
-			details.addEventListener('toggle', function() {
-				if (!details.open || loaded) return;
-				loaded = true;
-				var ansi = new AnsiUp();
-				fetch(url).then(function(resp) {
-					return resp.text();
-				}).then(function(text) {
-					pre.innerHTML = ansi.ansi_to_html(text);
-				});
-			});
-		});
-	</script>
 }
 
 templ deploymentsPage(deployments []Deployment) {

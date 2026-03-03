@@ -65,6 +65,8 @@ func (a *apiHandler) startJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.publishRunState(runID)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"job_id": job.ID,
@@ -107,6 +109,12 @@ func (a *apiHandler) appendOutput(w http.ResponseWriter, r *http.Request) {
 	if a.hub != nil {
 		key := fmt.Sprintf("%d/%s/%s", runID, name, stream)
 		a.hub.Publish(key, body)
+
+		// On first write to a new stream, publish updated run state.
+		streamKey := fmt.Sprintf("%d/%s/%s", runID, name, stream)
+		if _, loaded := knownStreams.LoadOrStore(streamKey, true); !loaded {
+			a.publishRunState(runID)
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -190,6 +198,8 @@ func (a *apiHandler) finishJob(w http.ResponseWriter, r *http.Request) {
 		a.hub.CloseAll(prefix)
 	}
 
+	a.publishRunState(runID)
+
 	// Store kind-specific data.
 	if req.Deploy != nil {
 		bb := req.Deploy.BinaryBytes
@@ -252,6 +262,9 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.publishRunState(runID)
+	a.closeRunEvents(runID)
+
 	// Send SMS on failure.
 	if req.Status == "failed" && a.sendSMS != nil {
 		msg := fmt.Sprintf("CI run %d failed", runID)
@@ -286,6 +299,9 @@ func (a *apiHandler) markDead(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("marking run dead: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	a.publishRunState(runID)
+	a.closeRunEvents(runID)
 
 	http.Redirect(w, r, fmt.Sprintf("runs/%d", runID), http.StatusFound)
 }
