@@ -29,96 +29,101 @@ func Mock(t *testing.T, dir string) func() {
 // setup creates a mock beet executable for testing
 func setup(t *testing.T, tmpDir string) {
 	// Create mock beet script
-	mockScript := `#!/usr/bin/env fish
+	mockScript := `#!/bin/bash
 
 # Parse arguments
-set -l quiet 0
-set -l log_file ""
-set -l albums
-set -l command ""
+quiet=0
+log_file=""
+albums=()
+command=""
 
-while test (count $argv) -gt 0
-    switch $argv[1]
-        case "import"
-            set command "import"
-            set -e argv[1]
-        case "rm"
-            set command "rm"
-            set -e argv[1]
-        case "--quiet"
-            set quiet 1
-            set -e argv[1]
-        case "-v"
-            set -e argv[1]
-        case "-l"
-            set log_file $argv[2]
-            set -e argv[1]
-            set -e argv[1]
-        case "*"
-            if test "$command" = "rm"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        import)
+            command="import"
+            shift
+            ;;
+        rm)
+            command="rm"
+            shift
+            ;;
+        --quiet)
+            quiet=1
+            shift
+            ;;
+        -v)
+            shift
+            ;;
+        -l)
+            log_file="$2"
+            shift 2
+            ;;
+        *)
+            if [ "$command" = "rm" ]; then
                 # For rm command, treat remaining args as query
-                set query $argv[1]
-                set -e argv[1]
+                query="$1"
+                shift
             else
                 # For import command, treat as album paths
-                set -a albums $argv[1]
-                set -e argv[1]
-            end
-    end
-end
+                albums+=("$1")
+                shift
+            fi
+            ;;
+    esac
+done
 
 # Handle rm command
-if test "$command" = "rm"
+if [ "$command" = "rm" ]; then
     # Mock successful removal
     exit 0
-end
+fi
 
 # Handle import command
-if test "$command" = "import"
+if [ "$command" = "import" ]; then
     # If no log file specified, error out
-    if test -z "$log_file"
+    if [ -z "$log_file" ]; then
         echo "Error: no log file specified" >&2
         exit 1
-    end
+    fi
 
     # Create log file directory if it doesn't exist
-    mkdir -p (dirname "$log_file")
+    mkdir -p "$(dirname "$log_file")"
 
     # Create or truncate log file
-    echo -n > "$log_file"
+    : > "$log_file"
 
     # Process each album
-    set -l has_error 0
-    for album in $albums
+    has_error=0
+    for album in "${albums[@]}"; do
         # Skip non-existent albums
-        if not test -d "$album"
+        if [ ! -d "$album" ]; then
             echo "skip $album; does not exist" >> "$log_file"
             continue
-        end
+        fi
 
         # Skip albums with "skip" in their name
-        if string match -q "*skip*" "$album"
+        if [[ "$album" == *skip* ]]; then
             echo "skip $album; test skip condition" >> "$log_file"
             continue
-        end
+        fi
 
         # Check for error albums
-        if string match -q "*error*" "$album"
-            set has_error 1
+        if [[ "$album" == *error* ]]; then
+            has_error=1
             continue
-        end
+        fi
 
         # Otherwise, mark as added
         echo "added $album" >> "$log_file"
-    end
+    done
 
     # Exit with error if any album had "error" in its name
-    if test "$has_error" = "1"
+    if [ "$has_error" = "1" ]; then
         exit 1
-    end
+    fi
 
     exit 0
-end
+fi
 
 # Unknown command
 echo "Error: unknown command" >&2
