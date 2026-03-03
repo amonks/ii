@@ -94,6 +94,7 @@ require (
 	github.com/riza-io/grpc-go v0.2.0 // indirect
 	github.com/rjeczalik/notify v0.9.3 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/simonw/rodney v0.4.0 // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/sqlc-dev/sqlc v1.30.0 // indirect
@@ -141,6 +142,7 @@ require (
 tool (
 	github.com/a-h/templ/cmd/templ
 	github.com/amonks/run
+	github.com/simonw/rodney
 	github.com/sqlc-dev/sqlc/cmd/sqlc
 	golang.org/x/vuln/cmd/govulncheck
 	honnef.co/go/tools/cmd/staticcheck
