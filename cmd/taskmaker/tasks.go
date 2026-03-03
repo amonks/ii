@@ -28,7 +28,7 @@ var baseTasks = []*task{
 	{
 		Id:   "compress-statics",
 		Type: "short",
-		Cmd:  "go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -force -v",
+		Cmd:  "go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -v",
 	},
 	{
 		Id:    "zone2terraform",
