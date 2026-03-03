@@ -5,13 +5,10 @@ on:
     branches: [main]
 
 jobs:
-  test-and-publish:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
 
       - uses: actions/setup-go@v5
         with:
@@ -32,7 +29,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake
-          pip install git-filter-repo
 
       - name: Build and install NLopt 2.10.0
         run: |
@@ -64,6 +60,33 @@ jobs:
         env:
           MONKS_ROOT: ${{ github.workspace }}
 
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.0"
+          cache: false
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
+          restore-keys: |
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ runner.os }}-
+
+      - name: Install git-filter-repo
+        run: pip install git-filter-repo
+
       - name: Configure git credentials
         run: gh auth setup-git
         env:
@@ -74,3 +97,36 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
           MONKS_ROOT: ${{ github.workspace }}
+
+  terraform:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform-apply
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fish
+        run: sudo apt-get install -y fish
+
+      - name: Convert zone files
+        working-directory: aws
+        run: fish convert-zones.fish
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: aws/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: aws/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_GANDI_PERSONAL_ACCESS_TOKEN: ${{ secrets.GANDI_TOKEN }}
+        run: terraform apply -auto-approve

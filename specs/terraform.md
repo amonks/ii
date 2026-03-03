@@ -120,3 +120,25 @@ exposes a top-level `terraform-apply` task that delegates to `aws/apply`.
 
 All Terraform commands source `.envrc` for AWS credentials and run from
 the `terraform/` subdirectory.
+
+## CI
+
+Terraform is applied automatically on every push to `main` via the
+`terraform` job in `.github/workflows/ci.yml`. The job runs after tests
+pass (`needs: test`), alongside the `publish` job.
+
+Steps: checkout → install fish → convert zone files → setup terraform →
+init → apply with `-auto-approve`.
+
+A concurrency group (`terraform-apply`, `cancel-in-progress: false`)
+ensures only one apply runs at a time. GitHub keeps at most one running
+plus one pending; additional pushes are debounced. Running apply with no
+changes is a no-op, so every-push execution also catches drift.
+
+Required GitHub Actions secrets:
+
+| Secret | Purpose |
+|--------|---------|
+| `AWS_ACCESS_KEY_ID` | AWS credentials for Terraform |
+| `AWS_SECRET_ACCESS_KEY` | AWS credentials for Terraform |
+| `GANDI_TOKEN` | Passed as `TF_VAR_GANDI_PERSONAL_ACCESS_TOKEN` for nameserver delegation |
