@@ -79,21 +79,8 @@ func FilesLayer(mappings map[string]string) (v1.Layer, error) {
 	tw := tar.NewWriter(&buf)
 
 	for src, dest := range mappings {
-		data, err := os.ReadFile(src)
-		if err != nil {
-			return nil, fmt.Errorf("reading file %s: %w", src, err)
-		}
-
-		entryName := strings.TrimPrefix(dest, "/")
-		if err := tw.WriteHeader(&tar.Header{
-			Name: entryName,
-			Mode: 0644,
-			Size: int64(len(data)),
-		}); err != nil {
-			return nil, fmt.Errorf("writing tar header for %s: %w", dest, err)
-		}
-		if _, err := tw.Write(data); err != nil {
-			return nil, fmt.Errorf("writing tar data for %s: %w", dest, err)
+		if err := addPathToTar(tw, src, dest); err != nil {
+			return nil, err
 		}
 	}
 
@@ -185,6 +172,68 @@ func layerFromTar(data []byte) (v1.Layer, error) {
 	return tarball.LayerFromOpener(func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}, tarball.WithMediaType(types.OCILayer))
+}
+
+// addPathToTar adds a file or directory (recursively) to the tar writer.
+func addPathToTar(tw *tar.Writer, src, dest string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("stat %s: %w", src, err)
+	}
+
+	if !info.IsDir() {
+		data, err := os.ReadFile(src)
+		if err != nil {
+			return fmt.Errorf("reading file %s: %w", src, err)
+		}
+		entryName := strings.TrimPrefix(dest, "/")
+		if err := tw.WriteHeader(&tar.Header{
+			Name: entryName,
+			Mode: 0644,
+			Size: int64(len(data)),
+		}); err != nil {
+			return fmt.Errorf("writing tar header for %s: %w", dest, err)
+		}
+		if _, err := tw.Write(data); err != nil {
+			return fmt.Errorf("writing tar data for %s: %w", dest, err)
+		}
+		return nil
+	}
+
+	// Walk the directory recursively.
+	return filepath.Walk(src, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dest, rel)
+		entryName := strings.TrimPrefix(target, "/")
+
+		if fi.IsDir() {
+			return tw.WriteHeader(&tar.Header{
+				Typeflag: tar.TypeDir,
+				Name:     entryName + "/",
+				Mode:     0755,
+			})
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", path, err)
+		}
+		if err := tw.WriteHeader(&tar.Header{
+			Name: entryName,
+			Mode: 0644,
+			Size: int64(len(data)),
+		}); err != nil {
+			return err
+		}
+		_, err = tw.Write(data)
+		return err
+	})
 }
 
 // writeDirEntries adds tar directory entries for all parent directories of path.
