@@ -120,7 +120,7 @@ templ runPage(run *Run, jobs []Job, logs []LogEvent) {
 			}
 		</p>
 		if run.Status == "running" {
-			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("../runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
 				<button type="submit" onclick="return confirm('Mark this run as dead?')">Mark Dead</button>
 			</form>
 		}
