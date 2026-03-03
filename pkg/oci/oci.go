@@ -132,16 +132,18 @@ func BuildAppImage(base v1.Image, binary string, files map[string]string, cfg Im
 		}
 	}
 
-	// Apply container config.
+	// Apply container config and platform.
 	imgCfg, err := img.ConfigFile()
 	if err != nil {
 		return nil, fmt.Errorf("reading image config: %w", err)
 	}
+	imgCfg.Architecture = "amd64"
+	imgCfg.OS = "linux"
 	imgCfg.Config.Cmd = cfg.Cmd
 	imgCfg.Config.Env = cfg.Env
 	imgCfg.Config.WorkingDir = cfg.WorkDir
 
-	img, err = mutate.Config(img, imgCfg.Config)
+	img, err = mutate.ConfigFile(img, imgCfg)
 	if err != nil {
 		return nil, fmt.Errorf("setting image config: %w", err)
 	}

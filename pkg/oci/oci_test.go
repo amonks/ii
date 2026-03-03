@@ -178,6 +178,29 @@ func TestBuildAppImage(t *testing.T) {
 	}
 }
 
+func TestBuildAppImageSetsPlatform(t *testing.T) {
+	cfg := oci.ImageConfig{
+		Cmd: []string{"/bin/app"},
+	}
+
+	img, err := oci.BuildAppImage(empty.Image, "", nil, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	imgCfg, err := img.ConfigFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if imgCfg.Architecture != "amd64" {
+		t.Errorf("expected Architecture %q, got %q", "amd64", imgCfg.Architecture)
+	}
+	if imgCfg.OS != "linux" {
+		t.Errorf("expected OS %q, got %q", "linux", imgCfg.OS)
+	}
+}
+
 func TestImageConfigRoundtrip(t *testing.T) {
 	cfg := oci.ImageConfig{
 		Cmd:     []string{"/bin/app", "--flag"},
