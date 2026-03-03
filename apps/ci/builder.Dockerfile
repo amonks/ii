@@ -19,6 +19,8 @@ RUN JJ_VERSION=$(curl -sL https://api.github.com/repos/jj-vcs/jj/releases/latest
     curl -LO "https://github.com/jj-vcs/jj/releases/download/v${JJ_VERSION}/jj-v${JJ_VERSION}-x86_64-unknown-linux-musl.tar.gz" && \
     tar xzf "jj-v${JJ_VERSION}-x86_64-unknown-linux-musl.tar.gz" --strip-components=0 -C /usr/local/bin/ ./jj && \
     rm "jj-v${JJ_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+RUN jj config set --user user.name "CI" && \
+    jj config set --user user.email "ci@monks.co"
 
 # terraform
 RUN curl -LO https://releases.hashicorp.com/terraform/1.11.0/terraform_1.11.0_linux_amd64.zip && \

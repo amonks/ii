@@ -14,14 +14,8 @@ func testTriggerHandler(t *testing.T) (*Model, *TriggerHandler) {
 	t.Helper()
 	m := testModel(t)
 
-	// Mock fly API server that handles machine listing and creation.
+	// Mock fly API server that handles machine creation.
 	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet && r.URL.Path == "/apps/monks-ci-builder/machines" {
-			json.NewEncoder(w).Encode([]map[string]any{
-				{"id": "m1", "config": map[string]any{"image": "test-image"}},
-			})
-			return
-		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"id":    "mock-machine-123",
 			"state": "created",
@@ -29,8 +23,17 @@ func testTriggerHandler(t *testing.T) (*Model, *TriggerHandler) {
 	}))
 	t.Cleanup(mockFly.Close)
 
+	// Mock registry that returns tags.
+	mockRegistry := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"tags": []string{"deployment-01AAA", "deployment-01BBB"},
+		})
+	}))
+	t.Cleanup(mockRegistry.Close)
+
 	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
 	flyClient.BaseURL = mockFly.URL
+	flyClient.RegistryURL = mockRegistry.URL
 
 	handler := &TriggerHandler{
 		model: m,

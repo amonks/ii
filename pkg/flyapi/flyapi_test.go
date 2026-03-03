@@ -300,6 +300,53 @@ func TestListMachines(t *testing.T) {
 	}
 }
 
+func TestLatestImage(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/myapp/tags/list" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		user, pass, ok := r.BasicAuth()
+		if !ok || user != "x" || pass != "test-token" {
+			t.Errorf("unexpected auth: user=%s ok=%v", user, ok)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"tags": []string{
+				"deployment-01AAAA",
+				"deployment-01CCCC",
+				"deployment-01BBBB",
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient("test-token", "myapp")
+	c.RegistryURL = srv.URL
+
+	got, err := c.LatestImage(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "registry.fly.io/myapp:deployment-01CCCC"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestLatestImageNoTags(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"tags": []string{}})
+	}))
+	defer srv.Close()
+
+	c := NewClient("test-token", "myapp")
+	c.RegistryURL = srv.URL
+
+	_, err := c.LatestImage(context.Background())
+	if err == nil {
+		t.Fatal("expected error for empty tags")
+	}
+}
+
 func TestStopMachineError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)

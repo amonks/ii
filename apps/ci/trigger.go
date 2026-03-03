@@ -105,18 +105,13 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TriggerHandler) resolveBuilderImage() string {
-	machines, err := h.fly.ListMachines(context.Background())
+	image, err := h.fly.LatestImage(context.Background())
 	if err != nil {
-		slog.Warn("failed to list builder machines, using fallback image", "error", err)
+		slog.Warn("failed to resolve builder image from registry, using fallback", "error", err)
 		return h.builderConfig.FallbackImage
 	}
-	for _, m := range machines {
-		if m.Config.Image != "" {
-			return m.Config.Image
-		}
-	}
-	slog.Warn("no builder machines found, using fallback image")
-	return h.builderConfig.FallbackImage
+	slog.Info("resolved builder image from registry", "image", image)
+	return image
 }
 
 func (h *TriggerHandler) createBuilderMachine(run *Run) {

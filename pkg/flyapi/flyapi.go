@@ -14,10 +14,11 @@ import (
 
 // Client is a Fly Machines API client.
 type Client struct {
-	Token      string
-	AppName    string
-	HTTPClient *http.Client
-	BaseURL    string
+	Token       string
+	AppName     string
+	HTTPClient  *http.Client
+	BaseURL     string
+	RegistryURL string
 }
 
 // NewClient creates a new Fly Machines API client with the default base URL.
@@ -232,6 +233,56 @@ func (c *Client) ListMachines(ctx context.Context) ([]MachineInfo, error) {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 	return machines, nil
+}
+
+// LatestImage queries the Fly registry v2 API to find the most recent
+// deployment image for the app. Deployment tags are ULIDs and sort
+// lexicographically by time.
+func (c *Client) LatestImage(ctx context.Context) (string, error) {
+	url := fmt.Sprintf("%s/v2/%s/tags/list", c.registryURL(), c.AppName)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("creating request: %w", err)
+	}
+	req.SetBasicAuth("x", c.Token)
+
+	resp, err := c.httpClient().Do(req)
+	if err != nil {
+		return "", fmt.Errorf("fetching tags: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", readAPIError(resp)
+	}
+
+	var result struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("decoding tags: %w", err)
+	}
+
+	if len(result.Tags) == 0 {
+		return "", fmt.Errorf("no tags found for %s", c.AppName)
+	}
+
+	// Tags are deployment ULIDs; the lexicographically last one is newest.
+	latest := result.Tags[0]
+	for _, tag := range result.Tags[1:] {
+		if tag > latest {
+			latest = tag
+		}
+	}
+
+	return fmt.Sprintf("registry.fly.io/%s:%s", c.AppName, latest), nil
+}
+
+func (c *Client) registryURL() string {
+	if c.RegistryURL != "" {
+		return c.RegistryURL
+	}
+	return "https://registry.fly.io"
 }
 
 func (c *Client) httpClient() *http.Client {
