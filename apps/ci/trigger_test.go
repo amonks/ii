@@ -106,7 +106,7 @@ func TestTriggerHandler(t *testing.T) {
 		runs, _ := m.RecentRuns(10)
 		for _, r := range runs {
 			if r.Status == "running" {
-				m.FinishRun(r.ID, "success")
+				m.FinishRun(r.ID, "success", "")
 			}
 		}
 

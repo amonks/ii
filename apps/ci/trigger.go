@@ -90,7 +90,7 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create builder machine.
 	if h.fly == nil {
 		slog.Error("no fly client configured, cannot create builder machine", "run_id", run.ID)
-		h.model.FinishRun(run.ID, "failed")
+		h.model.FinishRun(run.ID, "failed", "fly client not configured (FLY_API_TOKEN missing?)")
 		http.Error(w, "fly client not configured (FLY_API_TOKEN missing?)", http.StatusInternalServerError)
 		return
 	}
@@ -131,7 +131,7 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 			Guest: flyapi.Guest{
 				CPUKind:  "performance",
 				CPUs:     4,
-				MemoryMB: 4096,
+				MemoryMB: 8192,
 			},
 			Env:         env,
 			AutoDestroy: true,
@@ -145,7 +145,7 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 	info, err := h.fly.CreateMachine(context.Background(), input)
 	if err != nil {
 		slog.Error("creating builder machine", "error", err, "run_id", run.ID)
-		h.model.FinishRun(run.ID, "failed")
+		h.model.FinishRun(run.ID, "failed", fmt.Sprintf("creating builder machine: %v", err))
 		return
 	}
 

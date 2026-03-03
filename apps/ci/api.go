@@ -193,7 +193,7 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := a.model.FinishRun(runID, req.Status); err != nil {
+	if err := a.model.FinishRun(runID, req.Status, req.Error); err != nil {
 		http.Error(w, fmt.Sprintf("finishing run: %v", err), http.StatusInternalServerError)
 		return
 	}

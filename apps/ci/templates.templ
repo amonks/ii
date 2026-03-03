@@ -113,6 +113,9 @@ templ runPage(run *Run, jobs []Job) {
 			if run.MachineID != nil {
 				<br/>Machine: <span class="mono">{ *run.MachineID }</span>
 			}
+			if run.Error != nil {
+				<br/>Error: <span class="status-failed">{ *run.Error }</span>
+			}
 		</p>
 
 		<h2>Jobs</h2>

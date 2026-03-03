@@ -56,6 +56,7 @@ type Run struct {
 	FinishedAt *string `gorm:"column:finished_at"`
 	Status     string  `gorm:"column:status"`
 	Trigger    string  `gorm:"column:trigger"`
+	Error      *string `gorm:"column:error"`
 }
 
 func (Run) TableName() string { return "runs" }
@@ -136,12 +137,16 @@ func (m *Model) SetMachineID(runID int64, machineID string) error {
 }
 
 // FinishRun marks a run as complete.
-func (m *Model) FinishRun(runID int64, status string) error {
+func (m *Model) FinishRun(runID int64, status, errMsg string) error {
 	t := now()
-	return m.db.Model(&Run{}).Where("id = ?", runID).Updates(map[string]any{
+	updates := map[string]any{
 		"status":      status,
 		"finished_at": t,
-	}).Error
+	}
+	if errMsg != "" {
+		updates["error"] = errMsg
+	}
+	return m.db.Model(&Run{}).Where("id = ?", runID).Updates(updates).Error
 }
 
 // RecentRuns returns the most recent runs.

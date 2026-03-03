@@ -62,7 +62,7 @@ func TestFinishRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := m.FinishRun(run.ID, "success"); err != nil {
+	if err := m.FinishRun(run.ID, "success", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -89,7 +89,7 @@ func TestLastSuccessfulSHA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := m.FinishRun(run.ID, "success"); err != nil {
+	if err := m.FinishRun(run.ID, "success", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,7 +106,7 @@ func TestLastSuccessfulSHA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := m.FinishRun(run2.ID, "success"); err != nil {
+	if err := m.FinishRun(run2.ID, "success", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +143,7 @@ func TestHasRunningRun(t *testing.T) {
 		t.Error("expected running run")
 	}
 
-	if err := m.FinishRun(run.ID, "success"); err != nil {
+	if err := m.FinishRun(run.ID, "success", ""); err != nil {
 		t.Fatal(err)
 	}
 
