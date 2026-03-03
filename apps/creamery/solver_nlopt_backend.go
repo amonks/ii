@@ -2,6 +2,7 @@ package creamery
 
 import (
 	"math"
+	"strings"
 
 	"github.com/go-nlopt/nlopt"
 )
@@ -19,6 +20,20 @@ func (lpp *lpProblem) solveNLopt(objective []float64, opts SolverOptions) (float
 }
 
 func (lpp *lpProblem) solveWithObjective(opts SolverOptions, objective func(x, grad []float64) float64) (float64, []float64, error) {
+	value, solution, err := lpp.tryOptimize(opts, objective)
+	if err != nil && isRoundoffLimited(err) {
+		// ROUNDOFF_LIMITED means the optimizer couldn't improve further
+		// due to floating-point precision. Retry with relaxed tolerance,
+		// which often succeeds. This mirrors what NLopt 2.8+ does
+		// internally for SLSQP.
+		relaxed := opts
+		relaxed.ConstraintTolerance = opts.ConstraintTolerance * 10
+		value, solution, err = lpp.tryOptimize(relaxed, objective)
+	}
+	return value, solution, err
+}
+
+func (lpp *lpProblem) tryOptimize(opts SolverOptions, objective func(x, grad []float64) float64) (float64, []float64, error) {
 	opt, initial, err := lpp.configureOptimizer(opts)
 	if err != nil {
 		return 0, nil, err
@@ -34,6 +49,10 @@ func (lpp *lpProblem) solveWithObjective(opts SolverOptions, objective func(x, g
 		return 0, nil, err
 	}
 	return value, solution, nil
+}
+
+func isRoundoffLimited(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "ROUNDOFF_LIMITED")
 }
 
 func (lpp *lpProblem) configureOptimizer(opts SolverOptions) (*nlopt.NLopt, []float64, error) {
