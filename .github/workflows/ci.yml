@@ -30,8 +30,17 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnlopt-dev
+          sudo apt-get install -y cmake
           pip install git-filter-repo
+
+      - name: Build and install NLopt 2.10.0
+        run: |
+          curl -L https://github.com/stevengj/nlopt/archive/refs/tags/v2.10.0.tar.gz | tar xz
+          cd nlopt-2.10.0
+          cmake -DBUILD_SHARED_LIBS=ON -DNLOPT_PYTHON=OFF -DNLOPT_OCTAVE=OFF -DNLOPT_MATLAB=OFF -DNLOPT_GUILE=OFF -DNLOPT_SWIG=OFF .
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
 
       - uses: actions/setup-node@v4
         with:
