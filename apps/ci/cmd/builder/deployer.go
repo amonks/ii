@@ -98,7 +98,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 
 	cmd := exec.Command("go", "build", "-o", binaryPath, fmt.Sprintf("./apps/%s", app))
 	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "CGO_ENABLED=1", "MONKS_ROOT="+root)
+	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "MONKS_ROOT="+root)
 	cmd.Stdout = w
 	cmd.Stderr = w
 	if err := cmd.Run(); err != nil {
