@@ -87,9 +87,13 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqlog.Set(r.Context(), "trigger.base_sha", baseSHA)
 
 	// Create builder machine.
-	if h.fly != nil {
-		go h.createBuilderMachine(run)
+	if h.fly == nil {
+		slog.Error("no fly client configured, cannot create builder machine", "run_id", run.ID)
+		h.model.FinishRun(run.ID, "failed")
+		http.Error(w, "fly client not configured (FLY_API_TOKEN missing?)", http.StatusInternalServerError)
+		return
 	}
+	go h.createBuilderMachine(run)
 
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]any{

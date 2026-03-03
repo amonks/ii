@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"monks.co/pkg/serve"
+)
 
 templ layout(title string) {
 	<!DOCTYPE html>
@@ -8,6 +11,7 @@ templ layout(title string) {
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<base href={ serve.BasePathFromContext(ctx) }/>
 			<title>{ title } — CI</title>
 			<style>
 				body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }

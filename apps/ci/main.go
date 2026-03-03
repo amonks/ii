@@ -57,7 +57,7 @@ func run() error {
 		model: model,
 		fly:   flyClient,
 		builderConfig: BuilderConfig{
-			Image:           "registry.fly.io/monks-ci-builder:latest",
+			Image:           envOr("CI_BUILDER_IMAGE", "registry.fly.io/monks-ci-builder:deployment-01KJS6B9YA7BYXTBRZV5TS4WSW"),
 			Region:          "ord",
 			OrchestratorURL: "http://monks-ci-fly-ord",
 			FlyAPIToken:     flyToken,
@@ -152,6 +152,13 @@ func serveOutput(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	http.ServeFile(w, r, outputPath)
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 func sendSMS(message string) {

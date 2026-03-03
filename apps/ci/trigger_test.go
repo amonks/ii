@@ -6,15 +6,39 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"monks.co/pkg/flyapi"
 )
 
-func TestTriggerHandler(t *testing.T) {
+func testTriggerHandler(t *testing.T) (*Model, *TriggerHandler) {
+	t.Helper()
 	m := testModel(t)
+
+	// Mock fly API server that accepts machine creation.
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "mock-machine-123",
+			"state": "created",
+		})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
 
 	handler := &TriggerHandler{
 		model: m,
-		// No fly client — skips machine creation.
+		fly:   flyClient,
+		builderConfig: BuilderConfig{
+			Image:  "test-image",
+			Region: "ord",
+		},
 	}
+	return m, handler
+}
+
+func TestTriggerHandler(t *testing.T) {
+	m, handler := testTriggerHandler(t)
 
 	t.Run("creates run on valid request", func(t *testing.T) {
 		body := `{"sha":"abc123"}`
@@ -101,4 +125,21 @@ func TestTriggerHandler(t *testing.T) {
 			t.Errorf("expected base_sha abc123, got %v", resp["base_sha"])
 		}
 	})
+}
+
+func TestTriggerHandlerNoFlyClient(t *testing.T) {
+	m := testModel(t)
+	handler := &TriggerHandler{
+		model: m,
+		// No fly client.
+	}
+
+	body := `{"sha":"abc123"}`
+	req := httptest.NewRequest(http.MethodPost, "/trigger", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500 when fly client missing, got %d", w.Code)
+	}
 }
