@@ -4,6 +4,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <base href="{{.BasePath}}">
   <title>Creamery Console</title>
   <style>
 {{template "baseStyles"}}
@@ -41,10 +42,10 @@
   <header class="site-header">
     <div class="logo">Creamery Console</div>
     <nav class="site-nav">
-      <a href="/" class="active">Overview</a>
-      <a href="/labels">Labels</a>
-      <a href="/recipes">Recipes</a>
-      <a href="/batchlog">Batch Log</a>
+      <a href="./" class="active">Overview</a>
+      <a href="labels">Labels</a>
+      <a href="recipes">Recipes</a>
+      <a href="batchlog">Batch Log</a>
     </nav>
   </header>
   <main class="page">
@@ -57,17 +58,17 @@
       <div class="link-card">
         <h2>Label Reconstructions</h2>
         <p>Reverse-engineered ingredient weights, solver diagnostics, and sweetener metrics for every reference label.</p>
-        <a href="/labels">Open labels →</a>
+        <a href="labels">Open labels →</a>
       </div>
       <div class="link-card">
         <h2>Recipe Catalog</h2>
         <p>Every logged batch with composition, cost, and tasting notes so you can compare runs quickly.</p>
-        <a href="/recipes">Open recipes →</a>
+        <a href="recipes">Open recipes →</a>
       </div>
       <div class="link-card">
         <h2>Batch Log Dashboard</h2>
         <p>Time-series analytics, ingredient usage, and issue tracking straight from the production log.</p>
-        <a href="/batchlog">Open batch log →</a>
+        <a href="batchlog">Open batch log →</a>
       </div>
     </section>
   </main>

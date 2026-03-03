@@ -6,13 +6,16 @@ import (
 	"math"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
+
 	"monks.co/apps/creamery/fdaparser"
+	"monks.co/pkg/serve"
 )
 
 // UnifiedServer renders labels, recipes, and batch-log analytics from one host.
 type UnifiedServer struct {
+	*serve.Mux
+
 	catalog        IngredientCatalog
 	batchLogPath   string
 	recipeLogPath  string
@@ -47,7 +50,8 @@ func NewUnifiedServer(batchLogPath, recipeLogPath string, catalog IngredientCata
 		Funcs(funcs).
 		ParseFS(templateFiles, "base_styles.tmpl", "recipes.html.tmpl"))
 
-	return &UnifiedServer{
+	s := &UnifiedServer{
+		Mux:            serve.NewMux(),
 		catalog:        catalog,
 		batchLogPath:   batchLogPath,
 		recipeLogPath:  recipeLogPath,
@@ -55,24 +59,14 @@ func NewUnifiedServer(batchLogPath, recipeLogPath string, catalog IngredientCata
 		homeTmpl:       home,
 		labelsTmpl:     labels,
 		recipesTmpl:    recipes,
-	}, nil
-}
-
-// ServeHTTP routes traffic across the analytics dashboards.
-func (s *UnifiedServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimSuffix(r.URL.Path, "/")
-	switch path {
-	case "", "/":
-		s.renderHome(w, r)
-	case "/labels":
-		s.renderLabels(w, r)
-	case "/recipes":
-		s.renderRecipes(w, r)
-	case "/batchlog":
-		s.batchDashboard.ServeHTTP(w, r)
-	default:
-		http.NotFound(w, r)
 	}
+
+	s.HandleFunc("GET /{$}", s.renderHome)
+	s.HandleFunc("GET /labels/{$}", s.renderLabels)
+	s.HandleFunc("GET /recipes/{$}", s.renderRecipes)
+	s.Handle("GET /batchlog/{$}", s.batchDashboard)
+
+	return s, nil
 }
 
 func (s *UnifiedServer) renderHome(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +74,7 @@ func (s *UnifiedServer) renderHome(w http.ResponseWriter, r *http.Request) {
 		GeneratedAt: time.Now(),
 		BatchLog:    s.batchLogPath,
 		LabelCount:  len(DefaultLabelCatalog()),
+		BasePath:    serve.BasePath(r),
 	}
 	if err := s.homeTmpl.ExecuteTemplate(w, "home", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,6 +87,7 @@ func (s *UnifiedServer) renderLabels(w http.ResponseWriter, r *http.Request) {
 		GeneratedAt: report.GeneratedAt,
 		CatalogSize: len(report.Entries),
 		Entries:     make([]labelCardData, 0, len(report.Entries)),
+		BasePath:    serve.BasePath(r),
 	}
 	for _, entry := range report.Entries {
 		card := labelCardData{
@@ -154,6 +150,7 @@ func (s *UnifiedServer) renderRecipes(w http.ResponseWriter, r *http.Request) {
 		GeneratedAt: analysis.GeneratedAt,
 		Summary:     analysis.Analytics.Summary,
 		Entries:     make([]recipeCardData, 0, len(catalog.Entries)),
+		BasePath:    serve.BasePath(r),
 	}
 	for _, entry := range catalog.Entries {
 		card := recipeCardData{
@@ -186,6 +183,7 @@ type homePageData struct {
 	GeneratedAt time.Time
 	BatchLog    string
 	LabelCount  int
+	BasePath    string
 }
 
 type labelPageData struct {
@@ -194,6 +192,7 @@ type labelPageData struct {
 	SolvedCount int
 	FailedCount int
 	Entries     []labelCardData
+	BasePath    string
 }
 
 type labelCardData struct {
@@ -220,6 +219,7 @@ type recipePageData struct {
 	GeneratedAt time.Time
 	Summary     BatchLogSummary
 	Entries     []recipeCardData
+	BasePath    string
 }
 
 type recipeCardData struct {

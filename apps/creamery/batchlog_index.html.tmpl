@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <base href="{{.BasePath}}">
   <title>Batch Log · Creamery Console</title>
   <style>
 {{template "baseStyles"}}
@@ -11,10 +12,10 @@
   <header class="site-header">
     <div class="logo">Creamery Console</div>
     <nav class="site-nav">
-      <a href="/">Overview</a>
-      <a href="/labels">Labels</a>
-      <a href="/recipes">Recipes</a>
-      <a href="/batchlog" class="active">Batch Log</a>
+      <a href="./">Overview</a>
+      <a href="labels">Labels</a>
+      <a href="recipes">Recipes</a>
+      <a href="batchlog" class="active">Batch Log</a>
     </nav>
   </header>
   <main class="page">

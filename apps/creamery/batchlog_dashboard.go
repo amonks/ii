@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"monks.co/pkg/serve"
 )
 
 const batchLogTemplateName = "batchlog_index.html.tmpl"
@@ -57,10 +58,12 @@ func (d *BatchLogDashboard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		GeneratedAt time.Time
 		SourcePath  string
 		Analytics   BatchLogAnalytics
+		BasePath    string
 	}{
 		GeneratedAt: time.Now(),
 		SourcePath:  filepath.Clean(d.logPath),
 		Analytics:   analytics,
+		BasePath:    serve.BasePath(r),
 	}
 	if err := d.tmpl.ExecuteTemplate(w, batchLogTemplateName, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -210,26 +213,3 @@ func indentMultiline(text, indent string) string {
 	return strings.Join(lines, "\n")
 }
 
-// ServeURL renders a friendly URL for the bound address.
-func ServeURL(addr string) string {
-	if addr == "" {
-		return "http://localhost"
-	}
-	if strings.HasPrefix(addr, ":") {
-		return "http://localhost" + addr
-	}
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return "http://" + addr
-	}
-	if host == "" {
-		host = "localhost"
-	}
-	if strings.Contains(host, ":") && !strings.HasPrefix(host, "[") {
-		host = "[" + host + "]"
-	}
-	if port == "" {
-		return "http://" + host
-	}
-	return fmt.Sprintf("http://%s:%s", host, port)
-}

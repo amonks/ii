@@ -9,7 +9,7 @@ Apps run on different hosts but share a tailnet. The proxy app (`apps/proxy`) ha
 ### Hosts
 
 - **fly** (fly.io, Chicago ORD): dogs, homepage, map, writing, traffic, logs
-- **brigid** (local server): sms, calendar, directory, dungeon, golink, ping, scrobbles, youtube
+- **brigid** (local server): sms, calendar, creamery, directory, dungeon, golink, ping, scrobbles, youtube
 - **thor** (local server): air, movies, reddit
 
 ### Deployment
@@ -27,7 +27,7 @@ Routing is configured through tailscale capability grants. Access is tiered:
 - **Public** (autogroup:danger-all): dogs, dungeon, homepage, map, writing
 - **Tailnet members** (autogroup:member): air, movies
 - **Services** (tag:service): traffic, logs, sms
-- **Private** (ajm@passkey): calendar, directory, golink, ping, scrobbles, logs, youtube, reddit
+- **Private** (ajm@passkey): calendar, creamery, directory, golink, ping, scrobbles, logs, youtube, reddit
 
 The full routing configuration is maintained in tailscale ACL policy as capability grants on `tag:monks-co` nodes using the `monks.co/cap/public` capability. Backend names follow the pattern `monks-<app>-<host>[-<region>]`.
 
@@ -48,6 +48,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [air](air.md) | [apps/air/](../apps/air/) | Home environmental monitoring dashboard (CO2, temperature, humidity) |
 | [aranet](aranet.md) | [apps/aranet/](../apps/aranet/) | Bluetooth scanning service for Aranet4 sensors |
 | [calendar](calendar.md) | [apps/calendar/](../apps/calendar/) | Personal TV show tracking calendar |
+| [creamery](creamery.md) | [apps/creamery/](../apps/creamery/) | Ice cream formulation and batch log analytics |
 | [directory](directory.md) | [apps/directory/](../apps/directory/) | Internal service directory showing apps × machines |
 | [dogs](dogs.md) | [apps/dogs/](../apps/dogs/) | Hot dog eating contest photo gallery |
 | [dolmenwood](dolmenwood/index.md) | [apps/dolmenwood/](../apps/dolmenwood/) | Dolmenwood RPG character sheet manager |

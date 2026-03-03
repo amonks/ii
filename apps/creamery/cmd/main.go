@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"log/slog"
 	"os"
 	"sort"
 	"strings"
@@ -12,10 +14,26 @@ import (
 
 	"monks.co/apps/creamery"
 	"monks.co/apps/creamery/fdaparser"
+	"monks.co/pkg/gzip"
+	"monks.co/pkg/meta"
+	"monks.co/pkg/reqlog"
+	"monks.co/pkg/sigctx"
+	"monks.co/pkg/tailnet"
 )
 
 func main() {
-	log.SetFlags(0)
+	if err := run(); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("fatal", "error", err.Error(), "app.name", meta.AppName())
+		}
+		reqlog.Shutdown()
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	reqlog.SetupLogging()
+
 	if len(os.Args) < 2 {
 		PrintUsage()
 		os.Exit(1)
@@ -31,7 +49,7 @@ func main() {
 	case "notebook":
 		runNotebook(args)
 	case "serve":
-		runServe(args)
+		return runServe(args)
 	case "substitute":
 		runSubstitute(args)
 	default:
@@ -39,6 +57,7 @@ func main() {
 		PrintUsage()
 		os.Exit(1)
 	}
+	return nil
 }
 
 func runLabels(args []string) {
@@ -92,22 +111,28 @@ func runNotebook(args []string) {
 	}
 }
 
-func runServe(args []string) {
+func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
-	addr := fs.String("addr", ":8080", "HTTP listen address")
 	logPath := fs.String("log", "batches", "Path to batch log file")
 	recipesPath := fs.String("recipes", "recipes", "Additional recipe file path")
 	_ = fs.Parse(args)
 
+	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	catalog := creamery.DefaultIngredientCatalog()
 	server, err := creamery.NewUnifiedServer(*logPath, *recipesPath, catalog)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	fmt.Printf("Serving console at %s\n", creamery.ServeURL(*addr))
-	if err := http.ListenAndServe(*addr, server); err != nil {
-		log.Fatal(err)
+
+	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(server))); err != nil {
+		return err
 	}
+
+	return nil
 }
 
 func runSubstitute(args []string) {
@@ -312,7 +337,7 @@ Commands:
   labels                         Analyze all label reconstructions
   recipes [--log path --recipes path]   Analyze recipes from batch log plus extras
   notebook [args...]              Run the workflow/notebook sandbox
-  serve [--addr --log --recipes]  Start the unified web console
+  serve [--log --recipes]         Start the unified web console
   substitute --recipe <path> --remove <ing> --add <ing1,ing2,...>
                                  Substitute ingredients in a recipe`)
 }

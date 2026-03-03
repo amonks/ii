@@ -4,6 +4,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <base href="{{.BasePath}}">
   <title>Recipe Catalog · Creamery Console</title>
   <style>
 {{template "baseStyles"}}
@@ -20,10 +21,10 @@
   <header class="site-header">
     <div class="logo">Creamery Console</div>
     <nav class="site-nav">
-      <a href="/">Overview</a>
-      <a href="/labels">Labels</a>
-      <a href="/recipes" class="active">Recipes</a>
-      <a href="/batchlog">Batch Log</a>
+      <a href="./">Overview</a>
+      <a href="labels">Labels</a>
+      <a href="recipes" class="active">Recipes</a>
+      <a href="batchlog">Batch Log</a>
     </nav>
   </header>
   <main class="page">
