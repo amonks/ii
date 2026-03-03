@@ -14,22 +14,25 @@ templ layout(title string) {
 			<base href={ serve.BasePathFromContext(ctx) }/>
 			<title>{ title } — CI</title>
 			<style>
-				body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }
+				body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; background: #0d1117; color: #e6edf3; }
 				table { border-collapse: collapse; width: 100%; }
-				th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }
-				th { font-weight: 600; }
-				a { color: #0066cc; }
-				.status-success { color: #22863a; }
-				.status-failed { color: #cb2431; }
-				.status-running { color: #dbab09; }
-				.status-pending { color: #6a737d; }
-				.status-dead { color: #6a737d; }
+				th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #30363d; }
+				th { font-weight: 600; color: #e6edf3; }
+				a { color: #58a6ff; }
+				.status-success { color: #3fb950; }
+				.status-failed { color: #f85149; }
+				.status-running { color: #d29922; }
+				.status-pending { color: #8b949e; }
+				.status-dead { color: #8b949e; }
+				.status-in_progress { color: #d29922; }
 				nav { margin-bottom: 1rem; }
 				nav a { margin-right: 1rem; }
 				h1 { margin-bottom: 0.5rem; }
 				.mono { font-family: monospace; }
-				.small { font-size: 0.875rem; color: #6a737d; }
+				.small { font-size: 0.875rem; color: #8b949e; }
 				pre { margin: 0; padding: 0.25rem 0.5rem; white-space: pre-wrap; word-break: break-word; }
+				button { background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 0.375rem 0.75rem; cursor: pointer; }
+				button:hover { background: #30363d; border-color: #8b949e; }
 			</style>
 		</head>
 		<body>
@@ -160,15 +163,13 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 						for _, s := range streams[j.Name] {
 							<tr>
 								<td colspan="4" style="padding: 0 0.5rem;">
-									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) }>
+									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) } data-last-line={ s.LastLine }>
 										<summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
 											<span class={ statusClass(j.Status) }>&#x25cf;</span>
 											{ " " }{ s.Name }
-											if s.LastLine != "" {
-												<span class="stream-last-line" style="color: #6a737d; margin-left: 0.5rem;">{ s.LastLine }</span>
-											}
+											<span class="stream-last-line" style="color: #8b949e; margin-left: 0.5rem;"></span>
 										</summary>
-										<pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>
+										<pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>
 									</details>
 								</td>
 							</tr>
@@ -225,6 +226,11 @@ templ streamScript() {
 			var lastLineEl = details.querySelector('.stream-last-line');
 			var loaded = false;
 			var ansi = new AnsiUp();
+			var lastLineAnsi = new AnsiUp();
+
+			if (details.dataset.lastLine) {
+				lastLineEl.innerHTML = lastLineAnsi.ansi_to_html(details.dataset.lastLine);
+			}
 
 			details.addEventListener('toggle', function() {
 				if (!details.open || loaded) return;
@@ -241,7 +247,8 @@ templ streamScript() {
 							var lines = text.split('\n');
 							for (var i = lines.length - 1; i >= 0; i--) {
 								if (lines[i].trim() !== '') {
-									if (lastLineEl) lastLineEl.textContent = lines[i].replace(/\x1b\[[0-9;]*m/g, '').substring(0, 120);
+									lastLineAnsi = new AnsiUp();
+									lastLineEl.innerHTML = lastLineAnsi.ansi_to_html(lines[i].substring(0, 120));
 									break;
 								}
 							}
@@ -260,7 +267,13 @@ templ staticStreamScript() {
 		document.querySelectorAll('.stream-viewer').forEach(function(details) {
 			var url = details.dataset.streamUrl;
 			var pre = details.querySelector('.stream-output');
+			var lastLineEl = details.querySelector('.stream-last-line');
 			var loaded = false;
+
+			if (details.dataset.lastLine) {
+				var initAnsi = new AnsiUp();
+				lastLineEl.innerHTML = initAnsi.ansi_to_html(details.dataset.lastLine);
+			}
 
 			details.addEventListener('toggle', function() {
 				if (!details.open || loaded) return;
