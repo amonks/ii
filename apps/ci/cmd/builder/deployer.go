@@ -93,7 +93,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	// Step 1: Compile the binary.
 	fmt.Fprintf(w, "=== compiling %s\n", app)
 	compileStart := time.Now()
-	binaryPath := filepath.Join(os.TempDir(), "bin", app)
+	binaryPath := filepath.Join(os.TempDir(), "bin", app, "app")
 	os.MkdirAll(filepath.Dir(binaryPath), 0755)
 
 	cmd := exec.Command("go", "build", "-o", binaryPath, fmt.Sprintf("./apps/%s", app))
@@ -129,7 +129,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 
 	entrypoint := appCfg.Cmd
 	if len(entrypoint) == 0 {
-		entrypoint = []string{"/app/bin/app"}
+		entrypoint = []string{"/app/app"}
 	}
 
 	envVars := []string{
