@@ -26,6 +26,7 @@ resource "aws_route53_record" "wifi-ss-cx-A" {
   records = ["104.168.77.185"]
 }
 
+# third-party hosts
 resource "aws_route53_record" "w-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "w.ss.cx."
@@ -58,6 +59,7 @@ resource "aws_route53_record" "ss-cx-AAAA" {
   records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
+# monks.go
 resource "aws_route53_record" "ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "ss.cx."
@@ -74,6 +76,7 @@ resource "aws_route53_record" "lugh-ss-cx-A" {
   records = ["100.75.168.50"]
 }
 
+# junk
 resource "aws_route53_record" "local-brigid-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "local-brigid.ss.cx."
@@ -90,6 +93,7 @@ resource "aws_route53_record" "fly-ss-cx-A" {
   records = ["100.124.71.5"]
 }
 
+# tailnet
 resource "aws_route53_record" "brigid-ss-cx-A" {
   zone_id = aws_route53_zone.ss-cx.zone_id
   name    = "brigid.ss.cx."

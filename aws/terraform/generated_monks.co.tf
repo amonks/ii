@@ -18,6 +18,7 @@ resource "aws_route53_record" "www-monks-co-A" {
   records = ["37.16.29.186"]
 }
 
+# buttondown
 resource "aws_route53_record" "updates-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "updates.monks.co."
@@ -26,6 +27,7 @@ resource "aws_route53_record" "updates-monks-co-CNAME" {
   records = ["murmuring-bedbug-xc9fvm5sklejkr3tlrhfat80.herokudns.com."]
 }
 
+# gods teeth
 resource "aws_route53_record" "teeth-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "teeth.monks.co."
@@ -34,6 +36,7 @@ resource "aws_route53_record" "teeth-monks-co-CNAME" {
   records = ["0m80plo.gods-teeth-2025.fly.dev."]
 }
 
+# old sites
 resource "aws_route53_record" "processing-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "processing.monks.co."
@@ -74,6 +77,7 @@ resource "aws_route53_record" "monks-co-AAAA" {
   records = ["2a09:8280:1::d2:e9f9:0"]
 }
 
+# monks.co
 resource "aws_route53_record" "monks-co-A" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "monks.co."
@@ -98,6 +102,7 @@ resource "aws_route53_record" "fm2-_domainkey-monks-co-CNAME" {
   records = ["fm2.monks.co.dkim.fmhosted.com."]
 }
 
+# fastmail
 resource "aws_route53_record" "fm1-_domainkey-monks-co-CNAME" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "fm1._domainkey.monks.co."
@@ -114,6 +119,7 @@ resource "aws_route53_record" "_dmarc-monks-co-TXT" {
   records = ["v=DMARC1; p=quarantine; rua=mailto:940f0c149d7a65a4c6b0f32e5246f6fa@inbound.postmarkapp.com; aspf=r; pct=100"]
 }
 
+# twitter bluesky
 resource "aws_route53_record" "_atproto-monks-co-TXT" {
   zone_id = aws_route53_zone.monks-co.zone_id
   name    = "_atproto.monks.co."

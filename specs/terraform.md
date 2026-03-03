@@ -14,7 +14,6 @@ aws/
 ├── .envrc                      # AWS credentials (direnv)
 ├── convert-zones.fish          # Zone file → Terraform code generator
 ├── tasks.toml                  # Task runner definitions
-├── tfz53-macos / tfz53-linux   # Zone-to-Terraform converter binaries
 ├── zones/                      # Bind-format zone files (source of truth for DNS)
 │   ├── monks.co
 │   ├── ss.cx
@@ -33,7 +32,7 @@ aws/
 ## DNS Management
 
 DNS records are authored as standard bind zone files in `aws/zones/`.
-A `convert-zones.fish` script runs `tfz53` (a prebuilt binary) to convert
+A `convert-zones.fish` script runs `cmd/tfz53` (via `go run`) to convert
 each zone file into a `generated_<domain>.tf` file containing
 `aws_route53_zone` and `aws_route53_record` resources. These generated
 files are committed to the repo but should not be hand-edited.
