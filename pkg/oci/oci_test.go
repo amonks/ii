@@ -201,6 +201,35 @@ func TestBuildAppImageSetsPlatform(t *testing.T) {
 	}
 }
 
+func TestLayerMediaTypesAreOCI(t *testing.T) {
+	tmp := t.TempDir()
+	binPath := filepath.Join(tmp, "app")
+	if err := os.WriteFile(binPath, []byte("binary"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := oci.ImageConfig{Cmd: []string{"/app/app"}}
+	img, err := oci.BuildAppImage(empty.Image, binPath, nil, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	layers, err := img.Layers()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, l := range layers {
+		mt, err := l.MediaType()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if mt != "application/vnd.oci.image.layer.v1.tar+gzip" {
+			t.Errorf("layer %d media type = %q, want OCI gzip", i, mt)
+		}
+	}
+}
+
 func TestImageConfigRoundtrip(t *testing.T) {
 	cfg := oci.ImageConfig{
 		Cmd:     []string{"/bin/app", "--flag"},

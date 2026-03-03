@@ -14,6 +14,7 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -161,10 +162,11 @@ func Push(img v1.Image, ref string, opts ...remote.Option) error {
 }
 
 // layerFromTar creates a layer from tar bytes using LayerFromOpener.
+// Uses OCI media type for compatibility with OCI-format base images.
 func layerFromTar(data []byte) (v1.Layer, error) {
 	return tarball.LayerFromOpener(func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(data)), nil
-	})
+	}, tarball.WithMediaType(types.OCILayer))
 }
 
 // emptyTar returns the bytes of an empty but valid tar archive.
