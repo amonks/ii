@@ -41,3 +41,9 @@ func (sm *smuggler) WriteHeader(code int) {
 	sm.smuggle()
 	sm.ResponseWriter.WriteHeader(code)
 }
+
+func (sm *smuggler) Flush() {
+	if f, ok := sm.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}

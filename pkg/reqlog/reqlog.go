@@ -236,6 +236,12 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
+func (rw *responseWriter) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // Unwrap returns the underlying ResponseWriter, enabling
 // http.ResponseController to discover interface implementations
 // like http.Flusher on the original writer.

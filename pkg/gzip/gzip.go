@@ -2,7 +2,6 @@ package gzip
 
 import (
 	"compress/gzip"
-	"io"
 	"net/http"
 	"strings"
 
@@ -19,16 +18,23 @@ var Middleware = middleware.MiddlewareFunc(func(h http.Handler) http.Handler {
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
 		defer gz.Close()
-		gzw := gzipResponseWriter{w, gz}
+		gzw := &gzipResponseWriter{ResponseWriter: w, gzip: gz}
 		h.ServeHTTP(gzw, req)
 	})
 })
 
 type gzipResponseWriter struct {
 	http.ResponseWriter
-	gzip io.Writer
+	gzip *gzip.Writer
 }
 
-func (w gzipResponseWriter) Write(b []byte) (int, error) {
+func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.gzip.Write(b)
+}
+
+func (w *gzipResponseWriter) Flush() {
+	w.gzip.Flush()
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }
