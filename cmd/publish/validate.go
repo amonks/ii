@@ -153,7 +153,15 @@ func BuildDepGraph(root string) (map[string][]string, error) {
 			if err != nil {
 				return nil, fmt.Errorf("scanning %s: %w", dir, err)
 			}
-			graph[dir] = deps
+			// Filter out self-references (e.g. cmd/beetman/beetman
+			// imports monks.co/beetman which resolves to cmd/beetman).
+			filtered := deps[:0]
+			for _, dep := range deps {
+				if dep != dir {
+					filtered = append(filtered, dep)
+				}
+			}
+			graph[dir] = filtered
 		}
 	}
 

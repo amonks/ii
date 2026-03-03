@@ -211,9 +211,46 @@ var _ = util.Y
 		if dep == "beetman/internal" {
 			t.Errorf("dep graph should not contain bogus dir %q", dep)
 		}
+		if dep == "cmd/beetman" {
+			t.Error("dep graph should not contain self-reference")
+		}
 	}
 	if !hasUtil {
 		t.Errorf("expected cmd/beetman to depend on pkg/util, got %v", deps)
+	}
+}
+
+func TestBuildDepGraphSelfImport(t *testing.T) {
+	// A package whose CLI entrypoint imports itself (e.g. cmd/beetman/beetman
+	// imports monks.co/beetman) should not produce a self-dependency.
+	root := t.TempDir()
+
+	beetDir := filepath.Join(root, "cmd", "mylib")
+	os.MkdirAll(beetDir, 0755)
+	os.WriteFile(filepath.Join(beetDir, "go.mod"),
+		[]byte("module monks.co/mylib\n\ngo 1.26.0\n"), 0644)
+	os.WriteFile(filepath.Join(beetDir, "lib.go"),
+		[]byte("package mylib\n"), 0644)
+
+	// Subdirectory imports the parent module.
+	cliDir := filepath.Join(beetDir, "mylib")
+	os.MkdirAll(cliDir, 0755)
+	os.WriteFile(filepath.Join(cliDir, "main.go"), []byte(`package main
+
+import "monks.co/mylib"
+
+var _ = mylib.X
+`), 0644)
+
+	graph, err := BuildDepGraph(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, dep := range graph["cmd/mylib"] {
+		if dep == "cmd/mylib" {
+			t.Error("dep graph should not contain self-reference")
+		}
 	}
 }
 
@@ -233,6 +270,15 @@ func TestBuildDepGraphReal(t *testing.T) {
 	proxyDeps := graph["apps/proxy"]
 	if len(proxyDeps) == 0 {
 		t.Error("expected apps/proxy to have dependencies")
+	}
+
+	// All packages should be toposortable (no cycles, no self-deps).
+	allDirs := map[string]bool{}
+	for dir := range graph {
+		allDirs[dir] = true
+	}
+	if _, err := topoSort(allDirs, graph); err != nil {
+		t.Errorf("topoSort of all packages: %v", err)
 	}
 }
 
