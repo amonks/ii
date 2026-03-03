@@ -10,6 +10,8 @@ transitively depends on it.
 
 Code: [cmd/deploy/](../cmd/deploy/)
 
+Change detection library: [pkg/ci/changedetect/](../pkg/ci/changedetect/)
+
 Config: [config/fly-apps.toml](../config/fly-apps.toml)
 
 Dependency graph: [pkg/depgraph/](../pkg/depgraph/)
@@ -22,7 +24,8 @@ rest of the config is used by the Fly deployment infrastructure.
 
 ## Change Detection
 
-The deploy tool diffs changed files between a base commit and HEAD,
+The deploy tool uses `pkg/ci/changedetect` to diff changed files
+between a base commit and HEAD (trying jj first, falling back to git),
 then maps those changes to affected apps:
 
 | Changed path | Deploy |
@@ -82,6 +85,16 @@ The `FLY_API_TOKEN` secret provides Fly.io authentication.
 
 The deploy job uses `concurrency: fly-deploy` with
 `cancel-in-progress: false` to ensure deployments run sequentially.
+
+## Migration to CI Service
+
+`cmd/deploy` is being replaced by the CI service (`apps/ci`). The CI
+service builder uses `pkg/ci/changedetect` (same logic) and builds OCI
+images directly with `pkg/oci` instead of using Docker. See
+[ci spec](ci.md).
+
+During migration, both systems run in parallel. Once the CI service is
+stable, `cmd/deploy` will be removed.
 
 ## Dependencies
 

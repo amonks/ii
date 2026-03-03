@@ -7,6 +7,7 @@ use (
 	./apps/air
 	./apps/aranet
 	./apps/calendar
+	./apps/ci
 	./apps/creamery
 	./apps/directory
 	./apps/dogs
@@ -34,11 +35,12 @@ use (
 	./cmd/deploy
 	./cmd/publish
 	./cmd/taskmaker
-	./cmd/tfz53
+	./cmd/zone2terraform
 	./pkg/aranet4
 	./pkg/aschrome
 	./pkg/auth
 	./pkg/beeminder
+	./pkg/ci
 	./pkg/color
 	./pkg/config
 	./pkg/crdt
@@ -50,6 +52,7 @@ use (
 	./pkg/env
 	./pkg/filesystem
 	./pkg/flock
+	./pkg/flyapi
 	./pkg/fzf
 	./pkg/googlemaps
 	./pkg/gormdate
@@ -69,6 +72,7 @@ use (
 	./pkg/metacritic
 	./pkg/middleware
 	./pkg/migrate
+	./pkg/oci
 	./pkg/periodically
 	./pkg/posts
 	./pkg/prometh

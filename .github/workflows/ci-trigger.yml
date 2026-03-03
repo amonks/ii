@@ -1,0 +1,21 @@
+name: CI Trigger
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci-trigger
+
+      - name: Trigger CI
+        run: |
+          curl -sf -X POST "http://monks-ci-fly-ord/trigger" \
+            -H "Content-Type: application/json" \
+            -d '{"sha":"${{ github.sha }}"}'

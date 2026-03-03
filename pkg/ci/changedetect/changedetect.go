@@ -1,0 +1,193 @@
+// Package changedetect determines which Fly apps are affected by
+// code changes, using dependency graph analysis.
+package changedetect
+
+import (
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	"github.com/BurntSushi/toml"
+	"monks.co/pkg/depgraph"
+)
+
+// FlyAppsConfig represents config/fly-apps.toml with full app details.
+type FlyAppsConfig struct {
+	Defaults FlyAppDefaults         `toml:"defaults"`
+	Apps     map[string]FlyAppEntry `toml:"apps"`
+}
+
+// FlyAppDefaults are the default values for all apps.
+type FlyAppDefaults struct {
+	Region   string `toml:"region"`
+	VMSize   string `toml:"vm_size"`
+	VMMemory string `toml:"vm_memory"`
+}
+
+// FlyAppEntry is the configuration for a single Fly app.
+type FlyAppEntry struct {
+	VMSize   string   `toml:"vm_size"`
+	VMMemory string   `toml:"vm_memory"`
+	Volume   string   `toml:"volume"`
+	Public   bool     `toml:"public"`
+	Packages []string `toml:"packages"`
+	Files    []string `toml:"files"`
+	Cmd      []string `toml:"cmd"`
+}
+
+// LoadFlyAppsConfig reads config/fly-apps.toml and returns the full config.
+func LoadFlyAppsConfig(root string) (*FlyAppsConfig, error) {
+	path := filepath.Join(root, "config", "fly-apps.toml")
+	var cfg FlyAppsConfig
+	if _, err := toml.DecodeFile(path, &cfg); err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	}
+	return &cfg, nil
+}
+
+// LoadFlyApps reads config/fly-apps.toml and returns the sorted app names.
+func LoadFlyApps(root string) ([]string, error) {
+	cfg, err := LoadFlyAppsConfig(root)
+	if err != nil {
+		return nil, err
+	}
+	var apps []string
+	for name := range cfg.Apps {
+		apps = append(apps, name)
+	}
+	sortStrings(apps)
+	return apps, nil
+}
+
+// ChangedFiles returns the list of files changed between baseSHA and HEAD.
+// It tries jj first (jj diff --name-only), falling back to git.
+// If baseSHA is all zeros (initial push), returns nil to signal "deploy all".
+func ChangedFiles(root, baseSHA string) ([]string, error) {
+	if strings.TrimLeft(baseSHA, "0") == "" {
+		// Initial push: all zeros → deploy everything.
+		return nil, nil
+	}
+
+	// Try jj first.
+	out, err := tryJJ(root, baseSHA)
+	if err != nil {
+		// Fall back to git.
+		out, err = tryGit(root, baseSHA)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var files []string
+	for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
+		if line != "" {
+			files = append(files, line)
+		}
+	}
+	return files, nil
+}
+
+func tryJJ(root, baseSHA string) (string, error) {
+	cmd := exec.Command("jj", "diff", "--from", baseSHA, "--to", "@", "--name-only")
+	cmd.Dir = root
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("jj diff: %w", err)
+	}
+	return string(out), nil
+}
+
+func tryGit(root, baseSHA string) (string, error) {
+	cmd := exec.Command("git", "diff", "--name-only", baseSHA, "HEAD")
+	cmd.Dir = root
+	out, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("git diff: %s", string(exitErr.Stderr))
+		}
+		return "", fmt.Errorf("git diff: %w", err)
+	}
+	return string(out), nil
+}
+
+// AffectedApps determines which Fly apps need to be deployed based on
+// the changed files and dependency graph.
+//
+// Rules:
+//   - nil changed files (initial push) → all apps
+//   - apps/<name>/** → that app (if it's a Fly app)
+//   - pkg/<name>/** → any Fly app that transitively depends on that package
+//   - go.mod, go.sum (root) → all apps
+//   - config/fly-apps.toml → all apps
+//   - anything else → nothing
+func AffectedApps(flyApps []string, changed []string, graph map[string][]string) []string {
+	flyAppSet := map[string]bool{}
+	for _, app := range flyApps {
+		flyAppSet[app] = true
+	}
+
+	// nil means "deploy everything" (initial push).
+	if changed == nil {
+		return flyApps
+	}
+
+	affected := map[string]bool{}
+
+	// Build reverse dependency map: for each package, which apps depend on it?
+	reverseDeps := map[string][]string{}
+	for _, app := range flyApps {
+		appDir := filepath.Join("apps", app)
+		for dep := range depgraph.TransitiveDeps(graph, appDir) {
+			reverseDeps[dep] = append(reverseDeps[dep], app)
+		}
+	}
+
+	for _, file := range changed {
+		// Root go.mod/go.sum or config/fly-apps.toml → deploy all.
+		if file == "go.mod" || file == "go.sum" || file == "config/fly-apps.toml" {
+			return flyApps
+		}
+
+		// apps/<name>/... → that app.
+		if strings.HasPrefix(file, "apps/") {
+			parts := strings.SplitN(file, "/", 3)
+			if len(parts) >= 2 {
+				appName := parts[1]
+				if flyAppSet[appName] {
+					affected[appName] = true
+				}
+			}
+			continue
+		}
+
+		// pkg/<name>/... → any app that transitively depends on it.
+		if strings.HasPrefix(file, "pkg/") {
+			parts := strings.SplitN(file, "/", 3)
+			if len(parts) >= 2 {
+				pkgDir := filepath.Join("pkg", parts[1])
+				for _, app := range reverseDeps[pkgDir] {
+					affected[app] = true
+				}
+			}
+			continue
+		}
+	}
+
+	var result []string
+	for _, app := range flyApps {
+		if affected[app] {
+			result = append(result, app)
+		}
+	}
+	return result
+}
+
+// sortStrings sorts a string slice in place.
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+}

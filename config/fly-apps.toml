@@ -39,3 +39,7 @@
 
 [apps.mailer]
   volume = "monks_mailer_data"
+
+[apps.ci]
+  volume = "monks_ci_data"
+  packages = ["sqlite"]

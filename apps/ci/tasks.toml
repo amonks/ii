@@ -1,0 +1,23 @@
+[[task]]
+  id = "build"
+  type = "short"
+  dependencies = ["generate"]
+  watch = ["**/*.go", "*.go"]
+  cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "generate"
+  type = "short"
+  cmd = "go tool templ generate"
+  watch = ["**/*.templ"]
+
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = ["build"]
+  cmd = "../../bin/ci"
+
+[[task]]
+  id = "start"
+  type = "long"
+  cmd = "../../bin/ci"

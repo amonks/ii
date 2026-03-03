@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"monks.co/pkg/ci/publish"
 	"monks.co/pkg/env"
 )
 
@@ -24,7 +25,7 @@ func run() error {
 
 	root := env.InMonksRoot()
 
-	cfg, err := LoadPublishConfig(root)
+	cfg, err := publish.LoadConfig(root)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -34,5 +35,5 @@ func run() error {
 		return nil
 	}
 
-	return publish(root, cfg, *dryRun)
+	return publish.Run(root, cfg, *dryRun)
 }

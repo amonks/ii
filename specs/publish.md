@@ -12,6 +12,8 @@ By default, all public packages go into a single shared mirror repo
 
 Code: [cmd/publish/](../cmd/publish/)
 
+Library: [pkg/ci/publish/](../pkg/ci/publish/)
+
 Config: [config/publish.toml](../config/publish.toml)
 
 ## Config
@@ -42,7 +44,8 @@ Fields:
 
 ## Validation
 
-Go tests in `cmd/publish/validate_test.go` enforce publish invariants.
+Go tests in `cmd/publish/publish_test.go` and `pkg/ci/publish/config_test.go`
+enforce publish invariants.
 These run as part of `go test monks.co/...`:
 
 - Every public package's transitive `monks.co/*` deps are also public.

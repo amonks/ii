@@ -1,9 +1,13 @@
-// Command tfz53 converts a BIND zone file into Terraform aws_route53_zone
-// and aws_route53_record resources.
+// Command zone2terraform converts BIND zone files into Terraform
+// aws_route53_zone and aws_route53_record resources.
+//
+// Based on tfz53 by Calle Pettersson (https://github.com/carlpett/tfz53),
+// licensed under the Apache License, Version 2.0.
 //
 // Usage:
 //
-//	tfz53 -domain monks.co -zone-file zones/monks.co
+//	zone2terraform -dir aws/zones -out aws/terraform
+//	zone2terraform -domain monks.co -zone-file zones/monks.co
 package main
 
 import (
@@ -12,13 +16,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
 
 var (
-	flagDomain   = flag.String("domain", "", "Name of domain")
-	flagZoneFile = flag.String("zone-file", "", "Path to zone file")
+	flagDomain   = flag.String("domain", "", "Name of domain (single-file mode)")
+	flagZoneFile = flag.String("zone-file", "", "Path to zone file (single-file mode)")
+	flagDir      = flag.String("dir", "", "Directory containing zone files (batch mode)")
+	flagOut      = flag.String("out", "", "Output directory for generated .tf files (batch mode)")
 )
 
 type record struct {
@@ -36,13 +43,66 @@ type recordKey struct {
 
 func main() {
 	flag.Parse()
+
+	// Batch mode: process all zone files in a directory.
+	if *flagDir != "" {
+		if *flagOut == "" {
+			log.Fatal("-out is required when using -dir")
+		}
+		if err := generateAll(*flagDir, *flagOut); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
+	// Single-file mode.
 	if *flagDomain == "" {
-		log.Fatal("Domain is required")
+		log.Fatal("Domain is required (use -domain or -dir)")
 	}
 	if *flagZoneFile == "" {
 		log.Fatal("Zone file is required")
 	}
 	fmt.Print(generateForZone(*flagDomain, *flagZoneFile))
+}
+
+// generateAll processes all zone files in zonesDir and writes .tf files to outDir.
+func generateAll(zonesDir, outDir string) error {
+	// Remove old generated files.
+	matches, _ := filepath.Glob(filepath.Join(outDir, "generated_*.tf"))
+	for _, m := range matches {
+		if err := os.Remove(m); err != nil {
+			return fmt.Errorf("removing %s: %w", m, err)
+		}
+	}
+
+	entries, err := os.ReadDir(zonesDir)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", zonesDir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.Size() == 0 {
+			continue
+		}
+
+		domain := entry.Name()
+		zoneFile := filepath.Join(zonesDir, domain)
+		output := generateForZone(domain, zoneFile)
+
+		outPath := filepath.Join(outDir, "generated_"+domain+".tf")
+		if err := os.WriteFile(outPath, []byte(output), 0644); err != nil {
+			return fmt.Errorf("writing %s: %w", outPath, err)
+		}
+	}
+
+	return nil
 }
 
 func generateForZone(domain, zoneFilePath string) string {

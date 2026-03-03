@@ -52,6 +52,7 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [air](air.md) | [apps/air/](../apps/air/) | Home environmental monitoring dashboard (CO2, temperature, humidity) |
 | [aranet](aranet.md) | [apps/aranet/](../apps/aranet/) | Bluetooth scanning service for Aranet4 sensors |
 | [calendar](calendar.md) | [apps/calendar/](../apps/calendar/) | Personal TV show tracking calendar |
+| [ci](ci.md) | [apps/ci/](../apps/ci/) | Self-hosted CI/CD: orchestrator + ephemeral builder |
 | [creamery](creamery.md) | [apps/creamery/](../apps/creamery/) | Ice cream formulation and batch log analytics |
 | [directory](directory.md) | [apps/directory/](../apps/directory/) | Internal service directory showing apps × machines |
 | [dogs](dogs.md) | [apps/dogs/](../apps/dogs/) | Hot dog eating contest photo gallery |
@@ -86,6 +87,9 @@ The full routing configuration is maintained in tailscale ACL policy as capabili
 | [pkg-tls](pkg-tls.md) | [pkg/tls/](../pkg/tls/) | ACME TLS certificate management via CertMagic |
 | [pkg-logs](pkg-logs.md) | [pkg/logs/](../pkg/logs/) | SQLite log storage and adaptive query engine |
 | [pkg-depgraph](pkg-depgraph.md) | [pkg/depgraph/](../pkg/depgraph/) | Dependency graph builder for monks.co/* modules |
+| [pkg-ci](pkg-ci.md) | [pkg/ci/](../pkg/ci/) | CI shared libraries: change detection, publish config/validation |
+| [pkg-oci](pkg-oci.md) | [pkg/oci/](../pkg/oci/) | Pure Go OCI image building and registry push via go-containerregistry |
+| [pkg-flyapi](pkg-flyapi.md) | [pkg/flyapi/](../pkg/flyapi/) | Fly Machines API REST client |
 
 ### Domain-Specific
 

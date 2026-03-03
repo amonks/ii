@@ -1,0 +1,5 @@
+app = "monks-ci-builder"
+primary_region = "ord"
+
+[build]
+  dockerfile = "builder.Dockerfile"

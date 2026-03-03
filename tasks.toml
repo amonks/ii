@@ -68,7 +68,8 @@
     'apps/writing/templ',
     'apps/youtube/templ',
     'compress-statics',
-    'templ'
+    'templ',
+    'zone2terraform'
   ]
 
 [[task]]
@@ -128,3 +129,9 @@
     'apps/movies/dev',
     'apps/reddit/dev'
   ]
+
+[[task]]
+  id = 'zone2terraform'
+  type = 'short'
+  watch = ['aws/zones/*']
+  cmd = 'go run ./cmd/zone2terraform -dir=aws/zones -out=aws/terraform'

@@ -9,9 +9,5 @@ data
 aws/terraform
 apps/dogs/archive.zip
 
-# exclude all other apps
-apps/*
-!apps/proxy
-
 # exclude build artifacts
 **/node_modules

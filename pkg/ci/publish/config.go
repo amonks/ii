@@ -1,4 +1,6 @@
-package main
+// Package publish provides configuration and validation for publishing
+// monorepo subtrees as read-only GitHub mirrors.
+package publish
 
 import (
 	"fmt"
@@ -11,22 +13,23 @@ import (
 	"monks.co/pkg/depgraph"
 )
 
-// PublishConfig represents config/publish.toml.
-type PublishConfig struct {
-	DefaultMirror string           `toml:"default_mirror"`
-	Package       []PublishPackage `toml:"package"`
+// Config represents config/publish.toml.
+type Config struct {
+	DefaultMirror string    `toml:"default_mirror"`
+	Package       []Package `toml:"package"`
 }
 
-type PublishPackage struct {
+// Package is the configuration for a single published package.
+type Package struct {
 	Dir        string `toml:"dir"`
 	ModulePath string `toml:"module_path"`
 	Mirror     string `toml:"mirror"`
 }
 
-// LoadPublishConfig loads config/publish.toml.
-func LoadPublishConfig(root string) (*PublishConfig, error) {
+// LoadConfig loads config/publish.toml.
+func LoadConfig(root string) (*Config, error) {
 	path := filepath.Join(root, "config", "publish.toml")
-	var cfg PublishConfig
+	var cfg Config
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", path, err)
 	}
@@ -34,7 +37,7 @@ func LoadPublishConfig(root string) (*PublishConfig, error) {
 }
 
 // PublicDirs returns the set of directory paths that are public.
-func (c *PublishConfig) PublicDirs() map[string]bool {
+func (c *Config) PublicDirs() map[string]bool {
 	dirs := map[string]bool{}
 	for _, pkg := range c.Package {
 		dirs[pkg.Dir] = true
@@ -43,7 +46,7 @@ func (c *PublishConfig) PublicDirs() map[string]bool {
 }
 
 // PackageByDir returns the package config for a directory, or nil.
-func (c *PublishConfig) PackageByDir(dir string) *PublishPackage {
+func (c *Config) PackageByDir(dir string) *Package {
 	for i := range c.Package {
 		if c.Package[i].Dir == dir {
 			return &c.Package[i]
@@ -53,7 +56,7 @@ func (c *PublishConfig) PackageByDir(dir string) *PublishPackage {
 }
 
 // ExpectedModulePath returns the expected module path for a directory.
-func (c *PublishConfig) ExpectedModulePath(dir string) string {
+func (c *Config) ExpectedModulePath(dir string) string {
 	for _, pkg := range c.Package {
 		if pkg.Dir == dir && pkg.ModulePath != "" {
 			return pkg.ModulePath
@@ -82,7 +85,6 @@ func ValidatePublicDeps(graph map[string][]string, publicDirs map[string]bool) [
 func ValidateLicenses(root string, publicDirs map[string]bool) []string {
 	var errs []string
 	for dir := range publicDirs {
-		// Check for LICENSE or LICENSE.md
 		found := false
 		for _, name := range []string{"LICENSE", "LICENSE.md", "LICENSE.txt"} {
 			if _, err := os.Stat(filepath.Join(root, dir, name)); err == nil {
@@ -100,7 +102,7 @@ func ValidateLicenses(root string, publicDirs map[string]bool) []string {
 
 // ValidateGoModPaths checks that every public package's go.mod has the
 // expected module path.
-func ValidateGoModPaths(root string, cfg *PublishConfig) []string {
+func ValidateGoModPaths(root string, cfg *Config) []string {
 	var errs []string
 	for _, pkg := range cfg.Package {
 		goModPath := filepath.Join(root, pkg.Dir, "go.mod")
@@ -111,7 +113,6 @@ func ValidateGoModPaths(root string, cfg *PublishConfig) []string {
 		}
 
 		expected := cfg.ExpectedModulePath(pkg.Dir)
-		// Parse first line: "module monks.co/pkg/serve"
 		for line := range strings.SplitSeq(string(bs), "\n") {
 			line = strings.TrimSpace(line)
 			if after, ok := strings.CutPrefix(line, "module "); ok {

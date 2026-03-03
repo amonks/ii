@@ -1,0 +1,191 @@
+package main
+
+import "fmt"
+
+templ layout(title string) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } — CI</title>
+			<style>
+				body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }
+				table { border-collapse: collapse; width: 100%; }
+				th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }
+				th { font-weight: 600; }
+				a { color: #0066cc; }
+				.status-success { color: #22863a; }
+				.status-failed { color: #cb2431; }
+				.status-running { color: #dbab09; }
+				.status-pending { color: #6a737d; }
+				nav { margin-bottom: 1rem; }
+				nav a { margin-right: 1rem; }
+				h1 { margin-bottom: 0.5rem; }
+				.mono { font-family: monospace; }
+				.small { font-size: 0.875rem; color: #6a737d; }
+			</style>
+		</head>
+		<body>
+			<nav>
+				<a href="/">Runs</a>
+				<a href="/deployments">Deployments</a>
+			</nav>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ indexPage(runs []Run, deployments []Deployment) {
+	@layout("Dashboard") {
+		<h1>CI Dashboard</h1>
+
+		<h2>Current Deployments</h2>
+		if len(deployments) == 0 {
+			<p class="small">No deployments recorded yet.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>App</th>
+						<th>Commit</th>
+						<th>Deployed</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, d := range deployments {
+						<tr>
+							<td>{ d.App }</td>
+							<td class="mono">{ shortSHA(d.CommitSHA) }</td>
+							<td class="small">{ d.DeployedAt }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+
+		<h2>Recent Runs</h2>
+		if len(runs) == 0 {
+			<p class="small">No runs yet.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Status</th>
+						<th>Head SHA</th>
+						<th>Trigger</th>
+						<th>Started</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, r := range runs {
+						<tr>
+							<td><a href={ templ.SafeURL(fmt.Sprintf("/runs/%d", r.ID)) }>{ fmt.Sprintf("#%d", r.ID) }</a></td>
+							<td class={ statusClass(r.Status) }>{ r.Status }</td>
+							<td class="mono">{ shortSHA(r.HeadSHA) }</td>
+							<td>{ r.Trigger }</td>
+							<td class="small">{ r.StartedAt }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
+templ runPage(run *Run, jobs []Job) {
+	@layout(fmt.Sprintf("Run #%d", run.ID)) {
+		<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
+		<p>
+			Status: <span class={ statusClass(run.Status) }>{ run.Status }</span><br/>
+			Head: <span class="mono">{ run.HeadSHA }</span><br/>
+			Base: <span class="mono">{ run.BaseSHA }</span><br/>
+			Trigger: { run.Trigger }<br/>
+			Started: { run.StartedAt }
+			if run.FinishedAt != nil {
+				<br/>Finished: { *run.FinishedAt }
+			}
+			if run.MachineID != nil {
+				<br/>Machine: <span class="mono">{ *run.MachineID }</span>
+			}
+		</p>
+
+		<h2>Jobs</h2>
+		if len(jobs) == 0 {
+			<p class="small">No jobs yet.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Kind</th>
+						<th>Status</th>
+						<th>Duration</th>
+						<th>Output</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, j := range jobs {
+						<tr>
+							<td>{ j.Name }</td>
+							<td>{ j.Kind }</td>
+							<td class={ statusClass(j.Status) }>{ j.Status }</td>
+							<td>
+								if j.DurationMs != nil {
+									{ fmt.Sprintf("%dms", *j.DurationMs) }
+								}
+							</td>
+							<td>
+								if j.OutputPath != nil {
+									<a href={ templ.SafeURL(fmt.Sprintf("/output/%d/%s", run.ID, j.Name)) }>view</a>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
+templ deploymentsPage(deployments []Deployment) {
+	@layout("Deployments") {
+		<h1>Deployment History</h1>
+		if len(deployments) == 0 {
+			<p class="small">No deployments recorded yet.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>App</th>
+						<th>Commit</th>
+						<th>Image</th>
+						<th>Deployed</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, d := range deployments {
+						<tr>
+							<td>{ d.App }</td>
+							<td class="mono">{ shortSHA(d.CommitSHA) }</td>
+							<td class="mono small">{ d.ImageRef }</td>
+							<td class="small">{ d.DeployedAt }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
+func shortSHA(sha string) string {
+	if len(sha) > 7 {
+		return sha[:7]
+	}
+	return sha
+}
+
+func statusClass(status string) string {
+	return "status-" + status
+}

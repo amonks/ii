@@ -17,7 +17,7 @@ var baseTasks = []*task{
 	{
 		Id:           "generate",
 		Type:         "short",
-		Dependencies: []string{"templ", "compress-statics"},
+		Dependencies: []string{"templ", "compress-statics", "zone2terraform"},
 	},
 	{
 		Id:    "templ",
@@ -29,6 +29,12 @@ var baseTasks = []*task{
 		Id:   "compress-statics",
 		Type: "short",
 		Cmd:  "go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -force -v",
+	},
+	{
+		Id:    "zone2terraform",
+		Type:  "short",
+		Cmd:   "go run ./cmd/zone2terraform -dir=aws/zones -out=aws/terraform",
+		Watch: []string{"aws/zones/*"},
 	},
 	{
 		Id:           "test",
