@@ -869,7 +869,7 @@ func runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogEv
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " <script src=\"static/ansi_up.js\"></script> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -915,7 +915,7 @@ func streamScript() templ.Component {
 			templ_7745c5c3_Var53 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<script>\n\t\tdocument.querySelectorAll('.stream-viewer').forEach(function(details) {\n\t\t\tvar url = details.dataset.streamUrl;\n\t\t\tvar pre = details.querySelector('.stream-output');\n\t\t\tvar lastLineEl = details.querySelector('.stream-last-line');\n\t\t\tvar loaded = false;\n\n\t\t\tdetails.addEventListener('toggle', function() {\n\t\t\t\tif (!details.open || loaded) return;\n\t\t\t\tloaded = true;\n\t\t\t\tfetch(url + '?stream=1').then(function(resp) {\n\t\t\t\t\tvar reader = resp.body.getReader();\n\t\t\t\t\tvar decoder = new TextDecoder();\n\t\t\t\t\tfunction read() {\n\t\t\t\t\t\treader.read().then(function(result) {\n\t\t\t\t\t\t\tif (result.done) return;\n\t\t\t\t\t\t\tvar text = decoder.decode(result.value, {stream: true});\n\t\t\t\t\t\t\tpre.textContent += text;\n\t\t\t\t\t\t\tpre.scrollTop = pre.scrollHeight;\n\t\t\t\t\t\t\tvar lines = text.split('\\n');\n\t\t\t\t\t\t\tfor (var i = lines.length - 1; i >= 0; i--) {\n\t\t\t\t\t\t\t\tif (lines[i].trim() !== '') {\n\t\t\t\t\t\t\t\t\tif (lastLineEl) lastLineEl.textContent = lines[i].length > 120 ? lines[i].substring(0, 120) + '...' : lines[i];\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tread();\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t\tread();\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<script>\n\t\tdocument.querySelectorAll('.stream-viewer').forEach(function(details) {\n\t\t\tvar url = details.dataset.streamUrl;\n\t\t\tvar pre = details.querySelector('.stream-output');\n\t\t\tvar lastLineEl = details.querySelector('.stream-last-line');\n\t\t\tvar loaded = false;\n\t\t\tvar ansi = new AnsiUp();\n\n\t\t\tdetails.addEventListener('toggle', function() {\n\t\t\t\tif (!details.open || loaded) return;\n\t\t\t\tloaded = true;\n\t\t\t\tfetch(url + '?stream=1').then(function(resp) {\n\t\t\t\t\tvar reader = resp.body.getReader();\n\t\t\t\t\tvar decoder = new TextDecoder();\n\t\t\t\t\tfunction read() {\n\t\t\t\t\t\treader.read().then(function(result) {\n\t\t\t\t\t\t\tif (result.done) return;\n\t\t\t\t\t\t\tvar text = decoder.decode(result.value, {stream: true});\n\t\t\t\t\t\t\tpre.innerHTML += ansi.ansi_to_html(text);\n\t\t\t\t\t\t\tpre.scrollTop = pre.scrollHeight;\n\t\t\t\t\t\t\tvar lines = text.split('\\n');\n\t\t\t\t\t\t\tfor (var i = lines.length - 1; i >= 0; i--) {\n\t\t\t\t\t\t\t\tif (lines[i].trim() !== '') {\n\t\t\t\t\t\t\t\t\tif (lastLineEl) lastLineEl.textContent = lines[i].replace(/\\x1b\\[[0-9;]*m/g, '').substring(0, 120);\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tread();\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t\tread();\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -944,7 +944,7 @@ func staticStreamScript() templ.Component {
 			templ_7745c5c3_Var54 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<script>\n\t\tdocument.querySelectorAll('.stream-viewer').forEach(function(details) {\n\t\t\tvar url = details.dataset.streamUrl;\n\t\t\tvar pre = details.querySelector('.stream-output');\n\t\t\tvar loaded = false;\n\n\t\t\tdetails.addEventListener('toggle', function() {\n\t\t\t\tif (!details.open || loaded) return;\n\t\t\t\tloaded = true;\n\t\t\t\tfetch(url).then(function(resp) {\n\t\t\t\t\treturn resp.text();\n\t\t\t\t}).then(function(text) {\n\t\t\t\t\tpre.textContent = text;\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<script>\n\t\tdocument.querySelectorAll('.stream-viewer').forEach(function(details) {\n\t\t\tvar url = details.dataset.streamUrl;\n\t\t\tvar pre = details.querySelector('.stream-output');\n\t\t\tvar loaded = false;\n\n\t\t\tdetails.addEventListener('toggle', function() {\n\t\t\t\tif (!details.open || loaded) return;\n\t\t\t\tloaded = true;\n\t\t\t\tvar ansi = new AnsiUp();\n\t\t\t\tfetch(url).then(function(resp) {\n\t\t\t\t\treturn resp.text();\n\t\t\t\t}).then(function(text) {\n\t\t\t\t\tpre.innerHTML = ansi.ansi_to_html(text);\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1007,7 +1007,7 @@ func deploymentsPage(deployments []Deployment) templ.Component {
 					var templ_7745c5c3_Var57 string
 					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(d.App)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 294, Col: 18}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 297, Col: 18}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 					if templ_7745c5c3_Err != nil {
@@ -1020,7 +1020,7 @@ func deploymentsPage(deployments []Deployment) templ.Component {
 					var templ_7745c5c3_Var58 string
 					templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(shortSHA(d.CommitSHA))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 295, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 298, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 					if templ_7745c5c3_Err != nil {
@@ -1033,7 +1033,7 @@ func deploymentsPage(deployments []Deployment) templ.Component {
 					var templ_7745c5c3_Var59 string
 					templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(d.ImageRef)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 296, Col: 42}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 299, Col: 42}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 					if templ_7745c5c3_Err != nil {
@@ -1046,7 +1046,7 @@ func deploymentsPage(deployments []Deployment) templ.Component {
 					var templ_7745c5c3_Var60 string
 					templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(d.DeployedAt)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 297, Col: 39}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates.templ`, Line: 300, Col: 39}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 					if templ_7745c5c3_Err != nil {

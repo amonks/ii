@@ -208,6 +208,7 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 			</table>
 		}
 
+		<script src="static/ansi_up.js"></script>
 		if run.Status == "running" {
 			@streamScript()
 		} else {
@@ -223,6 +224,7 @@ templ streamScript() {
 			var pre = details.querySelector('.stream-output');
 			var lastLineEl = details.querySelector('.stream-last-line');
 			var loaded = false;
+			var ansi = new AnsiUp();
 
 			details.addEventListener('toggle', function() {
 				if (!details.open || loaded) return;
@@ -234,12 +236,12 @@ templ streamScript() {
 						reader.read().then(function(result) {
 							if (result.done) return;
 							var text = decoder.decode(result.value, {stream: true});
-							pre.textContent += text;
+							pre.innerHTML += ansi.ansi_to_html(text);
 							pre.scrollTop = pre.scrollHeight;
 							var lines = text.split('\n');
 							for (var i = lines.length - 1; i >= 0; i--) {
 								if (lines[i].trim() !== '') {
-									if (lastLineEl) lastLineEl.textContent = lines[i].length > 120 ? lines[i].substring(0, 120) + '...' : lines[i];
+									if (lastLineEl) lastLineEl.textContent = lines[i].replace(/\x1b\[[0-9;]*m/g, '').substring(0, 120);
 									break;
 								}
 							}
@@ -263,10 +265,11 @@ templ staticStreamScript() {
 			details.addEventListener('toggle', function() {
 				if (!details.open || loaded) return;
 				loaded = true;
+				var ansi = new AnsiUp();
 				fetch(url).then(function(resp) {
 					return resp.text();
 				}).then(function(text) {
-					pre.textContent = text;
+					pre.innerHTML = ansi.ansi_to_html(text);
 				});
 			});
 		});

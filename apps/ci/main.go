@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -21,6 +23,9 @@ import (
 	"monks.co/pkg/sigctx"
 	"monks.co/pkg/tailnet"
 )
+
+//go:embed static
+var staticFS embed.FS
 
 func main() {
 	if err := run(); err != nil {
@@ -51,6 +56,8 @@ func run() error {
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
 	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
 	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))
+	staticSub, _ := fs.Sub(staticFS, "static")
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticSub)))
 
 	// Trigger endpoint.
 	flyToken := os.Getenv("FLY_API_TOKEN")
