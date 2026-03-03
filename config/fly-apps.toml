@@ -10,7 +10,7 @@
   public = true
   packages = ["iptables", "ip6tables", "sqlite"]
   files = ["config/fly.toml", "apps/proxy/static/"]
-  cmd = ["/app/bin/app", "-machine", "fly"]
+  cmd = ["/app/app", "-machine", "fly"]
 
 [apps.homepage]
   volume = "monks_homepage_data"
