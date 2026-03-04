@@ -1,3 +1,6 @@
+[llm]
+model = "gpt-5.2-codex"
+
 [job]
 test-commands = ["go test ./...", "go vet ./...", "go tool staticcheck ./...", "go tool govulncheck ./..."]
 

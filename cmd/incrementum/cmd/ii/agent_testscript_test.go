@@ -23,7 +23,7 @@ func TestAgentScripts(t *testing.T) {
 
 	// Load and verify the config has providers that support:
 	// - claude-haiku-4-5 (explicitly used by several scripts)
-	// - gpt-5.2 (the default llm.model used when scripts omit --model)
+	// - gpt-5.2 (needed by provider list; default llm.model is gpt-5.2-codex)
 	cfg, err := config.Load(moduleRoot)
 	if err != nil {
 		t.Fatalf("failed to load incrementum.toml: %v", err)
