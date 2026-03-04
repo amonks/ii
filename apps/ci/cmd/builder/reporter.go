@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 )
 
 // Reporter reports build progress to the orchestrator via HTTP.
@@ -13,6 +14,9 @@ type Reporter struct {
 	baseURL string
 	runID   int64
 	client  *http.Client
+
+	mu      sync.Mutex
+	deploys []DeployResult
 }
 
 // NewReporter creates a reporter that talks to the orchestrator.
@@ -36,29 +40,6 @@ type FinishJobResult struct {
 	DurationMs int64
 	Error      string
 	OutputPath string
-
-	Deploy    *DeployData
-	Terraform *TerraformData
-}
-
-// DeployData contains deploy-specific result data.
-type DeployData struct {
-	App             string `json:"app"`
-	ImageRef        string `json:"image_ref"`
-	PreviousImage   string `json:"previous_image,omitempty"`
-	BinaryBytes     int64  `json:"binary_bytes,omitempty"`
-	ImageBytes      int64  `json:"image_bytes,omitempty"`
-	CompileMs       int64  `json:"compile_ms,omitempty"`
-	PushMs          int64  `json:"push_ms,omitempty"`
-	DeployMs        int64  `json:"deploy_ms,omitempty"`
-	PackagesChanged string `json:"packages_changed,omitempty"`
-}
-
-// TerraformData contains terraform-specific result data.
-type TerraformData struct {
-	ResourcesAdded     int `json:"resources_added"`
-	ResourcesChanged   int `json:"resources_changed"`
-	ResourcesDestroyed int `json:"resources_destroyed"`
 }
 
 // FinishJob tells the orchestrator a job has finished.
@@ -73,13 +54,49 @@ func (r *Reporter) FinishJob(name string, result FinishJobResult) error {
 	if result.OutputPath != "" {
 		body["output_path"] = result.OutputPath
 	}
-	if result.Deploy != nil {
-		body["deploy"] = result.Deploy
-	}
-	if result.Terraform != nil {
-		body["terraform"] = result.Terraform
-	}
 	return r.put(fmt.Sprintf("/api/runs/%d/jobs/%s/done", r.runID, name), body)
+}
+
+// FinishStreamResult contains the result of a finished stream.
+type FinishStreamResult struct {
+	Status     string
+	DurationMs int64
+	Error      string
+}
+
+// StartStream tells the orchestrator a stream has started.
+func (r *Reporter) StartStream(jobName, streamName string) error {
+	return r.put(fmt.Sprintf("/api/runs/%d/jobs/%s/streams/%s/start", r.runID, jobName, streamName), nil)
+}
+
+// FinishStream tells the orchestrator a stream has finished.
+func (r *Reporter) FinishStream(jobName, streamName string, result FinishStreamResult) error {
+	body := map[string]any{
+		"status":      result.Status,
+		"duration_ms": result.DurationMs,
+	}
+	if result.Error != "" {
+		body["error"] = result.Error
+	}
+	return r.put(fmt.Sprintf("/api/runs/%d/jobs/%s/streams/%s/done", r.runID, jobName, streamName), body)
+}
+
+// DeployResult contains deploy-specific result data for the task event.
+type DeployResult struct {
+	App         string `json:"app"`
+	ImageRef    string `json:"image_ref,omitempty"`
+	CompileMs   int64  `json:"compile_ms,omitempty"`
+	PushMs      int64  `json:"push_ms,omitempty"`
+	DeployMs    int64  `json:"deploy_ms,omitempty"`
+	ImageBytes  int64  `json:"image_bytes,omitempty"`
+	BinaryBytes int64  `json:"binary_bytes,omitempty"`
+}
+
+// AddDeployResult accumulates deploy metadata for the task event.
+func (r *Reporter) AddDeployResult(d DeployResult) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deploys = append(r.deploys, d)
 }
 
 // RecordDeployment tells the orchestrator about a deployment.
@@ -95,12 +112,17 @@ func (r *Reporter) RecordDeployment(app, sha, imageRef string, binaryBytes int64
 
 // FinishRun tells the orchestrator the run is complete.
 func (r *Reporter) FinishRun(status, errMsg string) error {
-	body := map[string]string{
+	body := map[string]any{
 		"status": status,
 	}
 	if errMsg != "" {
 		body["error"] = errMsg
 	}
+	r.mu.Lock()
+	if len(r.deploys) > 0 {
+		body["deploys"] = r.deploys
+	}
+	r.mu.Unlock()
 	return r.put(fmt.Sprintf("/api/runs/%d/done", r.runID), body)
 }
 

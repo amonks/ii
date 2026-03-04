@@ -68,7 +68,7 @@ describe("applyRunState", () => {
     applyRunState(makeState({
       jobs: [
         { name: "go-test", kind: "test", status: "in_progress" },
-        { name: "deploy-dogs", kind: "deploy", status: "success", duration_ms: 1500 },
+        { name: "deploy", kind: "deploy", status: "success", duration_ms: 1500 },
       ],
     }));
 
@@ -78,12 +78,13 @@ describe("applyRunState", () => {
     const firstRow = rows[0] as HTMLTableRowElement;
     expect(firstRow.dataset.jobName).toBe("go-test");
     const cells = firstRow.querySelectorAll("td");
-    expect(cells[2].textContent).toBe("in_progress");
-    expect(cells[2].className).toBe("status-in_progress");
+    // No Kind column: Name(0), Status(1), Duration(2)
+    expect(cells[1].textContent).toBe("in_progress");
+    expect(cells[1].className).toBe("status-in_progress");
 
     const secondRow = rows[1] as HTMLTableRowElement;
     const secondCells = secondRow.querySelectorAll("td");
-    expect(secondCells[3].textContent).toBe("1500ms");
+    expect(secondCells[2].textContent).toBe("1500ms");
   });
 
   it("updates existing job rows in place", () => {
@@ -100,14 +101,18 @@ describe("applyRunState", () => {
     const rows = document.querySelectorAll("#jobs-tbody tr[data-job-name]");
     expect(rows.length).toBe(1);
     const cells = (rows[0] as HTMLTableRowElement).querySelectorAll("td");
-    expect(cells[2].textContent).toBe("success");
-    expect(cells[3].textContent).toBe("2000ms");
+    // No Kind column: Name(0), Status(1), Duration(2)
+    expect(cells[1].textContent).toBe("success");
+    expect(cells[2].textContent).toBe("2000ms");
   });
 
   it("adds stream viewer rows", () => {
     applyRunState(makeState({
       jobs: [{ name: "go-test", kind: "test", status: "in_progress" }],
-      streams: { "go-test": ["stdout", "stderr"] },
+      streams: { "go-test": [
+        { name: "stdout", status: "in_progress" },
+        { name: "stderr", status: "in_progress" },
+      ] },
     }));
 
     const viewers = document.querySelectorAll(".stream-viewer");

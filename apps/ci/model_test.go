@@ -191,7 +191,7 @@ func TestJobs(t *testing.T) {
 	}
 }
 
-func TestDeployJob(t *testing.T) {
+func TestStreams(t *testing.T) {
 	m := testModel(t)
 
 	run, err := m.CreateRun("sha1", "base1", "webhook")
@@ -199,24 +199,132 @@ func TestDeployJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job, err := m.StartJob(run.ID, "deploy", "deploy-dogs", "/output/1/deploy-dogs")
+	job, err := m.StartJob(run.ID, "deploy", "deploy", "/output/1/deploy")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	binaryBytes := int64(1024)
-	imageBytes := int64(2048)
-	compileMs := int64(500)
-	dj := &DeployJob{
-		JobID:       job.ID,
-		App:         "dogs",
-		ImageRef:    "registry.fly.io/monks-dogs:sha1",
-		BinaryBytes: &binaryBytes,
-		ImageBytes:  &imageBytes,
-		CompileMs:   &compileMs,
-	}
-	if err := m.FinishDeployJob(dj); err != nil {
+	// Start a stream.
+	s, err := m.StartStream(job.ID, "dogs")
+	if err != nil {
 		t.Fatal(err)
+	}
+	if s.Status != "in_progress" {
+		t.Errorf("expected status in_progress, got %s", s.Status)
+	}
+	if s.StartedAt == nil {
+		t.Error("expected started_at to be set")
+	}
+
+	// Finish the stream.
+	if err := m.FinishStream(s.ID, "success", 1500, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// Load streams for job.
+	streams, err := m.StreamsForJob(job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 1 {
+		t.Fatalf("expected 1 stream, got %d", len(streams))
+	}
+	if streams[0].Status != "success" {
+		t.Errorf("expected status success, got %s", streams[0].Status)
+	}
+	if streams[0].DurationMs == nil || *streams[0].DurationMs != 1500 {
+		t.Error("expected duration_ms 1500")
+	}
+
+	// Start another stream with error.
+	s2, err := m.StartStream(job.ID, "logs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.FinishStream(s2.ID, "failed", 500, "compile error"); err != nil {
+		t.Fatal(err)
+	}
+
+	streams, err = m.StreamsForJob(job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 2 {
+		t.Fatalf("expected 2 streams, got %d", len(streams))
+	}
+	// Sorted by name: dogs, logs.
+	if streams[0].Name != "dogs" {
+		t.Errorf("expected first stream dogs, got %s", streams[0].Name)
+	}
+	if streams[1].Name != "logs" {
+		t.Errorf("expected second stream logs, got %s", streams[1].Name)
+	}
+	if streams[1].Error == nil || *streams[1].Error != "compile error" {
+		t.Errorf("expected error 'compile error', got %v", streams[1].Error)
+	}
+}
+
+func TestStreamsForRun(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	job1, err := m.StartJob(run.ID, "task", "test", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	job2, err := m.StartJob(run.ID, "deploy", "deploy", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	m.StartStream(job1.ID, "go-test")
+	m.StartStream(job1.ID, "staticcheck")
+	m.StartStream(job2.ID, "dogs")
+	m.StartStream(job2.ID, "proxy")
+
+	streams, err := m.StreamsForRun(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 4 {
+		t.Fatalf("expected 4 streams, got %d", len(streams))
+	}
+}
+
+func TestStreamSkipped(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	job, err := m.StartJob(run.ID, "deploy", "deploy", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := m.StartStream(job.ID, "homepage")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.FinishStream(s.ID, "skipped", 0, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	streams, err := m.StreamsForJob(job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 1 {
+		t.Fatalf("expected 1 stream, got %d", len(streams))
+	}
+	if streams[0].Status != "skipped" {
+		t.Errorf("expected status skipped, got %s", streams[0].Status)
 	}
 }
 
@@ -305,97 +413,6 @@ func TestSetMachineID(t *testing.T) {
 	}
 }
 
-func TestDeployJobsForRun(t *testing.T) {
-	m := testModel(t)
-
-	run, err := m.CreateRun("sha1", "base1", "webhook")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// No deploy jobs yet.
-	djs, err := m.DeployJobsForRun(run.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(djs) != 0 {
-		t.Fatalf("expected 0 deploy jobs, got %d", len(djs))
-	}
-
-	// Create a deploy job.
-	job, err := m.StartJob(run.ID, "deploy", "deploy-dogs", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	m.FinishJob(job.ID, "success", 5000, "", "")
-
-	compileMs := int64(1000)
-	imageBytes := int64(50000)
-	m.FinishDeployJob(&DeployJob{
-		JobID:      job.ID,
-		App:        "dogs",
-		ImageRef:   "registry.fly.io/monks-dogs:sha1",
-		CompileMs:  &compileMs,
-		ImageBytes: &imageBytes,
-	})
-
-	djs, err = m.DeployJobsForRun(run.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(djs) != 1 {
-		t.Fatalf("expected 1 deploy job, got %d", len(djs))
-	}
-	if djs[0].App != "dogs" {
-		t.Errorf("expected app dogs, got %s", djs[0].App)
-	}
-}
-
-func TestTerraformJobsForRun(t *testing.T) {
-	m := testModel(t)
-
-	run, err := m.CreateRun("sha1", "base1", "webhook")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// No terraform jobs yet.
-	tjs, err := m.TerraformJobsForRun(run.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(tjs) != 0 {
-		t.Fatalf("expected 0 terraform jobs, got %d", len(tjs))
-	}
-
-	// Create a terraform job.
-	job, err := m.StartJob(run.ID, "terraform", "terraform", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	m.FinishJob(job.ID, "success", 3000, "", "")
-
-	m.FinishTerraformJob(&TerraformJob{
-		JobID:              job.ID,
-		ResourcesAdded:     2,
-		ResourcesChanged:   1,
-		ResourcesDestroyed: 0,
-	})
-
-	tjs, err = m.TerraformJobsForRun(run.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(tjs) != 1 {
-		t.Fatalf("expected 1 terraform job, got %d", len(tjs))
-	}
-	if tjs[0].ResourcesAdded != 2 {
-		t.Errorf("expected 2 resources added, got %d", tjs[0].ResourcesAdded)
-	}
-	if tjs[0].ResourcesChanged != 1 {
-		t.Errorf("expected 1 resource changed, got %d", tjs[0].ResourcesChanged)
-	}
-}
 
 func init() {
 	// Ensure MONKS_DATA is set for tests that use OpenFromDataFolder.

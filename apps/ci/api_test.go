@@ -479,25 +479,11 @@ func TestFinishRunEmitsTaskEventWithDeployData(t *testing.T) {
 	m, mux, _ := setupAPI(t)
 
 	run, _ := m.CreateRun("sha1", "base1", "webhook")
-	job, _ := m.StartJob(run.ID, "deploy", "deploy-dogs", "")
+	job, _ := m.StartJob(run.ID, "deploy", "deploy", "")
 	m.FinishJob(job.ID, "success", 5000, "", "")
 
-	// Record deploy data.
-	compileMs := int64(1000)
-	pushMs := int64(2000)
-	deployMs := int64(1500)
-	imageBytes := int64(50000)
-	m.FinishDeployJob(&DeployJob{
-		JobID:      job.ID,
-		App:        "dogs",
-		ImageRef:   "registry.fly.io/monks-dogs:sha1",
-		CompileMs:  &compileMs,
-		PushMs:     &pushMs,
-		DeployMs:   &deployMs,
-		ImageBytes: &imageBytes,
-	})
-
-	body := `{"status":"success"}`
+	// Deploy data is now sent as part of the finishRun request.
+	body := `{"status":"success","deploys":[{"app":"dogs","image_ref":"registry.fly.io/monks-dogs:sha1","compile_ms":1000,"push_ms":2000,"deploy_ms":1500,"image_bytes":50000}]}`
 	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
@@ -529,6 +515,54 @@ func TestFinishRunEmitsTaskEventWithDeployData(t *testing.T) {
 	// JSON numbers are float64.
 	if v, ok := taskEvent["deploy.dogs.compile_ms"].(float64); !ok || v != 1000 {
 		t.Errorf("deploy.dogs.compile_ms = %v", taskEvent["deploy.dogs.compile_ms"])
+	}
+}
+
+func TestAPIStartAndFinishStream(t *testing.T) {
+	m, mux, _ := setupAPI(t)
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	m.StartJob(run.ID, "deploy", "deploy", "")
+
+	// Start a stream.
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/jobs/deploy/streams/dogs/start", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]any
+	json.NewDecoder(w.Body).Decode(&resp)
+	if resp["stream_id"] == nil {
+		t.Error("expected stream_id in response")
+	}
+
+	// Finish the stream.
+	body := `{"status":"success","duration_ms":2000}`
+	req = httptest.NewRequest(http.MethodPut, "/api/runs/1/jobs/deploy/streams/dogs/done", strings.NewReader(body))
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Verify stream in DB.
+	_, jobs, _ := m.RunWithJobs(run.ID)
+	streams, err := m.StreamsForJob(jobs[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 1 {
+		t.Fatalf("expected 1 stream, got %d", len(streams))
+	}
+	if streams[0].Status != "success" {
+		t.Errorf("expected success, got %s", streams[0].Status)
+	}
+	if streams[0].DurationMs == nil || *streams[0].DurationMs != 2000 {
+		t.Error("expected duration_ms 2000")
 	}
 }
 

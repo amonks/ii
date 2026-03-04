@@ -29,6 +29,24 @@ rebuilds the builder image, it runs
 and push to the registry without creating any machines. The
 orchestrator creates ephemeral machines on demand.
 
+## Data Model
+
+Every pipeline phase is one **Job** with N **Streams**. Each stream
+carries its own status, duration, and error. This is uniform across
+all job types:
+
+- **fetch**: 1 job, 1 stream ("output")
+- **generate**: 1 job, N streams (one per run-library task)
+- **test**: 1 job, N streams (one per run-library task)
+- **deploy**: 1 job, N streams (one per fly app — affected apps
+  deploy, unaffected apps show as "skipped")
+- **publish**: 1 job, 1 stream ("output")
+- **terraform**: 1 job, 1 stream ("output")
+
+Deploy metadata (compile_ms, push_ms, image_ref, etc.) is sent as
+part of the `FinishRun` request payload for task event emission,
+not stored in the DB.
+
 ## Trigger
 
 POST `/trigger` with `{"sha":"abc123"}`. Not publicly accessible —
@@ -50,11 +68,16 @@ The builder reports progress back over tailnet:
 
 - `PUT /api/runs/{id}/jobs/{name}/start` — mark job in_progress,
   set output_path to the output directory for this job
-- `PUT /api/runs/{id}/jobs/{name}/done` — store result, duration,
-  kind-specific data (deploy details, terraform resource counts)
+- `PUT /api/runs/{id}/jobs/{name}/done` — store result and duration
+- `PUT /api/runs/{id}/jobs/{name}/streams/{stream}/start` — create
+  stream record, mark as in_progress
+- `PUT /api/runs/{id}/jobs/{name}/streams/{stream}/done` — store
+  stream result, duration, error
 - `POST /api/runs/{id}/jobs/{name}/output/{stream}` — append raw
   bytes to a named output stream file on disk
-- `PUT /api/runs/{id}/done` — mark run complete, SMS on failure
+- `PUT /api/runs/{id}/done` — mark run complete, emit task event,
+  SMS on failure. Accepts optional `deploys` array with deploy
+  metadata for the task event log.
 - `GET /api/runs/{id}/base-sha` — return base SHA for this run
 - `POST /api/runs/{id}/deployments` — record deployment
 - `POST /runs/{id}/mark-dead` — mark a running run as dead
@@ -69,17 +92,25 @@ orchestrator's volume.
 **Builder side**: A `StreamWriter` implements `io.Writer`, buffers
 writes, and flushes them to the orchestrator's output endpoint on a
 cadence (every 500ms or 8KB, whichever comes first). The `Reporter`
-has a `StreamWriter(jobName, stream)` method to create writers.
+has a `StreamWriter(jobName, stream)` method to create writers,
+plus `StartStream` and `FinishStream` for lifecycle management.
 
 **Test jobs**: Use the `run` library (github.com/amonks/run)
 programmatically via `taskfile.Load` + `runner.New`. A custom
 `MultiWriter` implementation returns a `StreamWriter` per task ID,
 giving separate output streams for each task (go-test, staticcheck,
-templ, etc).
+templ, etc). After `run.Start()` returns, `run.TaskStatus()` is
+called for each task ID to set per-stream status (success, failed,
+or skipped).
 
-**Other jobs**: Single stream per job. Shellout stdout/stderr and
-progress messages both write to the same `StreamWriter`. Deploy
-jobs log progress ("compiling X", "pushing image", "deploying").
+**Deploy job**: A single "deploy" job with one stream per fly app.
+Unaffected apps get a "skipped" stream. Affected apps get a stream
+showing compile/push/deploy progress with success/failed status.
+Deploy metadata is accumulated via `reporter.AddDeployResult()` and
+sent with the `FinishRun` call.
+
+**Other jobs**: Single "output" stream per job. Shellout stdout/stderr
+and progress messages both write to the same `StreamWriter`.
 
 ## Live Output Hub
 
@@ -99,12 +130,13 @@ of build output. Keys are `"runID/jobName/stream"`.
 
 - `GET /` — recent runs, current deployments per app
 - `GET /runs/{id}` — jobs for this run with inline output viewers.
-  Each stream is a collapsible `<details>` showing a status dot,
-  stream name, and last line preview. Expanding loads the stream
+  Each stream is a collapsible `<details>` showing a status dot
+  colored by per-stream status (not job status), stream name,
+  optional duration, and last line preview. Expanding loads the stream
   content. For running runs, JS uses `fetch()` with `getReader()`
   to live-tail the `?stream=1` endpoint, auto-scrolling and updating
   the last-line preview. For finished runs, a simple fetch loads the
-  full content on expand.
+  full content on expand. Skipped streams show in gray.
 - `GET /deployments` — deployment history
 - `GET /output/{runID}/{jobName}` — redirects to single stream or
   lists available streams for multi-stream jobs
@@ -115,9 +147,14 @@ of build output. Keys are `"runID/jobName/stream"`.
 
 ## Database
 
-SQLite with WAL mode. Tables: `runs`, `jobs`, `deploy_jobs`,
-`terraform_jobs`, `deployments`. See
-[migrations/001_initial.sql](../apps/ci/migrations/001_initial.sql).
+SQLite with WAL mode. Tables: `runs`, `jobs`, `streams`,
+`deployments`. See
+[migrations/](../apps/ci/migrations/).
+
+The `streams` table stores per-stream metadata (status, duration,
+error) with a unique constraint on (job_id, name). The former
+`deploy_jobs` and `terraform_jobs` tables have been dropped —
+deploy metadata is now sent as part of the FinishRun payload.
 
 ## Task Event
 
@@ -131,11 +168,11 @@ run metadata flattened into dotted keys:
 - `task.error` = error message (if any)
 - `run.id`, `run.head_sha`, `run.base_sha`, `run.trigger`
 - `job.<name>.status`, `job.<name>.duration_ms` — per finished job
+- `stream.<job>.<stream>.status`, `stream.<job>.<stream>.duration_ms`
+  — per stream from DB
 - `deploy.<app>.image_ref`, `deploy.<app>.compile_ms`,
   `deploy.<app>.push_ms`, `deploy.<app>.deploy_ms`,
-  `deploy.<app>.image_bytes` — per deploy job
-- `terraform.resources_added`, `terraform.resources_changed`,
-  `terraform.resources_destroyed` — if terraform ran
+  `deploy.<app>.image_bytes` — from FinishRun request payload
 
 The run detail page displays this event as a key-value table in the
 "Task Event" section, fetched from the logs service with
@@ -154,13 +191,15 @@ Uses `tailnet.Client()` to POST to
    subsequent runs, then `jj new` the head SHA)
 3. Get base SHA from orchestrator
 4. Diff changed files
-5. Run generate + test (per-task output streams via run library)
+5. Run generate + test (per-task output streams via run library,
+   per-task status via `runner.TaskStatus()`)
 6. Concurrently:
-   - Deploy affected apps (each app deploys in parallel; streams compile/push/deploy progress)
+   - Deploy affected apps (single job, per-app streams including
+     skipped apps; deploy metadata accumulated for task event)
    - Publish subtrees (streams output)
    - Terraform apply (streams output)
    All three run as goroutines; errors are collected (not fail-fast) and joined.
-7. Report run complete
+7. Report run complete (sends accumulated deploy metadata)
 10. Exit → machine self-destructs
 
 ## Dependencies

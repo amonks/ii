@@ -118,11 +118,11 @@ func fetchRunLogsFrom(baseURL string, client *http.Client, run *Run) ([]LogEvent
 // ungrouped keys like "time", "level", "msg" omitted since they're metadata.
 func SortedDataKeys(data map[string]any) []string {
 	groupOrder := map[string]int{
-		"task":      0,
-		"run":       1,
-		"job":       2,
-		"deploy":    3,
-		"terraform": 4,
+		"task":   0,
+		"run":    1,
+		"job":    2,
+		"stream": 3,
+		"deploy": 4,
 	}
 
 	skip := map[string]bool{

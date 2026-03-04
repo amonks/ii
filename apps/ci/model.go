@@ -77,31 +77,19 @@ type Job struct {
 
 func (Job) TableName() string { return "jobs" }
 
-// DeployJob stores deploy-specific job data.
-type DeployJob struct {
-	JobID           int64   `gorm:"primaryKey;column:job_id"`
-	App             string  `gorm:"column:app"`
-	ImageRef        string  `gorm:"column:image_ref"`
-	PreviousImage   *string `gorm:"column:previous_image"`
-	BinaryBytes     *int64  `gorm:"column:binary_bytes"`
-	ImageBytes      *int64  `gorm:"column:image_bytes"`
-	CompileMs       *int64  `gorm:"column:compile_ms"`
-	PushMs          *int64  `gorm:"column:push_ms"`
-	DeployMs        *int64  `gorm:"column:deploy_ms"`
-	PackagesChanged *string `gorm:"column:packages_changed"`
+// Stream represents a named output stream within a job.
+type Stream struct {
+	ID         int64   `gorm:"primaryKey"`
+	JobID      int64   `gorm:"column:job_id"`
+	Name       string  `gorm:"column:name"`
+	Status     string  `gorm:"column:status"`
+	StartedAt  *string `gorm:"column:started_at"`
+	FinishedAt *string `gorm:"column:finished_at"`
+	DurationMs *int64  `gorm:"column:duration_ms"`
+	Error      *string `gorm:"column:error"`
 }
 
-func (DeployJob) TableName() string { return "deploy_jobs" }
-
-// TerraformJob stores terraform-specific job data.
-type TerraformJob struct {
-	JobID              int64 `gorm:"primaryKey;column:job_id"`
-	ResourcesAdded     int   `gorm:"column:resources_added"`
-	ResourcesChanged   int   `gorm:"column:resources_changed"`
-	ResourcesDestroyed int   `gorm:"column:resources_destroyed"`
-}
-
-func (TerraformJob) TableName() string { return "terraform_jobs" }
+func (Stream) TableName() string { return "streams" }
 
 // Deployment records a successful deployment.
 type Deployment struct {
@@ -223,28 +211,48 @@ func (m *Model) FinishJob(jobID int64, status string, durationMs int64, errorMsg
 	return m.db.Model(&Job{}).Where("id = ?", jobID).Updates(updates).Error
 }
 
-// FinishDeployJob stores deploy-specific data.
-func (m *Model) FinishDeployJob(dj *DeployJob) error {
-	return m.db.Create(dj).Error
+// StartStream creates a new stream and marks it as in_progress.
+func (m *Model) StartStream(jobID int64, name string) (*Stream, error) {
+	t := now()
+	s := Stream{
+		JobID:     jobID,
+		Name:      name,
+		Status:    "in_progress",
+		StartedAt: &t,
+	}
+	if err := m.db.Create(&s).Error; err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
-// FinishTerraformJob stores terraform-specific data.
-func (m *Model) FinishTerraformJob(tj *TerraformJob) error {
-	return m.db.Create(tj).Error
+// FinishStream marks a stream as complete.
+func (m *Model) FinishStream(streamID int64, status string, durationMs int64, errMsg string) error {
+	t := now()
+	updates := map[string]any{
+		"status":      status,
+		"finished_at": t,
+		"duration_ms": durationMs,
+	}
+	if errMsg != "" {
+		updates["error"] = errMsg
+	}
+	return m.db.Model(&Stream{}).Where("id = ?", streamID).Updates(updates).Error
 }
 
-// DeployJobsForRun loads all deploy job records for jobs belonging to a run.
-func (m *Model) DeployJobsForRun(runID int64) ([]DeployJob, error) {
-	var djs []DeployJob
-	err := m.db.Where("job_id IN (SELECT id FROM jobs WHERE run_id = ?)", runID).Find(&djs).Error
-	return djs, err
+// StreamsForJob returns all streams for a job, sorted by name.
+func (m *Model) StreamsForJob(jobID int64) ([]Stream, error) {
+	var streams []Stream
+	err := m.db.Where("job_id = ?", jobID).Order("name").Find(&streams).Error
+	return streams, err
 }
 
-// TerraformJobsForRun loads all terraform job records for jobs belonging to a run.
-func (m *Model) TerraformJobsForRun(runID int64) ([]TerraformJob, error) {
-	var tjs []TerraformJob
-	err := m.db.Where("job_id IN (SELECT id FROM jobs WHERE run_id = ?)", runID).Find(&tjs).Error
-	return tjs, err
+// StreamsForRun returns all streams for all jobs in a run, sorted by job ID then stream name.
+func (m *Model) StreamsForRun(runID int64) ([]Stream, error) {
+	var streams []Stream
+	err := m.db.Where("job_id IN (SELECT id FROM jobs WHERE run_id = ?)", runID).
+		Order("job_id, name").Find(&streams).Error
+	return streams, err
 }
 
 // RecordDeployment records a deployment.

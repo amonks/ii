@@ -21,6 +21,8 @@ func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(st
 
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/start", api.startJob)
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/done", api.finishJob)
+	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/streams/{stream}/start", api.startStream)
+	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/streams/{stream}/done", api.finishStream)
 	mux.HandleFunc("POST /api/runs/{runID}/jobs/{name}/output/{stream}", api.appendOutput)
 	mux.HandleFunc("PUT /api/runs/{runID}/done", api.finishRun)
 	mux.HandleFunc("POST /runs/{runID}/mark-dead", api.markDead)
@@ -127,30 +129,6 @@ type finishJobRequest struct {
 	DurationMs int64  `json:"duration_ms"`
 	Error      string `json:"error,omitempty"`
 	OutputPath string `json:"output_path,omitempty"`
-
-	// Deploy-specific fields.
-	Deploy *deployJobData `json:"deploy,omitempty"`
-
-	// Terraform-specific fields.
-	Terraform *terraformJobData `json:"terraform,omitempty"`
-}
-
-type deployJobData struct {
-	App             string `json:"app"`
-	ImageRef        string `json:"image_ref"`
-	PreviousImage   string `json:"previous_image,omitempty"`
-	BinaryBytes     int64  `json:"binary_bytes,omitempty"`
-	ImageBytes      int64  `json:"image_bytes,omitempty"`
-	CompileMs       int64  `json:"compile_ms,omitempty"`
-	PushMs          int64  `json:"push_ms,omitempty"`
-	DeployMs        int64  `json:"deploy_ms,omitempty"`
-	PackagesChanged string `json:"packages_changed,omitempty"`
-}
-
-type terraformJobData struct {
-	ResourcesAdded     int `json:"resources_added"`
-	ResourcesChanged   int `json:"resources_changed"`
-	ResourcesDestroyed int `json:"resources_destroyed"`
 }
 
 func (a *apiHandler) finishJob(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +138,6 @@ func (a *apiHandler) finishJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.PathValue("name")
-	_ = runID // used for logging
 
 	reqlog.Set(r.Context(), "api.run_id", runID)
 	reqlog.Set(r.Context(), "api.job_name", name)
@@ -202,46 +179,142 @@ func (a *apiHandler) finishJob(w http.ResponseWriter, r *http.Request) {
 
 	a.publishRunState(runID)
 
-	// Store kind-specific data.
-	if req.Deploy != nil {
-		bb := req.Deploy.BinaryBytes
-		ib := req.Deploy.ImageBytes
-		cm := req.Deploy.CompileMs
-		pm := req.Deploy.PushMs
-		dm := req.Deploy.DeployMs
-		dj := &DeployJob{
-			JobID:           jobID,
-			App:             req.Deploy.App,
-			ImageRef:        req.Deploy.ImageRef,
-			BinaryBytes:     &bb,
-			ImageBytes:      &ib,
-			CompileMs:       &cm,
-			PushMs:          &pm,
-			DeployMs:        &dm,
-			PackagesChanged: &req.Deploy.PackagesChanged,
-		}
-		if req.Deploy.PreviousImage != "" {
-			dj.PreviousImage = &req.Deploy.PreviousImage
-		}
-		a.model.FinishDeployJob(dj)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a *apiHandler) startStream(w http.ResponseWriter, r *http.Request) {
+	runID, err := a.parseRunID(r)
+	if err != nil {
+		http.Error(w, "invalid run ID", http.StatusBadRequest)
+		return
+	}
+	jobName := r.PathValue("name")
+	streamName := r.PathValue("stream")
+
+	reqlog.Set(r.Context(), "api.run_id", runID)
+	reqlog.Set(r.Context(), "api.job_name", jobName)
+	reqlog.Set(r.Context(), "api.stream_name", streamName)
+
+	// Find the job by run_id and name.
+	_, jobs, err := a.model.RunWithJobs(runID)
+	if err != nil {
+		http.Error(w, "run not found", http.StatusNotFound)
+		return
 	}
 
-	if req.Terraform != nil {
-		tj := &TerraformJob{
-			JobID:              jobID,
-			ResourcesAdded:     req.Terraform.ResourcesAdded,
-			ResourcesChanged:   req.Terraform.ResourcesChanged,
-			ResourcesDestroyed: req.Terraform.ResourcesDestroyed,
+	var jobID int64
+	for _, j := range jobs {
+		if j.Name == jobName {
+			jobID = j.ID
+			break
 		}
-		a.model.FinishTerraformJob(tj)
 	}
+	if jobID == 0 {
+		http.Error(w, "job not found", http.StatusNotFound)
+		return
+	}
+
+	s, err := a.model.StartStream(jobID, streamName)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("starting stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	a.publishRunState(runID)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"stream_id": s.ID,
+	})
+}
+
+type finishStreamRequest struct {
+	Status     string `json:"status"`
+	DurationMs int64  `json:"duration_ms"`
+	Error      string `json:"error,omitempty"`
+}
+
+func (a *apiHandler) finishStream(w http.ResponseWriter, r *http.Request) {
+	runID, err := a.parseRunID(r)
+	if err != nil {
+		http.Error(w, "invalid run ID", http.StatusBadRequest)
+		return
+	}
+	jobName := r.PathValue("name")
+	streamName := r.PathValue("stream")
+
+	reqlog.Set(r.Context(), "api.run_id", runID)
+	reqlog.Set(r.Context(), "api.job_name", jobName)
+	reqlog.Set(r.Context(), "api.stream_name", streamName)
+
+	var req finishStreamRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Find the job, then the stream.
+	_, jobs, err := a.model.RunWithJobs(runID)
+	if err != nil {
+		http.Error(w, "run not found", http.StatusNotFound)
+		return
+	}
+
+	var jobID int64
+	for _, j := range jobs {
+		if j.Name == jobName {
+			jobID = j.ID
+			break
+		}
+	}
+	if jobID == 0 {
+		http.Error(w, "job not found", http.StatusNotFound)
+		return
+	}
+
+	streams, err := a.model.StreamsForJob(jobID)
+	if err != nil {
+		http.Error(w, "error loading streams", http.StatusInternalServerError)
+		return
+	}
+
+	var streamID int64
+	for _, s := range streams {
+		if s.Name == streamName {
+			streamID = s.ID
+			break
+		}
+	}
+	if streamID == 0 {
+		http.Error(w, "stream not found", http.StatusNotFound)
+		return
+	}
+
+	if err := a.model.FinishStream(streamID, req.Status, req.DurationMs, req.Error); err != nil {
+		http.Error(w, fmt.Sprintf("finishing stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	a.publishRunState(runID)
 
 	w.WriteHeader(http.StatusOK)
 }
 
 type finishRunRequest struct {
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
+	Status  string            `json:"status"`
+	Error   string            `json:"error,omitempty"`
+	Deploys []deployEventData `json:"deploys,omitempty"`
+}
+
+// deployEventData carries deploy metadata for the task event log.
+type deployEventData struct {
+	App         string `json:"app"`
+	ImageRef    string `json:"image_ref,omitempty"`
+	CompileMs   int64  `json:"compile_ms,omitempty"`
+	PushMs      int64  `json:"push_ms,omitempty"`
+	DeployMs    int64  `json:"deploy_ms,omitempty"`
+	ImageBytes  int64  `json:"image_bytes,omitempty"`
+	BinaryBytes int64  `json:"binary_bytes,omitempty"`
 }
 
 func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
@@ -268,7 +341,7 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	a.closeRunEvents(runID)
 
 	// Emit a wide "task" event with all run metadata.
-	a.emitTaskEvent(runID, req.Status, req.Error)
+	a.emitTaskEvent(runID, req.Status, req.Error, req.Deploys)
 
 	// Send SMS on failure.
 	if req.Status == "failed" && a.sendSMS != nil {
@@ -370,7 +443,7 @@ func (a *apiHandler) recordDeployment(w http.ResponseWriter, r *http.Request) {
 }
 
 // emitTaskEvent logs a wide "task" event with all run metadata flattened into dotted keys.
-func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string) {
+func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string, deploys []deployEventData) {
 	run, jobs, err := a.model.RunWithJobs(runID)
 	if err != nil {
 		slog.Warn("emitTaskEvent: failed to load run", "error", err, "run_id", runID)
@@ -399,12 +472,6 @@ func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string) {
 		attrs = append(attrs, "task.error", errorMsg)
 	}
 
-	// Build a map from job ID to job for cross-referencing.
-	jobByID := make(map[int64]*Job, len(jobs))
-	for i := range jobs {
-		jobByID[jobs[i].ID] = &jobs[i]
-	}
-
 	// Per-job keys for finished jobs.
 	for _, j := range jobs {
 		if j.Status == "pending" || j.Status == "in_progress" {
@@ -417,37 +484,40 @@ func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string) {
 		}
 	}
 
-	// Deploy-specific keys.
-	deployJobs, _ := a.model.DeployJobsForRun(runID)
-	for _, dj := range deployJobs {
-		job := jobByID[dj.JobID]
-		if job == nil {
-			continue
-		}
-		prefix := "deploy." + dj.App
-		attrs = append(attrs, prefix+".image_ref", dj.ImageRef)
-		if dj.CompileMs != nil {
-			attrs = append(attrs, prefix+".compile_ms", *dj.CompileMs)
-		}
-		if dj.PushMs != nil {
-			attrs = append(attrs, prefix+".push_ms", *dj.PushMs)
-		}
-		if dj.DeployMs != nil {
-			attrs = append(attrs, prefix+".deploy_ms", *dj.DeployMs)
-		}
-		if dj.ImageBytes != nil {
-			attrs = append(attrs, prefix+".image_bytes", *dj.ImageBytes)
+	// Per-stream keys from DB.
+	streams, _ := a.model.StreamsForRun(runID)
+	// Build job ID -> name map.
+	jobNameByID := make(map[int64]string, len(jobs))
+	for _, j := range jobs {
+		jobNameByID[j.ID] = j.Name
+	}
+	for _, s := range streams {
+		jobName := jobNameByID[s.JobID]
+		prefix := "stream." + jobName + "." + s.Name
+		attrs = append(attrs, prefix+".status", s.Status)
+		if s.DurationMs != nil {
+			attrs = append(attrs, prefix+".duration_ms", *s.DurationMs)
 		}
 	}
 
-	// Terraform-specific keys.
-	terraformJobs, _ := a.model.TerraformJobsForRun(runID)
-	for _, tj := range terraformJobs {
-		attrs = append(attrs,
-			"terraform.resources_added", tj.ResourcesAdded,
-			"terraform.resources_changed", tj.ResourcesChanged,
-			"terraform.resources_destroyed", tj.ResourcesDestroyed,
-		)
+	// Deploy-specific keys from request payload.
+	for _, d := range deploys {
+		prefix := "deploy." + d.App
+		if d.ImageRef != "" {
+			attrs = append(attrs, prefix+".image_ref", d.ImageRef)
+		}
+		if d.CompileMs > 0 {
+			attrs = append(attrs, prefix+".compile_ms", d.CompileMs)
+		}
+		if d.PushMs > 0 {
+			attrs = append(attrs, prefix+".push_ms", d.PushMs)
+		}
+		if d.DeployMs > 0 {
+			attrs = append(attrs, prefix+".deploy_ms", d.DeployMs)
+		}
+		if d.ImageBytes > 0 {
+			attrs = append(attrs, prefix+".image_bytes", d.ImageBytes)
+		}
 	}
 
 	slog.Info("task", attrs...)

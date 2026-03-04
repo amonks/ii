@@ -25,6 +25,7 @@ templ layout(title string) {
 				.status-pending { color: #8b949e; }
 				.status-dead { color: #8b949e; }
 				.status-in_progress { color: #d29922; }
+				.status-skipped { color: #8b949e; }
 				nav { margin-bottom: 1rem; }
 				nav a { margin-right: 1rem; }
 				h1 { margin-bottom: 0.5rem; }
@@ -141,7 +142,6 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 				<thead>
 					<tr>
 						<th>Name</th>
-						<th>Kind</th>
 						<th>Status</th>
 						<th>Duration</th>
 					</tr>
@@ -150,7 +150,6 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 					for _, j := range jobs {
 						<tr data-job-name={ j.Name }>
 							<td>{ j.Name }</td>
-							<td>{ j.Kind }</td>
 							<td class={ statusClass(j.Status) }>{ j.Status }</td>
 							<td>
 								if j.DurationMs != nil {
@@ -160,18 +159,21 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 						</tr>
 						if j.Error != nil {
 							<tr id={ fmt.Sprintf("job-error-%s", j.Name) }>
-								<td colspan="4">
+								<td colspan="3">
 									<pre class="status-failed small">{ *j.Error }</pre>
 								</td>
 							</tr>
 						}
 						for _, s := range streams[j.Name] {
 							<tr>
-								<td colspan="4" style="padding: 0 0.5rem;">
-									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) } data-last-line={ s.LastLine }>
+								<td colspan="3" style="padding: 0 0.5rem;">
+									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) } data-last-line={ s.LastLine } data-stream-status={ s.Status }>
 										<summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
-											<span class={ statusClass(j.Status) }>&#x25cf;</span>
+											<span class={ statusClass(s.Status) }>&#x25cf;</span>
 											{ " " }{ s.Name }
+											if s.DurationMs != nil {
+												<span class="small" style="margin-left: 0.5rem;">{ fmt.Sprintf("%dms", *s.DurationMs) }</span>
+											}
 											<span class="stream-last-line" style="color: #8b949e; margin-left: 0.5rem;"></span>
 										</summary>
 										<pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>

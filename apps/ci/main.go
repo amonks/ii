@@ -122,8 +122,11 @@ func dashboardIndex(model *Model) http.HandlerFunc {
 
 // StreamInfo holds metadata about a single output stream for template rendering.
 type StreamInfo struct {
-	Name     string
-	LastLine string
+	Name       string
+	Status     string
+	DurationMs *int64
+	Error      *string
+	LastLine   string
 }
 
 func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
@@ -141,9 +144,39 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 			return
 		}
 
-		// Collect output streams for each job.
+		// Load streams from DB and collect output metadata.
+		dbStreams, _ := model.StreamsForRun(id)
+
+		// Index by job ID.
+		streamsByJobID := make(map[int64][]Stream)
+		for _, s := range dbStreams {
+			streamsByJobID[s.JobID] = append(streamsByJobID[s.JobID], s)
+		}
+
+		// Build job ID -> name map.
+		jobNameByID := make(map[int64]string, len(jobs))
+		for _, j := range jobs {
+			jobNameByID[j.ID] = j.Name
+		}
+
 		streams := map[string][]StreamInfo{}
 		for _, j := range jobs {
+			if jobStreams, ok := streamsByJobID[j.ID]; ok {
+				for _, s := range jobStreams {
+					dir := filepath.Join(outputDir, idStr, j.Name)
+					lastLine := readLastLine(filepath.Join(dir, s.Name+".log"))
+					streams[j.Name] = append(streams[j.Name], StreamInfo{
+						Name:       s.Name,
+						Status:     s.Status,
+						DurationMs: s.DurationMs,
+						Error:      s.Error,
+						LastLine:   lastLine,
+					})
+				}
+				continue
+			}
+
+			// Fallback: scan output directory for streams (legacy data).
 			if j.OutputPath == nil {
 				continue
 			}
@@ -155,7 +188,11 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 			for _, e := range entries {
 				name := strings.TrimSuffix(e.Name(), ".log")
 				lastLine := readLastLine(filepath.Join(dir, e.Name()))
-				streams[j.Name] = append(streams[j.Name], StreamInfo{Name: name, LastLine: lastLine})
+				streams[j.Name] = append(streams[j.Name], StreamInfo{
+					Name:     name,
+					Status:   j.Status,
+					LastLine: lastLine,
+				})
 			}
 		}
 

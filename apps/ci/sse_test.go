@@ -80,8 +80,8 @@ func TestSSEInitialEvent(t *testing.T) {
 	if state.Jobs[0].Name != "go-test" {
 		t.Errorf("expected job name go-test, got %s", state.Jobs[0].Name)
 	}
-	if streams, ok := state.Streams["go-test"]; !ok || len(streams) != 1 || streams[0] != "stdout" {
-		t.Errorf("expected streams [stdout] for go-test, got %v", state.Streams["go-test"])
+	if streams, ok := state.Streams["go-test"]; !ok || len(streams) != 1 || streams[0].Name != "stdout" {
+		t.Errorf("expected streams [{stdout ...}] for go-test, got %v", state.Streams["go-test"])
 	}
 }
 
@@ -145,7 +145,11 @@ func TestBuildRunState(t *testing.T) {
 	outputDir := t.TempDir()
 
 	run, _ := m.CreateRun("sha1", "base1", "webhook")
-	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
+	job, _ := m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
+
+	// Create DB streams.
+	m.StartStream(job.ID, "stdout")
+	m.StartStream(job.ID, "stderr")
 
 	// Create stream files.
 	streamDir := filepath.Join(outputDir, "1", "go-test")
@@ -170,5 +174,31 @@ func TestBuildRunState(t *testing.T) {
 	streams := state.Streams["go-test"]
 	if len(streams) != 2 {
 		t.Fatalf("expected 2 streams, got %d", len(streams))
+	}
+}
+
+func TestBuildRunStateFallsBackToFilesystem(t *testing.T) {
+	m := testModel(t)
+	outputDir := t.TempDir()
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
+
+	// No DB streams — just files on disk (legacy behavior).
+	streamDir := filepath.Join(outputDir, "1", "go-test")
+	os.MkdirAll(streamDir, 0755)
+	os.WriteFile(filepath.Join(streamDir, "stdout.log"), []byte("output"), 0644)
+
+	state, err := buildRunState(m, outputDir, run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	streams := state.Streams["go-test"]
+	if len(streams) != 1 {
+		t.Fatalf("expected 1 stream from filesystem fallback, got %d", len(streams))
+	}
+	if streams[0].Name != "stdout" {
+		t.Errorf("expected stream name stdout, got %s", streams[0].Name)
 	}
 }

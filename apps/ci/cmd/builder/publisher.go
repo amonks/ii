@@ -12,6 +12,7 @@ import (
 // PublishSubtrees publishes monorepo subtrees as public GitHub mirrors.
 func PublishSubtrees(root string, reporter *Reporter) error {
 	reporter.StartJob("publish", "publish")
+	reporter.StartStream("publish", "output")
 
 	w := reporter.StreamWriter("publish", "output")
 	defer w.Close()
@@ -23,9 +24,14 @@ func PublishSubtrees(root string, reporter *Reporter) error {
 		// Config might not exist yet.
 		slog.Info("no publish config, skipping", "error", err)
 		fmt.Fprintf(w, "no publish config, skipping: %v\n", err)
+		d := time.Since(start).Milliseconds()
+		reporter.FinishStream("publish", "output", FinishStreamResult{
+			Status:     "success",
+			DurationMs: d,
+		})
 		reporter.FinishJob("publish", FinishJobResult{
 			Status:     "success",
-			DurationMs: time.Since(start).Milliseconds(),
+			DurationMs: d,
 		})
 		return nil
 	}
@@ -33,9 +39,14 @@ func PublishSubtrees(root string, reporter *Reporter) error {
 	if len(cfg.Package) == 0 {
 		slog.Info("no public packages configured, skipping publish")
 		fmt.Fprintf(w, "no public packages configured, skipping\n")
+		d := time.Since(start).Milliseconds()
+		reporter.FinishStream("publish", "output", FinishStreamResult{
+			Status:     "success",
+			DurationMs: d,
+		})
 		reporter.FinishJob("publish", FinishJobResult{
 			Status:     "success",
-			DurationMs: time.Since(start).Milliseconds(),
+			DurationMs: d,
 		})
 		return nil
 	}
@@ -57,6 +68,12 @@ func PublishSubtrees(root string, reporter *Reporter) error {
 	} else {
 		fmt.Fprintf(w, "=== done (%dms)\n", duration)
 	}
+
+	reporter.FinishStream("publish", "output", FinishStreamResult{
+		Status:     status,
+		DurationMs: duration,
+		Error:      errMsg,
+	})
 
 	reporter.FinishJob("publish", FinishJobResult{
 		Status:     status,

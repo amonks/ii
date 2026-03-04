@@ -65,13 +65,66 @@ func TestReporterFinishJob(t *testing.T) {
 	}
 }
 
-func TestReporterFinishRun(t *testing.T) {
+func TestReporterStartStream(t *testing.T) {
+	var gotMethod, gotPath string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+	if err := reporter.StartStream("deploy", "dogs"); err != nil {
+		t.Fatal(err)
+	}
+
+	if gotMethod != http.MethodPut {
+		t.Errorf("expected PUT, got %s", gotMethod)
+	}
+	if gotPath != "/api/runs/1/jobs/deploy/streams/dogs/start" {
+		t.Errorf("expected /api/runs/1/jobs/deploy/streams/dogs/start, got %s", gotPath)
+	}
+}
+
+func TestReporterFinishStream(t *testing.T) {
 	var gotPath string
-	var gotBody map[string]string
+	var gotBody map[string]any
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
-		json.NewDecoder(r.Body).Decode(&gotBody)
+		bs, _ := io.ReadAll(r.Body)
+		json.Unmarshal(bs, &gotBody)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+	err := reporter.FinishStream("deploy", "dogs", FinishStreamResult{
+		Status:     "success",
+		DurationMs: 2000,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gotPath != "/api/runs/1/jobs/deploy/streams/dogs/done" {
+		t.Errorf("expected /api/runs/1/jobs/deploy/streams/dogs/done, got %s", gotPath)
+	}
+	if gotBody["status"] != "success" {
+		t.Errorf("expected status success, got %v", gotBody["status"])
+	}
+}
+
+func TestReporterFinishRun(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		bs, _ := io.ReadAll(r.Body)
+		json.Unmarshal(bs, &gotBody)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
@@ -85,10 +138,40 @@ func TestReporterFinishRun(t *testing.T) {
 		t.Errorf("expected /api/runs/5/done, got %s", gotPath)
 	}
 	if gotBody["status"] != "failed" {
-		t.Errorf("expected status failed, got %s", gotBody["status"])
+		t.Errorf("expected status failed, got %v", gotBody["status"])
 	}
 	if gotBody["error"] != "tests failed" {
-		t.Errorf("expected error 'tests failed', got %s", gotBody["error"])
+		t.Errorf("expected error 'tests failed', got %v", gotBody["error"])
+	}
+}
+
+func TestReporterFinishRunWithDeploys(t *testing.T) {
+	var gotBody map[string]any
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bs, _ := io.ReadAll(r.Body)
+		json.Unmarshal(bs, &gotBody)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+	reporter.AddDeployResult(DeployResult{
+		App:      "dogs",
+		ImageRef: "registry.fly.io/monks-dogs:sha1",
+	})
+
+	if err := reporter.FinishRun("success", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	deploys, ok := gotBody["deploys"].([]any)
+	if !ok || len(deploys) != 1 {
+		t.Fatalf("expected 1 deploy in request body, got %v", gotBody["deploys"])
+	}
+	d := deploys[0].(map[string]any)
+	if d["app"] != "dogs" {
+		t.Errorf("expected deploy app dogs, got %v", d["app"])
 	}
 }
 

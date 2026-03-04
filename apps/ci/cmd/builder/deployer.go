@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,10 +25,17 @@ import (
 var deployAppFunc = deployApp
 
 // DeployAffected builds and deploys all apps affected by the changes.
+// All fly apps are represented as streams — affected apps are deployed,
+// unaffected apps are shown as "skipped".
 func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, reporter *Reporter) error {
 	apps, err := changedetect.LoadFlyApps(root)
 	if err != nil {
 		return fmt.Errorf("loading fly apps: %w", err)
+	}
+
+	if len(apps) == 0 {
+		slog.Info("no fly apps configured")
+		return nil
 	}
 
 	changed, err := changedetect.ChangedFiles(root, baseSHA)
@@ -44,19 +50,58 @@ func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, repor
 
 	affected := changedetect.AffectedApps(apps, changed, graph)
 
-	if len(affected) == 0 {
-		slog.Info("no apps affected by changes")
-		return nil
+	affectedSet := make(map[string]bool, len(affected))
+	for _, a := range affected {
+		affectedSet[a] = true
 	}
 
-	slog.Info("affected apps", "apps", strings.Join(affected, ", "))
+	slog.Info("deploy analysis", "total_apps", len(apps), "affected", len(affected))
 
 	cfg, err := changedetect.LoadFlyAppsConfig(root)
 	if err != nil {
 		return fmt.Errorf("loading fly apps config: %w", err)
 	}
 
-	return deployApps(affected, root, headSHA, flyToken, baseImageRef, cfg, reporter)
+	// Start a single deploy job.
+	reporter.StartJob("deploy", "deploy")
+
+	start := time.Now()
+
+	// Report skipped apps as skipped streams.
+	for _, app := range apps {
+		if affectedSet[app] {
+			continue
+		}
+		reporter.StartStream("deploy", app)
+		w := reporter.StreamWriter("deploy", app)
+		fmt.Fprintf(w, "skipped (no changes affect this app)\n")
+		w.Close()
+		reporter.FinishStream("deploy", app, FinishStreamResult{
+			Status: "skipped",
+		})
+	}
+
+	// Deploy affected apps concurrently.
+	var deployErr error
+	if len(affected) > 0 {
+		deployErr = deployApps(affected, root, headSHA, flyToken, baseImageRef, cfg, reporter)
+	}
+
+	duration := time.Since(start).Milliseconds()
+	status := "success"
+	errMsg := ""
+	if deployErr != nil {
+		status = "failed"
+		errMsg = deployErr.Error()
+	}
+
+	reporter.FinishJob("deploy", FinishJobResult{
+		Status:     status,
+		DurationMs: duration,
+		Error:      errMsg,
+	})
+
+	return deployErr
 }
 
 // deployApps deploys the given apps concurrently and collects all errors.
@@ -85,10 +130,9 @@ func deployApps(apps []string, root, headSHA, flyToken, baseImageRef string, cfg
 }
 
 func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
-	jobName := "deploy-" + app
-	reporter.StartJob(jobName, "deploy")
+	reporter.StartStream("deploy", app)
 
-	w := reporter.StreamWriter(jobName, "output")
+	w := reporter.StreamWriter("deploy", app)
 	defer w.Close()
 
 	start := time.Now()
@@ -104,7 +148,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 			status = "failed"
 			errMsg = err.Error()
 		}
-		reporter.FinishJob(jobName, FinishJobResult{
+		reporter.FinishStream("deploy", app, FinishStreamResult{
 			Status:     status,
 			DurationMs: duration,
 			Error:      errMsg,
@@ -129,7 +173,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	if err := cmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("compile: %v", err)
 		fmt.Fprintf(w, "=== compile failed: %s\n", errMsg)
-		reporter.FinishJob(jobName, FinishJobResult{
+		reporter.FinishStream("deploy", app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -188,7 +232,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	if err != nil {
 		errMsg := fmt.Sprintf("building image: %v", err)
 		fmt.Fprintf(w, "=== image build failed: %s\n", errMsg)
-		reporter.FinishJob(jobName, FinishJobResult{
+		reporter.FinishStream("deploy", app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -202,7 +246,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	if err := oci.Push(img, imageRef, oci.FlyAuthOption(flyToken)); err != nil {
 		errMsg := fmt.Sprintf("pushing image: %v", err)
 		fmt.Fprintf(w, "=== push failed: %s\n", errMsg)
-		reporter.FinishJob(jobName, FinishJobResult{
+		reporter.FinishStream("deploy", app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -226,7 +270,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	if err := deployCmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("fly deploy: %v", err)
 		fmt.Fprintf(w, "=== deploy failed: %s\n", errMsg)
-		reporter.FinishJob(jobName, FinishJobResult{
+		reporter.FinishStream("deploy", app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -238,18 +282,19 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 
 	totalDuration := time.Since(start).Milliseconds()
 
-	reporter.FinishJob(jobName, FinishJobResult{
+	reporter.FinishStream("deploy", app, FinishStreamResult{
 		Status:     "success",
 		DurationMs: totalDuration,
-		Deploy: &DeployData{
-			App:         app,
-			ImageRef:    imageRef,
-			BinaryBytes: binaryBytes,
-			ImageBytes:  imageBytes,
-			CompileMs:   compileMs,
-			PushMs:      pushMs,
-			DeployMs:    deployMs,
-		},
+	})
+
+	reporter.AddDeployResult(DeployResult{
+		App:         app,
+		ImageRef:    imageRef,
+		BinaryBytes: binaryBytes,
+		ImageBytes:  imageBytes,
+		CompileMs:   compileMs,
+		PushMs:      pushMs,
+		DeployMs:    deployMs,
 	})
 
 	reporter.RecordDeployment(app, sha, imageRef, binaryBytes)

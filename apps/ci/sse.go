@@ -13,9 +13,9 @@ import (
 
 // runStateEvent is the JSON structure sent to SSE clients.
 type runStateEvent struct {
-	Run     runJSON              `json:"run"`
-	Jobs    []jobJSON            `json:"jobs"`
-	Streams map[string][]string  `json:"streams"`
+	Run     runJSON                  `json:"run"`
+	Jobs    []jobJSON                `json:"jobs"`
+	Streams map[string][]streamJSON  `json:"streams"`
 }
 
 type runJSON struct {
@@ -38,11 +38,27 @@ type jobJSON struct {
 	Error      *string `json:"error,omitempty"`
 }
 
+type streamJSON struct {
+	Name       string  `json:"name"`
+	Status     string  `json:"status"`
+	DurationMs *int64  `json:"duration_ms,omitempty"`
+	Error      *string `json:"error,omitempty"`
+}
+
 // buildRunState queries the model and output directory to build a full state snapshot.
 func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent, error) {
 	run, jobs, err := model.RunWithJobs(runID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Load all streams for this run from DB.
+	dbStreams, _ := model.StreamsForRun(runID)
+
+	// Index DB streams by job ID.
+	streamsByJobID := make(map[int64][]Stream)
+	for _, s := range dbStreams {
+		streamsByJobID[s.JobID] = append(streamsByJobID[s.JobID], s)
 	}
 
 	state := &runStateEvent{
@@ -58,7 +74,7 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 			Error:      run.Error,
 		},
 		Jobs:    make([]jobJSON, 0, len(jobs)),
-		Streams: make(map[string][]string),
+		Streams: make(map[string][]streamJSON),
 	}
 
 	for _, j := range jobs {
@@ -70,7 +86,20 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 			Error:      j.Error,
 		})
 
-		// Scan output directory for streams.
+		// Use DB streams if available.
+		if jobStreams, ok := streamsByJobID[j.ID]; ok {
+			for _, s := range jobStreams {
+				state.Streams[j.Name] = append(state.Streams[j.Name], streamJSON{
+					Name:       s.Name,
+					Status:     s.Status,
+					DurationMs: s.DurationMs,
+					Error:      s.Error,
+				})
+			}
+			continue
+		}
+
+		// Fallback: scan output directory for streams (legacy data).
 		if j.OutputPath == nil {
 			continue
 		}
@@ -81,7 +110,10 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 		}
 		for _, e := range entries {
 			name := strings.TrimSuffix(e.Name(), ".log")
-			state.Streams[j.Name] = append(state.Streams[j.Name], name)
+			state.Streams[j.Name] = append(state.Streams[j.Name], streamJSON{
+				Name:   name,
+				Status: j.Status,
+			})
 		}
 	}
 

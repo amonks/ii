@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -16,6 +14,7 @@ import (
 // TerraformApply runs terraform init and apply in the aws/terraform directory.
 func TerraformApply(root string, reporter *Reporter) error {
 	reporter.StartJob("terraform", "terraform")
+	reporter.StartStream("terraform", "output")
 
 	w := reporter.StreamWriter("terraform", "output")
 	defer w.Close()
@@ -28,9 +27,14 @@ func TerraformApply(root string, reporter *Reporter) error {
 	if _, err := os.Stat(terraformDir); os.IsNotExist(err) {
 		slog.Info("no terraform directory, skipping")
 		fmt.Fprintf(w, "no terraform directory, skipping\n")
+		d := time.Since(start).Milliseconds()
+		reporter.FinishStream("terraform", "output", FinishStreamResult{
+			Status:     "success",
+			DurationMs: d,
+		})
 		reporter.FinishJob("terraform", FinishJobResult{
 			Status:     "success",
-			DurationMs: time.Since(start).Milliseconds(),
+			DurationMs: d,
 		})
 		return nil
 	}
@@ -49,25 +53,27 @@ func TerraformApply(root string, reporter *Reporter) error {
 	if err := initCmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("terraform init: %v", err)
 		fmt.Fprintf(w, "=== init failed: %s\n", errMsg)
+		d := time.Since(start).Milliseconds()
+		reporter.FinishStream("terraform", "output", FinishStreamResult{
+			Status:     "failed",
+			DurationMs: d,
+			Error:      errMsg,
+		})
 		reporter.FinishJob("terraform", FinishJobResult{
 			Status:     "failed",
-			DurationMs: time.Since(start).Milliseconds(),
+			DurationMs: d,
 			Error:      errMsg,
 		})
 		return fmt.Errorf("terraform init: %w", err)
 	}
 
 	// terraform apply -auto-approve
-	// We need to capture the output for parsing resource counts while also
-	// streaming it to the orchestrator.
 	fmt.Fprintf(w, "=== terraform apply\n")
-	var applyBuf bytes.Buffer
-	applyTee := io.MultiWriter(w, &applyBuf)
 
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve")
 	applyCmd.Dir = terraformDir
-	applyCmd.Stdout = applyTee
-	applyCmd.Stderr = applyTee
+	applyCmd.Stdout = w
+	applyCmd.Stderr = w
 	err := applyCmd.Run()
 	duration := time.Since(start).Milliseconds()
 
@@ -79,18 +85,16 @@ func TerraformApply(root string, reporter *Reporter) error {
 		fmt.Fprintf(w, "=== apply failed: %s\n", errMsg)
 	}
 
-	// Parse resource counts from output.
-	added, changed, destroyed := parseTerraformOutput(applyBuf.String())
+	reporter.FinishStream("terraform", "output", FinishStreamResult{
+		Status:     status,
+		DurationMs: duration,
+		Error:      errMsg,
+	})
 
 	reporter.FinishJob("terraform", FinishJobResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,
-		Terraform: &TerraformData{
-			ResourcesAdded:     added,
-			ResourcesChanged:   changed,
-			ResourcesDestroyed: destroyed,
-		},
 	})
 
 	if err != nil {

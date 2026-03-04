@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -101,5 +102,73 @@ func TestParseTerraformOutput(t *testing.T) {
 			t.Errorf("parseTerraformOutput(%q) = (%d, %d, %d), want (%d, %d, %d)",
 				tt.output, added, changed, destroyed, tt.wantAdded, tt.wantChanged, tt.wantDel)
 		}
+	}
+}
+
+func TestDeployAppUsesStreams(t *testing.T) {
+	// Track API calls to verify stream lifecycle.
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+	cfg := &changedetect.FlyAppsConfig{}
+
+	original := deployAppFunc
+	defer func() { deployAppFunc = original }()
+
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+		// Simulated deploy: just call the stream lifecycle.
+		reporter.StartStream("deploy", app)
+		w := reporter.StreamWriter("deploy", app)
+		fmt.Fprintf(w, "deploying %s\n", app)
+		w.Close()
+		reporter.FinishStream("deploy", app, FinishStreamResult{
+			Status:     "success",
+			DurationMs: 100,
+		})
+		reporter.AddDeployResult(DeployResult{
+			App:      app,
+			ImageRef: "registry.fly.io/monks-" + app + ":sha1",
+		})
+		return nil
+	}
+
+	err := deployApps([]string{"dogs"}, "/tmp", "abc", "token", "ref", cfg, reporter)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	// Verify stream start/finish calls were made.
+	streamStartPattern := regexp.MustCompile(`PUT /api/runs/1/jobs/deploy/streams/dogs/start`)
+	streamFinishPattern := regexp.MustCompile(`PUT /api/runs/1/jobs/deploy/streams/dogs/done`)
+
+	var hasStart, hasFinish bool
+	for _, call := range calls {
+		if streamStartPattern.MatchString(call) {
+			hasStart = true
+		}
+		if streamFinishPattern.MatchString(call) {
+			hasFinish = true
+		}
+	}
+	if !hasStart {
+		t.Error("expected stream start call for dogs")
+	}
+	if !hasFinish {
+		t.Error("expected stream finish call for dogs")
+	}
+
+	// Verify deploy result was accumulated.
+	reporter.mu.Lock()
+	defer reporter.mu.Unlock()
+	if len(reporter.deploys) != 1 {
+		t.Fatalf("expected 1 deploy result, got %d", len(reporter.deploys))
+	}
+	if reporter.deploys[0].App != "dogs" {
+		t.Errorf("expected deploy app dogs, got %s", reporter.deploys[0].App)
 	}
 }

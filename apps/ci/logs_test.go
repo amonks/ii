@@ -127,8 +127,8 @@ func TestSortedDataKeys(t *testing.T) {
 		"run.id":            42,
 		"run.head_sha":      "abc123",
 		"job.test.status":   "success",
+		"stream.deploy.dogs.status": "success",
 		"deploy.dogs.image_ref": "registry.fly.io/monks-dogs:sha1",
-		"terraform.resources_added": 0,
 	}
 
 	keys := SortedDataKeys(data)
@@ -141,12 +141,12 @@ func TestSortedDataKeys(t *testing.T) {
 		}
 	}
 
-	// Should be ordered: task.*, run.*, job.*, deploy.*, terraform.*
+	// Should be ordered: task.*, run.*, job.*, stream.*, deploy.*
 	if len(keys) != 8 {
 		t.Fatalf("expected 8 keys, got %d: %v", len(keys), keys)
 	}
 
-	// Verify group ordering: task < run < job < deploy < terraform.
+	// Verify group ordering: task < run < job < stream < deploy.
 	groupOf := func(key string) string {
 		for i, c := range key {
 			if c == '.' {
@@ -161,7 +161,7 @@ func TestSortedDataKeys(t *testing.T) {
 		g := groupOf(k)
 		if prevGroup != "" && g != prevGroup {
 			// Group changed; verify it's in the right order.
-			order := map[string]int{"task": 0, "run": 1, "job": 2, "deploy": 3, "terraform": 4}
+			order := map[string]int{"task": 0, "run": 1, "job": 2, "stream": 3, "deploy": 4}
 			if order[g] < order[prevGroup] {
 				t.Errorf("key %q (group %q) appeared after group %q", k, g, prevGroup)
 			}

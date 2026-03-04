@@ -571,15 +571,14 @@
       if (existingRow) {
         row = existingRow;
         const cells = row.querySelectorAll("td");
-        cells[2].textContent = job.status;
-        cells[2].className = statusClass(job.status);
-        cells[3].textContent = job.duration_ms != null ? `${job.duration_ms}ms` : "";
+        cells[1].textContent = job.status;
+        cells[1].className = statusClass(job.status);
+        cells[2].textContent = job.duration_ms != null ? `${job.duration_ms}ms` : "";
       } else {
         row = document.createElement("tr");
         row.dataset.jobName = job.name;
         row.innerHTML = `
         <td>${escapeHtml(job.name)}</td>
-        <td>${escapeHtml(job.kind)}</td>
         <td class="${statusClass(job.status)}">${escapeHtml(job.status)}</td>
         <td>${job.duration_ms != null ? `${job.duration_ms}ms` : ""}</td>
       `;
@@ -591,25 +590,30 @@
         if (!errorRow) {
           errorRow = document.createElement("tr");
           errorRow.id = errorRowId;
-          errorRow.innerHTML = `<td colspan="4"><pre class="status-failed small">${escapeHtml(job.error)}</pre></td>`;
+          errorRow.innerHTML = `<td colspan="3"><pre class="status-failed small">${escapeHtml(job.error)}</pre></td>`;
         }
         fragment.appendChild(errorRow);
       }
       const jobStreams = state.streams[job.name] || [];
-      for (const streamName of jobStreams) {
-        const streamUrl = `output/${state.run.id}/${job.name}/${streamName}`;
+      for (const stream of jobStreams) {
+        const streamUrl = `output/${state.run.id}/${job.name}/${stream.name}`;
         const existingStreamRow = tbody.querySelector(`[data-stream-url="${streamUrl}"]`);
         if (existingStreamRow) {
           const streamTr = existingStreamRow.closest("tr");
+          const dot = streamTr.querySelector("summary > span:first-child");
+          if (dot) {
+            dot.className = statusClass(stream.status);
+          }
           fragment.appendChild(streamTr);
         } else {
+          const durationText = stream.duration_ms != null ? `<span class="small" style="margin-left: 0.5rem;">${stream.duration_ms}ms</span>` : "";
           const streamTr = document.createElement("tr");
           streamTr.innerHTML = `
-          <td colspan="4" style="padding: 0 0.5rem;">
-            <details class="stream-viewer" data-stream-url="${streamUrl}" data-last-line="">
+          <td colspan="3" style="padding: 0 0.5rem;">
+            <details class="stream-viewer" data-stream-url="${streamUrl}" data-last-line="" data-stream-status="${escapeHtml(stream.status)}">
               <summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
-                <span class="${statusClass(job.status)}">&#x25cf;</span>
-                ${" "}${escapeHtml(streamName)}
+                <span class="${statusClass(stream.status)}">&#x25cf;</span>
+                ${" "}${escapeHtml(stream.name)}${durationText}
                 <span class="stream-last-line" style="color: #8b949e; margin-left: 0.5rem;"></span>
               </summary>
               <pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>

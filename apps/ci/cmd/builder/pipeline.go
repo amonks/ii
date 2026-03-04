@@ -81,6 +81,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 func (p *Pipeline) fetchCode() error {
 	start := time.Now()
 	p.Reporter.StartJob("fetch", "fetch")
+	p.Reporter.StartStream("fetch", "output")
 
 	w := p.Reporter.StreamWriter("fetch", "output")
 	defer w.Close()
@@ -115,6 +116,12 @@ func (p *Pipeline) fetchCode() error {
 	} else {
 		fmt.Fprintf(w, "=== fetched in %dms\n", duration)
 	}
+
+	p.Reporter.FinishStream("fetch", "output", FinishStreamResult{
+		Status:     status,
+		DurationMs: duration,
+		Error:      errMsg,
+	})
 
 	p.Reporter.FinishJob("fetch", FinishJobResult{
 		Status:     status,
