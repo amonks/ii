@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"os/exec"
 	"time"
 
 	"monks.co/pkg/ci/publish"
@@ -37,6 +38,11 @@ func PublishSubtrees(root string, reporter *Reporter) error {
 			DurationMs: time.Since(start).Milliseconds(),
 		})
 		return nil
+	}
+
+	// Configure git to use gh for HTTPS authentication (uses GH_TOKEN env var).
+	if setupErr := exec.Command("gh", "auth", "setup-git").Run(); setupErr != nil {
+		slog.Warn("gh auth setup-git failed", "error", setupErr)
 	}
 
 	err = publish.Run(w, root, cfg, false)
