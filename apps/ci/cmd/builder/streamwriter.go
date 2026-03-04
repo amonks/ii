@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +13,12 @@ const (
 	flushInterval = 500 * time.Millisecond
 	flushSize     = 8 * 1024 // 8KB
 )
+
+var streamRetry = retryConfig{
+	maxAttempts: 5,
+	baseDelay:   200 * time.Millisecond,
+	maxDelay:    5 * time.Second,
+}
 
 // StreamWriter implements io.Writer by buffering writes and periodically
 // flushing them to the orchestrator's output endpoint.
@@ -98,15 +104,17 @@ func (sw *StreamWriter) flushLocked() {
 }
 
 func (sw *StreamWriter) send(data []byte) {
-	req, err := http.NewRequest(http.MethodPost, sw.url, bytes.NewReader(data))
+	resp, err := retryDo(sw.client, func() (*http.Request, error) {
+		req, err := http.NewRequest(http.MethodPost, sw.url, bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/octet-stream")
+		return req, nil
+	}, streamRetry)
 	if err != nil {
+		slog.Warn("stream send failed after retries, dropping data", "url", sw.url, "bytes", len(data), "error", err)
 		return
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	resp, err := sw.client.Do(req)
-	if err != nil {
-		return
-	}
-	io.ReadAll(resp.Body)
 	resp.Body.Close()
 }

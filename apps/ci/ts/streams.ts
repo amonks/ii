@@ -41,30 +41,64 @@ export function initOneStream(details: HTMLDetailsElement, running: boolean): vo
   });
 }
 
+function updateLastLine(text: string, lastLineEl: HTMLSpanElement): void {
+  const lines = text.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trim() !== "") {
+      const lineAnsi = new AnsiUp();
+      lastLineEl.innerHTML = lineAnsi.ansi_to_html(lines[i].substring(0, 120));
+      break;
+    }
+  }
+}
+
 function streamFetch(url: string, pre: HTMLPreElement, lastLineEl: HTMLSpanElement): void {
-  const ansi = new AnsiUp();
-  fetch(url + "?stream=1").then((resp) => {
-    const reader = resp.body!.getReader();
-    const decoder = new TextDecoder();
-    function read(): void {
-      reader.read().then((result) => {
-        if (result.done) return;
-        const text = decoder.decode(result.value, { stream: true });
-        pre.innerHTML += ansi.ansi_to_html(text);
-        pre.scrollTop = pre.scrollHeight;
-        const lines = text.split("\n");
-        for (let i = lines.length - 1; i >= 0; i--) {
-          if (lines[i].trim() !== "") {
-            const lineAnsi = new AnsiUp();
-            lastLineEl.innerHTML = lineAnsi.ansi_to_html(lines[i].substring(0, 120));
-            break;
-          }
+  let attempt = 0;
+  const baseDelay = 500;
+  const maxBackoff = 30_000;
+
+  function connect(): void {
+    const ansi = new AnsiUp();
+    // Clear since server replays full file on reconnect.
+    pre.innerHTML = "";
+
+    fetch(url + "?stream=1")
+      .then((resp) => {
+        attempt = 0;
+        const reader = resp.body!.getReader();
+        const decoder = new TextDecoder();
+        function read(): void {
+          reader
+            .read()
+            .then((result) => {
+              if (result.done) return; // normal EOF, don't reconnect
+              const text = decoder.decode(result.value, { stream: true });
+              pre.innerHTML += ansi.ansi_to_html(text);
+              pre.scrollTop = pre.scrollHeight;
+              updateLastLine(text, lastLineEl);
+              read();
+            })
+            .catch(() => scheduleReconnect());
         }
         read();
-      });
+      })
+      .catch(() => scheduleReconnect());
+  }
+
+  function scheduleReconnect(): void {
+    // If the run finished while disconnected, do a static fetch instead.
+    const container = document.getElementById("run-page");
+    if (container?.dataset.runStatus !== "running") {
+      staticFetch(url, pre);
+      return;
     }
-    read();
-  });
+    attempt++;
+    const delay = Math.min(baseDelay * 2 ** (attempt - 1), maxBackoff);
+    const jitter = delay * 0.5 + Math.random() * delay * 0.5;
+    setTimeout(connect, jitter);
+  }
+
+  connect();
 }
 
 function staticFetch(url: string, pre: HTMLPreElement): void {

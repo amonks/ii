@@ -24,6 +24,10 @@ import (
 // replaced in tests.
 var deployAppFunc = deployApp
 
+// deployCIBuilderFunc is the function used to rebuild the CI builder image.
+// It can be replaced in tests.
+var deployCIBuilderFunc = deployCIBuilder
+
 // DeployAffected builds and deploys all apps affected by the changes.
 // All fly apps are represented as streams — affected apps are deployed,
 // unaffected apps are shown as "skipped".
@@ -137,23 +141,23 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 
 	start := time.Now()
 
-	// Special case: if apps/ci itself is affected, use fly deploy
-	// with the builder Dockerfile (which needs remote builder).
+	// When apps/ci is affected, first rebuild the builder image before
+	// proceeding to the normal compile→OCI→push→deploy flow for the
+	// orchestrator.
 	if app == "ci" {
-		err := deployCIBuilder(root, w)
-		duration := time.Since(start).Milliseconds()
-		status := "success"
-		errMsg := ""
-		if err != nil {
-			status = "failed"
-			errMsg = err.Error()
+		fmt.Fprintf(w, "=== rebuilding CI builder image\n")
+		if err := deployCIBuilderFunc(root, w); err != nil {
+			errMsg := fmt.Sprintf("rebuilding CI builder: %v", err)
+			fmt.Fprintf(w, "=== builder rebuild failed: %s\n", errMsg)
+			reporter.FinishStream("deploy", app, FinishStreamResult{
+				Status:     "failed",
+				DurationMs: time.Since(start).Milliseconds(),
+				Error:      errMsg,
+			})
+			return fmt.Errorf("rebuilding CI builder: %w", err)
 		}
-		reporter.FinishStream("deploy", app, FinishStreamResult{
-			Status:     status,
-			DurationMs: duration,
-			Error:      errMsg,
-		})
-		return err
+		fmt.Fprintf(w, "=== builder image rebuilt successfully\n")
+		// fall through to normal deploy path
 	}
 
 	var compileMs, pushMs, deployMs, binaryBytes, imageBytes int64

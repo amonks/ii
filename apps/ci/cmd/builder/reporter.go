@@ -5,9 +5,78 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
+	"math/rand"
 	"net/http"
 	"sync"
+	"time"
 )
+
+type retryConfig struct {
+	maxAttempts int
+	baseDelay   time.Duration
+	maxDelay    time.Duration
+}
+
+var defaultRetry = retryConfig{
+	maxAttempts: 10,
+	baseDelay:   500 * time.Millisecond,
+	maxDelay:    30 * time.Second,
+}
+
+// retryDo executes an HTTP request with exponential backoff and jitter.
+// It retries on connection errors and 5xx responses. 4xx responses are
+// returned immediately (they are logic errors, not transient failures).
+// The makeReq factory is called for each attempt so the body reader is fresh.
+func retryDo(client *http.Client, makeReq func() (*http.Request, error), cfg retryConfig) (*http.Response, error) {
+	var lastErr error
+	for attempt := 1; attempt <= cfg.maxAttempts; attempt++ {
+		req, err := makeReq()
+		if err != nil {
+			return nil, fmt.Errorf("building request: %w", err)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			if attempt < cfg.maxAttempts {
+				slog.Warn("request failed, retrying", "attempt", attempt, "error", err)
+				sleep(cfg, attempt)
+			}
+			continue
+		}
+
+		// 4xx: not retryable.
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return resp, nil
+		}
+
+		// 5xx: retryable.
+		if resp.StatusCode >= 500 {
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			lastErr = fmt.Errorf("status %d: %s", resp.StatusCode, string(body))
+			if attempt < cfg.maxAttempts {
+				slog.Warn("server error, retrying", "attempt", attempt, "status", resp.StatusCode)
+				sleep(cfg, attempt)
+			}
+			continue
+		}
+
+		return resp, nil
+	}
+	return nil, fmt.Errorf("request failed after %d attempts: %w", cfg.maxAttempts, lastErr)
+}
+
+func sleep(cfg retryConfig, attempt int) {
+	delay := cfg.baseDelay * time.Duration(1<<(attempt-1))
+	if delay > cfg.maxDelay {
+		delay = cfg.maxDelay
+	}
+	// Jitter: 50-100% of delay.
+	jitter := time.Duration(float64(delay) * (0.5 + rand.Float64()*0.5))
+	time.Sleep(jitter)
+}
 
 // Reporter reports build progress to the orchestrator via HTTP.
 type Reporter struct {
@@ -135,7 +204,9 @@ func (r *Reporter) StreamWriter(jobName, stream string) *StreamWriter {
 // GetBaseSHA retrieves the base SHA for this run from the orchestrator.
 func (r *Reporter) GetBaseSHA() (string, error) {
 	url := r.baseURL + fmt.Sprintf("/api/runs/%d/base-sha", r.runID)
-	resp, err := r.client.Get(url)
+	resp, err := retryDo(r.client, func() (*http.Request, error) {
+		return http.NewRequest(http.MethodGet, url, nil)
+	}, defaultRetry)
 	if err != nil {
 		return "", fmt.Errorf("getting base SHA: %w", err)
 	}
@@ -167,13 +238,14 @@ func (r *Reporter) doRequest(method, path string, body any) error {
 	}
 
 	url := r.baseURL + path
-	req, err := http.NewRequest(method, url, bytes.NewReader(bs))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := r.client.Do(req)
+	resp, err := retryDo(r.client, func() (*http.Request, error) {
+		req, err := http.NewRequest(method, url, bytes.NewReader(bs))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
+	}, defaultRetry)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", method, path, err)
 	}

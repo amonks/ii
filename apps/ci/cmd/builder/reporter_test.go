@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestReporterStartJob(t *testing.T) {
@@ -229,14 +230,114 @@ func TestReporterRecordDeployment(t *testing.T) {
 
 func TestReporterErrorOnBadStatus(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("server error"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("bad request"))
 	}))
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
 	err := reporter.StartJob("test", "test")
 	if err == nil {
-		t.Fatal("expected error on 500 response")
+		t.Fatal("expected error on 400 response")
+	}
+}
+
+func TestRetryDoRetriesOnConnectionError(t *testing.T) {
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 3 {
+			// Force close the connection without responding.
+			hj, ok := w.(http.Hijacker)
+			if !ok {
+				t.Fatal("server doesn't support hijacking")
+			}
+			conn, _, _ := hj.Hijack()
+			conn.Close()
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	cfg := retryConfig{maxAttempts: 5, baseDelay: time.Millisecond, maxDelay: 10 * time.Millisecond}
+	resp, err := retryDo(http.DefaultClient, func() (*http.Request, error) {
+		return http.NewRequest("GET", srv.URL, nil)
+	}, cfg)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	resp.Body.Close()
+	if attempts != 3 {
+		t.Errorf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestRetryDoRetriesOn5xx(t *testing.T) {
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 3 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	cfg := retryConfig{maxAttempts: 5, baseDelay: time.Millisecond, maxDelay: 10 * time.Millisecond}
+	resp, err := retryDo(http.DefaultClient, func() (*http.Request, error) {
+		return http.NewRequest("GET", srv.URL, nil)
+	}, cfg)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	resp.Body.Close()
+	if attempts != 3 {
+		t.Errorf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestRetryDoDoesNotRetry4xx(t *testing.T) {
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	cfg := retryConfig{maxAttempts: 5, baseDelay: time.Millisecond, maxDelay: 10 * time.Millisecond}
+	resp, err := retryDo(http.DefaultClient, func() (*http.Request, error) {
+		return http.NewRequest("GET", srv.URL, nil)
+	}, cfg)
+	if err != nil {
+		t.Fatalf("expected no error (4xx is returned, not retried), got: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+	if attempts != 1 {
+		t.Errorf("expected 1 attempt, got %d", attempts)
+	}
+}
+
+func TestRetryDoExhaustsAttempts(t *testing.T) {
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	cfg := retryConfig{maxAttempts: 3, baseDelay: time.Millisecond, maxDelay: 10 * time.Millisecond}
+	_, err := retryDo(http.DefaultClient, func() (*http.Request, error) {
+		return http.NewRequest("GET", srv.URL, nil)
+	}, cfg)
+	if err == nil {
+		t.Fatal("expected error after exhausting attempts")
+	}
+	if attempts != 3 {
+		t.Errorf("expected 3 attempts, got %d", attempts)
 	}
 }

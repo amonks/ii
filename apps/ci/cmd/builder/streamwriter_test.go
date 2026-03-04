@@ -108,6 +108,62 @@ func TestStreamWriterFlushesOnSizeThreshold(t *testing.T) {
 	sw.Close()
 }
 
+func TestStreamWriterRetriesOnServerError(t *testing.T) {
+	var mu sync.Mutex
+	var attempts int
+	var received []byte
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		attempts++
+		a := attempts
+		mu.Unlock()
+		if a == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		mu.Lock()
+		received = append(received, data...)
+		mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	sw := NewStreamWriter(http.DefaultClient, srv.URL, 1, "test", "default")
+	sw.Write([]byte("retry-data"))
+	sw.Close()
+
+	// Give the background send retries a moment.
+	time.Sleep(200 * time.Millisecond)
+
+	mu.Lock()
+	defer mu.Unlock()
+	if string(received) != "retry-data" {
+		t.Errorf("expected 'retry-data', got %q", string(received))
+	}
+	if attempts < 2 {
+		t.Errorf("expected at least 2 attempts, got %d", attempts)
+	}
+}
+
+func TestStreamWriterDropsAfterRetryExhaustion(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	sw := NewStreamWriter(http.DefaultClient, srv.URL, 1, "test", "default")
+	sw.Write([]byte("will-be-dropped"))
+
+	// Close should complete without hanging or panicking.
+	sw.Close()
+
+	// Give retry attempts time to complete.
+	time.Sleep(200 * time.Millisecond)
+}
+
 func TestReporterStreamWriter(t *testing.T) {
 	var gotPath string
 

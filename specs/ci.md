@@ -94,6 +94,14 @@ writes, and flushes them to the orchestrator's output endpoint on a
 cadence (every 500ms or 8KB, whichever comes first). The `Reporter`
 has a `StreamWriter(jobName, stream)` method to create writers,
 plus `StartStream` and `FinishStream` for lifecycle management.
+All HTTP calls from the builder (Reporter and StreamWriter) use
+`retryDo` with exponential backoff and jitter to survive transient
+failures (e.g. orchestrator restart during self-deploy). Reporter
+callbacks retry up to 10 times (500ms–30s backoff, ~2–3 min window).
+StreamWriter output sends retry up to 5 times (200ms–5s backoff);
+on exhaustion the data is dropped (losing a few output lines is
+acceptable). Only connection errors and 5xx are retried; 4xx
+responses are not retried.
 
 **Test jobs**: Use the `run` library (github.com/amonks/run)
 programmatically via `taskfile.Load` + `runner.New`. A custom
@@ -107,7 +115,13 @@ or skipped).
 Unaffected apps get a "skipped" stream. Affected apps get a stream
 showing compile/push/deploy progress with success/failed status.
 Deploy metadata is accumulated via `reporter.AddDeployResult()` and
-sent with the `FinishRun` call.
+sent with the `FinishRun` call. When `apps/ci` is affected, the CI
+deploy stream first rebuilds the builder image via
+`fly deploy --build-only --push`, then proceeds with the normal
+compile→OCI→push→deploy flow for the orchestrator. The orchestrator
+restart is safe because state is on a persistent volume (SQLite, output
+files), and the builder's retry logic handles transient connection
+failures during the restart window.
 
 **Other jobs**: Single "output" stream per job. Shellout stdout/stderr
 and progress messages both write to the same `StreamWriter`.
@@ -135,8 +149,13 @@ of build output. Keys are `"runID/jobName/stream"`.
   optional duration, and last line preview. Expanding loads the stream
   content. For running runs, JS uses `fetch()` with `getReader()`
   to live-tail the `?stream=1` endpoint, auto-scrolling and updating
-  the last-line preview. For finished runs, a simple fetch loads the
-  full content on expand. Skipped streams show in gray.
+  the last-line preview. On connection error, the frontend reconnects
+  with exponential backoff (500ms base, 30s max, 50–100% jitter).
+  On reconnect, `pre.innerHTML` is cleared because the server replays
+  the entire file. If the run finished while disconnected (checked via
+  `data-run-status` on `#run-page`), a one-shot static fetch is used
+  instead. For finished runs, a simple fetch loads the full content on
+  expand. Skipped streams show in gray.
 - `GET /deployments` — deployment history
 - `GET /output/{runID}/{jobName}` — redirects to single stream or
   lists available streams for multi-stream jobs
