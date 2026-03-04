@@ -259,8 +259,8 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 }
 
 func deployCIBuilder(root string, w io.Writer) error {
-	fmt.Fprintf(w, "=== deploying CI builder (remote build)\n")
-	cmd := exec.Command("fly", "deploy", "-c", "apps/ci/builder.fly.toml")
+	fmt.Fprintf(w, "=== building CI builder image\n")
+	cmd := exec.Command("fly", "deploy", "-c", "apps/ci/builder.fly.toml", "--build-only", "--push")
 	cmd.Dir = root
 	cmd.Stdout = w
 	cmd.Stderr = w

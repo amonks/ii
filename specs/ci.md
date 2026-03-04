@@ -23,6 +23,11 @@ persistent volume.
 build deps. Persistent volume at `/data` for caches and repo clone.
 Joins tailnet as `monks-ci-builder-fly-ord`. Communicates with
 orchestrator via `tailnet.Client()`. Streams output in real time.
+The `monks-ci-builder` Fly app has no standing machines. When CI
+rebuilds the builder image, it runs
+`fly deploy --build-only --push` to build via Fly's remote builder
+and push to the registry without creating any machines. The
+orchestrator creates ephemeral machines on demand.
 
 ## Trigger
 
