@@ -31,11 +31,23 @@ func ParseTimeRange(req *http.Request) TimeRange {
 
 	if s := req.URL.Query().Get("start"); s != "" {
 		if e := req.URL.Query().Get("end"); e != "" {
+			// Try YYYY-MM-DD first (end becomes end-of-day).
 			start, err1 := time.Parse("2006-01-02", s)
 			end, err2 := time.Parse("2006-01-02", e)
 			if err1 == nil && err2 == nil {
 				end = end.Add(24*time.Hour - time.Nanosecond)
 				return TimeRange{Start: s, End: e, start: start, end: end}
+			}
+			// Try RFC3339 (use exact timestamps).
+			start, err1 = time.Parse(time.RFC3339, s)
+			end, err2 = time.Parse(time.RFC3339, e)
+			if err1 == nil && err2 == nil {
+				return TimeRange{
+					Start: start.Format("2006-01-02"),
+					End:   end.Format("2006-01-02"),
+					start: start,
+					end:   end,
+				}
 			}
 		}
 	}

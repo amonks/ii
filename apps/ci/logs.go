@@ -40,6 +40,12 @@ type eventsResponse struct {
 	Total  int               `json:"total"`
 }
 
+// eventEnvelope matches the shape returned by the logs /events endpoint.
+// The slog fields (with dotted keys) live inside Data.
+type eventEnvelope struct {
+	Data json.RawMessage `json:"data"`
+}
+
 // FetchRunLogs queries the logs service for events related to a CI run.
 func FetchRunLogs(run *Run) ([]LogEvent, error) {
 	client := tailnet.Client()
@@ -88,14 +94,20 @@ func FetchRunLogs(run *Run) ([]LogEvent, error) {
 	}
 
 	// Parse events and filter to those related to this run.
+	// The logs /events endpoint returns {id, timestamp, data: {<slog fields>}, ...}.
+	// The CI-specific fields (trigger.run_id, api.run_id) are inside `data`.
 	runID := float64(run.ID) // JSON numbers are float64
 	var events []LogEvent
 	for _, raw := range result.Events {
-		var ev LogEvent
-		if err := json.Unmarshal(raw, &ev); err != nil {
+		var envelope eventEnvelope
+		if err := json.Unmarshal(raw, &envelope); err != nil || envelope.Data == nil {
 			continue
 		}
-		ev.Raw = raw
+		var ev LogEvent
+		if err := json.Unmarshal(envelope.Data, &ev); err != nil {
+			continue
+		}
+		ev.Raw = envelope.Data
 
 		// Keep events that mention this run ID.
 		if matchesRunID(ev.TriggerRunID, runID) || matchesRunID(ev.APIRunID, runID) {
