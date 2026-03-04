@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 func TestFormatTodoTablePreservesAlignmentWithANSI(t *testing.T) {

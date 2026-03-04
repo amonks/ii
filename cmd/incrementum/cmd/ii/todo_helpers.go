@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

@@ -3,8 +3,8 @@ package job
 import (
 	"strings"
 
-	"github.com/amonks/incrementum/internal/markdown"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/markdown"
+	internalstrings "monks.co/incrementum/internal/strings"
 	"github.com/muesli/reflow/wordwrap"
 )
 

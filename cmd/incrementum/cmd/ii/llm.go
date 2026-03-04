@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/llm"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/llm"
 	"github.com/spf13/cobra"
 )
 

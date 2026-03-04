@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/testsupport"
-	"github.com/amonks/incrementum/llm"
+	"monks.co/incrementum/agent"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/testsupport"
+	"monks.co/incrementum/llm"
 )
 
 // These integration tests require a real provider configuration in ./incrementum.toml.

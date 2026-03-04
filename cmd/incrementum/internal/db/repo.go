@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // ErrRepoPathNotFound indicates a workspace is tracked but missing repo info.

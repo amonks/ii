@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/workspace"
 )
 
 func setupTestRepo(t *testing.T) string {

@@ -1,7 +1,7 @@
 package job
 
 import (
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func formatAgentText(event agentRenderedEvent) []string {

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/todoenv"
+	"monks.co/incrementum/agent"
+	internalagent "monks.co/incrementum/internal/agent"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/todoenv"
 )
 
 // AgentRunOptions configures an LLM run for job execution.

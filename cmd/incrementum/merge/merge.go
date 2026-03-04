@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	jobpkg "github.com/amonks/incrementum/job"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	jobpkg "monks.co/incrementum/job"
 )
 
 // RunLLMFunc runs a conflict resolution agent.

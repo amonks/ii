@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 // UserAgent builds the User-Agent value used for LLM HTTP requests.

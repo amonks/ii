@@ -3,7 +3,7 @@ package job
 import (
 	"errors"
 
-	"github.com/amonks/incrementum/internal/validation"
+	"monks.co/incrementum/internal/validation"
 )
 
 var (

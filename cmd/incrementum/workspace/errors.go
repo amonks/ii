@@ -3,7 +3,7 @@ package workspace
 import (
 	"errors"
 
-	"github.com/amonks/incrementum/internal/db"
+	"monks.co/incrementum/internal/db"
 )
 
 var (

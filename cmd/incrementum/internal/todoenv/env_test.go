@@ -3,7 +3,7 @@ package todoenv
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 func TestDefaultStatusUsesOpenByDefault(t *testing.T) {

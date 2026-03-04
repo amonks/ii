@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amonks/incrementum/internal/config"
-	internalids "github.com/amonks/incrementum/internal/ids"
-	internalllm "github.com/amonks/incrementum/internal/llm"
-	"github.com/amonks/incrementum/internal/paths"
+	"monks.co/incrementum/internal/config"
+	internalids "monks.co/incrementum/internal/ids"
+	internalllm "monks.co/incrementum/internal/llm"
+	"monks.co/incrementum/internal/paths"
 )
 
 // Re-export types from internal/llm for convenience

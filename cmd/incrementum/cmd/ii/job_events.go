@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/amonks/incrementum/job"
+	"monks.co/incrementum/job"
 )
 
 func appendAndPrintEvent(formatter *job.EventFormatter, event job.Event) error {

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/pool"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/pool"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/amonks/incrementum/job"
+	"monks.co/incrementum/job"
 	"github.com/spf13/cobra"
 )
 

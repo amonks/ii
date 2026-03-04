@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/testsupport"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/testsupport"
 )
 
 func TestOpen_NoConfig(t *testing.T) {

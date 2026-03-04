@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func normalizeCommitMessage(message string) string {

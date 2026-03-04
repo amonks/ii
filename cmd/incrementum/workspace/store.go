@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/paths"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/paths"
 )
 
 type Store struct {

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/amonks/incrementum/internal/ui"
+import "monks.co/incrementum/internal/ui"
 
 func logHighlighter(prefixLengths map[string]int, highlight func(string, int) string) func(string) string {
 	if prefixLengths == nil {

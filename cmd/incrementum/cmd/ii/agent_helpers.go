@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/paths"
-	jobpkg "github.com/amonks/incrementum/job"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/paths"
+	jobpkg "monks.co/incrementum/job"
 )
 
 func openAgentStoreAndRepoPath() (*agent.Store, func() error, string, error) {

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/workspace"
 )
 
 func TestFormatWorkspaceTablePreservesAlignmentWithANSI(t *testing.T) {

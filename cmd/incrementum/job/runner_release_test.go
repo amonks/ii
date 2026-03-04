@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/todo"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/todo"
+	"monks.co/incrementum/workspace"
 )
 
 func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {

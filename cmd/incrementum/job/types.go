@@ -3,8 +3,8 @@ package job
 import (
 	"time"
 
-	"github.com/amonks/incrementum/internal/validation"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/validation"
+	"monks.co/incrementum/todo"
 )
 
 // Status represents the job lifecycle state.

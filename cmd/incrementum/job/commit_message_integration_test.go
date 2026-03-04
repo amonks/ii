@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/jj"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/jj"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 )
 
 func TestRunCommitMessageShowsSummaryInJjLog(t *testing.T) {

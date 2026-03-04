@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // RunTestCommands executes test commands sequentially in a directory.

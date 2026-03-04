@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/db"
+	"monks.co/incrementum/internal/db"
 )
 
 func TestWorkspaceErrorsAliasModel(t *testing.T) {

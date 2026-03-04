@@ -1,6 +1,6 @@
 package todo
 
-import internalstrings "github.com/amonks/incrementum/internal/strings"
+import internalstrings "monks.co/incrementum/internal/strings"
 
 func normalizeStatus(status Status) Status {
 	return Status(internalstrings.NormalizeLower(string(status)))

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	publicllm "github.com/amonks/incrementum/llm"
-	"github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/llm"
+	publicllm "monks.co/incrementum/llm"
+	"monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/llm"
 )
 
 // These tests are integration-style (exercise real LLM calls) but they live under

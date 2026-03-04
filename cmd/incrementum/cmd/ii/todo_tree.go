@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 // printDepTree prints a dependency tree with ASCII art.

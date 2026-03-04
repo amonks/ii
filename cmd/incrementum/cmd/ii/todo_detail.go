@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 // printTodoDetail prints detailed information about a todo.

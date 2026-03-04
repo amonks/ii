@@ -3,7 +3,7 @@ package workspace
 import (
 	"time"
 
-	"github.com/amonks/incrementum/internal/validation"
+	"monks.co/incrementum/internal/validation"
 )
 
 // Status represents the state of a workspace.

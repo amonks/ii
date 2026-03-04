@@ -3,7 +3,7 @@ package job
 import (
 	"time"
 
-	internalage "github.com/amonks/incrementum/internal/age"
+	internalage "monks.co/incrementum/internal/age"
 )
 
 // AgeData computes the display age and whether timing data exists.

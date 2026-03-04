@@ -3,7 +3,7 @@ package todo
 import (
 	"time"
 
-	"github.com/amonks/incrementum/internal/ids"
+	"monks.co/incrementum/internal/ids"
 )
 
 // GenerateID creates a unique 8-character alphanumeric ID from a title and timestamp.

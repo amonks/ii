@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/habit"
-	"github.com/amonks/incrementum/internal/config"
+	"monks.co/incrementum/habit"
+	"monks.co/incrementum/internal/config"
 )
 
 func TestRunHabitRequiresHabitName(t *testing.T) {

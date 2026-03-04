@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/ids"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/ids"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // StaleJobTimeout is the duration after which an active job is considered stale

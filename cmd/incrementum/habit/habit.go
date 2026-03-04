@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/amonks/incrementum/internal/ids"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/ids"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // HabitsDir is the directory containing habit instruction documents.

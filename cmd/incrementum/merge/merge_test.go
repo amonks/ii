@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/jj"
-	jobpkg "github.com/amonks/incrementum/job"
+	"monks.co/incrementum/internal/jj"
+	jobpkg "monks.co/incrementum/job"
 )
 
 func TestNormalizeOptionsDefaults(t *testing.T) {

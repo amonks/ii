@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // Client wraps the jj CLI.

@@ -108,7 +108,7 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 				StartedAt:       time.Time{},
 				UpdatedAt:       time.Date(2026, 1, 1, 2, 15, 0, 0, time.UTC),
 				CompletedAt:     time.Date(2026, 1, 1, 2, 20, 0, 0, time.UTC),
-				ExitCode:        intPointer(0),
+				ExitCode:        new(0),
 				DurationSeconds: 120,
 				TokensUsed:      42,
 				Cost:            0.5,
@@ -136,7 +136,7 @@ func TestOpenMigratesLegacyJSON(t *testing.T) {
 							{
 								CommitID:       "commit-1",
 								DraftMessage:   "draft",
-								TestsPassed:    boolPointer(true),
+								TestsPassed:    new(true),
 								AgentSessionID: "abc123",
 								Review: &legacyJobReview{
 									Outcome:        legacyReviewOutcomeAccept,
@@ -549,14 +549,6 @@ func assertLegacyTime(t *testing.T, value string, expected time.Time) {
 	if value != formatLegacyTime(expected) {
 		t.Fatalf("time mismatch: %q", value)
 	}
-}
-
-func boolPointer(value bool) *bool {
-	return &value
-}
-
-func intPointer(value int) *int {
-	return &value
 }
 
 func readAll(t *testing.T, reader *os.File) string {

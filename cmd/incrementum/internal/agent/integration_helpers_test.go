@@ -3,7 +3,7 @@ package agent_test
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 func requireModel(t *testing.T, modelID string) llm.Model {

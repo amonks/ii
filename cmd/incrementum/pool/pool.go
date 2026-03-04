@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/todo"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/job"
+	"monks.co/incrementum/todo"
+	"monks.co/incrementum/workspace"
 )
 
 const (
@@ -121,9 +121,7 @@ func Run(ctx context.Context, opts Options) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, opts.Workers)
 	for i := 0; i < opts.Workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := runWorkerFn(ctx, pool, opts); err != nil {
 				errCh <- err
 				if !errors.Is(err, context.Canceled) {
@@ -131,7 +129,7 @@ func Run(ctx context.Context, opts Options) error {
 				}
 				return
 			}
-		}()
+		})
 	}
 
 	go func() {
@@ -253,7 +251,6 @@ func reopenTodo(repoPath, todoID string) error {
 	releaseErr := store.Release()
 	return errors.Join(err, releaseErr)
 }
-
 
 func sleepOrDone(ctx context.Context, d time.Duration) error {
 	if d <= 0 {

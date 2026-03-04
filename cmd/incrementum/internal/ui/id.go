@@ -3,8 +3,8 @@ package ui
 import (
 	"os"
 
-	"github.com/amonks/incrementum/internal/ids"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/ids"
+	internalstrings "monks.co/incrementum/internal/strings"
 	"golang.org/x/term"
 )
 

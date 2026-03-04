@@ -9,10 +9,10 @@ import (
 	"strings"
 	"text/template"
 
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 )
 
 const (

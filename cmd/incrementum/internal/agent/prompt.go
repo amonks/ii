@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 // BuildSystemBlocks generates the system prompt blocks for the agent with context-specific information.

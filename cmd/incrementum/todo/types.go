@@ -10,7 +10,7 @@
 //   - DepAdd, DepTree for dependency management
 package todo
 
-import "github.com/amonks/incrementum/internal/validation"
+import "monks.co/incrementum/internal/validation"
 
 // Status represents the state of a todo.
 type Status string

@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/internal/db"
-	internalids "github.com/amonks/incrementum/internal/ids"
-	"github.com/amonks/incrementum/internal/paths"
-	"github.com/amonks/incrementum/llm"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/internal/db"
+	internalids "monks.co/incrementum/internal/ids"
+	"monks.co/incrementum/internal/paths"
+	"monks.co/incrementum/llm"
 )
 
 // Store provides access to agent functionality with session persistence
@@ -66,6 +66,7 @@ func OpenWithDB(dbHandle *sql.DB, opts Options) (*Store, error) {
 	opts.DB = dbHandle
 	return OpenWithOptions(opts)
 }
+
 // Only loads global configuration (no project-specific config).
 func Open() (*Store, error) {
 	return OpenWithOptions(Options{})
@@ -114,8 +115,8 @@ func OpenWithOptions(opts Options) (*Store, error) {
 	}
 
 	return &Store{
-		sqlDB:    sqlDB,
-		closeDB:  closeFn,
+		sqlDB:     sqlDB,
+		closeDB:   closeFn,
 		eventsDir: eventsDir,
 		llmStore:  llmStore,
 		config:    cfg,
@@ -465,8 +466,8 @@ func (s *Store) FindSession(repoPath, sessionID string) (Session, error) {
 
 	// Some call sites may pass the full state key as the session ID ("<repo>/<id>").
 	// Accept that form as well by attempting a lookup when a repo-prefixed value is used.
-	if strings.HasPrefix(sessionID, repoName+"/") {
-		trimmed := strings.TrimPrefix(sessionID, repoName+"/")
+	if after, ok := strings.CutPrefix(sessionID, repoName+"/"); ok {
+		trimmed := after
 		if session, found, err := s.findSessionByID(repoName, trimmed); err != nil {
 			return Session{}, err
 		} else if found {

@@ -3,7 +3,7 @@ package agent_test
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/agent"
+	"monks.co/incrementum/agent"
 )
 
 func TestTranscriptTailDiff(t *testing.T) {

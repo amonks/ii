@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/editor"
-	"github.com/amonks/incrementum/internal/listflags"
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/editor"
+	"monks.co/incrementum/internal/listflags"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

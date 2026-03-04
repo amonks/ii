@@ -3,7 +3,7 @@ package job
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 func TestCommitMessageSnapshot(t *testing.T) {

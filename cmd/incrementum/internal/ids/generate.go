@@ -5,7 +5,7 @@ import (
 	"encoding/base32"
 	"time"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // DefaultLength is the standard length for generated IDs.

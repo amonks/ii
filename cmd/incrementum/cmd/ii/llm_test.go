@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/llm"
+	"monks.co/incrementum/llm"
 )
 
 func TestResolveLLMPrompt_Argument(t *testing.T) {

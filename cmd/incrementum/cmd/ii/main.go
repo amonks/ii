@@ -5,8 +5,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/amonks/incrementum/internal/paths"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/paths"
+	"monks.co/incrementum/workspace"
 	"github.com/spf13/cobra"
 )
 

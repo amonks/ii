@@ -8,9 +8,9 @@ import (
 	"text/template"
 
 	"github.com/BurntSushi/toml"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/validation"
-	"github.com/amonks/incrementum/todo"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/validation"
+	"monks.co/incrementum/todo"
 )
 
 // TodoData represents the data used to render the TOML template.

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 // formatValidationError creates a detailed error message for missing/invalid tool arguments.

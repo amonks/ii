@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	jobpkg "github.com/amonks/incrementum/job"
+	jobpkg "monks.co/incrementum/job"
 )
 
 func TestJobLogsHasLogAlias(t *testing.T) {

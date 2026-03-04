@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/validation"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/validation"
 )
 
 var (

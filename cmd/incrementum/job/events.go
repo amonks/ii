@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 const (

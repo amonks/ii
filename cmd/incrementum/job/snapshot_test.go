@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func requireSnapshot(t *testing.T, name string, got string) {

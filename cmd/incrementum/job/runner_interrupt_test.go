@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/testsupport"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/testsupport"
+	"monks.co/incrementum/todo"
 )
 
 func TestRunInterruptMarksJobFailed(t *testing.T) {

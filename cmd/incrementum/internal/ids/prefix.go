@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // NormalizeUniqueIDs lowercases IDs and removes duplicates or empty values.

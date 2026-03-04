@@ -9,9 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 

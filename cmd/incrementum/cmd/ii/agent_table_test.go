@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/agent"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func TestFormatAgentTablePreservesAlignmentWithANSI(t *testing.T) {

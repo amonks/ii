@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func TestLoadContextFiles_WhenMissing_ReturnsEmpty(t *testing.T) {

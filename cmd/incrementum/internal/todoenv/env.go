@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 // ProposerEnvVar is the environment variable that switches todo defaults.

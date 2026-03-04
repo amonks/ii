@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/workspace"
 )
 
 func resolveRepoRoot(path string) (string, error) {

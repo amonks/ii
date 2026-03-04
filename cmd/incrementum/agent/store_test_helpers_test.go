@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/db"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/db"
 )
 
 func openAgentTestDB(t *testing.T, stateDir string) *sql.DB {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/amonks/incrementum/internal/config"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/config"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 func newFakeStreamHandle(msg llm.AssistantMessage) *llm.StreamHandle {

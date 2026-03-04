@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/todoenv"
-	"github.com/amonks/incrementum/llm"
+	"monks.co/incrementum/agent"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/todoenv"
+	"monks.co/incrementum/llm"
 	"github.com/spf13/cobra"
 )
 

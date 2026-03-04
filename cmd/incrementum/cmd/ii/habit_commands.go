@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/amonks/incrementum/habit"
-	"github.com/amonks/incrementum/internal/editor"
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/job"
+	"monks.co/incrementum/habit"
+	"monks.co/incrementum/internal/editor"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/job"
 	"github.com/spf13/cobra"
 )
 

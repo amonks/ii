@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/internal/testsupport"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/internal/testsupport"
 )
 
 func TestLoad_NotFound(t *testing.T) {

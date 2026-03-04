@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/config"
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/jj"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/config"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/jj"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 )
 
 const (

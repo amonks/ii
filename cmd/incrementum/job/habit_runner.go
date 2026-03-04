@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/amonks/incrementum/habit"
-	"github.com/amonks/incrementum/internal/config"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/habit"
+	"monks.co/incrementum/internal/config"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 )
 
 // HabitRunOptions configures habit execution.

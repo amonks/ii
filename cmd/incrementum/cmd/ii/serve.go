@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/amonks/incrementum/internal/config"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/serve"
+	"monks.co/incrementum/internal/config"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/serve"
 	"github.com/spf13/cobra"
 )
 

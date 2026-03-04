@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/todo"
 )
 
 // printTodoTable prints todos in a table format.

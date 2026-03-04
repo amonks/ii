@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/todo"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/job"
+	"monks.co/incrementum/todo"
+	"monks.co/incrementum/workspace"
 )
 
 type fakePool struct {

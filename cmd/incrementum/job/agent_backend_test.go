@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/llm"
 )
 
 func TestRecordAgentEvents(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 func TestReloadTodoReturnsUpdatedTodo(t *testing.T) {

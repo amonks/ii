@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/paths"
 	"github.com/rogpeppe/go-internal/testscript"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/paths"
 )
 
 // CmdAgentSession upserts an agent session in the SQLite state database.
@@ -70,10 +70,7 @@ func CmdAgentSession(ts *testscript.TestScript, neg bool, args []string) {
 
 	durationSeconds := 0
 	if !completedAt.IsZero() {
-		durationSeconds = int(completedAt.Sub(createdAt).Seconds())
-		if durationSeconds < 0 {
-			durationSeconds = 0
-		}
+		durationSeconds = max(int(completedAt.Sub(createdAt).Seconds()), 0)
 	}
 
 	if err := upsertAgentSession(sqlDB, repoName, sessionID, status, createdAt, updatedAt, completedAt, exitCode, durationSeconds); err != nil {

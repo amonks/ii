@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

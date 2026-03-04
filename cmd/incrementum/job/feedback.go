@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // ReviewFeedback is parsed feedback from the review stage.

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/todo"
 )
 
 func TestRunImplementingStage_MissingCommitMessageRetries(t *testing.T) {

@@ -3,7 +3,7 @@ package agent_test
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/agent"
+	"monks.co/incrementum/agent"
 )
 
 func TestJSONLTailDiff(t *testing.T) {

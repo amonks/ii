@@ -3,7 +3,7 @@ package llm
 import (
 	"fmt"
 
-	internalllm "github.com/amonks/incrementum/internal/llm"
+	internalllm "monks.co/incrementum/internal/llm"
 )
 
 // Model represents an LLM model with its configuration and capabilities.

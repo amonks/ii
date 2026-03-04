@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 func TestToolExecutor_Bash(t *testing.T) {

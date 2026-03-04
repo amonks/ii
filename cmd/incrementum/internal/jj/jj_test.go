@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/jj"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	"monks.co/incrementum/internal/jj"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 func TestWorkspaceRoot(t *testing.T) {

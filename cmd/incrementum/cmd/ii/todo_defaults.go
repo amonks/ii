@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/amonks/incrementum/internal/todoenv"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/todoenv"
+	"monks.co/incrementum/todo"
 )
 
 func defaultTodoStatus() todo.Status {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // Config represents the configuration file schema.

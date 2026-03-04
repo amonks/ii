@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/amonks/incrementum/internal/config"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/merge"
+	"monks.co/incrementum/internal/config"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/merge"
 	"github.com/spf13/cobra"
 )
 

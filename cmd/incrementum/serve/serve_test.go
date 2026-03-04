@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/merge"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/job"
+	"monks.co/incrementum/merge"
+	"monks.co/incrementum/todo"
 )
 
 type fakeStore struct {

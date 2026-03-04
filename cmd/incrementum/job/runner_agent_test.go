@@ -3,8 +3,8 @@ package job
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/todo"
 )
 
 func TestResolveModelForPurposePrefersOverride(t *testing.T) {

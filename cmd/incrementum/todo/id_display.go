@@ -3,7 +3,7 @@ package todo
 import (
 	"fmt"
 
-	"github.com/amonks/incrementum/internal/ids"
+	"monks.co/incrementum/internal/ids"
 )
 
 // IDIndex indexes todo IDs for prefix matching and display.

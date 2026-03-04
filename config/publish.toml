@@ -7,3 +7,8 @@ dir = "pkg/set"
 dir = "cmd/beetman"
 module_path = "monks.co/beetman"
 mirror = "github.com/amonks/beetman"
+
+[[package]]
+dir = "cmd/incrementum"
+module_path = "monks.co/incrementum"
+mirror = "github.com/amonks/incrementum"

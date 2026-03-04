@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/testsupport"
-	"github.com/amonks/incrementum/llm"
+	"monks.co/incrementum/internal/testsupport"
+	"monks.co/incrementum/llm"
 )
 
 func TestOpen_NoConfig(t *testing.T) {

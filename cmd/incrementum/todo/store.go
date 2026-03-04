@@ -16,12 +16,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/amonks/incrementum/internal/db"
-	internalids "github.com/amonks/incrementum/internal/ids"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/db"
+	internalids "monks.co/incrementum/internal/ids"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/workspace"
 	"golang.org/x/term"
 )
 

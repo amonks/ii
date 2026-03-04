@@ -8,14 +8,14 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/internal/jj"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/merge"
-	"github.com/amonks/incrementum/pool"
-	"github.com/amonks/incrementum/todo"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/internal/jj"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/job"
+	"monks.co/incrementum/merge"
+	"monks.co/incrementum/pool"
+	"monks.co/incrementum/todo"
+	"monks.co/incrementum/workspace"
 	"golang.org/x/sync/errgroup"
 )
 

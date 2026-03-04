@@ -3,8 +3,8 @@ package main
 import (
 	"strings"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	jobpkg "github.com/amonks/incrementum/job"
+	internalstrings "monks.co/incrementum/internal/strings"
+	jobpkg "monks.co/incrementum/job"
 )
 
 func renderMarkdownOrDash(value string, width int) string {

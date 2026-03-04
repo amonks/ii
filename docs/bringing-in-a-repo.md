@@ -1,6 +1,6 @@
 # Bringing an External Repo into the Monorepo
 
-Guide and lab notes from importing beetman, gods-teeth, and creamery.
+Guide and lab notes from importing beetman, gods-teeth, creamery, and incrementum.
 
 ## Procedure
 
@@ -23,6 +23,10 @@ hashes will differ from the source repo.
 - Change the module path to `monks.co/<dir>` (or a vanity path if
   publishing with an explicit mirror).
 - Bump Go version to match the monorepo (currently 1.26.0).
+- Remove `tool` directives from the imported go.mod — they can
+  conflict with the monorepo's own tool directives (e.g., two
+  different paths resolving to the same binary name). Run
+  `go mod tidy` after removing them.
 - Update all internal imports: `find <dir> -name '*.go' -exec sed -i '' 's|old/path|new/path|g' {} +`
 
 Taskmaker will create go.mod for modules that don't have one, but
@@ -90,9 +94,14 @@ workspace. Common issues with imported code:
 
 - **gofix**: older Go idioms get auto-fixed (`strings.Split` →
   `strings.SplitSeq`, manual min → `min` builtin, `for i := 0; i < n`
-  → `for i := range n`, manual map copy → `maps.Copy`, etc.)
+  → `for i := range n`, manual map copy → `maps.Copy`,
+  `pointerHelper(x)` → `new(x)`, etc.)
   Apply fixes with `go fix ./path/...`.
-- **staticcheck**: unused variables, etc.
+- **staticcheck**: unused variables, etc. Note that gofix may
+  inline helper functions (e.g., `func boolPointer(b bool) *bool`)
+  at call sites but leave the now-unused function definitions
+  behind — staticcheck will then flag them as unused. Delete the
+  dead functions after applying gofix.
 - **cgo dependencies**: if the imported code uses cgo with
   pkg-config (like nlopt), ensure the system library is available
   both locally (via `.envrc`) and in CI (via `apt-get install` in
@@ -106,7 +115,22 @@ go run ./cmd/publish --dry-run
 
 ## Gotchas
 
-### jj colocation
+### Source repo must be git-colocated
+
+`git subtree add` needs a real `.git` directory in the source
+repo. If the source repo is jj-only (non-colocated), enable
+colocation first:
+
+```sh
+cd /path/to/source-repo
+jj git colocation enable
+```
+
+This creates a proper `.git` directory that `git subtree add` can
+read from. The jj internal git store (`.jj/repo/store/git`) is
+**not** guaranteed to be consistent and must not be used directly.
+
+### jj colocation (monorepo side)
 
 `git subtree add` requires a clean git working tree. Don't use
 `git stash` in a jj colocated repo — it doesn't work well. Use
@@ -160,3 +184,15 @@ Runs on brigid. Required adding nlopt system dependency to
 `.envrc` and CI. Needed a `build` task added to its `tasks.toml`.
 gofix had many changes (maps.Copy, range-over-int, etc.). Had a
 pre-existing test failure (stale batch count).
+
+### incrementum (cmd/incrementum)
+
+Published to `github.com/amonks/incrementum` with vanity path
+`monks.co/incrementum`. Source repo was jj-only (non-colocated) —
+required `jj git colocation enable` before `git subtree add`
+could read from it. Had a `tool` directive for
+`github.com/amonks/run/cmd/run` that conflicted with the
+monorepo's `github.com/amonks/run` (both resolve to the `run`
+binary), causing "tool is ambiguous" errors — removed the tool
+block and ran `go mod tidy`. gofix inlined pointer helper
+functions, leaving dead code that staticcheck flagged.

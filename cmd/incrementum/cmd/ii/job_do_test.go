@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/jj"
-	jobpkg "github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/jj"
+	jobpkg "monks.co/incrementum/job"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

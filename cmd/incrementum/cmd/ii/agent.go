@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/amonks/incrementum/agent"
-	"github.com/amonks/incrementum/internal/listflags"
-	"github.com/amonks/incrementum/internal/ui"
+	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/listflags"
+	"monks.co/incrementum/internal/ui"
 	"github.com/spf13/cobra"
 )
 

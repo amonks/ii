@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/workspace"
 )
 
 func requirePool(t *testing.T, pool *workspace.Pool) *workspace.Pool {

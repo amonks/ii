@@ -33,6 +33,7 @@ use (
 	./cmd/beetman
 	./cmd/compressor
 	./cmd/deploy
+	./cmd/incrementum
 	./cmd/publish
 	./cmd/taskmaker
 	./cmd/zone2terraform

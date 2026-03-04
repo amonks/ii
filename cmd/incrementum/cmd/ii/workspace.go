@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/amonks/incrementum/internal/db"
-	"github.com/amonks/incrementum/internal/listflags"
-	"github.com/amonks/incrementum/internal/paths"
-	"github.com/amonks/incrementum/internal/ui"
-	"github.com/amonks/incrementum/workspace"
+	"monks.co/incrementum/internal/db"
+	"monks.co/incrementum/internal/listflags"
+	"monks.co/incrementum/internal/paths"
+	"monks.co/incrementum/internal/ui"
+	"monks.co/incrementum/workspace"
 	"github.com/spf13/cobra"
 )
 

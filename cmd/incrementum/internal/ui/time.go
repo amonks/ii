@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	internalage "github.com/amonks/incrementum/internal/age"
+	internalage "monks.co/incrementum/internal/age"
 )
 
 // FormatTimeAgo returns a compact age string like "2m ago".

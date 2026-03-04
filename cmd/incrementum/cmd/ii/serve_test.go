@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/testsupport"
-	"github.com/amonks/incrementum/serve"
+	"monks.co/incrementum/internal/testsupport"
+	"monks.co/incrementum/serve"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/spf13/cobra"
 )

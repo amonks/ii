@@ -3,7 +3,7 @@ package job
 import (
 	"time"
 
-	"github.com/amonks/incrementum/internal/ids"
+	"monks.co/incrementum/internal/ids"
 )
 
 // GenerateID creates a unique ID from a todo ID and timestamp.

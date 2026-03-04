@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/glamour/styles"
 )

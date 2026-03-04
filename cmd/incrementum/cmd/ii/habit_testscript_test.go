@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/amonks/incrementum/internal/testsupport"
+	"monks.co/incrementum/internal/testsupport"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 

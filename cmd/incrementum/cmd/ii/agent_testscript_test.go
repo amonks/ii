@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amonks/incrementum/internal/config"
-	"github.com/amonks/incrementum/internal/testsupport"
+	"monks.co/incrementum/internal/config"
+	"monks.co/incrementum/internal/testsupport"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 

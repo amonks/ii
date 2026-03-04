@@ -1,6 +1,6 @@
 package job
 
-import internalstrings "github.com/amonks/incrementum/internal/strings"
+import internalstrings "monks.co/incrementum/internal/strings"
 
 func normalizeStage(stage Stage) Stage {
 	return Stage(internalstrings.NormalizeLower(string(stage)))

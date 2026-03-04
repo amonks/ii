@@ -6,7 +6,7 @@
 package agent
 
 import (
-	"github.com/amonks/incrementum/internal/llm"
+	"monks.co/incrementum/internal/llm"
 )
 
 // PromptContent bundles the structured pieces used to assemble prompts.

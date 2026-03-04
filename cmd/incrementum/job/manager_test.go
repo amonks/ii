@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	internaldb "github.com/amonks/incrementum/internal/db"
+	internaldb "monks.co/incrementum/internal/db"
 )
 
 func TestManager_CreateAndFind(t *testing.T) {

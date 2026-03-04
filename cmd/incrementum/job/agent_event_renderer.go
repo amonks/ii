@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // agentEventInterpreter renders agent events from the agent package.

@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/amonks/incrementum/habit"
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/paths"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/validation"
-	jobpkg "github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/habit"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/paths"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/validation"
+	jobpkg "monks.co/incrementum/job"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

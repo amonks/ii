@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amonks/incrementum/internal/jj"
+	"monks.co/incrementum/internal/jj"
 	"github.com/creack/pty"
 )
 

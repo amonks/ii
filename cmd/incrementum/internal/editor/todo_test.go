@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/todo"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/todo"
 )
 
 func TestRenderTodoTOML_Create(t *testing.T) {

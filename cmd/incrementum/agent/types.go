@@ -9,9 +9,9 @@ package agent
 import (
 	"time"
 
-	internalagent "github.com/amonks/incrementum/internal/agent"
-	"github.com/amonks/incrementum/internal/validation"
-	"github.com/amonks/incrementum/llm"
+	internalagent "monks.co/incrementum/internal/agent"
+	"monks.co/incrementum/internal/validation"
+	"monks.co/incrementum/llm"
 )
 
 // Re-export types from internal/agent for convenience

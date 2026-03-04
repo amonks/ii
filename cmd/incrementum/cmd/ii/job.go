@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/incrementum/internal/jj"
-	"github.com/amonks/incrementum/internal/paths"
+	"monks.co/incrementum/internal/jj"
+	"monks.co/incrementum/internal/paths"
 
-	"github.com/amonks/incrementum/internal/listflags"
-	internalstrings "github.com/amonks/incrementum/internal/strings"
-	"github.com/amonks/incrementum/internal/ui"
-	jobpkg "github.com/amonks/incrementum/job"
-	"github.com/amonks/incrementum/todo"
+	"monks.co/incrementum/internal/listflags"
+	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/ui"
+	jobpkg "monks.co/incrementum/job"
+	"monks.co/incrementum/todo"
 	"github.com/spf13/cobra"
 )
 

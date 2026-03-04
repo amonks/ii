@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	internalstrings "github.com/amonks/incrementum/internal/strings"
+	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // CreateOptions configures a new todo.
