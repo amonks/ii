@@ -39,8 +39,7 @@ func NewStreamWriter(client *http.Client, baseURL string, runID int64, jobName, 
 		url:    fmt.Sprintf("%s/api/runs/%d/jobs/%s/output/%s", baseURL, runID, jobName, stream),
 		done:   make(chan struct{}),
 	}
-	sw.flushWg.Add(1)
-	go sw.flushLoop()
+	sw.flushWg.Go(sw.flushLoop)
 	return sw
 }
 
@@ -75,7 +74,6 @@ func (sw *StreamWriter) Close() error {
 }
 
 func (sw *StreamWriter) flushLoop() {
-	defer sw.flushWg.Done()
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 	for {
@@ -100,11 +98,9 @@ func (sw *StreamWriter) flushLocked() {
 	sw.buf.Reset()
 
 	// Send in background to avoid blocking writes.
-	sw.flushWg.Add(1)
-	go func() {
-		defer sw.flushWg.Done()
+	sw.flushWg.Go(func() {
 		sw.send(data)
-	}()
+	})
 }
 
 func (sw *StreamWriter) send(data []byte) {
