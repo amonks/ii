@@ -30,6 +30,8 @@ The test command is `go tool run test`. It runs go test monks.co/..., a variety 
 
 ALWAYS use `go tool run test` after making changes to make sure everything's passing.
 
+For changes to CI infrastructure (builder.Dockerfile, builder code, CI config), local tests are not sufficient. You must push the change and verify the CI run succeeds. See the "Builder Image" section of [ci.md](ci.md) for the manual push workflow. The CI dashboard is at http://monks-ci-fly-ord/ on the tailnet.
+
 ### Deployment
 
 Our CI/CD system does three kinds of deployment:
@@ -58,7 +60,7 @@ Each area of the system should have a spec. Keep specs up to date while working 
 | [air](air.md)                     | [apps/air/](../apps/air/)               | Home environmental monitoring dashboard (CO2, temperature, humidity) |
 | [aranet](aranet.md)               | [apps/aranet/](../apps/aranet/)         | Bluetooth scanning service for Aranet4 sensors                       |
 | [calendar](calendar.md)           | [apps/calendar/](../apps/calendar/)     | Personal TV show tracking calendar                                   |
-| [ci](ci.md)                       | [apps/ci/](../apps/ci/)                 | Self-hosted CI/CD: orchestrator + ephemeral builder                  |
+| [ci](ci.md)                       | [apps/ci/](../apps/ci/)                 | Self-hosted CI/CD: orchestrator + ephemeral builder, builder image config |
 | [creamery](creamery.md)           | [apps/creamery/](../apps/creamery/)     | Ice cream formulation and batch log analytics                        |
 | [directory](directory.md)         | [apps/directory/](../apps/directory/)   | Internal service directory showing apps × machines                   |
 | [dogs](dogs.md)                   | [apps/dogs/](../apps/dogs/)             | Hot dog eating contest photo gallery                                 |

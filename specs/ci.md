@@ -230,6 +230,28 @@ and failure:
 7. Report run complete (sends accumulated deploy metadata)
 10. Exit → machine self-destructs
 
+## Builder Image
+
+The builder image (`apps/ci/builder.Dockerfile`) is a fat Alpine image
+with all build dependencies: Go, gcc, jj, terraform, gh, flyctl, NLopt,
+git-filter-repo, tailscale, and more. It also bakes in configuration
+files that tests depend on, notably the incrementum global config at
+`/root/.config/incrementum/config.toml` which defines LLM providers
+and the default model so that incrementum integration tests can reach
+the LLM gateway over the tailnet.
+
+CI automatically rebuilds the builder image when its Dockerfile or Go
+dependencies change, but the new image only takes effect on the *next*
+run. To avoid waiting through two full CI cycles when the builder image
+changes, you can manually push the image first:
+
+```
+fly deploy --build-only --push -c apps/ci/builder.fly.toml
+```
+
+Then `jj git push` to trigger CI, which will use the freshly pushed
+image.
+
 ## Dependencies
 
 - `pkg/flyapi` — create builder machines

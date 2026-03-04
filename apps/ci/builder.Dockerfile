@@ -53,6 +53,9 @@ ENV MONKS_DATA=/data
 # Incrementum config (so integration tests can reach the LLM gateway)
 RUN mkdir -p /root/.config/incrementum
 COPY <<'EOF' /root/.config/incrementum/config.toml
+[llm]
+model = "gpt-5.2-codex"
+
 [[llm.providers]]
 name = "tailnet-openai"
 api = "openai-responses"
