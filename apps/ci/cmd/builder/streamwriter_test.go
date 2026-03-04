@@ -32,9 +32,6 @@ func TestStreamWriterFlushesOnClose(t *testing.T) {
 	sw.Write([]byte("hello world"))
 	sw.Close()
 
-	// Give the background send a moment to complete.
-	time.Sleep(50 * time.Millisecond)
-
 	mu.Lock()
 	defer mu.Unlock()
 	if string(received) != "hello world" {
@@ -93,9 +90,7 @@ func TestStreamWriterFlushesOnSizeThreshold(t *testing.T) {
 		big[i] = 'x'
 	}
 	sw.Write(big)
-
-	// The size-triggered flush sends in background; give it a moment.
-	time.Sleep(50 * time.Millisecond)
+	sw.Close()
 
 	mu.Lock()
 	got := len(received)
@@ -104,8 +99,6 @@ func TestStreamWriterFlushesOnSizeThreshold(t *testing.T) {
 	if got != flushSize+1 {
 		t.Errorf("expected %d bytes flushed, got %d", flushSize+1, got)
 	}
-
-	sw.Close()
 }
 
 func TestStreamWriterRetriesOnServerError(t *testing.T) {
@@ -134,9 +127,6 @@ func TestStreamWriterRetriesOnServerError(t *testing.T) {
 	sw.Write([]byte("retry-data"))
 	sw.Close()
 
-	// Give the background send retries a moment.
-	time.Sleep(200 * time.Millisecond)
-
 	mu.Lock()
 	defer mu.Unlock()
 	if string(received) != "retry-data" {
@@ -159,9 +149,6 @@ func TestStreamWriterDropsAfterRetryExhaustion(t *testing.T) {
 
 	// Close should complete without hanging or panicking.
 	sw.Close()
-
-	// Give retry attempts time to complete.
-	time.Sleep(200 * time.Millisecond)
 }
 
 func TestReporterStreamWriter(t *testing.T) {
@@ -177,8 +164,6 @@ func TestReporterStreamWriter(t *testing.T) {
 	sw := reporter.StreamWriter("deploy-dogs", "output")
 	sw.Write([]byte("test"))
 	sw.Close()
-
-	time.Sleep(50 * time.Millisecond)
 
 	if gotPath != "/api/runs/42/jobs/deploy-dogs/output/output" {
 		t.Errorf("unexpected path: %s", gotPath)

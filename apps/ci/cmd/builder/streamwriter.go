@@ -100,7 +100,11 @@ func (sw *StreamWriter) flushLocked() {
 	sw.buf.Reset()
 
 	// Send in background to avoid blocking writes.
-	go sw.send(data)
+	sw.flushWg.Add(1)
+	go func() {
+		defer sw.flushWg.Done()
+		sw.send(data)
+	}()
 }
 
 func (sw *StreamWriter) send(data []byte) {
