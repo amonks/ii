@@ -150,10 +150,12 @@ Uses `tailnet.Client()` to POST to
 3. Get base SHA from orchestrator
 4. Diff changed files
 5. Run generate + test (per-task output streams via run library)
-6. Deploy affected apps (streams compile/push/deploy progress)
-7. Publish subtrees (streams output)
-8. Terraform apply (streams output)
-9. Report run complete
+6. Concurrently:
+   - Deploy affected apps (each app deploys in parallel; streams compile/push/deploy progress)
+   - Publish subtrees (streams output)
+   - Terraform apply (streams output)
+   All three run as goroutines; errors are collected (not fail-fast) and joined.
+7. Report run complete
 10. Exit → machine self-destructs
 
 ## Dependencies

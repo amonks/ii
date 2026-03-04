@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -8,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -18,6 +20,10 @@ import (
 	"monks.co/pkg/depgraph"
 	"monks.co/pkg/oci"
 )
+
+// deployAppFunc is the function used to deploy a single app. It can be
+// replaced in tests.
+var deployAppFunc = deployApp
 
 // DeployAffected builds and deploys all apps affected by the changes.
 func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, reporter *Reporter) error {
@@ -50,13 +56,32 @@ func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, repor
 		return fmt.Errorf("loading fly apps config: %w", err)
 	}
 
-	for _, app := range affected {
-		if err := deployApp(root, app, headSHA, flyToken, baseImageRef, cfg, reporter); err != nil {
-			return fmt.Errorf("deploying %s: %w", app, err)
-		}
+	return deployApps(affected, root, headSHA, flyToken, baseImageRef, cfg, reporter)
+}
+
+// deployApps deploys the given apps concurrently and collects all errors.
+func deployApps(apps []string, root, headSHA, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+	)
+
+	wg.Add(len(apps))
+	for _, app := range apps {
+		go func() {
+			defer wg.Done()
+			if err := deployAppFunc(root, app, headSHA, flyToken, baseImageRef, cfg, reporter); err != nil {
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("deploying %s: %w", app, err))
+				mu.Unlock()
+			}
+		}()
 	}
 
-	return nil
+	wg.Wait()
+
+	return errors.Join(errs...)
 }
 
 func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {

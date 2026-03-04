@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -32,25 +34,48 @@ func (p *Pipeline) Run(ctx context.Context) error {
 		return fmt.Errorf("tests failed: %w", err)
 	}
 
-	// Step 3: Deploy affected apps.
-	slog.Info("deploying affected apps")
-	if err := DeployAffected(root, p.Config.HeadSHA, p.Config.BaseSHA, p.Config.FlyAPIToken, p.Config.BaseImageRef, p.Reporter); err != nil {
-		return fmt.Errorf("deploy failed: %w", err)
-	}
+	// Steps 3-5: Deploy, publish, and terraform run concurrently.
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+	)
 
-	// Step 4: Publish subtrees.
-	slog.Info("publishing subtrees")
-	if err := PublishSubtrees(root, p.Reporter); err != nil {
-		return fmt.Errorf("publish failed: %w", err)
-	}
+	wg.Add(3)
 
-	// Step 5: Terraform apply.
-	slog.Info("applying terraform")
-	if err := TerraformApply(root, p.Reporter); err != nil {
-		return fmt.Errorf("terraform failed: %w", err)
-	}
+	go func() {
+		defer wg.Done()
+		slog.Info("deploying affected apps")
+		if err := DeployAffected(root, p.Config.HeadSHA, p.Config.BaseSHA, p.Config.FlyAPIToken, p.Config.BaseImageRef, p.Reporter); err != nil {
+			mu.Lock()
+			errs = append(errs, fmt.Errorf("deploy failed: %w", err))
+			mu.Unlock()
+		}
+	}()
 
-	return nil
+	go func() {
+		defer wg.Done()
+		slog.Info("publishing subtrees")
+		if err := PublishSubtrees(root, p.Reporter); err != nil {
+			mu.Lock()
+			errs = append(errs, fmt.Errorf("publish failed: %w", err))
+			mu.Unlock()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		slog.Info("applying terraform")
+		if err := TerraformApply(root, p.Reporter); err != nil {
+			mu.Lock()
+			errs = append(errs, fmt.Errorf("terraform failed: %w", err))
+			mu.Unlock()
+		}
+	}()
+
+	wg.Wait()
+
+	return errors.Join(errs...)
 }
 
 func (p *Pipeline) fetchCode() error {
