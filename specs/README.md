@@ -28,6 +28,8 @@ We use `go tool run` as a task runner. It runs dags of bash scripts defined in t
 
 The test command is `go tool run test`. It runs go test monks.co/..., a variety of static analysis tools, and any task 'test' defined in any module's taskfile.
 
+ALWAYS use `go tool run test` after making changes to make sure everything's passing.
+
 ### Deployment
 
 Our CI/CD system does three kinds of deployment:
