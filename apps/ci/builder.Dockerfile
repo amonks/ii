@@ -70,7 +70,7 @@ EOF
 COPY <<'SCRIPT' /usr/local/bin/entrypoint.sh
 #!/bin/sh
 set -e
-tailscaled --tun=userspace-networking &
+tailscaled &
 tailscale up --authkey="$TS_AUTHKEY" --hostname="monks-ci-builder-fly-${FLY_REGION:-ord}"
 exec /usr/local/bin/ci-builder
 SCRIPT
