@@ -116,6 +116,7 @@
   dependencies = [
     'go-test',
     'gofix',
+    'govulncheck',
     'staticcheck'
   ]
 
