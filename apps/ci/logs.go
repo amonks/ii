@@ -153,8 +153,8 @@ func SortedDataKeys(data map[string]any) []string {
 }
 
 func groupForKey(key string, order map[string]int) int {
-	if idx := strings.IndexByte(key, '.'); idx >= 0 {
-		if o, ok := order[key[:idx]]; ok {
+	if before, _, ok := strings.Cut(key, "."); ok {
+		if o, ok := order[before]; ok {
 			return o
 		}
 	}
