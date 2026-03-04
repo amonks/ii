@@ -21,8 +21,12 @@ persistent volume.
 **monks-ci-builder** (builder): Ephemeral Fly machine
 (`performance-4x`, 4GB, `auto_destroy: true`). Fat image with all
 build deps. Persistent volume at `/data` for caches and repo clone.
-Joins tailnet as `monks-ci-builder-fly-ord`. Communicates with
-orchestrator via `tailnet.Client()`. Streams output in real time.
+Joins tailnet via kernel tailscale (started by the entrypoint script)
+as `monks-ci-builder-fly-{region}`. Using kernel tailscale (rather
+than tsnet) puts the whole machine on the tailnet so that child
+processes like `go test` can reach tailnet hosts (e.g. the LLM
+gateway). Communicates with orchestrator via `http.DefaultClient`.
+Streams output in real time.
 The `monks-ci-builder` Fly app has no standing machines. When CI
 rebuilds the builder image, it runs
 `fly deploy --build-only --push` to build via Fly's remote builder
@@ -209,7 +213,7 @@ and failure:
 
 ## Builder Pipeline
 
-1. Join tailnet (via `tailnet.WaitReady`; uses `TS_AUTHKEY` from env)
+1. Tailnet is already up (kernel tailscale started by entrypoint script)
 2. Clone or fetch repo onto persistent volume at `/data/repo`
    (`jj git clone --colocate` on first run, `jj git fetch` on
    subsequent runs, then `jj new` the head SHA)
@@ -234,6 +238,6 @@ and failure:
 - `pkg/oci` — OCI image building
 - `pkg/database` — SQLite
 - `pkg/serve` — HTTP mux
-- `pkg/tailnet` — tailnet membership
+- `pkg/tailnet` — tailnet membership (orchestrator only; builder uses kernel tailscale)
 - `pkg/reqlog` — structured logging
 - `github.com/amonks/run` — task runner (programmatic API for test jobs)

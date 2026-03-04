@@ -1,7 +1,7 @@
 FROM golang:1.26-alpine
 
 RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
-    python3 py3-pip sqlite ca-certificates curl pkgconf
+    python3 py3-pip sqlite ca-certificates curl pkgconf tailscale
 
 # NLopt 2.10.0
 RUN curl -L https://github.com/stevengj/nlopt/archive/refs/tags/v2.10.0.tar.gz | tar xz && \
@@ -49,4 +49,31 @@ RUN go build -o /usr/local/bin/ci-builder ./apps/ci/cmd/builder
 
 ENV MONKS_ROOT=/data/repo
 ENV MONKS_DATA=/data
-CMD ["/usr/local/bin/ci-builder"]
+
+# Incrementum config (so integration tests can reach the LLM gateway)
+RUN mkdir -p /root/.config/incrementum
+COPY <<'EOF' /root/.config/incrementum/config.toml
+[[llm.providers]]
+name = "tailnet-openai"
+api = "openai-responses"
+base-url = "https://ai.tail98579.ts.net"
+models = ["gpt-5.2", "gpt-5.2-codex", "gpt-5-nano", "gpt-5", "gpt-5.1"]
+
+[[llm.providers]]
+name = "tailnet-anthropic"
+api = "anthropic-messages"
+base-url = "https://ai.tail98579.ts.net"
+models = ["claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001", "claude-sonnet-4-5", "claude-haiku-4-5", "claude-opus-4-5"]
+EOF
+
+# Entrypoint: start kernel tailscale then exec the builder
+COPY <<'SCRIPT' /usr/local/bin/entrypoint.sh
+#!/bin/sh
+set -e
+tailscaled --tun=userspace-networking &
+tailscale up --authkey="$TS_AUTHKEY" --hostname="monks-ci-builder-fly-${FLY_REGION:-ord}"
+exec /usr/local/bin/ci-builder
+SCRIPT
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

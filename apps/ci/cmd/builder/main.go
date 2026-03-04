@@ -7,10 +7,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"strconv"
-
-	"monks.co/pkg/tailnet"
 )
 
 func main() {
@@ -28,12 +27,7 @@ func run() error {
 
 	ctx := context.Background()
 
-	// Join the tailnet so we can reach the orchestrator.
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
-
-	reporter := NewReporter(cfg.OrchestratorURL, cfg.RunID, tailnet.Client())
+	reporter := NewReporter(cfg.OrchestratorURL, cfg.RunID, http.DefaultClient)
 
 	pipeline := &Pipeline{
 		Config:   cfg,
