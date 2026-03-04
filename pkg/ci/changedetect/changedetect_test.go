@@ -1,91 +1,125 @@
 package changedetect
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
+// fakeDeps returns a resolveDeps function backed by a map of package dir
+// to transitive dependencies.
+func fakeDeps(deps map[string][]string) func(string) ([]string, error) {
+	return func(pkgPath string) ([]string, error) {
+		d, ok := deps[pkgPath]
+		if !ok {
+			return nil, fmt.Errorf("unknown package: %s", pkgPath)
+		}
+		return d, nil
+	}
+}
+
 func TestAffectedApps(t *testing.T) {
 	flyApps := []string{"dogs", "homepage", "logs", "proxy", "writing"}
 
-	graph := map[string][]string{
-		"apps/dogs":      {"pkg/dogs", "pkg/serve"},
-		"apps/homepage":  {"pkg/serve", "pkg/letterboxd"},
-		"apps/logs":      {"pkg/logs", "pkg/serve"},
-		"apps/proxy":     {"pkg/serve", "pkg/tls", "pkg/tailnet"},
-		"apps/writing":   {"pkg/posts", "pkg/serve"},
-		"pkg/dogs":       {},
-		"pkg/serve":      {"pkg/middleware"},
-		"pkg/middleware":  {"pkg/reqlog"},
-		"pkg/reqlog":     {},
-		"pkg/logs":       {},
-		"pkg/letterboxd": {},
-		"pkg/tls":        {},
-		"pkg/tailnet":    {},
-		"pkg/posts":      {"pkg/markdown"},
-		"pkg/markdown":   {},
+	// Package-level transitive deps for each app.
+	deps := map[string][]string{
+		"apps/dogs":     {"pkg/dogs", "pkg/serve", "pkg/middleware", "pkg/reqlog"},
+		"apps/homepage": {"pkg/serve", "pkg/letterboxd", "pkg/middleware", "pkg/reqlog"},
+		"apps/logs":     {"pkg/logs", "pkg/serve", "pkg/middleware", "pkg/reqlog"},
+		"apps/proxy":    {"pkg/serve", "pkg/tls", "pkg/tailnet", "pkg/middleware", "pkg/reqlog"},
+		"apps/writing":  {"pkg/posts", "pkg/serve", "pkg/markdown", "pkg/middleware", "pkg/reqlog"},
 	}
+	resolve := fakeDeps(deps)
 
 	t.Run("app dir change", func(t *testing.T) {
 		changed := []string{"apps/dogs/main.go"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, []string{"dogs"})
 	})
 
 	t.Run("direct pkg dependency", func(t *testing.T) {
 		changed := []string{"pkg/dogs/handler.go"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, []string{"dogs"})
 	})
 
 	t.Run("transitive pkg dependency", func(t *testing.T) {
-		// pkg/reqlog is used by pkg/middleware, which is used by pkg/serve,
-		// which is used by all apps.
+		// pkg/reqlog is a transitive dep of all apps.
 		changed := []string{"pkg/reqlog/logger.go"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("shared pkg dependency", func(t *testing.T) {
 		// pkg/serve is used by all apps.
 		changed := []string{"pkg/serve/mux.go"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("root go.mod deploys all", func(t *testing.T) {
 		changed := []string{"go.mod"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("root go.sum deploys all", func(t *testing.T) {
 		changed := []string{"go.sum"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("config fly-apps.toml deploys all", func(t *testing.T) {
 		changed := []string{filepath.Join("config", "fly-apps.toml")}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("nil changed files (initial push) deploys all", func(t *testing.T) {
-		got := AffectedApps(flyApps, nil, graph)
+		got, err := AffectedApps(flyApps, nil, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, flyApps)
 	})
 
 	t.Run("unrelated files deploy nothing", func(t *testing.T) {
 		changed := []string{"README.md", "specs/deploy.md", ".github/workflows/ci.yml"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, nil)
 	})
 
 	t.Run("non-fly app change deploys nothing", func(t *testing.T) {
 		changed := []string{"apps/calendar/main.go"}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, nil)
 	})
 
@@ -95,7 +129,10 @@ func TestAffectedApps(t *testing.T) {
 			"apps/dogs/handler.go",
 			"pkg/dogs/model.go",
 		}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, []string{"dogs"})
 	})
 
@@ -104,14 +141,92 @@ func TestAffectedApps(t *testing.T) {
 			"apps/dogs/main.go",
 			"pkg/posts/render.go", // affects writing
 		}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, []string{"dogs", "writing"})
 	})
 
 	t.Run("empty changed files deploys nothing", func(t *testing.T) {
 		changed := []string{}
-		got := AffectedApps(flyApps, changed, graph)
+		got, err := AffectedApps(flyApps, changed, resolve)
+		if err != nil {
+			t.Fatal(err)
+		}
 		assertApps(t, got, nil)
+	})
+}
+
+func TestIsImageAffected(t *testing.T) {
+	resolve := fakeDeps(map[string][]string{
+		"apps/ci/cmd/builder": {"pkg/ci/changedetect", "pkg/depgraph", "pkg/oci"},
+	})
+
+	t.Run("dockerfile changed", func(t *testing.T) {
+		changed := []string{"apps/ci/builder.Dockerfile"}
+		got, err := IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolve, "apps/ci/cmd/builder")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got {
+			t.Error("expected image to be affected when Dockerfile changed")
+		}
+	})
+
+	t.Run("package source changed", func(t *testing.T) {
+		changed := []string{"apps/ci/cmd/builder/deployer.go"}
+		got, err := IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolve, "apps/ci/cmd/builder")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got {
+			t.Error("expected image to be affected when package source changed")
+		}
+	})
+
+	t.Run("dep changed", func(t *testing.T) {
+		changed := []string{"pkg/ci/changedetect/changedetect.go"}
+		got, err := IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolve, "apps/ci/cmd/builder")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got {
+			t.Error("expected image to be affected when dep changed")
+		}
+	})
+
+	t.Run("unrelated change", func(t *testing.T) {
+		changed := []string{"apps/dogs/main.go"}
+		got, err := IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolve, "apps/ci/cmd/builder")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got {
+			t.Error("expected image not to be affected by unrelated change")
+		}
+	})
+
+	t.Run("base image no pkg path", func(t *testing.T) {
+		changed := []string{"apps/ci/base.Dockerfile"}
+		got, err := IsImageAffected(changed, "apps/ci/base.Dockerfile", nil, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got {
+			t.Error("expected base image to be affected when Dockerfile changed")
+		}
+	})
+
+	t.Run("base image unrelated change", func(t *testing.T) {
+		changed := []string{"apps/dogs/main.go"}
+		got, err := IsImageAffected(changed, "apps/ci/base.Dockerfile", nil, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got {
+			t.Error("expected base image not to be affected by unrelated change")
+		}
 	})
 }
 

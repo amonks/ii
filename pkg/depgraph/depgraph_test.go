@@ -9,6 +9,9 @@ import (
 func TestBuildDepGraph(t *testing.T) {
 	root := t.TempDir()
 
+	// Create workspace.
+	mkWorkspace(t, root, "pkg/a", "pkg/b", "apps/myapp")
+
 	// Create pkg/a that depends on pkg/b.
 	mkModule(t, root, "pkg/a", "monks.co/pkg/a", `package a
 
@@ -47,13 +50,15 @@ var _ = a.X
 func TestBuildDepGraph_SelfImportFiltered(t *testing.T) {
 	root := t.TempDir()
 
+	mkWorkspace(t, root, "cmd/tool")
+
 	// cmd/tool has module monks.co/tool and imports itself.
 	dir := filepath.Join(root, "cmd", "tool")
 	os.MkdirAll(dir, 0755)
 	os.WriteFile(filepath.Join(dir, "go.mod"),
 		[]byte("module monks.co/tool\n\ngo 1.26.0\n"), 0644)
 	os.WriteFile(filepath.Join(dir, "lib.go"),
-		[]byte("package tool\n"), 0644)
+		[]byte("package tool\n\nvar X = 1\n"), 0644)
 
 	subDir := filepath.Join(dir, "tool")
 	os.MkdirAll(subDir, 0755)
@@ -186,6 +191,90 @@ func TestReadModulePath(t *testing.T) {
 	}
 }
 
+func TestPackageDeps(t *testing.T) {
+	root := t.TempDir()
+
+	mkWorkspace(t, root, "pkg/a", "pkg/b", "apps/myapp")
+
+	mkModule(t, root, "pkg/a", "monks.co/pkg/a", `package a
+
+import "monks.co/pkg/b"
+
+var _ = b.X
+`)
+	mkModule(t, root, "pkg/b", "monks.co/pkg/b", `package b
+
+var X = 1
+`)
+	mkModule(t, root, "apps/myapp", "monks.co/apps/myapp", `package myapp
+
+import "monks.co/pkg/a"
+
+var _ = a.X
+`)
+
+	t.Run("app with transitive deps", func(t *testing.T) {
+		deps, err := PackageDeps(root, "apps/myapp")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertDeps(t, map[string][]string{"apps/myapp": deps}, "apps/myapp", []string{"pkg/a", "pkg/b"})
+	})
+
+	t.Run("package with direct dep", func(t *testing.T) {
+		deps, err := PackageDeps(root, "pkg/a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertDeps(t, map[string][]string{"pkg/a": deps}, "pkg/a", []string{"pkg/b"})
+	})
+
+	t.Run("leaf package", func(t *testing.T) {
+		deps, err := PackageDeps(root, "pkg/b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(deps) != 0 {
+			t.Errorf("expected no deps for leaf, got %v", deps)
+		}
+	})
+}
+
+func TestPackageDeps_SubPackage(t *testing.T) {
+	root := t.TempDir()
+
+	mkWorkspace(t, root, "pkg/ci", "pkg/depgraph")
+
+	// pkg/ci has a sub-package changedetect that depends on pkg/depgraph.
+	ciDir := filepath.Join(root, "pkg", "ci")
+	os.MkdirAll(ciDir, 0755)
+	os.WriteFile(filepath.Join(ciDir, "go.mod"),
+		[]byte("module monks.co/pkg/ci\n\ngo 1.26.0\n"), 0644)
+	os.WriteFile(filepath.Join(ciDir, "ci.go"),
+		[]byte("package ci\n"), 0644)
+
+	cdDir := filepath.Join(ciDir, "changedetect")
+	os.MkdirAll(cdDir, 0755)
+	os.WriteFile(filepath.Join(cdDir, "changedetect.go"), []byte(`package changedetect
+
+import "monks.co/pkg/depgraph"
+
+var _ = depgraph.ReadModulePath
+`), 0644)
+
+	mkModule(t, root, "pkg/depgraph", "monks.co/pkg/depgraph", `package depgraph
+
+func ReadModulePath(s string) string { return "" }
+`)
+
+	deps, err := PackageDeps(root, "pkg/ci/changedetect")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Should include pkg/depgraph but NOT pkg/ci (the parent package).
+	assertDeps(t, map[string][]string{"x": deps}, "x", []string{"pkg/depgraph"})
+}
+
 // mkModule creates a module directory with go.mod and a .go file.
 func mkModule(t *testing.T, root, dir, modulePath, goSource string) {
 	t.Helper()
@@ -199,6 +288,20 @@ func mkModule(t *testing.T, root, dir, modulePath, goSource string) {
 	}
 	if err := os.WriteFile(filepath.Join(absDir, "main.go"),
 		[]byte(goSource), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// mkWorkspace creates a go.work file referencing the given module directories.
+func mkWorkspace(t *testing.T, root string, dirs ...string) {
+	t.Helper()
+	var b []byte
+	b = append(b, "go 1.26.0\n\nuse (\n"...)
+	for _, dir := range dirs {
+		b = append(b, "\t./"+dir+"\n"...)
+	}
+	b = append(b, ")\n"...)
+	if err := os.WriteFile(filepath.Join(root, "go.work"), b, 0644); err != nil {
 		t.Fatal(err)
 	}
 }

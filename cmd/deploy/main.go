@@ -47,12 +47,14 @@ func run() error {
 		return fmt.Errorf("getting changed files: %w", err)
 	}
 
-	graph, err := depgraph.BuildDepGraph(root)
-	if err != nil {
-		return fmt.Errorf("building dep graph: %w", err)
+	resolveDeps := func(pkgPath string) ([]string, error) {
+		return depgraph.PackageDeps(root, pkgPath)
 	}
 
-	affected := changedetect.AffectedApps(apps, changed, graph)
+	affected, err := changedetect.AffectedApps(apps, changed, resolveDeps)
+	if err != nil {
+		return fmt.Errorf("computing affected apps: %w", err)
+	}
 
 	if len(affected) == 0 {
 		fmt.Println("no apps affected by changes")

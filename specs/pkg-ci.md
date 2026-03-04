@@ -29,9 +29,13 @@ Code: [pkg/ci/changedetect/](../pkg/ci/changedetect/)
   between baseSHA and HEAD. Tries `jj diff --name-only` first, falls
   back to `git diff --name-only`. Returns nil for all-zeros SHA
   (initial push).
-- `AffectedApps(flyApps, changed, graph) []string` — which Fly apps
-  need deployment. See [deploy spec](deploy.md#change-detection) for
-  rules.
+- `AffectedApps(flyApps, changed, resolveDeps) ([]string, error)` —
+  which Fly apps need deployment. `resolveDeps` returns transitive
+  package-dir deps for a given package directory. See
+  [deploy spec](deploy.md#change-detection) for rules.
+- `IsImageAffected(changed, dockerfilePath, resolveDeps, pkgPath) (bool, error)` —
+  whether a Dockerfile or its Go dependencies changed. For images
+  with no Go code (base image), pass empty pkgPath.
 
 ## publish
 

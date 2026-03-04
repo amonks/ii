@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -11,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"monks.co/pkg/ci/changedetect"
 	"monks.co/pkg/depgraph"
@@ -24,13 +23,14 @@ import (
 // replaced in tests.
 var deployAppFunc = deployApp
 
-// deployCIBuilderFunc is the function used to rebuild the CI builder image.
-// It can be replaced in tests.
-var deployCIBuilderFunc = deployCIBuilder
+// rebuildImageFunc is the function used to rebuild a CI image. It can be
+// replaced in tests.
+var rebuildImageFunc = rebuildImage
 
 // DeployAffected builds and deploys all apps affected by the changes.
 // All fly apps are represented as streams — affected apps are deployed,
-// unaffected apps are shown as "skipped".
+// unaffected apps are shown as "skipped". Builder and base images are
+// rebuilt concurrently with app deploys when affected.
 func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, reporter *Reporter) error {
 	apps, err := changedetect.LoadFlyApps(root)
 	if err != nil {
@@ -47,19 +47,33 @@ func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, repor
 		return fmt.Errorf("getting changed files: %w", err)
 	}
 
-	graph, err := depgraph.BuildDepGraph(root)
-	if err != nil {
-		return fmt.Errorf("building dep graph: %w", err)
+	resolveDeps := func(pkgPath string) ([]string, error) {
+		return depgraph.PackageDeps(root, pkgPath)
 	}
 
-	affected := changedetect.AffectedApps(apps, changed, graph)
+	affected, err := changedetect.AffectedApps(apps, changed, resolveDeps)
+	if err != nil {
+		return fmt.Errorf("computing affected apps: %w", err)
+	}
 
 	affectedSet := make(map[string]bool, len(affected))
 	for _, a := range affected {
 		affectedSet[a] = true
 	}
 
-	slog.Info("deploy analysis", "total_apps", len(apps), "affected", len(affected))
+	// Determine which images need rebuilding.
+	builderAffected, err := changedetect.IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolveDeps, "apps/ci/cmd/builder")
+	if err != nil {
+		return fmt.Errorf("checking builder image: %w", err)
+	}
+
+	baseAffected, err := changedetect.IsImageAffected(changed, "apps/ci/base.Dockerfile", nil, "")
+	if err != nil {
+		return fmt.Errorf("checking base image: %w", err)
+	}
+
+	slog.Info("deploy analysis", "total_apps", len(apps), "affected", len(affected),
+		"builder_rebuild", builderAffected, "base_rebuild", baseAffected)
 
 	cfg, err := changedetect.LoadFlyAppsConfig(root)
 	if err != nil {
@@ -85,11 +99,49 @@ func DeployAffected(root, headSHA, baseSHA, flyToken, baseImageRef string, repor
 		})
 	}
 
-	// Deploy affected apps concurrently.
-	var deployErr error
+	// Deploy affected apps and rebuild images concurrently.
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+	)
+
+	// Deploy affected apps.
 	if len(affected) > 0 {
-		deployErr = deployApps(affected, root, headSHA, flyToken, baseImageRef, cfg, reporter)
+		wg.Go(func() {
+			if err := deployApps(affected, root, headSHA, flyToken, baseImageRef, cfg, reporter); err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+			}
+		})
 	}
+
+	// Rebuild CI builder image if affected (concurrent with app deploys).
+	if builderAffected {
+		wg.Go(func() {
+			if err := rebuildImageFunc(root, "ci-builder", "apps/ci/builder.fly.toml", reporter); err != nil {
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("rebuilding ci-builder: %w", err))
+				mu.Unlock()
+			}
+		})
+	}
+
+	// Rebuild base image if affected (concurrent with app deploys).
+	if baseAffected {
+		wg.Go(func() {
+			if err := rebuildImageFunc(root, "ci-base", "apps/ci/base.fly.toml", reporter); err != nil {
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("rebuilding ci-base: %w", err))
+				mu.Unlock()
+			}
+		})
+	}
+
+	wg.Wait()
+
+	deployErr := errors.Join(errs...)
 
 	duration := time.Since(start).Milliseconds()
 	status := "success"
@@ -116,16 +168,14 @@ func deployApps(apps []string, root, headSHA, flyToken, baseImageRef string, cfg
 		errs []error
 	)
 
-	wg.Add(len(apps))
 	for _, app := range apps {
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := deployAppFunc(root, app, headSHA, flyToken, baseImageRef, cfg, reporter); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("deploying %s: %w", app, err))
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -140,25 +190,6 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	defer w.Close()
 
 	start := time.Now()
-
-	// When apps/ci is affected, first rebuild the builder image before
-	// proceeding to the normal compile→OCI→push→deploy flow for the
-	// orchestrator.
-	if app == "ci" {
-		fmt.Fprintf(w, "=== rebuilding CI builder image\n")
-		if err := deployCIBuilderFunc(root, w); err != nil {
-			errMsg := fmt.Sprintf("rebuilding CI builder: %v", err)
-			fmt.Fprintf(w, "=== builder rebuild failed: %s\n", errMsg)
-			reporter.FinishStream("deploy", app, FinishStreamResult{
-				Status:     "failed",
-				DurationMs: time.Since(start).Milliseconds(),
-				Error:      errMsg,
-			})
-			return fmt.Errorf("rebuilding CI builder: %w", err)
-		}
-		fmt.Fprintf(w, "=== builder image rebuilt successfully\n")
-		// fall through to normal deploy path
-	}
 
 	var compileMs, pushMs, deployMs, binaryBytes, imageBytes int64
 	imageRef := fmt.Sprintf("registry.fly.io/monks-%s:%s", app, sha)
@@ -307,13 +338,36 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	return nil
 }
 
-func deployCIBuilder(root string, w io.Writer) error {
-	fmt.Fprintf(w, "=== building CI builder image\n")
-	cmd := exec.Command("fly", "deploy", "-c", "apps/ci/builder.fly.toml", "--build-only", "--push")
+func rebuildImage(root, name, tomlPath string, reporter *Reporter) error {
+	reporter.StartStream("deploy", name)
+	w := reporter.StreamWriter("deploy", name)
+	defer w.Close()
+
+	start := time.Now()
+
+	fmt.Fprintf(w, "=== rebuilding %s image\n", name)
+	cmd := exec.Command("fly", "deploy", "-c", tomlPath, "--build-only", "--push")
 	cmd.Dir = root
 	cmd.Stdout = w
 	cmd.Stderr = w
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		errMsg := fmt.Sprintf("rebuilding %s: %v", name, err)
+		fmt.Fprintf(w, "=== rebuild failed: %s\n", errMsg)
+		reporter.FinishStream("deploy", name, FinishStreamResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("rebuilding %s: %w", name, err)
+	}
+
+	duration := time.Since(start).Milliseconds()
+	fmt.Fprintf(w, "=== rebuilt in %dms\n", duration)
+	reporter.FinishStream("deploy", name, FinishStreamResult{
+		Status:     "success",
+		DurationMs: duration,
+	})
+	return nil
 }
 
 func mustParseRef(s string) name.Reference {

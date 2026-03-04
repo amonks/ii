@@ -258,6 +258,9 @@ func TestResolveImportDir(t *testing.T) {
 func TestBuildDepGraphNonStandardModulePath(t *testing.T) {
 	root := t.TempDir()
 
+	// Create workspace so go/packages can resolve cross-module imports.
+	os.WriteFile(filepath.Join(root, "go.work"), []byte("go 1.26.0\n\nuse (\n\t./cmd/beetman\n\t./pkg/util\n)\n"), 0644)
+
 	beetDir := filepath.Join(root, "cmd", "beetman")
 	os.MkdirAll(beetDir, 0755)
 	os.WriteFile(filepath.Join(beetDir, "go.mod"),

@@ -111,17 +111,20 @@ templ, etc). After `run.Start()` returns, `run.TaskStatus()` is
 called for each task ID to set per-stream status (success, failed,
 or skipped).
 
-**Deploy job**: A single "deploy" job with one stream per fly app.
-Unaffected apps get a "skipped" stream. Affected apps get a stream
-showing compile/push/deploy progress with success/failed status.
-Deploy metadata is accumulated via `reporter.AddDeployResult()` and
-sent with the `FinishRun` call. When `apps/ci` is affected, the CI
-deploy stream first rebuilds the builder image via
-`fly deploy --build-only --push`, then proceeds with the normal
-compile→OCI→push→deploy flow for the orchestrator. The orchestrator
-restart is safe because state is on a persistent volume (SQLite, output
-files), and the builder's retry logic handles transient connection
-failures during the restart window.
+**Deploy job**: A single "deploy" job with one stream per fly app
+plus optional streams for image rebuilds. Unaffected apps get a
+"skipped" stream. Affected apps get a stream showing
+compile/push/deploy progress with success/failed status. Deploy
+metadata is accumulated via `reporter.AddDeployResult()` and sent
+with the `FinishRun` call. CI app deploys go through the same
+compile→OCI→push→deploy path as all other apps. Builder and base
+image rebuilds run as separate streams (`ci-builder`, `ci-base`)
+concurrently with app deploys when their Dockerfile or Go
+dependencies change. Image rebuilds use
+`fly deploy --build-only --push`. The orchestrator restart during
+self-deploy is safe because state is on a persistent volume (SQLite,
+output files), and the builder's retry logic handles transient
+connection failures during the restart window.
 
 **Other jobs**: Single "output" stream per job. Shellout stdout/stderr
 and progress messages both write to the same `StreamWriter`.

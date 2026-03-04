@@ -43,19 +43,21 @@ Edge cases:
 
 ## Dependency Graph
 
-The `pkg/depgraph` package builds a dependency graph by scanning
-`{apps,pkg,cmd}/*` directories for Go source files containing
-`monks.co/*` imports. It resolves import paths to module directories
-using longest prefix match against `go.mod` files.
+The `pkg/depgraph` package builds a dependency graph using
+`go/packages` to load `monks.co/*` imports from the workspace. It
+resolves import paths to directories using `go.mod` module paths.
 
 Key functions:
 
-- `BuildDepGraph(root) → map[dir][]deps` — scans all modules
-- `TransitiveDeps(graph, dir) → set[dir]` — walks the graph
+- `BuildDepGraph(root) → map[dir][]deps` — module-level dep graph
+- `PackageDeps(root, pkgDir) → []dir` — package-level transitive deps
+- `TransitiveDeps(graph, dir) → set[dir]` — walks a BuildDepGraph graph
 - `BuildModuleMap(root) → map[modulePath]dir` — reads go.mod files
 - `ResolveImportDir(importPath, moduleMap) → dir` — longest prefix match
 
-This package is also used by `cmd/publish` for validation.
+`PackageDeps` provides finer-grained change detection than
+module-level `BuildDepGraph`. This package is also used by
+`cmd/publish` for validation.
 
 ## Usage
 

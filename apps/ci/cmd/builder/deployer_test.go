@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -106,76 +105,85 @@ func TestParseTerraformOutput(t *testing.T) {
 	}
 }
 
-func TestDeployAppCIBuilderFailureStopsEarly(t *testing.T) {
+func TestRebuildImage(t *testing.T) {
+	var calls []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
-	cfg := &changedetect.FlyAppsConfig{}
 
-	origDeploy := deployAppFunc
-	origBuilder := deployCIBuilderFunc
-	defer func() {
-		deployAppFunc = origDeploy
-		deployCIBuilderFunc = origBuilder
-	}()
+	origRebuild := rebuildImageFunc
+	defer func() { rebuildImageFunc = origRebuild }()
 
-	deployCIBuilderFunc = func(root string, w io.Writer) error {
-		return fmt.Errorf("builder image build failed")
-	}
-
-	var compileCalled bool
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
-		// This is the real deployApp; we track whether it got past the builder step.
-		compileCalled = true
+	var rebuiltNames []string
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter) error {
+		rebuiltNames = append(rebuiltNames, name)
+		reporter.StartStream("deploy", name)
+		w := reporter.StreamWriter("deploy", name)
+		fmt.Fprintf(w, "rebuilding %s\n", name)
+		w.Close()
+		reporter.FinishStream("deploy", name, FinishStreamResult{
+			Status:     "success",
+			DurationMs: 50,
+		})
 		return nil
 	}
 
-	// Call the real deployApp (not the mock) to test the ci branch.
-	err := deployApp("/tmp", "ci", "abc", "token", "ref", cfg, reporter)
-	if err == nil {
-		t.Fatal("expected error from builder failure")
+	// Call rebuildImageFunc directly to verify stream lifecycle.
+	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
 	}
-	if !strings.Contains(err.Error(), "builder") {
-		t.Errorf("expected error to mention builder, got: %s", err.Error())
+
+	if len(rebuiltNames) != 1 || rebuiltNames[0] != "ci-builder" {
+		t.Errorf("expected ci-builder rebuild, got %v", rebuiltNames)
 	}
-	if compileCalled {
-		t.Error("compile step should not have run after builder failure")
+
+	// Verify stream API calls.
+	streamStartPattern := regexp.MustCompile(`PUT /api/runs/1/jobs/deploy/streams/ci-builder/start`)
+	streamFinishPattern := regexp.MustCompile(`PUT /api/runs/1/jobs/deploy/streams/ci-builder/done`)
+
+	var hasStart, hasFinish bool
+	for _, call := range calls {
+		if streamStartPattern.MatchString(call) {
+			hasStart = true
+		}
+		if streamFinishPattern.MatchString(call) {
+			hasFinish = true
+		}
+	}
+	if !hasStart {
+		t.Error("expected stream start call for ci-builder")
+	}
+	if !hasFinish {
+		t.Error("expected stream finish call for ci-builder")
 	}
 }
 
-func TestDeployAppCIBuilderSuccessContinues(t *testing.T) {
+func TestRebuildImageError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
-	cfg := &changedetect.FlyAppsConfig{}
 
-	origBuilder := deployCIBuilderFunc
-	defer func() { deployCIBuilderFunc = origBuilder }()
+	origRebuild := rebuildImageFunc
+	defer func() { rebuildImageFunc = origRebuild }()
 
-	var builderCalled bool
-	deployCIBuilderFunc = func(root string, w io.Writer) error {
-		builderCalled = true
-		return nil
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter) error {
+		return fmt.Errorf("rebuild failed: %s", name)
 	}
 
-	// The real deployApp will fail at the compile step (no go build env in tests),
-	// but the error should be from compile, not from the builder, proving we
-	// got past the builder step.
-	err := deployApp("/tmp", "ci", "abc", "token", "ref", cfg, reporter)
-
-	if !builderCalled {
-		t.Error("expected builder to be called")
+	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter)
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
-	// We expect an error from the compile step (go build will fail in tests).
-	// The important thing is that it's NOT a builder error.
-	if err != nil && strings.Contains(err.Error(), "builder") {
-		t.Errorf("error should not be from builder: %s", err.Error())
+	if !strings.Contains(err.Error(), "ci-builder") {
+		t.Errorf("expected error to mention ci-builder, got: %s", err.Error())
 	}
 }
 

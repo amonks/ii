@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"monks.co/pkg/depgraph"
 )
 
 // FlyAppsConfig represents config/fly-apps.toml with full app details.
@@ -112,16 +112,19 @@ func tryGit(root, baseSHA string) (string, error) {
 }
 
 // AffectedApps determines which Fly apps need to be deployed based on
-// the changed files and dependency graph.
+// the changed files and package-level dependency analysis.
+//
+// resolveDeps returns the transitive package-dir dependencies for a given
+// package directory. In production this wraps depgraph.PackageDeps; in tests
+// it can be a simple map lookup.
 //
 // Rules:
 //   - nil changed files (initial push) → all apps
-//   - apps/<name>/** → that app (if it's a Fly app)
-//   - pkg/<name>/** → any Fly app that transitively depends on that package
+//   - any file under a dep's directory → that app
 //   - go.mod, go.sum (root) → all apps
 //   - config/fly-apps.toml → all apps
 //   - anything else → nothing
-func AffectedApps(flyApps []string, changed []string, graph map[string][]string) []string {
+func AffectedApps(flyApps []string, changed []string, resolveDeps func(pkgPath string) ([]string, error)) ([]string, error) {
 	flyAppSet := map[string]bool{}
 	for _, app := range flyApps {
 		flyAppSet[app] = true
@@ -129,48 +132,40 @@ func AffectedApps(flyApps []string, changed []string, graph map[string][]string)
 
 	// nil means "deploy everything" (initial push).
 	if changed == nil {
-		return flyApps
+		return flyApps, nil
 	}
 
-	affected := map[string]bool{}
-
-	// Build reverse dependency map: for each package, which apps depend on it?
+	// Build reverse dependency map: for each package dir, which apps depend on it?
 	reverseDeps := map[string][]string{}
 	for _, app := range flyApps {
 		appDir := filepath.Join("apps", app)
-		for dep := range depgraph.TransitiveDeps(graph, appDir) {
+		// Include self so own-source changes are detected.
+		reverseDeps[appDir] = append(reverseDeps[appDir], app)
+
+		deps, err := resolveDeps(appDir)
+		if err != nil {
+			return nil, fmt.Errorf("resolving deps for %s: %w", app, err)
+		}
+		for _, dep := range deps {
 			reverseDeps[dep] = append(reverseDeps[dep], app)
 		}
 	}
 
+	affected := map[string]bool{}
+
 	for _, file := range changed {
 		// Root go.mod/go.sum or config/fly-apps.toml → deploy all.
 		if file == "go.mod" || file == "go.sum" || file == "config/fly-apps.toml" {
-			return flyApps
+			return flyApps, nil
 		}
 
-		// apps/<name>/... → that app.
-		if strings.HasPrefix(file, "apps/") {
-			parts := strings.SplitN(file, "/", 3)
-			if len(parts) >= 2 {
-				appName := parts[1]
-				if flyAppSet[appName] {
-					affected[appName] = true
-				}
-			}
-			continue
-		}
-
-		// pkg/<name>/... → any app that transitively depends on it.
-		if strings.HasPrefix(file, "pkg/") {
-			parts := strings.SplitN(file, "/", 3)
-			if len(parts) >= 2 {
-				pkgDir := filepath.Join("pkg", parts[1])
-				for _, app := range reverseDeps[pkgDir] {
+		// Check prefix match against all reverse dep keys.
+		for dir, apps := range reverseDeps {
+			if strings.HasPrefix(file, dir+"/") {
+				for _, app := range apps {
 					affected[app] = true
 				}
 			}
-			continue
 		}
 	}
 
@@ -180,7 +175,38 @@ func AffectedApps(flyApps []string, changed []string, graph map[string][]string)
 			result = append(result, app)
 		}
 	}
-	return result
+	return result, nil
+}
+
+// IsImageAffected returns true if the given Dockerfile or any of the package's
+// transitive dependencies have changed. For images with no Go code (like the
+// base image), pass empty pkgPath to only check the Dockerfile.
+func IsImageAffected(changed []string, dockerfilePath string, resolveDeps func(string) ([]string, error), pkgPath string) (bool, error) {
+	if slices.Contains(changed, dockerfilePath) {
+		return true, nil
+	}
+
+	if pkgPath == "" {
+		return false, nil
+	}
+
+	deps, err := resolveDeps(pkgPath)
+	if err != nil {
+		return false, fmt.Errorf("resolving deps for %s: %w", pkgPath, err)
+	}
+
+	// Include self.
+	allDirs := append([]string{pkgPath}, deps...)
+
+	for _, file := range changed {
+		for _, dir := range allDirs {
+			if strings.HasPrefix(file, dir+"/") {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
 
 // sortStrings sorts a string slice in place.
