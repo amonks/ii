@@ -343,13 +343,21 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	// Emit a wide "task" event with all run metadata.
 	a.emitTaskEvent(runID, req.Status, req.Error, req.Deploys)
 
-	// Send SMS on failure.
-	if req.Status == "failed" && a.sendSMS != nil {
-		msg := fmt.Sprintf("CI run %d failed", runID)
-		if req.Error != "" {
-			msg += ": " + req.Error
+	// Send SMS on completion.
+	if a.sendSMS != nil {
+		var msg string
+		switch req.Status {
+		case "failed":
+			msg = fmt.Sprintf("CI run %d failed", runID)
+			if req.Error != "" {
+				msg += ": " + req.Error
+			}
+		case "success":
+			msg = fmt.Sprintf("CI run %d succeeded", runID)
 		}
-		a.sendSMS(msg)
+		if msg != "" {
+			a.sendSMS(msg)
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

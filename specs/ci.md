@@ -178,10 +178,12 @@ The run detail page displays this event as a key-value table in the
 "Task Event" section, fetched from the logs service with
 `q=group:app,app:ci,msg:task` and filtered by `run.id`.
 
-## SMS on Failure
+## SMS on Completion
 
-Uses `tailnet.Client()` to POST to
-`http://monks-sms-brigid/?message=CI+run+{id}+failed:+{error}`
+Uses `tailnet.Client()` to POST to `monks-sms-brigid` on both success
+and failure:
+- Failure: `CI run {id} failed: {error}`
+- Success: `CI run {id} succeeded`
 
 ## Builder Pipeline
 
