@@ -69,10 +69,7 @@ func retryDo(client *http.Client, makeReq func() (*http.Request, error), cfg ret
 }
 
 func sleep(cfg retryConfig, attempt int) {
-	delay := cfg.baseDelay * time.Duration(1<<(attempt-1))
-	if delay > cfg.maxDelay {
-		delay = cfg.maxDelay
-	}
+	delay := min(cfg.baseDelay*time.Duration(1<<(attempt-1)), cfg.maxDelay)
 	// Jitter: 50-100% of delay.
 	jitter := time.Duration(float64(delay) * (0.5 + rand.Float64()*0.5))
 	time.Sleep(jitter)
