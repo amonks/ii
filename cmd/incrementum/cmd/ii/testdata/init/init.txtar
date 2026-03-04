@@ -1,0 +1,37 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# init creates config
+exec $II init
+stdout 'Created'
+stdout 'Detected test command: go test ./...'
+exists incrementum.toml
+exec cat incrementum.toml
+stdout '\[job\]'
+stdout 'test-commands = \["go test ./..."\]'
+
+# running init again errors
+! exec $II init
+stderr 'configuration already exists'
+
+# detect go.mod only
+rm incrementum.toml
+! exists incrementum.toml
+exec $II init
+exec cat incrementum.toml
+stdout 'test-commands = \["go test ./..."\]'
+
+# tasks.toml + go.mod -> go tool run test
+rm incrementum.toml
+! exists incrementum.toml
+exec touch tasks.toml
+exec $II init
+exec cat incrementum.toml
+stdout 'test-commands = \["go tool run test"\]'
+
+-- repo/go.mod --
+module example.com/test
+
+go 1.22

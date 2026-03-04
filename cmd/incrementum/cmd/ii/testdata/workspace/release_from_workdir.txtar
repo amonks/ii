@@ -1,0 +1,29 @@
+# Test releasing a workspace from inside the workspace directory
+# without providing an explicit name argument.
+#
+# This tests the fix for: "should find workspace in working directory"
+
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# acquire workspace
+exec $II workspace acquire --purpose test-release-from-workdir
+envset WORKSPACE_PATH stdout
+exists $WORKSPACE_PATH
+
+# verify workspace is acquired
+exec $II workspace list
+stdout 'acquired'
+stdout 'ws-001'
+
+# change into the workspace directory and release without providing name
+cd $WORKSPACE_PATH
+exec $II workspace release
+stdout 'released workspace ws-001'
+
+# verify workspace is now available
+cd $WORK/repo
+exec $II workspace list
+stdout 'available'

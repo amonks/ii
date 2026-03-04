@@ -1,0 +1,3 @@
+exec $II -version
+stdout '^change_id unknown$'
+stdout '^commit_id unknown$'

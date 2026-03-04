@@ -1,0 +1,42 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# create todos
+stdin input.txt
+exec $II todo create --title 'Task 1'
+exec $II todo create --title 'Task 2'
+
+exec $II todo list --json
+todoid stdout 'Task 1' TASK1_ID
+todoid stdout 'Task 2' TASK2_ID
+
+exec chmod +x editor.sh
+exec env EDITOR=./editor.sh EDITOR_LOG=editor.log $II todo update $TASK1_ID $TASK2_ID --edit
+stdout ${TASK1_ID@R}
+stdout ${TASK2_ID@R}
+
+exec wc -l editor.log
+stdout '[[:space:]]*2 editor.log'
+
+exec $II todo list --json
+stdout '"title": "Edited by editor"'
+
+-- repo/editor.sh --
+#!/bin/sh
+set -eu
+
+log="${EDITOR_LOG:-editor.log}"
+echo "edit" >> "$log"
+
+cat > "$1" <<'EOF'
+title = "Edited by editor"
+type = "task" # task, bug, feature
+priority = 2 # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
+status = "open" # open, proposed, in_progress, closed, done, tombstone
+---
+Updated by editor
+EOF
+-- repo/input.txt --
+y

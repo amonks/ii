@@ -1,0 +1,72 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# list habits when none exist
+exec $II habit list
+stdout 'No habits found.'
+
+# create a habit
+env EDITOR=true
+exec $II habit create cleanup
+stdout 'Created habit'
+stdout 'cleanup.md'
+
+# list habits shows table format
+exec $II habit list
+stdout 'NAME'
+stdout 'IMPL MODEL'
+stdout 'REVIEW MODEL'
+stdout 'JOBS'
+stdout 'cleanup'
+
+# show habit
+exec $II habit show cleanup
+stdout '# cleanup'
+stdout 'Guidelines'
+
+# create another habit
+exec $II habit create code-review
+stdout 'Created habit'
+
+# list shows sorted
+exec $II habit list
+stdout 'cleanup'
+stdout 'code-review'
+
+# show non-existent habit fails
+! exec $II habit show nonexistent
+stderr 'habit not found: nonexistent'
+
+# edit non-existent habit fails
+! exec $II habit edit nonexistent
+stderr 'habit not found: nonexistent'
+
+# create existing habit fails
+! exec $II habit create cleanup
+stderr 'already exists'
+
+# edit existing habit opens editor
+exec $II habit edit cleanup
+
+# update alias works
+exec $II habit update cleanup
+
+# prefix addressing: show habit by unique prefix
+exec $II habit show cle
+stdout '# cleanup'
+stdout 'Guidelines'
+
+# prefix addressing: edit habit by unique prefix
+exec $II habit edit code
+# succeeds (editor is true)
+
+# prefix addressing: ambiguous prefix fails
+exec $II habit create clean-docs
+! exec $II habit show clea
+stderr 'ambiguous habit prefix'
+
+# prefix addressing: more specific prefix works
+exec $II habit show clean-d
+stdout '# clean docs'

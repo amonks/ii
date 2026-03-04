@@ -1,0 +1,99 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# create todo
+stdin input.txt
+exec $II todo create --title 'Fix the login bug' -t bug -p 1
+stdout 'Created todo'
+stdout 'Fix the login bug'
+
+# list todos
+exec $II todo list --json
+todoid stdout 'Fix the login bug' TODO_ID
+stdout '"type": "bug"'
+stdout '"priority": 1'
+
+# show todo
+exec $II todo show $TODO_ID
+stdout 'Fix the login bug'
+stdout 'bug'
+
+# start todo
+exec $II todo start $TODO_ID
+stdout 'Started'
+
+exec $II todo list --json
+stdout '"status": "in_progress"'
+
+# create todo with dependency
+exec $II todo create --title 'Write tests' --deps $TODO_ID
+stdout 'Created todo'
+
+exec $II todo list --json
+todoid stdout 'Write tests' CHILD_ID
+
+# add dependency
+exec $II todo create --title 'Blocker task'
+exec $II todo list --json
+todoid stdout 'Blocker task' BLOCKER_ID
+exec $II todo dep add $CHILD_ID $BLOCKER_ID
+stdout 'Added dependency'
+
+# dep tree
+exec $II todo dep tree $CHILD_ID
+stdout 'Write tests'
+
+# ready
+exec $II todo ready --json
+! stdout 'Write tests'
+stdout 'Blocker task'
+
+# close todo
+exec $II todo close $TODO_ID
+stdout 'Closed'
+
+exec $II todo show $TODO_ID --json
+stdout '"status": "closed"'
+
+# reopen todo
+exec $II todo reopen $TODO_ID
+stdout 'Reopened'
+
+exec $II todo show $TODO_ID --json
+stdout '"status": "open"'
+
+# finish todo
+exec $II todo finish $TODO_ID
+stdout 'Finished'
+
+exec $II todo show $TODO_ID --json
+stdout '"status": "done"'
+
+# list default excludes done
+exec $II todo list --json
+! stdout 'Fix the login bug'
+
+# list all includes done
+exec $II todo list --all --json
+stdout 'Fix the login bug'
+stdout '"status": "done"'
+
+# list filter by status
+exec $II todo list --status open --json
+stdout '"status": "open"'
+! stdout '"status": "closed"'
+
+# list filter by type
+exec $II todo list --status done --type bug --json
+stdout '"type": "bug"'
+stdout '"status": "done"'
+! stdout '"type": "task"'
+
+# list filter by title
+exec $II todo list --status done --title login --json
+stdout 'Fix the login bug'
+
+-- repo/input.txt --
+y

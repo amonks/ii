@@ -1,0 +1,32 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# seed todo
+stdin input.txt
+exec $II todo create --title 'Seed todo'
+
+# create with description from stdin
+stdin create_desc.txt
+exec $II todo create --title 'Stdin todo' --desc -
+stdout 'Created todo'
+
+exec $II todo list --json
+todoid stdout 'Stdin todo' STDIN_ID
+stdout 'Created from stdin'
+
+# update with description from stdin
+stdin update_desc.txt
+exec $II todo update $STDIN_ID --desc -
+stdout 'Updated'
+
+exec $II todo show $STDIN_ID --json
+stdout 'Updated from stdin'
+
+-- repo/input.txt --
+y
+-- repo/create_desc.txt --
+Created from stdin
+-- repo/update_desc.txt --
+Updated from stdin

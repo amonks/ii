@@ -1,0 +1,19 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+exec $II workspace acquire --purpose config-hooks
+envset WORKSPACE_PATH stdout
+exists $WORKSPACE_PATH/.created
+
+exec $II workspace release ws-001
+rm $WORKSPACE_PATH/.created
+
+exec $II workspace acquire --purpose config-hooks-reuse
+stdout ${WORKSPACE_PATH@R}
+exists $WORKSPACE_PATH/.created
+
+-- repo/incrementum.toml --
+[workspace]
+on-create = "touch .created"

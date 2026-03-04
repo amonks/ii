@@ -1,0 +1,16 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# list does not prompt when store missing
+exec $II todo list
+stdout 'No todos found\.'
+
+# create without prompt in non-tty
+stdin accept.txt
+exec $II todo create --title 'First todo'
+stdout 'Created todo'
+
+-- repo/accept.txt --
+y

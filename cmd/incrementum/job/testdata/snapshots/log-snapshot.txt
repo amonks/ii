@@ -1,0 +1,45 @@
+Running implementation prompt:
+    Implementation prompt:
+          Checklist:
+        
+          This paragraph is deliberately long to confirm that markdown rendering
+          wraps within the log width without losing spacing. It should break
+          across multiple lines and still preserve paragraph boundaries.
+        
+          - First bullet item includes additional words to make sure wrapping
+          happens after the bullet prefix.
+          - Second bullet item is also long enough to wrap on the next line in
+          the snapshot.
+        
+            export SNAPSHOT_MODE=enabled
+            ./bin/ii job run --preview
+    LLM transcript:
+        Agent transcript line one.
+        Agent transcript line two.
+
+    Final change description:
+        feat: snapshot log output
+        
+        Keep this description long enough to wrap and include a short list:
+        
+        - Capture prompt formatting.
+        - Preserve code fences.
+        
+        ```bash
+        go test ./job -run Snapshot
+        ```
+
+Implementation prompt complete; running tests:
+    Command: go test ./job/...
+    Exit Code: 1
+    Output:
+        --- FAIL: TestSnapshot (0.01s)
+            snapshot mismatch
+
+Starting review:
+    Code review result:
+          Review notes:
+        
+          - Update the snapshot file to match the current output.
+          - Keep the description block long enough to wrap across lines in the
+          snapshot output.

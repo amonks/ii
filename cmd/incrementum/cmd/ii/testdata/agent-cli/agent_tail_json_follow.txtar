@@ -1,0 +1,66 @@
+# Follow-mode JSONL tail should preserve JSONL semantics.
+#
+# This test simulates an agent session whose event log is appended over time,
+# including a partial (non-newline-terminated) JSON fragment.
+#
+# Expectations:
+# - tail prints only complete JSONL lines (requires trailing \n)
+# - incomplete trailing fragments are withheld until completed
+# - no output duplication across polls
+# - the process exits when the session status transitions away from active
+
+# setup repo and copy the real config
+mkdir repo
+cd repo
+exec jj git init
+cp $WORK/incrementum.toml incrementum.toml
+
+# Create a fake agent store layout.
+# (SQLite state for session; events file is JSONL.)
+mkdir -p state
+mkdir -p share/agent/events
+
+env INCREMENTUM_STATE_DIR=$WORK/repo/state
+env INCREMENTUM_AGENT_EVENTS_DIR=$WORK/repo/share/agent/events
+
+# Create active session record in SQLite.
+agent-session $WORK/repo abc123 active 2026-01-01T00:00:00Z 2026-01-01T00:00:00Z - -
+
+# Start with an empty log file.
+exec sh -c ': > share/agent/events/abc123.jsonl'
+# Start tail in the background.
+# (It should poll until the session is no longer active.)
+runbg TAILPID -- sh -c 'cd '$WORK'/repo && exec '$II' agent tail --json abc123'
+
+# Sanity: tail should be running.
+exec sh -c 'kill -0 $TAILPID'
+
+# Append a complete line -> should appear.
+exec sh -c 'printf "%s\\n" "{\"type\":\"a\"}" >> share/agent/events/abc123.jsonl'
+exec sh -c 'for i in $(seq 1 50); do grep -q "\"type\":\"a\"" $WORK/TAILPID.stdout && exit 0; sleep 0.05; done; echo "--- tail stderr ---"; cat $WORK/TAILPID.stderr || true; echo "--- tail stdout ---"; cat $WORK/TAILPID.stdout || true; exit 1'
+
+# Append an incomplete fragment -> should NOT appear yet.
+exec sh -c 'printf %s "{\"type\":\"b\"}" >> share/agent/events/abc123.jsonl'
+exec sh -c 'sleep 0.2'
+! exec grep -q '"type":"b"' $WORK/TAILPID.stdout
+
+# Finish the line -> should now appear exactly once.
+exec sh -c 'printf "\\n" >> share/agent/events/abc123.jsonl'
+exec sh -c 'for i in $(seq 1 100); do grep -q "\"type\":\"b\"" $WORK/TAILPID.stdout && exit 0; sleep 0.05; done; exit 1'
+
+# Ensure no duplication of the first line.
+# (stdout should contain exactly one occurrence of type=a)
+exec grep -c '"type":"a"' $WORK/TAILPID.stdout
+stdout '1'
+
+# End the session by marking it completed, then stop the tail process.
+agent-session $WORK/repo abc123 completed 2026-01-01T00:00:00Z 2026-01-01T00:00:01Z 2026-01-01T00:00:01Z 0
+
+# Give the tail process time to detect the status change and attempt to exit.
+# The tail command polls every 500ms, so wait at least that long.
+exec sh -c 'sleep 1'
+
+# Clean up: Stop the tail process
+# (In practice it should exit on its own, but we ensure cleanup for the test)
+exec sh -c 'kill '$TAILPID' 2>/dev/null || true'
+

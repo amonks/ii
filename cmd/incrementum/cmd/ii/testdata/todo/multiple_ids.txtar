@@ -1,0 +1,43 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# create todos
+stdin input.txt
+exec $II todo create --title 'Task 1'
+exec $II todo create --title 'Task 2'
+exec $II todo create --title 'Task 3'
+
+exec $II todo list --json
+todoid stdout 'Task 1' TASK1_ID
+todoid stdout 'Task 2' TASK2_ID
+todoid stdout 'Task 3' TASK3_ID
+
+# close multiple
+exec $II todo close $TASK1_ID $TASK2_ID $TASK3_ID
+stdout ${TASK1_ID@R}
+stdout ${TASK2_ID@R}
+stdout ${TASK3_ID@R}
+
+exec $II todo list --json
+stdout '"status": "closed"'
+
+# reopen multiple
+exec $II todo reopen $TASK1_ID $TASK2_ID $TASK3_ID
+
+exec $II todo list --json
+stdout '"status": "open"'
+! stdout '"status": "closed"'
+
+# update multiple
+exec $II todo update $TASK1_ID $TASK2_ID $TASK3_ID --status in_progress
+stdout ${TASK1_ID@R}
+stdout ${TASK2_ID@R}
+stdout ${TASK3_ID@R}
+
+exec $II todo list --json
+stdout '"status": "in_progress"'
+
+-- repo/input.txt --
+y

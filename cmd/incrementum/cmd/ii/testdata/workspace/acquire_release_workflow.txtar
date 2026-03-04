@@ -1,0 +1,25 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# acquire workspace
+exec $II workspace acquire --purpose workflow
+envset WORKSPACE_PATH stdout
+exists $WORKSPACE_PATH
+exists $WORKSPACE_PATH/.jj
+
+exec $II workspace list
+stdout 'acquired'
+stdout 'ws-001'
+! stdout 'CHANGE'
+
+exec $II workspace release ws-001
+stdout 'released workspace ws-001'
+
+exec $II workspace list
+stdout 'available'
+
+# reuse workspace
+exec $II workspace acquire --purpose workflow-reuse
+stdout ${WORKSPACE_PATH@R}
