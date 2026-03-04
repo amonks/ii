@@ -35,6 +35,11 @@ func TerraformApply(root string, reporter *Reporter) error {
 		return nil
 	}
 
+	// Set TF_VAR_ env vars from available tokens.
+	if v := os.Getenv("GANDI_TOKEN"); v != "" {
+		os.Setenv("TF_VAR_GANDI_PERSONAL_ACCESS_TOKEN", v)
+	}
+
 	// terraform init
 	fmt.Fprintf(w, "=== terraform init\n")
 	initCmd := exec.Command("terraform", "init")
