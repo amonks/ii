@@ -12,11 +12,11 @@ import (
 )
 
 // TerraformApply runs terraform init and apply in the aws/terraform directory.
+// It runs as a "terraform" stream within the "deploy" job.
 func TerraformApply(root string, reporter *Reporter) error {
-	reporter.StartJob("terraform", "terraform")
-	reporter.StartStream("terraform", "output")
+	reporter.StartStream("deploy", "terraform")
 
-	w := reporter.StreamWriter("terraform", "output")
+	w := reporter.StreamWriter("deploy", "terraform")
 	defer w.Close()
 
 	start := time.Now()
@@ -28,11 +28,7 @@ func TerraformApply(root string, reporter *Reporter) error {
 		slog.Info("no terraform directory, skipping")
 		fmt.Fprintf(w, "no terraform directory, skipping\n")
 		d := time.Since(start).Milliseconds()
-		reporter.FinishStream("terraform", "output", FinishStreamResult{
-			Status:     "success",
-			DurationMs: d,
-		})
-		reporter.FinishJob("terraform", FinishJobResult{
+		reporter.FinishStream("deploy", "terraform", FinishStreamResult{
 			Status:     "success",
 			DurationMs: d,
 		})
@@ -54,12 +50,7 @@ func TerraformApply(root string, reporter *Reporter) error {
 		errMsg := fmt.Sprintf("terraform init: %v", err)
 		fmt.Fprintf(w, "=== init failed: %s\n", errMsg)
 		d := time.Since(start).Milliseconds()
-		reporter.FinishStream("terraform", "output", FinishStreamResult{
-			Status:     "failed",
-			DurationMs: d,
-			Error:      errMsg,
-		})
-		reporter.FinishJob("terraform", FinishJobResult{
+		reporter.FinishStream("deploy", "terraform", FinishStreamResult{
 			Status:     "failed",
 			DurationMs: d,
 			Error:      errMsg,
@@ -85,13 +76,7 @@ func TerraformApply(root string, reporter *Reporter) error {
 		fmt.Fprintf(w, "=== apply failed: %s\n", errMsg)
 	}
 
-	reporter.FinishStream("terraform", "output", FinishStreamResult{
-		Status:     status,
-		DurationMs: duration,
-		Error:      errMsg,
-	})
-
-	reporter.FinishJob("terraform", FinishJobResult{
+	reporter.FinishStream("deploy", "terraform", FinishStreamResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,

@@ -38,10 +38,10 @@ all job types:
 - **fetch**: 1 job, 1 stream ("output")
 - **generate**: 1 job, N streams (one per run-library task)
 - **test**: 1 job, N streams (one per run-library task)
-- **deploy**: 1 job, N streams (one per fly app — affected apps
-  deploy, unaffected apps show as "skipped")
-- **publish**: 1 job, 1 stream ("output")
-- **terraform**: 1 job, 1 stream ("output")
+- **deploy**: 1 job, N streams — "analysis" stream for change
+  detection and skip reporting, per-fly-app streams for affected
+  apps, plus "publish" and "terraform" streams, all running in
+  parallel after analysis completes
 
 Deploy metadata (compile_ms, push_ms, image_ref, etc.) is sent as
 part of the `FinishRun` request payload for task event emission,
@@ -217,12 +217,12 @@ and failure:
 4. Diff changed files
 5. Run generate + test (per-task output streams via run library,
    per-task status via `runner.TaskStatus()`)
-6. Concurrently:
-   - Deploy affected apps (single job, per-app streams including
-     skipped apps; deploy metadata accumulated for task event)
-   - Publish subtrees (streams output)
-   - Terraform apply (streams output)
-   All three run as goroutines; errors are collected (not fail-fast) and joined.
+6. Single "deploy" job:
+   - "analysis" stream: change detection, reports affected/skipped apps
+   - Then concurrently: per-app deploy streams (affected only; deploy
+     metadata accumulated for task event), image rebuilds if needed,
+     "publish" stream, "terraform" stream
+   Errors are collected (not fail-fast) and joined.
 7. Report run complete (sends accumulated deploy metadata)
 10. Exit → machine self-destructs
 

@@ -34,48 +34,74 @@ func (p *Pipeline) Run(ctx context.Context) error {
 		return fmt.Errorf("tests failed: %w", err)
 	}
 
-	// Steps 3-5: Deploy, publish, and terraform run concurrently.
+	// Step 3: Single deploy job. Analysis runs first, then all
+	// streams (per-app deploys, image rebuilds, publish, terraform)
+	// run as peer goroutines.
+	p.Reporter.StartJob("deploy", "deploy")
+	deployStart := time.Now()
+
+	analysis, err := AnalyzeDeploy(root, p.Config.BaseSHA, p.Reporter)
+	if err != nil {
+		duration := time.Since(deployStart).Milliseconds()
+		p.Reporter.FinishJob("deploy", FinishJobResult{
+			Status:     "failed",
+			DurationMs: duration,
+			Error:      err.Error(),
+		})
+		return fmt.Errorf("deploy analysis: %w", err)
+	}
+
 	var (
 		wg   sync.WaitGroup
 		mu   sync.Mutex
 		errs []error
 	)
 
-	wg.Add(3)
-
-	go func() {
-		defer wg.Done()
-		slog.Info("deploying affected apps")
-		if err := DeployAffected(root, p.Config.HeadSHA, p.Config.BaseSHA, p.Config.FlyAPIToken, p.Config.BaseImageRef, p.Reporter); err != nil {
+	// Deploy affected apps and rebuild images.
+	wg.Go(func() {
+		if err := DeployAnalyzed(analysis, root, p.Config.HeadSHA, p.Config.FlyAPIToken, p.Config.BaseImageRef, p.Reporter); err != nil {
 			mu.Lock()
-			errs = append(errs, fmt.Errorf("deploy failed: %w", err))
+			errs = append(errs, err)
 			mu.Unlock()
 		}
-	}()
+	})
 
-	go func() {
-		defer wg.Done()
-		slog.Info("publishing subtrees")
+	// Publish subtrees.
+	wg.Go(func() {
 		if err := PublishSubtrees(root, p.Reporter); err != nil {
 			mu.Lock()
 			errs = append(errs, fmt.Errorf("publish failed: %w", err))
 			mu.Unlock()
 		}
-	}()
+	})
 
-	go func() {
-		defer wg.Done()
-		slog.Info("applying terraform")
+	// Terraform apply.
+	wg.Go(func() {
 		if err := TerraformApply(root, p.Reporter); err != nil {
 			mu.Lock()
 			errs = append(errs, fmt.Errorf("terraform failed: %w", err))
 			mu.Unlock()
 		}
-	}()
+	})
 
 	wg.Wait()
 
-	return errors.Join(errs...)
+	deployErr := errors.Join(errs...)
+	duration := time.Since(deployStart).Milliseconds()
+	status := "success"
+	errMsg := ""
+	if deployErr != nil {
+		status = "failed"
+		errMsg = deployErr.Error()
+	}
+
+	p.Reporter.FinishJob("deploy", FinishJobResult{
+		Status:     status,
+		DurationMs: duration,
+		Error:      errMsg,
+	})
+
+	return deployErr
 }
 
 func (p *Pipeline) fetchCode() error {

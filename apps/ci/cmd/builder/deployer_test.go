@@ -11,14 +11,13 @@ import (
 	"monks.co/pkg/ci/changedetect"
 )
 
-func TestDeployAppsCollectsAllErrors(t *testing.T) {
+func TestDeployAnalyzedCollectsAllErrors(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
-	cfg := &changedetect.FlyAppsConfig{}
 
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
@@ -30,8 +29,11 @@ func TestDeployAppsCollectsAllErrors(t *testing.T) {
 		return nil
 	}
 
-	apps := []string{"dogs", "proxy", "logs", "homepage"}
-	err := deployApps(apps, "/tmp", "abc", "token", "ref", cfg, reporter)
+	analysis := &deployAnalysis{
+		affected: []string{"dogs", "proxy", "logs", "homepage"},
+		cfg:      &changedetect.FlyAppsConfig{},
+	}
+	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -51,14 +53,13 @@ func TestDeployAppsCollectsAllErrors(t *testing.T) {
 	}
 }
 
-func TestDeployAppsAllSucceed(t *testing.T) {
+func TestDeployAnalyzedAllSucceed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
-	cfg := &changedetect.FlyAppsConfig{}
 
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
@@ -67,7 +68,11 @@ func TestDeployAppsAllSucceed(t *testing.T) {
 		return nil
 	}
 
-	err := deployApps([]string{"dogs", "proxy"}, "/tmp", "abc", "token", "ref", cfg, reporter)
+	analysis := &deployAnalysis{
+		affected: []string{"dogs", "proxy"},
+		cfg:      &changedetect.FlyAppsConfig{},
+	}
+	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -187,7 +192,7 @@ func TestRebuildImageError(t *testing.T) {
 	}
 }
 
-func TestDeployAppUsesStreams(t *testing.T) {
+func TestDeployAnalyzedUsesStreams(t *testing.T) {
 	// Track API calls to verify stream lifecycle.
 	var calls []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +202,6 @@ func TestDeployAppUsesStreams(t *testing.T) {
 	defer srv.Close()
 
 	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
-	cfg := &changedetect.FlyAppsConfig{}
 
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
@@ -219,7 +223,11 @@ func TestDeployAppUsesStreams(t *testing.T) {
 		return nil
 	}
 
-	err := deployApps([]string{"dogs"}, "/tmp", "abc", "token", "ref", cfg, reporter)
+	analysis := &deployAnalysis{
+		affected: []string{"dogs"},
+		cfg:      &changedetect.FlyAppsConfig{},
+	}
+	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
