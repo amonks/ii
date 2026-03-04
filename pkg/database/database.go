@@ -100,9 +100,13 @@ func LoadMigrationsFromFS(fs embed.FS, dir string) ([]Migration, error) {
 func (db *DB) Migrate(migrations []Migration) error {
 	for _, migration := range migrations {
 		if err := db.Exec(migration.SQL).Error; err != nil {
-			// Ignore "duplicate column name" errors
+			// Ignore idempotency errors from re-running migrations
 			if strings.Contains(err.Error(), "duplicate column name") {
 				log.Printf("Migration %s: column already exists, skipping", migration.ID)
+				continue
+			}
+			if strings.Contains(err.Error(), "already exists") {
+				log.Printf("Migration %s: already exists, skipping", migration.ID)
 				continue
 			}
 			return fmt.Errorf("migration %s failed: %w", migration.ID, err)

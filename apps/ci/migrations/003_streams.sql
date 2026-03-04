@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS deploy_jobs;
 DROP TABLE IF EXISTS terraform_jobs;
 
-CREATE TABLE streams (
+CREATE TABLE IF NOT EXISTS streams (
     id          INTEGER PRIMARY KEY,
     job_id      INTEGER NOT NULL REFERENCES jobs(id),
     name        TEXT NOT NULL,
