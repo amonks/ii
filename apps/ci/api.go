@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
@@ -265,6 +267,9 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	a.publishRunState(runID)
 	a.closeRunEvents(runID)
 
+	// Emit a wide "task" event with all run metadata.
+	a.emitTaskEvent(runID, req.Status, req.Error)
+
 	// Send SMS on failure.
 	if req.Status == "failed" && a.sendSMS != nil {
 		msg := fmt.Sprintf("CI run %d failed", runID)
@@ -362,4 +367,88 @@ func (a *apiHandler) recordDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+// emitTaskEvent logs a wide "task" event with all run metadata flattened into dotted keys.
+func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string) {
+	run, jobs, err := a.model.RunWithJobs(runID)
+	if err != nil {
+		slog.Warn("emitTaskEvent: failed to load run", "error", err, "run_id", runID)
+		return
+	}
+
+	// Compute run duration.
+	var durationMs int64
+	startTime, err := time.Parse(time.RFC3339, run.StartedAt)
+	if err == nil && run.FinishedAt != nil {
+		if endTime, err := time.Parse(time.RFC3339, *run.FinishedAt); err == nil {
+			durationMs = endTime.Sub(startTime).Milliseconds()
+		}
+	}
+
+	attrs := []any{
+		"task.name", "ci-run",
+		"task.status", status,
+		"task.duration_ms", durationMs,
+		"run.id", runID,
+		"run.head_sha", run.HeadSHA,
+		"run.base_sha", run.BaseSHA,
+		"run.trigger", run.Trigger,
+	}
+	if errorMsg != "" {
+		attrs = append(attrs, "task.error", errorMsg)
+	}
+
+	// Build a map from job ID to job for cross-referencing.
+	jobByID := make(map[int64]*Job, len(jobs))
+	for i := range jobs {
+		jobByID[jobs[i].ID] = &jobs[i]
+	}
+
+	// Per-job keys for finished jobs.
+	for _, j := range jobs {
+		if j.Status == "pending" || j.Status == "in_progress" {
+			continue
+		}
+		prefix := "job." + j.Name
+		attrs = append(attrs, prefix+".status", j.Status)
+		if j.DurationMs != nil {
+			attrs = append(attrs, prefix+".duration_ms", *j.DurationMs)
+		}
+	}
+
+	// Deploy-specific keys.
+	deployJobs, _ := a.model.DeployJobsForRun(runID)
+	for _, dj := range deployJobs {
+		job := jobByID[dj.JobID]
+		if job == nil {
+			continue
+		}
+		prefix := "deploy." + dj.App
+		attrs = append(attrs, prefix+".image_ref", dj.ImageRef)
+		if dj.CompileMs != nil {
+			attrs = append(attrs, prefix+".compile_ms", *dj.CompileMs)
+		}
+		if dj.PushMs != nil {
+			attrs = append(attrs, prefix+".push_ms", *dj.PushMs)
+		}
+		if dj.DeployMs != nil {
+			attrs = append(attrs, prefix+".deploy_ms", *dj.DeployMs)
+		}
+		if dj.ImageBytes != nil {
+			attrs = append(attrs, prefix+".image_bytes", *dj.ImageBytes)
+		}
+	}
+
+	// Terraform-specific keys.
+	terraformJobs, _ := a.model.TerraformJobsForRun(runID)
+	for _, tj := range terraformJobs {
+		attrs = append(attrs,
+			"terraform.resources_added", tj.ResourcesAdded,
+			"terraform.resources_changed", tj.ResourcesChanged,
+			"terraform.resources_destroyed", tj.ResourcesDestroyed,
+		)
+	}
+
+	slog.Info("task", attrs...)
 }

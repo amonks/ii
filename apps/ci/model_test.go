@@ -305,6 +305,98 @@ func TestSetMachineID(t *testing.T) {
 	}
 }
 
+func TestDeployJobsForRun(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No deploy jobs yet.
+	djs, err := m.DeployJobsForRun(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(djs) != 0 {
+		t.Fatalf("expected 0 deploy jobs, got %d", len(djs))
+	}
+
+	// Create a deploy job.
+	job, err := m.StartJob(run.ID, "deploy", "deploy-dogs", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.FinishJob(job.ID, "success", 5000, "", "")
+
+	compileMs := int64(1000)
+	imageBytes := int64(50000)
+	m.FinishDeployJob(&DeployJob{
+		JobID:      job.ID,
+		App:        "dogs",
+		ImageRef:   "registry.fly.io/monks-dogs:sha1",
+		CompileMs:  &compileMs,
+		ImageBytes: &imageBytes,
+	})
+
+	djs, err = m.DeployJobsForRun(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(djs) != 1 {
+		t.Fatalf("expected 1 deploy job, got %d", len(djs))
+	}
+	if djs[0].App != "dogs" {
+		t.Errorf("expected app dogs, got %s", djs[0].App)
+	}
+}
+
+func TestTerraformJobsForRun(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No terraform jobs yet.
+	tjs, err := m.TerraformJobsForRun(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tjs) != 0 {
+		t.Fatalf("expected 0 terraform jobs, got %d", len(tjs))
+	}
+
+	// Create a terraform job.
+	job, err := m.StartJob(run.ID, "terraform", "terraform", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.FinishJob(job.ID, "success", 3000, "", "")
+
+	m.FinishTerraformJob(&TerraformJob{
+		JobID:              job.ID,
+		ResourcesAdded:     2,
+		ResourcesChanged:   1,
+		ResourcesDestroyed: 0,
+	})
+
+	tjs, err = m.TerraformJobsForRun(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tjs) != 1 {
+		t.Fatalf("expected 1 terraform job, got %d", len(tjs))
+	}
+	if tjs[0].ResourcesAdded != 2 {
+		t.Errorf("expected 2 resources added, got %d", tjs[0].ResourcesAdded)
+	}
+	if tjs[0].ResourcesChanged != 1 {
+		t.Errorf("expected 1 resource changed, got %d", tjs[0].ResourcesChanged)
+	}
+}
+
 func init() {
 	// Ensure MONKS_DATA is set for tests that use OpenFromDataFolder.
 	if os.Getenv("MONKS_DATA") == "" {

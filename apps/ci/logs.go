@@ -6,33 +6,18 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	"monks.co/pkg/tailnet"
 )
 
-// LogEvent represents a single log event from the logs service.
+// LogEvent represents a single task log event from the logs service.
+// It carries the raw JSON data and a few parsed fields for display.
 type LogEvent struct {
-	Time       string `json:"time"`
-	Level      string `json:"level"`
-	Msg        string `json:"msg"`
-	App        string `json:"app.name"`
-	Method     string `json:"http.method"`
-	Path       string `json:"http.path"`
-	Status     int    `json:"http.status"`
-	DurationMs float64 `json:"http.duration_ms"`
-	RequestID  string `json:"req.id"`
-
-	// CI-specific fields
-	TriggerSHA    string `json:"trigger.sha"`
-	TriggerRunID  any    `json:"trigger.run_id"`
-	TriggerBase   string `json:"trigger.base_sha"`
-	APIRunID      any    `json:"api.run_id"`
-	APIJobName    string `json:"api.job_name"`
-	ErrorMessage  string `json:"err.message"`
-
-	// Raw JSON for display
-	Raw json.RawMessage `json:"-"`
+	Time string
+	Data map[string]any
 }
 
 type eventsResponse struct {
@@ -40,19 +25,20 @@ type eventsResponse struct {
 	Total  int               `json:"total"`
 }
 
-// eventEnvelope matches the shape returned by the logs /events endpoint.
-// The slog fields (with dotted keys) live inside Data.
 type eventEnvelope struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// FetchRunLogs queries the logs service for events related to a CI run.
+// FetchRunLogs queries the logs service for the task event associated with a CI run.
 func FetchRunLogs(run *Run) ([]LogEvent, error) {
 	client := tailnet.Client()
 	if client == nil {
 		return nil, fmt.Errorf("no tailnet client")
 	}
+	return fetchRunLogsFrom("http://monks-logs-fly-ord", client, run)
+}
 
+func fetchRunLogsFrom(baseURL string, client *http.Client, run *Run) ([]LogEvent, error) {
 	// Build time range: from run start to finish (or now).
 	start, err := time.Parse(time.RFC3339, run.StartedAt)
 	if err != nil {
@@ -72,11 +58,11 @@ func FetchRunLogs(run *Run) ([]LogEvent, error) {
 	params := url.Values{
 		"start": {start.Format(time.RFC3339)},
 		"end":   {end.Format(time.RFC3339)},
-		"q":     {"group:app,app:ci"},
-		"limit": {"200"},
+		"q":     {"group:app,app:ci,msg:task"},
+		"limit": {"50"},
 	}
 
-	reqURL := "http://monks-logs-fly-ord/events?" + params.Encode()
+	reqURL := baseURL + "/events?" + params.Encode()
 	resp, err := client.Get(reqURL)
 	if err != nil {
 		return nil, fmt.Errorf("querying logs: %w", err)
@@ -93,9 +79,7 @@ func FetchRunLogs(run *Run) ([]LogEvent, error) {
 		return nil, fmt.Errorf("decoding logs response: %w", err)
 	}
 
-	// Parse events and filter to those related to this run.
-	// The logs /events endpoint returns {id, timestamp, data: {<slog fields>}, ...}.
-	// The CI-specific fields (trigger.run_id, api.run_id) are inside `data`.
+	// Parse events and filter to those matching this run's ID.
 	runID := float64(run.ID) // JSON numbers are float64
 	var events []LogEvent
 	for _, raw := range result.Events {
@@ -103,27 +87,76 @@ func FetchRunLogs(run *Run) ([]LogEvent, error) {
 		if err := json.Unmarshal(raw, &envelope); err != nil || envelope.Data == nil {
 			continue
 		}
-		var ev LogEvent
-		if err := json.Unmarshal(envelope.Data, &ev); err != nil {
+
+		var data map[string]any
+		if err := json.Unmarshal(envelope.Data, &data); err != nil {
 			continue
 		}
-		ev.Raw = envelope.Data
 
-		// Keep events that mention this run ID.
-		if matchesRunID(ev.TriggerRunID, runID) || matchesRunID(ev.APIRunID, runID) {
-			events = append(events, ev)
+		// Filter: must have run.id matching this run.
+		if rid, ok := data["run.id"]; ok {
+			ridFloat, isFloat := rid.(float64)
+			if !isFloat || ridFloat != runID {
+				continue
+			}
+		} else {
+			continue
 		}
+
+		timeStr, _ := data["time"].(string)
+		events = append(events, LogEvent{
+			Time: timeStr,
+			Data: data,
+		})
 	}
 
 	return events, nil
 }
 
-func matchesRunID(field any, runID float64) bool {
-	switch v := field.(type) {
-	case float64:
-		return v == runID
-	case string:
-		return v == fmt.Sprintf("%d", int(runID))
+// SortedDataKeys returns the keys from a LogEvent's Data map in a display-friendly order.
+// Keys are grouped by prefix (task.*, run.*, job.*, deploy.*, terraform.*) with
+// ungrouped keys like "time", "level", "msg" omitted since they're metadata.
+func SortedDataKeys(data map[string]any) []string {
+	groupOrder := map[string]int{
+		"task":      0,
+		"run":       1,
+		"job":       2,
+		"deploy":    3,
+		"terraform": 4,
 	}
-	return false
+
+	skip := map[string]bool{
+		"time":     true,
+		"level":    true,
+		"msg":      true,
+		"app.name": true,
+	}
+
+	var keys []string
+	for k := range data {
+		if skip[k] {
+			continue
+		}
+		keys = append(keys, k)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		gi := groupForKey(keys[i], groupOrder)
+		gj := groupForKey(keys[j], groupOrder)
+		if gi != gj {
+			return gi < gj
+		}
+		return keys[i] < keys[j]
+	})
+
+	return keys
+}
+
+func groupForKey(key string, order map[string]int) int {
+	if idx := strings.IndexByte(key, '.'); idx >= 0 {
+		if o, ok := order[key[:idx]]; ok {
+			return o
+		}
+	}
+	return 99
 }

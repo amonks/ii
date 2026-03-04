@@ -56,6 +56,20 @@ longer ranges.
 The logs app's `/ingest` route is mounted **without** the `reqlog`
 middleware to prevent a log-shipping loop.
 
+### Event Types
+
+The logging system uses four `msg` values as a taxonomy:
+
+- **`request`**: HTTP request wide events emitted by `reqlog.Middleware()`.
+  Contains method, path, status, duration, remote addr, request ID.
+- **`task`**: Background task completion events. Emitted by apps after a
+  unit of work finishes (e.g., CI runs, scrobble fetches). Contains
+  `task.name`, `task.status`, `task.duration_ms`, plus domain-specific
+  fields flattened with dotted keys.
+- **`start`**: App startup events (e.g., `slog.Info("start", ...)`).
+- **`fatal`**: Unrecoverable errors causing app exit
+  (e.g., `slog.Error("fatal", ...)`).
+
 ## Request Tracing
 
 Each request gets a unique ID via the `X-Request-ID` header. The proxy

@@ -233,6 +233,20 @@ func (m *Model) FinishTerraformJob(tj *TerraformJob) error {
 	return m.db.Create(tj).Error
 }
 
+// DeployJobsForRun loads all deploy job records for jobs belonging to a run.
+func (m *Model) DeployJobsForRun(runID int64) ([]DeployJob, error) {
+	var djs []DeployJob
+	err := m.db.Where("job_id IN (SELECT id FROM jobs WHERE run_id = ?)", runID).Find(&djs).Error
+	return djs, err
+}
+
+// TerraformJobsForRun loads all terraform job records for jobs belonging to a run.
+func (m *Model) TerraformJobsForRun(runID int64) ([]TerraformJob, error) {
+	var tjs []TerraformJob
+	err := m.db.Where("job_id IN (SELECT id FROM jobs WHERE run_id = ?)", runID).Find(&tjs).Error
+	return tjs, err
+}
+
 // RecordDeployment records a deployment.
 func (m *Model) RecordDeployment(d *Deployment) error {
 	if d.DeployedAt == "" {

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -401,6 +403,132 @@ func TestReadLastLine(t *testing.T) {
 				t.Errorf("readLastLine(%q) = %q, want %q", tt.content, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFinishRunEmitsTaskEvent(t *testing.T) {
+	// Capture slog output to verify the task event.
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, nil))
+	origLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(origLogger)
+
+	m, mux, _ := setupAPI(t)
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	job, _ := m.StartJob(run.ID, "test", "go-test", "")
+	m.FinishJob(job.ID, "success", 1500, "", "")
+
+	body := `{"status":"success"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Parse the slog output to find the task event.
+	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	var taskEvent map[string]any
+	for _, line := range lines {
+		var ev map[string]any
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		if ev["msg"] == "task" {
+			taskEvent = ev
+			break
+		}
+	}
+
+	if taskEvent == nil {
+		t.Fatal("expected a 'task' log event to be emitted")
+	}
+
+	if taskEvent["task.name"] != "ci-run" {
+		t.Errorf("task.name = %v, want ci-run", taskEvent["task.name"])
+	}
+	if taskEvent["task.status"] != "success" {
+		t.Errorf("task.status = %v, want success", taskEvent["task.status"])
+	}
+	if taskEvent["run.head_sha"] != "sha1" {
+		t.Errorf("run.head_sha = %v, want sha1", taskEvent["run.head_sha"])
+	}
+	if taskEvent["run.trigger"] != "webhook" {
+		t.Errorf("run.trigger = %v, want webhook", taskEvent["run.trigger"])
+	}
+	// run.id should be present as a number.
+	if taskEvent["run.id"] == nil {
+		t.Error("expected run.id in task event")
+	}
+	// Job status should be included.
+	if taskEvent["job.go-test.status"] != "success" {
+		t.Errorf("job.go-test.status = %v, want success", taskEvent["job.go-test.status"])
+	}
+}
+
+func TestFinishRunEmitsTaskEventWithDeployData(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, nil))
+	origLogger := slog.Default()
+	slog.SetDefault(logger)
+	defer slog.SetDefault(origLogger)
+
+	m, mux, _ := setupAPI(t)
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	job, _ := m.StartJob(run.ID, "deploy", "deploy-dogs", "")
+	m.FinishJob(job.ID, "success", 5000, "", "")
+
+	// Record deploy data.
+	compileMs := int64(1000)
+	pushMs := int64(2000)
+	deployMs := int64(1500)
+	imageBytes := int64(50000)
+	m.FinishDeployJob(&DeployJob{
+		JobID:      job.ID,
+		App:        "dogs",
+		ImageRef:   "registry.fly.io/monks-dogs:sha1",
+		CompileMs:  &compileMs,
+		PushMs:     &pushMs,
+		DeployMs:   &deployMs,
+		ImageBytes: &imageBytes,
+	})
+
+	body := `{"status":"success"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	var taskEvent map[string]any
+	for _, line := range lines {
+		var ev map[string]any
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		if ev["msg"] == "task" {
+			taskEvent = ev
+			break
+		}
+	}
+
+	if taskEvent == nil {
+		t.Fatal("expected a 'task' log event")
+	}
+
+	if taskEvent["deploy.dogs.image_ref"] != "registry.fly.io/monks-dogs:sha1" {
+		t.Errorf("deploy.dogs.image_ref = %v", taskEvent["deploy.dogs.image_ref"])
+	}
+	// JSON numbers are float64.
+	if v, ok := taskEvent["deploy.dogs.compile_ms"].(float64); !ok || v != 1000 {
+		t.Errorf("deploy.dogs.compile_ms = %v", taskEvent["deploy.dogs.compile_ms"])
 	}
 }
 

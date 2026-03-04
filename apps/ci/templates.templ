@@ -183,34 +183,28 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 				</tbody>
 			</table>
 
-			<h2>Logs</h2>
+			<h2>Task Event</h2>
 			if len(logs) == 0 {
-				<p class="small">No log events found for this run.</p>
+				<p class="small">No task event recorded for this run.</p>
 			} else {
-				<table>
-					<thead>
-						<tr>
-							<th>Time</th>
-							<th>Level</th>
-							<th>Path</th>
-							<th>Status</th>
-							<th>Duration</th>
-							<th>Detail</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, l := range logs {
+				for _, l := range logs {
+					<table>
+						<thead>
 							<tr>
-								<td class="small mono">{ formatLogTime(l.Time) }</td>
-								<td class={ logLevelClass(l.Level) }>{ l.Level }</td>
-								<td class="mono">{ l.Method } { l.Path }</td>
-								<td>{ fmt.Sprintf("%d", l.Status) }</td>
-								<td>{ fmt.Sprintf("%.0fms", l.DurationMs) }</td>
-								<td class="small">{ logDetail(l) }</td>
+								<th>Key</th>
+								<th>Value</th>
 							</tr>
-						}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							for _, k := range SortedDataKeys(l.Data) {
+								<tr>
+									<td class="mono small">{ k }</td>
+									<td class="mono">{ fmt.Sprintf("%v", l.Data[k]) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
 			}
 
 			<script src="static/index.js"></script>
@@ -259,33 +253,3 @@ func statusClass(status string) string {
 	return "status-" + status
 }
 
-func logLevelClass(level string) string {
-	switch level {
-	case "ERROR":
-		return "status-failed"
-	case "WARN":
-		return "status-running"
-	default:
-		return ""
-	}
-}
-
-func formatLogTime(t string) string {
-	if len(t) > 19 {
-		return t[11:19] // HH:MM:SS
-	}
-	return t
-}
-
-func logDetail(l LogEvent) string {
-	if l.ErrorMessage != "" {
-		return l.ErrorMessage
-	}
-	if l.APIJobName != "" {
-		return "job: " + l.APIJobName
-	}
-	if l.TriggerSHA != "" {
-		return "sha: " + shortSHA(l.TriggerSHA)
-	}
-	return ""
-}

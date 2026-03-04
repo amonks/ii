@@ -114,6 +114,28 @@ SQLite with WAL mode. Tables: `runs`, `jobs`, `deploy_jobs`,
 `terraform_jobs`, `deployments`. See
 [migrations/001_initial.sql](../apps/ci/migrations/001_initial.sql).
 
+## Task Event
+
+When a CI run finishes (via the `PUT /api/runs/{id}/done` endpoint), the
+orchestrator emits a single wide `slog.Info("task", ...)` event with all
+run metadata flattened into dotted keys:
+
+- `task.name` = `"ci-run"`
+- `task.status` = success/failed/dead
+- `task.duration_ms` = run wall-clock time
+- `task.error` = error message (if any)
+- `run.id`, `run.head_sha`, `run.base_sha`, `run.trigger`
+- `job.<name>.status`, `job.<name>.duration_ms` — per finished job
+- `deploy.<app>.image_ref`, `deploy.<app>.compile_ms`,
+  `deploy.<app>.push_ms`, `deploy.<app>.deploy_ms`,
+  `deploy.<app>.image_bytes` — per deploy job
+- `terraform.resources_added`, `terraform.resources_changed`,
+  `terraform.resources_destroyed` — if terraform ran
+
+The run detail page displays this event as a key-value table in the
+"Task Event" section, fetched from the logs service with
+`q=group:app,app:ci,msg:task` and filtered by `run.id`.
+
 ## SMS on Failure
 
 Uses `tailnet.Client()` to POST to
