@@ -223,9 +223,9 @@ The run detail page displays this event as a key-value table in the
 ## SMS on Completion
 
 Uses `tailnet.Client()` to POST to `monks-sms-brigid` on both success
-and failure:
-- Failure: `CI run {id} failed: {error}`
-- Success: `CI run {id} succeeded`
+and failure. Messages include a link to the run dashboard:
+- Failure: `CI run {id} failed: https://monks.co/ci/runs/{id}\n{error}`
+- Success: `CI run {id} succeeded: https://monks.co/ci/runs/{id}`
 
 ## Builder Pipeline
 

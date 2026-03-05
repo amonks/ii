@@ -131,6 +131,37 @@ func TestAPIFinishRunSMSOnFailure(t *testing.T) {
 	if !strings.Contains(smsMessage, "failed") {
 		t.Errorf("expected SMS to contain 'failed', got %s", smsMessage)
 	}
+	if !strings.Contains(smsMessage, "https://monks.co/ci/runs/1") {
+		t.Errorf("expected SMS to contain run link, got %s", smsMessage)
+	}
+}
+
+func TestAPIFinishRunSMSOnSuccess(t *testing.T) {
+	m := testModel(t)
+	mux := serve.NewMux()
+	outputDir := filepath.Join(t.TempDir(), "output")
+
+	var smsMessage string
+	RegisterAPI(mux, m, outputDir, func(msg string) {
+		smsMessage = msg
+	}, NewOutputHub(), nil)
+
+	m.CreateRun("sha1", "base1", "webhook")
+
+	body := `{"status":"success"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	if !strings.Contains(smsMessage, "succeeded") {
+		t.Errorf("expected SMS to contain 'succeeded', got %s", smsMessage)
+	}
+	if !strings.Contains(smsMessage, "https://monks.co/ci/runs/1") {
+		t.Errorf("expected SMS to contain run link, got %s", smsMessage)
+	}
 }
 
 func TestAPIAppendOutput(t *testing.T) {
