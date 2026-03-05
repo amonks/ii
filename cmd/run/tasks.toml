@@ -1,0 +1,183 @@
+[[task]]
+  id = "prerelease"
+  description = """
+    - run the tests
+    - generate the docs
+    - generate the screenshots
+  """
+  type = "short"
+  dependencies = ["screenshots", "generate-docs", "validate"]
+
+[[task]]
+  id = "install"
+  type = "short"
+  dependencies = ["generate"]
+  cmd = "go install ."
+
+[[task]]
+  id = "generate"
+  type = "short"
+  cmd = "go generate ./..."
+
+[[task]]
+  id = "validate"
+  type = "short"
+  dependencies = ["generate", "test", "vulncheck", "staticcheck", "snapshot-cli", "shellcheck"]
+
+[[task]]
+  id = "test"
+  type = "short"
+  cmd = "go test ./..."
+
+[[task]]
+  id = "vulncheck"
+  type = "short"
+  cmd = "go run golang.org/x/vuln/cmd/govulncheck ./..."
+
+[[task]]
+  id = "staticcheck"
+  type = "short"
+  cmd = "go run honnef.co/go/tools/cmd/staticcheck ./..."
+
+[[task]]
+  id = "shellcheck"
+  type = "short"
+  cmd = "shellcheck $(git ls-files | grep 'sh$')"
+
+[[task]]
+  id = "screenshots"
+  type = "short"
+  dependencies = [
+    "screenshot-tui",
+    "screenshot-printer",
+    "screenshot-nontty",
+  ]
+  cmd = """
+    echo Cleaning up...
+    rm example/build.log
+  """
+
+[[task]]
+  id = "screenshot-tui"
+  type = "short"
+  dependencies = ["install", "screenshots-deps"]
+  cmd = """
+    cd example
+    go run github.com/charmbracelet/vhs ../screenshots/tui.tape
+    mv tui.gif ../screenshots/
+  """
+
+[[task]]
+  id = "screenshot-printer"
+  type = "short"
+  dependencies = ["install", "screenshots-deps"]
+  cmd = """
+    cd example
+    go run github.com/charmbracelet/vhs ../screenshots/printer.tape
+    mv printer.gif ../screenshots/
+  """
+
+[[task]]
+  id = "screenshot-nontty"
+  type = "short"
+  dependencies = ["install", "screenshots-deps"]
+  cmd = """
+    cd example
+    go run github.com/charmbracelet/vhs ../screenshots/nontty.tape
+    mv nontty.gif ../screenshots/
+  """
+
+[[task]]
+  id = "screenshots-deps"
+  type = "short"
+  cmd = """
+    if ! which ttyd ; then
+      echo "ttyd must be installed to generate screenshots"
+      exit 1
+    fi
+    if ! which ffmpeg ; then
+      echo "ffmpeg must be installed to generate screenshots"
+      exit 1
+    fi
+  """
+
+[[task]]
+  id = "reset-snapshot-failures"
+  type = "short"
+  cmd = """
+    cd runner/testdata/snapshots
+    for d in * ; do
+      if test -f $d/fail.log ; then
+        echo removing $d
+        rm $d/fail.log
+      fi
+    done
+  """
+
+[[task]]
+  id = "overwrite-snapshots"
+  type = "short"
+  cmd = """
+    cd runner/testdata/snapshots
+    for d in * ; do
+      if test -f $d/fail.log ; then
+        echo overwriting $d
+        mv $d/fail.log $d/out.log
+      fi
+    done
+  """
+
+[[task]]
+  id = "generate-docs"
+  type = "short"
+  cmd = """
+    rm -rf docs
+    go tool doc2go -out docs -home github.com/amonks/run ./...
+  """
+
+[[task]]
+  id = "generate-readme-usage"
+  type = "short"
+  cmd = """
+  README_USAGE_SECTION=$(sed -n '/<!-- usage-start -->/,/<!-- usage-end -->/p' README.md | sed '/<!-- usage-start -->\\|<!-- usage-end -->\\|```/d')
+  RUN_COMMAND_USAGE=$(go run . | sed -n '/USAGE/,/VERSION/p' | sed '/VERSION/d')
+
+  # Compare and update if necessary
+  if ! diff <(echo "$README_USAGE_SECTION") <(echo "$RUN_COMMAND_USAGE") > /dev/null; then
+    echo "The README section does not match the usage output. Updating the README section..."
+
+    # Remove the old usage section, keep markers
+    sed -i '/<!-- usage-start -->/,/<!-- usage-end -->/{//!d}' README.md
+
+    # Insert the new help output into README.md
+    TMP_FILE=$(mktemp)
+    echo '```' > "$TMP_FILE"
+    echo "$RUN_COMMAND_USAGE" >> "$TMP_FILE"
+    echo '```' >> "$TMP_FILE"
+    sed -i '/<!-- usage-start -->/r '"$TMP_FILE" README.md
+    rm "$TMP_FILE"
+
+    echo "README usage section has been updated."
+  else
+    echo "The README section matches the usage output."
+  fi
+"""
+
+[[task]]
+  id = "snapshot-cli"
+  type = "short"
+  dependencies = ["generate"]
+  cmd = """
+    mkdir -p testdata/cli_snapshots
+
+    CLICOLOR_FORCE=true go run . -version &> testdata/cli_snapshots/version
+    CLICOLOR_FORCE=true go run . -help &> testdata/cli_snapshots/help
+    CLICOLOR_FORCE=true go run . -credits &> testdata/cli_snapshots/credits
+    CLICOLOR_FORCE=true go run . -contributors &> testdata/cli_snapshots/contributors
+    CLICOLOR_FORCE=true go run . -license &> testdata/cli_snapshots/license
+    CLICOLOR_FORCE=true go run . -list &> testdata/cli_snapshots/list
+
+    if ! git diff --exit-code -- testdata/cli_snapshots ; then
+            exit 1
+    fi
+  """

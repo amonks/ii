@@ -1,0 +1,18 @@
+long
+
+  test  starting
+        running...
+        exit: exit 1
+        retrying in 1 second
+        retrying
+        starting
+        running...
+        exit: exit 1
+        retrying in 2 seconds
+        retrying
+        starting
+        running...
+        canceled; stopping
+
+   run  run canceled
+        done

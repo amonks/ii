@@ -1,0 +1,13 @@
+ok
+
+  prereq  starting
+          ...
+          invalidating {test}
+
+    test  starting
+          hello
+          exit ok
+
+     run  done
+
+  prereq  canceled; stopping
