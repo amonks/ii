@@ -47,6 +47,7 @@
     'apps/scrobbles/build',
     'apps/sms/build',
     'apps/template/build',
+    'apps/vault/build',
     'apps/writing/build',
     'apps/youtube/build'
   ]
@@ -91,6 +92,7 @@
     'apps/youtube/templ',
     'cmd/run/generate',
     'compress-statics',
+    'taskmaker',
     'templ',
     'zone2terraform'
   ]
@@ -151,7 +153,8 @@
     'apps/dogs/dev',
     'apps/monitor/dev',
     'apps/movies/dev',
-    'apps/reddit/dev'
+    'apps/reddit/dev',
+    'apps/vault/dev'
   ]
 
 [[task]]
