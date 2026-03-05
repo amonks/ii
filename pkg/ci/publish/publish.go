@@ -237,22 +237,19 @@ func FilterRepo(w io.Writer, root string, dirs []string, mirror string) error {
 	return nil
 }
 
-// Run executes the full publish flow for all public packages.
-func Run(w io.Writer, root string, cfg *Config, dryRun bool) error {
+// Analyze separates packages into explicit-mirror and default-mirror groups.
+func Analyze(root string, cfg *Config) (explicitPkgs []Package, defaultMirrorDirs []string, err error) {
 	graph, err := depgraph.BuildDepGraph(root)
 	if err != nil {
-		return fmt.Errorf("building dep graph: %w", err)
+		return nil, nil, fmt.Errorf("building dep graph: %w", err)
 	}
 
 	publicDirs := cfg.PublicDirs()
 	order, err := TopoSort(publicDirs, graph)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	// Separate packages into explicit-mirror and default-mirror groups.
-	var defaultMirrorDirs []string
-	var explicitPkgs []Package
 	for _, dir := range order {
 		pkg := cfg.PackageByDir(dir)
 		if pkg != nil && pkg.Mirror != "" {
@@ -261,67 +258,95 @@ func Run(w io.Writer, root string, cfg *Config, dryRun bool) error {
 			defaultMirrorDirs = append(defaultMirrorDirs, dir)
 		}
 	}
+	return explicitPkgs, defaultMirrorDirs, nil
+}
 
-	// Publish packages with explicit mirrors via subtree split.
-	for _, pkg := range explicitPkgs {
-		fmt.Fprintf(w, "publishing %s -> %s (subtree split)\n", pkg.Dir, pkg.Mirror)
+// PublishExplicitMirror publishes a single package with an explicit mirror
+// via git subtree split.
+func PublishExplicitMirror(w io.Writer, root string, pkg Package) error {
+	fmt.Fprintf(w, "publishing %s -> %s (subtree split)\n", pkg.Dir, pkg.Mirror)
 
-		if dryRun {
-			fmt.Fprintf(w, "  [dry-run] would split, create repo if needed, push\n")
-			continue
-		}
-
-		if !MirrorExists(pkg.Mirror) {
-			fmt.Fprintf(w, "  creating mirror repo %s\n", pkg.Mirror)
-			if err := CreateMirror(w, pkg.Mirror); err != nil {
-				return fmt.Errorf("creating mirror %s: %w", pkg.Mirror, err)
-			}
-		}
-
-		fmt.Fprintf(w, "  splitting %s...\n", pkg.Dir)
-		sha, err := SubtreeSplit(root, pkg.Dir)
-		if err != nil {
-			return fmt.Errorf("splitting %s: %w", pkg.Dir, err)
-		}
-		fmt.Fprintf(w, "  split SHA: %s\n", sha)
-
-		fmt.Fprintf(w, "  pushing to %s\n", pkg.Mirror)
-		if err := PushToMirror(w, root, sha, pkg.Mirror); err != nil {
-			return fmt.Errorf("pushing %s: %w", pkg.Dir, err)
-		}
-
-		tags, err := FindMonorepoTags(root, pkg.Dir)
-		if err != nil {
-			return fmt.Errorf("finding tags for %s: %w", pkg.Dir, err)
-		}
-		for _, tag := range tags {
-			mTag := MirrorTag(tag, pkg.Dir)
-			fmt.Fprintf(w, "  pushing tag %s -> %s\n", tag, mTag)
-			if err := PushTagToMirror(w, root, sha, mTag, pkg.Mirror); err != nil {
-				return fmt.Errorf("pushing tag %s: %w", tag, err)
-			}
+	if !MirrorExists(pkg.Mirror) {
+		fmt.Fprintf(w, "  creating mirror repo %s\n", pkg.Mirror)
+		if err := CreateMirror(w, pkg.Mirror); err != nil {
+			return fmt.Errorf("creating mirror %s: %w", pkg.Mirror, err)
 		}
 	}
 
-	// Publish default-mirror packages via git-filter-repo.
-	if len(defaultMirrorDirs) > 0 && cfg.DefaultMirror != "" {
-		fmt.Fprintf(w, "publishing %d packages -> %s (filter-repo)\n", len(defaultMirrorDirs), cfg.DefaultMirror)
-		for _, dir := range defaultMirrorDirs {
-			fmt.Fprintf(w, "  %s\n", dir)
-		}
+	fmt.Fprintf(w, "  splitting %s...\n", pkg.Dir)
+	sha, err := SubtreeSplit(root, pkg.Dir)
+	if err != nil {
+		return fmt.Errorf("splitting %s: %w", pkg.Dir, err)
+	}
+	fmt.Fprintf(w, "  split SHA: %s\n", sha)
 
+	fmt.Fprintf(w, "  pushing to %s\n", pkg.Mirror)
+	if err := PushToMirror(w, root, sha, pkg.Mirror); err != nil {
+		return fmt.Errorf("pushing %s: %w", pkg.Dir, err)
+	}
+
+	tags, err := FindMonorepoTags(root, pkg.Dir)
+	if err != nil {
+		return fmt.Errorf("finding tags for %s: %w", pkg.Dir, err)
+	}
+	for _, tag := range tags {
+		mTag := MirrorTag(tag, pkg.Dir)
+		fmt.Fprintf(w, "  pushing tag %s -> %s\n", tag, mTag)
+		if err := PushTagToMirror(w, root, sha, mTag, pkg.Mirror); err != nil {
+			return fmt.Errorf("pushing tag %s: %w", tag, err)
+		}
+	}
+
+	return nil
+}
+
+// PublishDefaultMirror publishes packages without explicit mirrors via
+// git-filter-repo to the default mirror repo.
+func PublishDefaultMirror(w io.Writer, root string, dirs []string, mirror string) error {
+	fmt.Fprintf(w, "publishing %d packages -> %s (filter-repo)\n", len(dirs), mirror)
+	for _, dir := range dirs {
+		fmt.Fprintf(w, "  %s\n", dir)
+	}
+
+	if !MirrorExists(mirror) {
+		fmt.Fprintf(w, "  creating mirror repo %s\n", mirror)
+		if err := CreateMirror(w, mirror); err != nil {
+			return fmt.Errorf("creating mirror %s: %w", mirror, err)
+		}
+	}
+
+	if err := FilterRepo(w, root, dirs, mirror); err != nil {
+		return fmt.Errorf("filter-repo: %w", err)
+	}
+
+	return nil
+}
+
+// Run executes the full publish flow for all public packages.
+func Run(w io.Writer, root string, cfg *Config, dryRun bool) error {
+	explicitPkgs, defaultMirrorDirs, err := Analyze(root, cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, pkg := range explicitPkgs {
 		if dryRun {
+			fmt.Fprintf(w, "publishing %s -> %s (subtree split)\n", pkg.Dir, pkg.Mirror)
+			fmt.Fprintf(w, "  [dry-run] would split, create repo if needed, push\n")
+			continue
+		}
+		if err := PublishExplicitMirror(w, root, pkg); err != nil {
+			return err
+		}
+	}
+
+	if len(defaultMirrorDirs) > 0 && cfg.DefaultMirror != "" {
+		if dryRun {
+			fmt.Fprintf(w, "publishing %d packages -> %s (filter-repo)\n", len(defaultMirrorDirs), cfg.DefaultMirror)
 			fmt.Fprintf(w, "  [dry-run] would clone, filter, push\n")
 		} else {
-			if !MirrorExists(cfg.DefaultMirror) {
-				fmt.Fprintf(w, "  creating mirror repo %s\n", cfg.DefaultMirror)
-				if err := CreateMirror(w, cfg.DefaultMirror); err != nil {
-					return fmt.Errorf("creating mirror %s: %w", cfg.DefaultMirror, err)
-				}
-			}
-
-			if err := FilterRepo(w, root, defaultMirrorDirs, cfg.DefaultMirror); err != nil {
-				return fmt.Errorf("filter-repo: %w", err)
+			if err := PublishDefaultMirror(w, root, defaultMirrorDirs, cfg.DefaultMirror); err != nil {
+				return err
 			}
 		}
 	}
