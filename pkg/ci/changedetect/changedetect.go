@@ -9,55 +9,22 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/BurntSushi/toml"
+	"monks.co/pkg/config"
 )
 
-// FlyAppsConfig represents config/fly-apps.toml with full app details.
-type FlyAppsConfig struct {
-	Defaults FlyAppDefaults         `toml:"defaults"`
-	Apps     map[string]FlyAppEntry `toml:"apps"`
+// LoadFlyAppsConfig reads config/apps.toml and returns the full config.
+func LoadFlyAppsConfig(root string) (*config.AppsConfig, error) {
+	path := filepath.Join(root, "config", "apps.toml")
+	return config.LoadAppsFrom(path)
 }
 
-// FlyAppDefaults are the default values for all apps.
-type FlyAppDefaults struct {
-	Region   string `toml:"region"`
-	VMSize   string `toml:"vm_size"`
-	VMMemory string `toml:"vm_memory"`
-}
-
-// FlyAppEntry is the configuration for a single Fly app.
-type FlyAppEntry struct {
-	VMSize   string   `toml:"vm_size"`
-	VMMemory string   `toml:"vm_memory"`
-	Volume   string   `toml:"volume"`
-	Public   bool     `toml:"public"`
-	Packages []string `toml:"packages"`
-	Files    []string `toml:"files"`
-	Cmd      []string `toml:"cmd"`
-}
-
-// LoadFlyAppsConfig reads config/fly-apps.toml and returns the full config.
-func LoadFlyAppsConfig(root string) (*FlyAppsConfig, error) {
-	path := filepath.Join(root, "config", "fly-apps.toml")
-	var cfg FlyAppsConfig
-	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", path, err)
-	}
-	return &cfg, nil
-}
-
-// LoadFlyApps reads config/fly-apps.toml and returns the sorted app names.
+// LoadFlyApps reads config/apps.toml and returns the sorted fly app names.
 func LoadFlyApps(root string) ([]string, error) {
 	cfg, err := LoadFlyAppsConfig(root)
 	if err != nil {
 		return nil, err
 	}
-	var apps []string
-	for name := range cfg.Apps {
-		apps = append(apps, name)
-	}
-	sortStrings(apps)
-	return apps, nil
+	return cfg.FlyApps(), nil
 }
 
 // ChangedFiles returns the list of files changed between baseSHA and HEAD.
@@ -122,7 +89,7 @@ func tryGit(root, baseSHA string) (string, error) {
 //   - nil changed files (initial push) → all apps
 //   - any file under a dep's directory → that app
 //   - go.mod, go.sum (root) → all apps
-//   - config/fly-apps.toml → all apps
+//   - config/apps.toml → all apps
 //   - anything else → nothing
 func AffectedApps(flyApps []string, changed []string, resolveDeps func(pkgPath string) ([]string, error)) ([]string, error) {
 	flyAppSet := map[string]bool{}
@@ -154,8 +121,8 @@ func AffectedApps(flyApps []string, changed []string, resolveDeps func(pkgPath s
 	affected := map[string]bool{}
 
 	for _, file := range changed {
-		// Root go.mod/go.sum or config/fly-apps.toml → deploy all.
-		if file == "go.mod" || file == "go.sum" || file == "config/fly-apps.toml" {
+		// Root go.mod/go.sum or config/apps.toml → deploy all.
+		if file == "go.mod" || file == "go.sum" || file == "config/apps.toml" {
 			return flyApps, nil
 		}
 

@@ -32,11 +32,11 @@ use (
 	./apps/youtube
 	./cmd/beetman
 	./cmd/compressor
-	./cmd/deploy
 	./cmd/incrementum
 	./cmd/publish
 	./cmd/rootsync
 	./cmd/run
+	./cmd/tailscale-acl
 	./cmd/taskmaker
 	./cmd/zone2terraform
 	./pkg/aranet4

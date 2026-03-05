@@ -3,23 +3,20 @@
 ## Overview
 
 Internal service directory that renders a matrix table showing which apps
-are running on which machines across the tailnet. Reads per-machine TOML
-config files at startup to build the table.
+are running on which machines across the tailnet. Reads `config/apps.toml`
+at startup to build the table from route definitions.
 
 Code: [apps/directory/](../apps/directory/)
 
 ## Data Loading
 
 `LoadTable()` at startup:
-1. Reads all `*.toml` files (excluding `fly-apps.toml`) from
-   `$MONKS_ROOT/config/`.
-2. For each machine, calls `config.Load(machine)` to parse the TOML and
-   resolve variables.
-3. Unions all known app names across all machines.
-4. For each app + machine pair, if hosted, sets a cell value of
-   `http://monks-<app>-<machine>/`.
-
-Returns a `Table{Headers, Rows}` struct for the template.
+1. Reads `config/apps.toml` via `config.LoadApps()`.
+2. Derives unique hosts from all routes (`cfg.ListHosts()`).
+3. For each app, checks which hosts have routes and derives the backend
+   URL: `http://monks-<app>-<host>/` (or `http://monks-<app>-fly-<region>/`
+   for Fly apps).
+4. Returns a `Table{Headers, Rows}` struct for the template.
 
 ## Routes
 

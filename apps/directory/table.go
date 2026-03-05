@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"slices"
 	"sort"
 
 	"monks.co/pkg/config"
@@ -14,43 +13,41 @@ type Table struct {
 }
 
 func LoadTable() (Table, error) {
-	machines, err := config.ListMachines()
+	cfg, err := config.LoadApps()
 	if err != nil {
 		return Table{}, err
 	}
 
-	configs := make(map[string]*config.Config, len(machines))
-	for _, machine := range machines {
-		config, err := config.Load(machine)
-		if err != nil {
-			return Table{}, err
-		}
-		configs[machine] = config
-	}
+	hosts := cfg.ListHosts()
 
 	data := Table{
-		Headers: append([]string{""}, machines...),
+		Headers: append([]string{""}, hosts...),
 	}
 
-	appSet := map[string]struct{}{}
-	for _, cfg := range configs {
-		for _, app := range cfg.Apps() {
-			appSet[app] = struct{}{}
-		}
-	}
 	var appNames []string
-	for app := range appSet {
-		appNames = append(appNames, app)
+	for name := range cfg.Apps {
+		appNames = append(appNames, name)
 	}
 	sort.Strings(appNames)
 
 	for _, app := range appNames {
-		row := make([]string, len(machines)+1)
+		entry := cfg.Apps[app]
+		row := make([]string, len(hosts)+1)
 		row[0] = app
-		for i, machine := range machines {
-			config := configs[machine]
-			if slices.Contains(config.Apps(), app) {
-				row[i+1] = fmt.Sprintf("http://monks-%s-%s/", app, machine)
+
+		hostBackends := map[string]string{}
+		for _, r := range entry.Routes {
+			host := r.Host
+			if host == "fly" {
+				hostBackends[host] = fmt.Sprintf("http://monks-%s-fly-%s/", app, cfg.Defaults.Region)
+			} else {
+				hostBackends[host] = fmt.Sprintf("http://monks-%s-%s/", app, host)
+			}
+		}
+
+		for i, host := range hosts {
+			if url, ok := hostBackends[host]; ok {
+				row[i+1] = url
 			}
 		}
 		data.Rows = append(data.Rows, row)

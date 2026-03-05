@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"monks.co/pkg/ci/changedetect"
+	"monks.co/pkg/config"
 	"monks.co/pkg/depgraph"
 	"monks.co/pkg/oci"
 )
@@ -32,7 +33,7 @@ type deployAnalysis struct {
 	affected        []string
 	builderAffected bool
 	baseAffected    bool
-	cfg             *changedetect.FlyAppsConfig
+	cfg             *config.AppsConfig
 }
 
 // AnalyzeDeploy runs change detection and reports results in an
@@ -211,7 +212,7 @@ func DeployAnalyzed(analysis *deployAnalysis, root, headSHA, flyToken, baseImage
 	return errors.Join(errs...)
 }
 
-func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
 	reporter.StartStream("deploy", app)
 
 	w := reporter.StreamWriter("deploy", app)
@@ -267,12 +268,8 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.
 	envVars := []string{
 		"MONKS_APP_NAME=" + app,
 		"MONKS_ROOT=/app",
+		"MONKS_DATA=/data",
 		"TSNET_FORCE_LOGIN=1",
-	}
-	if appCfg.Volume != "" {
-		envVars = append(envVars, "MONKS_DATA=/data")
-	} else {
-		envVars = append(envVars, "MONKS_DATA=/tmp")
 	}
 
 	imgCfg := oci.ImageConfig{

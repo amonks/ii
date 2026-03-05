@@ -88,8 +88,8 @@ func TestAffectedApps(t *testing.T) {
 		assertApps(t, got, flyApps)
 	})
 
-	t.Run("config fly-apps.toml deploys all", func(t *testing.T) {
-		changed := []string{filepath.Join("config", "fly-apps.toml")}
+	t.Run("config apps.toml deploys all", func(t *testing.T) {
+		changed := []string{filepath.Join("config", "apps.toml")}
 		got, err := AffectedApps(flyApps, changed, resolve)
 		if err != nil {
 			t.Fatal(err)
@@ -237,15 +237,33 @@ func TestLoadFlyApps(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(configDir, "fly-apps.toml"), []byte(`
+	if err := os.WriteFile(filepath.Join(configDir, "apps.toml"), []byte(`
 [apps.proxy]
   vm_size = "shared-cpu-8x"
+  [[apps.proxy.routes]]
+    path = "proxy"
+    host = "fly"
+    access = "tag:service"
 
 [apps.dogs]
   vm_size = "shared-cpu-2x"
+  [[apps.dogs.routes]]
+    path = "dogs"
+    host = "fly"
+    access = "autogroup:danger-all"
 
 [apps.logs]
   vm_size = "shared-cpu-4x"
+  [[apps.logs.routes]]
+    path = "logs"
+    host = "fly"
+    access = "tag:service"
+
+[apps.calendar]
+  [[apps.calendar.routes]]
+    path = "calendar"
+    host = "brigid"
+    access = "ajm@passkey"
 `), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +284,7 @@ func TestLoadFlyAppsConfig(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(configDir, "fly-apps.toml"), []byte(`
+	if err := os.WriteFile(filepath.Join(configDir, "apps.toml"), []byte(`
 [defaults]
   region = "ord"
   vm_size = "shared-cpu-1x"
@@ -275,8 +293,11 @@ func TestLoadFlyAppsConfig(t *testing.T) {
 [apps.dogs]
   vm_size = "shared-cpu-2x"
   vm_memory = "1gb"
-  volume = "monks_dogs_data"
   packages = ["sqlite"]
+  [[apps.dogs.routes]]
+    path = "dogs"
+    host = "fly"
+    access = "autogroup:danger-all"
 `), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -299,9 +320,6 @@ func TestLoadFlyAppsConfig(t *testing.T) {
 	}
 	if dogs.VMSize != "shared-cpu-2x" {
 		t.Errorf("expected dogs vm_size shared-cpu-2x, got %s", dogs.VMSize)
-	}
-	if dogs.Volume != "monks_dogs_data" {
-		t.Errorf("expected dogs volume monks_dogs_data, got %s", dogs.Volume)
 	}
 	if len(dogs.Packages) != 1 || dogs.Packages[0] != "sqlite" {
 		t.Errorf("expected dogs packages [sqlite], got %v", dogs.Packages)

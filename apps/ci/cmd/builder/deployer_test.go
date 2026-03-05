@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"monks.co/pkg/ci/changedetect"
+	"monks.co/pkg/config"
 )
 
 func TestDeployAnalyzedCollectsAllErrors(t *testing.T) {
@@ -22,7 +22,7 @@ func TestDeployAnalyzedCollectsAllErrors(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
 		if app == "dogs" || app == "logs" {
 			return fmt.Errorf("%s deploy error", app)
 		}
@@ -31,7 +31,7 @@ func TestDeployAnalyzedCollectsAllErrors(t *testing.T) {
 
 	analysis := &deployAnalysis{
 		affected: []string{"dogs", "proxy", "logs", "homepage"},
-		cfg:      &changedetect.FlyAppsConfig{},
+		cfg:      &config.AppsConfig{},
 	}
 	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err == nil {
@@ -64,13 +64,13 @@ func TestDeployAnalyzedAllSucceed(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
 		return nil
 	}
 
 	analysis := &deployAnalysis{
 		affected: []string{"dogs", "proxy"},
-		cfg:      &changedetect.FlyAppsConfig{},
+		cfg:      &config.AppsConfig{},
 	}
 	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err != nil {
@@ -206,7 +206,7 @@ func TestDeployAnalyzedUsesStreams(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *changedetect.FlyAppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
 		// Simulated deploy: just call the stream lifecycle.
 		reporter.StartStream("deploy", app)
 		w := reporter.StreamWriter("deploy", app)
@@ -225,7 +225,7 @@ func TestDeployAnalyzedUsesStreams(t *testing.T) {
 
 	analysis := &deployAnalysis{
 		affected: []string{"dogs"},
-		cfg:      &changedetect.FlyAppsConfig{},
+		cfg:      &config.AppsConfig{},
 	}
 	err := DeployAnalyzed(analysis, "/tmp", "abc", "token", "ref", reporter)
 	if err != nil {

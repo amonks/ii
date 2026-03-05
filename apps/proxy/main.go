@@ -26,7 +26,7 @@ import (
 	"monks.co/pkg/tls"
 )
 
-var machine = flag.String("machine", "", "machine name; must have a corresponding toml file in config/.")
+var _ = flag.String("machine", "", "deprecated: ignored")
 
 func main() {
 	if err := run(); err != nil {
@@ -57,7 +57,7 @@ var (
 func run() error {
 	flag.Parse()
 
-	config, err := config.Load(*machine)
+	config, err := config.LoadProxy()
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}

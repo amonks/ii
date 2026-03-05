@@ -37,42 +37,43 @@ three tasks:
 - **start**: long-running, runs the binary (no rebuild)
 - **build**: short, watches `*.go`, runs `go build -o ../../bin/ .`
 
-### 4. Add the app to a machine config
+### 4. Add the app to `config/apps.toml`
 
-Edit the appropriate file in `config/`:
+Add an `[apps.$name]` entry with at least one route:
 
-- `config/brigid.toml` -- brigid (home server)
-- `config/thor.toml` -- thor (home server)
+```toml
+[apps.$name]
+  [[apps.$name.routes]]
+    path = "$name"
+    host = "$machine"    # brigid, thor, or fly
+    access = "$access"   # autogroup:danger-all, ajm@passkey, tag:service, autogroup:member
+```
 
-Add the app name to the `apps` list (keep it sorted alphabetically).
-
-Fly-hosted apps are configured differently: add an entry to
-`config/fly-apps.toml` instead. Taskmaker will generate `fly.toml`,
-`Dockerfile.fly`, and `Dockerfile.fly.dockerignore` for you.
+For Fly-hosted apps, you can also set `vm_size`, `vm_memory`, `packages`,
+`files`, `cmd`, and `public`.
 
 ### 5. Run taskmaker
 
     go run ./cmd/taskmaker
 
 This regenerates the root `tasks.toml` with the new app included in the
-appropriate machine task and the `build` task.
+appropriate machine task and the `build` task. For Fly apps, it also
+generates `fly.toml`.
 
-### 6. Add a tailscale capability grant
+### 6. Generate Tailscale ACL (optional)
 
-The app won't be reachable through the proxy until you add a routing entry in
-the tailscale ACL policy's capability grants. Add an entry like:
+If you want to verify the ACL routing:
 
-    {"path": "$name", "backend": "monks-$name-$machine"}
+    go run ./cmd/tailscale-acl
 
-to the appropriate `monks.co/cap/public` grant based on who should have access
-(see the `<routing>` section in `AGENTS.md` for examples).
+The ACL is generated from `config/apps.toml` routes. No manual ACL editing
+is required -- update `config/apps.toml` and the routing grants are derived
+automatically.
 
 ### 7. Deploy
 
-For brigid/thor apps, build and deploy to the machine:
+For brigid/thor apps, build and run on the machine:
 
     cd apps/$name && go build -o ../../bin/ . # on the machine
 
-For fly apps:
-
-    fly deploy -c apps/$name/fly.toml
+For fly apps, CI deploys automatically on push to main.

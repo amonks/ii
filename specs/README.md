@@ -90,7 +90,7 @@ Each area of the system should have a spec. Keep specs up to date while working 
 | [pkg-tailnet](pkg-tailnet.md)   | [pkg/tailnet/](../pkg/tailnet/)   | tsnet wrapper: tailnet membership, HTTP client, peer identification   |
 | [pkg-reqlog](pkg-reqlog.md)     | [pkg/reqlog/](../pkg/reqlog/)     | Wide-event structured HTTP request logging and log shipping           |
 | [pkg-database](pkg-database.md) | [pkg/database/](../pkg/database/) | GORM + SQLite wrapper with WAL mode and migrations                    |
-| [pkg-config](pkg-config.md)     | [pkg/config/](../pkg/config/)     | Per-machine TOML configuration loading                                |
+| [pkg-config](pkg-config.md)     | [pkg/config/](../pkg/config/)     | Unified app config and proxy config loading from TOML                 |
 | [pkg-serve](pkg-serve.md)       | [pkg/serve/](../pkg/serve/)       | HTTP mux with base-path awareness, error helpers, JSON encoding       |
 | [pkg-tls](pkg-tls.md)           | [pkg/tls/](../pkg/tls/)           | ACME TLS certificate management via CertMagic                         |
 | [pkg-logs](pkg-logs.md)         | [pkg/logs/](../pkg/logs/)         | SQLite log storage and adaptive query engine                          |

@@ -1,0 +1,40 @@
+{
+    "hosts": {
+        "brigid": "100.85.200.70",
+        "calder": "100.110.179.113",
+        "fly":    "100.124.71.5",
+        "lugh":   "100.75.168.50",
+        "qaynan": "100.116.136.67",
+        "thor":   "100.93.23.97"
+    },
+    "tagOwners": {
+        "tag:exit-node":  [],
+        "tag:ci-trigger": [],
+        "tag:funnel":     [],
+        "tag:monks-co":   [],
+        "tag:service":    []
+    },
+    "nodeAttrs": [
+        { "target": ["tag:funnel"], "attr": ["funnel"] }
+    ],
+    "grants": [
+        { "src": ["autogroup:member", "tag:service"], "dst": ["tag:service"], "ip": ["*"] },
+        { "src": ["autogroup:member"], "dst": ["autogroup:internet"], "ip": ["*"] },
+        { "src": ["autogroup:member"], "dst": ["autogroup:self"], "ip": ["*"] },
+        { "src": ["tag:ci-trigger"], "dst": ["tag:service"], "ip": ["*"] },
+        { "src": ["*"], "dst": ["thor"], "ip": ["*"] },
+        { "src": ["autogroup:danger-all"], "dst": ["tag:service"],
+          "app": { "monks.co/cap/test": [{"test": true}] } }
+    ],
+    "ssh": [
+        { "action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self"],
+          "users": ["autogroup:nonroot"] }
+    ],
+    "tests": [
+        { "src": "calder", "accept": ["tag:service:80"] },
+        { "src": "qaynan", "accept": ["thor:22", "brigid:22"] }
+    ],
+    "sshTests": [
+        { "src": "ajm@passkey", "dst": ["ajm@passkey"], "accept": ["ajm"] }
+    ]
+}

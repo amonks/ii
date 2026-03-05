@@ -4,8 +4,7 @@
 
 Builds a dependency graph of `monks.co/*` modules and packages using
 `go/packages` for import analysis. Used by `cmd/publish` (validation),
-`cmd/deploy` (change detection), and `apps/ci/cmd/builder` (deploy +
-image rebuild change detection).
+`apps/ci/cmd/builder` (deploy + image rebuild change detection).
 
 Code: [pkg/depgraph/](../pkg/depgraph/)
 

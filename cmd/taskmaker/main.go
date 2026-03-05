@@ -125,22 +125,22 @@ func buildAppTasks() ([]*task, []string, error) {
 		Dependencies: buildDeps,
 	}}
 
-	// add run tasks for dev machines only
-	machineConfigs, err := getMachineConfigs()
+	// add run tasks for dev machines
+	appsCfg, err := config.LoadApps()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("loading apps config: %w", err)
 	}
-	for machineName, machine := range machineConfigs {
-		if machine.Mode != "dev" {
+	for _, host := range appsCfg.ListHosts() {
+		if host == "fly" {
 			continue
 		}
 
 		machineStart := &task{
-			Id:   machineName,
+			Id:   host,
 			Type: "long",
 		}
 
-		for _, app := range machine.Apps() {
+		for _, app := range appsCfg.AppsForHost(host) {
 			machineStart.Dependencies = append(machineStart.Dependencies,
 				"apps/"+app+"/dev")
 		}
@@ -153,23 +153,6 @@ func buildAppTasks() ([]*task, []string, error) {
 	return tasks, generateDeps, nil
 }
 
-func getMachineConfigs() (map[string]*config.Config, error) {
-	machines, err := config.ListMachines()
-	if err != nil {
-		return nil, fmt.Errorf("listing machines: %w", err)
-	}
-
-	machineConfigs := make(map[string]*config.Config, len(machines))
-	for _, machine := range machines {
-		config, err := config.Load(machine)
-		if err != nil {
-			return nil, fmt.Errorf("loading config for '%s': %w", machine, err)
-		}
-		machineConfigs[machine] = config
-	}
-
-	return machineConfigs, nil
-}
 
 // Find the "generate" tasks from the apps. A generate task is here defined as
 // the dependency of an app's build task.

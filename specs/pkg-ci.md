@@ -2,29 +2,21 @@
 
 ## Overview
 
-Shared library for CI operations, extracted from `cmd/deploy` and
-`cmd/publish`. Contains two subpackages.
+Shared library for CI operations. Contains two subpackages.
 
 Code: [pkg/ci/](../pkg/ci/)
 
 ## changedetect
 
-Change detection and Fly app config loading.
+Change detection and app config loading for Fly deployment.
 
 Code: [pkg/ci/changedetect/](../pkg/ci/changedetect/)
 
-### Types
-
-- `FlyAppsConfig` — full `config/fly-apps.toml` structure including
-  defaults and per-app settings (VM size, memory, volume, packages,
-  files, cmd).
-- `FlyAppDefaults` — default region, VM size, memory.
-- `FlyAppEntry` — per-app config.
-
 ### Functions
 
-- `LoadFlyAppsConfig(root) (*FlyAppsConfig, error)` — parse full config.
-- `LoadFlyApps(root) ([]string, error)` — sorted app names only.
+- `LoadFlyAppsConfig(root) (*config.AppsConfig, error)` — reads
+  `config/apps.toml` via `pkg/config`.
+- `LoadFlyApps(root) ([]string, error)` — sorted Fly app names only.
 - `ChangedFiles(root, baseSHA) ([]string, error)` — files changed
   between baseSHA and HEAD. Tries `jj diff --name-only` first, falls
   back to `git diff --name-only`. Returns nil for all-zeros SHA

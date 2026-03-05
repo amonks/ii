@@ -45,12 +45,17 @@ prefix (e.g., `/` becomes `/map/`).
 
 ## Access Tiers
 
-Access is controlled through Tailscale ACL groups:
+Access is controlled through Tailscale ACL capability grants. Each app's
+`access` field in `config/apps.toml` specifies the ACL source. The
+`cmd/tailscale-acl` tool generates the routing portion of the Tailscale
+ACL from this config, merged with `config/tailscale-acl-base.jsonc`.
 
-- **Public** (`autogroup:danger-all`): dogs, homepage, map, writing
+Current tiers:
+
+- **Public** (`autogroup:danger-all`): dogs, dungeon, homepage, map, writing
 - **Tailnet members** (`autogroup:member`): air, movies
-- **Services** (`tag:service`): traffic, logs, sms
-- **Private** (`ajm@passkey`): calendar, directory, golink, ping, scrobbles, logs, youtube, reddit
+- **Services** (`tag:service`): aranet, ci, logs, mailer, monitor, proxy, sms
+- **Private** (`ajm@passkey`): calendar, ci, creamery, directory, dogs, dolmenwood, golink, homepage, logs, map, movies, ping, reddit, scrobbles, writing, youtube
 
 ### Dual-Listener Architecture
 
