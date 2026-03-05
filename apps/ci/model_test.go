@@ -414,6 +414,103 @@ func TestSetMachineID(t *testing.T) {
 }
 
 
+func TestPendingTrigger(t *testing.T) {
+	m := testModel(t)
+
+	// Initially empty.
+	_, ok, err := m.PopPendingTrigger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Error("expected no pending trigger")
+	}
+
+	// Set one.
+	if err := m.SetPendingTrigger("sha1"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Overwrite (LWW).
+	if err := m.SetPendingTrigger("sha2"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Pop should return the latest.
+	sha, ok, err := m.PopPendingTrigger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected pending trigger")
+	}
+	if sha != "sha2" {
+		t.Errorf("expected sha2, got %s", sha)
+	}
+
+	// Should be empty after pop.
+	_, ok, err = m.PopPendingTrigger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Error("expected no pending trigger after pop")
+	}
+}
+
+func TestRunningRun(t *testing.T) {
+	m := testModel(t)
+
+	// No running run.
+	_, _, err := m.RunningRun()
+	if err == nil {
+		t.Error("expected error when no running run")
+	}
+
+	// Create a running run with no jobs.
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r, phase, err := m.RunningRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.ID != run.ID {
+		t.Errorf("expected run %d, got %d", run.ID, r.ID)
+	}
+	if phase != "" {
+		t.Errorf("expected empty phase, got %q", phase)
+	}
+
+	// Start a test job.
+	job, err := m.StartJob(run.ID, "test", "test", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, phase, err = m.RunningRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if phase != "test" {
+		t.Errorf("expected phase test, got %q", phase)
+	}
+
+	// Finish test, start deploy.
+	m.FinishJob(job.ID, "success", 100, "", "")
+	m.StartJob(run.ID, "deploy", "deploy", "")
+
+	_, phase, err = m.RunningRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if phase != "deploy" {
+		t.Errorf("expected phase deploy, got %q", phase)
+	}
+}
+
 func init() {
 	// Ensure MONKS_DATA is set for tests that use OpenFromDataFolder.
 	if os.Getenv("MONKS_DATA") == "" {

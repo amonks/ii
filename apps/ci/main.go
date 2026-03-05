@@ -88,7 +88,7 @@ func run() error {
 	// Builder callback API.
 	RegisterAPI(mux, model, outputDir, func(msg string) {
 		sendSMS(msg)
-	}, hub)
+	}, hub, trigger)
 
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {

@@ -19,7 +19,7 @@ func setupAPI(t *testing.T) (*Model, *serve.Mux, string) {
 	m := testModel(t)
 	mux := serve.NewMux()
 	outputDir := filepath.Join(t.TempDir(), "output")
-	RegisterAPI(mux, m, outputDir, nil, NewOutputHub())
+	RegisterAPI(mux, m, outputDir, nil, NewOutputHub(), nil)
 	return m, mux, outputDir
 }
 
@@ -113,7 +113,7 @@ func TestAPIFinishRunSMSOnFailure(t *testing.T) {
 	var smsMessage string
 	RegisterAPI(mux, m, outputDir, func(msg string) {
 		smsMessage = msg
-	}, NewOutputHub())
+	}, NewOutputHub(), nil)
 
 	m.CreateRun("sha1", "base1", "webhook")
 
@@ -283,7 +283,7 @@ func TestAPIAppendOutputPublishesToHub(t *testing.T) {
 	mux := serve.NewMux()
 	outputDir := filepath.Join(t.TempDir(), "output")
 	hub := NewOutputHub()
-	RegisterAPI(mux, m, outputDir, nil, hub)
+	RegisterAPI(mux, m, outputDir, nil, hub, nil)
 
 	run, _ := m.CreateRun("sha1", "base1", "webhook")
 	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))
@@ -315,7 +315,7 @@ func TestAPIFinishJobClosesHub(t *testing.T) {
 	mux := serve.NewMux()
 	outputDir := filepath.Join(t.TempDir(), "output")
 	hub := NewOutputHub()
-	RegisterAPI(mux, m, outputDir, nil, hub)
+	RegisterAPI(mux, m, outputDir, nil, hub, nil)
 
 	run, _ := m.CreateRun("sha1", "base1", "webhook")
 	m.StartJob(run.ID, "test", "go-test", filepath.Join(outputDir, "1", "go-test"))

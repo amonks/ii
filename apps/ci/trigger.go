@@ -56,19 +56,55 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqlog.Set(r.Context(), "trigger.sha", req.SHA)
 
 	// Check if a run is already in progress.
-	running, err := h.model.HasRunningRun()
+	run, currentJob, err := h.model.RunningRun()
 	if err != nil {
-		slog.Error("checking running runs", "error", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if running {
-		reqlog.Set(r.Context(), "trigger.skipped", "run_in_progress")
-		w.WriteHeader(http.StatusConflict)
-		fmt.Fprint(w, "run already in progress")
+		// No running run — start a new one.
+		h.startNewRun(w, r, req.SHA)
 		return
 	}
 
+	// A run is in progress. Behavior depends on the current phase.
+	reqlog.Set(r.Context(), "trigger.superseding_run", run.ID)
+	reqlog.Set(r.Context(), "trigger.current_job", currentJob)
+
+	if currentJob == "deploy" {
+		// During deploy: don't interrupt, just record the pending SHA.
+		// It will be picked up when the run finishes.
+		if err := h.model.SetPendingTrigger(req.SHA); err != nil {
+			slog.Error("setting pending trigger", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		reqlog.Set(r.Context(), "trigger.action", "queued_pending")
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  "queued",
+			"message": "deploy in progress; build will start when it finishes",
+			"sha":     req.SHA,
+		})
+		return
+	}
+
+	// During fetch/test/generate: kill the builder, mark run superseded, start new.
+	reqlog.Set(r.Context(), "trigger.action", "supersede")
+	go h.supersedRun(run)
+
+	h.startNewRun(w, r, req.SHA)
+}
+
+// supersedRun marks a running run as superseded and stops its builder machine.
+func (h *TriggerHandler) supersedRun(run *Run) {
+	if err := h.model.FinishRun(run.ID, "superseded", "superseded by newer commit"); err != nil {
+		slog.Error("marking run superseded", "error", err, "run_id", run.ID)
+	}
+	if run.MachineID != nil && h.fly != nil {
+		if err := h.fly.StopMachine(context.Background(), *run.MachineID); err != nil {
+			slog.Warn("stopping superseded builder machine", "error", err, "machine_id", *run.MachineID)
+		}
+	}
+}
+
+func (h *TriggerHandler) startNewRun(w http.ResponseWriter, r *http.Request, sha string) {
 	// Determine base SHA from last successful run.
 	baseSHA, err := h.model.LastSuccessfulSHA()
 	if err != nil {
@@ -77,7 +113,7 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the run.
-	run, err := h.model.CreateRun(req.SHA, baseSHA, "webhook")
+	run, err := h.model.CreateRun(sha, baseSHA, "webhook")
 	if err != nil {
 		slog.Error("creating run", "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -99,9 +135,42 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]any{
 		"run_id":   run.ID,
-		"head_sha": req.SHA,
+		"head_sha": sha,
 		"base_sha": baseSHA,
 	})
+}
+
+// StartPendingBuild checks for a pending trigger and starts a new build if one exists.
+func (h *TriggerHandler) StartPendingBuild() {
+	sha, ok, err := h.model.PopPendingTrigger()
+	if err != nil {
+		slog.Error("popping pending trigger", "error", err)
+		return
+	}
+	if !ok {
+		return
+	}
+
+	slog.Info("starting pending build", "sha", sha)
+
+	baseSHA, err := h.model.LastSuccessfulSHA()
+	if err != nil {
+		baseSHA = "0000000000000000000000000000000000000000"
+	}
+
+	run, err := h.model.CreateRun(sha, baseSHA, "pending")
+	if err != nil {
+		slog.Error("creating pending run", "error", err)
+		return
+	}
+
+	if h.fly == nil {
+		slog.Error("no fly client for pending build", "run_id", run.ID)
+		h.model.FinishRun(run.ID, "failed", "fly client not configured")
+		return
+	}
+
+	h.createBuilderMachine(run)
 }
 
 func (h *TriggerHandler) resolveBuilderImage() string {

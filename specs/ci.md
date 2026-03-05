@@ -57,14 +57,27 @@ POST `/trigger` with `{"sha":"abc123"}`. Not publicly accessible —
 only reachable over tailnet. Called by a minimal GitHub Actions
 workflow that joins the tailnet and curls the endpoint.
 
-Behavior:
-- Rejects if a run is already in progress (returns 409)
+Behavior depends on whether a run is already in progress:
+
+**No run in progress**: Creates a new run and builder machine. Returns
+202 with run ID, head SHA, base SHA.
+
+**Run in progress, pre-deploy phase** (fetch/test/generate): Stops the
+builder machine, marks the running run as "superseded", and starts a
+new run for the incoming SHA. Returns 202 with the new run's details.
+
+**Run in progress, deploy phase**: Records the SHA in a
+`pending_trigger` LWW register (SQLite table with at most one row).
+Returns 202 with `{"status":"queued"}`. When the deploy finishes
+(via `PUT /api/runs/{id}/done`), the orchestrator pops the pending
+trigger and automatically starts a new build.
+
+Common steps for starting a new run:
 - Looks up base SHA from last successful run (all-zeros if none)
 - Creates run row in SQLite
 - Resolves current builder image by listing `monks-ci-builder` machines
   via the Fly API (falls back to a hardcoded default if none found)
 - Creates builder machine via `pkg/flyapi`
-- Returns 202 with run ID, head SHA, base SHA
 
 ## Builder Callback API
 
@@ -174,7 +187,7 @@ of build output. Keys are `"runID/jobName/stream"`.
 ## Database
 
 SQLite with WAL mode. Tables: `runs`, `jobs`, `streams`,
-`deployments`. See
+`deployments`, `pending_trigger`. See
 [migrations/](../apps/ci/migrations/).
 
 The `streams` table stores per-stream metadata (status, duration,

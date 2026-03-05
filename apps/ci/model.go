@@ -283,6 +283,46 @@ func (m *Model) DeploymentHistory(app string) ([]Deployment, error) {
 	return deployments, err
 }
 
+// SetPendingTrigger sets (or replaces) the pending trigger SHA.
+func (m *Model) SetPendingTrigger(sha string) error {
+	return m.db.Exec(`
+		INSERT INTO pending_trigger (id, sha, created_at) VALUES (1, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET sha = excluded.sha, created_at = excluded.created_at
+	`, sha, now()).Error
+}
+
+// PopPendingTrigger returns and deletes the pending trigger SHA, if any.
+func (m *Model) PopPendingTrigger() (string, bool, error) {
+	var results []struct {
+		SHA string `gorm:"column:sha"`
+	}
+	if err := m.db.Raw("SELECT sha FROM pending_trigger WHERE id = 1").Scan(&results).Error; err != nil {
+		return "", false, err
+	}
+	if len(results) == 0 {
+		return "", false, nil
+	}
+	if err := m.db.Exec("DELETE FROM pending_trigger WHERE id = 1").Error; err != nil {
+		return "", false, err
+	}
+	return results[0].SHA, true, nil
+}
+
+// RunningRunPhase returns the current phase of the running run.
+// It returns the run and the name of the most recently started job (or "" if none).
+func (m *Model) RunningRun() (*Run, string, error) {
+	var run Run
+	if err := m.db.Where("status = ?", "running").Order("id DESC").First(&run).Error; err != nil {
+		return nil, "", err
+	}
+	var job Job
+	err := m.db.Where("run_id = ? AND status = ?", run.ID, "in_progress").Order("id DESC").First(&job).Error
+	if err != nil {
+		return &run, "", nil
+	}
+	return &run, job.Name, nil
+}
+
 func now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }

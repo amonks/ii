@@ -16,8 +16,8 @@ import (
 )
 
 // RegisterAPI registers the builder callback API routes.
-func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(string), hub *OutputHub) {
-	api := &apiHandler{model: model, outputDir: outputDir, sendSMS: smsFunc, hub: hub}
+func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(string), hub *OutputHub, trigger *TriggerHandler) {
+	api := &apiHandler{model: model, outputDir: outputDir, sendSMS: smsFunc, hub: hub, trigger: trigger}
 
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/start", api.startJob)
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/done", api.finishJob)
@@ -35,6 +35,7 @@ type apiHandler struct {
 	outputDir string
 	sendSMS   func(string)
 	hub       *OutputHub
+	trigger   *TriggerHandler
 }
 
 func (a *apiHandler) parseRunID(r *http.Request) (int64, error) {
@@ -358,6 +359,11 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 		if msg != "" {
 			a.sendSMS(msg)
 		}
+	}
+
+	// Check for pending trigger and start a new build if one exists.
+	if a.trigger != nil {
+		go a.trigger.StartPendingBuild()
 	}
 
 	w.WriteHeader(http.StatusOK)
