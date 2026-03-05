@@ -259,7 +259,7 @@ run. To avoid waiting through two full CI cycles when the builder image
 changes, you can manually push the image first:
 
 ```
-fly deploy --build-only --push -c apps/ci/builder.fly.toml
+go tool run apps/ci/build-builder-image
 ```
 
 Then `jj git push` to trigger CI, which will use the freshly pushed

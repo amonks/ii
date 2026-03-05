@@ -49,6 +49,8 @@ RUN go build -o /usr/local/bin/ci-builder ./apps/ci/cmd/builder
 
 ENV MONKS_ROOT=/data/repo
 ENV MONKS_DATA=/data
+ENV GOMODCACHE=/data/gomodcache
+ENV GOCACHE=/data/gobuildcache
 
 # Incrementum config (so integration tests can reach the LLM gateway)
 RUN mkdir -p /root/.config/incrementum
