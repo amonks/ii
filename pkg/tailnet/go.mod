@@ -49,6 +49,7 @@ require (
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pires/go-proxyproto v0.11.0 // indirect
+	github.com/pkg/sftp v1.13.10 // indirect
 	github.com/prometheus-community/pro-bing v0.8.0 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/safchain/ethtool v0.7.0 // indirect

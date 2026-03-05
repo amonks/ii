@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/charmbracelet/ssh v0.0.0-20241211182756-4fe22b0f1b7c
 	github.com/charmbracelet/wish v1.4.4
-	github.com/pkg/sftp v1.13.6
+	github.com/pkg/sftp v1.13.10
 )
 
 require (
