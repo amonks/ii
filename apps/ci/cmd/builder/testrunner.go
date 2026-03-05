@@ -23,8 +23,8 @@ func RunTests(ctx context.Context, root string, reporter *Reporter) error {
 	if err := runTask(ctx, root, "generate", reporter); err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
-	if err := runTask(ctx, root, "test", reporter); err != nil {
-		return fmt.Errorf("test: %w", err)
+	if err := runTask(ctx, root, "ci-test", reporter); err != nil {
+		return fmt.Errorf("ci-test: %w", err)
 	}
 	return nil
 }

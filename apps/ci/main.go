@@ -270,7 +270,7 @@ func serveJobStreams(outputDir string) http.HandlerFunc {
 		fmt.Fprintf(w, "<h2>Streams for %s</h2><ul>", jobName)
 		for _, e := range entries {
 			name := strings.TrimSuffix(e.Name(), ".log")
-			fmt.Fprintf(w, `<li><a href="%s/%s">%s</a></li>`, r.URL.Path, name, name)
+			fmt.Fprintf(w, `<li><a href="%s/%s">%s</a></li>`, r.URL.Path, name, decodeStreamName(name))
 		}
 		fmt.Fprintf(w, "</ul>")
 	}

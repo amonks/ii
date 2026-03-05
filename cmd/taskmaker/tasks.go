@@ -61,4 +61,14 @@ var baseTasks = []*task{
 		Type: "short",
 		Cmd:  "go test monks.co/...",
 	},
+	{
+		Id:   "check-for-diff",
+		Type: "short",
+		Cmd:  "diff=$(jj diff); if [ -n \"$diff\" ]; then echo \"ERROR: working copy has changes after generate:\"; echo \"$diff\"; exit 1; fi",
+	},
+	{
+		Id:           "ci-test",
+		Type:         "short",
+		Dependencies: []string{"test", "check-for-diff"},
+	},
 }

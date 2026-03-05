@@ -52,6 +52,19 @@
   ]
 
 [[task]]
+  id = 'check-for-diff'
+  type = 'short'
+  cmd = 'diff=$(jj diff); if [ -n "$diff" ]; then echo "ERROR: working copy has changes after generate:"; echo "$diff"; exit 1; fi'
+
+[[task]]
+  id = 'ci-test'
+  type = 'short'
+  dependencies = [
+    'check-for-diff',
+    'test'
+  ]
+
+[[task]]
   id = 'compress-statics'
   type = 'short'
   cmd = 'go run ./cmd/compressor -dir=apps/proxy/static -workers=8 -v'

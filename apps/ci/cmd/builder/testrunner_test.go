@@ -241,6 +241,72 @@ cmd = "echo sub-output"
 	}
 }
 
+func TestRunTestsRunsGenerateThenCITest(t *testing.T) {
+	handler := newRecordingHandler()
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	dir := t.TempDir()
+	tasksToml := `
+[[task]]
+id = "generate"
+type = "short"
+cmd = "echo generating"
+
+[[task]]
+id = "test"
+type = "short"
+cmd = "echo testing"
+
+[[task]]
+id = "check-for-diff"
+type = "short"
+cmd = "echo no diff"
+
+[[task]]
+id = "ci-test"
+type = "short"
+dependencies = ["test", "check-for-diff"]
+`
+	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := RunTests(ctx, dir, reporter)
+	if err != nil {
+		t.Fatalf("RunTests failed: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify that both "generate" and "ci-test" jobs were started.
+	reqs := handler.getRequests()
+	var generateStart, ciTestStart bool
+	for _, r := range reqs {
+		if r.Path == "/api/runs/1/jobs/generate/start" {
+			generateStart = true
+		}
+		if r.Path == "/api/runs/1/jobs/ci-test/start" {
+			ciTestStart = true
+		}
+	}
+	if !generateStart {
+		t.Error("expected generate job to be started")
+	}
+	if !ciTestStart {
+		t.Error("expected ci-test job to be started (not plain 'test')")
+	}
+
+	// Verify check-for-diff ran as a stream within ci-test.
+	diffOutput := handler.getOutput("/api/runs/1/jobs/ci-test/output/check-for-diff")
+	if !strings.Contains(diffOutput, "no diff") {
+		t.Errorf("expected check-for-diff output, got %q (paths=%v)", diffOutput, handler.outputPaths())
+	}
+}
+
 func TestRunTestsMultipleTasksGetSeparateStreams(t *testing.T) {
 	handler := newRecordingHandler()
 	srv := httptest.NewServer(handler)
