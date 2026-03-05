@@ -4,3 +4,13 @@
   cmd = "go run ."
   watch = ["*.go", "notes/**/*.md", "*.html"]
 
+
+[[task]]
+  id = "tidy"
+  type = "short"
+  cmd = "go mod tidy -e"
+
+[[task]]
+  id = "generate"
+  type = "short"
+  dependencies = ["tidy"]

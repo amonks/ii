@@ -14,3 +14,13 @@
   type = "short"
   watch = ["**/*.go", "*.go"]
   cmd = "go build -o ../../bin/ ."
+
+[[task]]
+  id = "tidy"
+  type = "short"
+  cmd = "go mod tidy -e"
+
+[[task]]
+  id = "generate"
+  type = "short"
+  dependencies = ["tidy"]
