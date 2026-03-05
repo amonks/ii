@@ -30,9 +30,8 @@ func NextVersion(track, latestTag, dir string) string {
 
 	if latestTag != "" {
 		ver := MirrorTag(latestTag, dir)
-		if strings.HasPrefix(ver, prefix) {
-			numStr := strings.TrimPrefix(ver, prefix)
-			if n, err := strconv.Atoi(numStr); err == nil {
+		if after, ok := strings.CutPrefix(ver, prefix); ok {
+			if n, err := strconv.Atoi(after); err == nil {
 				return fmt.Sprintf("%s%d", prefix, n+1)
 			}
 		}
