@@ -14,6 +14,7 @@ require (
 	golang.org/x/sync v0.19.0
 	golang.org/x/term v0.40.0
 	modernc.org/sqlite v1.46.1
+	monks.co/pkg/migrate v0.0.1
 )
 
 require (
