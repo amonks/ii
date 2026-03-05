@@ -1,3 +1,4 @@
+// Package main provides the reverse proxy for monks.co.
 package main
 
 import (
