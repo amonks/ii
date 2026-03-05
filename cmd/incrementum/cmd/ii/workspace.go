@@ -178,18 +178,20 @@ func runWorkspaceExec(cmd *cobra.Command, args []string) error {
 	}
 
 	// Copy stdin→pty and pty→stdout concurrently.
-	errc := make(chan error, 2)
+	outDone := make(chan struct{})
 	go func() {
-		_, err := copyIO(ptmx, os.Stdin)
-		errc <- err
+		copyIO(ptmx, os.Stdin)
 	}()
 	go func() {
-		_, err := copyIO(os.Stdout, ptmx)
-		errc <- err
+		defer close(outDone)
+		copyIO(os.Stdout, ptmx)
 	}()
 
 	// Wait for the command to finish.
 	cmdErr := c.Wait()
+
+	// Wait for all output to be copied before returning.
+	<-outDone
 
 	// Stop relaying signals.
 	signal.Stop(ch)
