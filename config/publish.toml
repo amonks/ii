@@ -1,6 +1,9 @@
 default_mirror = "github.com/amonks/go"
 
 [[package]]
+dir = "pkg/migrate"
+
+[[package]]
 dir = "pkg/set"
 
 [[package]]
@@ -22,3 +25,4 @@ mirror = "github.com/amonks/rootsync"
 dir = "cmd/run"
 module_path = "monks.co/run"
 mirror = "github.com/amonks/run"
+version = "1.0.0-beta"

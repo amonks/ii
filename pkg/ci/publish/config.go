@@ -24,6 +24,7 @@ type Package struct {
 	Dir        string `toml:"dir"`
 	ModulePath string `toml:"module_path"`
 	Mirror     string `toml:"mirror"`
+	Version    string `toml:"version"` // major.minor base, e.g. "1.0"; default "0.0"
 }
 
 // LoadConfig loads config/publish.toml.
@@ -98,6 +99,78 @@ func ValidateLicenses(root string, publicDirs map[string]bool) []string {
 	}
 	sort.Strings(errs)
 	return errs
+}
+
+// ValidateGoModCompleteness checks that every monks.co/* dependency detected
+// by the dep graph is declared in the module's go.mod require block.
+// In a workspace, imports resolve via go.work even when go.mod is incomplete,
+// so this catches dependencies that work locally but break when published.
+func ValidateGoModCompleteness(root string, graph map[string][]string, modPathToDir map[string]string, publicDirs map[string]bool) []string {
+	// Invert modPathToDir to get dir→modulePath.
+	dirToModPath := make(map[string]string, len(modPathToDir))
+	for modPath, dir := range modPathToDir {
+		dirToModPath[dir] = modPath
+	}
+
+	var errs []string
+	for dir := range publicDirs {
+		deps := graph[dir]
+		if len(deps) == 0 {
+			continue
+		}
+
+		goModPath := filepath.Join(root, dir, "go.mod")
+		bs, err := os.ReadFile(goModPath)
+		if err != nil {
+			continue // missing go.mod is caught by other validators
+		}
+
+		// Parse require lines from go.mod.
+		required := parseGoModRequires(string(bs))
+
+		for _, depDir := range deps {
+			depModPath, ok := dirToModPath[depDir]
+			if !ok {
+				continue
+			}
+			if !required[depModPath] {
+				errs = append(errs, fmt.Sprintf("%s imports %s but go.mod does not require it", dir, depModPath))
+			}
+		}
+	}
+	sort.Strings(errs)
+	return errs
+}
+
+// parseGoModRequires extracts module paths from require directives in a go.mod file.
+func parseGoModRequires(goMod string) map[string]bool {
+	required := map[string]bool{}
+	inBlock := false
+	for line := range strings.SplitSeq(goMod, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "require (" {
+			inBlock = true
+			continue
+		}
+		if inBlock && line == ")" {
+			inBlock = false
+			continue
+		}
+		if inBlock {
+			// "module/path v1.2.3" or "module/path v1.2.3 // indirect"
+			if parts := strings.Fields(line); len(parts) >= 2 {
+				required[parts[0]] = true
+			}
+			continue
+		}
+		// Single-line require: "require module/path v1.2.3"
+		if after, ok := strings.CutPrefix(line, "require "); ok {
+			if parts := strings.Fields(after); len(parts) >= 2 {
+				required[parts[0]] = true
+			}
+		}
+	}
+	return required
 }
 
 // ValidateGoModPaths checks that every public package's go.mod has the

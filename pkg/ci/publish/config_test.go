@@ -57,6 +57,70 @@ func TestValidatePublicDeps(t *testing.T) {
 	})
 }
 
+func TestValidateGoModCompleteness(t *testing.T) {
+	root := t.TempDir()
+
+	// Create a public module that imports another monks.co module.
+	os.MkdirAll(filepath.Join(root, "cmd/tool"), 0755)
+	os.WriteFile(filepath.Join(root, "cmd/tool/go.mod"),
+		[]byte("module monks.co/tool\n\ngo 1.26.0\n"), 0644)
+
+	// Create the dependency module.
+	os.MkdirAll(filepath.Join(root, "pkg/util"), 0755)
+	os.WriteFile(filepath.Join(root, "pkg/util/go.mod"),
+		[]byte("module monks.co/pkg/util\n\ngo 1.26.0\n"), 0644)
+
+	graph := map[string][]string{
+		"cmd/tool": {"pkg/util"},
+		"pkg/util": {},
+	}
+	modPathToDir := map[string]string{
+		"monks.co/tool":     "cmd/tool",
+		"monks.co/pkg/util": "pkg/util",
+	}
+
+	t.Run("missing require", func(t *testing.T) {
+		public := map[string]bool{"cmd/tool": true}
+		errs := ValidateGoModCompleteness(root, graph, modPathToDir, public)
+		if len(errs) != 1 {
+			t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+		}
+		if !strings.Contains(errs[0], "monks.co/pkg/util") {
+			t.Errorf("expected error about monks.co/pkg/util, got: %s", errs[0])
+		}
+	})
+
+	t.Run("require present", func(t *testing.T) {
+		os.WriteFile(filepath.Join(root, "cmd/tool/go.mod"),
+			[]byte("module monks.co/tool\n\ngo 1.26.0\n\nrequire monks.co/pkg/util v0.1.0\n"), 0644)
+		public := map[string]bool{"cmd/tool": true}
+		errs := ValidateGoModCompleteness(root, graph, modPathToDir, public)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors, got: %v", errs)
+		}
+	})
+
+	t.Run("require in block", func(t *testing.T) {
+		os.WriteFile(filepath.Join(root, "cmd/tool/go.mod"),
+			[]byte("module monks.co/tool\n\ngo 1.26.0\n\nrequire (\n\tmonks.co/pkg/util v0.1.0\n)\n"), 0644)
+		public := map[string]bool{"cmd/tool": true}
+		errs := ValidateGoModCompleteness(root, graph, modPathToDir, public)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors, got: %v", errs)
+		}
+	})
+
+	t.Run("private module not checked", func(t *testing.T) {
+		os.WriteFile(filepath.Join(root, "cmd/tool/go.mod"),
+			[]byte("module monks.co/tool\n\ngo 1.26.0\n"), 0644)
+		public := map[string]bool{} // cmd/tool is not public
+		errs := ValidateGoModCompleteness(root, graph, modPathToDir, public)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors for private module, got: %v", errs)
+		}
+	})
+}
+
 func TestValidateLicenses(t *testing.T) {
 	root := t.TempDir()
 

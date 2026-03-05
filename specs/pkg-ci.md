@@ -31,7 +31,8 @@ Code: [pkg/ci/changedetect/](../pkg/ci/changedetect/)
 
 ## publish
 
-Publish config, validation, and git operations for mirror publishing.
+Publish config, validation, versioning, and git operations for mirror
+publishing.
 
 Code: [pkg/ci/publish/](../pkg/ci/publish/)
 
@@ -53,8 +54,33 @@ Code: [pkg/ci/publish/](../pkg/ci/publish/)
   packages depend on private packages.
 - `ValidateLicenses(root, publicDirs) []string` — errors if public
   packages lack LICENSE files.
+- `ValidateGoModCompleteness(root, graph, modPathToDir, publicDirs) []string` —
+  errors if a public module imports a monks.co dependency that isn't
+  declared in its go.mod (workspace resolution hides missing requires).
+  Not used by the validate task since the publish flow handles go.mod
+  rewriting automatically.
 - `ValidateGoModPaths(root, cfg) []string` — errors if go.mod module
   paths don't match config.
+
+### Versioning Functions
+
+- `NextVersion(track, latestTag, dir) string` — computes next version
+  by appending an incrementing number to the version track (e.g.,
+  track `"1.0"` + latest `v1.0.3` → `v1.0.4`; track `"1.0.0-beta"` +
+  latest `v1.0.0-beta.37` → `v1.0.0-beta.38`). If the track changed
+  or there's no prior tag, starts at 1.
+- `LatestTag(root, dir) (string, error)` — most recent publish tag
+  for a directory, using semver ordering.
+- `ChangedSinceTag(root, dir, tag) (bool, error)` — true if files
+  in dir changed between tag and HEAD.
+- `CreateTag(root, tag) error` — create a git tag at HEAD.
+
+### go.mod Rewriting
+
+- `RewriteGoMod(data []byte, requires map[string]string) ([]byte, error)` —
+  adds or updates require directives in a go.mod file. Used at publish
+  time to inject monks.co/* dependencies that the workspace normally
+  resolves.
 
 ### Git Operations
 
@@ -63,4 +89,5 @@ Code: [pkg/ci/publish/](../pkg/ci/publish/)
 - `CloneSource(root) string` — clone path (jj git dir or repo root).
 - `SubtreeSplit`, `MirrorExists`, `CreateMirror`, `PushToMirror`,
   `PushTagToMirror`, `FindMonorepoTags`, `MirrorTag`, `FilterRepo`.
-- `Run(root, cfg, dryRun) error` — full publish flow.
+- `Run(w, root, cfg, dryRun) error` — full publish flow with change
+  detection, versioning, go.mod rewriting, and tagging.

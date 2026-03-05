@@ -140,6 +140,11 @@
   cmd = 'go tool govulncheck monks.co/...'
 
 [[task]]
+  id = 'publish-validate'
+  type = 'short'
+  cmd = 'go run ./cmd/publish -validate'
+
+[[task]]
   id = 'staticcheck'
   type = 'short'
   cmd = 'go tool staticcheck monks.co/...'
@@ -169,6 +174,7 @@
     'go-test',
     'gofix',
     'govulncheck',
+    'publish-validate',
     'staticcheck'
   ]
 

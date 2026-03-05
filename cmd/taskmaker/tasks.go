@@ -39,7 +39,12 @@ var baseTasks = []*task{
 	{
 		Id:           "test",
 		Type:         "short",
-		Dependencies: []string{"staticcheck", "go-test", "gofix", "govulncheck"},
+		Dependencies: []string{"staticcheck", "go-test", "gofix", "govulncheck", "publish-validate"},
+	},
+	{
+		Id:   "publish-validate",
+		Type: "short",
+		Cmd:  "go run ./cmd/publish -validate",
 	},
 	{
 		Id:   "gofix",
