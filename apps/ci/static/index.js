@@ -459,31 +459,53 @@
       }
     });
   }
-  function streamFetch(url, pre, lastLineEl) {
-    const ansi = new AnsiUp();
-    fetch(url + "?stream=1").then((resp) => {
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      function read() {
-        reader.read().then((result) => {
-          if (result.done)
-            return;
-          const text = decoder.decode(result.value, { stream: true });
-          pre.innerHTML += ansi.ansi_to_html(text);
-          pre.scrollTop = pre.scrollHeight;
-          const lines = text.split("\n");
-          for (let i = lines.length - 1; i >= 0; i--) {
-            if (lines[i].trim() !== "") {
-              const lineAnsi = new AnsiUp();
-              lastLineEl.innerHTML = lineAnsi.ansi_to_html(lines[i].substring(0, 120));
-              break;
-            }
-          }
-          read();
-        });
+  function updateLastLine(text, lastLineEl) {
+    const lines = text.split("\n");
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].trim() !== "") {
+        const lineAnsi = new AnsiUp();
+        lastLineEl.innerHTML = lineAnsi.ansi_to_html(lines[i].substring(0, 120));
+        break;
       }
-      read();
-    });
+    }
+  }
+  function streamFetch(url, pre, lastLineEl) {
+    let attempt = 0;
+    const baseDelay = 500;
+    const maxBackoff = 3e4;
+    function connect() {
+      const ansi = new AnsiUp();
+      pre.innerHTML = "";
+      fetch(url + "?stream=1").then((resp) => {
+        attempt = 0;
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        function read() {
+          reader.read().then((result) => {
+            if (result.done)
+              return;
+            const text = decoder.decode(result.value, { stream: true });
+            pre.innerHTML += ansi.ansi_to_html(text);
+            pre.scrollTop = pre.scrollHeight;
+            updateLastLine(text, lastLineEl);
+            read();
+          }).catch(() => scheduleReconnect());
+        }
+        read();
+      }).catch(() => scheduleReconnect());
+    }
+    function scheduleReconnect() {
+      const container = document.getElementById("run-page");
+      if (container?.dataset.runStatus !== "running") {
+        staticFetch(url, pre);
+        return;
+      }
+      attempt++;
+      const delay = Math.min(baseDelay * 2 ** (attempt - 1), maxBackoff);
+      const jitter = delay * 0.5 + Math.random() * delay * 0.5;
+      setTimeout(connect, jitter);
+    }
+    connect();
   }
   function staticFetch(url, pre) {
     const ansi = new AnsiUp();
