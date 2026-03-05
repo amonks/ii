@@ -1,3 +1,3 @@
-module github.com/amonks/rootsync
+module monks.co/rootsync
 
-go 1.21.3
+go 1.26.0

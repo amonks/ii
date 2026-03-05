@@ -18,23 +18,33 @@ func TestMain(m *testing.M) {
 
 func createTempDirs(t *testing.T) (string, string, func()) {
 	t.Helper()
-	
+
 	sourceDir, err := os.MkdirTemp("", "rootsync-source-*")
 	if err != nil {
 		t.Fatalf("failed to create temp source dir: %v", err)
 	}
-	
+	// Resolve symlinks so paths are consistent with filepath.Abs
+	// (macOS /var -> /private/var).
+	sourceDir, err = filepath.EvalSymlinks(sourceDir)
+	if err != nil {
+		t.Fatalf("failed to resolve source dir symlinks: %v", err)
+	}
+
 	destDir, err := os.MkdirTemp("", "rootsync-dest-*")
 	if err != nil {
 		os.RemoveAll(sourceDir)
 		t.Fatalf("failed to create temp dest dir: %v", err)
 	}
-	
+	destDir, err = filepath.EvalSymlinks(destDir)
+	if err != nil {
+		t.Fatalf("failed to resolve dest dir symlinks: %v", err)
+	}
+
 	cleanup := func() {
 		os.RemoveAll(sourceDir)
 		os.RemoveAll(destDir)
 	}
-	
+
 	return sourceDir, destDir, cleanup
 }
 
