@@ -75,7 +75,7 @@ func Open(path string, opts OpenOptions) (*DB, error) {
 		return nil, err
 	}
 
-	if err := migrate(sqlDB); err != nil {
+	if err := runMigrations(sqlDB); err != nil {
 		_ = sqlDB.Close()
 		return nil, err
 	}

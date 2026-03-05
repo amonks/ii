@@ -42,22 +42,18 @@ connection.
 
 ## Migrations
 
-Two migration strategies are used across the codebase:
-
-### Embedded SQL Migrations
+All apps use `pkg/migrate` via the `MigrateFS` convenience method:
 
 ```go
-migrations, _ := database.LoadMigrationsFromFS(migrationsFS, "migrations")
-db.Migrate(migrations)
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
+db.MigrateFS(ctx, migrationsFS, "migrations", "001_baseline.sql")
 ```
 
-`LoadMigrationsFromFS` loads and sorts `.sql` files from an `embed.FS`.
-`Migrate` applies them in order, tracking applied migrations and tolerating
-duplicate-column `ALTER TABLE` errors (best-effort schema evolution).
-
-### GORM AutoMigrate
-
-Simpler apps use `db.AutoMigrate(&Model{})` directly.
+`MigrateFS` extracts the underlying `*sql.DB` and delegates to
+`migrate.Run`. Baseline filenames are recorded without execution on
+existing databases. See [pkg-migrate.md](pkg-migrate.md) for details.
 
 ## Dependencies
 

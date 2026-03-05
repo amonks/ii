@@ -1,38 +1,22 @@
 package db
 
 import (
-	_ "embed"
+	"context"
+	"embed"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"monks.co/pkg/migrate"
 )
 
-var (
-	//go:embed schema.sql
-	schema string
-
-	//go:embed schema_tv.sql
-	tvSchema string
-
-	//go:embed migrate_tv.sql
-	migrateTVSchema string
-
-	//go:embed migrate_episode_files.sql
-	migrateEpisodeFilesSchema string
-
-	//go:embed migrate_season_status.sql
-	migrateSeasonStatusSchema string
-
-	//go:embed migrate_ignore_type.sql
-	migrateIgnoreTypeSchema string
-)
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 var ErrCollision = fmt.Errorf("collision")
 
@@ -225,44 +209,14 @@ func (db *DB) Start() error {
 
 	db.DB = gormdb
 
-	if err := gormdb.Exec(schema).Error; err != nil {
-		return fmt.Errorf("error migrating movie schema: %w", err)
+	sqlDB, err := gormdb.DB()
+	if err != nil {
+		return fmt.Errorf("getting sql.DB: %w", err)
 	}
-
-	if err := gormdb.Exec(tvSchema).Error; err != nil {
-		return fmt.Errorf("error migrating TV schema: %w", err)
-	}
-
-	// Run TV migration scripts (safe to run multiple times)
-	if err := gormdb.Exec(migrateTVSchema).Error; err != nil {
-		// Ignore duplicate column errors - this is expected if the column already exists
-		if !strings.Contains(err.Error(), "duplicate column name") {
-			return fmt.Errorf("error running TV migration: %w", err)
-		}
-	}
-
-	// Run episode_files migration script (safe to run multiple times)
-	if err := gormdb.Exec(migrateEpisodeFilesSchema).Error; err != nil {
-		// Ignore duplicate column errors - this is expected if the column already exists
-		if !strings.Contains(err.Error(), "duplicate column name") {
-			return fmt.Errorf("error running episode_files migration: %w", err)
-		}
-	}
-
-	// Run season_status migration script (safe to run multiple times)
-	if err := gormdb.Exec(migrateSeasonStatusSchema).Error; err != nil {
-		// Ignore duplicate column errors - this is expected if the column already exists
-		if !strings.Contains(err.Error(), "duplicate column name") {
-			return fmt.Errorf("error running season_status migration: %w", err)
-		}
-	}
-
-	// Run ignore_type migration script (safe to run multiple times)
-	if err := gormdb.Exec(migrateIgnoreTypeSchema).Error; err != nil {
-		// Ignore duplicate column errors - this is expected if the column already exists
-		if !strings.Contains(err.Error(), "duplicate column name") {
-			return fmt.Errorf("error running ignore_type migration: %w", err)
-		}
+	if err := migrate.Run(context.Background(), migrate.Config{
+		DB: sqlDB, FS: migrationsFS, Dir: "migrations", Baseline: []string{"001_baseline.sql"},
+	}); err != nil {
+		return fmt.Errorf("running migrations: %w", err)
 	}
 
 	if err := db.PopulateMovieWatches(); err != nil {

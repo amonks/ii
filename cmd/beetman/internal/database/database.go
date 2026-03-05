@@ -1,32 +1,25 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"monks.co/pkg/migrate"
 )
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 // SQLiteDB implements the Database interface using SQLite
 type SQLiteDB struct {
 	db *sql.DB
 }
-
-const schema = `
-CREATE TABLE IF NOT EXISTS albums (
-    directory_name TEXT PRIMARY KEY,
-    discovery_time TEXT,
-    mtime         TEXT,
-    import_time   TEXT NULL,
-    status        TEXT,
-    failure_count INTEGER DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_mtime ON albums(mtime);
-`
 
 const timeFormat = "2006-01-02 15:04:05.999999999Z07:00"
 
@@ -47,9 +40,11 @@ func New(dataDir string) (*SQLiteDB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	if _, err := db.Exec(schema); err != nil {
+	if err := migrate.Run(context.Background(), migrate.Config{
+		DB: db, FS: migrationsFS, Dir: "migrations", Baseline: []string{"001_baseline.sql"},
+	}); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("failed to create schema: %w", err)
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return &SQLiteDB{db: db}, nil

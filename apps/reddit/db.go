@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	emb "embed"
 	"monks.co/pkg/database"
 )
@@ -18,13 +19,9 @@ func NewModel() (*model, error) {
 		return nil, err
 	}
 
-	// Load migrations from embedded filesystem
-	migrations, err := database.LoadMigrationsFromFS(migrationsFS, "migrations")
-	if err != nil {
-		return nil, err
-	}
-
-	if err := db.Migrate(migrations); err != nil {
+	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations",
+		"001_create_posts_table.sql", "002_add_is_starred_column.sql",
+	); err != nil {
 		return nil, err
 	}
 

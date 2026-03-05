@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"time"
@@ -23,11 +24,9 @@ func NewModel() (*Model, error) {
 		return nil, fmt.Errorf("opening ci database: %w", err)
 	}
 
-	migrations, err := database.LoadMigrationsFromFS(migrationsFS, "migrations")
-	if err != nil {
-		return nil, fmt.Errorf("loading migrations: %w", err)
-	}
-	if err := db.Migrate(migrations); err != nil {
+	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations",
+		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql",
+	); err != nil {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 
@@ -36,11 +35,9 @@ func NewModel() (*Model, error) {
 
 // NewModelFromDB creates a model from an existing database connection (for testing).
 func NewModelFromDB(db *database.DB) (*Model, error) {
-	migrations, err := database.LoadMigrationsFromFS(migrationsFS, "migrations")
-	if err != nil {
-		return nil, fmt.Errorf("loading migrations: %w", err)
-	}
-	if err := db.Migrate(migrations); err != nil {
+	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations",
+		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql",
+	); err != nil {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 	return &Model{db: db}, nil

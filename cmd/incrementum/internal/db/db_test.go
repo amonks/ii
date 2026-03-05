@@ -53,7 +53,7 @@ func TestOpenIsIdempotent(t *testing.T) {
 	}
 	defer store.Close()
 
-	assertSchemaVersion(t, store.sql, 1)
+	assertMigrationApplied(t, store.sql, "001_initial.sql")
 }
 
 func TestOpenCreatesParentDir(t *testing.T) {
@@ -256,15 +256,12 @@ func assertPragma(t *testing.T, db *sql.DB, name string, expected string) {
 	}
 }
 
-func assertSchemaVersion(t *testing.T, db *sql.DB, expected int) {
+func assertMigrationApplied(t *testing.T, db *sql.DB, filename string) {
 	t.Helper()
-	row := db.QueryRow("SELECT version FROM schema_version LIMIT 1;")
-	var version int
-	if err := row.Scan(&version); err != nil {
-		t.Fatalf("read schema version: %v", err)
-	}
-	if version != expected {
-		t.Fatalf("schema version = %d, expected %d", version, expected)
+	row := db.QueryRow("SELECT migration_filename FROM applied_migrations WHERE migration_filename = ?;", filename)
+	var name string
+	if err := row.Scan(&name); err != nil {
+		t.Fatalf("migration %s not found in applied_migrations: %v", filename, err)
 	}
 }
 

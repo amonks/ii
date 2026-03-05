@@ -119,7 +119,6 @@
     'cmd/incrementum/generate',
     'cmd/run/generate',
     'compress-statics',
-    'pkg/migrate/generate',
     'taskmaker',
     'templ',
     'zone2terraform'

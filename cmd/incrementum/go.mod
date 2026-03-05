@@ -13,7 +13,7 @@ require (
 	github.com/spf13/pflag v1.0.9
 	golang.org/x/sync v0.19.0
 	golang.org/x/term v0.40.0
-	modernc.org/sqlite v1.44.3
+	modernc.org/sqlite v1.46.1
 )
 
 require (

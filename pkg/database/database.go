@@ -2,13 +2,10 @@ package database
 
 import (
 	"context"
-	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/benbjohnson/litestream"
@@ -16,6 +13,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"monks.co/pkg/env"
+	"monks.co/pkg/migrate"
 	"monks.co/pkg/tailnet"
 )
 
@@ -89,62 +87,17 @@ func tailnetReady() bool {
 	}
 }
 
-// Migration represents a database migration
-type Migration struct {
-	ID   string
-	SQL  string
-}
-
-// LoadMigrationsFromFS loads migrations from an embedded filesystem
-func LoadMigrationsFromFS(fs embed.FS, dir string) ([]Migration, error) {
-	entries, err := fs.ReadDir(dir)
+// MigrateFS runs migrations from an embedded filesystem using pkg/migrate.
+func (db *DB) MigrateFS(ctx context.Context, fsys fs.FS, dir string, baseline ...string) error {
+	sqlDB, err := db.DB.DB()
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	var migrations []Migration
-	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".sql") {
-			continue
-		}
-
-		content, err := fs.ReadFile(filepath.Join(dir, entry.Name()))
-		if err != nil {
-			return nil, err
-		}
-
-		// Use filename without extension as ID
-		id := strings.TrimSuffix(entry.Name(), ".sql")
-		migrations = append(migrations, Migration{
-			ID:  id,
-			SQL: string(content),
-		})
-	}
-
-	// Sort migrations by filename to ensure proper order
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].ID < migrations[j].ID
+	return migrate.Run(ctx, migrate.Config{
+		DB:       sqlDB,
+		FS:       fsys,
+		Dir:      dir,
+		Baseline: baseline,
 	})
-
-	return migrations, nil
 }
 
-// Migrate runs a sequence of migrations
-func (db *DB) Migrate(migrations []Migration) error {
-	for _, migration := range migrations {
-		if err := db.Exec(migration.SQL).Error; err != nil {
-			// Ignore idempotency errors from re-running migrations
-			if strings.Contains(err.Error(), "duplicate column name") {
-				log.Printf("Migration %s: column already exists, skipping", migration.ID)
-				continue
-			}
-			if strings.Contains(err.Error(), "already exists") {
-				log.Printf("Migration %s: already exists, skipping", migration.ID)
-				continue
-			}
-			return fmt.Errorf("migration %s failed: %w", migration.ID, err)
-		}
-		log.Printf("Applied migration: %s", migration.ID)
-	}
-	return nil
-}

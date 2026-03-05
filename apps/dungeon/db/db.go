@@ -1,11 +1,16 @@
 package db
 
 import (
+	"context"
+	"embed"
 	"fmt"
 	"time"
 
 	"monks.co/pkg/database"
 )
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 type DB struct {
 	*database.DB
@@ -47,57 +52,13 @@ type Marker struct {
 	Letter string `gorm:"column:letter" json:"letter"`
 }
 
-const schema = `
-CREATE TABLE IF NOT EXISTS maps (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	type TEXT NOT NULL,
-	created_at DATETIME
-);
-
-CREATE TABLE IF NOT EXISTS cells (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	map_id INTEGER NOT NULL REFERENCES maps(id),
-	x INTEGER NOT NULL,
-	y INTEGER NOT NULL,
-	is_explored INTEGER NOT NULL DEFAULT 0,
-	text TEXT NOT NULL DEFAULT '',
-	hue INTEGER,
-	room_id INTEGER,
-	UNIQUE(map_id, x, y)
-);
-CREATE INDEX IF NOT EXISTS cells_by_map ON cells(map_id);
-
-CREATE TABLE IF NOT EXISTS walls (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	map_id INTEGER NOT NULL REFERENCES maps(id),
-	x1 INTEGER NOT NULL,
-	y1 INTEGER NOT NULL,
-	x2 INTEGER NOT NULL,
-	y2 INTEGER NOT NULL,
-	type TEXT NOT NULL,
-	UNIQUE(map_id, x1, y1, x2, y2)
-);
-CREATE INDEX IF NOT EXISTS walls_by_map ON walls(map_id);
-
-CREATE TABLE IF NOT EXISTS markers (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	map_id INTEGER NOT NULL REFERENCES maps(id),
-	x INTEGER NOT NULL,
-	y INTEGER NOT NULL,
-	letter TEXT NOT NULL,
-	UNIQUE(map_id, x, y)
-);
-CREATE INDEX IF NOT EXISTS markers_by_map ON markers(map_id);
-`
-
 func New() (*DB, error) {
 	d, err := database.OpenFromDataFolder("dungeon")
 	if err != nil {
 		return nil, err
 	}
-	if err := d.Exec(schema).Error; err != nil {
-		return nil, fmt.Errorf("schema: %w", err)
+	if err := d.MigrateFS(context.Background(), migrationsFS, "migrations", "001_baseline.sql"); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
 	}
 	return &DB{d}, nil
 }
@@ -107,8 +68,8 @@ func NewMemory() (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := d.Exec(schema).Error; err != nil {
-		return nil, fmt.Errorf("schema: %w", err)
+	if err := d.MigrateFS(context.Background(), migrationsFS, "migrations"); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
 	}
 	return &DB{d}, nil
 }

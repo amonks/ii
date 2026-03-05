@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
+	"embed"
 	"fmt"
 	"time"
 
 	"gorm.io/gorm"
 	"monks.co/pkg/database"
 )
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 type DB struct {
 	*database.DB
@@ -18,9 +23,8 @@ func NewDB() (*DB, error) {
 		return nil, fmt.Errorf("opening /data/tank/venta/venta.db: %w", err)
 	}
 
-	// Only migrate the current structures - no more legacy tables
-	if err := db.AutoMigrate(&DataPoint{}, &WindowAggregate{}); err != nil {
-		return nil, err
+	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations", "001_baseline.sql"); err != nil {
+		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 
 	return &DB{db}, nil
