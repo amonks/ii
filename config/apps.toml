@@ -159,7 +159,7 @@
   vm_size = "shared-cpu-8x"
   vm_memory = "2gb"
   packages = ["iptables", "ip6tables", "sqlite"]
-  files = ["config/proxy.toml", "apps/proxy/static/"]
+  files = ["config/proxy.toml", "config/publish.toml", "apps/proxy/static/"]
   cmd = ["/app/app", "-machine", "fly"]
 
   [[apps.proxy.routes]]
