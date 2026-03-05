@@ -120,7 +120,7 @@ on exhaustion the data is dropped (losing a few output lines is
 acceptable). Only connection errors and 5xx are retried; 4xx
 responses are not retried.
 
-**Test jobs**: Use the `run` library (github.com/amonks/run)
+**Test jobs**: Use the `run` library (monks.co/run)
 programmatically via `taskfile.Load` + `runner.New`. A custom
 `MultiWriter` implementation returns a `StreamWriter` per task ID,
 giving separate output streams for each task (go-test, staticcheck,
@@ -286,4 +286,4 @@ image.
 - `pkg/serve` — HTTP mux
 - `pkg/tailnet` — tailnet membership (orchestrator only; builder uses kernel tailscale)
 - `pkg/reqlog` — structured logging
-- `github.com/amonks/run` — task runner (programmatic API for test jobs)
+- `monks.co/run` — task runner (programmatic API for test jobs)

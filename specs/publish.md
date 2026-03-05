@@ -29,7 +29,7 @@ dir = "pkg/set"
 
 [[package]]
 dir = "cmd/run"
-module_path = "github.com/amonks/run"
+module_path = "monks.co/run"
 mirror = "github.com/amonks/run"  # explicit → gets its own repo
 ```
 
