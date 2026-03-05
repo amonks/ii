@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"monks.co/pkg/flyapi"
 	"monks.co/pkg/reqlog"
@@ -141,7 +142,9 @@ func (h *TriggerHandler) startNewRun(w http.ResponseWriter, r *http.Request, sha
 }
 
 // StartPendingBuild checks for a pending trigger and starts a new build if one exists.
-func (h *TriggerHandler) StartPendingBuild() {
+// If prevMachineID is non-empty, it waits for that machine to be destroyed before
+// creating the new builder, so that the shared volume is released.
+func (h *TriggerHandler) StartPendingBuild(prevMachineID string) {
 	sha, ok, err := h.model.PopPendingTrigger()
 	if err != nil {
 		slog.Error("popping pending trigger", "error", err)
@@ -152,6 +155,16 @@ func (h *TriggerHandler) StartPendingBuild() {
 	}
 
 	slog.Info("starting pending build", "sha", sha)
+
+	// Wait for the previous builder machine to be fully destroyed so the
+	// shared volume (monks_ci_builder_cache) is detached and available.
+	if prevMachineID != "" && h.fly != nil {
+		slog.Info("waiting for previous builder to be destroyed", "machine_id", prevMachineID)
+		if err := h.fly.WaitForState(context.Background(), prevMachineID, "destroyed", 5*time.Minute); err != nil {
+			slog.Warn("waiting for previous builder destruction", "error", err, "machine_id", prevMachineID)
+			// Continue anyway — the volume may have been released.
+		}
+	}
 
 	baseSHA, err := h.model.LastSuccessfulSHA()
 	if err != nil {

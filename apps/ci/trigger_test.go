@@ -173,7 +173,7 @@ func TestStartPendingBuild(t *testing.T) {
 	m, handler := testTriggerHandler(t)
 
 	// No pending trigger — should be a no-op.
-	handler.StartPendingBuild()
+	handler.StartPendingBuild("")
 	runs, _ := m.RecentRuns(10)
 	if len(runs) != 0 {
 		t.Errorf("expected 0 runs, got %d", len(runs))
@@ -184,7 +184,7 @@ func TestStartPendingBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler.StartPendingBuild()
+	handler.StartPendingBuild("")
 
 	runs, _ = m.RecentRuns(10)
 	if len(runs) != 1 {
@@ -201,6 +201,67 @@ func TestStartPendingBuild(t *testing.T) {
 	_, ok, _ := m.PopPendingTrigger()
 	if ok {
 		t.Error("expected pending trigger to be consumed")
+	}
+}
+
+func TestStartPendingBuildWaitsForPreviousMachine(t *testing.T) {
+	m := testModel(t)
+
+	// Track which Fly API endpoints are called.
+	var waitCalled bool
+	var createCalled bool
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/wait") {
+			waitCalled = true
+			// Verify it's waiting for the right machine and "destroyed" state.
+			if !strings.Contains(r.URL.Path, "prev-machine-id") {
+				t.Errorf("expected wait for prev-machine-id, got %s", r.URL.Path)
+			}
+			if r.URL.Query().Get("state") != "destroyed" {
+				t.Errorf("expected wait for destroyed state, got %s", r.URL.Query().Get("state"))
+			}
+		}
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/machines") {
+			createCalled = true
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "new-machine-456",
+			"state": "created",
+		})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	mockRegistry := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"tags": []string{"deployment-01AAA"},
+		})
+	}))
+	t.Cleanup(mockRegistry.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
+	flyClient.RegistryURL = mockRegistry.URL
+
+	handler := &TriggerHandler{
+		model: m,
+		fly:   flyClient,
+		builderConfig: BuilderConfig{
+			FallbackImage: "test-image",
+			Region:        "ord",
+		},
+	}
+
+	if err := m.SetPendingTrigger("pending-sha"); err != nil {
+		t.Fatal(err)
+	}
+
+	handler.StartPendingBuild("prev-machine-id")
+
+	if !waitCalled {
+		t.Error("expected WaitForState to be called for previous machine")
+	}
+	if !createCalled {
+		t.Error("expected CreateMachine to be called after waiting")
 	}
 }
 

@@ -362,8 +362,15 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check for pending trigger and start a new build if one exists.
+	// Pass the finishing run's machine ID so we can wait for it to be
+	// destroyed before mounting the shared volume on a new machine.
 	if a.trigger != nil {
-		go a.trigger.StartPendingBuild()
+		run, _, _ := a.model.RunWithJobs(runID)
+		var prevMachineID string
+		if run != nil && run.MachineID != nil {
+			prevMachineID = *run.MachineID
+		}
+		go a.trigger.StartPendingBuild(prevMachineID)
 	}
 
 	w.WriteHeader(http.StatusOK)
