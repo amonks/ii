@@ -171,7 +171,7 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 									<details class="stream-viewer" data-stream-url={ fmt.Sprintf("output/%d/%s/%s", run.ID, j.Name, s.Name) } data-last-line={ s.LastLine } data-stream-status={ s.Status }>
 										<summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
 											<span class={ statusClass(s.Status) }>&#x25cf;</span>
-											{ " " }{ s.Name }
+											{ " " }{ s.DisplayName }
 											if s.DurationMs != nil {
 												<span class="small" style="margin-left: 0.5rem;">{ fmt.Sprintf("%dms", *s.DurationMs) }</span>
 											}

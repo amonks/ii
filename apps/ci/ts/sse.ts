@@ -2,6 +2,7 @@ import { initOneStream } from "./streams";
 
 export interface StreamInfo {
   name: string;
+  display_name: string;
   status: string;
   duration_ms?: number;
   error?: string;
@@ -187,7 +188,7 @@ function updateJobsTable(state: RunState): void {
             <details class="stream-viewer" data-stream-url="${streamUrl}" data-last-line="" data-stream-status="${escapeHtml(stream.status)}">
               <summary class="mono small" style="cursor: pointer; padding: 0.25rem 0;">
                 <span class="${statusClass(stream.status)}">&#x25cf;</span>
-                ${" "}${escapeHtml(stream.name)}${durationText}
+                ${" "}${escapeHtml(stream.display_name || stream.name)}${durationText}
                 <span class="stream-last-line" style="color: #8b949e; margin-left: 0.5rem;"></span>
               </summary>
               <pre class="stream-output" style="max-height: 12em; overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 3px; padding: 0.5rem; font-size: 0.8125rem;"></pre>

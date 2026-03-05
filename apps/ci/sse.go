@@ -39,10 +39,11 @@ type jobJSON struct {
 }
 
 type streamJSON struct {
-	Name       string  `json:"name"`
-	Status     string  `json:"status"`
-	DurationMs *int64  `json:"duration_ms,omitempty"`
-	Error      *string `json:"error,omitempty"`
+	Name        string  `json:"name"`
+	DisplayName string  `json:"display_name"`
+	Status      string  `json:"status"`
+	DurationMs  *int64  `json:"duration_ms,omitempty"`
+	Error       *string `json:"error,omitempty"`
 }
 
 // buildRunState queries the model and output directory to build a full state snapshot.
@@ -90,10 +91,11 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 		if jobStreams, ok := streamsByJobID[j.ID]; ok {
 			for _, s := range jobStreams {
 				state.Streams[j.Name] = append(state.Streams[j.Name], streamJSON{
-					Name:       s.Name,
-					Status:     s.Status,
-					DurationMs: s.DurationMs,
-					Error:      s.Error,
+					Name:        s.Name,
+					DisplayName: decodeStreamName(s.Name),
+					Status:      s.Status,
+					DurationMs:  s.DurationMs,
+					Error:       s.Error,
 				})
 			}
 			continue
@@ -111,8 +113,9 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 		for _, e := range entries {
 			name := strings.TrimSuffix(e.Name(), ".log")
 			state.Streams[j.Name] = append(state.Streams[j.Name], streamJSON{
-				Name:   name,
-				Status: j.Status,
+				Name:        name,
+				DisplayName: decodeStreamName(name),
+				Status:      j.Status,
 			})
 		}
 	}

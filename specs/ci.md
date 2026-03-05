@@ -126,7 +126,10 @@ programmatically via `taskfile.Load` + `runner.New`. A custom
 giving separate output streams for each task (go-test, staticcheck,
 templ, etc). After `run.Start()` returns, `run.TaskStatus()` is
 called for each task ID to set per-stream status (success, failed,
-or skipped).
+or skipped). Task IDs from sub-modules contain slashes (e.g.
+`apps/ci/build-js`); these are encoded as `~` for stream names
+(`apps~ci~build-js`) since stream names appear in HTTP URL path
+segments. The dashboard decodes `~` back to `/` for display.
 
 **Deploy job**: A single "deploy" job with one stream per fly app
 plus optional streams for image rebuilds. Unaffected apps get a

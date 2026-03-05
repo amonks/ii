@@ -174,6 +174,73 @@ cmd = "echo hello from task"
 	}
 }
 
+func TestRunTestsSubmoduleTasksEncodeStreamNames(t *testing.T) {
+	handler := newRecordingHandler()
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	// Create a root dir with a task that depends on a sub-module task.
+	dir := t.TempDir()
+	rootTasksToml := `
+[[task]]
+id = "generate"
+type = "short"
+dependencies = ["sub/build"]
+
+[[task]]
+id = "local"
+type = "short"
+cmd = "echo local"
+`
+	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(rootTasksToml), 0644)
+
+	// Create the sub-module task.
+	subDir := filepath.Join(dir, "sub")
+	os.MkdirAll(subDir, 0755)
+	subTasksToml := `
+[[task]]
+id = "build"
+type = "short"
+cmd = "echo sub-output"
+`
+	os.WriteFile(filepath.Join(subDir, "tasks.toml"), []byte(subTasksToml), 0644)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := runTask(ctx, dir, "generate", reporter)
+	if err != nil {
+		t.Fatalf("runTask failed: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	// The sub-module task "sub/build" should have its stream name encoded
+	// as "sub~build" so it works as a single URL path segment.
+	outSub := handler.getOutput("/api/runs/1/jobs/generate/output/sub~build")
+	if !strings.Contains(outSub, "sub-output") {
+		t.Errorf("expected sub/build output at encoded path, got %q (paths=%v)", outSub, handler.outputPaths())
+	}
+
+	// Check that stream start/finish use encoded names too.
+	reqs := handler.getRequests()
+	var foundStreamStart bool
+	for _, r := range reqs {
+		if r.Path == "/api/runs/1/jobs/generate/streams/sub~build/start" {
+			foundStreamStart = true
+		}
+	}
+	if !foundStreamStart {
+		var paths []string
+		for _, r := range reqs {
+			paths = append(paths, r.Path)
+		}
+		t.Errorf("expected stream start for sub~build, got paths=%v", paths)
+	}
+}
+
 func TestRunTestsMultipleTasksGetSeparateStreams(t *testing.T) {
 	handler := newRecordingHandler()
 	srv := httptest.NewServer(handler)

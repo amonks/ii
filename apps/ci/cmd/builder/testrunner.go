@@ -11,6 +11,12 @@ import (
 	"monks.co/run/taskfile"
 )
 
+// encodeStreamName makes a task ID safe for use as a single URL path segment
+// by replacing "/" with "~".
+func encodeStreamName(name string) string {
+	return strings.ReplaceAll(name, "/", "~")
+}
+
 // RunTests runs the generate and test tasks using the run library
 // programmatically, streaming per-task output to the orchestrator.
 func RunTests(ctx context.Context, root string, reporter *Reporter) error {
@@ -57,14 +63,21 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 	}
 
 	// Start streams for each non-internal task ID.
+	// Encode IDs to be URL-safe (task IDs like "apps/ci/build-js"
+	// contain slashes which break HTTP path routing).
 	ids := run.IDs()
-	var streamIDs []string
+	type streamMapping struct {
+		taskID     string
+		streamName string
+	}
+	var streams []streamMapping
 	for _, id := range ids {
 		if strings.HasPrefix(id, "@") {
 			continue
 		}
-		streamIDs = append(streamIDs, id)
-		reporter.StartStream(taskName, id)
+		sn := encodeStreamName(id)
+		streams = append(streams, streamMapping{taskID: id, streamName: sn})
+		reporter.StartStream(taskName, sn)
 	}
 
 	err = run.Start(ctx)
@@ -73,8 +86,8 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 	mw.CloseAll()
 
 	// Finish streams with per-task status from the runner.
-	for _, id := range streamIDs {
-		ts := run.TaskStatus(id)
+	for _, s := range streams {
+		ts := run.TaskStatus(s.taskID)
 		streamStatus := "skipped"
 		switch ts {
 		case runner.TaskStatusDone:
@@ -84,7 +97,7 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 		case runner.TaskStatusRunning:
 			streamStatus = "success" // was still running when run ended normally
 		}
-		reporter.FinishStream(taskName, id, FinishStreamResult{
+		reporter.FinishStream(taskName, s.streamName, FinishStreamResult{
 			Status: streamStatus,
 		})
 	}
@@ -117,7 +130,7 @@ type streamMultiWriter struct {
 }
 
 func (m *streamMultiWriter) Writer(id string) io.Writer {
-	sw := m.reporter.StreamWriter(m.jobName, id)
+	sw := m.reporter.StreamWriter(m.jobName, encodeStreamName(id))
 	m.writers[id] = sw
 	return sw
 }

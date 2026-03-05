@@ -122,11 +122,17 @@ func dashboardIndex(model *Model) http.HandlerFunc {
 
 // StreamInfo holds metadata about a single output stream for template rendering.
 type StreamInfo struct {
-	Name       string
-	Status     string
-	DurationMs *int64
-	Error      *string
-	LastLine   string
+	Name        string // URL-safe name (~ instead of /)
+	DisplayName string // human-readable name (/ restored)
+	Status      string
+	DurationMs  *int64
+	Error       *string
+	LastLine    string
+}
+
+// decodeStreamName restores "/" from "~" in encoded stream names.
+func decodeStreamName(name string) string {
+	return strings.ReplaceAll(name, "~", "/")
 }
 
 func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
@@ -166,11 +172,12 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 					dir := filepath.Join(outputDir, idStr, j.Name)
 					lastLine := readLastLine(filepath.Join(dir, s.Name+".log"))
 					streams[j.Name] = append(streams[j.Name], StreamInfo{
-						Name:       s.Name,
-						Status:     s.Status,
-						DurationMs: s.DurationMs,
-						Error:      s.Error,
-						LastLine:   lastLine,
+						Name:        s.Name,
+						DisplayName: decodeStreamName(s.Name),
+						Status:      s.Status,
+						DurationMs:  s.DurationMs,
+						Error:       s.Error,
+						LastLine:    lastLine,
 					})
 				}
 				continue
@@ -189,9 +196,10 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 				name := strings.TrimSuffix(e.Name(), ".log")
 				lastLine := readLastLine(filepath.Join(dir, e.Name()))
 				streams[j.Name] = append(streams[j.Name], StreamInfo{
-					Name:     name,
-					Status:   j.Status,
-					LastLine: lastLine,
+					Name:        name,
+					DisplayName: decodeStreamName(name),
+					Status:      j.Status,
+					LastLine:    lastLine,
 				})
 			}
 		}
