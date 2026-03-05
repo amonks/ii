@@ -121,8 +121,10 @@ func AffectedApps(flyApps []string, changed []string, resolveDeps func(pkgPath s
 	affected := map[string]bool{}
 
 	for _, file := range changed {
-		// Root go.mod/go.sum or config/apps.toml → deploy all.
-		if file == "go.mod" || file == "go.sum" || file == "config/apps.toml" {
+		// Root go.mod/go.sum or config/ changes → deploy all.
+		// config/apps.toml affects routing, config/publish.toml affects
+		// the proxy's vanity import handler.
+		if file == "go.mod" || file == "go.sum" || strings.HasPrefix(file, "config/") {
 			return flyApps, nil
 		}
 
