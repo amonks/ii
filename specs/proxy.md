@@ -52,8 +52,11 @@ The root path `/?go-get=1` also serves this meta tag for Go's VCS root
 verification. For packages with explicit mirrors, the go-import prefix
 is the module path itself.
 
-Multi-segment paths (`/pkg/serve`, `/cmd/run/runner`) are vanity candidates.
-Single-segment paths (`/dogs`, `/map`) are app routes and are not matched.
+Paths are matched against the module list from `config/publish.toml`.
+Both multi-segment (`/pkg/serve`, `/cmd/run/runner`) and single-segment
+(`/run`, `/run/taskfile`) paths are matched if they correspond to a
+published module. Unknown single-segment paths (`/dogs`, `/map`) fall
+through to app routing.
 
 See `apps/proxy/vanity.go`.
 

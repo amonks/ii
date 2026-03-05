@@ -8,7 +8,7 @@ import (
 
 	"bytes"
 
-	"github.com/amonks/run/taskfile"
+	"monks.co/run/taskfile"
 	"github.com/pelletier/go-toml/v2"
 	"monks.co/pkg/config"
 	"monks.co/pkg/env"

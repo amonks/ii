@@ -35,6 +35,7 @@ use (
 	./cmd/deploy
 	./cmd/incrementum
 	./cmd/publish
+	./cmd/run
 	./cmd/taskmaker
 	./cmd/zone2terraform
 	./pkg/aranet4

@@ -12,3 +12,8 @@ mirror = "github.com/amonks/beetman"
 dir = "cmd/incrementum"
 module_path = "monks.co/incrementum"
 mirror = "github.com/amonks/incrementum"
+
+[[package]]
+dir = "cmd/run"
+module_path = "monks.co/run"
+mirror = "github.com/amonks/run"

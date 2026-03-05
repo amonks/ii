@@ -140,7 +140,47 @@ func TestVanityGoGet(t *testing.T) {
 
 		handled := handler(w, req)
 		if handled {
-			t.Error("should not handle single-segment paths (these are app routes)")
+			t.Error("should not handle unknown single-segment paths (these are app routes)")
+		}
+	})
+
+	t.Run("single-segment module path is handled", func(t *testing.T) {
+		mods := []vanityModule{
+			{modulePath: "monks.co/run", mirror: "github.com/amonks/run", importPrefix: "monks.co/run", dir: "cmd/run"},
+		}
+		h := vanityHandler(mods, "github.com/amonks/go")
+
+		req := httptest.NewRequest("GET", "https://monks.co/run?go-get=1", nil)
+		w := httptest.NewRecorder()
+
+		handled := h(w, req)
+		if !handled {
+			t.Fatal("expected handler to handle single-segment module path")
+		}
+
+		body := w.Body.String()
+		if !strings.Contains(body, `monks.co/run git https://github.com/amonks/run`) {
+			t.Errorf("expected go-import meta tag, got: %s", body)
+		}
+	})
+
+	t.Run("single-segment module subpackage is handled", func(t *testing.T) {
+		mods := []vanityModule{
+			{modulePath: "monks.co/run", mirror: "github.com/amonks/run", importPrefix: "monks.co/run", dir: "cmd/run"},
+		}
+		h := vanityHandler(mods, "github.com/amonks/go")
+
+		req := httptest.NewRequest("GET", "https://monks.co/run/taskfile?go-get=1", nil)
+		w := httptest.NewRecorder()
+
+		handled := h(w, req)
+		if !handled {
+			t.Fatal("expected handler to handle subpackage of single-segment module")
+		}
+
+		body := w.Body.String()
+		if !strings.Contains(body, `monks.co/run git https://github.com/amonks/run`) {
+			t.Errorf("expected go-import meta tag for module root, got: %s", body)
 		}
 	})
 }

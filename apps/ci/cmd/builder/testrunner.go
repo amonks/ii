@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amonks/run/runner"
-	"github.com/amonks/run/taskfile"
+	"monks.co/run/runner"
+	"monks.co/run/taskfile"
 )
 
 // RunTests runs the generate and test tasks using the run library

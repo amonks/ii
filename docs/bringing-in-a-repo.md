@@ -164,6 +164,20 @@ it. You must manually update the module path. If there's no
 `go.mod`, taskmaker creates one with the default path
 (`monks.co/<dir>`).
 
+### Cross-module dependencies within the workspace
+
+If other monorepo modules import the newly imported module, you
+must update their imports and go.mod files. Before the module
+is published, the vanity path won't resolve via the network, so
+you must **remove** the `require` directive for it from
+consuming modules' go.mod files. The Go workspace resolves it
+via the `use` directive; a versioned `require` line triggers a
+network fetch that will fail pre-publish. After the first
+publish, `go mod tidy` should work normally. Similarly,
+Dockerfiles that used `go install <old-path>@latest` should
+be changed to `go install ./<dir>` to build from local source
+(avoids network dependency and version skew).
+
 ## History
 
 ### beetman (cmd/beetman)
@@ -196,3 +210,34 @@ monorepo's `github.com/amonks/run` (both resolve to the `run`
 binary), causing "tool is ambiguous" errors — removed the tool
 block and ran `go mod tidy`. gofix inlined pointer helper
 functions, leaving dead code that staticcheck flagged.
+
+### run (cmd/run)
+
+Published to `github.com/amonks/run` with vanity path
+`monks.co/run`. Had 34 tags (v1.0.0-beta.1 through
+v1.0.0-beta.35) that needed remapping to monorepo format
+(`cmd/run/vX.Y.Z`). `git subtree add` does not carry tags and
+rewrites commit SHAs, so tags were remapped by matching commit
+subject lines between the source repo and the imported history.
+Had a `tool` directive for `go.abhg.dev/doc2go` — removed it
+and ran `go mod tidy`.
+
+This was the first import where other monorepo modules
+(`cmd/taskmaker`, `apps/ci`) depend on the imported module.
+After changing imports from `github.com/amonks/run` to
+`monks.co/run`, the `require` directives in their go.mod files
+had to be removed — the vanity path wasn't published yet, so
+Go couldn't verify the version from the network. The workspace
+`use` directive handles resolution locally. After first publish,
+`go mod tidy` should add the `require` lines back normally.
+
+The Dockerfiles also needed updating: `go install
+github.com/amonks/run@latest` was changed to
+`go install ./cmd/run` (builds from the local source already
+copied into the Docker context, avoiding network dependency).
+
+The vanity handler (`apps/proxy/vanity.go`) previously rejected
+all single-segment paths (like `/run`) to avoid intercepting
+app routes (like `/dogs`). This was changed to match against
+known published modules instead, so `monks.co/run` resolves
+correctly while app routes are still unaffected.

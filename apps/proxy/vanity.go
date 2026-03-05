@@ -119,14 +119,10 @@ Redirecting to <a href="https://pkg.go.dev/%s">pkg.go.dev</a>...
 // matchVanityModule finds the module that matches the request path.
 // The path "/pkg/serve" matches "monks.co/pkg/serve".
 // The path "/cmd/run/runner" matches "monks.co/cmd/run" (subpackage).
+// The path "/run" matches "monks.co/run" (single-segment module path).
 func matchVanityModule(path string, modules []vanityModule) *vanityModule {
 	// Remove leading slash.
 	path = strings.TrimPrefix(path, "/")
-
-	// Only match multi-segment paths (single-segment = app routes).
-	if !strings.Contains(path, "/") {
-		return nil
-	}
 
 	for i := range modules {
 		prefix := strings.TrimPrefix(modules[i].modulePath, "monks.co/")
