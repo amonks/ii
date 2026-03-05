@@ -17,7 +17,7 @@ var baseTasks = []*task{
 	{
 		Id:           "generate",
 		Type:         "short",
-		Dependencies: []string{"templ", "compress-statics", "zone2terraform"},
+		Dependencies: []string{"taskmaker", "templ", "compress-statics", "zone2terraform"},
 	},
 	{
 		Id:    "templ",
