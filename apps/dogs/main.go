@@ -53,6 +53,11 @@ func run() error {
 
 	flag.Parse()
 
+	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	db, err := dogs.NewDB(archiveDir)
 	if err != nil {
 		return err
@@ -124,10 +129,6 @@ func run() error {
 		}
 	})
 
-	ctx := sigctx.New()
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
 	ctx, cancel := context.WithCancel(ctx)
 	errs := make(chan error)
 

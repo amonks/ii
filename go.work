@@ -28,6 +28,7 @@ use (
 	./apps/scrobbles
 	./apps/sms
 	./apps/template
+	./apps/vault
 	./apps/writing
 	./apps/youtube
 	./cmd/beetman

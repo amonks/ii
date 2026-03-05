@@ -46,14 +46,14 @@ func run() error {
 }
 
 func runServer() error {
-	db, err := NewModel()
-	if err != nil {
-		return fmt.Errorf("constructing model: %w", err)
-	}
-
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
+	}
+
+	db, err := NewModel()
+	if err != nil {
+		return fmt.Errorf("constructing model: %w", err)
 	}
 	var errs error
 

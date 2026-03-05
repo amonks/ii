@@ -100,6 +100,11 @@ func Listen(network, addr string) (net.Listener, error) {
 	return getServer().Listen(network, addr)
 }
 
+// Dial creates an outbound connection through the tailnet.
+func Dial(ctx context.Context, network, addr string) (net.Conn, error) {
+	return getServer().Dial(ctx, network, addr)
+}
+
 // WhoIs identifies a peer by remote address.
 func WhoIs(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
 	lc, err := getServer().LocalClient()

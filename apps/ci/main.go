@@ -40,6 +40,11 @@ func main() {
 func run() error {
 	reqlog.SetupLogging()
 
+	ctx := sigctx.New()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	model, err := NewModel()
 	if err != nil {
 		return fmt.Errorf("initializing model: %w", err)
@@ -93,10 +98,6 @@ func run() error {
 		sendSMS(msg)
 	}, hub, trigger)
 
-	ctx := sigctx.New()
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
 	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}

@@ -34,6 +34,11 @@ func main() {
 func run() error {
 	reqlog.SetupLogging()
 
+	ctx, cancel := sigctx.NewWithCancel()
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
 	lfm := lastfm.New(lastFmAPIKey())
 
 	db, err := NewDB()
@@ -76,10 +81,6 @@ func run() error {
 		}
 		Index(scrobbles).Render(context.Background(), w)
 	})
-	ctx, cancel := sigctx.NewWithCancel()
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
 	wg := new(errgroup.Group)
 
 	wg.Go(func() error {

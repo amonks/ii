@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"log"
@@ -10,14 +11,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/benbjohnson/litestream"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"monks.co/pkg/env"
+	"monks.co/pkg/tailnet"
 )
 
 type DB struct {
 	*gorm.DB
+	litestreamStore *litestream.Store
 }
 
 func OpenFromDataFolder(name string) (*DB, error) {
@@ -26,6 +30,18 @@ func OpenFromDataFolder(name string) (*DB, error) {
 }
 
 func Open(path string) (*DB, error) {
+	// Start litestream replication before opening GORM. Litestream needs
+	// to set up WAL monitoring first. Skip for :memory: databases (tests)
+	// and when the tailnet isn't ready (tests that use file-backed DBs).
+	var store *litestream.Store
+	if path != ":memory:" && tailnetReady() {
+		var err error
+		store, err = startReplication(context.Background(), path)
+		if err != nil {
+			return nil, fmt.Errorf("litestream replication for %s: %w", path, err)
+		}
+	}
+
 	dsn := path + "?_journal_mode=WAL&_busy_timeout=5000"
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.New(
@@ -40,9 +56,12 @@ func Open(path string) (*DB, error) {
 		),
 	})
 	if err != nil {
+		if store != nil {
+			store.Close(context.Background())
+		}
 		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
-	return &DB{db}, nil
+	return &DB{db, store}, nil
 }
 
 func (db *DB) Close() error {
@@ -53,7 +72,21 @@ func (db *DB) Close() error {
 	if err := sqlDB.Close(); err != nil {
 		return err
 	}
+	if db.litestreamStore != nil {
+		if err := db.litestreamStore.Close(context.Background()); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func tailnetReady() bool {
+	select {
+	case <-tailnet.ReadyChan():
+		return true
+	default:
+		return false
+	}
 }
 
 // Migration represents a database migration

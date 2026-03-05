@@ -28,14 +28,14 @@ func main() {
 func run() error {
 	reqlog.SetupLogging()
 
-	db, err := model.NewModel()
-	if err != nil {
-		return fmt.Errorf("constructing model: %w", err)
-	}
-
 	ctx := sigctx.New()
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
+	}
+
+	db, err := model.NewModel()
+	if err != nil {
+		return fmt.Errorf("constructing model: %w", err)
 	}
 	var errs error
 
