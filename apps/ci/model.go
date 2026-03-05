@@ -25,7 +25,7 @@ func NewModel() (*Model, error) {
 	}
 
 	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations",
-		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql",
+		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql", "005_run_phase.sql",
 	); err != nil {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
@@ -36,7 +36,7 @@ func NewModel() (*Model, error) {
 // NewModelFromDB creates a model from an existing database connection (for testing).
 func NewModelFromDB(db *database.DB) (*Model, error) {
 	if err := db.MigrateFS(context.Background(), migrationsFS, "migrations",
-		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql",
+		"001_initial.sql", "002_run_error.sql", "003_streams.sql", "004_pending_trigger.sql", "005_run_phase.sql",
 	); err != nil {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
@@ -48,6 +48,7 @@ type Run struct {
 	ID         int64   `gorm:"primaryKey"`
 	HeadSHA    string  `gorm:"column:head_sha"`
 	BaseSHA    string  `gorm:"column:base_sha"`
+	Phase      string  `gorm:"column:phase"`
 	MachineID  *string `gorm:"column:machine_id"`
 	StartedAt  string  `gorm:"column:started_at"`
 	FinishedAt *string `gorm:"column:finished_at"`
@@ -106,6 +107,7 @@ func (m *Model) CreateRun(headSHA, baseSHA, trigger string) (*Run, error) {
 	run := Run{
 		HeadSHA:   headSHA,
 		BaseSHA:   baseSHA,
+		Phase:     "initial",
 		StartedAt: now(),
 		Status:    "running",
 		Trigger:   trigger,
@@ -322,7 +324,7 @@ func (m *Model) PopPendingTrigger() (string, bool, error) {
 // It returns the run and the name of the most recently started job (or "" if none).
 func (m *Model) RunningRun() (*Run, string, error) {
 	var run Run
-	if err := m.db.Where("status = ?", "running").Order("id DESC").First(&run).Error; err != nil {
+	if err := m.db.Where("status IN ?", []string{"running", "restarting"}).Order("id DESC").First(&run).Error; err != nil {
 		return nil, "", err
 	}
 	var job Job
@@ -331,6 +333,23 @@ func (m *Model) RunningRun() (*Run, string, error) {
 		return &run, "", nil
 	}
 	return &run, job.Name, nil
+}
+
+// UpdateRunPhase updates both the phase and status of a run.
+func (m *Model) UpdateRunPhase(runID int64, phase, status string) error {
+	return m.db.Model(&Run{}).Where("id = ?", runID).Updates(map[string]any{
+		"phase":  phase,
+		"status": status,
+	}).Error
+}
+
+// LatestRun returns the most recent run by ID.
+func (m *Model) LatestRun() (*Run, error) {
+	var run Run
+	if err := m.db.Order("id DESC").First(&run).Error; err != nil {
+		return nil, err
+	}
+	return &run, nil
 }
 
 func now() string {

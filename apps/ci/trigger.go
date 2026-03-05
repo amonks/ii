@@ -71,7 +71,7 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqlog.Set(r.Context(), "trigger.superseding_run", run.ID)
 	reqlog.Set(r.Context(), "trigger.current_job", currentJob)
 
-	if currentJob == "deploy" {
+	if currentJob == "deploy" || run.Status == "restarting" {
 		// During deploy: don't interrupt, just record the pending SHA.
 		// It will be picked up when the run finishes.
 		if err := h.model.SetPendingTrigger(req.SHA); err != nil {
@@ -199,12 +199,36 @@ func (h *TriggerHandler) resolveBuilderImage() string {
 	return image
 }
 
+// ContinueRun waits for the old builder machine to die and creates a
+// continuation builder for the given run in its current phase.
+func (h *TriggerHandler) ContinueRun(run *Run, prevMachineID string) {
+	if prevMachineID != "" && h.fly != nil {
+		slog.Info("waiting for previous builder to be destroyed", "machine_id", prevMachineID, "run_id", run.ID)
+		if err := h.fly.WaitForState(context.Background(), prevMachineID, "destroyed", 5*time.Minute); err != nil {
+			slog.Warn("waiting for previous builder destruction", "error", err, "machine_id", prevMachineID)
+		}
+	}
+
+	// Set status back to running now that we're creating a new builder.
+	if err := h.model.UpdateRunPhase(run.ID, run.Phase, "running"); err != nil {
+		slog.Error("updating run phase for continuation", "error", err, "run_id", run.ID)
+	}
+
+	h.createBuilderMachine(run)
+}
+
 func (h *TriggerHandler) createBuilderMachine(run *Run) {
+	phase := run.Phase
+	if phase == "" {
+		phase = "initial"
+	}
+
 	env := map[string]string{
 		"CI_RUN_ID":           fmt.Sprintf("%d", run.ID),
 		"CI_HEAD_SHA":         run.HeadSHA,
 		"CI_BASE_SHA":         run.BaseSHA,
 		"CI_ORCHESTRATOR_URL": h.builderConfig.OrchestratorURL,
+		"CI_PHASE":            phase,
 		"FLY_API_TOKEN":       h.builderConfig.FlyAPIToken,
 		"GH_TOKEN":            h.builderConfig.GHToken,
 		"TS_AUTHKEY":          h.builderConfig.TSAuthKey,

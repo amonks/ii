@@ -19,24 +19,25 @@ func encodeStreamName(name string) string {
 
 // RunTests runs the generate and test tasks using the run library
 // programmatically, streaming per-task output to the orchestrator.
-func RunTests(ctx context.Context, root string, reporter *Reporter) error {
-	if err := runTask(ctx, root, "generate", reporter); err != nil {
+// The suffix is appended to job names (e.g. "-2" gives "generate-2", "ci-test-2").
+func RunTests(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+	if err := runTask(ctx, root, "generate", "generate"+suffix, reporter); err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
-	if err := runTask(ctx, root, "ci-test", reporter); err != nil {
+	if err := runTask(ctx, root, "ci-test", "ci-test"+suffix, reporter); err != nil {
 		return fmt.Errorf("ci-test: %w", err)
 	}
 	return nil
 }
 
-func runTask(ctx context.Context, root, taskName string, reporter *Reporter) error {
-	reporter.StartJob(taskName, "task")
+func runTask(ctx context.Context, root, taskName, jobName string, reporter *Reporter) error {
+	reporter.StartJob(jobName, "task")
 	start := time.Now()
 
 	tasks, err := taskfile.Load(root)
 	if err != nil {
 		errMsg := fmt.Sprintf("loading taskfile: %v", err)
-		reporter.FinishJob(taskName, FinishJobResult{
+		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -46,14 +47,14 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 
 	mw := &streamMultiWriter{
 		reporter: reporter,
-		jobName:  taskName,
+		jobName:  jobName,
 		writers:  make(map[string]*StreamWriter),
 	}
 
 	run, err := runner.New(runner.RunTypeShort, root, tasks, taskName, mw)
 	if err != nil {
 		errMsg := fmt.Sprintf("creating runner: %v", err)
-		reporter.FinishJob(taskName, FinishJobResult{
+		reporter.FinishJob(jobName, FinishJobResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -77,7 +78,7 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 		}
 		sn := encodeStreamName(id)
 		streams = append(streams, streamMapping{taskID: id, streamName: sn})
-		reporter.StartStream(taskName, sn)
+		reporter.StartStream(jobName, sn)
 	}
 
 	err = run.Start(ctx)
@@ -97,7 +98,7 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 		case runner.TaskStatusRunning:
 			streamStatus = "success" // was still running when run ended normally
 		}
-		reporter.FinishStream(taskName, s.streamName, FinishStreamResult{
+		reporter.FinishStream(jobName, s.streamName, FinishStreamResult{
 			Status: streamStatus,
 		})
 	}
@@ -109,7 +110,7 @@ func runTask(ctx context.Context, root, taskName string, reporter *Reporter) err
 		errMsg = err.Error()
 	}
 
-	reporter.FinishJob(taskName, FinishJobResult{
+	reporter.FinishJob(jobName, FinishJobResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,

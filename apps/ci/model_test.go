@@ -608,6 +608,94 @@ func TestRunningRun(t *testing.T) {
 	}
 }
 
+func TestUpdateRunPhase(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run.Phase != "initial" {
+		t.Errorf("expected default phase initial, got %s", run.Phase)
+	}
+
+	if err := m.UpdateRunPhase(run.ID, "post-orchestrator", "restarting"); err != nil {
+		t.Fatal(err)
+	}
+
+	fetched, _, err := m.RunWithJobs(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fetched.Phase != "post-orchestrator" {
+		t.Errorf("expected phase post-orchestrator, got %s", fetched.Phase)
+	}
+	if fetched.Status != "restarting" {
+		t.Errorf("expected status restarting, got %s", fetched.Status)
+	}
+}
+
+func TestLatestRun(t *testing.T) {
+	m := testModel(t)
+
+	// No runs.
+	_, err := m.LatestRun()
+	if err == nil {
+		t.Error("expected error when no runs")
+	}
+
+	run1, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	latest, err := m.LatestRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if latest.ID != run1.ID {
+		t.Errorf("expected run %d, got %d", run1.ID, latest.ID)
+	}
+
+	run2, err := m.CreateRun("sha2", "sha1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	latest, err = m.LatestRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if latest.ID != run2.ID {
+		t.Errorf("expected run %d, got %d", run2.ID, latest.ID)
+	}
+}
+
+func TestRunningRunIncludesRestarting(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set to restarting.
+	if err := m.UpdateRunPhase(run.ID, "post-orchestrator", "restarting"); err != nil {
+		t.Fatal(err)
+	}
+
+	r, _, err := m.RunningRun()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.ID != run.ID {
+		t.Errorf("expected run %d, got %d", run.ID, r.ID)
+	}
+	if r.Status != "restarting" {
+		t.Errorf("expected status restarting, got %s", r.Status)
+	}
+}
+
 func init() {
 	// Ensure MONKS_DATA is set for tests that use OpenFromDataFolder.
 	if os.Getenv("MONKS_DATA") == "" {

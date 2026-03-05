@@ -156,3 +156,21 @@ func cmdOutput(t *testing.T, dir string, name string, args ...string) string {
 	}
 	return string(out[:len(out)-1]) // trim newline
 }
+
+func TestPhaseSuffix(t *testing.T) {
+	tests := []struct {
+		phase  string
+		suffix string
+	}{
+		{"initial", ""},
+		{"post-orchestrator", "-2"},
+		{"post-builder", "-3"},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := phaseSuffix(tt.phase)
+		if got != tt.suffix {
+			t.Errorf("phaseSuffix(%q) = %q, want %q", tt.phase, got, tt.suffix)
+		}
+	}
+}

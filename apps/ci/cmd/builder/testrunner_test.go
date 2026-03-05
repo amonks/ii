@@ -137,7 +137,7 @@ cmd = "echo hello from task"
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := runTask(ctx, dir, "hello", reporter)
+	err := runTask(ctx, dir, "hello", "hello", reporter)
 	if err != nil {
 		t.Fatalf("runTask failed: %v", err)
 	}
@@ -210,7 +210,7 @@ cmd = "echo sub-output"
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := runTask(ctx, dir, "generate", reporter)
+	err := runTask(ctx, dir, "generate", "generate", reporter)
 	if err != nil {
 		t.Fatalf("runTask failed: %v", err)
 	}
@@ -275,7 +275,7 @@ dependencies = ["test", "check-for-diff"]
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := RunTests(ctx, dir, reporter)
+	err := RunTests(ctx, dir, reporter, "")
 	if err != nil {
 		t.Fatalf("RunTests failed: %v", err)
 	}
@@ -337,7 +337,7 @@ cmd = "echo output-from-b"
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := runTask(ctx, dir, "both", reporter)
+	err := runTask(ctx, dir, "both", "both", reporter)
 	if err != nil {
 		t.Fatalf("runTask failed: %v", err)
 	}
@@ -352,5 +352,55 @@ cmd = "echo output-from-b"
 	}
 	if !strings.Contains(outB, "output-from-b") {
 		t.Errorf("expected task 'b' output, got %q (paths=%v)", outB, handler.outputPaths())
+	}
+}
+
+func TestRunTestsJobNameSuffix(t *testing.T) {
+	handler := newRecordingHandler()
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	dir := t.TempDir()
+	tasksToml := `
+[[task]]
+id = "generate"
+type = "short"
+cmd = "echo generating"
+
+[[task]]
+id = "ci-test"
+type = "short"
+cmd = "echo testing"
+`
+	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := RunTests(ctx, dir, reporter, "-2")
+	if err != nil {
+		t.Fatalf("RunTests failed: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify that suffixed job names were used.
+	reqs := handler.getRequests()
+	var generate2Start, ciTest2Start bool
+	for _, r := range reqs {
+		if r.Path == "/api/runs/1/jobs/generate-2/start" {
+			generate2Start = true
+		}
+		if r.Path == "/api/runs/1/jobs/ci-test-2/start" {
+			ciTest2Start = true
+		}
+	}
+	if !generate2Start {
+		t.Error("expected generate-2 job to be started")
+	}
+	if !ciTest2Start {
+		t.Error("expected ci-test-2 job to be started")
 	}
 }

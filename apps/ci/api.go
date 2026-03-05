@@ -331,6 +331,31 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Handle restart statuses: don't finish the run terminally, just
+	// update phase/status and create a continuation builder.
+	isRestart := req.Status == "restart-orchestrator" || req.Status == "restart-builder-image"
+	if isRestart {
+		nextPhase := map[string]string{
+			"restart-orchestrator":  "post-orchestrator",
+			"restart-builder-image": "post-builder",
+		}[req.Status]
+		if err := a.model.UpdateRunPhase(runID, nextPhase, "restarting"); err != nil {
+			http.Error(w, fmt.Sprintf("updating run phase: %v", err), http.StatusInternalServerError)
+			return
+		}
+		a.publishRunState(runID)
+		if a.trigger != nil {
+			run, _, _ := a.model.RunWithJobs(runID)
+			var prevMachineID string
+			if run != nil && run.MachineID != nil {
+				prevMachineID = *run.MachineID
+			}
+			go a.trigger.ContinueRun(run, prevMachineID)
+		}
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if err := a.model.FinishRun(runID, req.Status, req.Error); err != nil {
 		http.Error(w, fmt.Sprintf("finishing run: %v", err), http.StatusInternalServerError)
 		return

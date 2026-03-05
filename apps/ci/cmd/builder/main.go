@@ -34,12 +34,9 @@ func run() error {
 		Reporter: reporter,
 	}
 
-	status := "success"
-	var pipelineErr error
-	if err := pipeline.Run(ctx); err != nil {
-		status = "failed"
-		pipelineErr = err
-		slog.Error("pipeline failed", "error", err)
+	status, pipelineErr := pipeline.Run(ctx)
+	if pipelineErr != nil {
+		slog.Error("pipeline failed", "error", pipelineErr)
 	}
 
 	// Report run completion to orchestrator.
@@ -49,6 +46,13 @@ func run() error {
 	}
 	if err := reporter.FinishRun(status, errMsg); err != nil {
 		slog.Error("failed to report run completion", "error", err)
+	}
+
+	// Restart statuses are clean exits — the orchestrator will
+	// continue the run on a new builder machine.
+	if status == "restart-orchestrator" || status == "restart-builder-image" {
+		slog.Info("exiting for restart", "status", status)
+		return nil
 	}
 
 	if pipelineErr != nil {
@@ -69,6 +73,7 @@ type Config struct {
 	DataDir         string
 	BaseImageRef    string
 	RepoURL         string
+	Phase           string
 }
 
 func loadConfig() (*Config, error) {
@@ -92,6 +97,7 @@ func loadConfig() (*Config, error) {
 		DataDir:         envOr("MONKS_DATA", "/data"),
 		BaseImageRef:    envOr("CI_BASE_IMAGE", "registry.fly.io/monks-ci-base:deployment-01KJTWXG5T3WX877TXXA84CXYZ"),
 		RepoURL:         repoURL(os.Getenv("GH_TOKEN")),
+		Phase:           envOr("CI_PHASE", "initial"),
 	}
 	return cfg, nil
 }

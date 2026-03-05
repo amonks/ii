@@ -14,6 +14,8 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"slices"
+
 	"monks.co/pkg/ci/changedetect"
 	"monks.co/pkg/config"
 	"monks.co/pkg/depgraph"
@@ -27,6 +29,63 @@ var deployAppFunc = deployApp
 // rebuildImageFunc is the function used to rebuild a CI image. It can be
 // replaced in tests.
 var rebuildImageFunc = rebuildImage
+
+// ChangeAnalysis holds the results of change detection analysis.
+type ChangeAnalysis struct {
+	Affected        []string
+	CIAffected      bool
+	BuilderAffected bool
+	BaseAffected    bool
+	Cfg             *config.AppsConfig
+}
+
+// DetectChanges runs change detection and returns what's affected.
+func DetectChanges(root, baseSHA string) (*ChangeAnalysis, error) {
+	apps, err := changedetect.LoadFlyApps(root)
+	if err != nil {
+		return nil, fmt.Errorf("loading fly apps: %w", err)
+	}
+
+	changed, err := changedetect.ChangedFiles(root, baseSHA)
+	if err != nil {
+		return nil, fmt.Errorf("getting changed files: %w", err)
+	}
+
+	resolveDeps := func(pkgPath string) ([]string, error) {
+		return depgraph.PackageDeps(root, pkgPath)
+	}
+
+	affected, err := changedetect.AffectedApps(apps, changed, resolveDeps)
+	if err != nil {
+		return nil, fmt.Errorf("computing affected apps: %w", err)
+	}
+
+	builderAffected, err := changedetect.IsImageAffected(changed, "apps/ci/builder.Dockerfile", resolveDeps, "apps/ci/cmd/builder")
+	if err != nil {
+		return nil, fmt.Errorf("checking builder image: %w", err)
+	}
+
+	baseAffected, err := changedetect.IsImageAffected(changed, "apps/ci/base.Dockerfile", nil, "")
+	if err != nil {
+		return nil, fmt.Errorf("checking base image: %w", err)
+	}
+
+	cfg, err := changedetect.LoadFlyAppsConfig(root)
+	if err != nil {
+		return nil, fmt.Errorf("loading fly apps config: %w", err)
+	}
+
+	// Determine if the CI orchestrator app itself is affected.
+	ciAffected := slices.Contains(affected, "ci")
+
+	return &ChangeAnalysis{
+		Affected:        affected,
+		CIAffected:      ciAffected,
+		BuilderAffected: builderAffected,
+		BaseAffected:    baseAffected,
+		Cfg:             cfg,
+	}, nil
+}
 
 // deployAnalysis holds the results of change detection analysis.
 type deployAnalysis struct {
@@ -179,7 +238,7 @@ func DeployAnalyzed(analysis *deployAnalysis, root, headSHA, flyToken, baseImage
 
 	for _, app := range analysis.affected {
 		wg.Go(func() {
-			if err := deployAppFunc(root, app, headSHA, flyToken, baseImageRef, analysis.cfg, reporter); err != nil {
+			if err := deployAppFunc(root, app, headSHA, flyToken, baseImageRef, analysis.cfg, reporter, "deploy"); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("deploying %s: %w", app, err))
 				mu.Unlock()
@@ -189,7 +248,7 @@ func DeployAnalyzed(analysis *deployAnalysis, root, headSHA, flyToken, baseImage
 
 	if analysis.builderAffected {
 		wg.Go(func() {
-			if err := rebuildImageFunc(root, "ci-builder", "apps/ci/builder.fly.toml", reporter); err != nil {
+			if err := rebuildImageFunc(root, "ci-builder", "apps/ci/builder.fly.toml", reporter, "deploy"); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("rebuilding ci-builder: %w", err))
 				mu.Unlock()
@@ -199,7 +258,7 @@ func DeployAnalyzed(analysis *deployAnalysis, root, headSHA, flyToken, baseImage
 
 	if analysis.baseAffected {
 		wg.Go(func() {
-			if err := rebuildImageFunc(root, "ci-base", "apps/ci/base.fly.toml", reporter); err != nil {
+			if err := rebuildImageFunc(root, "ci-base", "apps/ci/base.fly.toml", reporter, "deploy"); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("rebuilding ci-base: %w", err))
 				mu.Unlock()
@@ -212,10 +271,10 @@ func DeployAnalyzed(analysis *deployAnalysis, root, headSHA, flyToken, baseImage
 	return errors.Join(errs...)
 }
 
-func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
-	reporter.StartStream("deploy", app)
+func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter, jobName string) error {
+	reporter.StartStream(jobName, app)
 
-	w := reporter.StreamWriter("deploy", app)
+	w := reporter.StreamWriter(jobName, app)
 	defer w.Close()
 
 	start := time.Now()
@@ -237,7 +296,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 	if err := cmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("compile: %v", err)
 		fmt.Fprintf(w, "=== compile failed: %s\n", errMsg)
-		reporter.FinishStream("deploy", app, FinishStreamResult{
+		reporter.FinishStream(jobName, app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -292,7 +351,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 	if err != nil {
 		errMsg := fmt.Sprintf("building image: %v", err)
 		fmt.Fprintf(w, "=== image build failed: %s\n", errMsg)
-		reporter.FinishStream("deploy", app, FinishStreamResult{
+		reporter.FinishStream(jobName, app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -306,7 +365,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 	if err := oci.Push(img, imageRef, oci.FlyAuthOption(flyToken)); err != nil {
 		errMsg := fmt.Sprintf("pushing image: %v", err)
 		fmt.Fprintf(w, "=== push failed: %s\n", errMsg)
-		reporter.FinishStream("deploy", app, FinishStreamResult{
+		reporter.FinishStream(jobName, app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -330,7 +389,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 	if err := deployCmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("fly deploy: %v", err)
 		fmt.Fprintf(w, "=== deploy failed: %s\n", errMsg)
-		reporter.FinishStream("deploy", app, FinishStreamResult{
+		reporter.FinishStream(jobName, app, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -342,7 +401,7 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 
 	totalDuration := time.Since(start).Milliseconds()
 
-	reporter.FinishStream("deploy", app, FinishStreamResult{
+	reporter.FinishStream(jobName, app, FinishStreamResult{
 		Status:     "success",
 		DurationMs: totalDuration,
 	})
@@ -363,9 +422,9 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 	return nil
 }
 
-func rebuildImage(root, name, tomlPath string, reporter *Reporter) error {
-	reporter.StartStream("deploy", name)
-	w := reporter.StreamWriter("deploy", name)
+func rebuildImage(root, name, tomlPath string, reporter *Reporter, jobName string) error {
+	reporter.StartStream(jobName, name)
+	w := reporter.StreamWriter(jobName, name)
 	defer w.Close()
 
 	start := time.Now()
@@ -378,7 +437,7 @@ func rebuildImage(root, name, tomlPath string, reporter *Reporter) error {
 	if err := cmd.Run(); err != nil {
 		errMsg := fmt.Sprintf("rebuilding %s: %v", name, err)
 		fmt.Fprintf(w, "=== rebuild failed: %s\n", errMsg)
-		reporter.FinishStream("deploy", name, FinishStreamResult{
+		reporter.FinishStream(jobName, name, FinishStreamResult{
 			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
 			Error:      errMsg,
@@ -388,7 +447,7 @@ func rebuildImage(root, name, tomlPath string, reporter *Reporter) error {
 
 	duration := time.Since(start).Milliseconds()
 	fmt.Fprintf(w, "=== rebuilt in %dms\n", duration)
-	reporter.FinishStream("deploy", name, FinishStreamResult{
+	reporter.FinishStream(jobName, name, FinishStreamResult{
 		Status:     "success",
 		DurationMs: duration,
 	})

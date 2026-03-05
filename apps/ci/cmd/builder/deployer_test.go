@@ -22,7 +22,7 @@ func TestDeployAnalyzedCollectsAllErrors(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter, jobName string) error {
 		if app == "dogs" || app == "logs" {
 			return fmt.Errorf("%s deploy error", app)
 		}
@@ -64,7 +64,7 @@ func TestDeployAnalyzedAllSucceed(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter, jobName string) error {
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func TestRebuildImage(t *testing.T) {
 	defer func() { rebuildImageFunc = origRebuild }()
 
 	var rebuiltNames []string
-	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter) error {
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
 		rebuiltNames = append(rebuiltNames, name)
 		reporter.StartStream("deploy", name)
 		w := reporter.StreamWriter("deploy", name)
@@ -138,7 +138,7 @@ func TestRebuildImage(t *testing.T) {
 	}
 
 	// Call rebuildImageFunc directly to verify stream lifecycle.
-	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter)
+	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter, "deploy")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -179,11 +179,11 @@ func TestRebuildImageError(t *testing.T) {
 	origRebuild := rebuildImageFunc
 	defer func() { rebuildImageFunc = origRebuild }()
 
-	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter) error {
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
 		return fmt.Errorf("rebuild failed: %s", name)
 	}
 
-	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter)
+	err := rebuildImageFunc("/tmp", "ci-builder", "apps/ci/builder.fly.toml", reporter, "deploy")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -206,13 +206,13 @@ func TestDeployAnalyzedUsesStreams(t *testing.T) {
 	original := deployAppFunc
 	defer func() { deployAppFunc = original }()
 
-	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter) error {
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter, jn string) error {
 		// Simulated deploy: just call the stream lifecycle.
-		reporter.StartStream("deploy", app)
-		w := reporter.StreamWriter("deploy", app)
+		reporter.StartStream(jn, app)
+		w := reporter.StreamWriter(jn, app)
 		fmt.Fprintf(w, "deploying %s\n", app)
 		w.Close()
-		reporter.FinishStream("deploy", app, FinishStreamResult{
+		reporter.FinishStream(jn, app, FinishStreamResult{
 			Status:     "success",
 			DurationMs: 100,
 		})

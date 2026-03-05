@@ -544,6 +544,71 @@ func TestAPIStartAndFinishStream(t *testing.T) {
 	}
 }
 
+func TestAPIFinishRunRestartOrchestrator(t *testing.T) {
+	m := testModel(t)
+	mux := serve.NewMux()
+	outputDir := filepath.Join(t.TempDir(), "output")
+
+	var smsMessage string
+	RegisterAPI(mux, m, outputDir, func(msg string) {
+		smsMessage = msg
+	}, NewOutputHub(), nil)
+
+	m.CreateRun("sha1", "base1", "webhook")
+
+	body := `{"status":"restart-orchestrator"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Run should not be terminally finished — it should be "restarting".
+	runs, _ := m.RecentRuns(1)
+	if runs[0].Status != "restarting" {
+		t.Errorf("expected status restarting, got %s", runs[0].Status)
+	}
+	if runs[0].Phase != "post-orchestrator" {
+		t.Errorf("expected phase post-orchestrator, got %s", runs[0].Phase)
+	}
+	if runs[0].FinishedAt != nil {
+		t.Error("expected finished_at to be nil for restarting run")
+	}
+
+	// No SMS should be sent.
+	if smsMessage != "" {
+		t.Errorf("expected no SMS, got %s", smsMessage)
+	}
+}
+
+func TestAPIFinishRunRestartBuilderImage(t *testing.T) {
+	m := testModel(t)
+	mux := serve.NewMux()
+	outputDir := filepath.Join(t.TempDir(), "output")
+	RegisterAPI(mux, m, outputDir, nil, NewOutputHub(), nil)
+
+	m.CreateRun("sha1", "base1", "webhook")
+
+	body := `{"status":"restart-builder-image"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/runs/1/done", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	runs, _ := m.RecentRuns(1)
+	if runs[0].Status != "restarting" {
+		t.Errorf("expected status restarting, got %s", runs[0].Status)
+	}
+	if runs[0].Phase != "post-builder" {
+		t.Errorf("expected phase post-builder, got %s", runs[0].Phase)
+	}
+}
+
 func TestAPIRecordDeployment(t *testing.T) {
 	m, mux, _ := setupAPI(t)
 	m.CreateRun("sha1", "base1", "webhook")

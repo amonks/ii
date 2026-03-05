@@ -66,7 +66,7 @@ Behavior depends on whether a run is already in progress:
 builder machine, marks the running run as "superseded", and starts a
 new run for the incoming SHA. Returns 202 with the new run's details.
 
-**Run in progress, deploy phase**: Records the SHA in a
+**Run in progress, deploy or restarting phase**: Records the SHA in a
 `pending_trigger` LWW register (SQLite table with at most one row).
 Returns 202 with `{"status":"queued"}`. When the deploy finishes
 (via `PUT /api/runs/{id}/done`), the orchestrator pops the pending
@@ -188,8 +188,9 @@ of build output. Keys are `"runID/jobName/stream"`.
 ## Database
 
 SQLite with WAL mode. Tables: `runs`, `jobs`, `streams`,
-`deployments`, `pending_trigger`. See
-[migrations/](../apps/ci/migrations/).
+`deployments`, `pending_trigger`. The `runs` table has a `phase`
+column (default `'initial'`) tracking the current phase for phased
+deployment. See [migrations/](../apps/ci/migrations/).
 
 The `streams` table stores per-stream metadata (status, duration,
 error) with a unique constraint on (job_id, name). The former
@@ -235,6 +236,63 @@ and failure. Messages include a link to the run dashboard:
 
 ## Builder Pipeline
 
+A run proceeds through up to 3 named **phases**, each on a separate
+builder machine. The phase is passed as `CI_PHASE` env var.
+
+### Phases
+
+**`initial`** (default):
+1. fetch → generate → ci-test
+2. Is `ci` app affected? → deploy orchestrator → exit `restart-orchestrator`
+3. Is builder image affected? → rebuild image → exit `restart-builder-image`
+4. Neither → deploy apps
+
+**`post-orchestrator`**:
+1. fetch → generate-2 → ci-test-2
+2. Is builder image affected? → rebuild → exit `restart-builder-image`
+3. No → deploy apps
+
+**`post-builder`**:
+1. fetch → generate-3 → ci-test-3
+2. Deploy apps (no more infrastructure checks)
+
+### Common case (no CI infra changes)
+
+Single builder: fetch → generate → ci-test → deploy. Identical to
+before phased deployment was added.
+
+### Worst case (both orchestrator and builder changed)
+
+Builder 1: fetch → generate → ci-test → deploy orchestrator → exit
+Builder 2: fetch → generate-2 → ci-test-2 → rebuild builder image → exit
+Builder 3: fetch → generate-3 → ci-test-3 → deploy apps
+
+### Deploy phase
+
+The deploy phase always excludes `ci` from affected apps and sets
+`builderAffected=false`. These are handled in pre-flight or not at
+all. `baseAffected` is unchanged (base image doesn't require builder
+restart).
+
+### Orchestrator handling of restart statuses
+
+`finishRun` handler: when status is `restart-orchestrator` or
+`restart-builder-image`:
+- Updates run phase and sets status to `restarting`
+- Does NOT send SMS, emit task event, or check pending triggers
+- Creates continuation builder in background (waits for old builder
+  to die, then creates new machine with updated phase)
+
+Startup recovery: on boot, checks latest run. If status is
+`restarting`, `restart-orchestrator`, or `restart-builder-image`,
+creates a continuation builder. The literal status values handle the
+first-deployment edge case where the OLD orchestrator stores the
+status it doesn't understand.
+
+Trigger during `restarting`: queued as pending (same as during deploy).
+
+### Pipeline step details
+
 1. Tailnet is already up (kernel tailscale started by entrypoint script)
 2. Clone or fetch repo onto persistent volume at `/data/repo`
    (`jj git clone --colocate` on first run, `jj git fetch` on
@@ -242,15 +300,16 @@ and failure. Messages include a link to the run dashboard:
 3. Get base SHA from orchestrator
 4. Diff changed files
 5. Run generate + test (per-task output streams via run library,
-   per-task status via `runner.TaskStatus()`)
-6. Single "deploy" job:
+   per-task status via `runner.TaskStatus()`, with phase suffix)
+6. Phase-dependent infrastructure checks (see above)
+7. Single "deploy" job:
    - "analysis" stream: change detection, reports affected/skipped apps
    - Then concurrently: per-app deploy streams (affected only; deploy
-     metadata accumulated for task event), image rebuilds if needed,
+     metadata accumulated for task event), base image rebuild if needed,
      "publish" stream, "terraform" stream, "tailscale-acl" stream
    Errors are collected (not fail-fast) and joined.
-7. Report run complete (sends accumulated deploy metadata)
-10. Exit → machine self-destructs
+8. Report run complete (sends accumulated deploy metadata)
+9. Exit → machine self-destructs
 
 ## Builder Image
 

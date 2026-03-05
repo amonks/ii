@@ -265,6 +265,47 @@ func TestStartPendingBuildWaitsForPreviousMachine(t *testing.T) {
 	}
 }
 
+func TestTriggerDuringRestarting(t *testing.T) {
+	m, handler := testTriggerHandler(t)
+
+	// Finish all running runs, then create one in restarting state.
+	runs, _ := m.RecentRuns(10)
+	for _, r := range runs {
+		if r.Status == "running" {
+			m.FinishRun(r.ID, "success", "")
+		}
+	}
+
+	run, _ := m.CreateRun("restarting-sha", "base1", "webhook")
+	m.UpdateRunPhase(run.ID, "post-orchestrator", "restarting")
+
+	body := `{"sha":"queued-sha"}`
+	req := httptest.NewRequest(http.MethodPost, "/trigger", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusAccepted {
+		t.Errorf("expected 202, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]any
+	json.NewDecoder(w.Body).Decode(&resp)
+	if resp["status"] != "queued" {
+		t.Errorf("expected status queued, got %v", resp["status"])
+	}
+
+	// Verify pending trigger was set.
+	sha, ok, err := m.PopPendingTrigger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Error("expected pending trigger to be set")
+	}
+	if sha != "queued-sha" {
+		t.Errorf("expected queued-sha, got %s", sha)
+	}
+}
+
 func TestTriggerHandlerNoFlyClient(t *testing.T) {
 	m := testModel(t)
 	handler := &TriggerHandler{

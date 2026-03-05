@@ -1,0 +1,1 @@
+ALTER TABLE runs ADD COLUMN phase TEXT NOT NULL DEFAULT 'initial';
