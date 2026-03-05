@@ -59,7 +59,7 @@ func SkillSection(title string, names []string, targets map[string]int) templ.Co
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 8, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 8, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -115,7 +115,7 @@ func SkillSection(title string, names []string, targets map[string]int) templ.Co
 								var templ_7745c5c3_Var8 string
 								templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 12, Col: 28}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 12, Col: 28}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 								if templ_7745c5c3_Err != nil {
@@ -146,7 +146,7 @@ func SkillSection(title string, names []string, targets map[string]int) templ.Co
 								var templ_7745c5c3_Var10 string
 								templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", targets[name]))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 13, Col: 55}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 13, Col: 55}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 								if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func SkillList(title string, names []string, targets map[string]int) templ.Compo
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 23, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 23, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -295,7 +295,7 @@ func SkillList(title string, names []string, targets map[string]int) templ.Compo
 						var templ_7745c5c3_Var17 string
 						templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 29, Col: 20}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 29, Col: 20}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 						if templ_7745c5c3_Err != nil {
@@ -308,7 +308,7 @@ func SkillList(title string, names []string, targets map[string]int) templ.Compo
 						var templ_7745c5c3_Var18 string
 						templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", targets[name]))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/skills.templ`, Line: 29, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/skills.templ`, Line: 29, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 						if templ_7745c5c3_Err != nil {
