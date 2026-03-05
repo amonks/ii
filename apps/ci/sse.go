@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // runStateEvent is the JSON structure sent to SSE clients.
@@ -46,6 +47,24 @@ type streamJSON struct {
 	Error       *string `json:"error,omitempty"`
 }
 
+// durationFromTimestamps computes duration in milliseconds from RFC3339 timestamps.
+// Returns nil if either timestamp is missing or unparseable.
+func durationFromTimestamps(startedAt, finishedAt *string) *int64 {
+	if startedAt == nil || finishedAt == nil {
+		return nil
+	}
+	start, err := time.Parse(time.RFC3339, *startedAt)
+	if err != nil {
+		return nil
+	}
+	end, err := time.Parse(time.RFC3339, *finishedAt)
+	if err != nil {
+		return nil
+	}
+	ms := end.Sub(start).Milliseconds()
+	return &ms
+}
+
 // buildRunState queries the model and output directory to build a full state snapshot.
 func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent, error) {
 	run, jobs, err := model.RunWithJobs(runID)
@@ -79,22 +98,30 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 	}
 
 	for _, j := range jobs {
+		dur := j.DurationMs
+		if dur == nil {
+			dur = durationFromTimestamps(j.StartedAt, j.FinishedAt)
+		}
 		state.Jobs = append(state.Jobs, jobJSON{
 			Name:       j.Name,
 			Kind:       j.Kind,
 			Status:     j.Status,
-			DurationMs: j.DurationMs,
+			DurationMs: dur,
 			Error:      j.Error,
 		})
 
 		// Use DB streams if available.
 		if jobStreams, ok := streamsByJobID[j.ID]; ok {
 			for _, s := range jobStreams {
+				sdur := s.DurationMs
+				if sdur == nil {
+					sdur = durationFromTimestamps(s.StartedAt, s.FinishedAt)
+				}
 				state.Streams[j.Name] = append(state.Streams[j.Name], streamJSON{
 					Name:        s.Name,
 					DisplayName: decodeStreamName(s.Name),
 					Status:      s.Status,
-					DurationMs:  s.DurationMs,
+					DurationMs:  sdur,
 					Error:       s.Error,
 				})
 			}

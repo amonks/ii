@@ -167,15 +167,24 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 
 		streams := map[string][]StreamInfo{}
 		for _, j := range jobs {
+			// Compute job duration fallback from timestamps.
+			if j.DurationMs == nil && j.StartedAt != nil && j.FinishedAt != nil {
+				j.DurationMs = durationFromTimestamps(j.StartedAt, j.FinishedAt)
+			}
+
 			if jobStreams, ok := streamsByJobID[j.ID]; ok {
 				for _, s := range jobStreams {
+					dur := s.DurationMs
+					if dur == nil {
+						dur = durationFromTimestamps(s.StartedAt, s.FinishedAt)
+					}
 					dir := filepath.Join(outputDir, idStr, j.Name)
 					lastLine := readLastLine(filepath.Join(dir, s.Name+".log"))
 					streams[j.Name] = append(streams[j.Name], StreamInfo{
 						Name:        s.Name,
 						DisplayName: decodeStreamName(s.Name),
 						Status:      s.Status,
-						DurationMs:  s.DurationMs,
+						DurationMs:  dur,
 						Error:       s.Error,
 						LastLine:    lastLine,
 					})

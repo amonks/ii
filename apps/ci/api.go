@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"monks.co/pkg/reqlog"
 	"monks.co/pkg/serve"
@@ -465,13 +464,10 @@ func (a *apiHandler) emitTaskEvent(runID int64, status, errorMsg string, deploys
 		return
 	}
 
-	// Compute run duration.
+	// Compute run duration from timestamps.
 	var durationMs int64
-	startTime, err := time.Parse(time.RFC3339, run.StartedAt)
-	if err == nil && run.FinishedAt != nil {
-		if endTime, err := time.Parse(time.RFC3339, *run.FinishedAt); err == nil {
-			durationMs = endTime.Sub(startTime).Milliseconds()
-		}
+	if d := durationFromTimestamps(&run.StartedAt, run.FinishedAt); d != nil {
+		durationMs = *d
 	}
 
 	attrs := []any{

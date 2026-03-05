@@ -328,6 +328,49 @@ func TestStreamSkipped(t *testing.T) {
 	}
 }
 
+func TestZeroDurationNotStored(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Job with 0 duration should leave duration_ms NULL.
+	job, err := m.StartJob(run.ID, "test", "go-test", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.FinishJob(job.ID, "success", 0, "", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	_, jobs, err := m.RunWithJobs(run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if jobs[0].DurationMs != nil {
+		t.Errorf("expected nil duration for 0ms, got %d", *jobs[0].DurationMs)
+	}
+
+	// Stream with 0 duration should leave duration_ms NULL.
+	s, err := m.StartStream(job.ID, "output")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.FinishStream(s.ID, "success", 0, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	streams, err := m.StreamsForJob(job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if streams[0].DurationMs != nil {
+		t.Errorf("expected nil duration for 0ms, got %d", *streams[0].DurationMs)
+	}
+}
+
 func TestDeployments(t *testing.T) {
 	m := testModel(t)
 

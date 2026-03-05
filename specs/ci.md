@@ -198,6 +198,14 @@ error) with a unique constraint on (job_id, name). The former
 `deploy_jobs` and `terraform_jobs` tables have been dropped —
 deploy metadata is now sent as part of the FinishRun payload.
 
+Duration tracking: the builder sends `duration_ms` when finishing
+jobs and streams. The model only stores non-zero values (0 is
+treated as "not reported" and leaves the column NULL). For display,
+the SSE and template layers fall back to computing duration from
+`started_at`/`finished_at` timestamps when `duration_ms` is NULL.
+This covers cases like test runner streams where per-stream timing
+is not available from the builder.
+
 ## Task Event
 
 When a CI run finishes (via the `PUT /api/runs/{id}/done` endpoint), the

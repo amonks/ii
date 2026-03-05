@@ -120,6 +120,61 @@ func TestSSEPublishReachesSubscribers(t *testing.T) {
 	}
 }
 
+func TestDurationFromTimestamps(t *testing.T) {
+	start := "2026-03-04T10:00:00Z"
+	end := "2026-03-04T10:05:30Z"
+
+	d := durationFromTimestamps(&start, &end)
+	if d == nil {
+		t.Fatal("expected non-nil duration")
+	}
+	if *d != 330000 { // 5m30s = 330000ms
+		t.Errorf("expected 330000ms, got %d", *d)
+	}
+
+	// Nil inputs return nil.
+	if d := durationFromTimestamps(nil, &end); d != nil {
+		t.Error("expected nil for nil start")
+	}
+	if d := durationFromTimestamps(&start, nil); d != nil {
+		t.Error("expected nil for nil end")
+	}
+}
+
+func TestBuildRunStateDurationFallback(t *testing.T) {
+	m := testModel(t)
+	outputDir := t.TempDir()
+
+	run, _ := m.CreateRun("sha1", "base1", "webhook")
+	job, _ := m.StartJob(run.ID, "test", "go-test", "")
+
+	// Start and finish a stream with 0 duration (simulating test runner behavior).
+	s, _ := m.StartStream(job.ID, "task-a")
+	m.FinishStream(s.ID, "success", 0, "")
+
+	// Also finish the job with 0 duration.
+	m.FinishJob(job.ID, "success", 0, "", "")
+
+	state, err := buildRunState(m, outputDir, run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Job should have a computed duration from timestamps (even if only second precision).
+	if state.Jobs[0].DurationMs == nil {
+		t.Error("expected non-nil job duration from timestamp fallback")
+	}
+
+	// Stream should have a computed duration from timestamps.
+	streams := state.Streams["go-test"]
+	if len(streams) != 1 {
+		t.Fatalf("expected 1 stream, got %d", len(streams))
+	}
+	if streams[0].DurationMs == nil {
+		t.Error("expected non-nil stream duration from timestamp fallback")
+	}
+}
+
 func TestSSECloseRunEvents(t *testing.T) {
 	m := testModel(t)
 	hub := NewOutputHub()

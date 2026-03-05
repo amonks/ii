@@ -209,7 +209,9 @@ func (m *Model) FinishJob(jobID int64, status string, durationMs int64, errorMsg
 	updates := map[string]any{
 		"status":      status,
 		"finished_at": t,
-		"duration_ms": durationMs,
+	}
+	if durationMs > 0 {
+		updates["duration_ms"] = durationMs
 	}
 	if errorMsg != "" {
 		updates["error"] = errorMsg
@@ -241,7 +243,9 @@ func (m *Model) FinishStream(streamID int64, status string, durationMs int64, er
 	updates := map[string]any{
 		"status":      status,
 		"finished_at": t,
-		"duration_ms": durationMs,
+	}
+	if durationMs > 0 {
+		updates["duration_ms"] = durationMs
 	}
 	if errMsg != "" {
 		updates["error"] = errMsg
