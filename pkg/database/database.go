@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -59,6 +60,29 @@ func Open(path string) (*DB, error) {
 		}
 		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
+
+	// SQLite only supports one concurrent writer. Limit the connection
+	// pool to a single connection to avoid SQLITE_BUSY contention between
+	// pooled connections from concurrent goroutines.
+	sqlDB, err := db.DB()
+	if err != nil {
+		if store != nil {
+			store.Close(context.Background())
+		}
+		return nil, fmt.Errorf("getting sql.DB for %s: %w", path, err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
+	// Ensure WAL writes are fsynced immediately. The default
+	// synchronous=FULL should already do this, but set it explicitly
+	// so durability doesn't depend on compile-time defaults.
+	if _, err := sqlDB.Exec("PRAGMA synchronous = FULL"); err != nil {
+		if store != nil {
+			store.Close(context.Background())
+		}
+		return nil, fmt.Errorf("setting synchronous mode for %s: %w", path, err)
+	}
+
 	return &DB{db, store}, nil
 }
 
@@ -67,6 +91,14 @@ func (db *DB) Close() error {
 	if err != nil {
 		return err
 	}
+
+	// Checkpoint the WAL to flush all data to the main database file
+	// before closing. This ensures durability across machine restarts
+	// where the WAL file might not survive.
+	if _, err := sqlDB.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+		slog.Warn("wal checkpoint on close failed", "error", err)
+	}
+
 	if err := sqlDB.Close(); err != nil {
 		return err
 	}

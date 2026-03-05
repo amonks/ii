@@ -49,6 +49,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("initializing model: %w", err)
 	}
+	defer model.Close()
 
 	mux := serve.NewMux()
 	hub := NewOutputHub()

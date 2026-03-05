@@ -11,8 +11,13 @@ Code: [pkg/database/](../pkg/database/)
 ## Opening a Database
 
 - `Open(path string) (*DB, error)` — opens SQLite at the given path with
-  WAL mode and a 5-second busy timeout. Starts litestream replication
-  if the tailnet is ready and the path is not `:memory:`.
+  WAL mode, a 5-second busy timeout, and `synchronous=FULL` (explicit).
+  Starts litestream replication if the tailnet is ready and the path is
+  not `:memory:`. The connection pool is limited to a single connection
+  (`SetMaxOpenConns(1)`) because SQLite only supports one concurrent
+  writer. `Close()` performs a WAL checkpoint (`TRUNCATE`) to flush all
+  data to the main DB file before closing, ensuring durability across
+  machine restarts.
 - `OpenFromDataFolder(name string) (*DB, error)` — opens
   `$MONKS_DATA/<name>.db`.
 

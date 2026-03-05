@@ -352,6 +352,11 @@ func (m *Model) LatestRun() (*Run, error) {
 	return &run, nil
 }
 
+// Close closes the database connection and stops litestream replication.
+func (m *Model) Close() error {
+	return m.db.Close()
+}
+
 func now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
