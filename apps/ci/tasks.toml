@@ -46,9 +46,9 @@
 [[task]]
   id = "build-base-image"
   type = "short"
-  cmd = "fly deploy --build-only --push -c base.fly.toml"
+  cmd = "cd ../.. && fly deploy --build-only --push -c apps/ci/base.fly.toml"
 
 [[task]]
   id = "build-builder-image"
   type = "short"
-  cmd = "fly deploy --build-only --push -c builder.fly.toml"
+  cmd = "cd ../.. && fly deploy --build-only --push -c apps/ci/builder.fly.toml"

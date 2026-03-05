@@ -10,6 +10,43 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// discoverModuleTasks scans {apps,pkg,cmd}/* for tasks.toml files and returns
+// a map from module directory (e.g. "apps/ci") to the task IDs defined in that
+// module's taskfile.
+func discoverModuleTasks(root string) (map[string][]string, error) {
+	result := map[string][]string{}
+	for _, prefix := range []string{"apps", "pkg", "cmd"} {
+		prefixDir := filepath.Join(root, prefix)
+		entries, err := os.ReadDir(prefixDir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("reading %s: %w", prefixDir, err)
+		}
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			taskfilePath := filepath.Join(prefixDir, e.Name(), "tasks.toml")
+			if _, err := os.Stat(taskfilePath); os.IsNotExist(err) {
+				continue
+			}
+			var tf taskfileTasks
+			if _, err := toml.DecodeFile(taskfilePath, &tf); err != nil {
+				return nil, fmt.Errorf("parsing %s: %w", taskfilePath, err)
+			}
+			dir := filepath.Join(prefix, e.Name())
+			var ids []string
+			for _, t := range tf.Task {
+				ids = append(ids, t.ID)
+			}
+			result[dir] = ids
+		}
+	}
+	return result, nil
+}
+
 // loadRedundantCommands loads config/redundant-commands, a newline-delimited
 // list of commands that are already run at the root level and should not be
 // aggregated from app tasks.

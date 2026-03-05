@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 
 	"bytes"
 
-	"monks.co/run/taskfile"
 	"github.com/pelletier/go-toml/v2"
+	"monks.co/run/taskfile"
 	"monks.co/pkg/config"
 	"monks.co/pkg/env"
 )
@@ -35,13 +36,13 @@ func start() error {
 	tasks = append(tasks, baseTasks...)
 
 	// build app task sets for each machine
-	appTasks, err := buildAppTasks()
+	appTasks, moduleGenerateDeps, err := buildAppTasks()
 	if err != nil {
 		return err
 	}
 	tasks = append(tasks, appTasks...)
 
-	// find generate task
+	// find generate task and add discovered generate dependencies
 	var generate *task
 	for _, task := range tasks {
 		if task.Id == "generate" {
@@ -49,13 +50,18 @@ func start() error {
 			break
 		}
 	}
+	generate.Dependencies = append(generate.Dependencies, moduleGenerateDeps...)
 
-	// add discovered dependencies (from apps) to top-level generate task
+	// also add build-task dependencies (e.g. templ, build-css) as generators
 	generators, err := findGenerateTaskIDs(tasks)
 	if err != nil {
 		return fmt.Errorf("finding generator tasks: %w", err)
 	}
 	generate.Dependencies = append(generate.Dependencies, generators...)
+
+	// deduplicate
+	slices.Sort(generate.Dependencies)
+	generate.Dependencies = slices.Compact(generate.Dependencies)
 
 	// add discovered test tasks from apps to top-level test task
 	redundant, err := loadRedundantCommands(root)
@@ -90,35 +96,40 @@ func start() error {
 	return nil
 }
 
-func buildAppTasks() ([]*task, error) {
-	machineConfigs, err := getMachineConfigs()
+func buildAppTasks() ([]*task, []string, error) {
+	root := env.InMonksRoot()
+
+	// discover all modules with tasks.toml files
+	moduleTasks, err := discoverModuleTasks(root)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("discovering module tasks: %w", err)
 	}
 
-	// collect all app names from dev machine configs
-	allApps := map[string]struct{}{}
-	for _, machine := range machineConfigs {
-		if machine.Mode != "dev" {
-			continue
+	// collect modules that have build or generate tasks
+	var buildDeps, generateDeps []string
+	for dir, ids := range moduleTasks {
+		if slices.Contains(ids, "build") {
+			buildDeps = append(buildDeps, dir+"/build")
 		}
-		for _, app := range machine.Apps() {
-			allApps[app] = struct{}{}
+		if slices.Contains(ids, "generate") {
+			generateDeps = append(generateDeps, dir+"/generate")
 		}
 	}
-	var buildDependencies []string
-	for name := range allApps {
-		buildDependencies = append(buildDependencies, "apps/"+name+"/build")
-	}
-	sort.Strings(buildDependencies)
+	sort.Strings(buildDeps)
+	sort.Strings(generateDeps)
 
-	tasks := []*task{{
+	var tasks []*task
+	tasks = []*task{{
 		Id:           "build",
 		Type:         "short",
-		Dependencies: buildDependencies,
+		Dependencies: buildDeps,
 	}}
 
 	// add run tasks for dev machines only
+	machineConfigs, err := getMachineConfigs()
+	if err != nil {
+		return nil, nil, err
+	}
 	for machineName, machine := range machineConfigs {
 		if machine.Mode != "dev" {
 			continue
@@ -139,7 +150,7 @@ func buildAppTasks() ([]*task, error) {
 		tasks = append(tasks, machineStart)
 	}
 
-	return tasks, nil
+	return tasks, generateDeps, nil
 }
 
 func getMachineConfigs() (map[string]*config.Config, error) {

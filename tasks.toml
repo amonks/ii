@@ -27,6 +27,7 @@
     'apps/air/build',
     'apps/aranet/build',
     'apps/calendar/build',
+    'apps/ci/build',
     'apps/creamery/build',
     'apps/directory/build',
     'apps/dogs/build',
@@ -34,13 +35,18 @@
     'apps/dungeon/build',
     'apps/golink/build',
     'apps/homepage/build',
+    'apps/logs/build',
+    'apps/mailer/build',
+    'apps/mailrules/build',
     'apps/map/build',
     'apps/monitor/build',
     'apps/movies/build',
     'apps/ping/build',
+    'apps/proxy/build',
     'apps/reddit/build',
     'apps/scrobbles/build',
     'apps/sms/build',
+    'apps/template/build',
     'apps/writing/build',
     'apps/youtube/build'
   ]
@@ -54,6 +60,8 @@
   id = 'generate'
   type = 'short'
   dependencies = [
+    'apps/ci/build-js',
+    'apps/ci/generate',
     'apps/creamery/compile-pegs',
     'apps/directory/templ',
     'apps/dogs/templ',
@@ -62,11 +70,13 @@
     'apps/dungeon/build-js',
     'apps/dungeon/templ',
     'apps/homepage/templ',
+    'apps/logs/build-css',
     'apps/map/build-css',
     'apps/map/build-js',
     'apps/reddit/templ',
     'apps/writing/templ',
     'apps/youtube/templ',
+    'cmd/run/generate',
     'compress-statics',
     'templ',
     'zone2terraform'
