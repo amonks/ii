@@ -1,5 +1,5 @@
 # monks.co monorepo
 
-<!-- bump ci: publish flow v4 -->
+<!-- bump ci: publish flow v5 -->
 
 @specs/README.md
