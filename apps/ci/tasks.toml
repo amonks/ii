@@ -36,3 +36,19 @@
   id = "start"
   type = "long"
   cmd = "../../bin/ci"
+
+[[task]]
+  id = "build-images"
+  type = "short"
+  dependencies = ["build-base-image", "build-builder-image"]
+  cmd = "echo 'done'"
+
+[[task]]
+  id = "build-base-image"
+  type = "short"
+  cmd = "fly deploy --build-only --push -c base.fly.toml"
+
+[[task]]
+  id = "build-builder-image"
+  type = "short"
+  cmd = "fly deploy --build-only --push -c builder.fly.toml"
