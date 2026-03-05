@@ -81,11 +81,6 @@ function updateRunMetadata(state: RunState): void {
     }
   }
 
-  const deadForm = document.getElementById("mark-dead-form");
-  if (deadForm && state.run.status !== "running") {
-    deadForm.style.display = "none";
-  }
-
   // Update data-run-status on container so new stream viewers know the mode.
   const container = document.getElementById("run-page");
   if (container) {

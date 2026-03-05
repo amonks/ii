@@ -97,8 +97,6 @@ The builder reports progress back over tailnet:
   metadata for the task event log.
 - `GET /api/runs/{id}/base-sha` — return base SHA for this run
 - `POST /api/runs/{id}/deployments` — record deployment
-- `POST /runs/{id}/mark-dead` — mark a running run as dead
-  (dashboard action, not builder API)
 
 ## Output Streaming
 

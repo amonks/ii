@@ -237,59 +237,6 @@ func TestAPIAppendOutputMultipleStreams(t *testing.T) {
 	}
 }
 
-func TestMarkRunDead(t *testing.T) {
-	m, mux, _ := setupAPI(t)
-	m.CreateRun("sha1", "base1", "webhook")
-
-	// Verify it's running.
-	runs, _ := m.RecentRuns(1)
-	if runs[0].Status != "running" {
-		t.Fatalf("expected running, got %s", runs[0].Status)
-	}
-
-	req := httptest.NewRequest(http.MethodPost, "/runs/1/mark-dead", nil)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-
-	// Should redirect back to the run page.
-	if w.Code != http.StatusFound {
-		t.Errorf("expected 302, got %d: %s", w.Code, w.Body.String())
-	}
-
-	// Verify the run is now dead.
-	run, _, _ := m.RunWithJobs(1)
-	if run.Status != "dead" {
-		t.Errorf("expected dead, got %s", run.Status)
-	}
-	if run.FinishedAt == nil {
-		t.Error("expected finished_at to be set")
-	}
-	if run.Error == nil || *run.Error != "manually marked as dead" {
-		t.Errorf("expected error message, got %v", run.Error)
-	}
-}
-
-func TestMarkRunDeadOnlyAffectsRunning(t *testing.T) {
-	m, mux, _ := setupAPI(t)
-	run, _ := m.CreateRun("sha1", "base1", "webhook")
-	m.FinishRun(run.ID, "success", "")
-
-	req := httptest.NewRequest(http.MethodPost, "/runs/1/mark-dead", nil)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-
-	// Should return bad request for non-running runs.
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", w.Code)
-	}
-
-	// Status should still be success.
-	fetched, _, _ := m.RunWithJobs(1)
-	if fetched.Status != "success" {
-		t.Errorf("expected success, got %s", fetched.Status)
-	}
-}
-
 func TestAPIGetBaseSHA(t *testing.T) {
 	m, mux, _ := setupAPI(t)
 	m.CreateRun("sha1", "base1", "webhook")

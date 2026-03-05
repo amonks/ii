@@ -24,8 +24,7 @@ func RegisterAPI(mux *serve.Mux, model *Model, outputDir string, smsFunc func(st
 	mux.HandleFunc("PUT /api/runs/{runID}/jobs/{name}/streams/{stream}/done", api.finishStream)
 	mux.HandleFunc("POST /api/runs/{runID}/jobs/{name}/output/{stream}", api.appendOutput)
 	mux.HandleFunc("PUT /api/runs/{runID}/done", api.finishRun)
-	mux.HandleFunc("POST /runs/{runID}/mark-dead", api.markDead)
-	mux.HandleFunc("GET /api/runs/{runID}/base-sha", api.getBaseSHA)
+mux.HandleFunc("GET /api/runs/{runID}/base-sha", api.getBaseSHA)
 	mux.HandleFunc("POST /api/runs/{runID}/deployments", api.recordDeployment)
 }
 
@@ -374,35 +373,6 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (a *apiHandler) markDead(w http.ResponseWriter, r *http.Request) {
-	runID, err := a.parseRunID(r)
-	if err != nil {
-		http.Error(w, "invalid run ID", http.StatusBadRequest)
-		return
-	}
-
-	run, _, err := a.model.RunWithJobs(runID)
-	if err != nil {
-		http.Error(w, "run not found", http.StatusNotFound)
-		return
-	}
-
-	if run.Status != "running" {
-		http.Error(w, "can only mark running runs as dead", http.StatusBadRequest)
-		return
-	}
-
-	if err := a.model.FinishRun(runID, "dead", "manually marked as dead"); err != nil {
-		http.Error(w, fmt.Sprintf("marking run dead: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	a.publishRunState(runID)
-	a.closeRunEvents(runID)
-
-	http.Redirect(w, r, fmt.Sprintf("runs/%d", runID), http.StatusFound)
 }
 
 func (a *apiHandler) getBaseSHA(w http.ResponseWriter, r *http.Request) {

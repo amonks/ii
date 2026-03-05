@@ -553,10 +553,6 @@
         errorEl.style.display = "";
       }
     }
-    const deadForm = document.getElementById("mark-dead-form");
-    if (deadForm && state.run.status !== "running") {
-      deadForm.style.display = "none";
-    }
     const container = document.getElementById("run-page");
     if (container) {
       container.dataset.runStatus = state.run.status;

@@ -25,7 +25,6 @@ describe("applyRunState", () => {
         <span id="run-status" class="status-running">running</span>
         <span id="run-finished" style="display: none;"></span>
         <span id="run-error" style="display: none;"></span>
-        <form id="mark-dead-form"></form>
         <p id="no-jobs">No jobs yet.</p>
         <table id="jobs-table">
           <tbody id="jobs-tbody"></tbody>
@@ -55,13 +54,6 @@ describe("applyRunState", () => {
 
     const el = document.getElementById("run-error")!;
     expect(el.textContent).toBe("build failed");
-  });
-
-  it("hides mark-dead form when run finishes", () => {
-    applyRunState(makeState({ run: { id: 1, status: "success", head_sha: "a", base_sha: "b", trigger: "w", started_at: "t" } }));
-
-    const form = document.getElementById("mark-dead-form")!;
-    expect(form.style.display).toBe("none");
   });
 
   it("adds job rows", () => {

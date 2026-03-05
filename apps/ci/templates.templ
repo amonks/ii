@@ -129,12 +129,6 @@ templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogE
 					<span id="run-error" class="status-failed" style="display: none;"></span>
 				}
 			</p>
-			if run.Status == "running" {
-				<form id="mark-dead-form" method="POST" action={ templ.SafeURL(fmt.Sprintf("runs/%d/mark-dead", run.ID)) } style="margin-bottom: 1rem;">
-					<button type="submit" onclick="return confirm('Mark this run as dead?')">Mark Dead</button>
-				</form>
-			}
-
 			<h2>Jobs</h2>
 			if len(jobs) == 0 {
 				<p id="no-jobs" class="small">No jobs yet.</p>
