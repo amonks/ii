@@ -414,6 +414,60 @@ func TestSetMachineID(t *testing.T) {
 }
 
 
+func TestFinishRunClosesOrphanedStreams(t *testing.T) {
+	m := testModel(t)
+
+	run, err := m.CreateRun("sha1", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	job, err := m.StartJob(run.ID, "deploy", "deploy", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create two streams: one finished, one orphaned (still in_progress).
+	s1, err := m.StartStream(job.ID, "dogs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.FinishStream(s1.ID, "success", 1000, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = m.StartStream(job.ID, "publish")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Finish the run. The orphaned "publish" stream should be auto-closed.
+	if err := m.FinishRun(run.ID, "failed", "publish failed"); err != nil {
+		t.Fatal(err)
+	}
+
+	streams, err := m.StreamsForJob(job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 2 {
+		t.Fatalf("expected 2 streams, got %d", len(streams))
+	}
+	for _, s := range streams {
+		if s.Status == "in_progress" {
+			t.Errorf("stream %q should not be in_progress after run finished, got status %q", s.Name, s.Status)
+		}
+	}
+	// The orphaned stream should be marked as "unknown".
+	for _, s := range streams {
+		if s.Name == "publish" {
+			if s.Status != "unknown" {
+				t.Errorf("expected orphaned stream status 'unknown', got %q", s.Status)
+			}
+		}
+	}
+}
+
 func TestPendingTrigger(t *testing.T) {
 	m := testModel(t)
 

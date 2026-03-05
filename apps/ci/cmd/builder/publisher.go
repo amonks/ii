@@ -99,11 +99,13 @@ func publishExplicitMirror(root string, pkg publish.Package, reporter *Reporter)
 		fmt.Fprintf(w, "=== done (%dms)\n", duration)
 	}
 
-	reporter.FinishStream("deploy", stream, FinishStreamResult{
+	if fsErr := reporter.FinishStream("deploy", stream, FinishStreamResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,
-	})
+	}); fsErr != nil {
+		slog.Warn("failed to finish stream", "stream", stream, "error", fsErr)
+	}
 
 	if err != nil {
 		return fmt.Errorf("publish %s: %w", pkg.Dir, err)
@@ -133,11 +135,13 @@ func publishDefaultMirror(root string, dirs []string, mirror string, reporter *R
 		fmt.Fprintf(w, "=== done (%dms)\n", duration)
 	}
 
-	reporter.FinishStream("deploy", stream, FinishStreamResult{
+	if fsErr := reporter.FinishStream("deploy", stream, FinishStreamResult{
 		Status:     status,
 		DurationMs: duration,
 		Error:      errMsg,
-	})
+	}); fsErr != nil {
+		slog.Warn("failed to finish stream", "stream", stream, "error", fsErr)
+	}
 
 	if err != nil {
 		return fmt.Errorf("publish default mirror: %w", err)

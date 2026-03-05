@@ -124,7 +124,9 @@ func (m *Model) SetMachineID(runID int64, machineID string) error {
 	return m.db.Model(&Run{}).Where("id = ?", runID).Update("machine_id", machineID).Error
 }
 
-// FinishRun marks a run as complete.
+// FinishRun marks a run as complete. Any streams still in_progress are
+// marked as "unknown" — this handles cases where a FinishStream call was
+// lost (e.g. during an orchestrator restart).
 func (m *Model) FinishRun(runID int64, status, errMsg string) error {
 	t := now()
 	updates := map[string]any{
@@ -134,7 +136,14 @@ func (m *Model) FinishRun(runID int64, status, errMsg string) error {
 	if errMsg != "" {
 		updates["error"] = errMsg
 	}
-	return m.db.Model(&Run{}).Where("id = ?", runID).Updates(updates).Error
+	if err := m.db.Model(&Run{}).Where("id = ?", runID).Updates(updates).Error; err != nil {
+		return err
+	}
+
+	// Close any orphaned in_progress streams.
+	return m.db.Model(&Stream{}).
+		Where("status = ? AND job_id IN (SELECT id FROM jobs WHERE run_id = ?)", "in_progress", runID).
+		Updates(map[string]any{"status": "unknown", "finished_at": t}).Error
 }
 
 // RecentRuns returns the most recent runs.
