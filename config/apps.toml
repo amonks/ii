@@ -124,6 +124,12 @@
     host = "brigid"
     access = "ajm@passkey"
 
+[apps.vault]
+  [[apps.vault.routes]]
+    path = "vault"
+    host = "thor"
+    access = "autogroup:self"
+
 [apps.monitor]
   [[apps.monitor.routes]]
     path = "monitor"
