@@ -536,7 +536,10 @@ func prepareClone(w io.Writer, root string, order []string, graph map[string][]s
 			return "", fmt.Errorf("git add: %w", err)
 		}
 
-		commitCmd := exec.Command("git", "commit", "-m", "publish: update go.mod dependencies")
+		commitCmd := exec.Command("git",
+			"-c", "user.name=monks-ci",
+			"-c", "user.email=ci@monks.co",
+			"commit", "-m", "publish: update go.mod dependencies")
 		commitCmd.Dir = tmpDir
 		if err := commitCmd.Run(); err != nil {
 			return "", fmt.Errorf("git commit: %w", err)
