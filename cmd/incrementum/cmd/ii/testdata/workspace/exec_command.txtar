@@ -1,0 +1,24 @@
+# setup repo
+mkdir repo
+cd repo
+exec jj git init
+
+# exec a simple command in a workspace
+exec $II workspace exec --purpose 'exec test' -- pwd
+envset WORKSPACE_PATH stdout
+
+# workspace should be released after exec finishes
+exec $II workspace list
+stdout 'available'
+stdout 'ws-001'
+
+# exec with default purpose derived from command name
+exec $II workspace exec -- echo hello
+stdout 'hello'
+
+# exec propagates exit code
+! exec $II workspace exec --purpose 'fail test' -- sh -c 'exit 42'
+
+# workspace is still released even on non-zero exit
+exec $II workspace list --all
+! stdout 'acquired'

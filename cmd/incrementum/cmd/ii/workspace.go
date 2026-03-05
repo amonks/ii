@@ -1,17 +1,23 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
+	"github.com/creack/pty"
+	"github.com/spf13/cobra"
 	"monks.co/incrementum/internal/db"
 	"monks.co/incrementum/internal/listflags"
 	"monks.co/incrementum/internal/paths"
 	"monks.co/incrementum/internal/ui"
 	"monks.co/incrementum/workspace"
-	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var workspaceCmd = &cobra.Command{
@@ -37,6 +43,14 @@ var workspaceListCmd = &cobra.Command{
 	RunE:  runWorkspaceList,
 }
 
+var workspaceExecCmd = &cobra.Command{
+	Use:           "exec [flags] -- <command> [args...]",
+	Short:         "Run a command in an acquired workspace",
+	Args:          cobra.MinimumNArgs(1),
+	SilenceUsage: true,
+	RunE:          runWorkspaceExec,
+}
+
 var workspaceDestroyAllCmd = &cobra.Command{
 	Use:   "destroy-all",
 	Short: "Destroy all workspaces for the current repository",
@@ -46,16 +60,20 @@ var workspaceDestroyAllCmd = &cobra.Command{
 var (
 	workspaceAcquireRev     string
 	workspaceAcquirePurpose string
+	workspaceExecRev        string
+	workspaceExecPurpose    string
 	workspaceListJSON       bool
 	workspaceListAll        bool
 )
 
 func init() {
 	rootCmd.AddCommand(workspaceCmd)
-	workspaceCmd.AddCommand(workspaceAcquireCmd, workspaceReleaseCmd, workspaceListCmd, workspaceDestroyAllCmd)
+	workspaceCmd.AddCommand(workspaceAcquireCmd, workspaceReleaseCmd, workspaceListCmd, workspaceExecCmd, workspaceDestroyAllCmd)
 
 	workspaceAcquireCmd.Flags().StringVar(&workspaceAcquireRev, "rev", "@", "Revision to base the new change on")
 	workspaceAcquireCmd.Flags().StringVar(&workspaceAcquirePurpose, "purpose", "", "Purpose for acquiring the workspace")
+	workspaceExecCmd.Flags().StringVar(&workspaceExecRev, "rev", "@", "Revision to base the new change on")
+	workspaceExecCmd.Flags().StringVar(&workspaceExecPurpose, "purpose", "", "Purpose for acquiring the workspace (defaults to \"exec: <command>\")")
 	workspaceListCmd.Flags().BoolVar(&workspaceListJSON, "json", false, "Output as JSON")
 	listflags.AddAllFlag(workspaceListCmd, &workspaceListAll)
 }
@@ -109,6 +127,101 @@ func runWorkspaceAcquire(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(wsPath)
 	return nil
+}
+
+func runWorkspaceExec(cmd *cobra.Command, args []string) error {
+	pool, repoPath, err := openWorkspacePoolAndRepoPath()
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	purpose := workspaceExecPurpose
+	if purpose == "" {
+		purpose = "exec: " + args[0]
+	}
+
+	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+		Rev:     workspaceExecRev,
+		Purpose: purpose,
+	})
+	if err != nil {
+		return fmt.Errorf("acquire workspace: %w", err)
+	}
+	defer pool.Release(wsPath)
+
+	c := exec.Command(args[0], args[1:]...)
+	c.Dir = wsPath
+	c.Env = append(os.Environ(), "II_WORKSPACE="+wsPath)
+
+	// Use a PTY so interactive programs see a terminal.
+	ptmx, err := pty.Start(c)
+	if err != nil {
+		return fmt.Errorf("start command: %w", err)
+	}
+	defer ptmx.Close()
+
+	// Handle window size changes.
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGWINCH)
+	go func() {
+		for range ch {
+			_ = pty.InheritSize(os.Stdin, ptmx)
+		}
+	}()
+	// Set initial size.
+	_ = pty.InheritSize(os.Stdin, ptmx)
+
+	// Put stdin into raw mode so keystrokes pass through.
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err == nil {
+		defer term.Restore(int(os.Stdin.Fd()), oldState)
+	}
+
+	// Copy stdin→pty and pty→stdout concurrently.
+	errc := make(chan error, 2)
+	go func() {
+		_, err := copyIO(ptmx, os.Stdin)
+		errc <- err
+	}()
+	go func() {
+		_, err := copyIO(os.Stdout, ptmx)
+		errc <- err
+	}()
+
+	// Wait for the command to finish.
+	cmdErr := c.Wait()
+
+	// Stop relaying signals.
+	signal.Stop(ch)
+	close(ch)
+
+	if cmdErr != nil {
+		var exitErr *exec.ExitError
+		if errors.As(cmdErr, &exitErr) {
+			return exitError{code: exitErr.ExitCode()}
+		}
+		return cmdErr
+	}
+	return nil
+}
+
+func copyIO(dst *os.File, src *os.File) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var written int64
+	for {
+		n, readErr := src.Read(buf)
+		if n > 0 {
+			nw, writeErr := dst.Write(buf[:n])
+			written += int64(nw)
+			if writeErr != nil {
+				return written, writeErr
+			}
+		}
+		if readErr != nil {
+			return written, readErr
+		}
+	}
 }
 
 func runWorkspaceRelease(cmd *cobra.Command, args []string) error {

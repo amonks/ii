@@ -57,4 +57,5 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 - `ii workspace acquire [--rev <rev>] --purpose <text>`: acquire or create a workspace; prints the workspace path.
 - `ii workspace release [name...]`: release one or more workspaces by name (or the current workspace when no names provided); prints "released workspace <name>" for each.
 - `ii workspace list [--json] [--all]`: list workspaces for the current repo.
+- `ii workspace exec [--rev <rev>] [--purpose <text>] -- <command> [args...]`: acquire a workspace, run a command in it via a PTY, and release it when done. If `--purpose` is omitted, defaults to `"exec: <command>"`. The child process runs with `II_WORKSPACE` set to the workspace path. Stdin/stdout/stderr are wired through a PTY so interactive programs (shells, editors) work correctly. The child's exit code is propagated.
 - `ii workspace destroy-all`: remove all workspaces for the current repo.
