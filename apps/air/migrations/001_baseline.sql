@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS data_points (
 	value REAL
 );
 
+CREATE INDEX IF NOT EXISTS timeseries ON data_points (room, device, parameter, created_at);
+
 CREATE TABLE IF NOT EXISTS window_aggregates (
 	room TEXT,
 	device TEXT,
