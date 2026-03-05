@@ -98,6 +98,7 @@ Each area of the system should have a spec. Keep specs up to date while working 
 | [pkg-ci](pkg-ci.md)             | [pkg/ci/](../pkg/ci/)             | CI shared libraries: change detection, publish config/validation      |
 | [pkg-oci](pkg-oci.md)           | [pkg/oci/](../pkg/oci/)           | Pure Go OCI image building and registry push via go-containerregistry |
 | [pkg-flyapi](pkg-flyapi.md)     | [pkg/flyapi/](../pkg/flyapi/)     | Fly Machines API REST client                                          |
+| —                               | [pkg/tailscaleacl/](../pkg/tailscaleacl/) | Generate Tailscale ACL JSON from apps.toml + base JSONC       |
 
 ### Domain-Specific
 

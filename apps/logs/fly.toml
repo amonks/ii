@@ -3,10 +3,6 @@
 app = "monks-logs"
 primary_region = "ord"
 
-[build]
-  dockerfile = "Dockerfile.fly"
-  ignorefile = "apps/logs/Dockerfile.fly.dockerignore"
-
 [env]
   MONKS_APP_NAME = "logs"
   MONKS_ROOT = "/app"

@@ -80,7 +80,10 @@ func run() error {
 			AWSAccessKeyID:  os.Getenv("AWS_ACCESS_KEY_ID"),
 			AWSSecretKey:    os.Getenv("AWS_SECRET_ACCESS_KEY"),
 			AWSRegion:       os.Getenv("AWS_REGION"),
-			GandiToken:      os.Getenv("GANDI_TOKEN"),
+			GandiToken:          os.Getenv("GANDI_TOKEN"),
+			TSOAuthClientID:     os.Getenv("TAILSCALE_OAUTH_CLIENT_ID"),
+			TSOAuthClientSecret: os.Getenv("TAILSCALE_OAUTH_CLIENT_SECRET"),
+			TSTailnetID:         os.Getenv("TAILSCALE_TAILNET_ID"),
 		},
 	}
 	mux.Handle("POST /trigger", trigger)

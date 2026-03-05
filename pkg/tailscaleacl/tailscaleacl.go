@@ -1,7 +1,7 @@
-// Command tailscale-acl generates a complete Tailscale ACL JSON by
+// Package tailscaleacl generates a complete Tailscale ACL JSON by
 // merging config/tailscale-acl-base.jsonc with routing grants derived
 // from config/apps.toml.
-package main
+package tailscaleacl
 
 import (
 	"encoding/json"
@@ -13,23 +13,17 @@ import (
 	"monks.co/pkg/env"
 )
 
-func main() {
-	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
-
-func run() error {
+// Generate produces the full ACL policy as JSON bytes.
+func Generate() ([]byte, error) {
 	cfg, err := config.LoadApps()
 	if err != nil {
-		return fmt.Errorf("loading apps config: %w", err)
+		return nil, fmt.Errorf("loading apps config: %w", err)
 	}
 
 	basePath := env.InMonksRoot("config", "tailscale-acl-base.jsonc")
 	baseBytes, err := os.ReadFile(basePath)
 	if err != nil {
-		return fmt.Errorf("reading base ACL: %w", err)
+		return nil, fmt.Errorf("reading base ACL: %w", err)
 	}
 
 	// Strip JSONC comments.
@@ -37,7 +31,7 @@ func run() error {
 
 	var base map[string]any
 	if err := json.Unmarshal(baseBytes, &base); err != nil {
-		return fmt.Errorf("parsing base ACL: %w", err)
+		return nil, fmt.Errorf("parsing base ACL: %w", err)
 	}
 
 	grants := generateGrants(cfg)
@@ -51,11 +45,10 @@ func run() error {
 
 	out, err := json.MarshalIndent(base, "", "    ")
 	if err != nil {
-		return fmt.Errorf("marshaling ACL: %w", err)
+		return nil, fmt.Errorf("marshaling ACL: %w", err)
 	}
 
-	fmt.Println(string(out))
-	return nil
+	return out, nil
 }
 
 type routeEntry struct {

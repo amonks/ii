@@ -3,10 +3,6 @@
 app = "monks-mailer"
 primary_region = "ord"
 
-[build]
-  dockerfile = "Dockerfile.fly"
-  ignorefile = "apps/mailer/Dockerfile.fly.dockerignore"
-
 [env]
   MONKS_APP_NAME = "mailer"
   MONKS_ROOT = "/app"

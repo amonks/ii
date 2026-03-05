@@ -44,8 +44,8 @@ all job types:
 - **test**: 1 job, N streams (one per run-library task)
 - **deploy**: 1 job, N streams — "analysis" stream for change
   detection and skip reporting, per-fly-app streams for affected
-  apps, plus "publish" and "terraform" streams, all running in
-  parallel after analysis completes
+  apps, plus "publish", "terraform", and "tailscale-acl" streams,
+  all running in parallel after analysis completes
 
 Deploy metadata (compile_ms, push_ms, image_ref, etc.) is sent as
 part of the `FinishRun` request payload for task event emission,
@@ -249,7 +249,7 @@ and failure. Messages include a link to the run dashboard:
    - "analysis" stream: change detection, reports affected/skipped apps
    - Then concurrently: per-app deploy streams (affected only; deploy
      metadata accumulated for task event), image rebuilds if needed,
-     "publish" stream, "terraform" stream
+     "publish" stream, "terraform" stream, "tailscale-acl" stream
    Errors are collected (not fail-fast) and joined.
 7. Report run complete (sends accumulated deploy metadata)
 10. Exit → machine self-destructs

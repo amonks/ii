@@ -1,4 +1,4 @@
-package main
+package tailscaleacl
 
 import (
 	"encoding/json"

@@ -21,16 +21,19 @@ type TriggerHandler struct {
 
 // BuilderConfig holds the configuration for creating builder machines.
 type BuilderConfig struct {
-	FallbackImage    string
-	Region           string
-	OrchestratorURL  string
-	FlyAPIToken      string
-	GHToken          string
-	TSAuthKey        string
-	AWSAccessKeyID   string
-	AWSSecretKey     string
-	AWSRegion        string
-	GandiToken       string
+	FallbackImage         string
+	Region                string
+	OrchestratorURL       string
+	FlyAPIToken           string
+	GHToken               string
+	TSAuthKey             string
+	AWSAccessKeyID        string
+	AWSSecretKey          string
+	AWSRegion             string
+	GandiToken            string
+	TSOAuthClientID       string
+	TSOAuthClientSecret   string
+	TSTailnetID           string
 }
 
 type triggerRequest struct {
@@ -214,6 +217,11 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 	}
 	if h.builderConfig.GandiToken != "" {
 		env["GANDI_TOKEN"] = h.builderConfig.GandiToken
+	}
+	if h.builderConfig.TSOAuthClientID != "" {
+		env["TAILSCALE_OAUTH_CLIENT_ID"] = h.builderConfig.TSOAuthClientID
+		env["TAILSCALE_OAUTH_CLIENT_SECRET"] = h.builderConfig.TSOAuthClientSecret
+		env["TAILSCALE_TAILNET_ID"] = h.builderConfig.TSTailnetID
 	}
 
 	input := flyapi.MachineCreateInput{

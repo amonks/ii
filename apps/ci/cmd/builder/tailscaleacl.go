@@ -1,0 +1,96 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"os"
+	"time"
+
+	tsclient "github.com/tailscale/tailscale-client-go/v2"
+	"monks.co/pkg/tailscaleacl"
+)
+
+// TailscaleACLApply generates the Tailscale ACL policy from config and
+// pushes it via the Tailscale API. It runs as a "tailscale-acl" stream
+// within the "deploy" job.
+func TailscaleACLApply(reporter *Reporter) error {
+	reporter.StartStream("deploy", "tailscale-acl")
+
+	w := reporter.StreamWriter("deploy", "tailscale-acl")
+	defer w.Close()
+
+	start := time.Now()
+
+	clientID := os.Getenv("TAILSCALE_OAUTH_CLIENT_ID")
+	clientSecret := os.Getenv("TAILSCALE_OAUTH_CLIENT_SECRET")
+	tailnetID := os.Getenv("TAILSCALE_TAILNET_ID")
+
+	if clientID == "" || clientSecret == "" || tailnetID == "" {
+		slog.Info("tailscale OAuth credentials not configured, skipping ACL push")
+		fmt.Fprintf(w, "tailscale OAuth credentials not configured, skipping\n")
+		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
+			Status:     "skipped",
+			DurationMs: time.Since(start).Milliseconds(),
+		})
+		return nil
+	}
+
+	// Generate ACL JSON.
+	fmt.Fprintf(w, "=== generating ACL policy\n")
+	aclBytes, err := tailscaleacl.Generate()
+	if err != nil {
+		errMsg := fmt.Sprintf("generating ACL: %v", err)
+		fmt.Fprintf(w, "=== %s\n", errMsg)
+		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("generating ACL: %w", err)
+	}
+
+	// Parse into any so the SDK can serialize it.
+	var acl any
+	if err := json.Unmarshal(aclBytes, &acl); err != nil {
+		errMsg := fmt.Sprintf("parsing generated ACL: %v", err)
+		fmt.Fprintf(w, "=== %s\n", errMsg)
+		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("parsing generated ACL: %w", err)
+	}
+
+	// Push to Tailscale.
+	fmt.Fprintf(w, "=== pushing ACL to tailnet %s\n", tailnetID)
+	client := &tsclient.Client{
+		Tailnet: tailnetID,
+		HTTP: tsclient.OAuthConfig{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}.HTTPClient(),
+	}
+
+	ctx := context.Background()
+	if err := client.PolicyFile().Set(ctx, acl, ""); err != nil {
+		errMsg := fmt.Sprintf("pushing ACL: %v", err)
+		fmt.Fprintf(w, "=== %s\n", errMsg)
+		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("pushing ACL: %w", err)
+	}
+
+	duration := time.Since(start).Milliseconds()
+	fmt.Fprintf(w, "=== done (%dms)\n", duration)
+	reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
+		Status:     "success",
+		DurationMs: duration,
+	})
+	return nil
+}

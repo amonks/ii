@@ -84,6 +84,15 @@ func (p *Pipeline) Run(ctx context.Context) error {
 		}
 	})
 
+	// Tailscale ACL push.
+	wg.Go(func() {
+		if err := TailscaleACLApply(p.Reporter); err != nil {
+			mu.Lock()
+			errs = append(errs, fmt.Errorf("tailscale-acl failed: %w", err))
+			mu.Unlock()
+		}
+	})
+
 	wg.Wait()
 
 	deployErr := errors.Join(errs...)
