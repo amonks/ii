@@ -125,9 +125,17 @@ func resolveImportPath(pkgDir string, modPathToDir map[string]string) (string, b
 // loadMonksPackages loads all monks.co/* packages from the workspace rooted
 // at root and returns a map from import path to package.
 func loadMonksPackages(root string) (map[string]*packages.Package, error) {
+	// Set GOWORK explicitly so go/packages uses the workspace in root,
+	// not one inherited from the calling environment.
+	env := os.Environ()
+	goWork := filepath.Join(root, "go.work")
+	if _, err := os.Stat(goWork); err == nil {
+		env = append(env, "GOWORK="+goWork)
+	}
 	cfg := &packages.Config{
 		Mode: packages.NeedImports | packages.NeedDeps | packages.NeedName,
 		Dir:  root,
+		Env:  env,
 	}
 	initial, err := packages.Load(cfg, "monks.co/...")
 	if err != nil {
