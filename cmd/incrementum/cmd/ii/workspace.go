@@ -152,7 +152,6 @@ func runWorkspaceExec(cmd *cobra.Command, args []string) error {
 
 	c := exec.Command(args[0], args[1:]...)
 	c.Dir = wsPath
-	c.Env = append(os.Environ(), "II_WORKSPACE="+wsPath)
 
 	// Use a PTY so interactive programs see a terminal.
 	ptmx, err := pty.Start(c)
