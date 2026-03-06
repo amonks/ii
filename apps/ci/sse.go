@@ -14,9 +14,9 @@ import (
 
 // runStateEvent is the JSON structure sent to SSE clients.
 type runStateEvent struct {
-	Run     runJSON                  `json:"run"`
-	Jobs    []jobJSON                `json:"jobs"`
-	Streams map[string][]streamJSON  `json:"streams"`
+	Run     runJSON                 `json:"run"`
+	Jobs    []jobJSON               `json:"jobs"`
+	Streams map[string][]streamJSON `json:"streams"`
 }
 
 type runJSON struct {
@@ -107,7 +107,7 @@ func buildRunState(model *Model, outputDir string, runID int64) (*runStateEvent,
 			Kind:       j.Kind,
 			Status:     j.Status,
 			DurationMs: dur,
-			Error:      j.Error,
+			Error:       j.Error,
 		})
 
 		// Use DB streams if available.

@@ -84,6 +84,14 @@ func (h *recordingHandler) outputPaths() []string {
 	return paths
 }
 
+func requestPaths(reqs []recordedRequest) []string {
+	paths := make([]string, len(reqs))
+	for i, r := range reqs {
+		paths[i] = r.Path
+	}
+	return paths
+}
+
 func TestReporterIntegration(t *testing.T) {
 	handler := newRecordingHandler()
 	srv := httptest.NewServer(handler)
@@ -379,7 +387,7 @@ cmd = "echo testing"
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := RunTests(ctx, dir, reporter, "-2")
+	err := RunTests(ctx, dir, reporter, "-post-orchestrator")
 	if err != nil {
 		t.Fatalf("RunTests failed: %v", err)
 	}
@@ -388,19 +396,19 @@ cmd = "echo testing"
 
 	// Verify that suffixed job names were used.
 	reqs := handler.getRequests()
-	var generate2Start, ciTest2Start bool
+	var generateStart, ciTestStart bool
 	for _, r := range reqs {
-		if r.Path == "/api/runs/1/jobs/generate-2/start" {
-			generate2Start = true
+		if r.Path == "/api/runs/1/jobs/generate-post-orchestrator/start" {
+			generateStart = true
 		}
-		if r.Path == "/api/runs/1/jobs/ci-test-2/start" {
-			ciTest2Start = true
+		if r.Path == "/api/runs/1/jobs/ci-test-post-orchestrator/start" {
+			ciTestStart = true
 		}
 	}
-	if !generate2Start {
-		t.Error("expected generate-2 job to be started")
+	if !generateStart {
+		t.Errorf("expected generate-post-orchestrator job to be started; got paths: %v", requestPaths(reqs))
 	}
-	if !ciTest2Start {
-		t.Error("expected ci-test-2 job to be started")
+	if !ciTestStart {
+		t.Errorf("expected ci-test-post-orchestrator job to be started; got paths: %v", requestPaths(reqs))
 	}
 }

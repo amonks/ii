@@ -163,8 +163,8 @@ func TestPhaseSuffix(t *testing.T) {
 		suffix string
 	}{
 		{"initial", ""},
-		{"post-orchestrator", "-2"},
-		{"post-builder", "-3"},
+		{"post-orchestrator", "-post-orchestrator"},
+		{"post-builder", "-post-builder"},
 		{"", ""},
 	}
 	for _, tt := range tests {

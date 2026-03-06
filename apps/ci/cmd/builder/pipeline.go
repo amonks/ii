@@ -81,9 +81,9 @@ func (p *Pipeline) Run(ctx context.Context) (string, error) {
 func phaseSuffix(phase string) string {
 	switch phase {
 	case "post-orchestrator":
-		return "-2"
+		return "-post-orchestrator"
 	case "post-builder":
-		return "-3"
+		return "-post-builder"
 	default:
 		return ""
 	}
