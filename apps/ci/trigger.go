@@ -14,9 +14,13 @@ import (
 
 // TriggerHandler handles POST /trigger requests from GitHub Actions.
 type TriggerHandler struct {
-	model    *Model
-	fly      *flyapi.Client
+	model         *Model
+	fly           *flyapi.Client
 	builderConfig BuilderConfig
+
+	// destroyTimeout is how long to wait for an old builder to be
+	// destroyed before giving up. Defaults to 1 minute.
+	destroyTimeout time.Duration
 }
 
 // BuilderConfig holds the configuration for creating builder machines.
@@ -105,9 +109,45 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// During fetch/test/generate: kill the builder, mark run superseded, start new.
 	reqlog.Set(r.Context(), "trigger.action", "supersede")
-	go h.supersedRun(run)
 
-	h.startNewRun(w, r, req.SHA)
+	// Mark old run superseded immediately.
+	if err := h.model.FinishRun(run.ID, "superseded", "superseded by newer commit"); err != nil {
+		slog.Error("marking run superseded", "error", err, "run_id", run.ID)
+	}
+
+	// Create the new run and respond to the webhook right away.
+	baseSHA, err := h.model.LastSuccessfulSHA()
+	if err != nil {
+		baseSHA = "0000000000000000000000000000000000000000"
+	}
+	newRun, err := h.model.CreateRun(req.SHA, baseSHA, "webhook")
+	if err != nil {
+		slog.Error("creating run", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	reqlog.Set(r.Context(), "trigger.run_id", newRun.ID)
+	reqlog.Set(r.Context(), "trigger.base_sha", baseSHA)
+	if h.fly == nil {
+		slog.Error("no fly client configured, cannot create builder machine", "run_id", newRun.ID)
+		h.model.FinishRun(newRun.ID, "failed", "fly client not configured (FLY_API_TOKEN missing?)")
+		http.Error(w, "fly client not configured (FLY_API_TOKEN missing?)", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(map[string]any{
+		"run_id":   newRun.ID,
+		"head_sha": req.SHA,
+		"base_sha": baseSHA,
+	})
+
+	// In the background: stop the old builder, wait for it to be destroyed,
+	// then create the new builder. This ensures the shared volume is released.
+	prevMachineID := ""
+	if run.MachineID != nil {
+		prevMachineID = *run.MachineID
+	}
+	go h.supersedeAndStart(prevMachineID, newRun)
 }
 
 // BuildNow handles POST /build requests from the dashboard.
@@ -147,14 +187,53 @@ func (h *TriggerHandler) BuildNow(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("runs/%d", run.ID), http.StatusSeeOther)
 }
 
-// supersedRun marks a running run as superseded and stops its builder machine.
-func (h *TriggerHandler) supersedRun(run *Run) {
-	if err := h.model.FinishRun(run.ID, "superseded", "superseded by newer commit"); err != nil {
-		slog.Error("marking run superseded", "error", err, "run_id", run.ID)
+// supersedeAndStart stops the old builder machine, waits for it to be
+// destroyed (so the shared volume is released), then creates the new builder.
+// If the old machine doesn't die within 1 minute, the new run is failed.
+func (h *TriggerHandler) supersedeAndStart(prevMachineID string, newRun *Run) {
+	timeout := h.destroyTimeout
+	if timeout == 0 {
+		timeout = time.Minute
 	}
-	if run.MachineID != nil && h.fly != nil {
-		if err := h.fly.StopMachine(context.Background(), *run.MachineID); err != nil {
-			slog.Warn("stopping superseded builder machine", "error", err, "machine_id", *run.MachineID)
+	if prevMachineID != "" {
+		if err := h.stopAndWaitForDestroyed(prevMachineID, timeout); err != nil {
+			slog.Error("old builder did not die in time", "error", err, "machine_id", prevMachineID, "run_id", newRun.ID)
+			h.model.FinishRun(newRun.ID, "failed", fmt.Sprintf("old builder did not die in time: %v", err))
+			return
+		}
+	}
+	h.createBuilderMachine(newRun)
+}
+
+// stopAndWaitForDestroyed stops a machine and waits for it to reach the
+// "destroyed" state. It retries the stop+wait cycle up to 3 times, with an
+// overall deadline of the given timeout.
+func (h *TriggerHandler) stopAndWaitForDestroyed(machineID string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	for attempt := 1; ; attempt++ {
+		slog.Info("stopping old builder", "machine_id", machineID, "attempt", attempt)
+		if err := h.fly.StopMachine(ctx, machineID); err != nil {
+			slog.Warn("stopping builder machine", "error", err, "machine_id", machineID, "attempt", attempt)
+		}
+
+		deadline, _ := ctx.Deadline()
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return fmt.Errorf("timeout waiting for machine %s to be destroyed", machineID)
+		}
+
+		err := h.fly.WaitForState(ctx, machineID, "destroyed", remaining)
+		if err == nil {
+			slog.Info("old builder destroyed", "machine_id", machineID)
+			return nil
+		}
+
+		slog.Warn("waiting for builder destruction", "error", err, "machine_id", machineID, "attempt", attempt)
+
+		if ctx.Err() != nil {
+			return fmt.Errorf("timeout waiting for machine %s to be destroyed after %d attempts", machineID, attempt)
 		}
 	}
 }

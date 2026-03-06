@@ -464,6 +464,111 @@ func TestCancelRun(t *testing.T) {
 	})
 }
 
+func TestSupersedeWaitsForOldBuilder(t *testing.T) {
+	m := testModel(t)
+
+	var calls []string
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/stop"):
+			calls = append(calls, "stop")
+		case strings.Contains(r.URL.Path, "/wait"):
+			calls = append(calls, "wait")
+			if r.URL.Query().Get("state") != "destroyed" {
+				t.Errorf("expected wait for destroyed state, got %s", r.URL.Query().Get("state"))
+			}
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/machines"):
+			calls = append(calls, "create")
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "new-machine",
+			"state": "created",
+		})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	mockRegistry := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"tags": []string{"deployment-01AAA"}})
+	}))
+	t.Cleanup(mockRegistry.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
+	flyClient.RegistryURL = mockRegistry.URL
+
+	handler := &TriggerHandler{
+		model: m,
+		fly:   flyClient,
+		builderConfig: BuilderConfig{
+			FallbackImage: "test-image",
+			Region:        "ord",
+		},
+	}
+
+	// Create a run to be the "new" run that supersedeAndStart will build.
+	run, err := m.CreateRun("new-sha", "base1", "webhook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.supersedeAndStart("old-machine-id", run)
+
+	// Verify the call order: stop, wait, then create.
+	if len(calls) != 3 {
+		t.Fatalf("expected 3 fly API calls, got %d: %v", len(calls), calls)
+	}
+	if calls[0] != "stop" {
+		t.Errorf("expected first call to be stop, got %s", calls[0])
+	}
+	if calls[1] != "wait" {
+		t.Errorf("expected second call to be wait, got %s", calls[1])
+	}
+	if calls[2] != "create" {
+		t.Errorf("expected third call to be create, got %s", calls[2])
+	}
+}
+
+func TestSupersedeFailsRunOnTimeout(t *testing.T) {
+	m := testModel(t)
+
+	// Mock fly that always returns 408 for wait (simulating the machine never dying).
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/wait") {
+			// Simulate a brief delay so we don't spin too fast.
+			time.Sleep(50 * time.Millisecond)
+			http.Error(w, "timeout", http.StatusRequestTimeout)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "machine",
+			"state": "stopped",
+		})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
+
+	handler := &TriggerHandler{
+		model:          m,
+		fly:            flyClient,
+		destroyTimeout: 500 * time.Millisecond,
+		builderConfig: BuilderConfig{
+			FallbackImage: "test-image",
+			Region:        "ord",
+		},
+	}
+
+	// supersedeAndStart should fail the run when the old builder won't die.
+	run, _ := m.CreateRun("timeout-sha", "base1", "webhook")
+	handler.supersedeAndStart("stuck-machine", run)
+
+	updated, _, _ := m.RunWithJobs(run.ID)
+	if updated.Status != "failed" {
+		t.Errorf("expected run to be failed after timeout, got %s", updated.Status)
+	}
+}
+
 func TestTriggerHandlerNoFlyClient(t *testing.T) {
 	m := testModel(t)
 	handler := &TriggerHandler{
