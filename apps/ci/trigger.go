@@ -401,11 +401,24 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 		},
 	}
 
-	info, err := h.fly.CreateMachine(context.Background(), input)
-	if err != nil {
-		slog.Error("creating builder machine", "error", err, "run_id", run.ID)
-		h.model.FinishRun(run.ID, "failed", fmt.Sprintf("creating builder machine: %v", err))
-		return
+	// Retry machine creation — the volume may not be immediately available
+	// after the previous builder is destroyed.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	var info *flyapi.MachineInfo
+	for attempt := 1; ; attempt++ {
+		var err error
+		info, err = h.fly.CreateMachine(ctx, input)
+		if err == nil {
+			break
+		}
+		slog.Warn("creating builder machine", "error", err, "run_id", run.ID, "attempt", attempt)
+		if ctx.Err() != nil {
+			slog.Error("giving up creating builder machine", "error", err, "run_id", run.ID, "attempts", attempt)
+			h.model.FinishRun(run.ID, "failed", fmt.Sprintf("creating builder machine: %v", err))
+			return
+		}
+		time.Sleep(2 * time.Second)
 	}
 
 	slog.Info("created builder machine", "machine_id", info.ID, "run_id", run.ID)

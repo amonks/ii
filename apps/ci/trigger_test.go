@@ -569,6 +569,64 @@ func TestSupersedeFailsRunOnTimeout(t *testing.T) {
 	}
 }
 
+func TestCreateBuilderMachineRetries(t *testing.T) {
+	m := testModel(t)
+
+	var createAttempts int
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Registry endpoint for image resolution.
+		if strings.Contains(r.URL.Path, "/tags/list") {
+			json.NewEncoder(w).Encode(map[string]any{"tags": []string{"deployment-01AAA"}})
+			return
+		}
+		// CreateMachine: fail the first 2 attempts, succeed on the 3rd.
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/machines") {
+			createAttempts++
+			if createAttempts < 3 {
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintf(w, `{"error":"volume not found"}`)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]any{
+				"id":    "retry-machine",
+				"state": "created",
+			})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"id": "x", "state": "ok"})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
+	flyClient.RegistryURL = mockFly.URL
+
+	handler := &TriggerHandler{
+		model: m,
+		fly:   flyClient,
+		builderConfig: BuilderConfig{
+			FallbackImage: "test-image",
+			Region:        "ord",
+		},
+	}
+
+	run, _ := m.CreateRun("retry-sha", "base1", "webhook")
+	handler.createBuilderMachine(run)
+
+	if createAttempts != 3 {
+		t.Errorf("expected 3 create attempts, got %d", createAttempts)
+	}
+
+	// Run should still be running (not failed).
+	updated, _, _ := m.RunWithJobs(run.ID)
+	if updated.Status != "running" {
+		t.Errorf("expected run still running, got %s", updated.Status)
+	}
+	if updated.MachineID == nil || *updated.MachineID != "retry-machine" {
+		t.Error("expected machine ID to be set to retry-machine")
+	}
+}
+
 func TestTriggerHandlerNoFlyClient(t *testing.T) {
 	m := testModel(t)
 	handler := &TriggerHandler{
