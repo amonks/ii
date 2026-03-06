@@ -1,6 +1,6 @@
 module monks.co/apps/vault
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/charmbracelet/ssh v0.0.0-20241211182756-4fe22b0f1b7c

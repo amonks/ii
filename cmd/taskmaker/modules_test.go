@@ -79,7 +79,7 @@ func TestGenerateGoWork(t *testing.T) {
 
 	content := generateGoWork(mods)
 
-	if !strings.Contains(content, "go 1.26.0") {
+	if !strings.Contains(content, "go 1.26.1") {
 		t.Error("expected go version directive")
 	}
 	if !strings.Contains(content, "\t.") {
@@ -98,7 +98,7 @@ func TestGenerateGoMod(t *testing.T) {
 	if !strings.Contains(content, "module monks.co/pkg/serve") {
 		t.Error("expected module directive")
 	}
-	if !strings.Contains(content, "go 1.26.0") {
+	if !strings.Contains(content, "go 1.26.1") {
 		t.Error("expected go version directive")
 	}
 }
@@ -146,7 +146,7 @@ func TestGenerateGoModDoesNotOverwriteExisting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	existing := "module monks.co/pkg/serve\n\ngo 1.26.0\n\nrequire example.com/foo v1.0.0\n"
+	existing := "module monks.co/pkg/serve\n\ngo 1.26.1\n\nrequire example.com/foo v1.0.0\n"
 	if err := os.WriteFile(filepath.Join(p, "go.mod"), []byte(existing), 0644); err != nil {
 		t.Fatal(err)
 	}

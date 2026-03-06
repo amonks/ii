@@ -1,6 +1,6 @@
 module monks.co/pkg/tls
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/caddyserver/certmagic v0.25.1

@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine
+FROM golang:1.26.1-alpine
 
 RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
     python3 py3-pip sqlite ca-certificates curl pkgconf tailscale

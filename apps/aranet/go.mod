@@ -1,6 +1,6 @@
 module monks.co/apps/aranet
 
-go 1.26.0
+go 1.26.1
 
 require tinygo.org/x/bluetooth v0.14.0
 

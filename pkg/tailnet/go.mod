@@ -1,6 +1,6 @@
 module monks.co/pkg/tailnet
 
-go 1.26.0
+go 1.26.1
 
 require tailscale.com v1.94.1
 

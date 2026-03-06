@@ -81,7 +81,7 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
+		Prompt: internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -118,19 +118,19 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 	}
 
 	// Verify the assistant message contains "4"
-	var responseText strings.Builder
+	var responseText string
 	for _, msg := range result.Messages {
 		if am, ok := msg.(llm.AssistantMessage); ok {
 			for _, block := range am.Content {
 				if tc, ok := block.(llm.TextContent); ok {
-					responseText.WriteString(tc.Text)
+					responseText += tc.Text
 				}
 			}
 		}
 	}
 
-	if !strings.Contains(responseText.String(), "4") {
-		t.Errorf("Expected response to contain '4', got %q", responseText.String())
+	if !strings.Contains(responseText, "4") {
+		t.Errorf("Expected response to contain '4', got %q", responseText)
 	}
 
 	// Verify usage was tracked
@@ -178,7 +178,7 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 		t.Error("Expected log to contain agent.start event")
 	}
 
-	t.Logf("Response: %s", responseText.String())
+	t.Logf("Response: %s", responseText)
 	t.Logf("Session ID: %s", result.SessionID)
 	t.Logf("Usage: input=%d, output=%d, cost=$%.6f", result.Usage.Input, result.Usage.Output, result.Usage.Cost.Total)
 }
@@ -205,7 +205,7 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
+		Prompt: internalagent.PromptContent{UserContent: "What is 2+2? Just say the number, nothing else."},
 		Model:     "gpt-5.2",
 		StartedAt: time.Now(),
 	}
@@ -230,22 +230,22 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 	}
 
 	// Verify the response contains "4"
-	var responseText strings.Builder
+	var responseText string
 	for _, msg := range result.Messages {
 		if am, ok := msg.(llm.AssistantMessage); ok {
 			for _, block := range am.Content {
 				if tc, ok := block.(llm.TextContent); ok {
-					responseText.WriteString(tc.Text)
+					responseText += tc.Text
 				}
 			}
 		}
 	}
 
-	if !strings.Contains(responseText.String(), "4") {
-		t.Errorf("Expected response to contain '4', got %q", responseText.String())
+	if !strings.Contains(responseText, "4") {
+		t.Errorf("Expected response to contain '4', got %q", responseText)
 	}
 
-	t.Logf("Response: %s", responseText.String())
+	t.Logf("Response: %s", responseText)
 	t.Logf("Session ID: %s", result.SessionID)
 	t.Logf("Usage: input=%d, output=%d", result.Usage.Input, result.Usage.Output)
 }
@@ -273,7 +273,7 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "Please run 'echo hello world' using the bash tool and tell me the output."},
+		Prompt: internalagent.PromptContent{UserContent: "Please run 'echo hello world' using the bash tool and tell me the output."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -358,7 +358,7 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "Please create a file at " + testFile + " with the content 'Hello from the agent!'"},
+		Prompt: internalagent.PromptContent{UserContent: "Please create a file at " + testFile + " with the content 'Hello from the agent!'"},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}
@@ -415,7 +415,7 @@ func TestAgentStoreRun_Transcript(t *testing.T) {
 	opts := agent.RunOptions{
 		RepoPath:  "/test/repo",
 		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "What is the capital of France? Just say the city name."},
+		Prompt: internalagent.PromptContent{UserContent: "What is the capital of France? Just say the city name."},
 		Model:     "claude-sonnet-4-5",
 		StartedAt: time.Now(),
 	}

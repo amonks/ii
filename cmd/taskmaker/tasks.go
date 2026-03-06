@@ -49,7 +49,7 @@ var baseTasks = []*task{
 	{
 		Id:   "gofix",
 		Type: "short",
-		Cmd:  "echo \"=== gofix diag ===\"; go version; echo \"GOARCH=$GOARCH GOOS=$GOOS\"; echo \"GOMODCACHE=$GOMODCACHE GOCACHE=$GOCACHE GOWORK=$GOWORK\"; echo \"PWD=$PWD\"; echo \"=== go fix -diff ===\"; go fix -diff monks.co/... | tee /dev/stderr | head -100; echo \"=== applying ===\"; go fix monks.co/...",
+		Cmd:  "go fix monks.co/...",
 	},
 	{
 		Id:   "staticcheck",

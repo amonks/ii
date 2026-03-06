@@ -1,3 +1,3 @@
 module monks.co/apps/golink
 
-go 1.26.0
+go 1.26.1

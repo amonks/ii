@@ -1,6 +1,6 @@
 module monks.co/apps/creamery
 
-go 1.26.0
+go 1.26.1
 
 require github.com/go-nlopt/nlopt v0.0.0-20230219125344-443d3362dcb5
 

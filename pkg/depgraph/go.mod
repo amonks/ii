@@ -1,6 +1,6 @@
 module monks.co/pkg/depgraph
 
-go 1.26.0
+go 1.26.1
 
 require golang.org/x/tools v0.42.0
 

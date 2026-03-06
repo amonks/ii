@@ -1,6 +1,6 @@
 module monks.co/pkg/gzipserver
 
-go 1.26.0
+go 1.26.1
 
 require github.com/kevinpollet/nego v0.0.0-20211010160919-a65cd48cee43
 

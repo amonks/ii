@@ -1,6 +1,6 @@
 module monks.co
 
-go 1.26.0
+go 1.26.1
 
 require (
 	cel.dev/expr v0.24.0 // indirect

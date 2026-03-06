@@ -1,6 +1,6 @@
 module monks.co/pkg/twilio
 
-go 1.26.0
+go 1.26.1
 
 require github.com/twilio/twilio-go v1.30.1
 
