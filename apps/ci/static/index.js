@@ -443,21 +443,15 @@
     const lastLineEl = details.querySelector(".stream-last-line");
     if (!pre || !lastLineEl)
       return;
-    let loaded = false;
     if (details.dataset.lastLine) {
       const initAnsi = new AnsiUp();
       lastLineEl.innerHTML = initAnsi.ansi_to_html(details.dataset.lastLine);
     }
-    details.addEventListener("toggle", () => {
-      if (!details.open || loaded)
-        return;
-      loaded = true;
-      if (running) {
-        streamFetch(url, pre, lastLineEl);
-      } else {
-        staticFetch(url, pre);
-      }
-    });
+    if (running) {
+      streamFetch(url, pre, lastLineEl);
+    } else {
+      staticFetch(url, pre);
+    }
   }
   function updateLastLine(text, lastLineEl) {
     const lines = text.split("\n");

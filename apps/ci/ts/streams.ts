@@ -21,24 +21,18 @@ export function initOneStream(details: HTMLDetailsElement, running: boolean): vo
   const lastLineEl = details.querySelector<HTMLSpanElement>(".stream-last-line");
   if (!pre || !lastLineEl) return;
 
-  let loaded = false;
-
   // Show the last line summary from server-rendered data attribute.
   if (details.dataset.lastLine) {
     const initAnsi = new AnsiUp();
     lastLineEl.innerHTML = initAnsi.ansi_to_html(details.dataset.lastLine);
   }
 
-  details.addEventListener("toggle", () => {
-    if (!details.open || loaded) return;
-    loaded = true;
-
-    if (running) {
-      streamFetch(url, pre, lastLineEl);
-    } else {
-      staticFetch(url, pre);
-    }
-  });
+  // Fetch stream content immediately (not lazily on toggle).
+  if (running) {
+    streamFetch(url, pre, lastLineEl);
+  } else {
+    staticFetch(url, pre);
+  }
 }
 
 function updateLastLine(text: string, lastLineEl: HTMLSpanElement): void {
