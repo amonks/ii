@@ -31,6 +31,7 @@ use (
 	./apps/vault
 	./apps/writing
 	./apps/youtube
+	./cmd/backupd
 	./cmd/beetman
 	./cmd/compressor
 	./cmd/incrementum

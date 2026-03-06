@@ -241,3 +241,17 @@ all single-segment paths (like `/run`) to avoid intercepting
 app routes (like `/dogs`). This was changed to match against
 known published modules instead, so `monks.co/run` resolves
 correctly while app routes are still unaffected.
+
+### backupd (cmd/backupd)
+
+Published to `github.com/amonks/backupd` with vanity path
+`monks.co/backupd`. Source repo was jj-only (non-colocated) —
+required `jj git colocation enable` before `git subtree add`
+could read from it. Module path was already `monks.co/backupd`
+so no import rewrites needed. Had a `tools.go` with templ,
+govulncheck, and staticcheck tool imports — removed it and ran
+`go mod tidy`. The `tasks.toml` was adapted to use `go tool`
+commands instead of `go run` for tools. gofix applied two
+changes: `fmt.Sprintf` → `fmt.Appendf` in logger, manual map
+copy → `maps.Copy` in sync status. First staticcheck run failed
+due to stale cache; passed on retry.
