@@ -119,6 +119,7 @@
     'cmd/incrementum/generate',
     'cmd/run/generate',
     'compress-statics',
+    'gofix',
     'taskmaker',
     'templ',
     'zone2terraform'
@@ -132,7 +133,7 @@
 [[task]]
   id = 'gofix'
   type = 'short'
-  cmd = 'diff=$(go fix -diff monks.co/...); if [ -n "$diff" ]; then echo "$diff"; exit 1; fi'
+  cmd = 'go fix monks.co/...'
 
 [[task]]
   id = 'govulncheck'
@@ -172,7 +173,6 @@
   type = 'short'
   dependencies = [
     'go-test',
-    'gofix',
     'govulncheck',
     'publish-validate',
     'staticcheck'

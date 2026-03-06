@@ -17,7 +17,7 @@ var baseTasks = []*task{
 	{
 		Id:           "generate",
 		Type:         "short",
-		Dependencies: []string{"taskmaker", "templ", "compress-statics", "zone2terraform"},
+		Dependencies: []string{"taskmaker", "templ", "compress-statics", "zone2terraform", "gofix"},
 	},
 	{
 		Id:    "templ",
@@ -39,7 +39,7 @@ var baseTasks = []*task{
 	{
 		Id:           "test",
 		Type:         "short",
-		Dependencies: []string{"staticcheck", "go-test", "gofix", "govulncheck", "publish-validate"},
+		Dependencies: []string{"staticcheck", "go-test", "govulncheck", "publish-validate"},
 	},
 	{
 		Id:   "publish-validate",
@@ -49,7 +49,7 @@ var baseTasks = []*task{
 	{
 		Id:   "gofix",
 		Type: "short",
-		Cmd:  "diff=$(go fix -diff monks.co/...); if [ -n \"$diff\" ]; then echo \"$diff\"; exit 1; fi",
+		Cmd:  "go fix monks.co/...",
 	},
 	{
 		Id:   "staticcheck",
