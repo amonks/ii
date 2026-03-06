@@ -6,3 +6,4 @@ bin
 data
 **/.terraform/*
 *.tfvars
+compare-agents-output

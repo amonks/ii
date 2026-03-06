@@ -33,6 +33,7 @@ use (
 	./apps/youtube
 	./cmd/backupd
 	./cmd/beetman
+	./cmd/compare-agents
 	./cmd/compressor
 	./cmd/incrementum
 	./cmd/publish
