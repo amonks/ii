@@ -63,6 +63,28 @@ func start() error {
 	slices.Sort(generate.Dependencies)
 	generate.Dependencies = slices.Compact(generate.Dependencies)
 
+	// gofix (go fix monks.co/...) reads and rewrites Go files across the
+	// whole workspace, so it must run after all other generators to avoid
+	// races. We introduce a "codegen" group containing everything except
+	// gofix, then make gofix depend on it.
+	var codegenDeps []string
+	for _, dep := range generate.Dependencies {
+		if dep != "gofix" {
+			codegenDeps = append(codegenDeps, dep)
+		}
+	}
+	tasks = append(tasks, &task{
+		Id:           "codegen",
+		Type:         "short",
+		Dependencies: codegenDeps,
+	})
+	for _, t := range tasks {
+		if t.Id == "gofix" {
+			t.Dependencies = append(t.Dependencies, "codegen")
+			break
+		}
+	}
+
 	// add discovered test tasks from apps to top-level test task
 	redundant, err := loadRedundantCommands(root)
 	if err != nil {
