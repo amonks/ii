@@ -283,11 +283,12 @@ restart).
 - Creates continuation builder in background (waits for old builder
   to die, then creates new machine with updated phase)
 
-Startup recovery: on boot, checks latest run. If status is
-`restarting`, `restart-orchestrator`, or `restart-builder-image`,
-creates a continuation builder. The literal status values handle the
-first-deployment edge case where the OLD orchestrator stores the
-status it doesn't understand.
+There is no startup recovery for restart statuses. The builder's
+reporter has retry logic (up to 10 retries with backoff) that ensures
+the `finishRun` call reaches the new orchestrator after a self-deploy.
+If the orchestrator crashes while a run is in "restarting" state
+(before `ContinueRun` creates a builder), the next trigger will
+detect the stale run (>15 minutes old), fail it, and start fresh.
 
 Trigger during `restarting`: queued as pending (same as during deploy).
 

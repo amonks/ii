@@ -99,43 +99,6 @@ func run() error {
 		sendSMS(msg)
 	}, hub, trigger)
 
-	// Startup recovery: if the latest run was restarting (or has a
-	// literal restart status from an old orchestrator that didn't
-	// understand the status), continue it.
-	if flyClient != nil {
-		go func() {
-			latest, err := model.LatestRun()
-			if err != nil {
-				return
-			}
-			switch latest.Status {
-			case "restarting":
-				// Already in restarting state with correct phase.
-				var prevMachineID string
-				if latest.MachineID != nil {
-					prevMachineID = *latest.MachineID
-				}
-				trigger.ContinueRun(latest, prevMachineID)
-			case "restart-orchestrator":
-				model.UpdateRunPhase(latest.ID, "post-orchestrator", "restarting")
-				latest.Phase = "post-orchestrator"
-				var prevMachineID string
-				if latest.MachineID != nil {
-					prevMachineID = *latest.MachineID
-				}
-				trigger.ContinueRun(latest, prevMachineID)
-			case "restart-builder-image":
-				model.UpdateRunPhase(latest.ID, "post-builder", "restarting")
-				latest.Phase = "post-builder"
-				var prevMachineID string
-				if latest.MachineID != nil {
-					prevMachineID = *latest.MachineID
-				}
-				trigger.ContinueRun(latest, prevMachineID)
-			}
-		}()
-	}
-
 	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}

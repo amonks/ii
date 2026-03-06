@@ -71,9 +71,23 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqlog.Set(r.Context(), "trigger.superseding_run", run.ID)
 	reqlog.Set(r.Context(), "trigger.current_job", currentJob)
 
+	// If the run is stuck in "restarting" for too long (e.g. the
+	// orchestrator crashed after setting the status but before creating
+	// a continuation builder), fail it and start fresh.
+	if run.Status == "restarting" {
+		startedAt, err := time.Parse(time.RFC3339, run.StartedAt)
+		if err == nil && time.Since(startedAt) > 15*time.Minute {
+			slog.Warn("failing stale restarting run", "run_id", run.ID, "started_at", run.StartedAt)
+			reqlog.Set(r.Context(), "trigger.action", "fail_stale_restart")
+			h.model.FinishRun(run.ID, "failed", "stuck in restarting state")
+			h.startNewRun(w, r, req.SHA)
+			return
+		}
+	}
+
 	if currentJob == "deploy" || run.Status == "restarting" {
-		// During deploy: don't interrupt, just record the pending SHA.
-		// It will be picked up when the run finishes.
+		// During deploy or restarting: don't interrupt, just record the
+		// pending SHA. It will be picked up when the run finishes.
 		if err := h.model.SetPendingTrigger(req.SHA); err != nil {
 			slog.Error("setting pending trigger", "error", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)

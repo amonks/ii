@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"monks.co/pkg/flyapi"
 )
@@ -303,6 +304,47 @@ func TestTriggerDuringRestarting(t *testing.T) {
 	}
 	if sha != "queued-sha" {
 		t.Errorf("expected queued-sha, got %s", sha)
+	}
+}
+
+func TestTriggerFailsStaleRestartingRun(t *testing.T) {
+	m, handler := testTriggerHandler(t)
+
+	// Finish all running runs.
+	runs, _ := m.RecentRuns(10)
+	for _, r := range runs {
+		if r.Status == "running" {
+			m.FinishRun(r.ID, "success", "")
+		}
+	}
+
+	// Create a run stuck in "restarting" with a very old started_at.
+	run, _ := m.CreateRun("stale-sha", "base1", "webhook")
+	m.UpdateRunPhase(run.ID, "post-orchestrator", "restarting")
+	// Backdate started_at to 30 minutes ago.
+	m.db.Model(&Run{}).Where("id = ?", run.ID).Update("started_at",
+		time.Now().Add(-30*time.Minute).UTC().Format(time.RFC3339))
+
+	body := `{"sha":"new-sha"}`
+	req := httptest.NewRequest(http.MethodPost, "/trigger", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusAccepted {
+		t.Errorf("expected 202, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// The stale run should be failed.
+	stale, _, _ := m.RunWithJobs(run.ID)
+	if stale.Status != "failed" {
+		t.Errorf("expected stale run to be failed, got %s", stale.Status)
+	}
+
+	// A new run should have been created for the incoming SHA.
+	var resp map[string]any
+	json.NewDecoder(w.Body).Decode(&resp)
+	if resp["head_sha"] != "new-sha" {
+		t.Errorf("expected new run with head_sha new-sha, got %v", resp["head_sha"])
 	}
 }
 
