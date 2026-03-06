@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	publicllm "monks.co/incrementum/llm"
 	"monks.co/incrementum/internal/llm"
+	publicllm "monks.co/incrementum/llm"
 )
 
 // These tests are integration-style (exercise real LLM calls) but they live under
@@ -190,15 +190,15 @@ func TestAnthropicStream_Simple(t *testing.T) {
 	}
 
 	// Should have text content with "4"
-	var text string
+	var text strings.Builder
 	for _, block := range msg.Content {
 		if tc, ok := block.(llm.TextContent); ok {
-			text += tc.Text
+			text.WriteString(tc.Text)
 		}
 	}
 
-	if !strings.Contains(text, "4") {
-		t.Errorf("Response does not contain '4': %q", text)
+	if !strings.Contains(text.String(), "4") {
+		t.Errorf("Response does not contain '4': %q", text.String())
 	}
 
 	// Should have usage info
@@ -209,7 +209,7 @@ func TestAnthropicStream_Simple(t *testing.T) {
 		t.Error("Output tokens should be > 0")
 	}
 
-	t.Logf("Response: %q", text)
+	t.Logf("Response: %q", text.String())
 	t.Logf("Usage: input=%d, output=%d, cost=$%.6f", msg.Usage.Input, msg.Usage.Output, msg.Usage.Cost.Total)
 }
 
@@ -324,18 +324,18 @@ func TestOpenAIStream_Simple(t *testing.T) {
 		t.Errorf("Role = %q, want %q", msg.Role, "assistant")
 	}
 
-	var text string
+	var text strings.Builder
 	for _, block := range msg.Content {
 		if tc, ok := block.(llm.TextContent); ok {
-			text += tc.Text
+			text.WriteString(tc.Text)
 		}
 	}
 
-	if !strings.Contains(text, "4") {
-		t.Errorf("Response does not contain '4': %q", text)
+	if !strings.Contains(text.String(), "4") {
+		t.Errorf("Response does not contain '4': %q", text.String())
 	}
 
-	t.Logf("Response: %q", text)
+	t.Logf("Response: %q", text.String())
 	t.Logf("Usage: input=%d, output=%d", msg.Usage.Input, msg.Usage.Output)
 }
 
@@ -451,18 +451,18 @@ func TestOpenAIStream_ReasoningModel(t *testing.T) {
 		t.Errorf("Role = %q, want %q", msg.Role, "assistant")
 	}
 
-	var text string
+	var text strings.Builder
 	for _, block := range msg.Content {
 		if tc, ok := block.(llm.TextContent); ok {
-			text += tc.Text
+			text.WriteString(tc.Text)
 		}
 	}
 
-	if !strings.Contains(text, "4") {
-		t.Errorf("Response does not contain '4': %q", text)
+	if !strings.Contains(text.String(), "4") {
+		t.Errorf("Response does not contain '4': %q", text.String())
 	}
 
-	t.Logf("Response: %q", text)
+	t.Logf("Response: %q", text.String())
 	t.Logf("Usage: input=%d, output=%d", msg.Usage.Input, msg.Usage.Output)
 }
 
@@ -561,23 +561,23 @@ func TestWellKnownModels_Integration(t *testing.T) {
 				t.Errorf("Role = %q, want %q", msg.Role, "assistant")
 			}
 
-			var responseText string
+			var responseText strings.Builder
 			for _, block := range msg.Content {
 				if textContent, ok := block.(llm.TextContent); ok {
-					responseText += textContent.Text
+					responseText.WriteString(textContent.Text)
 				}
 			}
 
-			if responseText == "" {
+			if responseText.String() == "" {
 				t.Error("Expected non-empty response")
 			}
 
 			// The response should contain "4"
-			if !strings.Contains(responseText, "4") {
-				t.Errorf("Response does not contain '4': %q", responseText)
+			if !strings.Contains(responseText.String(), "4") {
+				t.Errorf("Response does not contain '4': %q", responseText.String())
 			}
 
-			t.Logf("%s: response=%q, input=%d, output=%d", modelID, responseText, msg.Usage.Input, msg.Usage.Output)
+			t.Logf("%s: response=%q, input=%d, output=%d", modelID, responseText.String(), msg.Usage.Input, msg.Usage.Output)
 		})
 	}
 }

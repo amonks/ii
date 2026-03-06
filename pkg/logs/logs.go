@@ -476,20 +476,21 @@ func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]E
 		}
 	}
 
-	where := `WHERE timestamp >= ? AND timestamp <= ?`
+	var where strings.Builder
+	where.WriteString(`WHERE timestamp >= ? AND timestamp <= ?`)
 	args := []any{tr.StartTime(), tr.EndTime()}
 	if !hasMsgFilter {
-		where += ` AND msg = 'request'`
+		where.WriteString(` AND msg = 'request'`)
 	}
 	for _, f := range q.Filters {
 		s, a := f.buildSQL(f.Column)
-		where += s
+		where.WriteString(s)
 		args = append(args, a...)
 	}
 
 	// Get total count.
 	var total int
-	countSQL := `SELECT COUNT(*) FROM events ` + where
+	countSQL := `SELECT COUNT(*) FROM events ` + where.String()
 	row := m.Raw(countSQL, args...).Row()
 	if err := row.Scan(&total); err != nil {
 		return nil, 0, err
@@ -497,7 +498,7 @@ func (m *Model) GetFilteredEvents(tr TimeRange, q Query, limit, offset int) ([]E
 
 	// Get page of events.
 	dataSQL := `SELECT id, timestamp, data, app, level, msg, request_id, method, host, path, status, duration_ms, remote_addr
-		FROM events ` + where + ` ORDER BY timestamp DESC LIMIT ? OFFSET ?`
+		FROM events ` + where.String() + ` ORDER BY timestamp DESC LIMIT ? OFFSET ?`
 	dataArgs := append(append([]any{}, args...), limit, offset)
 
 	var events []Event
