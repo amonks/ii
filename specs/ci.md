@@ -19,7 +19,7 @@ serves dashboard, sends SMS on failure. Stores build output on its
 persistent volume.
 
 **monks-ci-builder** (builder): Ephemeral Fly machine
-(`performance-4x`, 4GB, `auto_destroy: true`). Fat image with all
+(`performance-4x`, 8GB, `auto_destroy: true`). Fat image with all
 build deps. Persistent volume at `/data` for caches and repo clone.
 Joins tailnet via kernel tailscale (started by the entrypoint script)
 as `monks-ci-builder-fly-{region}`. Using kernel tailscale (rather
@@ -330,10 +330,20 @@ files that tests depend on, notably the incrementum global config at
 and the default model so that incrementum integration tests can reach
 the LLM gateway over the tailnet.
 
+The builder image is pinned to a specific Go patch version (e.g.
+`golang:1.26.1-alpine`) to prevent toolchain drift between local
+development and CI. The `go` directive in all `go.mod` and `go.work`
+files should match the version in the Dockerfile.
+
 CI automatically rebuilds the builder image when its Dockerfile or Go
-dependencies change, but the new image only takes effect on the *next*
-run. To avoid waiting through two full CI cycles when the builder image
-changes, you can manually push the image first:
+dependencies change. When detected, the current builder rebuilds the
+image via `fly deploy --build-only --push`, returns
+`restart-builder-image`, and the orchestrator creates a new builder
+machine using the updated image in the `post-builder` phase — all
+within the same run.
+
+To manually push the image (e.g. when iterating on the Dockerfile
+without waiting for CI):
 
 ```
 go tool run apps/ci/build-builder-image
