@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	publicllm "monks.co/incrementum/llm"
 	"monks.co/incrementum/internal/agent"
 	"monks.co/incrementum/internal/llm"
+	publicllm "monks.co/incrementum/llm"
 )
 
 // These tests are integration-style (exercise real LLM calls) but they live under
@@ -127,19 +127,19 @@ func TestAgentRun_SimpleCompletion_Anthropic(t *testing.T) {
 	}
 
 	// Verify the assistant message contains "4"
-	var responseText string
+	var responseText strings.Builder
 	for _, msg := range result.Messages {
 		if am, ok := msg.(llm.AssistantMessage); ok {
 			for _, block := range am.Content {
 				if tc, ok := block.(llm.TextContent); ok {
-					responseText += tc.Text
+					responseText.WriteString(tc.Text)
 				}
 			}
 		}
 	}
 
-	if !strings.Contains(responseText, "4") {
-		t.Errorf("Expected response to contain '4', got %q", responseText)
+	if !strings.Contains(responseText.String(), "4") {
+		t.Errorf("Expected response to contain '4', got %q", responseText.String())
 	}
 
 	// Verify usage was tracked
@@ -150,7 +150,7 @@ func TestAgentRun_SimpleCompletion_Anthropic(t *testing.T) {
 		t.Error("Expected output tokens > 0")
 	}
 
-	t.Logf("Response: %s", responseText)
+	t.Logf("Response: %s", responseText.String())
 	t.Logf("Usage: input=%d, output=%d, cost=$%.6f", result.Usage.Input, result.Usage.Output, result.Usage.Cost.Total)
 }
 
@@ -190,22 +190,22 @@ func TestAgentRun_SimpleCompletion_OpenAI(t *testing.T) {
 	}
 
 	// Verify the response contains "4"
-	var responseText string
+	var responseText strings.Builder
 	for _, msg := range result.Messages {
 		if am, ok := msg.(llm.AssistantMessage); ok {
 			for _, block := range am.Content {
 				if tc, ok := block.(llm.TextContent); ok {
-					responseText += tc.Text
+					responseText.WriteString(tc.Text)
 				}
 			}
 		}
 	}
 
-	if !strings.Contains(responseText, "4") {
-		t.Errorf("Expected response to contain '4', got %q", responseText)
+	if !strings.Contains(responseText.String(), "4") {
+		t.Errorf("Expected response to contain '4', got %q", responseText.String())
 	}
 
-	t.Logf("Response: %s", responseText)
+	t.Logf("Response: %s", responseText.String())
 	t.Logf("Usage: input=%d, output=%d", result.Usage.Input, result.Usage.Output)
 }
 
