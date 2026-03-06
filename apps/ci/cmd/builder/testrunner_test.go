@@ -432,6 +432,81 @@ cmd = "sleep 1 && echo slow-done"
 	}
 }
 
+func TestRunTaskReportsStreamDuration(t *testing.T) {
+	handler := newRecordingHandler()
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	dir := t.TempDir()
+	tasksToml := `
+[[task]]
+id = "root"
+type = "short"
+dependencies = ["quick", "slow"]
+
+[[task]]
+id = "quick"
+type = "short"
+cmd = "echo done"
+
+[[task]]
+id = "slow"
+type = "short"
+cmd = "sleep 0.5 && echo done"
+`
+	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := runTask(ctx, dir, "root", "root", reporter)
+	if err != nil {
+		t.Fatalf("runTask failed: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	reqs := handler.getRequests()
+
+	// Find the stream finish requests and check their duration_ms values.
+	var quickDuration, slowDuration float64
+	var quickFound, slowFound bool
+	for _, r := range reqs {
+		if r.Path == "/api/runs/1/jobs/root/streams/quick/done" {
+			quickFound = true
+			if d, ok := r.Body["duration_ms"].(float64); ok {
+				quickDuration = d
+			}
+		}
+		if r.Path == "/api/runs/1/jobs/root/streams/slow/done" {
+			slowFound = true
+			if d, ok := r.Body["duration_ms"].(float64); ok {
+				slowDuration = d
+			}
+		}
+	}
+
+	if !quickFound {
+		t.Fatalf("quick stream finish not found; got paths: %v", requestPaths(reqs))
+	}
+	if !slowFound {
+		t.Fatalf("slow stream finish not found; got paths: %v", requestPaths(reqs))
+	}
+
+	// The slow task sleeps 0.5s, so its duration should be at least 400ms.
+	if slowDuration < 400 {
+		t.Errorf("expected slow stream duration >= 400ms, got %.0fms", slowDuration)
+	}
+
+	// The slow task should have a longer duration than the quick one.
+	if slowDuration <= quickDuration {
+		t.Errorf("expected slow duration (%.0fms) > quick duration (%.0fms)",
+			slowDuration, quickDuration)
+	}
+}
+
 func TestRunTestsJobNameSuffix(t *testing.T) {
 	handler := newRecordingHandler()
 	srv := httptest.NewServer(handler)

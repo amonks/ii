@@ -52,10 +52,11 @@ func runTask(ctx context.Context, root, taskName, jobName string, reporter *Repo
 	}
 
 	mw := &streamMultiWriter{
-		reporter: reporter,
-		jobName:  jobName,
-		writers:  make(map[string]*StreamWriter),
-		finished: make(map[string]bool),
+		reporter:  reporter,
+		jobName:   jobName,
+		writers:   make(map[string]*StreamWriter),
+		finished:  make(map[string]bool),
+		startTime: make(map[string]time.Time),
 	}
 
 	run, err := runner.New(runner.RunTypeShort, root, tasks, taskName, mw)
@@ -118,19 +119,20 @@ func runTask(ctx context.Context, root, taskName, jobName string, reporter *Repo
 // it checks all tasks' statuses and reports any newly-finished streams to
 // the orchestrator, so the web UI updates incrementally.
 type streamMultiWriter struct {
-	reporter *Reporter
-	jobName  string
-	writers  map[string]*StreamWriter
-	run      *runner.Run
-	streams  []streamMapping
-	mu       sync.Mutex
-	finished map[string]bool
+	reporter  *Reporter
+	jobName   string
+	writers   map[string]*StreamWriter
+	run       *runner.Run
+	streams   []streamMapping
+	mu        sync.Mutex
+	finished  map[string]bool
+	startTime map[string]time.Time // first write time per task ID
 }
 
 func (m *streamMultiWriter) Writer(id string) io.Writer {
 	sw := m.reporter.StreamWriter(m.jobName, encodeStreamName(id))
 	m.writers[id] = sw
-	return &statusCheckingWriter{inner: sw, mw: m}
+	return &statusCheckingWriter{inner: sw, mw: m, taskID: id}
 }
 
 func (m *streamMultiWriter) CloseAll() {
@@ -147,23 +149,30 @@ func (m *streamMultiWriter) checkStatuses() {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	now := time.Now()
 	for _, s := range m.streams {
 		if m.finished[s.taskID] {
 			continue
 		}
 		ts := m.run.TaskStatus(s.taskID)
+		var status string
 		switch ts {
 		case runner.TaskStatusDone:
-			m.finished[s.taskID] = true
-			m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
-				Status: "success",
-			})
+			status = "success"
 		case runner.TaskStatusFailed:
-			m.finished[s.taskID] = true
-			m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
-				Status: "failed",
-			})
+			status = "failed"
+		default:
+			continue
 		}
+		m.finished[s.taskID] = true
+		var durationMs int64
+		if t, ok := m.startTime[s.taskID]; ok {
+			durationMs = now.Sub(t).Milliseconds()
+		}
+		m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
+			Status:     status,
+			DurationMs: durationMs,
+		})
 	}
 }
 
@@ -185,11 +194,18 @@ func (m *streamMultiWriter) finishRemaining() {
 // statusCheckingWriter wraps a StreamWriter and checks all task statuses
 // after each write, so finished tasks are reported incrementally.
 type statusCheckingWriter struct {
-	inner *StreamWriter
-	mw    *streamMultiWriter
+	inner  *StreamWriter
+	mw     *streamMultiWriter
+	taskID string
 }
 
 func (w *statusCheckingWriter) Write(p []byte) (int, error) {
+	w.mw.mu.Lock()
+	if _, ok := w.mw.startTime[w.taskID]; !ok {
+		w.mw.startTime[w.taskID] = time.Now()
+	}
+	w.mw.mu.Unlock()
+
 	n, err := w.inner.Write(p)
 	w.mw.checkStatuses()
 	return n, err
