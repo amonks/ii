@@ -352,6 +352,52 @@ go tool run apps/ci/build-builder-image
 Then `jj git push` to trigger CI, which will use the freshly pushed
 image.
 
+### Debugging on a builder machine
+
+To get a shell on a builder with the persistent volume attached (for
+investigating CI-only failures), create a temporary machine via the
+Fly API. The volume must not be attached to another machine (i.e. no
+CI run in progress).
+
+```bash
+# Get the current builder image ref
+fly releases -a monks-ci-builder --json | python3 -c \
+  "import json,sys; print(json.load(sys.stdin)[0]['ImageRef'])"
+
+# Get the volume ID
+fly volumes list -a monks-ci-builder
+
+# Create a sleeping machine with the volume attached
+FLY_TOKEN=$(fly auth token) && curl -s -X POST \
+  "https://api.machines.dev/v1/apps/monks-ci-builder/machines" \
+  -H "Authorization: Bearer $FLY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "debug-builder",
+    "region": "ord",
+    "config": {
+      "image": "<IMAGE_REF>",
+      "init": {"entrypoint": ["/bin/sh", "-c"], "cmd": ["sleep 3600"]},
+      "guest": {"cpu_kind": "performance", "cpus": 4, "memory_mb": 8192},
+      "auto_destroy": false,
+      "restart": {"policy": "no"},
+      "mounts": [{"volume": "<VOL_ID>", "path": "/data"}]
+    }
+  }'
+
+# SSH in (commands must be wrapped in /bin/sh -c since fly ssh
+# doesn't use a shell)
+fly ssh console -a monks-ci-builder -s \
+  -C "/bin/sh -c 'cd /data/repo && jj log --limit 5'"
+
+# Clean up when done
+fly machine destroy <MACHINE_ID> -a monks-ci-builder --force
+```
+
+Note: Docker `ENV` vars from the builder image (like `GOMODCACHE`,
+`GOCACHE`) are not available in SSH sessions. Export them manually
+if needed.
+
 ## Dependencies
 
 - `pkg/flyapi` — create builder machines
