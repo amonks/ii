@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	"monks.co/run/runner"
 	"monks.co/run/taskfile"
 )
+
+type streamMapping struct {
+	taskID     string
+	streamName string
+}
 
 // encodeStreamName makes a task ID safe for use as a single URL path segment
 // by replacing "/" with "~".
@@ -49,6 +55,7 @@ func runTask(ctx context.Context, root, taskName, jobName string, reporter *Repo
 		reporter: reporter,
 		jobName:  jobName,
 		writers:  make(map[string]*StreamWriter),
+		finished: make(map[string]bool),
 	}
 
 	run, err := runner.New(runner.RunTypeShort, root, tasks, taskName, mw)
@@ -67,41 +74,25 @@ func runTask(ctx context.Context, root, taskName, jobName string, reporter *Repo
 	// Encode IDs to be URL-safe (task IDs like "apps/ci/build-js"
 	// contain slashes which break HTTP path routing).
 	ids := run.IDs()
-	type streamMapping struct {
-		taskID     string
-		streamName string
-	}
-	var streams []streamMapping
 	for _, id := range ids {
 		if strings.HasPrefix(id, "@") {
 			continue
 		}
 		sn := encodeStreamName(id)
-		streams = append(streams, streamMapping{taskID: id, streamName: sn})
+		mw.streams = append(mw.streams, streamMapping{taskID: id, streamName: sn})
 		reporter.StartStream(jobName, sn)
 	}
+	mw.run = run
 
 	err = run.Start(ctx)
 	duration := time.Since(start).Milliseconds()
 
 	mw.CloseAll()
 
-	// Finish streams with per-task status from the runner.
-	for _, s := range streams {
-		ts := run.TaskStatus(s.taskID)
-		streamStatus := "skipped"
-		switch ts {
-		case runner.TaskStatusDone:
-			streamStatus = "success"
-		case runner.TaskStatusFailed:
-			streamStatus = "failed"
-		case runner.TaskStatusRunning:
-			streamStatus = "success" // was still running when run ended normally
-		}
-		reporter.FinishStream(jobName, s.streamName, FinishStreamResult{
-			Status: streamStatus,
-		})
-	}
+	// Report any streams that weren't already reported during execution.
+	mw.checkStatuses()
+	// Report any remaining streams (e.g. tasks that were skipped or never ran).
+	mw.finishRemaining()
 
 	status := "success"
 	errMsg := ""
@@ -123,21 +114,83 @@ func runTask(ctx context.Context, root, taskName, jobName string, reporter *Repo
 }
 
 // streamMultiWriter implements runner.MultiWriter, returning a StreamWriter
-// per task ID so each task's output is streamed separately.
+// per task ID so each task's output is streamed separately. On each write,
+// it checks all tasks' statuses and reports any newly-finished streams to
+// the orchestrator, so the web UI updates incrementally.
 type streamMultiWriter struct {
 	reporter *Reporter
 	jobName  string
 	writers  map[string]*StreamWriter
+	run      *runner.Run
+	streams  []streamMapping
+	mu       sync.Mutex
+	finished map[string]bool
 }
 
 func (m *streamMultiWriter) Writer(id string) io.Writer {
 	sw := m.reporter.StreamWriter(m.jobName, encodeStreamName(id))
 	m.writers[id] = sw
-	return sw
+	return &statusCheckingWriter{inner: sw, mw: m}
 }
 
 func (m *streamMultiWriter) CloseAll() {
 	for _, sw := range m.writers {
 		sw.Close()
 	}
+}
+
+// checkStatuses reports any streams whose tasks have finished but haven't
+// been reported yet.
+func (m *streamMultiWriter) checkStatuses() {
+	if m.run == nil {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, s := range m.streams {
+		if m.finished[s.taskID] {
+			continue
+		}
+		ts := m.run.TaskStatus(s.taskID)
+		switch ts {
+		case runner.TaskStatusDone:
+			m.finished[s.taskID] = true
+			m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
+				Status: "success",
+			})
+		case runner.TaskStatusFailed:
+			m.finished[s.taskID] = true
+			m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
+				Status: "failed",
+			})
+		}
+	}
+}
+
+// finishRemaining reports any streams not yet reported as "skipped".
+func (m *streamMultiWriter) finishRemaining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, s := range m.streams {
+		if m.finished[s.taskID] {
+			continue
+		}
+		m.finished[s.taskID] = true
+		m.reporter.FinishStream(m.jobName, s.streamName, FinishStreamResult{
+			Status: "skipped",
+		})
+	}
+}
+
+// statusCheckingWriter wraps a StreamWriter and checks all task statuses
+// after each write, so finished tasks are reported incrementally.
+type statusCheckingWriter struct {
+	inner *StreamWriter
+	mw    *streamMultiWriter
+}
+
+func (w *statusCheckingWriter) Write(p []byte) (int, error) {
+	n, err := w.inner.Write(p)
+	w.mw.checkStatuses()
+	return n, err
 }

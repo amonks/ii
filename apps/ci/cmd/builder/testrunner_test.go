@@ -25,6 +25,7 @@ type recordedRequest struct {
 	Method string
 	Path   string
 	Body   map[string]any
+	Time   time.Time
 }
 
 func newRecordingHandler() *recordingHandler {
@@ -50,6 +51,7 @@ func (h *recordingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Method: r.Method,
 		Path:   r.URL.Path,
 		Body:   body,
+		Time:   time.Now(),
 	})
 
 	// Return job_id for start requests.
@@ -360,6 +362,73 @@ cmd = "echo output-from-b"
 	}
 	if !strings.Contains(outB, "output-from-b") {
 		t.Errorf("expected task 'b' output, got %q (paths=%v)", outB, handler.outputPaths())
+	}
+}
+
+func TestRunTaskReportsStreamFinishIncrementally(t *testing.T) {
+	handler := newRecordingHandler()
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	// Task "root" depends on "fast" and "slow". "fast" finishes immediately
+	// while "slow" sleeps 1s. If reporting is incremental, the "fast" stream
+	// finish should arrive well before the "slow" stream finish (at least
+	// 200ms earlier). If batched, they arrive within milliseconds of each other.
+	dir := t.TempDir()
+	tasksToml := `
+[[task]]
+id = "root"
+type = "short"
+dependencies = ["fast", "slow"]
+
+[[task]]
+id = "fast"
+type = "short"
+cmd = "echo fast-done"
+
+[[task]]
+id = "slow"
+type = "short"
+cmd = "sleep 1 && echo slow-done"
+`
+	os.WriteFile(filepath.Join(dir, "tasks.toml"), []byte(tasksToml), 0644)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := runTask(ctx, dir, "root", "root", reporter)
+	if err != nil {
+		t.Fatalf("runTask failed: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	reqs := handler.getRequests()
+
+	// Find the timestamps of "fast" and "slow" stream finish requests.
+	var fastFinishTime, slowFinishTime time.Time
+	for _, r := range reqs {
+		if r.Path == "/api/runs/1/jobs/root/streams/fast/done" {
+			fastFinishTime = r.Time
+		}
+		if r.Path == "/api/runs/1/jobs/root/streams/slow/done" {
+			slowFinishTime = r.Time
+		}
+	}
+
+	if fastFinishTime.IsZero() {
+		t.Fatalf("fast stream finish not found; got paths: %v", requestPaths(reqs))
+	}
+	if slowFinishTime.IsZero() {
+		t.Fatalf("slow stream finish not found; got paths: %v", requestPaths(reqs))
+	}
+
+	gap := slowFinishTime.Sub(fastFinishTime)
+	if gap < 200*time.Millisecond {
+		t.Errorf("expected fast stream finish to arrive well before slow (gap=%v); "+
+			"they should not be batched together", gap)
 	}
 }
 
