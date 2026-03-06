@@ -163,8 +163,16 @@ of build output. Keys are `"runID/jobName/stream"`.
 
 ## Dashboard
 
-- `GET /` — recent runs, current deployments per app
+- `GET /` — recent runs, current deployments per app, "Build main"
+  button that POSTs to `/build`
+- `POST /build` — manually trigger a build of `main`. Returns 409 if
+  a run is already in progress. On success, creates a run with
+  `trigger=manual` and `head_sha=main`, then redirects to the run page.
 - `GET /runs/{id}` — jobs for this run with inline output viewers.
+  Shows a "Cancel" button for running/restarting runs.
+- `POST /runs/{id}/cancel` — cancel a running or restarting run. Stops
+  the builder machine and marks the run as "cancelled". Redirects back
+  to the run page.
   Each stream is a collapsible `<details>` showing a status dot
   colored by per-stream status (not job status), stream name,
   optional duration, and last line preview. Expanding loads the stream

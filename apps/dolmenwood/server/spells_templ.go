@@ -218,7 +218,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var10 string
 											templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(spellLevelLabel(slot.Level))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 75, Col: 54}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 75, Col: 54}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 											if templ_7745c5c3_Err != nil {
@@ -249,7 +249,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var12 string
 											templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", slot.Available, slot.Total))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 76, Col: 74}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 76, Col: 74}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 											if templ_7745c5c3_Err != nil {
@@ -402,7 +402,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var19 string
 										templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(spell.Name)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 92, Col: 31}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 92, Col: 31}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 										if templ_7745c5c3_Err != nil {
@@ -429,7 +429,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var21 string
 										templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("(Level %d)", spell.SpellLevel))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 93, Col: 69}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 93, Col: 69}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 										if templ_7745c5c3_Err != nil {
@@ -489,7 +489,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 											var templ_7745c5c3_Var24 string
 											templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("spells/%d/cast/", spell.ID)))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 100, Col: 81}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 100, Col: 81}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 											if templ_7745c5c3_Err != nil {
@@ -533,7 +533,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 										var templ_7745c5c3_Var26 string
 										templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(fmt.Sprintf("spells/%d/forget/", spell.ID)))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 104, Col: 82}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 104, Col: 82}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 										if templ_7745c5c3_Err != nil {
@@ -653,7 +653,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var31 string
 									templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", slot.Level))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 119, Col: 54}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 119, Col: 54}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 									if templ_7745c5c3_Err != nil {
@@ -666,7 +666,7 @@ func SpellsSection(view *CharacterView) templ.Component {
 									var templ_7745c5c3_Var32 string
 									templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(spellLevelLabel(slot.Level))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/spells.templ`, Line: 119, Col: 86}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/dolmenwood/server/spells.templ`, Line: 119, Col: 86}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 									if templ_7745c5c3_Err != nil {

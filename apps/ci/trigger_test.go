@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -346,6 +347,121 @@ func TestTriggerFailsStaleRestartingRun(t *testing.T) {
 	if resp["head_sha"] != "new-sha" {
 		t.Errorf("expected new run with head_sha new-sha, got %v", resp["head_sha"])
 	}
+}
+
+func TestBuildNow(t *testing.T) {
+	m, handler := testTriggerHandler(t)
+
+	t.Run("creates manual run and redirects", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/build", nil)
+		w := httptest.NewRecorder()
+		handler.BuildNow(w, req)
+
+		if w.Code != http.StatusSeeOther {
+			t.Errorf("expected 303, got %d: %s", w.Code, w.Body.String())
+		}
+
+		runs, err := m.RecentRuns(10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var found bool
+		for _, r := range runs {
+			if r.HeadSHA == "main" && r.Trigger == "manual" {
+				found = true
+				// Verify redirect points to this run.
+				loc := w.Header().Get("Location")
+				if !strings.HasSuffix(loc, fmt.Sprintf("runs/%d", r.ID)) {
+					t.Errorf("expected redirect to runs/%d, got %s", r.ID, loc)
+				}
+			}
+		}
+		if !found {
+			t.Error("expected a run with HeadSHA=main and Trigger=manual")
+		}
+	})
+
+	t.Run("rejects when build already running", func(t *testing.T) {
+		// A run is still running from previous sub-test.
+		req := httptest.NewRequest(http.MethodPost, "/build", nil)
+		w := httptest.NewRecorder()
+		handler.BuildNow(w, req)
+
+		if w.Code != http.StatusConflict {
+			t.Errorf("expected 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestCancelRun(t *testing.T) {
+	m := testModel(t)
+
+	var stopCalled bool
+	mockFly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/stop") {
+			stopCalled = true
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "mock-machine",
+			"state": "stopped",
+		})
+	}))
+	t.Cleanup(mockFly.Close)
+
+	flyClient := flyapi.NewClient("test-token", "monks-ci-builder")
+	flyClient.BaseURL = mockFly.URL
+
+	handler := cancelRun(m, flyClient)
+
+	t.Run("cancels a running run", func(t *testing.T) {
+		run, _ := m.CreateRun("cancel-sha", "base1", "webhook")
+		machineID := "mock-machine-id"
+		m.SetMachineID(run.ID, machineID)
+
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/runs/%d/cancel", run.ID), nil)
+		req.SetPathValue("id", fmt.Sprintf("%d", run.ID))
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusSeeOther {
+			t.Errorf("expected 303, got %d: %s", w.Code, w.Body.String())
+		}
+
+		// Verify run is cancelled.
+		updated, _, _ := m.RunWithJobs(run.ID)
+		if updated.Status != "cancelled" {
+			t.Errorf("expected status cancelled, got %s", updated.Status)
+		}
+
+		if !stopCalled {
+			t.Error("expected StopMachine to be called")
+		}
+	})
+
+	t.Run("rejects cancel of finished run", func(t *testing.T) {
+		run, _ := m.CreateRun("done-sha", "base1", "webhook")
+		m.FinishRun(run.ID, "success", "")
+
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/runs/%d/cancel", run.ID), nil)
+		req.SetPathValue("id", fmt.Sprintf("%d", run.ID))
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusConflict {
+			t.Errorf("expected 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("returns 404 for nonexistent run", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/runs/99999/cancel", nil)
+		req.SetPathValue("id", "99999")
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
+		}
+	})
 }
 
 func TestTriggerHandlerNoFlyClient(t *testing.T) {

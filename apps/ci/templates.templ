@@ -27,6 +27,8 @@ templ layout(title string) {
 				.status-in_progress { color: #d29922; }
 				.status-skipped { color: #8b949e; }
 				.status-unknown { color: #8b949e; }
+				.status-cancelled { color: #8b949e; }
+				.status-superseded { color: #8b949e; }
 				nav { margin-bottom: 1rem; }
 				nav a { margin-right: 1rem; }
 				h1 { margin-bottom: 0.5rem; }
@@ -75,7 +77,12 @@ templ indexPage(runs []Run, deployments []Deployment) {
 			</table>
 		}
 
-		<h2>Recent Runs</h2>
+		<div style="display: flex; align-items: center; gap: 1rem; margin-top: 1.5rem;">
+			<h2 style="margin: 0;">Recent Runs</h2>
+			<form method="POST" action="build" style="margin: 0;">
+				<button type="submit">Build main</button>
+			</form>
+		</div>
 		if len(runs) == 0 {
 			<p class="small">No runs yet.</p>
 		} else {
@@ -108,7 +115,14 @@ templ indexPage(runs []Run, deployments []Deployment) {
 templ runPage(run *Run, jobs []Job, streams map[string][]StreamInfo, logs []LogEvent) {
 	@layout(fmt.Sprintf("Run #%d", run.ID)) {
 		<div id="run-page" data-run-id={ fmt.Sprintf("%d", run.ID) } data-run-status={ run.Status }>
-			<h1>{ fmt.Sprintf("Run #%d", run.ID) }</h1>
+			<div style="display: flex; align-items: center; gap: 1rem;">
+				<h1 style="margin: 0;">{ fmt.Sprintf("Run #%d", run.ID) }</h1>
+				if run.Status == "running" || run.Status == "restarting" {
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("runs/%d/cancel", run.ID)) } style="margin: 0;">
+						<button type="submit" style="background: #da3633; border-color: #f85149;">Cancel</button>
+					</form>
+				}
+			</div>
 			<p>
 				Status: <span id="run-status" class={ statusClass(run.Status) }>{ run.Status }</span><br/>
 				Head: <span class="mono">{ run.HeadSHA }</span><br/>

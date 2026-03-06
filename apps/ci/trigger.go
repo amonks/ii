@@ -110,6 +110,43 @@ func (h *TriggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.startNewRun(w, r, req.SHA)
 }
 
+// BuildNow handles POST /build requests from the dashboard.
+// It triggers a manual build of "main" and redirects to the new run's page.
+func (h *TriggerHandler) BuildNow(w http.ResponseWriter, r *http.Request) {
+	reqlog.Set(r.Context(), "trigger.sha", "main")
+	reqlog.Set(r.Context(), "trigger.action", "manual")
+
+	// Check if a run is already in progress.
+	if _, _, err := h.model.RunningRun(); err == nil {
+		http.Error(w, "a build is already running", http.StatusConflict)
+		return
+	}
+
+	baseSHA, err := h.model.LastSuccessfulSHA()
+	if err != nil {
+		baseSHA = "0000000000000000000000000000000000000000"
+	}
+
+	run, err := h.model.CreateRun("main", baseSHA, "manual")
+	if err != nil {
+		slog.Error("creating manual run", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	reqlog.Set(r.Context(), "trigger.run_id", run.ID)
+
+	if h.fly == nil {
+		slog.Error("no fly client configured", "run_id", run.ID)
+		h.model.FinishRun(run.ID, "failed", "fly client not configured")
+		http.Error(w, "fly client not configured", http.StatusInternalServerError)
+		return
+	}
+	go h.createBuilderMachine(run)
+
+	http.Redirect(w, r, fmt.Sprintf("runs/%d", run.ID), http.StatusSeeOther)
+}
+
 // supersedRun marks a running run as superseded and stops its builder machine.
 func (h *TriggerHandler) supersedRun(run *Run) {
 	if err := h.model.FinishRun(run.ID, "superseded", "superseded by newer commit"); err != nil {
@@ -122,7 +159,11 @@ func (h *TriggerHandler) supersedRun(run *Run) {
 	}
 }
 
-func (h *TriggerHandler) startNewRun(w http.ResponseWriter, r *http.Request, sha string) {
+func (h *TriggerHandler) startNewRun(w http.ResponseWriter, r *http.Request, sha string, trigger ...string) {
+	trig := "webhook"
+	if len(trigger) > 0 {
+		trig = trigger[0]
+	}
 	// Determine base SHA from last successful run.
 	baseSHA, err := h.model.LastSuccessfulSHA()
 	if err != nil {
@@ -131,7 +172,7 @@ func (h *TriggerHandler) startNewRun(w http.ResponseWriter, r *http.Request, sha
 	}
 
 	// Create the run.
-	run, err := h.model.CreateRun(sha, baseSHA, "webhook")
+	run, err := h.model.CreateRun(sha, baseSHA, trig)
 	if err != nil {
 		slog.Error("creating run", "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)

@@ -93,6 +93,8 @@ func run() error {
 		},
 	}
 	mux.Handle("POST /trigger", trigger)
+	mux.HandleFunc("POST /build", trigger.BuildNow)
+	mux.HandleFunc("POST /runs/{id}/cancel", cancelRun(model, flyClient))
 
 	// Builder callback API.
 	RegisterAPI(mux, model, outputDir, func(msg string) {
@@ -227,6 +229,43 @@ func dashboardRun(model *Model, outputDir string) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html")
 		runPage(run, jobs, streams, logs).Render(r.Context(), w)
+	}
+}
+
+func cancelRun(model *Model, fly *flyapi.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid run ID", http.StatusBadRequest)
+			return
+		}
+
+		run, _, err := model.RunWithJobs(id)
+		if err != nil {
+			http.Error(w, "run not found", http.StatusNotFound)
+			return
+		}
+
+		if run.Status != "running" && run.Status != "restarting" {
+			http.Error(w, "run is not cancellable", http.StatusConflict)
+			return
+		}
+
+		// Stop the builder machine.
+		if run.MachineID != nil && fly != nil {
+			if err := fly.StopMachine(context.Background(), *run.MachineID); err != nil {
+				slog.Warn("stopping cancelled builder machine", "error", err, "machine_id", *run.MachineID)
+			}
+		}
+
+		if err := model.FinishRun(run.ID, "cancelled", "manually cancelled"); err != nil {
+			slog.Error("cancelling run", "error", err, "run_id", run.ID)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("runs/%d", run.ID), http.StatusSeeOther)
 	}
 }
 
