@@ -1,0 +1,46 @@
+[[task]]
+  id = "dev"
+  type = "long"
+  dependencies = ["templ"]
+
+[[task]]
+  id = "dryrun"
+  type = "long"
+  dependencies = ["templ"]
+  watch = ["**/*.go", "*.go"]
+  cmd = "sudo go run . -dryrun -addr=0.0.0.0:8887"
+
+[[task]]
+  id = "templ"
+  type = "short"
+  watch = ["*.templ"]
+  cmd = "go run github.com/a-h/templ/cmd/templ generate ."
+
+[[task]]
+  id = "test"
+  type = "short"
+  dependencies = ["vulncheck", "staticcheck", "go-test", "vet"]
+
+[[task]]
+  id = "vulncheck"
+  type = "short"
+  dependencies = ["templ"]
+  cmd = "go run golang.org/x/vuln/cmd/govulncheck ./..."
+
+[[task]]
+  id = "staticcheck"
+  type = "short"
+  dependencies = ["templ"]
+  cmd = "go run honnef.co/go/tools/cmd/staticcheck ./..."
+
+[[task]]
+  id = "vet"
+  type = "short"
+  dependencies = ["templ"]
+  cmd = "go vet ./..."
+
+[[task]]
+  id = "go-test"
+  type = "short"
+  dependencies = ["templ"]
+  cmd = "go test ./..."
