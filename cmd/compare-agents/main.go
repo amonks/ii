@@ -36,6 +36,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"io/fs"
 )
 
 func main() {
@@ -44,11 +46,13 @@ func main() {
 	var timeout time.Duration
 	var openaiModel string
 	var claudeModel string
+	var templateDir string
 	flag.StringVar(&outputDir, "output", "./compare-agents-output", "base directory for output")
 	flag.StringVar(&upstream, "upstream", "https://ai.tail98579.ts.net", "upstream API proxy URL")
 	flag.DurationVar(&timeout, "timeout", 5*time.Minute, "per-agent timeout")
 	flag.StringVar(&openaiModel, "openai-model", "gpt-5.2-codex", "OpenAI model for ii-openai")
 	flag.StringVar(&claudeModel, "claude-model", "claude-sonnet-4-5", "Anthropic model for ii-claude")
+	flag.StringVar(&templateDir, "template-dir", "", "template directory to copy for each agent (enables diff capture)")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: compare-agents [flags] <prompt>\n\nFlags:\n")
 		flag.PrintDefaults()
@@ -99,19 +103,19 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		runCodex(ctx, timeout, prompt, proxies[0].proxy.url(), upstream, runDir)
+		runCodex(ctx, timeout, prompt, proxies[0].proxy.url(), upstream, templateDir, runDir)
 	}()
 	go func() {
 		defer wg.Done()
-		runClaudeCode(ctx, timeout, prompt, proxies[1].proxy.url(), runDir)
+		runClaudeCode(ctx, timeout, prompt, proxies[1].proxy.url(), templateDir, runDir)
 	}()
 	go func() {
 		defer wg.Done()
-		runIIOpenAI(ctx, timeout, prompt, openaiModel, proxies[2].proxy.url(), upstream, runDir)
+		runIIOpenAI(ctx, timeout, prompt, openaiModel, proxies[2].proxy.url(), upstream, templateDir, runDir)
 	}()
 	go func() {
 		defer wg.Done()
-		runIIClaude(ctx, timeout, prompt, claudeModel, proxies[3].proxy.url(), upstream, runDir)
+		runIIClaude(ctx, timeout, prompt, claudeModel, proxies[3].proxy.url(), upstream, templateDir, runDir)
 	}()
 
 	wg.Wait()
@@ -119,7 +123,7 @@ func main() {
 
 // --- Agent runners ---
 
-func runCodex(ctx context.Context, timeout time.Duration, prompt, proxyURL, upstream, runDir string) {
+func runCodex(ctx context.Context, timeout time.Duration, prompt, proxyURL, upstream, templateDir, runDir string) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -134,17 +138,18 @@ func runCodex(ctx context.Context, timeout time.Duration, prompt, proxyURL, upst
 	env := replaceEnv(os.Environ(), "HOME", fakeHome)
 	cmd.Env = env
 
-	runAgent(cmd, runDir, "codex")
+	runAgent(cmd, templateDir, runDir, "codex")
 }
 
-func runClaudeCode(ctx context.Context, timeout time.Duration, prompt, proxyURL, runDir string) {
+func runClaudeCode(ctx context.Context, timeout time.Duration, prompt, proxyURL, templateDir, runDir string) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "claude",
 		"-p", prompt,
-		"--max-turns", "5",
+		"--max-turns", "10",
 		"--output-format", "text",
+		"--permission-mode", "bypassPermissions",
 	)
 
 	// Build env: inherit everything, override ANTHROPIC_BASE_URL, remove CLAUDECODE.
@@ -152,10 +157,10 @@ func runClaudeCode(ctx context.Context, timeout time.Duration, prompt, proxyURL,
 	env = append(env, "ANTHROPIC_BASE_URL="+proxyURL)
 	cmd.Env = env
 
-	runAgent(cmd, runDir, "claude-code")
+	runAgent(cmd, templateDir, runDir, "claude-code")
 }
 
-func runIIOpenAI(ctx context.Context, timeout time.Duration, prompt, model, proxyURL, upstream, runDir string) {
+func runIIOpenAI(ctx context.Context, timeout time.Duration, prompt, model, proxyURL, upstream, templateDir, runDir string) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -170,10 +175,10 @@ func runIIOpenAI(ctx context.Context, timeout time.Duration, prompt, model, prox
 	env := replaceEnv(os.Environ(), "HOME", fakeHome)
 	cmd.Env = env
 
-	runAgent(cmd, runDir, "ii-openai")
+	runAgent(cmd, templateDir, runDir, "ii-openai")
 }
 
-func runIIClaude(ctx context.Context, timeout time.Duration, prompt, model, proxyURL, upstream, runDir string) {
+func runIIClaude(ctx context.Context, timeout time.Duration, prompt, model, proxyURL, upstream, templateDir, runDir string) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -188,10 +193,10 @@ func runIIClaude(ctx context.Context, timeout time.Duration, prompt, model, prox
 	env := replaceEnv(os.Environ(), "HOME", fakeHome)
 	cmd.Env = env
 
-	runAgent(cmd, runDir, "ii-claude")
+	runAgent(cmd, templateDir, runDir, "ii-claude")
 }
 
-func runAgent(cmd *exec.Cmd, runDir, name string) {
+func runAgent(cmd *exec.Cmd, templateDir, runDir, name string) {
 	stdoutPath := filepath.Join(runDir, name+".stdout")
 	stderrPath := filepath.Join(runDir, name+".stderr")
 
@@ -212,7 +217,26 @@ func runAgent(cmd *exec.Cmd, runDir, name string) {
 	cmd.Stdout = stdoutFile
 	cmd.Stderr = stderrFile
 
+	// If a template directory is specified, prepare an isolated working copy.
+	var workDir string
+	if templateDir != "" {
+		wd, err := prepareWorkDir(templateDir, name)
+		if err != nil {
+			log.Printf("[%s] prepare work dir: %v", name, err)
+			return
+		}
+		defer os.RemoveAll(wd)
+		workDir = wd
+		cmd.Dir = wd
+		// Set GOWORK=off so the isolated module doesn't get confused
+		// by a go.work file in a parent directory.
+		cmd.Env = append(cmd.Env, "GOWORK=off")
+	}
+
 	log.Printf("[%s] starting: %s", name, strings.Join(cmd.Args, " "))
+	if workDir != "" {
+		log.Printf("[%s] workdir: %s", name, workDir)
+	}
 	start := time.Now()
 
 	err = cmd.Run()
@@ -223,6 +247,96 @@ func runAgent(cmd *exec.Cmd, runDir, name string) {
 	} else {
 		log.Printf("[%s] finished in %s", name, elapsed.Round(time.Second))
 	}
+
+	// Capture diff if we have a working directory.
+	if workDir != "" {
+		captureDiff(workDir, runDir, name)
+	}
+}
+
+// --- Template dir helpers ---
+
+// prepareWorkDir creates a temp directory, copies the template into it,
+// and initializes a git repo with an initial commit so we can diff later.
+func prepareWorkDir(templateDir, name string) (string, error) {
+	tmpDir, err := os.MkdirTemp("", "compare-agents-"+name+"-*")
+	if err != nil {
+		return "", fmt.Errorf("create temp dir: %w", err)
+	}
+
+	// Copy all files from templateDir into tmpDir.
+	if err := copyDir(templateDir, tmpDir); err != nil {
+		os.RemoveAll(tmpDir)
+		return "", fmt.Errorf("copy template: %w", err)
+	}
+
+	// Initialize git repo and make an initial commit.
+	// We tag it so captureDiff can always diff against the baseline,
+	// even if the agent makes additional commits.
+	for _, args := range [][]string{
+		{"git", "init"},
+		{"git", "add", "."},
+		{"git", "-c", "user.name=compare-agents", "-c", "user.email=noreply@test", "commit", "-m", "init"},
+		{"git", "tag", "baseline"},
+	} {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir = tmpDir
+		cmd.Env = append(os.Environ(), "GOWORK=off")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			os.RemoveAll(tmpDir)
+			return "", fmt.Errorf("%s: %w\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+
+	// Also initialize a jj repo (required by ii agents).
+	jjInit := exec.Command("jj", "git", "init", "--colocate")
+	jjInit.Dir = tmpDir
+	jjInit.Env = append(os.Environ(), "GOWORK=off")
+	if out, err := jjInit.CombinedOutput(); err != nil {
+		log.Printf("jj init (non-fatal): %v\n%s", err, out)
+	}
+
+	return tmpDir, nil
+}
+
+// captureDiff diffs the working directory against the baseline tag
+// (set up by prepareWorkDir). This captures all changes including
+// committed ones.
+func captureDiff(workDir, runDir, name string) {
+	cmd := exec.Command("git", "diff", "baseline")
+	cmd.Dir = workDir
+	out, err := cmd.Output()
+	if err != nil {
+		log.Printf("[%s] git diff failed: %v", name, err)
+		return
+	}
+	diffPath := filepath.Join(runDir, name+".diff")
+	if err := os.WriteFile(diffPath, out, 0644); err != nil {
+		log.Printf("[%s] write diff: %v", name, err)
+	}
+}
+
+// copyDir recursively copies src to dst.
+func copyDir(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+
+		if d.IsDir() {
+			return os.MkdirAll(target, 0755)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0644)
+	})
 }
 
 // --- Fake HOME helpers ---

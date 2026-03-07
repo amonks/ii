@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -226,5 +227,91 @@ func TestSymlinkDotfiles(t *testing.T) {
 	}
 	if _, err := os.Lstat(filepath.Join(dst, "notdot")); err == nil {
 		t.Error("notdot should not be symlinked (not a dotfile)")
+	}
+}
+
+func TestPrepareWorkDir(t *testing.T) {
+	// Create a fake template directory.
+	tmpl := t.TempDir()
+	os.WriteFile(filepath.Join(tmpl, "hello.go"), []byte("package main\n"), 0644)
+	os.MkdirAll(filepath.Join(tmpl, "sub"), 0755)
+	os.WriteFile(filepath.Join(tmpl, "sub", "nested.txt"), []byte("nested\n"), 0644)
+
+	workDir, err := prepareWorkDir(tmpl, "test-agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(workDir)
+
+	// Check files were copied.
+	data, err := os.ReadFile(filepath.Join(workDir, "hello.go"))
+	if err != nil {
+		t.Fatal("hello.go should exist")
+	}
+	if string(data) != "package main\n" {
+		t.Errorf("hello.go content = %q", data)
+	}
+
+	data, err = os.ReadFile(filepath.Join(workDir, "sub", "nested.txt"))
+	if err != nil {
+		t.Fatal("sub/nested.txt should exist")
+	}
+	if string(data) != "nested\n" {
+		t.Errorf("sub/nested.txt content = %q", data)
+	}
+
+	// Check git repo was initialized with a commit and baseline tag.
+	cmd := exec.Command("git", "log", "--oneline")
+	cmd.Dir = workDir
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git log failed: %v", err)
+	}
+	if !strings.Contains(string(out), "init") {
+		t.Errorf("expected initial commit, got: %s", out)
+	}
+
+	tagCmd := exec.Command("git", "tag", "-l", "baseline")
+	tagCmd.Dir = workDir
+	tagOut, err := tagCmd.Output()
+	if err != nil {
+		t.Fatalf("git tag failed: %v", err)
+	}
+	if !strings.Contains(string(tagOut), "baseline") {
+		t.Error("expected baseline tag")
+	}
+}
+
+func TestCaptureDiff(t *testing.T) {
+	// Set up a git repo with an initial commit.
+	tmpl := t.TempDir()
+	os.WriteFile(filepath.Join(tmpl, "file.txt"), []byte("original\n"), 0644)
+
+	workDir, err := prepareWorkDir(tmpl, "test-diff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(workDir)
+
+	// Modify a file and also commit it (to test that captureDiff
+	// catches committed changes, not just working tree changes).
+	os.WriteFile(filepath.Join(workDir, "file.txt"), []byte("modified\n"), 0644)
+	commitCmd := exec.Command("git", "add", ".")
+	commitCmd.Dir = workDir
+	commitCmd.Run()
+	commitCmd2 := exec.Command("git", "-c", "user.name=test", "-c", "user.email=test@test", "commit", "-m", "modify")
+	commitCmd2.Dir = workDir
+	commitCmd2.Run()
+
+	// Capture the diff.
+	runDir := t.TempDir()
+	captureDiff(workDir, runDir, "test-agent")
+
+	diffData, err := os.ReadFile(filepath.Join(runDir, "test-agent.diff"))
+	if err != nil {
+		t.Fatal("diff file should exist")
+	}
+	if !strings.Contains(string(diffData), "-original") || !strings.Contains(string(diffData), "+modified") {
+		t.Errorf("unexpected diff content: %s", diffData)
 	}
 }
