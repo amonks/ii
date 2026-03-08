@@ -10,8 +10,8 @@ primary_region = "ord"
   TSNET_FORCE_LOGIN = "1"
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256"
+  size = "shared-cpu-4x"
+  memory = "512"
 
 [[mounts]]
   source = "monks_ci_data"
