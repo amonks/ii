@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -53,20 +52,8 @@ func TailscaleACLApply(reporter *Reporter) error {
 		return fmt.Errorf("generating ACL: %w", err)
 	}
 
-	// Parse into any so the SDK can serialize it.
-	var acl any
-	if err := json.Unmarshal(aclBytes, &acl); err != nil {
-		errMsg := fmt.Sprintf("parsing generated ACL: %v", err)
-		fmt.Fprintf(w, "=== %s\n", errMsg)
-		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
-			Status:     "failed",
-			DurationMs: time.Since(start).Milliseconds(),
-			Error:      errMsg,
-		})
-		return fmt.Errorf("parsing generated ACL: %w", err)
-	}
-
-	// Push to Tailscale.
+	// Push to Tailscale. Pass the JSON bytes as a string so the SDK
+	// treats it as HuJSON content (the Set method rejects map[string]interface{}).
 	fmt.Fprintf(w, "=== pushing ACL to tailnet %s\n", tailnetID)
 	client := &tsclient.Client{
 		Tailnet: tailnetID,
@@ -77,7 +64,7 @@ func TailscaleACLApply(reporter *Reporter) error {
 	}
 
 	ctx := context.Background()
-	if err := client.PolicyFile().Set(ctx, acl, ""); err != nil {
+	if err := client.PolicyFile().Set(ctx, string(aclBytes), ""); err != nil {
 		errMsg := fmt.Sprintf("pushing ACL: %v", err)
 		fmt.Fprintf(w, "=== %s\n", errMsg)
 		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
