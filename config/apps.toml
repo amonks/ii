@@ -92,7 +92,7 @@
 
 [apps.logs]
   vm_size = "shared-cpu-4x"
-  vm_memory = "2gb"
+  vm_memory = "4gb"
   packages = ["sqlite"]
 
   [[apps.logs.routes]]
