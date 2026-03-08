@@ -24,7 +24,7 @@
 [apps.ci]
   packages = ["sqlite"]
   vm_size = "shared-cpu-4x"
-  vm_memory = "512"
+  vm_memory = "1gb"
 
   [[apps.ci.routes]]
     path = "ci"

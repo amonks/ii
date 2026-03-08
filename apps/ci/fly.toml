@@ -11,7 +11,7 @@ primary_region = "ord"
 
 [[vm]]
   size = "shared-cpu-4x"
-  memory = "512"
+  memory = "1gb"
 
 [[mounts]]
   source = "monks_ci_data"
