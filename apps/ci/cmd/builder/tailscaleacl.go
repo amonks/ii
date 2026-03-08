@@ -28,13 +28,15 @@ func TailscaleACLApply(reporter *Reporter) error {
 	tailnetID := os.Getenv("TAILSCALE_TAILNET_ID")
 
 	if clientID == "" || clientSecret == "" || tailnetID == "" {
-		slog.Info("tailscale OAuth credentials not configured, skipping ACL push")
-		fmt.Fprintf(w, "tailscale OAuth credentials not configured, skipping\n")
+		errMsg := "tailscale OAuth credentials not configured (need TAILSCALE_OAUTH_CLIENT_ID, TAILSCALE_OAUTH_CLIENT_SECRET, TAILSCALE_TAILNET_ID)"
+		slog.Error(errMsg)
+		fmt.Fprintf(w, "%s\n", errMsg)
 		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{
-			Status:     "skipped",
+			Status:     "failed",
 			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
 		})
-		return nil
+		return fmt.Errorf("%s", errMsg)
 	}
 
 	// Generate ACL JSON.

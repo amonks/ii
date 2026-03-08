@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
+"github.com/google/go-containerregistry/pkg/v1/remote"
 	"slices"
 
 	"monks.co/pkg/ci/changedetect"
@@ -337,14 +335,19 @@ func deployApp(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsCo
 		WorkDir: fmt.Sprintf("/app/apps/%s", app),
 	}
 
-	var baseImage v1.Image
 	baseImage, err := remote.Image(
 		mustParseRef(baseImageRef),
 		oci.FlyAuthOption(flyToken),
 	)
 	if err != nil {
-		fmt.Fprintf(w, "=== warning: failed to pull base image, using empty: %v\n", err)
-		baseImage = emptyImage()
+		errMsg := fmt.Sprintf("pulling base image %s: %v", baseImageRef, err)
+		fmt.Fprintf(w, "=== %s\n", errMsg)
+		reporter.FinishStream(jobName, app, FinishStreamResult{
+			Status:     "failed",
+			DurationMs: time.Since(start).Milliseconds(),
+			Error:      errMsg,
+		})
+		return fmt.Errorf("pulling base image for %s: %w", app, err)
 	}
 
 	img, err := oci.BuildAppImage(baseImage, binaryPath, files, imgCfg)
@@ -462,6 +465,3 @@ func mustParseRef(s string) name.Reference {
 	return ref
 }
 
-func emptyImage() v1.Image {
-	return empty.Image
-}

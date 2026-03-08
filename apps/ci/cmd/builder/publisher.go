@@ -14,8 +14,7 @@ import (
 func PublishSubtrees(root string, reporter *Reporter) error {
 	cfg, err := publish.LoadConfig(root)
 	if err != nil {
-		slog.Info("no publish config, skipping", "error", err)
-		return nil
+		return fmt.Errorf("loading publish config: %w", err)
 	}
 
 	if len(cfg.Package) == 0 {
@@ -25,7 +24,7 @@ func PublishSubtrees(root string, reporter *Reporter) error {
 
 	// Configure git to use gh for HTTPS authentication (uses GH_TOKEN env var).
 	if setupErr := exec.Command("gh", "auth", "setup-git").Run(); setupErr != nil {
-		slog.Warn("gh auth setup-git failed", "error", setupErr)
+		return fmt.Errorf("gh auth setup-git: %w", setupErr)
 	}
 
 	stream := "publish"
