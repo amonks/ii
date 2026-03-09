@@ -373,12 +373,12 @@ func (a *apiHandler) finishRun(w http.ResponseWriter, r *http.Request) {
 		link := fmt.Sprintf("https://monks.co/ci/runs/%d", runID)
 		switch req.Status {
 		case "failed":
-			msg = fmt.Sprintf("CI run %d failed: %s", runID, link)
+			msg = fmt.Sprintf("ci run %d %s failed", runID, link)
 			if req.Error != "" {
 				msg += "\n" + req.Error
 			}
 		case "success":
-			msg = fmt.Sprintf("CI run %d succeeded: %s", runID, link)
+			msg = fmt.Sprintf("ci run %d %s success", runID, link)
 		}
 		if msg != "" {
 			a.sendSMS(msg)

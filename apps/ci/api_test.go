@@ -156,8 +156,8 @@ func TestAPIFinishRunSMSOnSuccess(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
-	if !strings.Contains(smsMessage, "succeeded") {
-		t.Errorf("expected SMS to contain 'succeeded', got %s", smsMessage)
+	if !strings.Contains(smsMessage, "success") {
+		t.Errorf("expected SMS to contain 'success', got %s", smsMessage)
 	}
 	if !strings.Contains(smsMessage, "https://monks.co/ci/runs/1") {
 		t.Errorf("expected SMS to contain run link, got %s", smsMessage)
