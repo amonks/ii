@@ -389,8 +389,8 @@ func (h *TriggerHandler) createBuilderMachine(run *Run) {
 			Image: h.resolveBuilderImage(),
 			Guest: flyapi.Guest{
 				CPUKind:  "performance",
-				CPUs:     4,
-				MemoryMB: 8192,
+				CPUs:     16,
+				MemoryMB: 32768,
 			},
 			Env:         env,
 			AutoDestroy: true,
