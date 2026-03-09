@@ -5,8 +5,8 @@ go 1.26.1
 require (
 	github.com/a-h/templ v0.3.977
 	github.com/google/go-containerregistry v0.20.3
-	github.com/tailscale/tailscale-client-go/v2 v2.0.0-20250129222324-74c8fc3cb4d7
 	monks.co/run v1.0.0-beta.36
+	tailscale.com/client/tailscale/v2 v2.8.0
 )
 
 require (

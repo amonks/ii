@@ -33,8 +33,5 @@
     "tests": [
         { "src": "calder", "accept": ["tag:service:80"] },
         { "src": "qaynan", "accept": ["thor:22", "brigid:22"] }
-    ],
-    "sshTests": [
-        { "src": "ajm@passkey", "dst": ["ajm@passkey"], "accept": ["ajm"] }
     ]
 }

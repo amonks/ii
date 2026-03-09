@@ -121,3 +121,5 @@ gotest.tools/v3 v3.4.0 h1:ZazjZUfuVeZGLAmlKKuyv3IKP5orXcwtOwDQH6YVr6o=
 gotest.tools/v3 v3.4.0/go.mod h1:CtbdzLSsqVhDgMtKsx03ird5YTGB3ar27v0u/yKBW5g=
 monks.co/run v1.0.0-beta.36 h1:Ya2++ejMAkbdPx+/OYpqPgqLf4zTsp6XnsJ6hNLyMx8=
 monks.co/run v1.0.0-beta.36/go.mod h1:wgiNSykjzoLLaxCRyh6+65QZRrysqY5nJAbE3UW5y7Y=
+tailscale.com/client/tailscale/v2 v2.8.0 h1:jU7jo7VyJAgi5besNeroZ0xkG7Exk56pJ18s+4nL7Pw=
+tailscale.com/client/tailscale/v2 v2.8.0/go.mod h1:FGjvGT3ThHelqo0gfdK3IN3k1dwNbRzYbQh2XO3C47U=

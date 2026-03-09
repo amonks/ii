@@ -1,4 +1,4 @@
-// Package tailscaleacl generates a complete Tailscale ACL JSON by
+// Package tailscaleacl generates a complete Tailscale ACL policy by
 // merging config/tailscale-acl-base.jsonc with routing grants derived
 // from config/apps.toml.
 package tailscaleacl
@@ -9,12 +9,14 @@ import (
 	"os"
 	"sort"
 
+	tailscale "tailscale.com/client/tailscale/v2"
+
 	"monks.co/pkg/config"
 	"monks.co/pkg/env"
 )
 
-// Generate produces the full ACL policy as JSON bytes.
-func Generate() ([]byte, error) {
+// Generate produces the full ACL policy as a typed [tailscale.ACL].
+func Generate() (*tailscale.ACL, error) {
 	cfg, err := config.LoadApps()
 	if err != nil {
 		return nil, fmt.Errorf("loading apps config: %w", err)
@@ -26,46 +28,24 @@ func Generate() ([]byte, error) {
 		return nil, fmt.Errorf("reading base ACL: %w", err)
 	}
 
-	// Strip JSONC comments.
+	// Strip JSONC comments so we can unmarshal as plain JSON.
 	baseBytes = stripJSONCComments(baseBytes)
 
-	var base map[string]any
-	if err := json.Unmarshal(baseBytes, &base); err != nil {
+	var acl tailscale.ACL
+	if err := json.Unmarshal(baseBytes, &acl); err != nil {
 		return nil, fmt.Errorf("parsing base ACL: %w", err)
 	}
 
-	grants := generateGrants(cfg)
+	acl.Grants = append(acl.Grants, generateGrants(cfg)...)
 
-	// Append to existing grants.
-	existingGrants, _ := base["grants"].([]any)
-	for _, g := range grants {
-		existingGrants = append(existingGrants, g)
-	}
-	base["grants"] = existingGrants
-
-	out, err := json.MarshalIndent(base, "", "    ")
-	if err != nil {
-		return nil, fmt.Errorf("marshaling ACL: %w", err)
-	}
-
-	return out, nil
+	return &acl, nil
 }
 
-type routeEntry struct {
-	Path    string `json:"path"`
-	Backend string `json:"backend"`
-}
-
-type grant struct {
-	Src []string       `json:"src"`
-	Dst []string       `json:"dst"`
-	App map[string]any `json:"app"`
-}
-
-func generateGrants(cfg *config.AppsConfig) []grant {
+func generateGrants(cfg *config.AppsConfig) []tailscale.Grant {
 	// Group routes by access value.
 	type routeInfo struct {
-		entry        routeEntry
+		path         string
+		backend      string
 		capabilities []string
 	}
 	accessRoutes := map[string][]routeInfo{}
@@ -74,7 +54,8 @@ func generateGrants(cfg *config.AppsConfig) []grant {
 		for _, r := range app.Routes {
 			backend := deriveBackend(name, r.Host, cfg.Defaults.Region)
 			ri := routeInfo{
-				entry:        routeEntry{Path: r.Path, Backend: backend},
+				path:         r.Path,
+				backend:      backend,
 				capabilities: r.Capabilities,
 			}
 			accessRoutes[r.Access] = append(accessRoutes[r.Access], ri)
@@ -88,7 +69,7 @@ func generateGrants(cfg *config.AppsConfig) []grant {
 	}
 	sort.Strings(accessValues)
 
-	var grants []grant
+	var grants []tailscale.Grant
 
 	// Track capability grants to deduplicate.
 	type capKey struct {
@@ -102,22 +83,25 @@ func generateGrants(cfg *config.AppsConfig) []grant {
 
 		// Sort routes for deterministic output.
 		sort.Slice(routes, func(i, j int) bool {
-			if routes[i].entry.Path != routes[j].entry.Path {
-				return routes[i].entry.Path < routes[j].entry.Path
+			if routes[i].path != routes[j].path {
+				return routes[i].path < routes[j].path
 			}
-			return routes[i].entry.Backend < routes[j].entry.Backend
+			return routes[i].backend < routes[j].backend
 		})
 
 		// Build the public routing grant.
-		entries := make([]routeEntry, len(routes))
+		entries := make([]map[string]any, len(routes))
 		for i, ri := range routes {
-			entries[i] = ri.entry
+			entries[i] = map[string]any{
+				"path":    ri.path,
+				"backend": ri.backend,
+			}
 		}
 
-		grants = append(grants, grant{
-			Src: []string{access},
-			Dst: []string{"tag:monks-co"},
-			App: map[string]any{
+		grants = append(grants, tailscale.Grant{
+			Source:      []string{access},
+			Destination: []string{"tag:monks-co"},
+			App: map[string][]map[string]any{
 				"monks.co/cap/public": entries,
 			},
 		})
@@ -131,11 +115,11 @@ func generateGrants(cfg *config.AppsConfig) []grant {
 				}
 				capGrants[key] = true
 
-				grants = append(grants, grant{
-					Src: []string{access},
-					Dst: []string{"tag:monks-co"},
-					App: map[string]any{
-						"monks.co/cap/" + cap: []map[string]any{{}},
+				grants = append(grants, tailscale.Grant{
+					Source:      []string{access},
+					Destination: []string{"tag:monks-co"},
+					App: map[string][]map[string]any{
+						"monks.co/cap/" + cap: {{}},
 					},
 				})
 			}

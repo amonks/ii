@@ -7,7 +7,8 @@ import (
 	"os"
 	"time"
 
-	tsclient "github.com/tailscale/tailscale-client-go/v2"
+	tsclient "tailscale.com/client/tailscale/v2"
+
 	"monks.co/pkg/tailscaleacl"
 )
 
@@ -38,9 +39,9 @@ func TailscaleACLApply(reporter *Reporter) error {
 		return fmt.Errorf("%s", errMsg)
 	}
 
-	// Generate ACL JSON.
+	// Generate typed ACL policy.
 	fmt.Fprintf(w, "=== generating ACL policy\n")
-	aclBytes, err := tailscaleacl.Generate()
+	acl, err := tailscaleacl.Generate()
 	if err != nil {
 		errMsg := fmt.Sprintf("generating ACL: %v", err)
 		fmt.Fprintf(w, "=== %s\n", errMsg)
@@ -52,8 +53,7 @@ func TailscaleACLApply(reporter *Reporter) error {
 		return fmt.Errorf("generating ACL: %w", err)
 	}
 
-	// Push to Tailscale. Pass the JSON bytes as a string so the SDK
-	// treats it as HuJSON content (the Set method rejects map[string]interface{}).
+	// Push to Tailscale.
 	fmt.Fprintf(w, "=== pushing ACL to tailnet %s\n", tailnetID)
 	client := &tsclient.Client{
 		Tailnet: tailnetID,
@@ -64,7 +64,7 @@ func TailscaleACLApply(reporter *Reporter) error {
 	}
 
 	ctx := context.Background()
-	if err := client.PolicyFile().Set(ctx, string(aclBytes), ""); err != nil {
+	if err := client.PolicyFile().Set(ctx, *acl, ""); err != nil {
 		errMsg := fmt.Sprintf("pushing ACL: %v", err)
 		fmt.Fprintf(w, "=== %s\n", errMsg)
 		reporter.FinishStream("deploy", "tailscale-acl", FinishStreamResult{

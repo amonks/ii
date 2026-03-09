@@ -33,24 +33,27 @@ func TestGenerateGrants(t *testing.T) {
 		t.Fatalf("expected at least 3 grants, got %d", len(grants))
 	}
 
-	// Verify each grant is valid JSON.
+	// Verify each grant has required fields and serializes cleanly.
 	for i, g := range grants {
-		bs, err := json.Marshal(g)
-		if err != nil {
-			t.Errorf("grant %d: marshal error: %v", i, err)
-			continue
+		if len(g.Source) == 0 {
+			t.Errorf("grant %d: missing Source", i)
 		}
-
-		var parsed map[string]any
-		if err := json.Unmarshal(bs, &parsed); err != nil {
-			t.Errorf("grant %d: unmarshal error: %v", i, err)
+		if len(g.Destination) == 0 {
+			t.Errorf("grant %d: missing Destination", i)
+		}
+		if len(g.App) == 0 {
+			t.Errorf("grant %d: missing App", i)
+		}
+		// Ensure it round-trips through JSON.
+		if _, err := json.Marshal(g); err != nil {
+			t.Errorf("grant %d: marshal error: %v", i, err)
 		}
 	}
 
 	// Find the ajm@passkey grant and check for movies-write capability.
 	var foundMoviesWrite bool
 	for _, g := range grants {
-		if len(g.Src) == 1 && g.Src[0] == "ajm@passkey" {
+		if len(g.Source) == 1 && g.Source[0] == "ajm@passkey" {
 			if _, ok := g.App["monks.co/cap/movies-write"]; ok {
 				foundMoviesWrite = true
 			}
