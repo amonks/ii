@@ -130,7 +130,7 @@
   [[apps.vault.routes]]
     path = "vault"
     host = "thor"
-    access = "autogroup:self"
+    access = "ajm@passkey"
 
 [apps.monitor]
   [[apps.monitor.routes]]
