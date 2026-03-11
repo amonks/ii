@@ -1,10 +1,8 @@
 package agent
 
 import (
-	"bufio"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -13,24 +11,22 @@ import (
 	"strings"
 	"time"
 
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
+	"monks.co/incrementum/internal/agents"
 	"monks.co/incrementum/internal/config"
 	"monks.co/incrementum/internal/db"
 	internalids "monks.co/incrementum/internal/ids"
 	"monks.co/incrementum/internal/paths"
-	"monks.co/incrementum/llm"
+	"monks.co/pkg/llm"
 )
 
-// Store provides access to agent functionality with session persistence
-// and event logging.
+// Store provides access to agent functionality with session persistence.
 type Store struct {
 	// closeDB closes any owned database connection.
 	closeDB func() error
 	// sqlDB is the sqlite handle used for persistence.
 	sqlDB *sql.DB
-	// eventsDir is the directory for event logs.
-	eventsDir string
-	llmStore  *llm.Store
+	registry  *agents.ModelRegistry
 	config    *config.Config
 }
 
@@ -49,12 +45,8 @@ type Options struct {
 	StateDir string
 
 	// DB is an existing SQLite database connection to use.
-	// If set, StateDir is ignored for persistence (events still use EventsDir).
+	// If set, StateDir is ignored for persistence.
 	DB *sql.DB
-
-	// EventsDir is the directory for event logs.
-	// Default: ~/.local/share/incrementum/agent/events
-	EventsDir string
 
 	// RepoPath is the repository path for loading project-specific config.
 	// If empty, only global config is loaded.
@@ -83,13 +75,9 @@ func OpenWithOptions(opts Options) (*Store, error) {
 		}
 	}
 
-	eventsDir, err := paths.ResolveWithDefault(opts.EventsDir, defaultEventsDir)
-	if err != nil {
-		return nil, fmt.Errorf("resolve events dir: %w", err)
-	}
-
 	// Load config
 	var cfg *config.Config
+	var err error
 	if opts.RepoPath != "" {
 		cfg, err = config.Load(opts.RepoPath)
 	} else {
@@ -99,14 +87,10 @@ func OpenWithOptions(opts Options) (*Store, error) {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
 
-	// Load LLM store for model resolution
-	llmStoreOpts := llm.Options{RepoPath: opts.RepoPath}
-	if stateDir != "" {
-		llmStoreOpts.StateDir = stateDir
-	}
-	llmStore, err := llm.OpenWithOptions(llmStoreOpts)
+	// Build model registry from config
+	registry, err := agents.NewModelRegistry(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("open llm store: %w", err)
+		return nil, fmt.Errorf("build model registry: %w", err)
 	}
 
 	sqlDB, closeFn, err := openAgentDB(opts, stateDir)
@@ -115,20 +99,11 @@ func OpenWithOptions(opts Options) (*Store, error) {
 	}
 
 	return &Store{
-		sqlDB:     sqlDB,
-		closeDB:   closeFn,
-		eventsDir: eventsDir,
-		llmStore:  llmStore,
-		config:    cfg,
+		sqlDB:    sqlDB,
+		closeDB:  closeFn,
+		registry: registry,
+		config:   cfg,
 	}, nil
-}
-
-func defaultEventsDir() (string, error) {
-	home, err := paths.HomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".local", "share", "incrementum", "agent", "events"), nil
 }
 
 func openAgentDB(opts Options, stateDir string) (*sql.DB, func() error, error) {
@@ -190,27 +165,27 @@ func (s *Store) GetOrCreateRepoName(path string) (string, error) {
 func (s *Store) ResolveModel(explicit string, taskModel string) (llm.Model, error) {
 	// Priority 1: Explicit model
 	if explicit != "" {
-		return s.llmStore.GetModel(explicit)
+		return s.registry.GetModel(explicit)
 	}
 
 	// Priority 2: Environment variable
 	if envModel := os.Getenv("INCREMENTUM_AGENT_MODEL"); envModel != "" {
-		return s.llmStore.GetModel(envModel)
+		return s.registry.GetModel(envModel)
 	}
 
 	// Priority 3: Per-task model
 	if taskModel != "" {
-		return s.llmStore.GetModel(taskModel)
+		return s.registry.GetModel(taskModel)
 	}
 
 	// Priority 4: agent.model from config
 	if s.config != nil && s.config.Agent.Model != "" {
-		return s.llmStore.GetModel(s.config.Agent.Model)
+		return s.registry.GetModel(s.config.Agent.Model)
 	}
 
 	// Priority 5: llm.model from config (final fallback)
-	if defaultModel := s.llmStore.DefaultModel(); defaultModel != "" {
-		return s.llmStore.GetModel(defaultModel)
+	if defaultModel := s.registry.DefaultModel(); defaultModel != "" {
+		return s.registry.GetModel(defaultModel)
 	}
 
 	return llm.Model{}, fmt.Errorf("%w: specify --model, set INCREMENTUM_AGENT_MODEL, or configure agent.model or llm.model in config", ErrNoModelConfigured)
@@ -313,75 +288,29 @@ func (s *Store) Run(ctx context.Context, opts RunOptions) (*RunHandle, error) {
 		return nil, fmt.Errorf("start agent: %w", err)
 	}
 
-	// Create event log file
-	logPath := s.eventLogPath(sessionID)
-	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
-		return nil, fmt.Errorf("create events dir: %w", err)
-	}
-
-	logFile, err := os.Create(logPath)
-	if err != nil {
-		return nil, fmt.Errorf("create event log: %w", err)
-	}
-
-	// Create wrapped event channel and result channel
-	events := make(chan Event, 100)
+	// Create result channel
 	resultCh := make(chan RunResult, 1)
 
 	handle := &RunHandle{
-		Events:    events,
 		sessionID: sessionID,
 		handle:    internalHandle,
 		resultCh:  resultCh,
 	}
 
-	// Start event forwarding goroutine
-	go s.forwardEvents(ctx, internalHandle, events, resultCh, logFile, session, model.ContextWindow)
+	// Start result collection goroutine
+	go s.collectResult(internalHandle, resultCh, session, model.ContextWindow)
 
 	return handle, nil
 }
 
-// forwardEvents forwards events from internal agent to the public channel,
-// logs them to disk, and updates session state on completion.
-func (s *Store) forwardEvents(
-	ctx context.Context,
+// collectResult waits for the agent to complete and updates session state.
+func (s *Store) collectResult(
 	internalHandle *internalagent.RunHandle,
-	events chan<- Event,
 	resultCh chan<- RunResult,
-	logFile *os.File,
 	session Session,
 	contextWindow int,
 ) {
-	defer close(events)
 	defer close(resultCh)
-	defer logFile.Close()
-
-	writer := bufio.NewWriter(logFile)
-	defer writer.Flush()
-
-	eventIndex := 0
-
-	// Forward all events
-	for event := range internalHandle.Events {
-		// Convert to SSE and log
-		sse := EventToSSE(event)
-		sse.ID = fmt.Sprintf("%d", eventIndex)
-		eventIndex++
-
-		// Write event to log as JSON line
-		eventJSON, _ := json.Marshal(sse)
-		writer.Write(eventJSON)
-		writer.WriteString("\n")
-
-		// Forward event
-		select {
-		case events <- event:
-		case <-ctx.Done():
-		}
-	}
-
-	// Flush remaining events
-	writer.Flush()
 
 	// Wait for final result
 	internalResult, _ := internalHandle.Wait()
@@ -477,137 +406,6 @@ func (s *Store) FindSession(repoPath, sessionID string) (Session, error) {
 
 	// Try prefix match (case-insensitive)
 	return s.findSessionByPrefix(repoName, sessionID)
-}
-
-// Logs returns the raw event log for a session.
-func (s *Store) Logs(repoPath, sessionID string) (string, error) {
-	session, err := s.FindSession(repoPath, sessionID)
-	if err != nil {
-		return "", err
-	}
-
-	logPath := s.eventLogPath(session.ID)
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("event log not found for session %s", sessionID)
-		}
-		return "", fmt.Errorf("read event log: %w", err)
-	}
-
-	return string(data), nil
-}
-
-// Transcript returns a readable transcript of a session.
-// Shows user and assistant messages without detailed tool call information.
-func (s *Store) Transcript(repoPath, sessionID string) (string, error) {
-	logContent, err := s.Logs(repoPath, sessionID)
-	if err != nil {
-		return "", err
-	}
-
-	return buildTranscript(logContent, false)
-}
-
-// TranscriptSnapshot returns a readable transcript by session ID.
-// Unlike Transcript, this does not require the repoPath as the session ID
-// uniquely identifies the event log file. This method includes tool output.
-func (s *Store) TranscriptSnapshot(sessionID string) (string, error) {
-	logPath := s.eventLogPath(sessionID)
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("event log not found for session %s", sessionID)
-		}
-		return "", fmt.Errorf("read event log: %w", err)
-	}
-
-	return buildTranscript(string(data), true)
-}
-
-// buildTranscript parses event log content and builds a readable transcript.
-// If includeToolOutput is true, tool execution results are included.
-func buildTranscript(logContent string, includeToolOutput bool) (string, error) {
-	var builder strings.Builder
-	scanner := bufio.NewScanner(strings.NewReader(logContent))
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-
-		var sse SSEEvent
-		if err := json.Unmarshal([]byte(line), &sse); err != nil {
-			continue
-		}
-
-		// Only include message events for transcript
-		switch sse.Name {
-		case "message.end":
-			var event struct {
-				Message struct {
-					Role    string `json:"Role"`
-					Content []struct {
-						Type string `json:"Type"`
-						Text string `json:"Text"`
-					} `json:"Content"`
-				} `json:"Message"`
-			}
-			if err := json.Unmarshal([]byte(sse.Data), &event); err != nil {
-				continue
-			}
-
-			// Extract text content
-			for _, block := range event.Message.Content {
-				if block.Type == "text" && block.Text != "" {
-					builder.WriteString("## Assistant\n\n")
-					builder.WriteString(block.Text)
-					builder.WriteString("\n\n")
-				}
-			}
-
-		case "tool.end":
-			if !includeToolOutput {
-				continue
-			}
-			var event struct {
-				Result struct {
-					Content []struct {
-						Type string `json:"Type"`
-						Text string `json:"Text"`
-					} `json:"Content"`
-				} `json:"Result"`
-			}
-			if err := json.Unmarshal([]byte(sse.Data), &event); err != nil {
-				continue
-			}
-
-			// Extract tool output text
-			for _, block := range event.Result.Content {
-				if block.Type == "text" && block.Text != "" {
-					builder.WriteString("Tool output:\n")
-					builder.WriteString(block.Text)
-					builder.WriteString("\n\n")
-				}
-			}
-
-		case "agent.start":
-			// Note the session started
-			builder.WriteString("# Agent Session\n\n")
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("scan event log: %w", err)
-	}
-
-	return builder.String(), nil
-}
-
-// eventLogPath returns the path to the event log for a session.
-func (s *Store) eventLogPath(sessionID string) string {
-	return filepath.Join(s.eventsDir, sessionID+".jsonl")
 }
 
 func (s *Store) saveSession(session Session) error {

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"monks.co/incrementum/agent"
+	"monks.co/incrementum/internal/agents"
 	"monks.co/incrementum/internal/config"
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/jj"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/todo"
@@ -33,9 +33,6 @@ type RunOptions struct {
 	SkipFinalize bool
 	OnStart       func(StartInfo)
 	OnStageChange func(Stage)
-	// EventStream receives job events as they are recorded. The channel is closed
-	// when Run completes.
-	EventStream chan<- Event
 	// WorkspacePath is the path to run the job from.
 	// Defaults to repoPath when empty.
 	WorkspacePath string
@@ -48,7 +45,14 @@ type RunOptions struct {
 	// When nil, LoadConfig is used.
 	Config   *config.Config
 	RunTests func(string, []string) ([]TestCommandResult, error)
-	// RunLLM runs an LLM session using an agent backend.
+	// Adapter is the default CLI agent backend for all stages.
+	Adapter agents.Adapter
+	// ReviewAdapter overrides Adapter for the review stage. If nil, uses Adapter.
+	ReviewAdapter agents.Adapter
+	// CommitAdapter overrides Adapter for the commit stage. If nil, uses Adapter.
+	CommitAdapter agents.Adapter
+	// RunLLM runs an LLM session using an agent backend (legacy callback).
+	// Deprecated: use Adapter instead.
 	RunLLM func(AgentRunOptions) (AgentRunResult, error)
 	// Model overrides model selection for all stages when set.
 	Model              string
@@ -67,10 +71,6 @@ type RunOptions struct {
 	Snapshot           func(string) error
 	// SeriesLog retrieves the log of commits from fork_point(@|main) to @-.
 	SeriesLog func(string) (string, error)
-	// Transcripts retrieves transcripts for LLM sessions.
-	Transcripts     func(string, []AgentSession) ([]AgentTranscript, error)
-	EventLog        *EventLog
-	EventLogOptions EventLogOptions
 	Logger          Logger
 }
 
@@ -105,9 +105,6 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 	}
 
 	opts = normalizeRunOptions(opts)
-	if opts.EventStream != nil {
-		defer close(opts.EventStream)
-	}
 	result := &RunResult{}
 	repoPath = filepath.Clean(repoPath)
 	if abs, absErr := filepath.Abs(repoPath); absErr == nil {
@@ -177,40 +174,6 @@ func Resume(repoPath, jobID string, opts RunOptions) (*RunResult, error) {
 		opts.OnStart(StartInfo{JobID: updated.ID, Workdir: workspaceAbs, Todo: item})
 	}
 
-	createdEventLog := false
-	if opts.EventLog == nil {
-		eventLog, err := OpenEventLogAppend(updated.ID, opts.EventLogOptions)
-		if err != nil {
-			status := StatusFailed
-			updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
-			result.Job = updated
-			var finalizeErr error
-			if !opts.SkipFinalize {
-				finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
-			}
-			return result, errors.Join(err, updateErr, finalizeErr)
-		}
-		opts.EventLog = eventLog
-		createdEventLog = true
-	}
-	if createdEventLog {
-		defer func() {
-			_ = opts.EventLog.Close()
-		}()
-	}
-	if opts.EventStream != nil {
-		opts.EventLog.SetStream(opts.EventStream)
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventStage, stageEventData{Stage: stage}); err != nil {
-		status := StatusFailed
-		updated, updateErr := manager.Update(updated.ID, UpdateOptions{Status: &status}, opts.Now())
-		result.Job = updated
-		var finalizeErr error
-		if !opts.SkipFinalize {
-			finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
-		}
-		return result, errors.Join(err, updateErr, finalizeErr)
-	}
 	if opts.OnStageChange != nil {
 		opts.OnStageChange(stage)
 	}
@@ -257,9 +220,6 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 	}
 
 	opts = normalizeRunOptions(opts)
-	if opts.EventStream != nil {
-		defer close(opts.EventStream)
-	}
 	result := &RunResult{}
 	repoPath = filepath.Clean(repoPath)
 	if abs, absErr := filepath.Abs(repoPath); absErr == nil {
@@ -323,40 +283,6 @@ func runJob(repoPath, todoID string, opts RunOptions) (*RunResult, error) {
 		opts.OnStart(StartInfo{JobID: created.ID, Workdir: workspaceAbs, Todo: item})
 	}
 
-	createdEventLog := false
-	if opts.EventLog == nil {
-		eventLog, err := OpenEventLog(created.ID, opts.EventLogOptions)
-		if err != nil {
-			status := StatusFailed
-			updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
-			result.Job = updated
-			var finalizeErr error
-			if !opts.SkipFinalize {
-				finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
-			}
-			return result, errors.Join(err, updateErr, finalizeErr)
-		}
-		opts.EventLog = eventLog
-		createdEventLog = true
-	}
-	if createdEventLog {
-		defer func() {
-			_ = opts.EventLog.Close()
-		}()
-	}
-	if opts.EventStream != nil {
-		opts.EventLog.SetStream(opts.EventStream)
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventStage, stageEventData{Stage: created.Stage}); err != nil {
-		status := StatusFailed
-		updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
-		result.Job = updated
-		var finalizeErr error
-		if !opts.SkipFinalize {
-			finalizeErr = finalizeTodo(repoPath, item.ID, StatusFailed)
-		}
-		return result, errors.Join(err, updateErr, finalizeErr)
-	}
 	if opts.OnStageChange != nil {
 		opts.OnStageChange(created.Stage)
 	}
@@ -543,12 +469,6 @@ func (ctx *runContext) handleStageOutcome(current, next Job, stageErr error) (Jo
 	}
 	if next.ID != "" {
 		if next.Stage != current.Stage {
-			if err := appendJobEvent(ctx.opts.EventLog, jobEventStage, stageEventData{Stage: next.Stage}); err != nil {
-				status := StatusFailed
-				updated, updateErr := ctx.manager.Update(next.ID, UpdateOptions{Status: &status}, ctx.opts.Now())
-				ctx.result.Job = updated
-				return updated, errors.Join(err, updateErr)
-			}
 			if ctx.opts.OnStageChange != nil {
 				ctx.opts.OnStageChange(next.Stage)
 			}
@@ -668,9 +588,6 @@ func normalizeRunOptions(opts RunOptions) RunOptions {
 	if opts.SeriesLog == nil {
 		opts.SeriesLog = getJJ().SeriesLog
 	}
-	if opts.Transcripts == nil {
-		opts.Transcripts = defaultTranscripts
-	}
 	opts.Logger = resolveLogger(opts.Logger)
 	return opts
 }
@@ -758,12 +675,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 	if opts.SeriesLog != nil {
 		var seriesLogErr error
 		seriesLog, seriesLogErr = opts.SeriesLog(workspacePath)
-		if seriesLogErr != nil {
-			_ = appendJobEvent(opts.EventLog, jobEventWarning, warningEventData{
-				Context: "series_log",
-				Message: seriesLogErr.Error(),
-			})
-		}
+		_ = seriesLogErr // best-effort; continue without series log
 	}
 
 	model := resolveModelForPurpose(opts.Config, opts.Model, "implement", item)
@@ -778,15 +690,11 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		Prompt:        buildPromptContent(phase, userContent, workspacePath, opts),
 		Model:         model,
 		StartedAt:     opts.Now(),
-		EventLog:      opts.EventLog,
 		Env:           agentRunEnv(),
 	}
 	prompt := renderPromptLog(runOpts.Prompt)
-	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
-		return ImplementingStageResult{}, err
-	}
 	runAttempt := func() (AgentRunResult, error) {
-		result, err := runLLMWithEvents(opts, runOpts, "implement")
+		result, err := runLLM(opts, runOpts)
 		if err != nil {
 			return AgentRunResult{}, err
 		}
@@ -797,13 +705,7 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 		if err != nil {
 			return AgentRunResult{}, err
 		}
-		transcript := loadTranscript(opts, session)
-		if !internalstrings.IsBlank(transcript) {
-			if err := appendJobEvent(opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: transcript}); err != nil {
-				return AgentRunResult{}, err
-			}
-		}
-		logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt, Transcript: transcript})
+		logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt})
 		return result, nil
 	}
 
@@ -914,9 +816,6 @@ func runImplementingStage(manager *Manager, current Job, item todo.Todo, repoPat
 			return ImplementingStageResult{}, err
 		}
 		logger.CommitMessage(CommitMessageLog{Label: "Draft", Message: message})
-		if err := appendJobEvent(opts.EventLog, jobEventCommitMessage, commitMessageEventData{Label: "Draft", Message: message}); err != nil {
-			return ImplementingStageResult{}, err
-		}
 
 		// Record the commit in the current change.
 		commit := JobCommit{
@@ -965,9 +864,6 @@ func runTestingStage(manager *Manager, current Job, repoPath, workspacePath stri
 		return Job{}, err
 	}
 	logger.Tests(TestLog{Results: results})
-	if err := appendJobEvent(opts.EventLog, jobEventTests, buildTestsEventData(results)); err != nil {
-		return Job{}, err
-	}
 
 	nextStage, feedback := testingStageOutcome(results)
 
@@ -1047,15 +943,11 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		Prompt:        promptContent,
 		Model:         model,
 		StartedAt:     opts.Now(),
-		EventLog:      opts.EventLog,
 		Env:           agentRunEnv(),
 	}
 	prompt := renderPromptLog(promptContent)
-	if err := appendJobEvent(opts.EventLog, jobEventPrompt, promptEventData{Purpose: purpose, Template: promptName, Prompt: prompt}); err != nil {
-		return ReviewingStageResult{}, err
-	}
 
-	llmResult, err := runLLMWithEvents(opts, runOpts, purpose)
+	llmResult, err := runLLM(opts, runOpts)
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
@@ -1065,13 +957,7 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 	if err != nil {
 		return ReviewingStageResult{}, err
 	}
-	transcript := loadTranscript(opts, session)
-	if !internalstrings.IsBlank(transcript) {
-		if err := appendJobEvent(opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: purpose, Transcript: transcript}); err != nil {
-			return ReviewingStageResult{}, err
-		}
-	}
-	logger.Prompt(PromptLog{Purpose: purpose, Template: promptName, Prompt: prompt, Transcript: transcript})
+	logger.Prompt(PromptLog{Purpose: purpose, Template: promptName, Prompt: prompt})
 
 	if llmResult.ExitCode != 0 {
 		return ReviewingStageResult{}, fmt.Errorf("%s", buildReviewFailureMessage(purpose, llmResult, model))
@@ -1082,9 +968,6 @@ func runReviewingStage(manager *Manager, current Job, item todo.Todo, repoPath, 
 		return ReviewingStageResult{}, err
 	}
 	logger.Review(ReviewLog{Purpose: purpose, Feedback: feedback})
-	if err := appendJobEvent(opts.EventLog, jobEventReview, reviewEventData{Purpose: purpose, Outcome: feedback.Outcome, Details: feedback.Details}); err != nil {
-		return ReviewingStageResult{}, err
-	}
 
 	// Record the review in the appropriate place.
 	review := JobReview{
@@ -1179,9 +1062,6 @@ func runCommittingStage(opts CommittingStageOptions) (Job, error) {
 	logMessage := formatCommitMessageWithWidth(opts.Item, message, opts.ReviewComments, lineWidth-subdocumentIndent)
 	opts.Result.CommitMessage = finalMessage
 	logger.CommitMessage(CommitMessageLog{Label: "Final", Message: logMessage, Preformatted: true})
-	if err := appendJobEvent(opts.RunOptions.EventLog, jobEventCommitMessage, commitMessageEventData{Label: "Final", Message: logMessage, Preformatted: true}); err != nil {
-		return Job{}, err
-	}
 
 	updateStaleWorkspace(opts.RunOptions.UpdateStale, opts.WorkspacePath)
 	if err := opts.RunOptions.Commit(opts.WorkspacePath, finalMessage); err != nil {
@@ -1194,34 +1074,6 @@ func runCommittingStage(opts CommittingStageOptions) (Job, error) {
 		return Job{}, err
 	}
 	return updated, nil
-}
-
-// defaultTranscripts loads transcripts for LLM sessions.
-// The repoPath argument is ignored since agent session IDs are globally unique.
-func defaultTranscripts(_ string, sessions []AgentSession) ([]AgentTranscript, error) {
-	if len(sessions) == 0 {
-		return nil, nil
-	}
-
-	store, err := agent.Open()
-	if err != nil {
-		return nil, err
-	}
-
-	transcripts := make([]AgentTranscript, 0, len(sessions))
-	for _, session := range sessions {
-		transcript, err := store.TranscriptSnapshot(session.ID)
-		if err != nil {
-			// If we can't get a transcript, just use an empty one
-			transcript = "-"
-		}
-		text := internalstrings.TrimTrailingNewlines(transcript)
-		if text == "" {
-			text = "-"
-		}
-		transcripts = append(transcripts, AgentTranscript{Purpose: session.Purpose, Transcript: text})
-	}
-	return transcripts, nil
 }
 
 func testingStageOutcome(results []TestCommandResult) (Stage, string) {

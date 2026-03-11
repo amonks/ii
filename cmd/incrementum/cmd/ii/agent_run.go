@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"monks.co/incrementum/agent"
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/paths"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/internal/todoenv"
-	"monks.co/incrementum/llm"
+	"monks.co/pkg/llm"
 	"github.com/spf13/cobra"
 )
 
@@ -52,8 +52,7 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 
 	store, err := agent.OpenWithDB(sqlDB, agent.Options{
 		StateDir: stateDir,
-		RepoPath:  repoPath,
-		EventsDir: os.Getenv("INCREMENTUM_AGENT_EVENTS_DIR"),
+		RepoPath: repoPath,
 	})
 	if err != nil {
 		return err
@@ -88,9 +87,6 @@ func runAgentRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	// Stream events to stderr
-	streamAgentEventsToStderr(handle.Events)
 
 	result, err := handle.Wait()
 	if err != nil {
@@ -131,49 +127,6 @@ func resolveAgentPrompt(args []string, reader io.Reader) (string, error) {
 	}
 
 	return prompt, nil
-}
-
-func streamAgentEventsToStderr(events <-chan agent.Event) {
-	for event := range events {
-		switch e := event.(type) {
-		case agent.TurnStartEvent:
-			fmt.Fprintf(os.Stderr, "--- Turn %d ---\n", e.TurnIndex+1)
-
-		case agent.MessageUpdateEvent:
-			// Stream text and thinking deltas
-			switch se := e.StreamEvent.(type) {
-			case llm.TextDeltaEvent:
-				fmt.Fprint(os.Stderr, se.Delta)
-			case llm.ThinkingDeltaEvent:
-				fmt.Fprint(os.Stderr, se.Delta)
-			}
-
-		case agent.MessageEndEvent:
-			fmt.Fprintln(os.Stderr) // Newline after message
-
-		case agent.ToolExecutionStartEvent:
-			fmt.Fprintf(os.Stderr, "\n[Tool: %s]\n", e.ToolName)
-
-		case agent.ToolExecutionEndEvent:
-			// Show tool result summary (truncated)
-			for _, block := range e.Result.Content {
-				if tc, ok := block.(llm.TextContent); ok {
-					output := tc.Text
-					if len(output) > 500 {
-						output = output[:500] + "..."
-					}
-					fmt.Fprintf(os.Stderr, "%s\n", output)
-				}
-			}
-
-		case agent.WaitingForInputEvent:
-			fmt.Fprint(os.Stderr, "\n> ")
-
-		case agent.AgentEndEvent:
-			fmt.Fprintf(os.Stderr, "\n--- Agent finished (tokens: %d, cost: $%.4f) ---\n",
-				e.Usage.Total, e.Usage.Cost.Total)
-		}
-	}
 }
 
 func printFinalAgentResponse(messages []llm.Message) {

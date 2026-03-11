@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/paths"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/todo"

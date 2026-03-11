@@ -141,8 +141,6 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 	if err != nil {
 		return err
 	}
-	transcripts := makeTranscriptsFunc()
-
 	logger := jobpkg.NewConsoleLogger(nil)
 	reporter := newJobStageReporter(logger)
 	onStageChange := reporter.OnStageChange
@@ -155,7 +153,6 @@ func runDoAllHabit(cmd *cobra.Command, repoPath, habitName string) error {
 		OnStageChange: onStageChange,
 		Logger:        logger,
 		RunLLM:        runLLM,
-		Transcripts:   transcripts,
 		WorkspacePath: workspacePath,
 	})
 	if err != nil {

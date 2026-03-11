@@ -38,6 +38,28 @@ type Agent struct {
 
 	// CacheRetention controls prompt caching for agent runs. Defaults to "short" when unset.
 	CacheRetention string `toml:"cache-retention"`
+
+	// Default is the default backend name for all stages (e.g., "claude", "agent", "codex").
+	Default string `toml:"default"`
+
+	// Backends maps backend names to their configuration.
+	Backends map[string]AgentBackend `toml:"backends"`
+
+	// Stages maps stage names to backend names.
+	Stages AgentStages `toml:"stages"`
+}
+
+// AgentBackend configures a single CLI agent backend.
+type AgentBackend struct {
+	// Binary is the path or name of the agent binary.
+	Binary string `toml:"binary"`
+}
+
+// AgentStages maps job stages to backend names.
+type AgentStages struct {
+	Implementing string `toml:"implementing"`
+	Reviewing    string `toml:"reviewing"`
+	Committing   string `toml:"committing"`
 }
 
 // LLMProvider configures a single LLM provider.

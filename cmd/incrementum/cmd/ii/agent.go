@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -23,35 +22,15 @@ var agentListCmd = &cobra.Command{
 	RunE:  runAgentList,
 }
 
-var agentLogsCmd = &cobra.Command{
-	Use:   "logs <session-id>",
-	Short: "Show agent session logs snapshot",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runAgentLogs,
-}
-
-var agentTailCmd = &cobra.Command{
-	Use:   "tail <session-id>",
-	Short: "Stream transcript from agent session until it ends",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runAgentTail,
-}
-
-var agentLogsJSON bool
-var agentTailJSON bool
-
 var agentListJSON bool
 var agentListAll bool
 
 func init() {
 	rootCmd.AddCommand(agentCmd)
-	agentCmd.AddCommand(agentListCmd, agentLogsCmd, agentTailCmd)
+	agentCmd.AddCommand(agentListCmd)
 
 	agentListCmd.Flags().BoolVar(&agentListJSON, "json", false, "Output as JSON")
 	listflags.AddAllFlag(agentListCmd, &agentListAll)
-
-	agentLogsCmd.Flags().BoolVar(&agentLogsJSON, "json", false, "Output as JSONL")
-	agentTailCmd.Flags().BoolVar(&agentTailJSON, "json", false, "Output as JSONL")
 }
 
 func runAgentList(cmd *cobra.Command, args []string) error {
@@ -81,90 +60,6 @@ func runAgentList(cmd *cobra.Command, args []string) error {
 	prefixLengths := agentSessionPrefixLengths(allSessions)
 	fmt.Print(formatAgentTable(sessions, ui.HighlightID, time.Now(), prefixLengths))
 	return nil
-}
-
-func runAgentLogs(cmd *cobra.Command, args []string) error {
-	store, closeFn, repoPath, err := openAgentStoreAndRepoPath()
-	if err != nil {
-		return err
-	}
-	defer closeFn()
-
-	if agentLogsJSON {
-		logContent, err := store.Logs(repoPath, args[0])
-		if err != nil {
-			return err
-		}
-		fmt.Print(logContent)
-		return nil
-	}
-
-	transcript, err := store.Transcript(repoPath, args[0])
-	if err != nil {
-		return err
-	}
-
-	fmt.Print(transcript)
-	return nil
-}
-
-func runAgentTail(cmd *cobra.Command, args []string) error {
-	store, closeFn, repoPath, err := openAgentStoreAndRepoPath()
-	if err != nil {
-		return err
-	}
-	defer closeFn()
-
-	if agentTailJSON {
-		// Follow-mode JSONL: poll the stored event log and emit only newly appended lines.
-		var last string
-		for {
-			session, err := store.FindSession(repoPath, args[0])
-			if err != nil {
-				return err
-			}
-
-			logContent, err := store.Logs(repoPath, session.ID)
-			if err != nil {
-				return err
-			}
-
-			diff := agent.JSONLTailDiff(last, logContent)
-			if diff != "" {
-				fmt.Print(diff)
-				os.Stdout.Sync() // Flush output immediately for tail mode
-			}
-			last = logContent
-
-			if session.Status != agent.SessionActive {
-				return nil
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
-
-	// Tail currently polls until the session ends and prints only newly appended
-	// transcript content each poll (placeholder until true event streaming lands).
-	var last string
-	for {
-		session, err := store.FindSession(repoPath, args[0])
-		if err != nil {
-			return err
-		}
-
-		transcript, err := store.Transcript(repoPath, session.ID)
-		if err != nil {
-			return err
-		}
-
-		fmt.Print(agent.TranscriptTailDiff(last, transcript))
-		last = transcript
-
-		if session.Status != agent.SessionActive {
-			return nil
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
 }
 
 func filterAgentSessionsForList(sessions []agent.Session, includeAll bool) []agent.Session {

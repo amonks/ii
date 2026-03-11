@@ -4,6 +4,12 @@ default_mirror = "github.com/amonks/go"
 dir = "pkg/migrate"
 
 [[package]]
+dir = "pkg/llm"
+
+[[package]]
+dir = "pkg/agent"
+
+[[package]]
 dir = "pkg/set"
 
 [[package]]

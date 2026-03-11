@@ -31,6 +31,7 @@ use (
 	./apps/vault
 	./apps/writing
 	./apps/youtube
+	./cmd/agent
 	./cmd/backupd
 	./cmd/beetman
 	./cmd/compare-agents
@@ -41,6 +42,7 @@ use (
 	./cmd/run
 	./cmd/taskmaker
 	./cmd/zone2terraform
+	./pkg/agent
 	./pkg/aranet4
 	./pkg/aschrome
 	./pkg/auth

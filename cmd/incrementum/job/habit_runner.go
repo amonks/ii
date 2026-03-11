@@ -18,9 +18,6 @@ import (
 type HabitRunOptions struct {
 	OnStart       func(HabitStartInfo)
 	OnStageChange func(Stage)
-	// EventStream receives job events as they are recorded. The channel is closed
-	// when RunHabit completes.
-	EventStream chan<- Event
 	// WorkspacePath is the path to run the job from.
 	// Defaults to repoPath when empty.
 	WorkspacePath string
@@ -48,11 +45,7 @@ type HabitRunOptions struct {
 	RestoreWorkspace   func(string, string) error
 	UpdateStale        func(string) error
 	Snapshot           func(string) error
-	// Transcripts retrieves transcripts for LLM sessions.
-	Transcripts     func(string, []AgentSession) ([]AgentTranscript, error)
-	EventLog        *EventLog
-	EventLogOptions EventLogOptions
-	Logger          Logger
+	Logger             Logger
 }
 
 // HabitRunResult captures the output of running a habit.
@@ -77,9 +70,6 @@ func RunHabit(repoPath, habitName string, opts HabitRunOptions) (*HabitRunResult
 	}
 
 	opts = normalizeHabitRunOptions(opts)
-	if opts.EventStream != nil {
-		defer close(opts.EventStream)
-	}
 	result := &HabitRunResult{}
 	repoPath = filepath.Clean(repoPath)
 	if abs, absErr := filepath.Abs(repoPath); absErr == nil {
@@ -141,32 +131,6 @@ func RunHabit(repoPath, habitName string, opts HabitRunOptions) (*HabitRunResult
 		})
 	}
 
-	createdEventLog := false
-	if opts.EventLog == nil {
-		eventLog, err := OpenEventLog(created.ID, opts.EventLogOptions)
-		if err != nil {
-			status := StatusFailed
-			updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
-			result.Job = updated
-			return result, errors.Join(err, updateErr)
-		}
-		opts.EventLog = eventLog
-		createdEventLog = true
-	}
-	if createdEventLog {
-		defer func() {
-			_ = opts.EventLog.Close()
-		}()
-	}
-	if opts.EventStream != nil {
-		opts.EventLog.SetStream(opts.EventStream)
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventStage, stageEventData{Stage: created.Stage}); err != nil {
-		status := StatusFailed
-		updated, updateErr := manager.Update(created.ID, UpdateOptions{Status: &status}, opts.Now())
-		result.Job = updated
-		return result, errors.Join(err, updateErr)
-	}
 	if opts.OnStageChange != nil {
 		opts.OnStageChange(created.Stage)
 	}
@@ -326,12 +290,6 @@ func (ctx *habitRunContext) handleStageOutcome(current, next Job, stageErr error
 	}
 	if next.ID != "" {
 		if next.Stage != current.Stage {
-			if err := appendJobEvent(ctx.opts.EventLog, jobEventStage, stageEventData{Stage: next.Stage}); err != nil {
-				status := StatusFailed
-				updated, updateErr := ctx.manager.Update(next.ID, UpdateOptions{Status: &status}, ctx.opts.Now())
-				ctx.result.Job = updated
-				return updated, errors.Join(err, updateErr)
-			}
 			if ctx.opts.OnStageChange != nil {
 				ctx.opts.OnStageChange(next.Stage)
 			}
@@ -372,15 +330,11 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			Prompt:        buildPromptContent(phase, userContent, ctx.workspacePath, ctx.opts.toRunOptions()),
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
-			EventLog:      ctx.opts.EventLog,
 			Env:           agentRunEnv(),
 		}
 		prompt := renderPromptLog(runOpts.Prompt)
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "implement", Template: promptName, Prompt: prompt}); err != nil {
-			return Job{}, err
-		}
 		runAttempt := func() (AgentRunResult, error) {
-			result, err := runLLMWithEvents(ctx.opts.toRunOptions(), runOpts, "implement")
+			result, err := runLLM(ctx.opts.toRunOptions(), runOpts)
 			if err != nil {
 				return AgentRunResult{}, err
 			}
@@ -390,13 +344,7 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			if err != nil {
 				return AgentRunResult{}, err
 			}
-			transcript := loadTranscript(ctx.opts.toRunOptions(), session)
-			if !internalstrings.IsBlank(transcript) {
-				if err := appendJobEvent(ctx.opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "implement", Transcript: transcript}); err != nil {
-					return AgentRunResult{}, err
-				}
-			}
-			logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt, Transcript: transcript})
+			logger.Prompt(PromptLog{Purpose: "implement", Template: promptName, Prompt: prompt})
 			return result, nil
 		}
 
@@ -474,9 +422,6 @@ func (ctx *habitRunContext) runHabitImplementingStage(current Job) func() (Job, 
 			}
 			if message != "" {
 				logger.CommitMessage(CommitMessageLog{Label: "Draft", Message: message})
-				if err := appendJobEvent(ctx.opts.EventLog, jobEventCommitMessage, commitMessageEventData{Label: "Draft", Message: message}); err != nil {
-					return Job{}, err
-				}
 			}
 		}
 		if !changed {
@@ -520,9 +465,6 @@ func (ctx *habitRunContext) runHabitTestingStage(current Job) func() (Job, error
 			return Job{}, err
 		}
 		logger.Tests(TestLog{Results: results})
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventTests, buildTestsEventData(results)); err != nil {
-			return Job{}, err
-		}
 
 		nextStage, feedback := testingStageOutcome(results)
 		update := UpdateOptions{Stage: &nextStage}
@@ -571,19 +513,15 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		}
 		promptContent := promptContentFromParts(parts)
 		prompt := renderPromptLog(promptContent)
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventPrompt, promptEventData{Purpose: "review", Template: promptName, Prompt: prompt}); err != nil {
-			return Job{}, err
-		}
 
-		llmResult, err := runLLMWithEvents(ctx.opts.toRunOptions(), AgentRunOptions{
+		llmResult, err := runLLM(ctx.opts.toRunOptions(), AgentRunOptions{
 			RepoPath:      ctx.repoPath,
 			WorkspacePath: ctx.workspacePath,
 			Prompt:        promptContent,
 			Model:         model,
 			StartedAt:     ctx.opts.Now(),
-			EventLog:      ctx.opts.EventLog,
 			Env:           agentRunEnv(),
-		}, "review")
+		})
 		if err != nil {
 			return Job{}, err
 		}
@@ -593,13 +531,7 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 		if err != nil {
 			return Job{}, err
 		}
-		transcript := loadTranscript(ctx.opts.toRunOptions(), session)
-		if !internalstrings.IsBlank(transcript) {
-			if err := appendJobEvent(ctx.opts.EventLog, jobEventTranscript, transcriptEventData{Purpose: "review", Transcript: transcript}); err != nil {
-				return Job{}, err
-			}
-		}
-		logger.Prompt(PromptLog{Purpose: "review", Template: promptName, Prompt: prompt, Transcript: transcript})
+		logger.Prompt(PromptLog{Purpose: "review", Template: promptName, Prompt: prompt})
 
 		if llmResult.ExitCode != 0 {
 			return Job{}, fmt.Errorf("%s", buildReviewFailureMessage("review", llmResult, model))
@@ -610,9 +542,6 @@ func (ctx *habitRunContext) runHabitReviewingStage(current Job) func() (Job, err
 			return Job{}, err
 		}
 		logger.Review(ReviewLog{Purpose: "review", Feedback: feedback})
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventReview, reviewEventData{Purpose: "review", Outcome: feedback.Outcome, Details: feedback.Details}); err != nil {
-			return Job{}, err
-		}
 
 		switch feedback.Outcome {
 		case ReviewOutcomeAccept:
@@ -672,9 +601,6 @@ func (ctx *habitRunContext) runHabitCommittingStage(current Job) func() (Job, er
 		logMessage := formatHabitCommitMessageWithWidth(ctx.habit, message, ctx.reviewComments, lineWidth-subdocumentIndent)
 		ctx.result.CommitMessage = finalMessage
 		logger.CommitMessage(CommitMessageLog{Label: "Final", Message: logMessage, Preformatted: true})
-		if err := appendJobEvent(ctx.opts.EventLog, jobEventCommitMessage, commitMessageEventData{Label: "Final", Message: logMessage, Preformatted: true}); err != nil {
-			return Job{}, err
-		}
 
 		updateStaleWorkspace(ctx.opts.UpdateStale, ctx.workspacePath)
 		if err := ctx.opts.Commit(ctx.workspacePath, finalMessage); err != nil {
@@ -716,8 +642,6 @@ func (opts *HabitRunOptions) toRunOptions() RunOptions {
 		RestoreWorkspace:   opts.RestoreWorkspace,
 		UpdateStale:        opts.UpdateStale,
 		Snapshot:           opts.Snapshot,
-		Transcripts:        opts.Transcripts,
-		EventLog:           opts.EventLog,
 		Logger:             opts.Logger,
 	}
 }
@@ -741,8 +665,6 @@ func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 		RestoreWorkspace:   opts.RestoreWorkspace,
 		UpdateStale:        opts.UpdateStale,
 		Snapshot:           opts.Snapshot,
-		Transcripts:        opts.Transcripts,
-		EventLog:           opts.EventLog,
 		Logger:             opts.Logger,
 	})
 
@@ -761,7 +683,6 @@ func normalizeHabitRunOptions(opts HabitRunOptions) HabitRunOptions {
 	opts.RestoreWorkspace = runOpts.RestoreWorkspace
 	opts.UpdateStale = runOpts.UpdateStale
 	opts.Snapshot = runOpts.Snapshot
-	opts.Transcripts = runOpts.Transcripts
 	opts.Logger = runOpts.Logger
 	return opts
 }

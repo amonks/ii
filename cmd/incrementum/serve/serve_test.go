@@ -76,9 +76,6 @@ func TestNormalizeOptionsDefaults(t *testing.T) {
 	if opts.RunTests == nil {
 		t.Fatalf("expected RunTests to be set")
 	}
-	if opts.Transcripts == nil {
-		t.Fatalf("expected Transcripts to be set")
-	}
 	if opts.UpdateStale == nil {
 		t.Fatalf("expected UpdateStale to be set")
 	}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
+
 	"monks.co/apps/movies/db"
 	"monks.co/pkg/llm"
 	"monks.co/pkg/tmdb"
@@ -16,17 +18,67 @@ type LLMClient interface {
 	GenerateTVQuery(filepath string) (string, int, int, error)
 }
 
-// movieLLM extends the basic LLM client with movie-specific functionality
+// movieLLM uses the pkg/llm streaming API with tool calling for structured output.
 type movieLLM struct {
-	llmClient *llm.Client
+	model llm.Model
+}
+
+// generate sends a prompt to the LLM with a tool definition and returns the tool call arguments.
+func (m *movieLLM) generate(prompt string, tools []llm.Tool) (map[string]any, error) {
+	maxTokens := 200
+	req := llm.Request{
+		Messages: []llm.Message{
+			llm.UserMessage{
+				Role:      "user",
+				Content:   []llm.ContentBlock{llm.TextContent{Type: "text", Text: prompt}},
+				Timestamp: time.Now(),
+			},
+		},
+		Tools: tools,
+	}
+	opts := llm.StreamOptions{
+		MaxTokens:      &maxTokens,
+		CacheRetention: llm.CacheNone,
+	}
+
+	handle, err := llm.Stream(context.Background(), m.model, req, opts)
+	if err != nil {
+		return nil, fmt.Errorf("llm stream: %w", err)
+	}
+
+	msg, err := handle.Wait()
+	if err != nil {
+		return nil, fmt.Errorf("llm wait: %w", err)
+	}
+
+	for _, block := range msg.Content {
+		if tc, ok := block.(llm.ToolCall); ok {
+			return tc.Arguments, nil
+		}
+	}
+	return nil, fmt.Errorf("no tool call in LLM response")
+}
+
+type movieQueryParams struct {
+	TitleQuery string `json:"title_query" jsonschema:"description=The movie title to search for"`
+	YearQuery  int    `json:"year_query" jsonschema:"description=The release year (0 if not in filename)"`
+}
+
+type tvQueryParams struct {
+	TitleQuery   string `json:"title_query" jsonschema:"description=The TV show title to search for"`
+	YearQuery    int    `json:"year_query" jsonschema:"description=The first air year (0 if not in filename)"`
+	SeasonNumber int    `json:"season_number" jsonschema:"description=The season number"`
 }
 
 // GenerateMovieQuery generates a movie search query from a filepath
 func (m *movieLLM) GenerateMovieQuery(filepath string) (string, int, error) {
-	prompt := fmt.Sprintf("We have the following filepath, which we think is a movie file. We'd like to look it up in TMDB, and we need to construct a search query for that lookup. IMPORTANT: For the year_query, ONLY return a year if it is explicitly present in the filename. DO NOT guess or use your prior knowledge about when movies were released - if the year isn't in the filename, set year_query to 0. Here is the filepath: %q", filepath)
-	schema := "title_query str, year_query int"
+	prompt := fmt.Sprintf("We have the following filepath, which we think is a movie file. We'd like to look it up in TMDB, and we need to construct a search query for that lookup. IMPORTANT: For the year_query, ONLY return a year if it is explicitly present in the filename. DO NOT guess or use your prior knowledge about when movies were released - if the year isn't in the filename, set year_query to 0. Here is the filepath: %q. Call the extract_movie_query tool with the results.", filepath)
 
-	result, err := m.llmClient.GenerateWithSchema(prompt, schema)
+	result, err := m.generate(prompt, []llm.Tool{{
+		Name:        "extract_movie_query",
+		Description: "Extract a movie title and year from a filepath for TMDB search",
+		Parameters:  movieQueryParams{},
+	}})
 	if err != nil {
 		return "", 0, err
 	}
@@ -36,20 +88,20 @@ func (m *movieLLM) GenerateMovieQuery(filepath string) (string, int, error) {
 		return "", 0, fmt.Errorf("invalid title_query in LLM response: %v", result)
 	}
 
-	yearQuery, ok := result["year_query"].(float64)
-	if !ok {
-		return "", 0, fmt.Errorf("invalid year_query in LLM response: %v", result)
-	}
+	yearQuery, _ := result["year_query"].(float64)
 
 	return titleQuery, int(yearQuery), nil
 }
 
 // GenerateTVQuery generates a TV show search query from a filepath
 func (m *movieLLM) GenerateTVQuery(filepath string) (string, int, int, error) {
-	prompt := fmt.Sprintf("We have the following filepath, which we think is a TV series folder. We'd like to look it up in TMDB, and we need to construct a search query for that lookup. Extract the TV show name and determine which season this folder likely represents. IMPORTANT: For the year_query, ONLY return a year if it is explicitly present in the filename. DO NOT guess or use your prior knowledge about when the TV series first aired - if the year isn't in the filename, set year_query to 0. Here is the filepath: %q", filepath)
-	schema := "title_query str, year_query int, season_number int"
+	prompt := fmt.Sprintf("We have the following filepath, which we think is a TV series folder. We'd like to look it up in TMDB, and we need to construct a search query for that lookup. Extract the TV show name and determine which season this folder likely represents. IMPORTANT: For the year_query, ONLY return a year if it is explicitly present in the filename. DO NOT guess or use your prior knowledge about when the TV series first aired - if the year isn't in the filename, set year_query to 0. Here is the filepath: %q. Call the extract_tv_query tool with the results.", filepath)
 
-	result, err := m.llmClient.GenerateWithSchema(prompt, schema)
+	result, err := m.generate(prompt, []llm.Tool{{
+		Name:        "extract_tv_query",
+		Description: "Extract a TV show title, year, and season number from a filepath for TMDB search",
+		Parameters:  tvQueryParams{},
+	}})
 	if err != nil {
 		return "", 0, 0, err
 	}
@@ -59,15 +111,9 @@ func (m *movieLLM) GenerateTVQuery(filepath string) (string, int, int, error) {
 		return "", 0, 0, fmt.Errorf("invalid title_query in LLM response: %v", result)
 	}
 
-	yearQuery, ok := result["year_query"].(float64)
-	if !ok {
-		// Year might be optional for TV shows
-		yearQuery = 0
-	}
-
+	yearQuery, _ := result["year_query"].(float64)
 	seasonNumber, ok := result["season_number"].(float64)
 	if !ok {
-		// Default to season 1 if not detected
 		seasonNumber = 1
 	}
 
@@ -98,14 +144,9 @@ type StubQueryGenerator struct {
 }
 
 // New creates a new StubQueryGenerator
-func New(llmClient *llm.Client, tmdb *tmdb.Client, db *db.DB) *StubQueryGenerator {
-	// Create movie-specific LLM client that wraps the base LLM client
-	movieClient := &movieLLM{
-		llmClient: llmClient,
-	}
-
+func New(model llm.Model, tmdb *tmdb.Client, db *db.DB) *StubQueryGenerator {
 	return &StubQueryGenerator{
-		llm:  movieClient,
+		llm:  &movieLLM{model: model},
 		tmdb: tmdb,
 		db:   db,
 	}

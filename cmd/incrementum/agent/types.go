@@ -9,9 +9,9 @@ package agent
 import (
 	"time"
 
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/validation"
-	"monks.co/incrementum/llm"
+	"monks.co/pkg/llm"
 )
 
 // Re-export types from internal/agent for convenience
@@ -24,46 +24,7 @@ type (
 
 	// BashRule defines a single permission rule for bash commands.
 	BashRule = internalagent.BashRule
-
-	// Event is an interface implemented by all agent event types.
-	Event = internalagent.Event
-
-	// AgentStartEvent indicates the agent run has started.
-	AgentStartEvent = internalagent.AgentStartEvent
-
-	// AgentEndEvent indicates the agent run has completed.
-	AgentEndEvent = internalagent.AgentEndEvent
-
-	// TurnStartEvent indicates a new turn has started.
-	TurnStartEvent = internalagent.TurnStartEvent
-
-	// TurnEndEvent indicates a turn has completed.
-	TurnEndEvent = internalagent.TurnEndEvent
-
-	// MessageStartEvent indicates the LLM has started streaming.
-	MessageStartEvent = internalagent.MessageStartEvent
-
-	// MessageUpdateEvent contains a streaming delta from the LLM.
-	MessageUpdateEvent = internalagent.MessageUpdateEvent
-
-	// MessageEndEvent indicates the LLM has finished streaming.
-	MessageEndEvent = internalagent.MessageEndEvent
-
-	// ToolExecutionStartEvent indicates a tool execution has started.
-	ToolExecutionStartEvent = internalagent.ToolExecutionStartEvent
-
-	// ToolExecutionEndEvent indicates a tool execution has completed.
-	ToolExecutionEndEvent = internalagent.ToolExecutionEndEvent
-
-	// SSEEvent represents an event in SSE format.
-	SSEEvent = internalagent.SSEEvent
-
-	// WaitingForInputEvent indicates the agent is awaiting additional user input.
-	WaitingForInputEvent = internalagent.WaitingForInputEvent
 )
-
-// Re-export functions from internal/agent
-var EventToSSE = internalagent.EventToSSE
 
 // SessionStatus represents the state of an agent session.
 type SessionStatus string
@@ -156,10 +117,6 @@ type RunOptions struct {
 
 // RunHandle provides access to a running agent session.
 type RunHandle struct {
-	// Events receives typed events from the agent run.
-	// The channel is closed when the agent completes.
-	Events <-chan Event
-
 	// sessionID is the session ID for this run.
 	sessionID string
 
@@ -172,10 +129,6 @@ type RunHandle struct {
 
 // Wait blocks until the agent completes and returns the result.
 func (h *RunHandle) Wait() (RunResult, error) {
-	// Drain events first
-	for range h.Events {
-	}
-
 	result := <-h.resultCh
 	return result, nil
 }

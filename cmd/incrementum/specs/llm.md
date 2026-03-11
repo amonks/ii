@@ -8,9 +8,9 @@ across Anthropic Messages, OpenAI Completions, and OpenAI Responses APIs.
 
 ## Packages
 
-### internal/llm
+### monks.co/pkg/llm (standalone module)
 
-The core LLM abstraction with no persistence. Provides:
+The core LLM abstraction, formerly `internal/llm`, now a standalone module at `pkg/llm/`. Provides:
 
 - Unified message types across providers
 - Streaming completions via channels
@@ -19,13 +19,12 @@ The core LLM abstraction with no persistence. Provides:
 - Thinking/reasoning mode support
 - Usage and cost tracking
 
-### llm
+### internal/agents (model resolution)
 
-A wrapper around `internal/llm` that adds:
-
-- Completion history storage to disk
-- CLI support for `ii llm` subcommands
-- Model listing from configuration
+Model configuration loading (well-known models, API key resolution, prefix-matching
+model lookups) lives in `internal/agents/`. The former `llm/` wrapper package has
+been removed; its model-resolution logic moved to `agents.ModelRegistry` and its
+completion-history persistence was deleted.
 
 ## Message Types
 
@@ -202,8 +201,8 @@ All LLM HTTP requests MUST set a `User-Agent` header.
 
   `incrementum TEST`
 
-This is implemented in `internal/llm.UserAgent(repoPath, version)` and is passed
-via `internal/llm.StreamOptions.UserAgent`.
+This is implemented in `llm.UserAgent(repoPath, version)` (in `monks.co/pkg/llm`) and is passed
+via `llm.StreamOptions.UserAgent`.
 
 
 Tools are defined using Go structs with JSON tags. The package uses reflection
@@ -394,29 +393,22 @@ Each provider implements streaming by:
 When switching models between turns, previous thinking blocks are converted
 to text content. Tool call IDs are normalized to meet provider constraints.
 
-## Public Package (llm/)
+## Model Registry (internal/agents)
 
-### Store
+### ModelRegistry
 
 ```go
-type Store struct {
+type ModelRegistry struct {
     // internal state
 }
 
-func Open() (*Store, error)
-func OpenWithOptions(opts Options) (*Store, error)
-
-type Options struct {
-    StateDir    string // Default: ~/.local/state/incrementum
-    HistoryDir  string // Default: ~/.local/share/incrementum/llm/history
-    RepoPath    string // If set, loads project-specific config; otherwise global only
-}
+func NewModelRegistry(cfg *config.Config) (*ModelRegistry, error)
 ```
 
 ### Well-Known Models
 
-The package includes built-in knowledge of well-known models. When a model ID
-matches a known model, its capabilities and pricing are automatically populated:
+The package includes built-in knowledge of well-known models in `internal/agents/wellknown.go`.
+When a model ID matches a known model, its capabilities and pricing are automatically populated:
 
 - Claude 4.5 models: claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001, claude-opus-4-5-20251101 (and undated aliases)
 - Claude 4 models: claude-sonnet-4-20250514, claude-haiku-4-20250514
@@ -425,43 +417,22 @@ matches a known model, its capabilities and pricing are automatically populated:
 - GPT-4 series: gpt-4.1, gpt-4o, gpt-4o-mini
 - Reasoning models: o1, o3, o3-mini, o4-mini (and dated variants)
 
-Unknown models cause an error at store initialization. All models used in
-configuration must be present in the well-known models list (`llm/models.go`).
+Unknown models cause an error at registry construction. All models used in
+configuration must be present in the well-known models list (`internal/agents/wellknown.go`).
 This prevents subtle failures from incorrect defaults (e.g., a 4096 max_tokens
 default applied to a model that supports 128k).
-
-### Completion History
-
-```go
-type Completion struct {
-    ID          string
-    Model       string
-    Request     Request
-    Response    AssistantMessage
-    CreatedAt   time.Time
-}
-
-func (s *Store) ListCompletions() ([]Completion, error)
-func (s *Store) GetCompletion(id string) (Completion, error)
-```
 
 ### Model Access
 
 ```go
-func (s *Store) ListModels() ([]Model, error)
-func (s *Store) GetModel(id string) (Model, error)
+func (r *ModelRegistry) ListModels() ([]llm.Model, error)
+func (r *ModelRegistry) GetModel(id string) (llm.Model, error)
+func (r *ModelRegistry) DefaultModel() string
+func (r *ModelRegistry) GetDefaultModel() (llm.Model, error)
 ```
 
 `GetModel` supports prefix matching - "claude-sonnet" will match "claude-sonnet-4-20250514"
 if it's the only match. Returns `ErrAmbiguousModel` if multiple models match the prefix.
-
-### Streaming with History
-
-```go
-func (s *Store) Stream(ctx context.Context, model Model, req Request, opts StreamOptions) (*StreamHandle, error)
-```
-
-This wraps `internal/llm.Stream` and records completions to history.
 
 ## Commands
 

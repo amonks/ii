@@ -47,11 +47,12 @@
 | [todo.md](./todo.md)               | [todo/](../todo/)           | Task tracking: command-line JIRA with TODOs stored in a special branch                                       |
 | [habit.md](./habit.md)             | [habit/](../habit/)         | Habit management: ongoing improvement practices stored as version-controlled instruction documents           |
 | [cli.md](./cli.md)                 | [cmd/ii/](../cmd/ii/)       | CLI conventions and behavior notes                                                                             |
-| [llm.md](./llm.md)                 | [llm/](../llm/)             | LLM abstraction: unified API for Anthropic, OpenAI completions, and OpenAI responses                         |
-| [agent.md](./agent.md)             | [agent/](../agent/)         | Agent loop: autonomous task execution with built-in tools (bash, read, write, edit)                          |
+| —                                  | [cmd/agent/](../../cmd/agent/) | Standalone agent CLI (separate from `ii agent`)                                                             |
+| [llm.md](./llm.md)                 | [pkg/llm/](../../pkg/llm/)  | LLM abstraction: unified API for Anthropic, OpenAI completions, and OpenAI responses (standalone module `monks.co/pkg/llm`) |
+| [agent.md](./agent.md)             | [pkg/agent/](../../pkg/agent/) | Agent loop: autonomous task execution with built-in tools (bash, read, write, edit) (standalone module `monks.co/pkg/agent`) |
 | [job.md](./job.md)                 | [job/](../job/)             | Jobs system: workflow management for LLM-based todo completion, with acceptance testing                      |
 | [job-changes.md](./job-changes.md) | [job/](../job/)             | Job change tracking: persistent state for changes, commits, and reviews within a job                         |
-| [events.md](./events.md)           | [job/](../job/)             | Event logging and rendering for agent and jobs                                                               |
+| [events.md](./events.md)           | —                           | ~~Event logging and rendering~~ (removed; retained for historical reference)                                 |
 | [merge.md](./merge.md)             | [merge/](../merge/)         | Change merge workflow: rebase changes onto a target bookmark with conflict resolution                         |
 | [pool.md](./pool.md)               | [pool/](../pool/)           | Pooled worker runner: execute job workers across pooled workspaces                                            |
 | [serve.md](./serve.md)             | [serve/](../serve/)         | Serve runner: pooled workers plus merge loop                                                                  |
@@ -60,14 +61,15 @@
 
 | Spec                                                   | Code                                                | Purpose                                              |
 | ------------------------------------------------------ | --------------------------------------------------- | ---------------------------------------------------- |
-| [internal-agent.md](./internal-agent.md)               | [internal/agent/](../internal/agent/)               | Core agent loop without persistence                  |
+| [internal-agent.md](./internal-agent.md)               | ~~internal/agent/~~ → [pkg/agent/](../../pkg/agent/) | Core agent loop without persistence (moved to standalone module `monks.co/pkg/agent`) |
+| —                                                      | [internal/agents/](../internal/agents/)              | CLI agent adapters (claude, codex, agent) + model registry |
 | [internal-age.md](./internal-age.md)                   | [internal/age/](../internal/age/)                   | Timing helpers for computed ages and durations       |
 | [internal-config.md](./internal-config.md)             | [internal/config/](../internal/config/)             | Load project/global configuration and run hook scripts      |
 | [internal-editor.md](./internal-editor.md)             | [internal/editor/](../internal/editor/)             | `$EDITOR` integration and todo TOML editing flow     |
 | [internal-ids.md](./internal-ids.md)                   | [internal/ids/](../internal/ids/)                   | Unique prefix length calculation for IDs             |
 | [internal-jj.md](./internal-jj.md)                     | [internal/jj/](../internal/jj/)                     | Go wrapper around jj CLI commands                    |
 | [internal-listflags.md](./internal-listflags.md)       | [internal/listflags/](../internal/listflags/)       | Shared Cobra list flags                              |
-| [internal-llm.md](./internal-llm.md)                   | [internal/llm/](../internal/llm/)                   | Core LLM abstraction without persistence             |
+| [internal-llm.md](./internal-llm.md)                   | ~~internal/llm/~~ → [pkg/llm/](../../pkg/llm/)      | Core LLM abstraction without persistence (moved to standalone module `monks.co/pkg/llm`) |
 | [internal-markdown.md](./internal-markdown.md)         | [internal/markdown/](../internal/markdown/)         | Markdown rendering helpers for terminal output       |
 | [internal-paths.md](./internal-paths.md)               | [internal/paths/](../internal/paths/)               | Default state and workspace paths                    |
 | [internal-db.md](./internal-db.md)                     | [internal/db/](../internal/db/)                     | SQLite state database connection and repo/workspace helpers |

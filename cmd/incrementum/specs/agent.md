@@ -8,9 +8,9 @@ the llm package for model interactions.
 
 ## Packages
 
-### internal/agent
+### monks.co/pkg/agent (standalone module)
 
-The core agent loop with no persistence. Provides:
+The core agent loop, formerly `internal/agent`, now a standalone module at `pkg/agent/`. Provides:
 
 - Agent loop: prompt -> response -> tool execution -> repeat
 - Built-in tools: bash, read, write, edit
@@ -19,10 +19,9 @@ The core agent loop with no persistence. Provides:
 
 ### agent
 
-A wrapper around `internal/agent` that adds:
+A wrapper around `monks.co/pkg/agent` that adds:
 
 - Session state persistence
-- Event logging to disk
 - CLI support for `ii agent` subcommands
 
 ## Agent Loop
@@ -396,25 +395,7 @@ type ToolExecutionEndEvent struct {
 }
 ```
 
-### SSE Adapter
-
-For compatibility with existing event logging, an adapter converts typed
-events to SSE format (ID, Name, Data strings).
-
-```go
-func EventToSSE(event Event) SSEEvent
-
-type SSEEvent struct {
-    ID   string
-    Name string
-    Data string // JSON encoded
-}
-```
-
-Note: API keys are automatically redacted when events are serialized to SSE
-format to prevent sensitive credentials from appearing in event logs.
-
-## Internal Package API (internal/agent)
+## Core Package API (monks.co/pkg/agent)
 
 ```go
 type PromptContent struct {
@@ -425,9 +406,7 @@ type PromptContent struct {
     UserContent    string   // todo block, series log, feedback, commit message
 }
 
-type RunHandle struct {
-    Events <-chan Event
-}
+type RunHandle struct {}
 
 func (h *RunHandle) Wait() (RunResult, error)
 
@@ -454,7 +433,6 @@ func OpenWithOptions(opts Options) (*Store, error)
 
 type Options struct {
     StateDir  string // Default: ~/.local/state/incrementum
-    EventsDir string // Default: ~/.local/share/incrementum/agent/events
 }
 ```
 
@@ -482,9 +460,7 @@ configuration.
 ### Run Handle
 
 ```go
-type RunHandle struct {
-    Events <-chan Event
-}
+type RunHandle struct {}
 
 func (h *RunHandle) Wait() (RunResult, error)
 
@@ -583,8 +559,6 @@ slug and session ID.
 
 - Session state is stored in the SQLite database under
   `~/.local/state/incrementum/state.db`.
-- Event logs are stored under `~/.local/share/incrementum/agent/events/<session-id>.jsonl`.
-- Events are written as newline-delimited JSON (one SSE event per line).
 
 ## Commands
 
@@ -637,34 +611,8 @@ slug and session ID.
 The job package uses the agent store:
 
 1. Call `store.Run(RunOptions)` to start an agent session
-2. Consume events from the handle for progress tracking
-3. Call `handle.Wait()` to get the final result
-4. Use the session ID for logging and auditing
-
-### Event Channel Semantics
-
-The `Events` channel is closed when the agent run completes, independently of
-whether `Wait()` has been called. This allows consumers to fully drain events
-before getting the result.
-
-**Important**: The `Wait()` method also drains the `Events` channel internally.
-If you have another goroutine consuming events (e.g., `RecordAgentEvents`),
-calling `Wait()` concurrently creates a race condition where events may be lost
-to the wrong consumer.
-
-When using `RecordAgentEvents` to log events:
-
-```go
-// Correct: Wait for recording to complete before Wait()
-eventErrCh := job.RecordAgentEvents(eventLog, handle.Events())
-eventErr := <-eventErrCh  // Wait for all events to be recorded
-result, err := handle.Wait()  // Now safe - channel already drained and closed
-
-// Incorrect: Race condition - events may be lost
-eventErrCh := job.RecordAgentEvents(eventLog, handle.Events())
-result, err := handle.Wait()  // Races with recording goroutine!
-eventErr := <-eventErrCh
-```
+2. Call `handle.Wait()` to get the final result
+3. Use the session ID for logging and auditing
 
 The job runner injects agent runs via a function parameter, allowing tests
 to provide mock implementations.

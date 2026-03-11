@@ -1,12 +1,12 @@
 package job
 
 import (
+	"context"
 	"errors"
 	"time"
 
-	"monks.co/incrementum/agent"
-	internalagent "monks.co/incrementum/internal/agent"
-	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/incrementum/internal/agents"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/todoenv"
 )
 
@@ -17,7 +17,6 @@ type AgentRunOptions struct {
 	Prompt        internalagent.PromptContent
 	Model         string
 	StartedAt     time.Time
-	EventLog      *EventLog
 	Env           []string
 }
 
@@ -53,99 +52,54 @@ type AgentTranscript struct {
 	Transcript string
 }
 
-// runLLMWithEvents runs an LLM session, recording events and emitting
-// job-level events for the run.
-func runLLMWithEvents(opts RunOptions, runOpts AgentRunOptions, purpose string) (AgentRunResult, error) {
+// runLLM runs an LLM session with snapshot support.
+// It uses the adapter if available, falling back to the RunLLM callback.
+func runLLM(opts RunOptions, runOpts AgentRunOptions) (AgentRunResult, error) {
 	snapshotWorkspace(opts.Snapshot, runOpts.WorkspacePath)
-	if err := appendJobEvent(opts.EventLog, jobEventAgentStart, agentStartEventData{Purpose: purpose, Model: runOpts.Model}); err != nil {
-		return AgentRunResult{}, err
+
+	// Use adapter if available
+	if opts.Adapter != nil {
+		return runWithAdapter(opts.Adapter, runOpts)
 	}
+
+	// Fall back to legacy callback
 	result, err := opts.RunLLM(runOpts)
 	if err != nil {
-		logErr := appendJobEvent(opts.EventLog, jobEventAgentError, agentErrorEventData{Purpose: purpose, Error: err.Error()})
-		if logErr != nil {
-			return AgentRunResult{}, errors.Join(err, logErr)
-		}
-		return AgentRunResult{}, err
-	}
-	if err := appendJobEvent(opts.EventLog, jobEventAgentEnd, agentEndEventData{
-		Purpose:       purpose,
-		SessionID:     result.SessionID,
-		ExitCode:      result.ExitCode,
-		Error:         result.Error,
-		InputTokens:   result.InputTokens,
-		OutputTokens:  result.OutputTokens,
-		TotalTokens:   result.TotalTokens,
-		ContextWindow: result.ContextWindow,
-	}); err != nil {
 		return AgentRunResult{}, err
 	}
 	return result, nil
 }
 
-// loadTranscript loads a transcript for the given session.
-func loadTranscript(opts RunOptions, session AgentSession) string {
-	if opts.Transcripts == nil || internalstrings.IsBlank(session.ID) {
-		return ""
+// runWithAdapter invokes an adapter with flattened prompt content.
+func runWithAdapter(a agents.Adapter, runOpts AgentRunOptions) (AgentRunResult, error) {
+	flatPrompt := agents.FlattenPrompt(runOpts.Prompt)
+
+	result, err := a.Run(context.Background(), agents.RunOptions{
+		WorkDir: runOpts.WorkspacePath,
+		Prompt:  flatPrompt,
+		Model:   runOpts.Model,
+		Env:     runOpts.Env,
+	})
+
+	agentResult := AgentRunResult{
+		ExitCode:     result.ExitCode,
+		InputTokens:  result.InputTokens,
+		OutputTokens: result.OutputTokens,
+		TotalTokens:  result.InputTokens + result.OutputTokens,
 	}
-	// Transcripts don't need repoPath since session ID is globally unique
-	transcripts, err := opts.Transcripts("", []AgentSession{session})
-	if err != nil || len(transcripts) == 0 {
-		return ""
+
+	if err != nil {
+		agentResult.Error = err.Error()
+		return agentResult, err
 	}
-	return transcripts[0].Transcript
-}
-
-// Agent event data types for job event logging
-
-type agentStartEventData struct {
-	Purpose string `json:"purpose"`
-	Model   string `json:"model,omitempty"`
-}
-
-type agentEndEventData struct {
-	Purpose       string `json:"purpose"`
-	SessionID     string `json:"session_id,omitempty"`
-	ExitCode      int    `json:"exit_code"`
-	Error         string `json:"error,omitempty"`
-	InputTokens   int    `json:"input_tokens,omitempty"`
-	OutputTokens  int    `json:"output_tokens,omitempty"`
-	TotalTokens   int    `json:"total_tokens,omitempty"`
-	ContextWindow int    `json:"context_window,omitempty"`
-}
-
-type agentErrorEventData struct {
-	Purpose string `json:"purpose"`
-	Error   string `json:"error"`
-}
-
-// RecordAgentEvents forwards agent events to the job event log.
-// Returns a channel that receives any error encountered during recording.
-func RecordAgentEvents(log *EventLog, events <-chan agent.Event) <-chan error {
-	done := make(chan error, 1)
-	if events == nil {
-		done <- nil
-		return done
+	if result.ExitCode != 0 {
+		agentResult.Error = result.Stderr
 	}
-	go func() {
-		var recordErr error
-		for event := range events {
-			if log == nil || recordErr != nil {
-				continue
-			}
-			sse := agent.EventToSSE(event)
-			recordErr = log.Append(Event{ID: sse.ID, Name: sse.Name, Data: sse.Data})
-		}
-		done <- recordErr
-	}()
-	return done
+
+	return agentResult, nil
 }
 
 // defaultRunLLM is the default implementation for RunOptions.RunLLM.
-// It uses the agent package to run LLM sessions.
 func defaultRunLLM(opts AgentRunOptions) (AgentRunResult, error) {
-	// Note: The actual agent run is handled by the caller who sets up
-	// the agent runner. This function is called by normalizeRunOptions
-	// to set up a default.
-	return AgentRunResult{}, errors.New("RunLLM not configured; set RunOptions.RunLLM or use CLI helpers")
+	return AgentRunResult{}, errors.New("RunLLM not configured; set RunOptions.Adapter or RunOptions.RunLLM")
 }

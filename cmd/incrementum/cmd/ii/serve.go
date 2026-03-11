@@ -67,7 +67,6 @@ func runServe(cmd *cobra.Command, args []string) error {
 		Workers:     workers,
 		Target:      target,
 		RunLLM:      runLLM,
-		Transcripts: makeTranscriptsFunc(),
 	}
 
 	ctx := context.Background()

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"monks.co/incrementum/internal/jj"
@@ -43,13 +42,6 @@ var jobResumeCmd = &cobra.Command{
 	RunE:  runJobResume,
 }
 
-var jobLogsCmd = &cobra.Command{
-	Use:     "logs <job-id>",
-	Aliases: []string{"log"},
-	Short:   "Show job logs",
-	Args:    cobra.ExactArgs(1),
-	RunE:    runJobLogs,
-}
 
 var (
 	jobOpen   = jobpkg.Open
@@ -64,7 +56,7 @@ var (
 
 func init() {
 	rootCmd.AddCommand(jobCmd)
-	jobCmd.AddCommand(jobShowCmd, jobListCmd, jobResumeCmd, jobLogsCmd)
+	jobCmd.AddCommand(jobShowCmd, jobListCmd, jobResumeCmd)
 
 	jobListCmd.Flags().BoolVar(&jobListJSON, "json", false, "Output as JSON")
 	jobListCmd.Flags().StringVar(&jobListStatus, "status", "", "Filter by status")
@@ -187,7 +179,6 @@ func runJobResume(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	transcripts := makeTranscriptsFunc()
 
 	logger := jobpkg.NewConsoleLogger(os.Stdout)
 	reporter := newJobStageReporter(logger)
@@ -195,45 +186,14 @@ func runJobResume(cmd *cobra.Command, args []string) error {
 	onStart := func(info jobpkg.StartInfo) {
 		printJobStart(info)
 	}
-	eventStream := make(chan jobpkg.Event, 128)
-	eventErrs := make(chan error, 1)
-	eventDone := make(chan struct{})
-	go func() {
-		formatter := jobpkg.NewEventFormatterWithRepoPath(repoPath)
-		var streamErr error
-		for {
-			select {
-			case event, ok := <-eventStream:
-				if !ok {
-					eventErrs <- streamErr
-					return
-				}
-				if strings.HasPrefix(event.Name, "job.") {
-					continue
-				}
-				if err := appendAndPrintEvent(formatter, event); err != nil {
-					if streamErr == nil {
-						streamErr = err
-					}
-				}
-			case <-eventDone:
-				eventErrs <- streamErr
-				return
-			}
-		}
-	}()
 
 	result, err := jobResume(repoPath, args[0], jobpkg.RunOptions{
 		OnStart:       onStart,
 		OnStageChange: onStageChange,
 		Logger:        logger,
-		EventStream:   eventStream,
 		RunLLM:        runLLM,
-		Transcripts:   transcripts,
 		WorkspacePath: workspacePath,
 	})
-	close(eventDone)
-	streamErr := <-eventErrs
 	if err != nil {
 		var abandonedErr *jobpkg.AbandonedError
 		if errors.As(err, &abandonedErr) {
@@ -242,40 +202,12 @@ func runJobResume(cmd *cobra.Command, args []string) error {
 		}
 		return err
 	}
-	if streamErr != nil {
-		return streamErr
-	}
 
 	if !internalstrings.IsBlank(result.CommitMessage) {
 		fmt.Printf("\n%s\n", formatCommitMessageOutput(result.CommitMessage))
 	}
 	return nil
 }
-func runJobLogs(cmd *cobra.Command, args []string) error {
-	repoPath, err := getRepoPath()
-	if err != nil {
-		return err
-	}
-
-	manager, err := jobOpen(repoPath, jobpkg.OpenOptions{})
-	if err != nil {
-		return err
-	}
-
-	item, err := manager.Find(args[0])
-	if err != nil {
-		return err
-	}
-
-	snapshot, err := jobpkg.LogSnapshot(item.ID, jobpkg.EventLogOptions{RepoPath: repoPath})
-	if err != nil {
-		return err
-	}
-
-	fmt.Print(snapshot)
-	return nil
-}
-
 
 func resolveWorkspaceRoot() (string, error) {
 	cwd, err := paths.WorkingDir()

@@ -70,15 +70,11 @@ func (runner jobRunnerFunc) Run(repoPath, todoID string, opts job.RunOptions) (*
 // This matches job.RunOptions.RunLLM.
 type RunLLMFunc func(job.AgentRunOptions) (job.AgentRunResult, error)
 
-// TranscriptsFunc retrieves transcripts for job sessions.
-type TranscriptsFunc func(string, []job.AgentSession) ([]job.AgentTranscript, error)
-
 // Options configures pool execution.
 type Options struct {
 	Workers      int
 	RepoPath     string
 	RunLLM       RunLLMFunc
-	Transcripts  TranscriptsFunc
 	PollInterval time.Duration
 	Now          func() time.Time
 	LoadConfig   func(string) (*config.Config, error)
@@ -209,7 +205,6 @@ func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
 			SkipFinalize:  true,
 			WorkspacePath: wsPath,
 			RunLLM:        opts.RunLLM,
-			Transcripts:   opts.Transcripts,
 			LoadConfig:    opts.LoadConfig,
 			RunTests:      opts.RunTests,
 			Model:         opts.Model,
@@ -282,9 +277,6 @@ func normalizeOptions(opts Options) Options {
 	if opts.RunTests == nil {
 		opts.RunTests = job.RunTestCommands
 	}
-	if opts.Transcripts == nil {
-		opts.Transcripts = defaultTranscripts
-	}
 	if opts.UpdateStale == nil || opts.Snapshot == nil {
 		client := jj.New()
 		if opts.UpdateStale == nil {
@@ -297,13 +289,3 @@ func normalizeOptions(opts Options) Options {
 	return opts
 }
 
-func defaultTranscripts(_ string, sessions []job.AgentSession) ([]job.AgentTranscript, error) {
-	if len(sessions) == 0 {
-		return nil, nil
-	}
-	transcripts := make([]job.AgentTranscript, 0, len(sessions))
-	for _, session := range sessions {
-		transcripts = append(transcripts, job.AgentTranscript{Purpose: session.Purpose, Transcript: "-"})
-	}
-	return transcripts, nil
-}

@@ -215,10 +215,6 @@ func preserveMarkdownLineBreaks(value string) string {
 	return strings.Join(lines, "\n")
 }
 
-func formatMarkdownBody(body string, indent int) string {
-	return formatMarkdownBlock(body, indent, false)
-}
-
 func formatPromptBody(body string, indent int) string {
 	body, empty := trimLogBody(body)
 	if empty {
@@ -275,12 +271,6 @@ type testResultLog struct {
 	Command  string
 	ExitCode int
 	Output   string
-}
-
-func testResultLogsFromEventData(results []testResultEventData) []testResultLog {
-	return testResultLogsFrom(results, func(result testResultEventData) testResultLog {
-		return testResultLog(result)
-	})
 }
 
 func testResultLogsFromCommandResults(results []TestCommandResult) []testResultLog {

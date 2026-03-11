@@ -276,11 +276,16 @@ func run() error {
 	runAfterTVImport("tvcopier", tc.Run)
 	runAfterTVImport("tvmetadatafetcher", tmf.Run)
 
-	// Initialize the LLM client
-	llmClient := llm.New("4o-mini")
+	// Initialize the LLM model for structured queries
+	llmModel := llm.Model{
+		ID:      "gpt-4o-mini",
+		API:     llm.APIOpenAICompletions,
+		BaseURL: os.Getenv("OPENAI_BASE_URL"),
+		APIKey:  os.Getenv("OPENAI_API_KEY"),
+	}
 
 	// Add stub query generator for movies
-	sqg := stubquerygenerator.New(llmClient, tmdb, db)
+	sqg := stubquerygenerator.New(llmModel, tmdb, db)
 	runAfterMovieStubCreation("stubquerygenerator_movies", sqg.RunMovies)
 
 	// Add stub query generator for TV shows

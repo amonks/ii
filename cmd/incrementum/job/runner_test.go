@@ -1,7 +1,6 @@
 package job
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -604,9 +603,6 @@ func TestRunCommittingStageFormatsCommitMessage(t *testing.T) {
 		DiffStat: func(string, string, string) (string, error) {
 			return "file.txt | 1 +\n", nil
 		},
-		Transcripts: func(repoPath string, sessions []AgentSession) ([]AgentTranscript, error) {
-			return []AgentTranscript{{Purpose: "implement", Transcript: "Planning\n"}}, nil
-		},
 		CommitIDAt: func(string, string) (string, error) {
 			return "commit-333", nil
 		},
@@ -648,11 +644,10 @@ func TestRunCommittingStageFormatsCommitMessage(t *testing.T) {
 	}
 }
 
-func TestRunCommittingStageLogsFormattedCommitMessage(t *testing.T) {
+func TestRunCommittingStageCommitsWithFormattedMessage(t *testing.T) {
 	stateDir := t.TempDir()
 	repoPath := t.TempDir()
 	workspacePath := t.TempDir()
-	eventsDir := t.TempDir()
 
 	manager, err := Open(repoPath, OpenOptions{StateDir: stateDir})
 	if err != nil {
@@ -674,19 +669,9 @@ func TestRunCommittingStageLogsFormattedCommitMessage(t *testing.T) {
 		Priority:    todo.PriorityMedium,
 	}
 
-	log, err := OpenEventLog(current.ID, EventLogOptions{EventsDir: eventsDir})
-	if err != nil {
-		t.Fatalf("open event log: %v", err)
-	}
-	defer func() {
-		if err := log.Close(); err != nil {
-			t.Fatalf("close event log: %v", err)
-		}
-	}()
-
 	message := "feat: log commit message"
-	expectedLogMessage := formatCommitMessageWithWidth(item, message, "", lineWidth-subdocumentIndent)
 
+	var committedMessage string
 	opts := RunOptions{
 		Now: func() time.Time {
 			return startedAt
@@ -700,10 +685,10 @@ func TestRunCommittingStageLogsFormattedCommitMessage(t *testing.T) {
 		CommitIDAt: func(string, string) (string, error) {
 			return "commit-log", nil
 		},
-		Commit: func(string, string) error {
+		Commit: func(_ string, msg string) error {
+			committedMessage = msg
 			return nil
 		},
-		EventLog: log,
 	}
 
 	_, err = runCommittingStage(CommittingStageOptions{
@@ -720,30 +705,11 @@ func TestRunCommittingStageLogsFormattedCommitMessage(t *testing.T) {
 		t.Fatalf("run committing stage: %v", err)
 	}
 
-	path := filepath.Join(eventsDir, current.ID+".jsonl")
-	events := readEventLogFile(t, path)
-	if len(events) == 0 {
-		t.Fatal("expected event log entries")
+	if committedMessage == "" {
+		t.Fatal("expected commit to be called with a message")
 	}
-
-	var commitEvent commitMessageEventData
-	for _, event := range events {
-		if event.Name != jobEventCommitMessage {
-			continue
-		}
-		if err := json.Unmarshal([]byte(event.Data), &commitEvent); err != nil {
-			t.Fatalf("decode commit message event: %v", err)
-		}
-		break
-	}
-	if commitEvent.Message == "" {
-		t.Fatalf("expected commit message event, got %v", events)
-	}
-	if commitEvent.Message != expectedLogMessage {
-		t.Fatalf("expected log message %q, got %q", expectedLogMessage, commitEvent.Message)
-	}
-	if !commitEvent.Preformatted {
-		t.Fatalf("expected preformatted commit message, got %#v", commitEvent)
+	if !strings.Contains(committedMessage, "feat: log commit message") {
+		t.Fatalf("expected commit message to contain original message, got %q", committedMessage)
 	}
 }
 

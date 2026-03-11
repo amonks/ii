@@ -54,7 +54,6 @@ func runPool(cmd *cobra.Command, args []string) error {
 		RepoPath:    repoPath,
 		Workers:     workers,
 		RunLLM:      runLLM,
-		Transcripts: makeTranscriptsFunc(),
 	}
 
 	ctx := context.Background()

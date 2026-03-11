@@ -12,7 +12,7 @@ import (
 
 	"monks.co/incrementum/agent"
 	"monks.co/incrementum/habit"
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
 	"monks.co/incrementum/internal/editor"
 	"monks.co/incrementum/internal/jj"
 	"monks.co/incrementum/internal/paths"
@@ -270,7 +270,6 @@ func runHabitJob(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	transcripts := makeTranscriptsFunc()
 
 	logger := jobpkg.NewConsoleLogger(os.Stdout)
 	reporter := newJobStageReporter(logger)
@@ -278,45 +277,14 @@ func runHabitJob(cmd *cobra.Command) error {
 	onStart := func(info jobpkg.HabitStartInfo) {
 		printHabitJobStart(info, h)
 	}
-	eventStream := make(chan jobpkg.Event, 128)
-	eventErrs := make(chan error, 1)
-	eventDone := make(chan struct{})
-	go func() {
-		formatter := jobpkg.NewEventFormatterWithRepoPath(repoPath)
-		var streamErr error
-		for {
-			select {
-			case event, ok := <-eventStream:
-				if !ok {
-					eventErrs <- streamErr
-					return
-				}
-				if strings.HasPrefix(event.Name, "job.") {
-					continue
-				}
-				if err := appendAndPrintEvent(formatter, event); err != nil {
-					if streamErr == nil {
-						streamErr = err
-					}
-				}
-			case <-eventDone:
-				eventErrs <- streamErr
-				return
-			}
-		}
-	}()
 
 	result, err := jobpkg.RunHabit(repoPath, h.Name, jobpkg.HabitRunOptions{
 		OnStart:       onStart,
 		OnStageChange: onStageChange,
 		Logger:        logger,
-		EventStream:   eventStream,
 		RunLLM:        runLLM,
-		Transcripts:   transcripts,
 		WorkspacePath: workspacePath,
 	})
-	close(eventDone)
-	streamErr := <-eventErrs
 	if err != nil {
 		var abandonedErr *jobpkg.AbandonedError
 		if errors.As(err, &abandonedErr) {
@@ -324,9 +292,6 @@ func runHabitJob(cmd *cobra.Command) error {
 			return err
 		}
 		return err
-	}
-	if streamErr != nil {
-		return streamErr
 	}
 
 	if result.Abandoned {
@@ -452,9 +417,6 @@ func defaultRunInteractiveSession(opts interactiveSessionOptions) (interactiveSe
 	defer func() {
 		close(doneCh)
 	}()
-
-	// Stream events to stderr (same as agent run command)
-	streamAgentEventsToStderr(handle.Events)
 
 	result, err := handle.Wait()
 	if err != nil {
@@ -608,53 +570,20 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 	if err != nil {
 		return err
 	}
-	transcripts := makeTranscriptsFunc()
-
 	logger := jobpkg.NewConsoleLogger(os.Stdout)
 	reporter := newJobStageReporter(logger)
 	onStageChange := reporter.OnStageChange
 	onStart := func(info jobpkg.StartInfo) {
 		printJobStart(info)
 	}
-	eventStream := make(chan jobpkg.Event, 128)
-	eventErrs := make(chan error, 1)
-	eventDone := make(chan struct{})
-	go func() {
-		formatter := jobpkg.NewEventFormatterWithRepoPath(repoPath)
-		var streamErr error
-		for {
-			select {
-			case event, ok := <-eventStream:
-				if !ok {
-					eventErrs <- streamErr
-					return
-				}
-				if strings.HasPrefix(event.Name, "job.") {
-					continue
-				}
-				if err := appendAndPrintEvent(formatter, event); err != nil {
-					if streamErr == nil {
-						streamErr = err
-					}
-				}
-			case <-eventDone:
-				eventErrs <- streamErr
-				return
-			}
-		}
-	}()
 
 	result, err := jobRun(repoPath, todoID, jobpkg.RunOptions{
 		OnStart:       onStart,
 		OnStageChange: onStageChange,
 		Logger:        logger,
-		EventStream:   eventStream,
 		RunLLM:        runLLM,
-		Transcripts:   transcripts,
 		WorkspacePath: workspacePath,
 	})
-	close(eventDone)
-	streamErr := <-eventErrs
 	if err != nil {
 		var abandonedErr *jobpkg.AbandonedError
 		if errors.As(err, &abandonedErr) {
@@ -662,9 +591,6 @@ func runHeadlessJob(cmd *cobra.Command, repoPath, todoID string) error {
 			return err
 		}
 		return err
-	}
-	if streamErr != nil {
-		return streamErr
 	}
 
 	if !internalstrings.IsBlank(result.CommitMessage) {

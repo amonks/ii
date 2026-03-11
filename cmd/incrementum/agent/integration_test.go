@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"monks.co/incrementum/agent"
-	internalagent "monks.co/incrementum/internal/agent"
+	internalagent "monks.co/pkg/agent"
+	"monks.co/incrementum/internal/agents"
+	"monks.co/incrementum/internal/config"
 	"monks.co/incrementum/internal/testsupport"
-	"monks.co/incrementum/llm"
+	"monks.co/pkg/llm"
 )
 
 // These integration tests require a real provider configuration in ./incrementum.toml.
@@ -43,15 +45,16 @@ func setupTestConfigFromRepoConfig(t *testing.T, requiredModels ...string) strin
 	}
 
 	// Validate required models against the copied config.
-	modelStore, err := llm.OpenWithOptions(llm.Options{
-		StateDir: filepath.Join(homeDir, ".local", "state", "incrementum"),
-		RepoPath: filepath.Join("..", ""),
-	})
+	cfg, err := config.LoadGlobal()
 	if err != nil {
-		t.Fatalf("failed to open llm store: %v", err)
+		t.Fatalf("failed to load config: %v", err)
+	}
+	registry, err := agents.NewModelRegistry(cfg)
+	if err != nil {
+		t.Fatalf("failed to build model registry: %v", err)
 	}
 	for _, modelID := range requiredModels {
-		if _, err := modelStore.GetModel(modelID); err != nil {
+		if _, err := registry.GetModel(modelID); err != nil {
 			t.Fatalf("test requires model %q to be configured: %v", modelID, err)
 		}
 	}
@@ -64,11 +67,9 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
+		StateDir: stateDir,
 	})
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
@@ -91,20 +92,9 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 		t.Fatalf("Run failed: %v", err)
 	}
 
-	// Collect events
-	var events []agent.Event
-	for event := range handle.Events {
-		events = append(events, event)
-	}
-
 	result, err := handle.Wait()
 	if err != nil {
 		t.Fatalf("Wait failed: %v", err)
-	}
-
-	// Verify we got events
-	if len(events) == 0 {
-		t.Error("Expected events, got none")
 	}
 
 	// Verify session ID was generated
@@ -164,20 +154,6 @@ func TestAgentStoreRun_SimpleCompletion_Anthropic(t *testing.T) {
 		}
 	}
 
-	// Verify event log was written
-	logContent, err := store.Logs("/test/repo", result.SessionID)
-	if err != nil {
-		t.Fatalf("Logs failed: %v", err)
-	}
-
-	if logContent == "" {
-		t.Error("Expected non-empty log content")
-	}
-
-	if !strings.Contains(logContent, "agent.start") {
-		t.Error("Expected log to contain agent.start event")
-	}
-
 	t.Logf("Response: %s", responseText.String())
 	t.Logf("Session ID: %s", result.SessionID)
 	t.Logf("Usage: input=%d, output=%d, cost=$%.6f", result.Usage.Input, result.Usage.Output, result.Usage.Cost.Total)
@@ -188,11 +164,9 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
+		StateDir: stateDir,
 	})
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
@@ -213,10 +187,6 @@ func TestAgentStoreRun_SimpleCompletion_OpenAI(t *testing.T) {
 	handle, err := store.Run(ctx, opts)
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
-	}
-
-	// Drain events
-	for range handle.Events {
 	}
 
 	result, err := handle.Wait()
@@ -255,11 +225,9 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
+		StateDir: stateDir,
 	})
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
@@ -283,27 +251,9 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 		t.Fatalf("Run failed: %v", err)
 	}
 
-	// Collect events
-	var toolExecutions []agent.ToolExecutionStartEvent
-	for event := range handle.Events {
-		if te, ok := event.(agent.ToolExecutionStartEvent); ok {
-			toolExecutions = append(toolExecutions, te)
-		}
-	}
-
 	result, err := handle.Wait()
 	if err != nil {
 		t.Fatalf("Wait failed: %v", err)
-	}
-
-	// Verify tool was called
-	if len(toolExecutions) == 0 {
-		t.Error("Expected at least one tool execution")
-	} else {
-		t.Logf("Tool executions: %d", len(toolExecutions))
-		for _, te := range toolExecutions {
-			t.Logf("  Tool: %s, Args: %v", te.ToolName, te.Arguments)
-		}
 	}
 
 	// Verify conversation has tool results
@@ -319,16 +269,6 @@ func TestAgentStoreRun_ToolCall_Anthropic(t *testing.T) {
 		t.Error("Expected tool result in conversation")
 	}
 
-	// Verify event log contains tool events
-	logContent, err := store.Logs("/test/repo", result.SessionID)
-	if err != nil {
-		t.Fatalf("Logs failed: %v", err)
-	}
-
-	if !strings.Contains(logContent, "tool.start") {
-		t.Error("Expected log to contain tool.start event")
-	}
-
 	t.Logf("Total messages: %d", len(result.Messages))
 	t.Logf("Session ID: %s", result.SessionID)
 	t.Logf("Usage: input=%d, output=%d", result.Usage.Input, result.Usage.Output)
@@ -339,11 +279,9 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
+		StateDir: stateDir,
 	})
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
@@ -368,10 +306,6 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 		t.Fatalf("Run failed: %v", err)
 	}
 
-	// Drain events
-	for range handle.Events {
-	}
-
 	result, err := handle.Wait()
 	if err != nil {
 		t.Fatalf("Wait failed: %v", err)
@@ -391,63 +325,4 @@ func TestAgentStoreRun_FileWrite_Anthropic(t *testing.T) {
 	t.Logf("Session ID: %s", result.SessionID)
 	t.Logf("Total messages: %d", len(result.Messages))
 	t.Logf("Usage: input=%d, output=%d, cost=$%.6f", result.Usage.Input, result.Usage.Output, result.Usage.Cost.Total)
-}
-
-func TestAgentStoreRun_Transcript(t *testing.T) {
-	homeDir := setupTestConfigFromRepoConfig(t, "claude-sonnet-4-5")
-
-	tmpDir := t.TempDir()
-	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
-
-	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
-	})
-	if err != nil {
-		t.Fatalf("OpenWithOptions failed: %v", err)
-	}
-	defer store.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	opts := agent.RunOptions{
-		RepoPath:  "/test/repo",
-		WorkDir:   tmpDir,
-		Prompt:    internalagent.PromptContent{UserContent: "What is the capital of France? Just say the city name."},
-		Model:     "claude-sonnet-4-5",
-		StartedAt: time.Now(),
-	}
-
-	handle, err := store.Run(ctx, opts)
-	if err != nil {
-		t.Fatalf("Run failed: %v", err)
-	}
-
-	// Drain events
-	for range handle.Events {
-	}
-
-	result, err := handle.Wait()
-	if err != nil {
-		t.Fatalf("Wait failed: %v", err)
-	}
-
-	// Get transcript
-	transcript, err := store.Transcript("/test/repo", result.SessionID)
-	if err != nil {
-		t.Fatalf("Transcript failed: %v", err)
-	}
-
-	if transcript == "" {
-		t.Error("Expected non-empty transcript")
-	}
-
-	// Transcript should contain the assistant's response
-	if !strings.Contains(strings.ToLower(transcript), "paris") {
-		t.Errorf("Expected transcript to contain 'Paris', got: %s", transcript)
-	}
-
-	t.Logf("Transcript:\n%s", transcript)
 }

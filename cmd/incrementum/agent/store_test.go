@@ -3,7 +3,6 @@ package agent_test
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -32,11 +31,9 @@ func TestOpenWithOptions_CustomDirs(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	stateDir := filepath.Join(tmpDir, "state")
-	eventsDir := filepath.Join(tmpDir, "events")
 
 	store, err := agent.OpenWithOptions(agent.Options{
-		StateDir:  stateDir,
-		EventsDir: eventsDir,
+		StateDir: stateDir,
 	})
 	if err != nil {
 		t.Fatalf("OpenWithOptions failed: %v", err)
@@ -592,178 +589,4 @@ func TestSessionStatus_IsValid(t *testing.T) {
 	}
 }
 
-func TestTranscriptSnapshot(t *testing.T) {
-	homeDir := testsupport.SetupTestHome(t)
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
-
-	// Create events directory
-	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
-		t.Fatalf("failed to create events dir: %v", err)
-	}
-
-	// Write a sample event log
-	sessionID := "test12345"
-	eventLog := `{"ID":"0","Name":"agent.start","Data":"{}"}
-{"ID":"1","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Hello from the assistant!\"}]}}"}
-{"ID":"2","Name":"agent.end","Data":"{}"}
-`
-	logPath := filepath.Join(eventsDir, sessionID+".jsonl")
-	if err := os.WriteFile(logPath, []byte(eventLog), 0o644); err != nil {
-		t.Fatalf("failed to write event log: %v", err)
-	}
-
-	store, err := agent.OpenWithOptions(agent.Options{
-		EventsDir: eventsDir,
-	})
-	if err != nil {
-		t.Fatalf("Open failed: %v", err)
-	}
-	defer store.Close()
-
-	transcript, err := store.TranscriptSnapshot(sessionID)
-	if err != nil {
-		t.Fatalf("TranscriptSnapshot failed: %v", err)
-	}
-
-	// Verify transcript contains expected content
-	if transcript == "" {
-		t.Error("expected non-empty transcript")
-	}
-	if !strings.Contains(transcript, "# Agent Session") {
-		t.Error("expected transcript to contain '# Agent Session'")
-	}
-	if !strings.Contains(transcript, "Hello from the assistant!") {
-		t.Error("expected transcript to contain assistant message")
-	}
-}
-
-func TestTranscriptSnapshot_NotFound(t *testing.T) {
-	homeDir := testsupport.SetupTestHome(t)
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
-
-	store, err := agent.OpenWithOptions(agent.Options{
-		EventsDir: eventsDir,
-	})
-	if err != nil {
-		t.Fatalf("Open failed: %v", err)
-	}
-	defer store.Close()
-
-	_, err = store.TranscriptSnapshot("nonexistent")
-	if err == nil {
-		t.Error("expected error for non-existent session")
-	}
-}
-
-func TestTranscriptSnapshot_IncludesToolOutput(t *testing.T) {
-	homeDir := testsupport.SetupTestHome(t)
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
-
-	// Create events directory
-	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
-		t.Fatalf("failed to create events dir: %v", err)
-	}
-
-	// Write event log with tool output
-	sessionID := "tooltest"
-	eventLog := `{"ID":"0","Name":"agent.start","Data":"{}"}
-{"ID":"1","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Running a command...\"}]}}"}
-{"ID":"2","Name":"tool.end","Data":"{\"Result\":{\"Content\":[{\"Type\":\"text\",\"Text\":\"command output here\"}]}}"}
-{"ID":"3","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Command completed.\"}]}}"}
-{"ID":"4","Name":"agent.end","Data":"{}"}
-`
-	logPath := filepath.Join(eventsDir, sessionID+".jsonl")
-	if err := os.WriteFile(logPath, []byte(eventLog), 0o644); err != nil {
-		t.Fatalf("failed to write event log: %v", err)
-	}
-
-	store, err := agent.OpenWithOptions(agent.Options{
-		EventsDir: eventsDir,
-	})
-	if err != nil {
-		t.Fatalf("Open failed: %v", err)
-	}
-	defer store.Close()
-
-	transcript, err := store.TranscriptSnapshot(sessionID)
-	if err != nil {
-		t.Fatalf("TranscriptSnapshot failed: %v", err)
-	}
-
-	// TranscriptSnapshot should include tool output
-	if !strings.Contains(transcript, "command output here") {
-		t.Error("expected TranscriptSnapshot to include tool output")
-	}
-	if !strings.Contains(transcript, "Running a command...") {
-		t.Error("expected transcript to contain first assistant message")
-	}
-	if !strings.Contains(transcript, "Command completed.") {
-		t.Error("expected transcript to contain second assistant message")
-	}
-}
-
-func TestTranscript_ExcludesToolOutput(t *testing.T) {
-	homeDir := testsupport.SetupTestHome(t)
-	eventsDir := filepath.Join(homeDir, ".local", "share", "incrementum", "agent", "events")
-	stateDir := filepath.Join(homeDir, ".local", "state", "incrementum")
-	repoPath := "/path/to/test-repo"
-	sessionID := "toolexclude"
-
-	// Create events directory
-	if err := os.MkdirAll(eventsDir, 0o755); err != nil {
-		t.Fatalf("failed to create events dir: %v", err)
-	}
-
-	sqlDB := openAgentTestDB(t, stateDir)
-	repoName, err := db.GetOrCreateRepoName(sqlDB, repoPath)
-	if err != nil {
-		t.Fatalf("create repo: %v", err)
-	}
-
-	now := time.Now()
-	err = insertAgentSession(sqlDB, repoName, sessionID, agent.SessionActive, "claude-haiku-4-5-20251001", now, now, now, time.Time{}, nil, 0, 0, 0)
-	if err != nil {
-		t.Fatalf("insert session: %v", err)
-	}
-
-	// Write event log with tool output to that session's event log
-	eventLog := `{"ID":"0","Name":"agent.start","Data":"{}"}
-{"ID":"1","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Running a command...\"}]}}"}
-{"ID":"2","Name":"tool.end","Data":"{\"Result\":{\"Content\":[{\"Type\":\"text\",\"Text\":\"secret tool output\"}]}}"}
-{"ID":"3","Name":"message.end","Data":"{\"Message\":{\"Role\":\"assistant\",\"Content\":[{\"Type\":\"text\",\"Text\":\"Command completed.\"}]}}"}
-{"ID":"4","Name":"agent.end","Data":"{}"}
-`
-	logPath := filepath.Join(eventsDir, sessionID+".jsonl")
-	if err := os.WriteFile(logPath, []byte(eventLog), 0o644); err != nil {
-		t.Fatalf("failed to write event log: %v", err)
-	}
-
-	store, err := agent.OpenWithOptions(agent.Options{
-		EventsDir: eventsDir,
-		StateDir:  stateDir,
-	})
-	if err != nil {
-		t.Fatalf("Open failed: %v", err)
-	}
-	defer store.Close()
-
-	// Call Transcript (not TranscriptSnapshot) - should exclude tool output
-	transcript, err := store.Transcript(repoPath, sessionID)
-	if err != nil {
-		t.Fatalf("Transcript failed: %v", err)
-	}
-
-	// Verify tool output is NOT present
-	if strings.Contains(transcript, "secret tool output") {
-		t.Error("expected Transcript to EXCLUDE tool output, but found 'secret tool output'")
-	}
-
-	// Verify assistant messages ARE present (sanity check)
-	if !strings.Contains(transcript, "Running a command...") {
-		t.Error("expected transcript to contain first assistant message")
-	}
-	if !strings.Contains(transcript, "Command completed.") {
-		t.Error("expected transcript to contain second assistant message")
-	}
-}
 
