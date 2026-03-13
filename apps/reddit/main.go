@@ -80,9 +80,11 @@ func runServer() error {
 
 func runUpdate() error {
 	ctx := sigctx.New()
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
+
+	// Start tailnet in the background for log shipping, but don't block
+	// the update on it — tsnet can modify DNS resolution which causes
+	// 403s from Reddit's API (oauth.reddit.com).
+	go tailnet.WaitReady(ctx)
 
 	db, err := NewModel()
 	if err != nil {
