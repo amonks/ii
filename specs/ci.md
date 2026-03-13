@@ -324,7 +324,8 @@ Trigger during `restarting`: queued as pending (same as during deploy).
 
 The builder image (`apps/ci/builder.Dockerfile`) is a fat Alpine image
 with all build dependencies: Go, gcc, jj, terraform, gh, flyctl, NLopt,
-git-filter-repo, tailscale, and more. It also bakes in configuration
+git-filter-repo, tailscale, claude (Claude Code CLI), codex (OpenAI
+Codex CLI), and more. It also bakes in configuration
 files that tests depend on, notably the incrementum global config at
 `/root/.config/incrementum/config.toml` which defines LLM providers
 and the default model so that incrementum integration tests can reach

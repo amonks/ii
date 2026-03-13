@@ -33,6 +33,12 @@ RUN GH_VERSION=$(curl -sL https://api.github.com/repos/cli/cli/releases/latest |
     tar xzf "gh_${GH_VERSION}_linux_amd64.tar.gz" --strip-components=2 -C /usr/local/bin/ "gh_${GH_VERSION}_linux_amd64/bin/gh" && \
     rm "gh_${GH_VERSION}_linux_amd64.tar.gz"
 
+# claude (Claude Code CLI)
+RUN npm install -g @anthropic-ai/claude-code
+
+# codex (OpenAI Codex CLI)
+RUN npm install -g @openai/codex
+
 # flyctl
 RUN curl -L https://fly.io/install.sh | sh
 ENV FLYCTL_INSTALL="/root/.fly"
