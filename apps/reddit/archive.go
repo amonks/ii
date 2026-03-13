@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -44,7 +46,17 @@ func NewRedditArchiver(db *model, clientID, clientSecret, archivePath, username 
 		clientSecret: clientSecret,
 		archivePath:  archivePath,
 		username:     username,
-		httpClient:   &http.Client{Timeout: 30 * time.Second},
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig:   &tls.Config{},
+				ForceAttemptHTTP2: false,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+			},
+		},
 		tokenFile:    "/data/tank/mirror/reddit/.tokens.json",
 
 		// Initialize rate limits conservatively
