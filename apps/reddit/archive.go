@@ -286,7 +286,7 @@ func (ra *RedditArchiver) fetchSavedPosts(after string) ([]*Post, string, error)
 	}
 
 	// Set headers
-	req.Header.Set("User-Agent", "golang:monks.co.reddit:v1.0")
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Authorization", "Bearer "+ra.accessToken)
 
 	// Make the request
@@ -513,7 +513,7 @@ func (ra *RedditArchiver) fetchPostData(postID string) (map[string]any, error) {
 	}
 
 	// Set headers
-	req.Header.Set("User-Agent", "golang:monks.co.reddit:v1.0")
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Authorization", "Bearer "+ra.accessToken)
 
 	// Make the request
@@ -745,7 +745,7 @@ func (ra *RedditArchiver) downloadFile(fileURL, filePath string) error {
 	}
 
 	// Set a user agent
-	req.Header.Set("User-Agent", "golang:monks.co.reddit:v1.0")
+	req.Header.Set("User-Agent", userAgent)
 
 	// Download the file
 	resp, err := ra.httpClient.Do(req)

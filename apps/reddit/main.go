@@ -21,6 +21,7 @@ const (
 	clientID    = "-RT9cp4AERMlAEhwR01isQ"
 	secret      = "mgo2f7coeJj31sIZDsdIlLZfjBfSiA"
 	username    = "richbizzness"
+	userAgent   = "golang:monks.co.reddit:v1.0 (by /u/richbizzness)"
 )
 
 func main() {

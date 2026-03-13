@@ -77,7 +77,7 @@ func (a *AuthHelper) ExchangeCode(code string) (*TokenResponse, error) {
 
 	// Set headers
 	req.SetBasicAuth(a.ClientID, a.ClientSecret)
-	req.Header.Set("User-Agent", "golang:monks.co.reddit:v1.0")
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	// Send request
@@ -129,7 +129,7 @@ func (a *AuthHelper) RefreshToken(refreshToken string) (*TokenResponse, error) {
 
 	// Set headers
 	req.SetBasicAuth(a.ClientID, a.ClientSecret)
-	req.Header.Set("User-Agent", "golang:monks.co.reddit:v1.0")
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	// Send request
