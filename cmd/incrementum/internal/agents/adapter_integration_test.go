@@ -14,7 +14,10 @@ import (
 // TestClaudeAdapter_E2E exercises the ClaudeAdapter with the real claude binary.
 func TestClaudeAdapter_E2E(t *testing.T) {
 	if _, err := exec.LookPath("claude"); err != nil {
-		t.Fatal("claude binary not found in PATH")
+		t.Skip("claude binary not found in PATH")
+	}
+	if os.Getuid() == 0 {
+		t.Skip("claude refuses --permission-mode bypassPermissions as root")
 	}
 
 	// Clear env vars that prevent nested Claude Code invocations.
@@ -51,7 +54,10 @@ func TestClaudeAdapter_E2E(t *testing.T) {
 // TestCodexAdapter_E2E exercises the CodexAdapter with the real codex binary.
 func TestCodexAdapter_E2E(t *testing.T) {
 	if _, err := exec.LookPath("codex"); err != nil {
-		t.Fatal("codex binary not found in PATH")
+		t.Skip("codex binary not found in PATH")
+	}
+	if os.Getenv("OPENAI_API_KEY") == "" {
+		t.Skip("OPENAI_API_KEY not set")
 	}
 
 	adapter := &agents.CodexAdapter{}
