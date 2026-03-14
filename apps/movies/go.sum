@@ -36,5 +36,7 @@ modernc.org/memory v1.11.0 h1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=
 modernc.org/memory v1.11.0/go.mod h1:/JP4VbVC+K5sU2wZi9bHoq2MAkCnrt2r98UGeSK7Mjw=
 modernc.org/sqlite v1.46.1 h1:eFJ2ShBLIEnUWlLy12raN0Z1plqmFX9Qe3rjQTKt6sU=
 modernc.org/sqlite v1.46.1/go.mod h1:CzbrU2lSB1DKUusvwGz7rqEKIq+NUd8GWuBBZDs9/nA=
+monks.co/pkg/llm v0.0.1 h1:jfiT9DJgjJYfuFnkFTd+2wGB7SsGpJjGB+KP0QJhGbU=
+monks.co/pkg/llm v0.0.1/go.mod h1:5zNdauOUn5Hd54afe0rjD1ff5+Fb9HwIYY52qNQV+Ac=
 monks.co/pkg/migrate v0.0.1 h1:Ic3lOqhlsOzKjNVe5vcZYNUexNMWATDrNz2FV4OPfLw=
 monks.co/pkg/migrate v0.0.1/go.mod h1:bMXpdraY3Run19d1VQNcl4E41fUjCGE0SzmeNbR5BMA=

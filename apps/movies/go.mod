@@ -6,6 +6,7 @@ require (
 	github.com/a-h/templ v0.3.977
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
+	monks.co/pkg/llm v0.0.1
 	monks.co/pkg/migrate v0.0.1
 )
 
