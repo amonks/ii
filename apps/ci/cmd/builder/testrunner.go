@@ -23,10 +23,17 @@ func encodeStreamName(name string) string {
 	return strings.ReplaceAll(name, "/", "~")
 }
 
+// runTestsFunc is the function used to run tests. It can be replaced in tests.
+var runTestsFunc = runTests
+
 // RunTests runs the generate and test tasks using the run library
 // programmatically, streaming per-task output to the orchestrator.
 // The suffix is appended to job names (e.g. "-2" gives "generate-2", "ci-test-2").
 func RunTests(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+	return runTestsFunc(ctx, root, reporter, suffix)
+}
+
+func runTests(ctx context.Context, root string, reporter *Reporter, suffix string) error {
 	if err := runTask(ctx, root, "generate", "generate"+suffix, reporter); err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}

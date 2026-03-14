@@ -37,8 +37,16 @@ type ChangeAnalysis struct {
 	Cfg             *config.AppsConfig
 }
 
+// detectChangesFunc is the function used to detect changes. It can be
+// replaced in tests.
+var detectChangesFunc = detectChanges
+
 // DetectChanges runs change detection and returns what's affected.
 func DetectChanges(root, baseSHA string) (*ChangeAnalysis, error) {
+	return detectChangesFunc(root, baseSHA)
+}
+
+func detectChanges(root, baseSHA string) (*ChangeAnalysis, error) {
 	apps, err := changedetect.LoadFlyApps(root)
 	if err != nil {
 		return nil, fmt.Errorf("loading fly apps: %w", err)

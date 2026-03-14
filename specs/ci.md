@@ -250,15 +250,15 @@ builder machine. The phase is passed as `CI_PHASE` env var.
 ### Phases
 
 **`initial`** (default):
-1. fetch → generate → ci-test
-2. Is `ci` app affected? → deploy orchestrator → exit `restart-orchestrator`
-3. Is builder image affected? → rebuild image → exit `restart-builder-image`
-4. Neither → deploy apps
+1. fetch → detect changes
+2. Is builder image affected? → rebuild image → exit `restart-builder-image`
+3. generate → ci-test
+4. Is `ci` app affected? → deploy orchestrator → exit `restart-orchestrator`
+5. Neither → deploy apps
 
 **`post-orchestrator`**:
 1. fetch → generate-2 → ci-test-2
-2. Is builder image affected? → rebuild → exit `restart-builder-image`
-3. No → deploy apps
+2. Deploy apps (no more infrastructure checks; builder was handled in initial)
 
 **`post-builder`**:
 1. fetch → generate-3 → ci-test-3
@@ -271,8 +271,8 @@ before phased deployment was added.
 
 ### Worst case (both orchestrator and builder changed)
 
-Builder 1: fetch → generate → ci-test → deploy orchestrator → exit
-Builder 2: fetch → generate-2 → ci-test-2 → rebuild builder image → exit
+Builder 1: fetch → detect → rebuild builder image → exit
+Builder 2: fetch → generate-2 → ci-test-2 → deploy orchestrator → exit
 Builder 3: fetch → generate-3 → ci-test-3 → deploy apps
 
 ### Deploy phase

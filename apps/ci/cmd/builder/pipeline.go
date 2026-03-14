@@ -18,58 +18,75 @@ type Pipeline struct {
 	Reporter *Reporter
 }
 
+// fetchCodeFunc can be overridden in tests to skip real git operations.
+var fetchCodeFunc func(p *Pipeline) error
+
 // Run executes the pipeline steps in order. It returns a status string
 // and an error. The status is "success", "failed", "restart-orchestrator",
 // or "restart-builder-image".
 func (p *Pipeline) Run(ctx context.Context) (string, error) {
 	// Step 1: Fetch latest code (updates p.Config.Root to persistent volume).
 	slog.Info("fetching latest code")
-	if err := p.fetchCode(); err != nil {
+	fetchFn := p.fetchCode
+	if fetchCodeFunc != nil {
+		fetchFn = func() error { return fetchCodeFunc(p) }
+	}
+	if err := fetchFn(); err != nil {
 		return "failed", fmt.Errorf("fetching code: %w", err)
 	}
 
 	root := p.Config.Root
-	suffix := phaseSuffix(p.Config.Phase)
 
-	// Step 2: Run generate + test.
+	// Step 2: In the initial phase, check if the builder image needs
+	// rebuilding before running tests. This ensures that when a commit
+	// changes both the Dockerfile and code that depends on the new
+	// builder environment, the image is rebuilt first and tests run on
+	// the new builder in the post-builder phase.
+	if p.Config.Phase == "initial" {
+		analysis, err := DetectChanges(root, p.Config.BaseSHA)
+		if err != nil {
+			return "failed", fmt.Errorf("change detection: %w", err)
+		}
+		if analysis.BuilderAffected {
+			if err := p.rebuildBuilderImage(root); err != nil {
+				return "failed", fmt.Errorf("rebuilding builder image: %w", err)
+			}
+			return "restart-builder-image", nil
+		}
+	}
+
+	// Step 3: Generate + test.
+	suffix := phaseSuffix(p.Config.Phase)
 	slog.Info("running tests", "phase", p.Config.Phase, "suffix", suffix)
 	if err := RunTests(ctx, root, p.Reporter, suffix); err != nil {
 		return "failed", fmt.Errorf("tests failed: %w", err)
 	}
 
-	// Step 3: Detect changes.
+	// Step 4: Detect changes for deploy decisions. In the initial phase
+	// this re-runs change detection (cheap: git diff + dep graph walk),
+	// but now we need the full analysis for CI deploy and app deploy.
 	analysis, err := DetectChanges(root, p.Config.BaseSHA)
 	if err != nil {
 		return "failed", fmt.Errorf("change detection: %w", err)
 	}
 
-	// Step 4: Phase-dependent infrastructure checks.
+	// Step 5: Phase-dependent infrastructure checks.
 	switch p.Config.Phase {
 	case "initial":
+		// Builder was already handled above. Check CI orchestrator.
 		if analysis.CIAffected {
 			if err := p.deployOrchestrator(root, analysis); err != nil {
 				return "failed", fmt.Errorf("deploying orchestrator: %w", err)
 			}
 			return "restart-orchestrator", nil
 		}
-		if analysis.BuilderAffected {
-			if err := p.rebuildBuilderImage(root); err != nil {
-				return "failed", fmt.Errorf("rebuilding builder image: %w", err)
-			}
-			return "restart-builder-image", nil
-		}
 	case "post-orchestrator":
-		if analysis.BuilderAffected {
-			if err := p.rebuildBuilderImage(root); err != nil {
-				return "failed", fmt.Errorf("rebuilding builder image: %w", err)
-			}
-			return "restart-builder-image", nil
-		}
+		// Builder already handled in initial phase. No more infra checks.
 	case "post-builder":
 		// No infrastructure checks needed.
 	}
 
-	// Step 5: Deploy apps (excluding ci, with builderAffected forced off).
+	// Step 6: Deploy apps (excluding ci, with builderAffected forced off).
 	if err := p.runDeploy(ctx, root, analysis); err != nil {
 		return "failed", err
 	}
@@ -135,10 +152,20 @@ func (p *Pipeline) rebuildBuilderImage(root string) error {
 	return err
 }
 
+// runDeployFunc can be overridden in tests to skip real deploy operations.
+var runDeployFunc func(ctx context.Context, p *Pipeline, root string, analysis *ChangeAnalysis) error
+
 // runDeploy runs the deploy phase: analysis stream + concurrent app
 // deploys, publish, terraform, and tailscale ACL. CI is excluded from
 // affected apps, and builderAffected is forced off (handled in pre-flight).
 func (p *Pipeline) runDeploy(ctx context.Context, root string, analysis *ChangeAnalysis) error {
+	if runDeployFunc != nil {
+		return runDeployFunc(ctx, p, root, analysis)
+	}
+	return p.runDeployReal(ctx, root, analysis)
+}
+
+func (p *Pipeline) runDeployReal(ctx context.Context, root string, analysis *ChangeAnalysis) error {
 	p.Reporter.StartJob("deploy", "deploy")
 	deployStart := time.Now()
 

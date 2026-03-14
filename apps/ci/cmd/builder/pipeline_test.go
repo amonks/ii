@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"monks.co/pkg/config"
 )
 
 func TestFetchCodeClonesWhenNoRepo(t *testing.T) {
@@ -155,6 +159,278 @@ func cmdOutput(t *testing.T, dir string, name string, args ...string) string {
 		t.Fatalf("%s %v: %v", name, args, err)
 	}
 	return string(out[:len(out)-1]) // trim newline
+}
+
+// stubPipeline creates a Pipeline with all external functions stubbed out,
+// plus a no-op HTTP server for the reporter. It returns the pipeline and
+// a cleanup function that restores the original function vars.
+func stubPipeline(t *testing.T, phase string) *Pipeline {
+	t.Helper()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+
+	reporter := NewReporter(srv.URL, 1, http.DefaultClient)
+	cfg := &Config{
+		RunID:   1,
+		HeadSHA: "abc123",
+		BaseSHA: "000000",
+		DataDir: t.TempDir(),
+		Root:    t.TempDir(),
+		Phase:   phase,
+	}
+	return &Pipeline{Config: cfg, Reporter: reporter}
+}
+
+// saveFuncs saves the current function vars and returns a cleanup function.
+// It also installs no-op stubs for fetch and deploy by default.
+func saveFuncs(t *testing.T) {
+	t.Helper()
+	origDetect := detectChangesFunc
+	origTests := runTestsFunc
+	origDeploy := deployAppFunc
+	origRebuild := rebuildImageFunc
+	origFetch := fetchCodeFunc
+	origRunDeploy := runDeployFunc
+	t.Cleanup(func() {
+		detectChangesFunc = origDetect
+		runTestsFunc = origTests
+		deployAppFunc = origDeploy
+		rebuildImageFunc = origRebuild
+		fetchCodeFunc = origFetch
+		runDeployFunc = origRunDeploy
+	})
+	// Default: no-op fetch and deploy for pipeline Run() tests.
+	fetchCodeFunc = func(p *Pipeline) error { return nil }
+	runDeployFunc = func(ctx context.Context, p *Pipeline, root string, analysis *ChangeAnalysis) error { return nil }
+}
+
+func TestRunInitialBuilderAffected_RebuildsBeforeTests(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "initial")
+
+	var steps []string
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		steps = append(steps, "detect")
+		return &ChangeAnalysis{
+			BuilderAffected: true,
+			Cfg:             &config.AppsConfig{},
+		}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		steps = append(steps, "test")
+		return nil
+	}
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
+		steps = append(steps, "rebuild")
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != "restart-builder-image" {
+		t.Errorf("expected restart-builder-image, got %s", status)
+	}
+	// Tests must NOT have run.
+	expected := []string{"detect", "rebuild"}
+	if len(steps) != len(expected) {
+		t.Fatalf("expected steps %v, got %v", expected, steps)
+	}
+	for i, s := range expected {
+		if steps[i] != s {
+			t.Errorf("step %d: expected %s, got %s", i, s, steps[i])
+		}
+	}
+}
+
+func TestRunInitialCIAffected_TestsRunBeforeDeploy(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "initial")
+
+	var steps []string
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		steps = append(steps, "detect")
+		return &ChangeAnalysis{
+			CIAffected: true,
+			Cfg:        &config.AppsConfig{},
+		}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		steps = append(steps, "test")
+		return nil
+	}
+	deployAppFunc = func(root, app, sha, flyToken, baseImageRef string, cfg *config.AppsConfig, reporter *Reporter, jobName string) error {
+		steps = append(steps, "deploy-"+app)
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != "restart-orchestrator" {
+		t.Errorf("expected restart-orchestrator, got %s", status)
+	}
+	// detect runs twice (once early for builder check, once after tests for deploy decisions),
+	// then orchestrator deploy via deployAppFunc.
+	expected := []string{"detect", "test", "detect", "deploy-ci"}
+	if len(steps) != len(expected) {
+		t.Fatalf("expected steps %v, got %v", expected, steps)
+	}
+	for i, s := range expected {
+		if steps[i] != s {
+			t.Errorf("step %d: expected %s, got %s", i, s, steps[i])
+		}
+	}
+}
+
+func TestRunInitialNoInfraChanges_TestsThenDeploy(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "initial")
+
+	var steps []string
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		steps = append(steps, "detect")
+		return &ChangeAnalysis{
+			Affected: []string{"dogs"},
+			Cfg:      &config.AppsConfig{},
+		}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		steps = append(steps, "test")
+		return nil
+	}
+	runDeployFunc = func(ctx context.Context, p *Pipeline, root string, analysis *ChangeAnalysis) error {
+		steps = append(steps, "deploy")
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != "success" {
+		t.Errorf("expected success, got %s", status)
+	}
+	// detect runs twice in initial (early builder check + post-test deploy check), tests between.
+	expected := []string{"detect", "test", "detect", "deploy"}
+	if len(steps) != len(expected) {
+		t.Fatalf("expected steps %v, got %v", expected, steps)
+	}
+	for i, s := range expected {
+		if steps[i] != s {
+			t.Errorf("step %d: expected %s, got %s", i, s, steps[i])
+		}
+	}
+}
+
+func TestRunPostOrchestrator_NoBuilderCheck(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "post-orchestrator")
+
+	var steps []string
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		steps = append(steps, "detect")
+		return &ChangeAnalysis{
+			BuilderAffected: true, // should be ignored in post-orchestrator
+			Affected:        []string{"dogs"},
+			Cfg:             &config.AppsConfig{},
+		}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		steps = append(steps, "test")
+		return nil
+	}
+	runDeployFunc = func(ctx context.Context, p *Pipeline, root string, analysis *ChangeAnalysis) error {
+		steps = append(steps, "deploy")
+		return nil
+	}
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
+		steps = append(steps, "rebuild")
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != "success" {
+		t.Errorf("expected success, got %s", status)
+	}
+	// No rebuild should have happened.
+	for _, s := range steps {
+		if s == "rebuild" {
+			t.Error("post-orchestrator should not rebuild builder image")
+		}
+	}
+}
+
+func TestRunPostBuilder_NoInfraChecks(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "post-builder")
+
+	var steps []string
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		steps = append(steps, "detect")
+		return &ChangeAnalysis{
+			Affected: []string{"dogs"},
+			Cfg:      &config.AppsConfig{},
+		}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		steps = append(steps, "test")
+		return nil
+	}
+	runDeployFunc = func(ctx context.Context, p *Pipeline, root string, analysis *ChangeAnalysis) error {
+		steps = append(steps, "deploy")
+		return nil
+	}
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
+		steps = append(steps, "rebuild")
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != "success" {
+		t.Errorf("expected success, got %s", status)
+	}
+	// Only test + detect + deploy, no rebuild.
+	for _, s := range steps {
+		if s == "rebuild" {
+			t.Error("post-builder should not rebuild builder image")
+		}
+	}
+}
+
+func TestRunInitialTestFailure_NoDeployOrRebuild(t *testing.T) {
+	saveFuncs(t)
+	p := stubPipeline(t, "initial")
+
+	detectChangesFunc = func(root, baseSHA string) (*ChangeAnalysis, error) {
+		return &ChangeAnalysis{Cfg: &config.AppsConfig{}}, nil
+	}
+	runTestsFunc = func(ctx context.Context, root string, reporter *Reporter, suffix string) error {
+		return fmt.Errorf("tests failed")
+	}
+	rebuildImageFunc = func(root, name, tomlPath string, reporter *Reporter, jobName string) error {
+		t.Error("should not rebuild on test failure")
+		return nil
+	}
+
+	status, err := p.Run(context.Background())
+	if status != "failed" {
+		t.Errorf("expected failed, got %s", status)
+	}
+	if err == nil {
+		t.Error("expected error from test failure")
+	}
 }
 
 func TestPhaseSuffix(t *testing.T) {
