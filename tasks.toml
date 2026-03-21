@@ -5,6 +5,7 @@
   type = 'long'
   dependencies = [
     'apps/aranet/dev',
+    'apps/breadcrumbs/dev',
     'apps/calendar/dev',
     'apps/creamery/dev',
     'apps/directory/dev',
@@ -26,6 +27,7 @@
   dependencies = [
     'apps/air/build',
     'apps/aranet/build',
+    'apps/breadcrumbs/build',
     'apps/calendar/build',
     'apps/ci/build',
     'apps/creamery/build',
@@ -71,6 +73,7 @@
   dependencies = [
     'apps/air/generate',
     'apps/aranet/generate',
+    'apps/breadcrumbs/generate',
     'apps/calendar/generate',
     'apps/ci/build-js',
     'apps/ci/generate',
@@ -130,6 +133,7 @@
   dependencies = [
     'apps/air/generate',
     'apps/aranet/generate',
+    'apps/breadcrumbs/generate',
     'apps/calendar/generate',
     'apps/ci/build-js',
     'apps/ci/generate',

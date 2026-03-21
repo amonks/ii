@@ -15,6 +15,12 @@
     host = "brigid"
     access = "tag:service"
 
+[apps.breadcrumbs]
+  [[apps.breadcrumbs.routes]]
+    path = "breadcrumbs"
+    host = "brigid"
+    access = "ajm@passkey"
+
 [apps.calendar]
   [[apps.calendar.routes]]
     path = "calendar"

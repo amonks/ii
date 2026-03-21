@@ -6,6 +6,7 @@ use (
 	.
 	./apps/air
 	./apps/aranet
+	./apps/breadcrumbs
 	./apps/calendar
 	./apps/ci
 	./apps/creamery
