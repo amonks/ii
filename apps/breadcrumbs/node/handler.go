@@ -1,0 +1,262 @@
+package node
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	pb "monks.co/apps/breadcrumbs/proto"
+	"google.golang.org/protobuf/proto"
+)
+
+// handler wires together the store, simplifier, and hub to serve HTTP.
+type handler struct {
+	store      *Store
+	simplifier *Simplifier
+	hub        *Hub
+	config     *Config
+	forwarder  *Forwarder // nil if no upstream
+	mux        *http.ServeMux
+	httpClient *http.Client
+}
+
+func newHandler(store *Store, simplifier *Simplifier, hub *Hub, config *Config, forwarder *Forwarder) http.Handler {
+	h := &handler{
+		store:      store,
+		simplifier: simplifier,
+		hub:        hub,
+		config:     config,
+		forwarder:  forwarder,
+		mux:        http.NewServeMux(),
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+	}
+	h.mux.HandleFunc("POST /ingest", h.handleIngest)
+	h.mux.HandleFunc("GET /tiles/{z}/{x}/{y}", h.handleTile)
+	h.mux.HandleFunc("GET /events", h.handleEvents)
+	h.mux.HandleFunc("POST /flush", h.handleFlush)
+	return h
+}
+
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
+}
+
+func (h *handler) handleIngest(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "reading body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var track pb.Track
+	if err := proto.Unmarshal(body, &track); err != nil {
+		http.Error(w, "invalid protobuf: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var watermark int64
+	for _, p := range track.Points {
+		result := h.simplifier.Append(p)
+
+		// Check if point matches any subscription.
+		subscribed := matchesSubscription(p, result.NewPointSig, h.config.Subscriptions)
+
+		if err := h.store.InsertPoint(r.Context(), p, result.NewPointSig, subscribed); err != nil {
+			http.Error(w, "storing point: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if result.HasPrevUpdate {
+			if err := h.store.UpdateSignificance(r.Context(), result.PrevTailTimestamp, result.PrevTailSig); err != nil {
+				http.Error(w, "updating significance: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if p.Timestamp > watermark {
+			watermark = p.Timestamp
+		}
+	}
+
+	// Run eviction if capacity is configured.
+	if h.config.Capacity > 0 {
+		// For now (no upstream), all points are eligible for eviction.
+		h.store.Evict(r.Context(), h.config.Capacity, math.MaxInt64)
+	}
+
+	resp := &pb.IngestResponse{Watermark: watermark}
+	data, err := proto.Marshal(resp)
+	if err != nil {
+		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/protobuf")
+	w.Write(data)
+}
+
+func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
+	z, err := strconv.Atoi(r.PathValue("z"))
+	if err != nil {
+		http.Error(w, "invalid z", http.StatusBadRequest)
+		return
+	}
+	x, err := strconv.Atoi(r.PathValue("x"))
+	if err != nil {
+		http.Error(w, "invalid x", http.StatusBadRequest)
+		return
+	}
+	y, err := strconv.Atoi(r.PathValue("y"))
+	if err != nil {
+		http.Error(w, "invalid y", http.StatusBadRequest)
+		return
+	}
+
+	south, north, west, east, err := TileBBox(z, x, y)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	minSig := SignificanceThreshold(z)
+	points, err := h.store.QueryTile(r.Context(), south, north, west, east, minSig)
+	if err != nil {
+		http.Error(w, "querying tile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	accept := r.Header.Get("Accept")
+	if strings.Contains(accept, "application/vnd.mapbox-vector-tile") {
+		data, err := EncodeMVT(points, z, x, y)
+		if err != nil {
+			http.Error(w, "encoding MVT: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/vnd.mapbox-vector-tile")
+		w.Write(data)
+	} else {
+		track := &pb.Track{Points: points}
+		data, err := proto.Marshal(track)
+		if err != nil {
+			http.Error(w, "encoding protobuf: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/protobuf")
+		w.Write(data)
+	}
+
+	// Background read-through: fetch from upstream and notify client if data changed.
+	if h.config.Upstream != "" {
+		clientID := r.URL.Query().Get("client")
+		go h.readThrough(z, x, y, clientID)
+	}
+}
+
+func (h *handler) handleEvents(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	clientID := r.URL.Query().Get("client")
+	if clientID == "" {
+		http.Error(w, "missing client query parameter", http.StatusBadRequest)
+		return
+	}
+
+	ch, unsub := h.hub.Subscribe(clientID)
+	defer unsub()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	flusher.Flush()
+
+	keepalive := time.NewTicker(30 * time.Second)
+	defer keepalive.Stop()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case msg, ok := <-ch:
+			if !ok {
+				return
+			}
+			fmt.Fprintf(w, "event: tile-updated\ndata: %s\n\n", msg)
+			flusher.Flush()
+		case <-keepalive.C:
+			fmt.Fprintf(w, ":keepalive\n\n")
+			flusher.Flush()
+		}
+	}
+}
+
+func (h *handler) handleFlush(w http.ResponseWriter, r *http.Request) {
+	var forwarded int32
+	var watermark int64
+
+	if h.forwarder != nil {
+		var err error
+		forwarded, watermark, err = h.forwarder.Forward(r.Context())
+		if err != nil {
+			http.Error(w, "forwarding: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp := &pb.FlushResponse{Watermark: watermark, PointsForwarded: forwarded}
+	data, err := proto.Marshal(resp)
+	if err != nil {
+		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/protobuf")
+	w.Write(data)
+}
+
+func matchesSubscription(p *pb.Point, significance float64, subs []Subscription) bool {
+	for _, sub := range subs {
+		west, south, east, north := sub.BBox[0], sub.BBox[1], sub.BBox[2], sub.BBox[3]
+		if p.Latitude >= south && p.Latitude <= north &&
+			p.Longitude >= west && p.Longitude <= east &&
+			significance >= sub.MinSignificance {
+			return true
+		}
+	}
+	return false
+}
+
+// notifyTileUpdated sends a tile-updated SSE event to the specified client.
+func (h *handler) notifyTileUpdated(clientID string, z, x, y int) {
+	data, _ := json.Marshal(pb.TileUpdated{Z: int32(z), X: int32(x), Y: int32(y)})
+	h.hub.Publish(clientID, data)
+}
+
+// readThrough fetches a tile from upstream, writes new points, and notifies
+// the client if data changed. Runs in a background goroutine.
+func (h *handler) readThrough(z, x, y int, clientID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	points, err := FetchTileFromUpstream(ctx, h.httpClient, h.config.Upstream, z, x, y)
+	if err != nil {
+		// Upstream fetch failed silently — offline is fine.
+		return
+	}
+
+	changed, err := WriteUpstreamPoints(ctx, h.store, points, h.config.Subscriptions)
+	if err != nil {
+		return
+	}
+
+	if changed && clientID != "" {
+		h.notifyTileUpdated(clientID, z, x, y)
+	}
+}

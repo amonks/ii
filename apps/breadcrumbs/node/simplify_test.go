@@ -1,0 +1,98 @@
+package node
+
+import (
+	"math"
+	"testing"
+
+	pb "monks.co/apps/breadcrumbs/proto"
+)
+
+func TestSimplifyFirstPoint(t *testing.T) {
+	s := NewSimplifier()
+	r := s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	if r.NewPointSig != math.MaxFloat64 {
+		t.Errorf("first point sig = %v, want MaxFloat64", r.NewPointSig)
+	}
+	if r.HasPrevUpdate {
+		t.Error("first point should not have prev update")
+	}
+}
+
+func TestSimplifySecondPoint(t *testing.T) {
+	s := NewSimplifier()
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	r := s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
+	if r.NewPointSig != math.MaxFloat64 {
+		t.Errorf("second point sig = %v, want MaxFloat64", r.NewPointSig)
+	}
+	if r.HasPrevUpdate {
+		t.Error("second point should not have prev update")
+	}
+}
+
+func TestSimplifyThirdPoint(t *testing.T) {
+	s := NewSimplifier()
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 0})
+	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 0, Longitude: 1})
+
+	if r.NewPointSig != math.MaxFloat64 {
+		t.Errorf("new point sig = %v, want MaxFloat64", r.NewPointSig)
+	}
+	if !r.HasPrevUpdate {
+		t.Fatal("expected prev update")
+	}
+	if r.PrevTailTimestamp != 2 {
+		t.Errorf("PrevTailTimestamp = %d, want 2", r.PrevTailTimestamp)
+	}
+	// Triangle: (0,0), (1,0), (0,1) has area 0.5
+	if math.Abs(r.PrevTailSig-0.5) > 1e-10 {
+		t.Errorf("PrevTailSig = %v, want 0.5", r.PrevTailSig)
+	}
+}
+
+func TestSimplifyCollinear(t *testing.T) {
+	s := NewSimplifier()
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
+	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 2, Longitude: 2})
+
+	if !r.HasPrevUpdate {
+		t.Fatal("expected prev update")
+	}
+	if r.PrevTailSig != 0 {
+		t.Errorf("collinear PrevTailSig = %v, want 0", r.PrevTailSig)
+	}
+}
+
+func TestSimplifyRecovery(t *testing.T) {
+	// Continuous: append 5 points, record the 5th's significance update.
+	s1 := NewSimplifier()
+	pts := []*pb.Point{
+		{Timestamp: 1, Latitude: 0, Longitude: 0},
+		{Timestamp: 2, Latitude: 1, Longitude: 0},
+		{Timestamp: 3, Latitude: 1, Longitude: 1},
+		{Timestamp: 4, Latitude: 2, Longitude: 1},
+		{Timestamp: 5, Latitude: 2, Longitude: 2},
+	}
+	for _, p := range pts {
+		s1.Append(p)
+	}
+	// Now append a 6th point with the continuous simplifier.
+	r1 := s1.Append(&pb.Point{Timestamp: 6, Latitude: 3, Longitude: 2})
+
+	// Recovered: start from last two points (4th and 5th), append 6th.
+	s2 := NewSimplifier()
+	s2.Recover(pts[3], pts[4])
+	r2 := s2.Append(&pb.Point{Timestamp: 6, Latitude: 3, Longitude: 2})
+
+	if !r1.HasPrevUpdate || !r2.HasPrevUpdate {
+		t.Fatal("expected prev updates from both")
+	}
+	if r1.PrevTailSig != r2.PrevTailSig {
+		t.Errorf("continuous sig %v != recovered sig %v", r1.PrevTailSig, r2.PrevTailSig)
+	}
+	if r1.PrevTailTimestamp != r2.PrevTailTimestamp {
+		t.Errorf("continuous ts %d != recovered ts %d", r1.PrevTailTimestamp, r2.PrevTailTimestamp)
+	}
+}

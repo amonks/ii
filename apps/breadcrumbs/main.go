@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 
+	"monks.co/apps/breadcrumbs/node"
+	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/meta"
 	"monks.co/pkg/reqlog"
@@ -28,9 +30,33 @@ func main() {
 func run() error {
 	reqlog.SetupLogging()
 
-	mux := serve.NewMux()
-
 	ctx := sigctx.New()
+
+	configPath := os.Getenv("BREADCRUMBS_CONFIG")
+	if configPath == "" {
+		configPath = env.InMonksData("breadcrumbs.json")
+	}
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("reading config %s: %w", configPath, err)
+	}
+	config, err := node.ParseConfig(configData)
+	if err != nil {
+		return fmt.Errorf("parsing config: %w", err)
+	}
+	if config.DBPath == "" {
+		config.DBPath = env.InMonksData("breadcrumbs.db")
+	}
+
+	n, err := node.NewNode(ctx, config)
+	if err != nil {
+		return fmt.Errorf("creating node: %w", err)
+	}
+	defer n.Close()
+
+	mux := serve.NewMux()
+	mux.Handle("/", n.Handler())
+
 	if err := tailnet.WaitReady(ctx); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
 	}

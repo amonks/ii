@@ -16,7 +16,6 @@
   env = { SQLITE_ENABLE_LOCKING_STYLE = "1" }
   cmd = "go build -o ../../bin/ ."
 
-
 [[task]]
   id = "tidy"
   type = "short"
@@ -26,3 +25,4 @@
   id = "generate"
   type = "short"
   dependencies = ["tidy"]
+  cmd = "protoc --go_out=. --go_opt=module=monks.co/apps/breadcrumbs proto/breadcrumbs.proto proto/vector_tile.proto"
