@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Breadcrumbs
+//  maplog
 //
 //  Created by Andrew Monks on 3/19/26.
 //
@@ -52,7 +52,7 @@ struct ContentView: View {
                 }
             }
         }
-        .navigationTitle("Breadcrumbs")
+        .navigationTitle("maplog")
         .onChange(of: logger.storeCount) {
             refresh()
         }

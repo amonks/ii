@@ -1,13 +1,13 @@
 //
-//  BreadcrumbsUITestsLaunchTests.swift
-//  BreadcrumbsUITests
+//  maplogUITestsLaunchTests.swift
+//  maplogUITests
 //
 //  Created by Andrew Monks on 3/19/26.
 //
 
 import XCTest
 
-final class BreadcrumbsUITestsLaunchTests: XCTestCase {
+final class maplogUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

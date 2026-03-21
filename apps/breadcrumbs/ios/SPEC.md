@@ -1,4 +1,4 @@
-# Breadcrumbs spec
+# maplog spec
 
 ## User Stories
 
@@ -41,7 +41,7 @@
 
 ## Overview
 
-Breadcrumbs is a personal location-tracking system. An iOS app continuously
+maplog is a personal location-tracking system. An iOS app continuously
 records GPS fixes. A shared Go library handles storage, simplification,
 and tile serving. The same library runs on the phone (via gomobile bind)
 and on a remote server. Each instance is a "node."
@@ -75,7 +75,7 @@ A node is configured with:
 
 ```json
 {
-  "db_path": "/data/breadcrumbs.db",
+  "db_path": "/data/maplog.db",
   "listen": "127.0.0.1:8080",
   "upstream": "https://maps.example.com",
   "capacity": 100000,
@@ -171,7 +171,7 @@ between components.
 
 ```protobuf
 syntax = "proto3";
-package breadcrumbs;
+package maplog;
 
 message Point {
     int64  timestamp            = 1;  // nanoseconds since Unix epoch
@@ -489,7 +489,7 @@ significance assignments are globally optimal), and stores the points.
 
 ## Components
 
-### Go library (`breadcrumbs`)
+### Go library (`maplog`)
 
 The public API:
 

@@ -12,50 +12,50 @@
 			containerPortal = 116A716D2F6C624000A8258D /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 116A71742F6C624000A8258D;
-			remoteInfo = Breadcrumbs;
+			remoteInfo = maplog;
 		};
 		116A718D2F6C624100A8258D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 116A716D2F6C624000A8258D /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 116A71742F6C624000A8258D;
-			remoteInfo = Breadcrumbs;
+			remoteInfo = maplog;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		116A71752F6C624000A8258D /* Breadcrumbs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Breadcrumbs.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		116A71822F6C624100A8258D /* BreadcrumbsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BreadcrumbsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		116A718C2F6C624100A8258D /* BreadcrumbsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BreadcrumbsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		116A71752F6C624000A8258D /* maplog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = maplog.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		116A71822F6C624100A8258D /* maplogTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		116A718C2F6C624100A8258D /* maplogUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		116A71A02F6C6BF400A8258D /* Exceptions for "Breadcrumbs" folder in "Breadcrumbs" target */ = {
+		116A71A02F6C6BF400A8258D /* Exceptions for "maplog" folder in "maplog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 116A71742F6C624000A8258D /* Breadcrumbs */;
+			target = 116A71742F6C624000A8258D /* maplog */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		116A71772F6C624000A8258D /* Breadcrumbs */ = {
+		116A71772F6C624000A8258D /* maplog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				116A71A02F6C6BF400A8258D /* Exceptions for "Breadcrumbs" folder in "Breadcrumbs" target */,
+				116A71A02F6C6BF400A8258D /* Exceptions for "maplog" folder in "maplog" target */,
 			);
-			path = Breadcrumbs;
+			path = maplog;
 			sourceTree = "<group>";
 		};
-		116A71852F6C624100A8258D /* BreadcrumbsTests */ = {
+		116A71852F6C624100A8258D /* maplogTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BreadcrumbsTests;
+			path = maplogTests;
 			sourceTree = "<group>";
 		};
-		116A718F2F6C624100A8258D /* BreadcrumbsUITests */ = {
+		116A718F2F6C624100A8258D /* maplogUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BreadcrumbsUITests;
+			path = maplogUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,9 +88,9 @@
 		116A716C2F6C623F00A8258D = {
 			isa = PBXGroup;
 			children = (
-				116A71772F6C624000A8258D /* Breadcrumbs */,
-				116A71852F6C624100A8258D /* BreadcrumbsTests */,
-				116A718F2F6C624100A8258D /* BreadcrumbsUITests */,
+				116A71772F6C624000A8258D /* maplog */,
+				116A71852F6C624100A8258D /* maplogTests */,
+				116A718F2F6C624100A8258D /* maplogUITests */,
 				116A71762F6C624000A8258D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -98,9 +98,9 @@
 		116A71762F6C624000A8258D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				116A71752F6C624000A8258D /* Breadcrumbs.app */,
-				116A71822F6C624100A8258D /* BreadcrumbsTests.xctest */,
-				116A718C2F6C624100A8258D /* BreadcrumbsUITests.xctest */,
+				116A71752F6C624000A8258D /* maplog.app */,
+				116A71822F6C624100A8258D /* maplogTests.xctest */,
+				116A718C2F6C624100A8258D /* maplogUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,9 +108,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		116A71742F6C624000A8258D /* Breadcrumbs */ = {
+		116A71742F6C624000A8258D /* maplog */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 116A71962F6C624100A8258D /* Build configuration list for PBXNativeTarget "Breadcrumbs" */;
+			buildConfigurationList = 116A71962F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplog" */;
 			buildPhases = (
 				116A71712F6C624000A8258D /* Sources */,
 				116A71722F6C624000A8258D /* Frameworks */,
@@ -121,18 +121,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				116A71772F6C624000A8258D /* Breadcrumbs */,
+				116A71772F6C624000A8258D /* maplog */,
 			);
-			name = Breadcrumbs;
+			name = maplog;
 			packageProductDependencies = (
 			);
-			productName = Breadcrumbs;
-			productReference = 116A71752F6C624000A8258D /* Breadcrumbs.app */;
+			productName = maplog;
+			productReference = 116A71752F6C624000A8258D /* maplog.app */;
 			productType = "com.apple.product-type.application";
 		};
-		116A71812F6C624100A8258D /* BreadcrumbsTests */ = {
+		116A71812F6C624100A8258D /* maplogTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 116A71992F6C624100A8258D /* Build configuration list for PBXNativeTarget "BreadcrumbsTests" */;
+			buildConfigurationList = 116A71992F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplogTests" */;
 			buildPhases = (
 				116A717E2F6C624100A8258D /* Sources */,
 				116A717F2F6C624100A8258D /* Frameworks */,
@@ -144,18 +144,18 @@
 				116A71842F6C624100A8258D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				116A71852F6C624100A8258D /* BreadcrumbsTests */,
+				116A71852F6C624100A8258D /* maplogTests */,
 			);
-			name = BreadcrumbsTests;
+			name = maplogTests;
 			packageProductDependencies = (
 			);
-			productName = BreadcrumbsTests;
-			productReference = 116A71822F6C624100A8258D /* BreadcrumbsTests.xctest */;
+			productName = maplogTests;
+			productReference = 116A71822F6C624100A8258D /* maplogTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		116A718B2F6C624100A8258D /* BreadcrumbsUITests */ = {
+		116A718B2F6C624100A8258D /* maplogUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 116A719C2F6C624100A8258D /* Build configuration list for PBXNativeTarget "BreadcrumbsUITests" */;
+			buildConfigurationList = 116A719C2F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplogUITests" */;
 			buildPhases = (
 				116A71882F6C624100A8258D /* Sources */,
 				116A71892F6C624100A8258D /* Frameworks */,
@@ -167,13 +167,13 @@
 				116A718E2F6C624100A8258D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				116A718F2F6C624100A8258D /* BreadcrumbsUITests */,
+				116A718F2F6C624100A8258D /* maplogUITests */,
 			);
-			name = BreadcrumbsUITests;
+			name = maplogUITests;
 			packageProductDependencies = (
 			);
-			productName = BreadcrumbsUITests;
-			productReference = 116A718C2F6C624100A8258D /* BreadcrumbsUITests.xctest */;
+			productName = maplogUITests;
+			productReference = 116A718C2F6C624100A8258D /* maplogUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -199,7 +199,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 116A71702F6C624000A8258D /* Build configuration list for PBXProject "Breadcrumbs" */;
+			buildConfigurationList = 116A71702F6C624000A8258D /* Build configuration list for PBXProject "maplog" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -213,9 +213,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				116A71742F6C624000A8258D /* Breadcrumbs */,
-				116A71812F6C624100A8258D /* BreadcrumbsTests */,
-				116A718B2F6C624100A8258D /* BreadcrumbsUITests */,
+				116A71742F6C624000A8258D /* maplog */,
+				116A71812F6C624100A8258D /* maplogTests */,
+				116A718B2F6C624100A8258D /* maplogUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -271,12 +271,12 @@
 /* Begin PBXTargetDependency section */
 		116A71842F6C624100A8258D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 116A71742F6C624000A8258D /* Breadcrumbs */;
+			target = 116A71742F6C624000A8258D /* maplog */;
 			targetProxy = 116A71832F6C624100A8258D /* PBXContainerItemProxy */;
 		};
 		116A718E2F6C624100A8258D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 116A71742F6C624000A8258D /* Breadcrumbs */;
+			target = 116A71742F6C624000A8258D /* maplog */;
 			targetProxy = 116A718D2F6C624100A8258D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -413,9 +413,9 @@
 				DEVELOPMENT_TEAM = 89WR6ARSCL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Breadcrumbs/Info.plist;
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Breadcrumbs records your location";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Breadcrumbs records your location";
+				INFOPLIST_FILE = maplog/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Maplog records your location";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Maplog records your location";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -426,7 +426,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.breadcrumbs;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -448,9 +448,9 @@
 				DEVELOPMENT_TEAM = 89WR6ARSCL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Breadcrumbs/Info.plist;
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Breadcrumbs records your location";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Breadcrumbs records your location";
+				INFOPLIST_FILE = maplog/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Maplog records your location";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Maplog records your location";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -461,7 +461,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.breadcrumbs;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -483,7 +483,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.BreadcrumbsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplogTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -491,7 +491,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Breadcrumbs.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Breadcrumbs";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/maplog.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/maplog";
 			};
 			name = Debug;
 		};
@@ -505,7 +505,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.BreadcrumbsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplogTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -513,7 +513,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Breadcrumbs.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Breadcrumbs";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/maplog.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/maplog";
 			};
 			name = Release;
 		};
@@ -525,7 +525,7 @@
 				DEVELOPMENT_TEAM = 89WR6ARSCL;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.BreadcrumbsUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplogUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -533,7 +533,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Breadcrumbs;
+				TEST_TARGET_NAME = maplog;
 			};
 			name = Debug;
 		};
@@ -545,7 +545,7 @@
 				DEVELOPMENT_TEAM = 89WR6ARSCL;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = co.monks.BreadcrumbsUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = co.monks.maplogUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -553,14 +553,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Breadcrumbs;
+				TEST_TARGET_NAME = maplog;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		116A71702F6C624000A8258D /* Build configuration list for PBXProject "Breadcrumbs" */ = {
+		116A71702F6C624000A8258D /* Build configuration list for PBXProject "maplog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				116A71942F6C624100A8258D /* Debug */,
@@ -569,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		116A71962F6C624100A8258D /* Build configuration list for PBXNativeTarget "Breadcrumbs" */ = {
+		116A71962F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				116A71972F6C624100A8258D /* Debug */,
@@ -578,7 +578,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		116A71992F6C624100A8258D /* Build configuration list for PBXNativeTarget "BreadcrumbsTests" */ = {
+		116A71992F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplogTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				116A719A2F6C624100A8258D /* Debug */,
@@ -587,7 +587,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		116A719C2F6C624100A8258D /* Build configuration list for PBXNativeTarget "BreadcrumbsUITests" */ = {
+		116A719C2F6C624100A8258D /* Build configuration list for PBXNativeTarget "maplogUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				116A719D2F6C624100A8258D /* Debug */,
