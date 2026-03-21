@@ -2,7 +2,7 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:apps/breadcrumbs/ios/maplog.xcodeproj">
+      location = "group:apps/breadcrumbs/ios/Breadcrumbs.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:apps">

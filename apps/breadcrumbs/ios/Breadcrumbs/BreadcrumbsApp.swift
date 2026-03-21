@@ -1,6 +1,6 @@
 //
-//  maplogApp.swift
-//  maplog
+//  BreadcrumbsApp.swift
+//  Breadcrumbs
 //
 //  Created by Andrew Monks on 3/19/26.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct maplogApp: App {
+struct BreadcrumbsApp: App {
     let container: ModelContainer
     @State private var logger: LocationLogger
 

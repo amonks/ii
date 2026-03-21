@@ -59,6 +59,7 @@ Each area of the system should have a spec. Keep specs up to date while working 
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
 | [air](air.md)                     | [apps/air/](../apps/air/)               | Home environmental monitoring dashboard (CO2, temperature, humidity) |
 | [aranet](aranet.md)               | [apps/aranet/](../apps/aranet/)         | Bluetooth scanning service for Aranet4 sensors                       |
+| [breadcrumbs](../apps/breadcrumbs/ios/SPEC.md) | [apps/breadcrumbs/](../apps/breadcrumbs/) | Personal location-tracking with iOS app and Go server                |
 | [calendar](calendar.md)           | [apps/calendar/](../apps/calendar/)     | Personal TV show tracking calendar                                   |
 | [ci](ci.md)                       | [apps/ci/](../apps/ci/)                 | Self-hosted CI/CD: orchestrator + ephemeral builder, builder image config |
 | [creamery](creamery.md)           | [apps/creamery/](../apps/creamery/)     | Ice cream formulation and batch log analytics                        |

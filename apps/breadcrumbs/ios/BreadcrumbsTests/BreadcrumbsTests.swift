@@ -1,6 +1,6 @@
 //
-//  maplogTests.swift
-//  maplogTests
+//  BreadcrumbsTests.swift
+//  BreadcrumbsTests
 //
 //  Created by Andrew Monks on 3/19/26.
 //
@@ -8,7 +8,7 @@
 import Testing
 import SwiftData
 import CoreLocation
-@testable import maplog
+@testable import Breadcrumbs
 
 func makeContainer() throws -> ModelContainer {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
