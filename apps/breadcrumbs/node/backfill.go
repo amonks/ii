@@ -54,16 +54,16 @@ func backfillSubscriptions(ctx context.Context, store *Store, config Config) {
 }
 
 // zoomForSignificance returns the zoom level whose significance threshold
-// is closest to (but not greater than) the given min_significance.
+// (at detail=0) is closest to (but not greater than) the given min_significance.
 // If min_significance is 0, returns zoom 22 (maximum detail).
 func zoomForSignificance(minSig float64) int {
 	if minSig <= 0 {
 		return 22
 	}
-	// SignificanceThreshold(z) = (360 / 2^z)^2 / 256^2
-	// Solve for z: 2^z = 360 / (256 * sqrt(minSig))
-	// z = log2(360 / (256 * sqrt(minSig)))
-	z := math.Log2(360.0 / (256.0 * math.Sqrt(minSig)))
+	// SignificanceThreshold(z, 0) = (360 / 2^z) / 256
+	// Solve for z: 2^z = 360 / (256 * minSig)
+	// z = log2(360 / (256 * minSig))
+	z := math.Log2(360.0 / (256.0 * minSig))
 	zi := int(math.Ceil(z))
 	if zi < 0 {
 		return 0

@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		115153422F6F873F0072C4E5 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 115153412F6F873F0072C4E5 /* MapLibre */; };
+		11A58B122F6F6E7000B08893 /* Mobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11A58B112F6F6E7000B08893 /* Mobile.xcframework */; };
+		11A58B132F6F6E7000B08893 /* Mobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 11A58B112F6F6E7000B08893 /* Mobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		11A58B172F6F70D900B08893 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 11A58B162F6F70D900B08893 /* SwiftProtobuf */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		116A71832F6C624100A8258D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,10 +30,25 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		11A58B142F6F6E7000B08893 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				11A58B132F6F6E7000B08893 /* Mobile.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		116A71752F6C624000A8258D /* maplog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = maplog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		116A71822F6C624100A8258D /* maplogTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		116A718C2F6C624100A8258D /* maplogUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		11A58B112F6F6E7000B08893 /* Mobile.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Mobile.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +87,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11A58B122F6F6E7000B08893 /* Mobile.xcframework in Frameworks */,
+				115153422F6F873F0072C4E5 /* MapLibre in Frameworks */,
+				11A58B172F6F70D900B08893 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +116,7 @@
 				116A71772F6C624000A8258D /* maplog */,
 				116A71852F6C624100A8258D /* maplogTests */,
 				116A718F2F6C624100A8258D /* maplogUITests */,
+				11A58B102F6F6E7000B08893 /* Frameworks */,
 				116A71762F6C624000A8258D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -105,6 +131,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		11A58B102F6F6E7000B08893 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				11A58B112F6F6E7000B08893 /* Mobile.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -115,6 +149,7 @@
 				116A71712F6C624000A8258D /* Sources */,
 				116A71722F6C624000A8258D /* Frameworks */,
 				116A71732F6C624000A8258D /* Resources */,
+				11A58B142F6F6E7000B08893 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -125,6 +160,8 @@
 			);
 			name = maplog;
 			packageProductDependencies = (
+				11A58B162F6F70D900B08893 /* SwiftProtobuf */,
+				115153412F6F873F0072C4E5 /* MapLibre */,
 			);
 			productName = maplog;
 			productReference = 116A71752F6C624000A8258D /* maplog.app */;
@@ -208,6 +245,10 @@
 			);
 			mainGroup = 116A716C2F6C623F00A8258D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				11A58B152F6F70D900B08893 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
+				115153402F6F873F0072C4E5 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 116A71762F6C624000A8258D /* Products */;
 			projectDirPath = "";
@@ -597,6 +638,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		115153402F6F873F0072C4E5 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.24.0;
+			};
+		};
+		11A58B152F6F70D900B08893 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-protobuf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.36.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		115153412F6F873F0072C4E5 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 115153402F6F873F0072C4E5 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+		11A58B162F6F70D900B08893 /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11A58B152F6F70D900B08893 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
+			productName = SwiftProtobuf;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 116A716D2F6C624000A8258D /* Project object */;
 }

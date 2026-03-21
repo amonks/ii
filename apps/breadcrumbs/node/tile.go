@@ -22,11 +22,21 @@ func TileBBox(z, x, y int) (south, north, west, east float64, err error) {
 	return south, north, west, east, nil
 }
 
-// SignificanceThreshold returns the minimum significance for a tile at zoom z.
-// Points whose triangle area (in square degrees) is smaller than this are excluded.
-func SignificanceThreshold(z int) float64 {
+// SignificanceThreshold returns the minimum significance for a tile at zoom z,
+// scaled by a detail coefficient.
+//
+// The threshold drops by 2x per zoom level (linear in tile size), not 4x
+// (quadratic). This is correct because a GPS track is a 1D line: the number
+// of track points in a tile is proportional to tile width, not tile area.
+// With a 2x drop, the number of points surviving per tile stays roughly
+// constant across zoom levels, giving consistent visual smoothness.
+//
+// The detail parameter (0–10) scales the threshold logarithmically:
+// threshold = base * 10^(-detail), where base = tileWidth / 256.
+func SignificanceThreshold(z int, detail float64) float64 {
 	tileSize := 360.0 / math.Pow(2, float64(z))
-	return (tileSize * tileSize) / (256.0 * 256.0)
+	base := tileSize / 256.0
+	return base * math.Pow(10, -detail)
 }
 
 func tileLonDeg(x, n int) float64 {

@@ -143,6 +143,41 @@ func TestHandlerTileMVT(t *testing.T) {
 	}
 }
 
+func TestHandlerTileDefaultMVT(t *testing.T) {
+	h := testHandler(t)
+
+	// Ingest a point.
+	track := &pb.Track{
+		Points: []*pb.Point{
+			{Timestamp: 1000, Latitude: 0, Longitude: 0},
+		},
+	}
+	body, _ := proto.Marshal(track)
+	req := httptest.NewRequest("POST", "/ingest", strings.NewReader(string(body)))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	// Request tile without Accept header — should default to MVT.
+	req = httptest.NewRequest("GET", "/tiles/0/0/0", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Header().Get("Content-Type") != "application/vnd.mapbox-vector-tile" {
+		t.Errorf("content-type = %q, want application/vnd.mapbox-vector-tile", w.Header().Get("Content-Type"))
+	}
+
+	var tile pb.Tile
+	if err := proto.Unmarshal(w.Body.Bytes(), &tile); err != nil {
+		t.Fatal(err)
+	}
+	if len(tile.Layers) != 1 || tile.Layers[0].GetName() != "track" {
+		t.Error("invalid MVT layer")
+	}
+}
+
 func TestHandlerTileEmptyNoError(t *testing.T) {
 	h := testHandler(t)
 
@@ -182,7 +217,7 @@ func TestHandlerTileSignificanceFiltering(t *testing.T) {
 	config := &Config{Capacity: 10000}
 	h := newHandler(s, simp, hub, config, nil)
 
-	// Low zoom (high threshold) should filter out the low-sig point.
+	// Default (detail=5): threshold is low enough that both points survive.
 	req := httptest.NewRequest("GET", "/tiles/0/0/0", nil)
 	req.Header.Set("Accept", "application/protobuf")
 	w := httptest.NewRecorder()
@@ -190,8 +225,61 @@ func TestHandlerTileSignificanceFiltering(t *testing.T) {
 
 	var track pb.Track
 	proto.Unmarshal(w.Body.Bytes(), &track)
-	if len(track.Points) != 1 {
-		t.Errorf("low zoom: got %d points, want 1", len(track.Points))
+	if len(track.Points) != 2 {
+		t.Errorf("default detail: got %d points, want 2", len(track.Points))
+	}
+
+	// detail=0: aggressive threshold, only high-significance point survives.
+	req = httptest.NewRequest("GET", "/tiles/0/0/0?detail=0", nil)
+	req.Header.Set("Accept", "application/protobuf")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	var filtered pb.Track
+	proto.Unmarshal(w.Body.Bytes(), &filtered)
+	if len(filtered.Points) != 1 {
+		t.Errorf("detail=0: got %d points, want 1", len(filtered.Points))
+	}
+}
+
+func TestHandlerTileBoundaryBuffer(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Insert points that cross the boundary between tile (1,0,0) and (1,1,0).
+	// At z=1, tile (1,0,0) covers lon [-180, 0], tile (1,1,0) covers lon [0, 180].
+	// Place points on either side of lon=0.
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1, Latitude: 45, Longitude: -1}, math.MaxFloat64, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 2, Latitude: 45, Longitude: 1}, math.MaxFloat64, false)
+
+	simp := NewSimplifier()
+	hub := NewHub()
+	config := &Config{Capacity: 10000}
+	h := newHandler(s, simp, hub, config, nil)
+
+	// Tile (1,0,0) should include both points thanks to the buffer,
+	// even though lon=1 is outside its strict bbox.
+	req := httptest.NewRequest("GET", "/tiles/1/0/0", nil)
+	req.Header.Set("Accept", "application/protobuf")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	var track pb.Track
+	proto.Unmarshal(w.Body.Bytes(), &track)
+	if len(track.Points) != 2 {
+		t.Errorf("tile (1,0,0): got %d points, want 2 (buffer should include cross-boundary point)", len(track.Points))
+	}
+
+	// Tile (1,1,0) should also include both points.
+	req = httptest.NewRequest("GET", "/tiles/1/1/0", nil)
+	req.Header.Set("Accept", "application/protobuf")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	var track2 pb.Track
+	proto.Unmarshal(w.Body.Bytes(), &track2)
+	if len(track2.Points) != 2 {
+		t.Errorf("tile (1,1,0): got %d points, want 2 (buffer should include cross-boundary point)", len(track2.Points))
 	}
 }
 
@@ -254,6 +342,75 @@ func TestHandlerEvents(t *testing.T) {
 	}
 	if !strings.Contains(got, `"z":3`) {
 		t.Errorf("expected z:3 in event data, got: %q", got)
+	}
+}
+
+func TestHandlerStatsEmpty(t *testing.T) {
+	h := testHandler(t)
+
+	req := httptest.NewRequest("GET", "/stats", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	var resp pb.StatsResponse
+	if err := proto.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Count != 0 {
+		t.Errorf("count = %d, want 0", resp.Count)
+	}
+	if resp.LatestPoint != nil {
+		t.Errorf("latest_point should be nil, got %v", resp.LatestPoint)
+	}
+}
+
+func TestHandlerStatsAfterIngest(t *testing.T) {
+	h := testHandler(t)
+
+	// Ingest some points.
+	track := &pb.Track{
+		Points: []*pb.Point{
+			{Timestamp: 1000, Latitude: 41.88, Longitude: -87.63},
+			{Timestamp: 3000, Latitude: 41.90, Longitude: -87.61},
+			{Timestamp: 2000, Latitude: 41.89, Longitude: -87.62},
+		},
+	}
+	body, _ := proto.Marshal(track)
+	req := httptest.NewRequest("POST", "/ingest", strings.NewReader(string(body)))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("ingest status = %d", w.Code)
+	}
+
+	// Now check stats.
+	req = httptest.NewRequest("GET", "/stats", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	var resp pb.StatsResponse
+	if err := proto.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Count != 3 {
+		t.Errorf("count = %d, want 3", resp.Count)
+	}
+	if resp.LatestPoint == nil {
+		t.Fatal("latest_point is nil")
+	}
+	if resp.LatestPoint.Timestamp != 3000 {
+		t.Errorf("latest timestamp = %d, want 3000", resp.LatestPoint.Timestamp)
+	}
+	if resp.LatestPoint.Latitude != 41.90 {
+		t.Errorf("latest lat = %f, want 41.90", resp.LatestPoint.Latitude)
 	}
 }
 

@@ -1,5 +1,5 @@
 import CoreLocation
-import SwiftData
+import SwiftProtobuf
 import Observation
 
 @Observable
@@ -9,13 +9,15 @@ final class LocationLogger {
     private var serviceSession: CLServiceSession?
     private var updatesTask: Task<Void, Never>?
 
-    private let container: ModelContainer
+    private let port: Int
+    private let session = URLSession.shared
     private var lastStoredDate: Date?
     private var lastStoredLatitude: Double?
     private var lastStoredLongitude: Double?
     private let heartbeatInterval: TimeInterval = 60
 
     var storeCount: Int = 0
+    var lastWatermark: Int64 = 0
 
     private static let isEnabledKey = "loggingEnabled"
 
@@ -30,8 +32,8 @@ final class LocationLogger {
         }
     }
 
-    init(container: ModelContainer) {
-        self.container = container
+    init(port: Int) {
+        self.port = port
         if UserDefaults.standard.object(forKey: Self.isEnabledKey) == nil {
             self.isEnabled = true
         } else {
@@ -80,30 +82,44 @@ final class LocationLogger {
     }
 
     func store(_ location: CLLocation) async {
-        let record = LocationRecord(
-            timestamp: location.timestamp,
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            altitude: location.altitude,
-            ellipsoidalAltitude: location.ellipsoidalAltitude,
-            horizontalAccuracy: location.horizontalAccuracy,
-            verticalAccuracy: location.verticalAccuracy,
-            speed: location.speed,
-            speedAccuracy: location.speedAccuracy,
-            course: location.course,
-            courseAccuracy: location.courseAccuracy,
-            floor: location.floor?.level,
-            isSimulatedBySoftware: location.sourceInformation?.isSimulatedBySoftware ?? false,
-            isProducedByAccessory: location.sourceInformation?.isProducedByAccessory ?? false
-        )
+        var point = Breadcrumbs_Point()
+        point.timestamp = Int64(location.timestamp.timeIntervalSince1970 * 1_000_000_000)
+        point.latitude = location.coordinate.latitude
+        point.longitude = location.coordinate.longitude
+        point.altitude = location.altitude
+        point.ellipsoidalAltitude = location.ellipsoidalAltitude
+        point.horizontalAccuracy = location.horizontalAccuracy
+        point.verticalAccuracy = location.verticalAccuracy
+        point.speed = location.speed
+        point.speedAccuracy = location.speedAccuracy
+        point.course = location.course
+        point.courseAccuracy = location.courseAccuracy
+        point.floor = Int32(location.floor?.level ?? 0)
+        point.isSimulated = location.sourceInformation?.isSimulatedBySoftware ?? false
+        point.isFromAccessory = location.sourceInformation?.isProducedByAccessory ?? false
 
-        let context = container.mainContext
-        context.insert(record)
-        try? context.save()
+        var track = Breadcrumbs_Track()
+        track.points = [point]
 
-        lastStoredDate = record.timestamp
-        lastStoredLatitude = (record.latitude * 1e5).rounded() / 1e5
-        lastStoredLongitude = (record.longitude * 1e5).rounded() / 1e5
+        guard let body = try? track.serializedData() else { return }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/ingest")!)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.setValue("application/protobuf", forHTTPHeaderField: "Content-Type")
+
+        do {
+            let (data, _) = try await session.data(for: request)
+            let resp = try Breadcrumbs_IngestResponse(serializedBytes: data)
+            lastWatermark = resp.watermark
+        } catch {
+            // Ingest failed — node may be down. Point is lost.
+            // TODO: buffer for retry
+        }
+
+        lastStoredDate = location.timestamp
+        lastStoredLatitude = (location.coordinate.latitude * 1e5).rounded() / 1e5
+        lastStoredLongitude = (location.coordinate.longitude * 1e5).rounded() / 1e5
         storeCount += 1
     }
 }

@@ -220,6 +220,36 @@ func (s *Store) LastTwoPoints(ctx context.Context) (prev, tail *pb.Point, err er
 	}
 }
 
+// Stats returns the total point count and the most recent point (by timestamp).
+// If the store is empty, latest is nil.
+func (s *Store) Stats(ctx context.Context) (count int64, latest *pb.Point, err error) {
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM points`).Scan(&count); err != nil {
+		return 0, nil, err
+	}
+	if count == 0 {
+		return 0, nil, nil
+	}
+
+	row := s.db.QueryRowContext(ctx,
+		`SELECT timestamp, lat, lon, alt, ellipsoidal_alt,
+			h_accuracy, v_accuracy, speed, speed_accuracy,
+			course, course_accuracy, floor, is_simulated, is_from_accessory
+		FROM points ORDER BY timestamp DESC LIMIT 1`,
+	)
+	p := &pb.Point{}
+	var isSim, isAcc sql.NullInt64
+	if err := row.Scan(
+		&p.Timestamp, &p.Latitude, &p.Longitude, &p.Altitude, &p.EllipsoidalAltitude,
+		&p.HorizontalAccuracy, &p.VerticalAccuracy, &p.Speed, &p.SpeedAccuracy,
+		&p.Course, &p.CourseAccuracy, &p.Floor, &isSim, &isAcc,
+	); err != nil {
+		return 0, nil, err
+	}
+	p.IsSimulated = isSim.Valid && isSim.Int64 != 0
+	p.IsFromAccessory = isAcc.Valid && isAcc.Int64 != 0
+	return count, p, nil
+}
+
 // Close closes the database connection.
 func (s *Store) Close() error {
 	if _, err := s.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {

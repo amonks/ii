@@ -38,3 +38,8 @@ message TileUpdated {
     int32 x = 2;
     int32 y = 3;
 }
+
+message StatsResponse {
+    int64 count = 1;
+    Point latest_point = 2;  // most recent point, or absent if empty
+}

@@ -1,6 +1,8 @@
 package node
 
 import (
+	"math"
+
 	pb "monks.co/apps/breadcrumbs/proto"
 	"google.golang.org/protobuf/proto"
 )
@@ -43,7 +45,10 @@ func encodeLineString(points []*pb.Point, south, north, west, east float64) []ui
 	}
 
 	width := east - west
-	height := north - south
+	// Convert tile lat bounds to Mercator Y for correct projection.
+	mercNorth := latToMercatorY(north)
+	mercSouth := latToMercatorY(south)
+	mercHeight := mercNorth - mercSouth
 
 	// MoveTo(1) + first point
 	cmds := make([]uint32, 0, 3+2*(len(points)-1))
@@ -51,7 +56,8 @@ func encodeLineString(points []*pb.Point, south, north, west, east float64) []ui
 	prevX, prevY := 0, 0
 	for i, p := range points {
 		tileX := int(((p.Longitude - west) / width) * mvtExtent)
-		tileY := int(((north - p.Latitude) / height) * mvtExtent)
+		mercY := latToMercatorY(p.Latitude)
+		tileY := int(((mercNorth - mercY) / mercHeight) * mvtExtent)
 
 		dx := tileX - prevX
 		dy := tileY - prevY
@@ -68,6 +74,13 @@ func encodeLineString(points []*pb.Point, south, north, west, east float64) []ui
 	}
 
 	return cmds
+}
+
+// latToMercatorY converts a latitude in degrees to Web Mercator Y
+// (projected coordinate in the range used by slippy map tiles).
+func latToMercatorY(lat float64) float64 {
+	latRad := lat * math.Pi / 180.0
+	return math.Log(math.Tan(latRad/2 + math.Pi/4))
 }
 
 // commandInt encodes an MVT command integer: (id & 0x7) | (count << 3)

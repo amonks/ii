@@ -40,6 +40,7 @@ func newHandler(store *Store, simplifier *Simplifier, hub *Hub, config *Config, 
 	h.mux.HandleFunc("GET /tiles/{z}/{x}/{y}", h.handleTile)
 	h.mux.HandleFunc("GET /events", h.handleEvents)
 	h.mux.HandleFunc("POST /flush", h.handleFlush)
+	h.mux.HandleFunc("GET /stats", h.handleStats)
 	return h
 }
 
@@ -123,23 +124,30 @@ func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	minSig := SignificanceThreshold(z)
-	points, err := h.store.QueryTile(r.Context(), south, north, west, east, minSig)
+	detail := 5.0 // default: balanced detail
+	if d := r.URL.Query().Get("detail"); d != "" {
+		if parsed, err := strconv.ParseFloat(d, 64); err == nil {
+			detail = parsed
+		}
+	}
+	minSig := SignificanceThreshold(z, detail)
+
+	// Expand the query bbox by a buffer so the line extends past tile edges.
+	// This eliminates gaps at tile boundaries. The MVT encoder will produce
+	// coordinates outside [0, extent] for buffered points, which is valid —
+	// MapLibre clips them to the tile.
+	latBuf := (north - south) * 0.1
+	lonBuf := (east - west) * 0.1
+	points, err := h.store.QueryTile(r.Context(),
+		south-latBuf, north+latBuf, west-lonBuf, east+lonBuf, minSig)
 	if err != nil {
 		http.Error(w, "querying tile: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	accept := r.Header.Get("Accept")
-	if strings.Contains(accept, "application/vnd.mapbox-vector-tile") {
-		data, err := EncodeMVT(points, z, x, y)
-		if err != nil {
-			http.Error(w, "encoding MVT: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/vnd.mapbox-vector-tile")
-		w.Write(data)
-	} else {
+	if strings.Contains(accept, "application/protobuf") {
+		// Node-to-node requests explicitly ask for protobuf.
 		track := &pb.Track{Points: points}
 		data, err := proto.Marshal(track)
 		if err != nil {
@@ -147,6 +155,15 @@ func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/protobuf")
+		w.Write(data)
+	} else {
+		// Default to MVT for map clients (MapLibre, browsers, etc.).
+		data, err := EncodeMVT(points, z, x, y)
+		if err != nil {
+			http.Error(w, "encoding MVT: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/vnd.mapbox-vector-tile")
 		w.Write(data)
 	}
 
@@ -212,6 +229,23 @@ func (h *handler) handleFlush(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := &pb.FlushResponse{Watermark: watermark, PointsForwarded: forwarded}
+	data, err := proto.Marshal(resp)
+	if err != nil {
+		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/protobuf")
+	w.Write(data)
+}
+
+func (h *handler) handleStats(w http.ResponseWriter, r *http.Request) {
+	count, latest, err := h.store.Stats(r.Context())
+	if err != nil {
+		http.Error(w, "querying stats: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &pb.StatsResponse{Count: count, LatestPoint: latest}
 	data, err := proto.Marshal(resp)
 	if err != nil {
 		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)

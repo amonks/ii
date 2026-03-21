@@ -208,6 +208,11 @@ message TileUpdated {
     int32 x = 2;
     int32 y = 3;
 }
+
+message StatsResponse {
+    int64 count = 1;
+    Point latest_point = 2;
+}
 ```
 
 ## Track
@@ -451,6 +456,14 @@ reconnects, any tile-updated events generated between disconnect and
 reconnect are lost — the client can do a full MapLibre source reload
 on reconnect to compensate.
 
+### `GET /stats`
+
+Response body: protobuf-encoded `StatsResponse`.
+
+Returns the total point count and the most recent point (by timestamp).
+Used by the iOS app's status UI to confirm the node is running and
+receiving data.
+
 ### `POST /flush`
 
 Request body: empty.
@@ -533,3 +546,67 @@ Static HTML/JS. Generates a random client ID on page load. A MapLibre
 GL JS map with a tile source pointed at the server's
 `/tiles/{z}/{x}/{y}?client={id}` endpoint. Connects to
 `/events?client={id}` for live tile updates.
+
+## Development
+
+All commands are run from `apps/breadcrumbs/`.
+
+### Go tests
+
+```sh
+go test ./... -count=1
+```
+
+### Regenerate Go protobuf
+
+```sh
+go tool run generate
+```
+
+This runs `protoc --go_out` via the task defined in `tasks.toml`. Requires
+`protoc` (macports: `/opt/local/bin/protoc`) and `protoc-gen-go`
+(`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`).
+
+### Regenerate Swift protobuf
+
+```sh
+protoc \
+  --plugin=protoc-gen-swift=$HOME/git/apple/swift-protobuf/.build/release/protoc-gen-swift \
+  --swift_out=ios/maplog \
+  --swift_opt=Visibility=Internal \
+  --proto_path=proto \
+  breadcrumbs.proto
+```
+
+The generated file requires post-processing for the project's
+`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` setting. Apply these
+replacements to `ios/maplog/breadcrumbs.pb.swift`:
+
+- `import SwiftProtobuf` → `@preconcurrency import SwiftProtobuf`
+- `fileprivate struct _Generated` → `nonisolated fileprivate struct _Generated`
+- `struct Breadcrumbs_` → `nonisolated struct Breadcrumbs_` (all occurrences)
+- `fileprivate let _protobuf_package` → `nonisolated fileprivate let _protobuf_package`
+- `extension Breadcrumbs_` → `nonisolated extension Breadcrumbs_` (all occurrences)
+
+### Rebuild XCFramework
+
+```sh
+rm -rf ios/Mobile.xcframework
+go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile
+```
+
+### Xcode build
+
+The Xcode project is at `ios/maplog.xcodeproj`. Build with:
+
+```sh
+LIBRARY_PATH= xcodebuild build \
+  -project ios/maplog.xcodeproj \
+  -scheme maplog \
+  -destination 'generic/platform=iOS Simulator'
+```
+
+Note: `LIBRARY_PATH=` is required to clear the macOS SDK library path
+that otherwise causes the linker to find macOS `libobjc.A.tbd` instead
+of the iOS SDK's copy. The Xcode IDE may need the same fix if it
+inherits a `LIBRARY_PATH` from the launching shell.

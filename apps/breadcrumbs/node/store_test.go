@@ -180,6 +180,45 @@ func TestStoreUpdateSignificance(t *testing.T) {
 	}
 }
 
+func TestStoreStatsEmpty(t *testing.T) {
+	s := testStore(t)
+	count, latest, err := s.Stats(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Errorf("count = %d, want 0", count)
+	}
+	if latest != nil {
+		t.Errorf("latest = %v, want nil", latest)
+	}
+}
+
+func TestStoreStats(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 10, Longitude: 20}, math.MaxFloat64, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 3000, Latitude: 30, Longitude: 40}, math.MaxFloat64, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 2000, Latitude: 50, Longitude: 60}, math.MaxFloat64, false)
+
+	count, latest, err := s.Stats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 3 {
+		t.Errorf("count = %d, want 3", count)
+	}
+	if latest == nil {
+		t.Fatal("latest is nil")
+	}
+	if latest.Timestamp != 3000 {
+		t.Errorf("latest.Timestamp = %d, want 3000", latest.Timestamp)
+	}
+	if latest.Latitude != 30 {
+		t.Errorf("latest.Latitude = %f, want 30", latest.Latitude)
+	}
+}
+
 func TestStoreLastTwoPointsEmpty(t *testing.T) {
 	s := testStore(t)
 	prev, tail, err := s.LastTwoPoints(context.Background())

@@ -18,8 +18,8 @@ func TestZoomForSignificance(t *testing.T) {
 		t.Errorf("sig=0: z=%d, want 22", z)
 	}
 
-	// The threshold at zoom 0 is (360)^2/(256)^2 ≈ 1.978
-	// So significance >= 1.978 should yield zoom 0.
+	// The threshold at zoom 0 (detail=0) is 360/256 ≈ 1.406.
+	// So significance >= 1.406 should yield zoom 0.
 	if z := zoomForSignificance(2.0); z != 0 {
 		t.Errorf("sig=2.0: z=%d, want 0", z)
 	}
@@ -27,7 +27,7 @@ func TestZoomForSignificance(t *testing.T) {
 	// Check round-trip: the threshold at the returned zoom should be <= minSig.
 	for _, minSig := range []float64{1e-4, 0.001, 0.01, 0.1, 1.0} {
 		z := zoomForSignificance(minSig)
-		threshold := SignificanceThreshold(z)
+		threshold := SignificanceThreshold(z, 0)
 		if threshold > minSig*1.01 { // small tolerance
 			t.Errorf("sig=%g: z=%d, threshold=%g > minSig", minSig, z, threshold)
 		}
