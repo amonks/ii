@@ -7,3 +7,4 @@ data
 **/.terraform/*
 *.tfvars
 compare-agents-output
+xcuserdata/
