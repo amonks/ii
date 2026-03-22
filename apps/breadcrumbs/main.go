@@ -32,17 +32,9 @@ func run() error {
 
 	ctx := sigctx.New()
 
-	configPath := os.Getenv("BREADCRUMBS_CONFIG")
-	if configPath == "" {
-		configPath = env.InMonksData("breadcrumbs.json")
-	}
-	configData, err := os.ReadFile(configPath)
+	config, err := loadConfig()
 	if err != nil {
-		return fmt.Errorf("reading config %s: %w", configPath, err)
-	}
-	config, err := node.ParseConfig(configData)
-	if err != nil {
-		return fmt.Errorf("parsing config: %w", err)
+		return fmt.Errorf("loading config: %w", err)
 	}
 	if config.DBPath == "" {
 		config.DBPath = env.InMonksData("breadcrumbs.db")
@@ -65,4 +57,24 @@ func run() error {
 	}
 
 	return nil
+}
+
+func loadConfig() (node.Config, error) {
+	configPath := os.Getenv("BREADCRUMBS_CONFIG")
+	if configPath == "" {
+		configPath = env.InMonksData("breadcrumbs.json")
+	}
+	configData, err := os.ReadFile(configPath)
+	if os.IsNotExist(err) {
+		slog.Info("no config file found, using root-node defaults", "path", configPath)
+		return node.DefaultConfig(), nil
+	}
+	if err != nil {
+		return node.Config{}, fmt.Errorf("reading config %s: %w", configPath, err)
+	}
+	config, err := node.ParseConfig(configData)
+	if err != nil {
+		return node.Config{}, fmt.Errorf("parsing config: %w", err)
+	}
+	return config, nil
 }

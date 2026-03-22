@@ -63,6 +63,25 @@ func TestParseConfigNoUpstream(t *testing.T) {
 	}
 }
 
+func TestDefaultConfig(t *testing.T) {
+	c := DefaultConfig()
+	if c.Upstream != "" {
+		t.Errorf("Upstream = %q, want empty (root node)", c.Upstream)
+	}
+	if c.Capacity != 0 {
+		t.Errorf("Capacity = %d, want 0 (no eviction)", c.Capacity)
+	}
+	if len(c.Subscriptions) != 1 {
+		t.Fatalf("len(Subscriptions) = %d, want 1", len(c.Subscriptions))
+	}
+	if c.Subscriptions[0].BBox != [4]float64{-180, -90, 180, 90} {
+		t.Errorf("BBox = %v, want global", c.Subscriptions[0].BBox)
+	}
+	if c.Subscriptions[0].MinSignificance != 0 {
+		t.Errorf("MinSignificance = %v, want 0 (retain all)", c.Subscriptions[0].MinSignificance)
+	}
+}
+
 func TestParseConfigInvalid(t *testing.T) {
 	_, err := ParseConfig([]byte(`not json`))
 	if err == nil {

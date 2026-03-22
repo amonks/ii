@@ -18,6 +18,17 @@ type Subscription struct {
 	MinSignificance float64    `json:"min_significance"`
 }
 
+// DefaultConfig returns a root-node configuration that retains all data
+// worldwide with no upstream and no eviction.
+func DefaultConfig() Config {
+	return Config{
+		Capacity: 0,
+		Subscriptions: []Subscription{
+			{BBox: [4]float64{-180, -90, 180, 90}, MinSignificance: 0},
+		},
+	}
+}
+
 func ParseConfig(data []byte) (Config, error) {
 	var c Config
 	if err := json.Unmarshal(data, &c); err != nil {
