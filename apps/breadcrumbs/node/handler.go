@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,9 @@ import (
 	pb "monks.co/apps/breadcrumbs/proto"
 	"google.golang.org/protobuf/proto"
 )
+
+//go:embed web
+var webContent embed.FS
 
 // handler wires together the store, simplifier, and hub to serve HTTP.
 type handler struct {
@@ -37,6 +41,7 @@ func newHandler(store *Store, simplifier *Simplifier, hub *Hub, config *Config, 
 		mux:        http.NewServeMux(),
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
+	h.mux.HandleFunc("GET /{$}", h.handleIndex)
 	h.mux.HandleFunc("POST /ingest", h.handleIngest)
 	h.mux.HandleFunc("GET /tiles/{z}/{x}/{y}", h.handleTile)
 	h.mux.HandleFunc("GET /events", h.handleEvents)
@@ -370,6 +375,16 @@ func (h *handler) handleDebugSignificance(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
+	data, err := webContent.ReadFile("web/index.html")
+	if err != nil {
+		http.Error(w, "reading index: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write(data)
 }
 
 // readThrough fetches a tile from upstream, writes new points, and notifies

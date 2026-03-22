@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>breadcrumbs</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  body { margin: 0; }
+  #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+const clientID = crypto.randomUUID().replace(/-/g, '');
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      'osm': {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors',
+      },
+      'track': {
+        type: 'vector',
+        tiles: [location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID],
+        minzoom: 0,
+        maxzoom: 22,
+      },
+    },
+    layers: [
+      {
+        id: 'osm',
+        type: 'raster',
+        source: 'osm',
+      },
+      {
+        id: 'track-line',
+        type: 'line',
+        source: 'track',
+        'source-layer': 'track',
+        paint: {
+          'line-color': '#e03030',
+          'line-width': 2.5,
+          'line-opacity': 0.85,
+        },
+      },
+    ],
+  },
+  center: [-87.65, 41.88],
+  zoom: 10,
+});
+
+// SSE: listen for tile-updated events and reload affected tiles.
+const events = new EventSource('/events?client=' + clientID);
+events.addEventListener('tile-updated', function(e) {
+  const src = map.getSource('track');
+  if (src) {
+    // setTiles forces a reload of all tiles from the source.
+    src.setTiles([location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID]);
+  }
+});
+events.onerror = function() {
+  // On disconnect, do a full source reload when reconnected.
+  setTimeout(function() {
+    const src = map.getSource('track');
+    if (src) {
+      src.setTiles([location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID]);
+    }
+  }, 2000);
+};
+</script>
+</body>
+</html>

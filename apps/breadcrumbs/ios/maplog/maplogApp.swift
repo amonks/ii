@@ -31,7 +31,7 @@ struct maplogApp: App {
         let dbPath = docsDir.appendingPathComponent("breadcrumbs.db").path
 
         let config = """
-        {"db_path": "\(dbPath)", "capacity": 100000}
+        {"db_path": "\(dbPath)", "capacity": 100000, "upstream": "https://monks.co/breadcrumbs"}
         """
 
         var port: Int = 0
