@@ -1,7 +1,7 @@
 FROM golang:1.26.1-alpine
 
 RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
-    python3 py3-pip sqlite ca-certificates curl pkgconf tailscale protobuf
+    python3 py3-pip sqlite ca-certificates curl pkgconf tailscale protoc
 
 # protoc-gen-go (for breadcrumbs protobuf codegen)
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
