@@ -63,9 +63,9 @@ func TestTileBBoxInvalid(t *testing.T) {
 }
 
 func TestSignificanceThreshold(t *testing.T) {
-	// At detail=0, threshold equals tileWidth / 256.
+	// At detail=0, threshold = (360/256)^2 = one pixel's area.
 	z0 := SignificanceThreshold(0, 0)
-	expected := 360.0 / 256.0
+	expected := (360.0 / 256.0) * (360.0 / 256.0)
 	if math.Abs(z0-expected) > 1e-10 {
 		t.Errorf("z=0 detail=0: got %f, want %f", z0, expected)
 	}
@@ -76,11 +76,11 @@ func TestSignificanceThreshold(t *testing.T) {
 		t.Errorf("z=10 threshold %f should be less than z=0 threshold %f", z10, z0)
 	}
 
-	// Threshold decreases by factor of 2 per zoom level (linear in tile width).
+	// Threshold decreases by factor of 4 per zoom level (area-based).
 	z1 := SignificanceThreshold(1, 0)
 	ratio := z0 / z1
-	if math.Abs(ratio-2) > 0.001 {
-		t.Errorf("ratio z0/z1 = %f, want 2", ratio)
+	if math.Abs(ratio-4) > 0.001 {
+		t.Errorf("ratio z0/z1 = %f, want 4", ratio)
 	}
 
 	// Higher detail = lower threshold (more points shown).
@@ -90,7 +90,7 @@ func TestSignificanceThreshold(t *testing.T) {
 		t.Errorf("detail=5 threshold %e should be less than detail=0 threshold %e", d5, d0)
 	}
 
-	// detail=10 should make threshold effectively 0 for practical purposes.
+	// detail=10 should make threshold very small.
 	d10 := SignificanceThreshold(0, 10)
 	if d10 > 1e-8 {
 		t.Errorf("detail=10 threshold = %e, expected < 1e-8", d10)

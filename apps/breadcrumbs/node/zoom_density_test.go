@@ -68,8 +68,9 @@ func tileContaining(z int, lat, lon float64) (x, y int) {
 }
 
 // TestSignificanceThresholdDropsPerZoom verifies that the threshold drops by
-// 2x per zoom level (linear in tile width), which is the correct rate for
-// maintaining constant visual density along a 1D line track.
+// 4x per zoom level (quadratic in tile size), matching the area-based
+// significance metric from Visvalingam-Whyatt. This holds for any fixed
+// detail value.
 func TestSignificanceThresholdDropsPerZoom(t *testing.T) {
 	detail := 5.0
 
@@ -82,9 +83,9 @@ func TestSignificanceThresholdDropsPerZoom(t *testing.T) {
 		ratio := prev / threshold
 		t.Logf("%-5d %-20e %-10.2f", z, threshold, ratio)
 
-		// Each zoom level should reduce threshold by 2x (linear in tile width).
-		if math.Abs(ratio-2.0) > 0.01 {
-			t.Errorf("z=%d: ratio = %.2f, want 2.0", z, ratio)
+		// Each zoom level should reduce threshold by 4x (area-based).
+		if math.Abs(ratio-4.0) > 0.01 {
+			t.Errorf("z=%d: ratio = %.2f, want 4.0", z, ratio)
 		}
 		prev = threshold
 	}
@@ -108,8 +109,7 @@ func TestPointDensityPerTileAtFixedDetail(t *testing.T) {
 
 	t.Logf("%-5s %-8s %-20s %-20s", "Zoom", "Points", "Threshold", "Tile Area (sq°)")
 
-	var pointsPerZoom []int
-	for z := 10; z <= 18; z++ {
+	for z := 10; z <= 20; z++ {
 		x, y := tileContaining(z, centerLat, centerLon)
 		south, north, west, east, err := TileBBox(z, x, y)
 		if err != nil {
@@ -128,7 +128,6 @@ func TestPointDensityPerTileAtFixedDetail(t *testing.T) {
 
 		area := (north - south) * (east - west)
 		t.Logf("%-5d %-8d %-20e %-20e", z, len(pts), minSig, area)
-		pointsPerZoom = append(pointsPerZoom, len(pts))
 	}
 }
 
@@ -164,11 +163,11 @@ func TestVWSignificanceDistribution(t *testing.T) {
 	t.Logf("  p75:  %e", sigs[len(sigs)*3/4])
 	t.Logf("  max:  %e", sigs[len(sigs)-1])
 
-	// Compare with thresholds at various zoom levels.
-	t.Logf("\nThresholds vs significance percentiles (detail=5):")
+	// Compare with thresholds at various zoom levels (detail=0, the base case).
+	t.Logf("\nThresholds vs significance percentiles (detail=0):")
 	t.Logf("%-5s %-20s %-20s", "Zoom", "Threshold", "% points surviving")
-	for z := 0; z <= 18; z++ {
-		threshold := SignificanceThreshold(z, 5.0)
+	for z := 0; z <= 22; z++ {
+		threshold := SignificanceThreshold(z, 0)
 		surviving := 0
 		for _, sig := range sigs {
 			if sig >= threshold {
@@ -176,14 +175,14 @@ func TestVWSignificanceDistribution(t *testing.T) {
 			}
 		}
 		total := len(sigs) + 2
-		surviving += 2 // first and last always survive
+		surviving += 2 // first and last always survive (MaxFloat64)
 		pct := float64(surviving) / float64(total) * 100
 		t.Logf("%-5d %-20e %-10.1f%%", z, threshold, pct)
 	}
 }
 
 // TestConstantVisualDensity verifies that the number of points per tile
-// is roughly constant across zoom levels, giving consistent visual
+// stays roughly constant across zoom levels, giving consistent visual
 // smoothness when zooming in. This is the key behavioral test.
 func TestConstantVisualDensity(t *testing.T) {
 	s := testStore(t)
@@ -198,11 +197,16 @@ func TestConstantVisualDensity(t *testing.T) {
 	centerLat := 41.88 + 0.005
 	centerLon := -87.63 + 0.005
 
-	// Count points and compute density at two different zoom levels.
-	zoomLow := 12
-	zoomHigh := 16
+	// Query point counts at consecutive zoom levels where the track
+	// is visible. The track spans ~0.01°, so it first appears around z≈15
+	// and is fully contained by z≈18.
+	type result struct {
+		z     int
+		count int
+	}
+	var results []result
 
-	densityAt := func(z int) (count int, density float64) {
+	for z := 16; z <= 20; z++ {
 		x, y := tileContaining(z, centerLat, centerLon)
 		south, north, west, east, err := TileBBox(z, x, y)
 		if err != nil {
@@ -217,30 +221,84 @@ func TestConstantVisualDensity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("z=%d: %v", z, err)
 		}
-		area := (north - south) * (east - west)
-		if area > 0 && len(pts) > 0 {
-			return len(pts), float64(len(pts)) / area
-		}
-		return len(pts), 0
+		t.Logf("z=%d: %d points, threshold=%e", z, len(pts), minSig)
+		results = append(results, result{z, len(pts)})
 	}
 
-	lowCount, lowDensity := densityAt(zoomLow)
-	highCount, highDensity := densityAt(zoomHigh)
-
-	t.Logf("z=%d: %d points, density=%e pts/sq°", zoomLow, lowCount, lowDensity)
-	t.Logf("z=%d: %d points, density=%e pts/sq°", zoomHigh, highCount, highDensity)
-
-	if lowDensity > 0 && highDensity > 0 {
-		densityRatio := highDensity / lowDensity
-		t.Logf("Density ratio (z=%d / z=%d): %.1fx", zoomHigh, zoomLow, densityRatio)
-
-		// With the 2x-per-zoom threshold, density should not grow
-		// dramatically. A 4x tolerance accounts for the fact that the
-		// significance distribution isn't perfectly uniform.
-		if densityRatio > 4.0 {
-			t.Errorf("density ratio z=%d/z=%d is %.1fx, want < 4.0; "+
-				"threshold is dropping too fast with zoom",
-				zoomHigh, zoomLow, densityRatio)
+	// Find two consecutive zoom levels where both have points. The count
+	// should not explode — if threshold is correct, zooming in shows more
+	// detail but per-tile count stays bounded.
+	for i := 1; i < len(results); i++ {
+		lo := results[i-1]
+		hi := results[i]
+		if lo.count > 0 && hi.count > 0 {
+			// At higher zoom, the tile is smaller (fewer points spatially)
+			// but threshold is lower (more points survive). These should
+			// roughly cancel out. Allow up to 4x growth.
+			if hi.count > lo.count*4 {
+				t.Errorf("z=%d→%d: point count jumped from %d to %d (>4x); "+
+					"threshold may be dropping too fast",
+					lo.z, hi.z, lo.count, hi.count)
+			}
 		}
+	}
+
+	// At z=20 (very high zoom), nearly all points in the tile should survive.
+	last := results[len(results)-1]
+	if last.count < 10 {
+		t.Errorf("z=%d: only %d points survived; expected many at high zoom", last.z, last.count)
+	}
+}
+
+// TestDistanceFloorSurvivesAtLowZoom verifies that the distance_floor method
+// lets points survive at much lower zoom levels than pure area, because
+// collinear points along long segments get significance from neighbor distance.
+func TestDistanceFloorSurvivesAtLowZoom(t *testing.T) {
+	s := testStore(t)
+	simp := NewSimplifier()
+
+	points := generateGPSTrack(1000, 41.88, -87.63)
+	ingestTrack(t, s, simp, points)
+
+	ctx := context.Background()
+	detail := 5.0
+
+	// With pure area, almost nothing survives at z=10 (threshold ≈ 1.9e-11,
+	// most significance values are smaller).
+	areaCount := 0
+	{
+		x, y := tileContaining(10, 41.885, -87.625)
+		south, north, west, east, _ := TileBBox(10, x, y)
+		minSig := SignificanceThreshold(10, detail)
+		latBuf := (north - south) * 0.1
+		lonBuf := (east - west) * 0.1
+		pts, _ := s.QueryTile(ctx, south-latBuf, north+latBuf, west-lonBuf, east+lonBuf, minSig)
+		areaCount = len(pts)
+		t.Logf("area method z=10: %d points (threshold=%e)", areaCount, minSig)
+	}
+
+	// Recompute with distance_floor.
+	n, err := s.RecomputeSignificance(ctx, MethodDistanceFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("recomputed %d points with distance_floor", n)
+
+	// Now query again — distance_floor should let many more points survive.
+	floorCount := 0
+	{
+		x, y := tileContaining(10, 41.885, -87.625)
+		south, north, west, east, _ := TileBBox(10, x, y)
+		minSig := SignificanceThreshold(10, detail)
+		latBuf := (north - south) * 0.1
+		lonBuf := (east - west) * 0.1
+		pts, _ := s.QueryTile(ctx, south-latBuf, north+latBuf, west-lonBuf, east+lonBuf, minSig)
+		floorCount = len(pts)
+		t.Logf("distance_floor method z=10: %d points (threshold=%e)", floorCount, minSig)
+	}
+
+	if floorCount <= areaCount {
+		t.Errorf("distance_floor (%d) should show more points than area (%d) at z=10",
+			floorCount, areaCount)
 	}
 }

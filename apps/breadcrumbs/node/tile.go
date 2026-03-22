@@ -23,20 +23,48 @@ func TileBBox(z, x, y int) (south, north, west, east float64, err error) {
 }
 
 // SignificanceThreshold returns the minimum significance for a tile at zoom z,
-// scaled by a detail coefficient.
+// scaled by a detail parameter.
 //
-// The threshold drops by 2x per zoom level (linear in tile size), not 4x
-// (quadratic). This is correct because a GPS track is a 1D line: the number
-// of track points in a tile is proportional to tile width, not tile area.
-// With a 2x drop, the number of points surviving per tile stays roughly
-// constant across zoom levels, giving consistent visual smoothness.
+// Significance is measured in square degrees (triangle area from
+// Visvalingam-Whyatt). The base threshold is the area of one pixel in tile
+// coordinates: tile_area / tile_pixels = (360/2^z)^2 / 256^2.
 //
 // The detail parameter (0–10) scales the threshold logarithmically:
-// threshold = base * 10^(-detail), where base = tileWidth / 256.
+// threshold = base * 10^(-detail). At detail=0 the threshold equals one
+// pixel's area; higher detail lowers the threshold, retaining more points.
+//
+// The base drops by 4x per zoom level. For a 1D GPS track, the number of
+// points in a tile is proportional to tile width (halves per zoom), while
+// the fraction surviving the lower threshold roughly doubles per zoom,
+// so the net points per tile stays approximately constant across zoom
+// levels for any fixed detail setting.
 func SignificanceThreshold(z int, detail float64) float64 {
 	tileSize := 360.0 / math.Pow(2, float64(z))
-	base := tileSize / 256.0
-	return base * math.Pow(10, -detail)
+	pixelSize := tileSize / 256.0
+	return pixelSize * pixelSize * math.Pow(10, -detail)
+}
+
+// zoomForSigAtDetail returns the zoom level at which a point with the given
+// significance first becomes visible at the given detail setting.
+func zoomForSigAtDetail(sig, detail float64) int {
+	if sig <= 0 {
+		return 22
+	}
+	// SignificanceThreshold(z, detail) = (360 / (256 * 2^z))^2 * 10^(-detail)
+	// sig = (360 / (256 * 2^z))^2 * 10^(-detail)
+	// (360 / (256 * 2^z))^2 = sig * 10^detail
+	// 360 / (256 * 2^z) = sqrt(sig * 10^detail)
+	// 2^z = 360 / (256 * sqrt(sig * 10^detail))
+	adj := sig * math.Pow(10, detail)
+	z := math.Log2(360.0 / (256.0 * math.Sqrt(adj)))
+	zi := int(math.Ceil(z))
+	if zi < 0 {
+		return 0
+	}
+	if zi > 22 {
+		return 22
+	}
+	return zi
 }
 
 func tileLonDeg(x, n int) float64 {

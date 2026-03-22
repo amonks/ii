@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -41,6 +42,8 @@ func newHandler(store *Store, simplifier *Simplifier, hub *Hub, config *Config, 
 	h.mux.HandleFunc("GET /events", h.handleEvents)
 	h.mux.HandleFunc("POST /flush", h.handleFlush)
 	h.mux.HandleFunc("GET /stats", h.handleStats)
+	h.mux.HandleFunc("GET /debug/significance", h.handleDebugSignificance)
+	h.mux.HandleFunc("POST /recompute", h.handleRecompute)
 	return h
 }
 
@@ -124,7 +127,7 @@ func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	detail := 5.0 // default: balanced detail
+	detail := 5.0 // default
 	if d := r.URL.Query().Get("detail"); d != "" {
 		if parsed, err := strconv.ParseFloat(d, 64); err == nil {
 			detail = parsed
@@ -144,6 +147,13 @@ func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "querying tile: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	slog.Debug("tile",
+		"z", z, "x", x, "y", y,
+		"detail", detail,
+		"threshold", minSig,
+		"points", len(points),
+	)
 
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, "application/protobuf") {
@@ -271,6 +281,95 @@ func matchesSubscription(p *pb.Point, significance float64, subs []Subscription)
 func (h *handler) notifyTileUpdated(clientID string, z, x, y int) {
 	data, _ := json.Marshal(pb.TileUpdated{Z: int32(z), X: int32(x), Y: int32(y)})
 	h.hub.Publish(clientID, data)
+}
+
+func (h *handler) handleRecompute(w http.ResponseWriter, r *http.Request) {
+	method := r.URL.Query().Get("method")
+	if !ValidSimplifyMethod(method) {
+		http.Error(w, fmt.Sprintf("invalid method %q, want \"area\", \"distance\", or \"distance_floor\"", method), http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("recomputing significance", "method", method)
+	start := time.Now()
+	n, err := h.store.RecomputeSignificance(r.Context(), SimplifyMethod(method))
+	elapsed := time.Since(start)
+	if err != nil {
+		http.Error(w, "recompute failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Update the simplifier so new ingests use the same method.
+	h.simplifier.Method = SimplifyMethod(method)
+
+	slog.Info("recompute complete", "method", method, "points", n, "duration", elapsed)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"points":      n,
+		"method":      method,
+		"duration_ms": elapsed.Milliseconds(),
+	})
+}
+
+func (h *handler) handleDebugSignificance(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.store.SignificanceStats(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	detail := 5.0
+	if d := r.URL.Query().Get("detail"); d != "" {
+		if parsed, err := strconv.ParseFloat(d, 64); err == nil {
+			detail = parsed
+		}
+	}
+
+	type zoomInfo struct {
+		Zoom      int     `json:"zoom"`
+		Threshold float64 `json:"threshold"`
+	}
+
+	// For each percentile, find the zoom where that fraction of points first appears.
+	type percentileInfo struct {
+		Label string  `json:"label"`
+		Sig   float64 `json:"sig"`
+		Zoom  int     `json:"visible_at_zoom"`
+	}
+	var percentiles []percentileInfo
+	for _, p := range []struct {
+		label string
+		sig   float64
+	}{
+		{"min", stats.Min},
+		{"p25", stats.P25},
+		{"p50", stats.P50},
+		{"p75", stats.P75},
+		{"max", stats.Max},
+	} {
+		z := 22
+		if p.sig > 0 {
+			z = zoomForSigAtDetail(p.sig, detail)
+		}
+		percentiles = append(percentiles, percentileInfo{p.label, p.sig, z})
+	}
+
+	// Thresholds at each zoom level.
+	var zooms []zoomInfo
+	for z := 0; z <= 22; z++ {
+		zooms = append(zooms, zoomInfo{z, SignificanceThreshold(z, detail)})
+	}
+
+	resp := struct {
+		Count       int64            `json:"count"`
+		Detail      float64          `json:"detail"`
+		Percentiles []percentileInfo `json:"percentiles"`
+		Zooms       []zoomInfo       `json:"zooms"`
+	}{stats.Count, detail, percentiles, zooms}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 // readThrough fetches a tile from upstream, writes new points, and notifies

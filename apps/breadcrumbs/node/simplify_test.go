@@ -65,6 +65,57 @@ func TestSimplifyCollinear(t *testing.T) {
 	}
 }
 
+func TestSimplifyDistancePure(t *testing.T) {
+	s := NewSimplifier()
+	s.Method = MethodDistance
+	// (0,0), (1,0), (0,1): triangle area = 0.5, but pure distance only
+	// uses distanceSquared((0,0), (0,1)) = 1.
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 0})
+	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 0, Longitude: 1})
+
+	if !r.HasPrevUpdate {
+		t.Fatal("expected prev update")
+	}
+	if r.PrevTailSig != 1.0 {
+		t.Errorf("distance sig = %v, want 1.0 (dist² of (0,0)→(0,1))", r.PrevTailSig)
+	}
+}
+
+func TestSimplifyDistanceFloorCollinear(t *testing.T) {
+	s := NewSimplifier()
+	s.Method = MethodDistanceFloor
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
+	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 2, Longitude: 2})
+
+	if !r.HasPrevUpdate {
+		t.Fatal("expected prev update")
+	}
+	// Triangle area is 0 (collinear), but distance from (0,0) to (2,2) = sqrt(8),
+	// so distanceSquared = 8. The floor should kick in.
+	if r.PrevTailSig != 8.0 {
+		t.Errorf("distance_floor collinear sig = %v, want 8.0", r.PrevTailSig)
+	}
+}
+
+func TestSimplifyDistanceFloorUsesMaxOfAreaAndDistance(t *testing.T) {
+	s := NewSimplifier()
+	s.Method = MethodDistanceFloor
+	// (0,0), (1,0), (0,1): triangle area = 0.5, distance (0,0)→(0,1) = 1, dist² = 1.
+	// max(0.5, 1) = 1.
+	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
+	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 0})
+	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 0, Longitude: 1})
+
+	if !r.HasPrevUpdate {
+		t.Fatal("expected prev update")
+	}
+	if r.PrevTailSig != 1.0 {
+		t.Errorf("distance_floor sig = %v, want 1.0 (max of area=0.5, dist²=1)", r.PrevTailSig)
+	}
+}
+
 func TestSimplifyRecovery(t *testing.T) {
 	// Continuous: append 5 points, record the 5th's significance update.
 	s1 := NewSimplifier()

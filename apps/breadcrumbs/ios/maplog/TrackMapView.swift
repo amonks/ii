@@ -8,6 +8,7 @@ struct TrackMapView: UIViewRepresentable {
     let nodePort: Int
     let clientID: String
     let detail: Double
+    let recomputeGeneration: Int
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -23,13 +24,22 @@ struct TrackMapView: UIViewRepresentable {
         context.coordinator.nodePort = nodePort
         context.coordinator.clientID = clientID
         context.coordinator.detail = detail
+        context.coordinator.recomputeGeneration = recomputeGeneration
         context.coordinator.didSetInitialLocation = false
         return mapView
     }
 
     func updateUIView(_ mapView: MLNMapView, context: Context) {
+        var needsReload = false
         if context.coordinator.detail != detail {
             context.coordinator.detail = detail
+            needsReload = true
+        }
+        if context.coordinator.recomputeGeneration != recomputeGeneration {
+            context.coordinator.recomputeGeneration = recomputeGeneration
+            needsReload = true
+        }
+        if needsReload {
             context.coordinator.reloadTiles(on: mapView)
         }
     }
@@ -39,6 +49,7 @@ struct TrackMapView: UIViewRepresentable {
         var nodePort: Int = 0
         var clientID: String = ""
         var detail: Double = 10
+        var recomputeGeneration: Int = 0
         var didSetInitialLocation = false
         private var sourceAdded = false
 

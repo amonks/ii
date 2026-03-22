@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -50,6 +51,37 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 
 		// Backfill subscriptions from upstream.
 		go backfillSubscriptions(nodeCtx, store, config)
+	}
+
+	// Log significance distribution to help debug threshold tuning.
+	if stats, err := store.SignificanceStats(ctx); err == nil && stats.Count > 0 {
+		slog.Info("significance distribution",
+			"points", stats.Count,
+			"min", stats.Min,
+			"p25", stats.P25,
+			"p50", stats.P50,
+			"p75", stats.P75,
+			"max", stats.Max,
+		)
+		// Show which zoom levels would show 25%/50%/75%/100% of points at detail=5.
+		for _, pct := range []struct {
+			label string
+			sig   float64
+		}{
+			{"25%", stats.P25},
+			{"50%", stats.P50},
+			{"75%", stats.P75},
+			{"all", stats.Min},
+		} {
+			if pct.sig > 0 {
+				z := zoomForSigAtDetail(pct.sig, 5.0)
+				slog.Info("zoom to show points",
+					"fraction", pct.label,
+					"sig", pct.sig,
+					"zoom_at_detail5", z,
+				)
+			}
+		}
 	}
 
 	handler := newHandler(store, simplifier, hub, &config, forwarder)

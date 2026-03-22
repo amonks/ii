@@ -15,14 +15,16 @@ struct ContentView: View {
     let clientID: String
 
     @AppStorage("detail") private var detail: Double = 5
+    @AppStorage("simplifyMethod") private var simplifyMethod: String = "area"
+    @AppStorage("recomputeGeneration") private var recomputeGeneration: Int = 0
 
     var body: some View {
         TabView {
             Tab("Map", systemImage: "map") {
-                MapTab(nodePort: nodePort, clientID: clientID, detail: detail)
+                MapTab(nodePort: nodePort, clientID: clientID, detail: detail, recomputeGeneration: recomputeGeneration)
             }
             Tab("Status", systemImage: "info.circle") {
-                StatusTab(logger: logger, nodePort: nodePort, clientID: clientID, detail: $detail)
+                StatusTab(logger: logger, nodePort: nodePort, clientID: clientID, detail: $detail, simplifyMethod: $simplifyMethod, recomputeGeneration: $recomputeGeneration)
             }
         }
     }
@@ -33,6 +35,8 @@ struct StatusTab: View {
     let nodePort: Int
     let clientID: String
     @Binding var detail: Double
+    @Binding var simplifyMethod: String
+    @Binding var recomputeGeneration: Int
 
     @Environment(\.modelContext) private var modelContext
     @State private var legacyCount: Int = 0
@@ -45,6 +49,8 @@ struct StatusTab: View {
     @State private var latestLon: Double? = nil
     @State private var statsError: String? = nil
     @State private var flushing: Bool = false
+    @State private var recomputing: Bool = false
+    @State private var recomputeResult: String? = nil
 
     var body: some View {
         NavigationStack {
@@ -77,6 +83,30 @@ struct StatusTab: View {
                     VStack(alignment: .leading) {
                         Text("Detail: \(Int(detail))")
                         Slider(value: $detail, in: 0...10, step: 1)
+                    }
+
+                    Picker("Simplify Method", selection: $simplifyMethod) {
+                        Text("Area (VW)").tag("area")
+                        Text("Distance").tag("distance")
+                        Text("Area + Distance").tag("distance_floor")
+                        Text("Multiscale").tag("multiscale")
+                    }
+                    .onChange(of: simplifyMethod) {
+                        recomputeResult = nil
+                    }
+
+                    if recomputing {
+                        ProgressView("Recomputing…")
+                    } else {
+                        Button("Recompute Significance") {
+                            Task { await recompute() }
+                        }
+                    }
+
+                    if let result = recomputeResult {
+                        Text(result)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -227,5 +257,34 @@ struct StatusTab: View {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(nodePort)/flush")!)
         request.httpMethod = "POST"
         _ = try? await URLSession.shared.data(for: request)
+    }
+
+    private func recompute() async {
+        recomputing = true
+        recomputeResult = nil
+        defer { recomputing = false }
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(nodePort)/recompute?method=\(simplifyMethod)")!)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 300
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return }
+            recomputeGeneration += 1
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let points = json["points"] as? Int,
+               let ms = json["duration_ms"] as? Int,
+               let method = json["method"] as? String {
+                let label = switch method {
+                case "area": "area"
+                case "distance": "distance"
+                case "distance_floor": "area + distance"
+                case "multiscale": "multiscale"
+                default: method
+                }
+                recomputeResult = "Recomputed \(points) points with \(label) in \(ms)ms"
+            }
+        } catch {
+            // silently fail
+        }
     }
 }

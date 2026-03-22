@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"math"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -71,11 +73,11 @@ func (s *Store) InsertPoint(ctx context.Context, p *pb.Point, significance float
 	if err == sql.ErrNoRows {
 		// Insert new point.
 		res, err := tx.ExecContext(ctx,
-			`INSERT INTO points (timestamp, subscribed, touched_at, lat, lon, alt, ellipsoidal_alt,
+			`INSERT INTO points (timestamp, subscribed, touched_at, significance, lat, lon, alt, ellipsoidal_alt,
 				h_accuracy, v_accuracy, speed, speed_accuracy, course, course_accuracy,
 				floor, is_simulated, is_from_accessory)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			p.Timestamp, sub, now, p.Latitude, p.Longitude, p.Altitude, p.EllipsoidalAltitude,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.Timestamp, sub, now, significance, p.Latitude, p.Longitude, p.Altitude, p.EllipsoidalAltitude,
 			p.HorizontalAccuracy, p.VerticalAccuracy, p.Speed, p.SpeedAccuracy,
 			p.Course, p.CourseAccuracy, p.Floor, boolToInt(p.IsSimulated), boolToInt(p.IsFromAccessory),
 		)
@@ -87,9 +89,9 @@ func (s *Store) InsertPoint(ctx context.Context, p *pb.Point, significance float
 			return err
 		}
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO points_idx (id, min_lat, max_lat, min_lon, max_lon, min_sig, max_sig)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			id, p.Latitude, p.Latitude, p.Longitude, p.Longitude, significance, significance,
+			`INSERT INTO points_idx (id, min_lat, max_lat, min_lon, max_lon)
+			VALUES (?, ?, ?, ?, ?)`,
+			id, p.Latitude, p.Latitude, p.Longitude, p.Longitude,
 		); err != nil {
 			return fmt.Errorf("inserting rtree: %w", err)
 		}
@@ -98,11 +100,11 @@ func (s *Store) InsertPoint(ctx context.Context, p *pb.Point, significance float
 	} else {
 		// Update existing point.
 		if _, err := tx.ExecContext(ctx,
-			`UPDATE points SET subscribed=?, touched_at=?, lat=?, lon=?, alt=?, ellipsoidal_alt=?,
+			`UPDATE points SET subscribed=?, touched_at=?, significance=?, lat=?, lon=?, alt=?, ellipsoidal_alt=?,
 				h_accuracy=?, v_accuracy=?, speed=?, speed_accuracy=?, course=?, course_accuracy=?,
 				floor=?, is_simulated=?, is_from_accessory=?
 			WHERE id=?`,
-			sub, now, p.Latitude, p.Longitude, p.Altitude, p.EllipsoidalAltitude,
+			sub, now, significance, p.Latitude, p.Longitude, p.Altitude, p.EllipsoidalAltitude,
 			p.HorizontalAccuracy, p.VerticalAccuracy, p.Speed, p.SpeedAccuracy,
 			p.Course, p.CourseAccuracy, p.Floor, boolToInt(p.IsSimulated), boolToInt(p.IsFromAccessory),
 			existingID,
@@ -110,9 +112,9 @@ func (s *Store) InsertPoint(ctx context.Context, p *pb.Point, significance float
 			return fmt.Errorf("updating point: %w", err)
 		}
 		if _, err := tx.ExecContext(ctx,
-			`UPDATE points_idx SET min_lat=?, max_lat=?, min_lon=?, max_lon=?, min_sig=?, max_sig=?
+			`UPDATE points_idx SET min_lat=?, max_lat=?, min_lon=?, max_lon=?
 			WHERE id=?`,
-			p.Latitude, p.Latitude, p.Longitude, p.Longitude, significance, significance,
+			p.Latitude, p.Latitude, p.Longitude, p.Longitude,
 			existingID,
 		); err != nil {
 			return fmt.Errorf("updating rtree: %w", err)
@@ -124,18 +126,9 @@ func (s *Store) InsertPoint(ctx context.Context, p *pb.Point, significance float
 
 // UpdateSignificance updates the significance of a point identified by timestamp.
 func (s *Store) UpdateSignificance(ctx context.Context, timestamp int64, significance float64) error {
-	var id int64
-	if err := s.db.QueryRowContext(ctx,
-		`SELECT id FROM points WHERE timestamp = ?`, timestamp,
-	).Scan(&id); err != nil {
-		if err == sql.ErrNoRows {
-			return nil // point may have been evicted
-		}
-		return err
-	}
 	_, err := s.db.ExecContext(ctx,
-		`UPDATE points_idx SET min_sig=?, max_sig=? WHERE id=?`,
-		significance, significance, id,
+		`UPDATE points SET significance=? WHERE timestamp=?`,
+		significance, timestamp,
 	)
 	return err
 }
@@ -149,7 +142,7 @@ func (s *Store) QueryTile(ctx context.Context, south, north, west, east, minSig 
 		FROM points_idx i JOIN points p ON i.id = p.id
 		WHERE i.max_lat >= ? AND i.min_lat <= ?
 		  AND i.max_lon >= ? AND i.min_lon <= ?
-		  AND i.max_sig >= ?
+		  AND p.significance >= ?
 		ORDER BY p.timestamp`,
 		south, north, west, east, minSig,
 	)
@@ -248,6 +241,162 @@ func (s *Store) Stats(ctx context.Context) (count int64, latest *pb.Point, err e
 	p.IsSimulated = isSim.Valid && isSim.Int64 != 0
 	p.IsFromAccessory = isAcc.Valid && isAcc.Int64 != 0
 	return count, p, nil
+}
+
+// SignificanceStats returns summary statistics about point significance values
+// in the store. All values exclude +Inf (first/last points).
+type SignificanceStats struct {
+	Count int64
+	Min   float64
+	P25   float64
+	P50   float64
+	P75   float64
+	Max   float64
+}
+
+func (s *Store) SignificanceStats(ctx context.Context) (SignificanceStats, error) {
+	var st SignificanceStats
+	err := s.db.QueryRowContext(ctx,
+		`SELECT count(*) FROM points WHERE significance < 1e300`,
+	).Scan(&st.Count)
+	if err != nil || st.Count == 0 {
+		return st, err
+	}
+
+	row := s.db.QueryRowContext(ctx, `
+		WITH ranked AS (
+			SELECT significance, ntile(100) OVER (ORDER BY significance) AS pct
+			FROM points WHERE significance < 1e300
+		)
+		SELECT
+			min(significance),
+			max(CASE WHEN pct = 25 THEN significance END),
+			max(CASE WHEN pct = 50 THEN significance END),
+			max(CASE WHEN pct = 75 THEN significance END),
+			max(significance)
+		FROM ranked`,
+	)
+	err = row.Scan(&st.Min, &st.P25, &st.P50, &st.P75, &st.Max)
+	return st, err
+}
+
+// RecomputeSignificance recalculates significance for all points using the
+// given method. It reads all points in timestamp order, walks through
+// triplets, and batch-updates the rtree index.
+func (s *Store) RecomputeSignificance(ctx context.Context, method SimplifyMethod) (int, error) {
+	// Read all point IDs and coordinates in timestamp order.
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, lat, lon FROM points ORDER BY timestamp`)
+	if err != nil {
+		return 0, fmt.Errorf("reading points: %w", err)
+	}
+
+	type idPoint struct {
+		id  int64
+		lat float64
+		lon float64
+	}
+	var pts []idPoint
+	for rows.Next() {
+		var p idPoint
+		if err := rows.Scan(&p.id, &p.lat, &p.lon); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		pts = append(pts, p)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	if len(pts) == 0 {
+		return 0, nil
+	}
+
+	total := len(pts)
+
+	// Compute significance for each point.
+	type sigUpdate struct {
+		id  int64
+		sig float64
+	}
+	updates := make([]sigUpdate, total)
+
+	// First and last get +Inf.
+	updates[0] = sigUpdate{pts[0].id, math.MaxFloat64}
+	if total > 1 {
+		updates[total-1] = sigUpdate{pts[total-1].id, math.MaxFloat64}
+	}
+
+	// Interior points.
+	if method == MethodMultiscale {
+		// Multiscale needs all points for doubling offsets.
+		coords := make([]struct{ lat, lon float64 }, total)
+		for i, p := range pts {
+			coords[i] = struct{ lat, lon float64 }{p.lat, p.lon}
+		}
+		for i := 1; i < total-1; i++ {
+			updates[i] = sigUpdate{pts[i].id, computeMultiscaleSignificance(coords, i)}
+		}
+	} else {
+		// Triplet-based methods.
+		for i := 1; i < total-1; i++ {
+			a := &pb.Point{Latitude: pts[i-1].lat, Longitude: pts[i-1].lon}
+			b := &pb.Point{Latitude: pts[i].lat, Longitude: pts[i].lon}
+			c := &pb.Point{Latitude: pts[i+1].lat, Longitude: pts[i+1].lon}
+			updates[i] = sigUpdate{pts[i].id, computeSignificance(method, a, b, c)}
+		}
+	}
+
+	// Batch updates using CASE expressions to minimize cgo round-trips.
+	// Each batch handles up to 1000 rows in a single UPDATE statement.
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	const batchSize = 1000
+	for start := 0; start < len(updates); start += batchSize {
+		end := start + batchSize
+		if end > len(updates) {
+			end = len(updates)
+		}
+		batch := updates[start:end]
+
+		// Build: UPDATE points SET significance = CASE id
+		//          WHEN ?1 THEN ?2 WHEN ?3 THEN ?4 ...
+		//        END WHERE id IN (?5, ?6, ...)
+		var b strings.Builder
+		// 3 args per row: 2 for CASE (id, sig) + 1 for IN (id)
+		args := make([]any, 0, len(batch)*3)
+
+		b.WriteString("UPDATE points SET significance = CASE id ")
+		for _, u := range batch {
+			b.WriteString("WHEN ? THEN ? ")
+			args = append(args, u.id, u.sig)
+		}
+		b.WriteString("END WHERE id IN (")
+		for i, u := range batch {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			b.WriteByte('?')
+			args = append(args, u.id)
+		}
+		b.WriteByte(')')
+
+		if _, err := tx.ExecContext(ctx, b.String(), args...); err != nil {
+			return 0, fmt.Errorf("batch update: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }
 
 // Close closes the database connection.

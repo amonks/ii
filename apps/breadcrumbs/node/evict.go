@@ -83,10 +83,10 @@ func (s *Store) RecomputeSubscriptions(ctx context.Context, subs []Subscription)
 		if _, err := tx.ExecContext(ctx,
 			`UPDATE points SET subscribed = 1
 			WHERE id IN (
-				SELECT i.id FROM points_idx i
+				SELECT p.id FROM points_idx i JOIN points p ON i.id = p.id
 				WHERE i.min_lat >= ? AND i.max_lat <= ?
 				  AND i.min_lon >= ? AND i.max_lon <= ?
-				  AND i.max_sig >= ?
+				  AND p.significance >= ?
 			)`,
 			south, north, west, east, sub.MinSignificance,
 		); err != nil {

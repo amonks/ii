@@ -7,6 +7,7 @@ struct MapTab: View {
     let nodePort: Int
     let clientID: String
     let detail: Double
+    let recomputeGeneration: Int
 
     @State private var mapViewRef: MLNMapView?
     @State private var coordinatorRef: TrackMapView.Coordinator?
@@ -14,7 +15,7 @@ struct MapTab: View {
     @State private var listenTask: Task<Void, Never>?
 
     var body: some View {
-        TrackMapView(nodePort: nodePort, clientID: clientID, detail: detail)
+        TrackMapView(nodePort: nodePort, clientID: clientID, detail: detail, recomputeGeneration: recomputeGeneration)
             .ignoresSafeArea()
             .onAppear {
                 startListening()

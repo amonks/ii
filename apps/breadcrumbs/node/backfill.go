@@ -60,10 +60,11 @@ func zoomForSignificance(minSig float64) int {
 	if minSig <= 0 {
 		return 22
 	}
-	// SignificanceThreshold(z, 0) = (360 / 2^z) / 256
-	// Solve for z: 2^z = 360 / (256 * minSig)
-	// z = log2(360 / (256 * minSig))
-	z := math.Log2(360.0 / (256.0 * minSig))
+	// SignificanceThreshold(z, 0) = (360 / (256 * 2^z))^2
+	// Solve for z: 360 / (256 * 2^z) = sqrt(minSig)
+	// 2^z = 360 / (256 * sqrt(minSig))
+	// z = log2(360 / (256 * sqrt(minSig)))
+	z := math.Log2(360.0 / (256.0 * math.Sqrt(minSig)))
 	zi := int(math.Ceil(z))
 	if zi < 0 {
 		return 0

@@ -235,11 +235,13 @@ retained and visible at every zoom level.
 Significance is stored as a continuous float in square degrees, not a
 discrete zoom level. At query time, the significance threshold is
 derived from the tile's geographic area: a tile at zoom z covers
-`(360 / 2^z)^2` square degrees over `256^2` pixels, so the threshold
-is `tile_area / tile_pixels`. Points whose significance triangle is
-smaller than one pixel in the requested tile are excluded. No tuning
-parameters — the threshold is a deterministic function of the zoom
-level.
+`(360 / 2^z)^2` square degrees over `256^2` pixels, so the base
+threshold is `tile_area / tile_pixels`. An optional detail parameter
+(0–10) scales the threshold logarithmically:
+`threshold = base * 10^(-detail)`. At detail=0 the threshold equals
+one pixel's area; higher values lower the threshold and retain more
+points. The default is 5. For any fixed detail setting, the number of
+points per tile stays approximately constant across zoom levels.
 
 Each node runs simplification independently. The server has the complete
 history so its assignments are globally optimal and authoritative. The

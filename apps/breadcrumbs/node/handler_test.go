@@ -217,7 +217,8 @@ func TestHandlerTileSignificanceFiltering(t *testing.T) {
 	config := &Config{Capacity: 10000}
 	h := newHandler(s, simp, hub, config, nil)
 
-	// Default (detail=5): threshold is low enough that both points survive.
+	// Default (detail=5): threshold at z=0 = (360/256)^2 * 1e-5 ≈ 1.98e-5.
+	// The low-sig point (0.0001) is above this, so both survive.
 	req := httptest.NewRequest("GET", "/tiles/0/0/0", nil)
 	req.Header.Set("Accept", "application/protobuf")
 	w := httptest.NewRecorder()
@@ -229,7 +230,7 @@ func TestHandlerTileSignificanceFiltering(t *testing.T) {
 		t.Errorf("default detail: got %d points, want 2", len(track.Points))
 	}
 
-	// detail=0: aggressive threshold, only high-significance point survives.
+	// detail=0: threshold at z=0 = (360/256)^2 ≈ 1.977, only high-sig survives.
 	req = httptest.NewRequest("GET", "/tiles/0/0/0?detail=0", nil)
 	req.Header.Set("Accept", "application/protobuf")
 	w = httptest.NewRecorder()
@@ -421,6 +422,68 @@ func TestHandlerEventsMissingClient(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
+	if w.Code != 400 {
+		t.Errorf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestHandlerRecompute(t *testing.T) {
+	h := testHandler(t)
+
+	// Ingest collinear points — pure VW gives them zero significance.
+	track := &pb.Track{
+		Points: []*pb.Point{
+			{Timestamp: 1, Latitude: 0, Longitude: 0},
+			{Timestamp: 2, Latitude: 1, Longitude: 1},
+			{Timestamp: 3, Latitude: 2, Longitude: 2},
+		},
+	}
+	body, _ := proto.Marshal(track)
+	req := httptest.NewRequest("POST", "/ingest", strings.NewReader(string(body)))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("ingest status = %d", w.Code)
+	}
+
+	// The middle point (1,1) has zero significance from pure area VW.
+	// At z=0 default detail=5, threshold ≈ 1.977e-5. Middle point (sig=0) filtered.
+	req = httptest.NewRequest("GET", "/tiles/0/0/0", nil)
+	req.Header.Set("Accept", "application/protobuf")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	var before pb.Track
+	proto.Unmarshal(w.Body.Bytes(), &before)
+	if len(before.Points) != 2 {
+		t.Errorf("before recompute: got %d points, want 2 (middle filtered)", len(before.Points))
+	}
+
+	// Recompute with distance_floor.
+	req = httptest.NewRequest("POST", "/recompute?method=distance_floor", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("recompute status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	// Now the middle point has sig = distanceSquared((0,0),(2,2)) = 8,
+	// well above threshold. All 3 points should survive.
+	req = httptest.NewRequest("GET", "/tiles/0/0/0", nil)
+	req.Header.Set("Accept", "application/protobuf")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	var after pb.Track
+	proto.Unmarshal(w.Body.Bytes(), &after)
+	if len(after.Points) != 3 {
+		t.Errorf("after recompute: got %d points, want 3 (middle should survive)", len(after.Points))
+	}
+}
+
+func TestHandlerRecomputeInvalidMethod(t *testing.T) {
+	h := testHandler(t)
+	req := httptest.NewRequest("POST", "/recompute?method=bogus", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
 	if w.Code != 400 {
 		t.Errorf("status = %d, want 400", w.Code)
 	}
