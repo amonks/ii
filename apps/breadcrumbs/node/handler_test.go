@@ -17,7 +17,7 @@ import (
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
 	s := testStore(t)
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	prev, tail, _ := s.LastTwoPoints(context.Background())
 	if tail != nil {
 		simp.Recover(prev, tail)
@@ -213,7 +213,7 @@ func TestHandlerTileSignificanceFiltering(t *testing.T) {
 	// Insert a point with high significance.
 	s.InsertPoint(ctx, &pb.Point{Timestamp: 2, Latitude: 0.01, Longitude: 0.01}, math.MaxFloat64, false)
 
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	hub := NewHub()
 	config := &Config{Capacity: 10000}
 	h := newHandler(s, simp, hub, config, nil)
@@ -254,7 +254,7 @@ func TestHandlerTileBoundaryBuffer(t *testing.T) {
 	s.InsertPoint(ctx, &pb.Point{Timestamp: 1, Latitude: 45, Longitude: -1}, math.MaxFloat64, false)
 	s.InsertPoint(ctx, &pb.Point{Timestamp: 2, Latitude: 45, Longitude: 1}, math.MaxFloat64, false)
 
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	hub := NewHub()
 	config := &Config{Capacity: 10000}
 	h := newHandler(s, simp, hub, config, nil)
@@ -307,7 +307,7 @@ func TestHandlerFlush(t *testing.T) {
 
 func TestHandlerEvents(t *testing.T) {
 	s := testStore(t)
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	hub := NewHub()
 	config := &Config{}
 	h := newHandler(s, simp, hub, config, nil).(*handler)
@@ -431,7 +431,7 @@ func TestHandlerStatsForwardQueue(t *testing.T) {
 	// Set watermark to 3 — points 4 and 5 are unforwarded.
 	s.SetWatermark(ctx, 3)
 
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	hub := NewHub()
 	config := &Config{Capacity: 10000}
 	h := newHandler(s, simp, hub, config, nil)

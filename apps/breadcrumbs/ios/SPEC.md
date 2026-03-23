@@ -79,6 +79,7 @@ A node is configured with:
   "listen": "127.0.0.1:8080",
   "upstream": "https://maps.example.com",
   "capacity": 100000,
+  "simplify_method": "distance_floor",
   "subscriptions": [
     { "bbox": [-180, -90, 180, 90], "min_significance": 1e-4 },
     { "bbox": [-74.0, 40.7, -73.9, 40.8], "min_significance": 0 }
@@ -224,15 +225,33 @@ protobuf serialization and MVT encoding.
 
 ## Simplification
 
-Visvalingam-Whyatt with effective area.
+Multiple simplification methods are available, configured via
+`simplify_method` (default `"distance_floor"`):
 
-Each point's significance is the area of the triangle formed by it and
-its two temporal neighbors. On append, only the previous tail point's
-significance is recomputed — everything older is frozen.
+- **`area`** — Pure Visvalingam-Whyatt triangle area. Measures deviation
+  from a straight line. Collinear points get near-zero significance and
+  vanish at low zoom.
+- **`distance`** — Squared distance between temporal neighbors. Pure
+  coverage, no deviation awareness.
+- **`distance_floor`** — `max(triangleArea, distanceSquared)`. Preserves
+  sharp turns (via triangle area) while ensuring points along long
+  straight segments remain visible at low zoom (via distance). This is
+  the default because it produces consistent visual density across zoom
+  levels for GPS tracks.
+- **`multiscale`** — `max(triangleArea, multiscale distance²)` at
+  exponentially increasing offsets (1, 2, 4, 8, ...). Creates a natural
+  LOD pyramid. Only usable via recompute (requires all points in memory).
+
+On append, only the previous tail point's significance is recomputed —
+everything older is frozen.
 
 The first and second points in a track have no triangle. Their
 significance is set to +Inf (math.MaxFloat64) so they are always
 retained and visible at every zoom level.
+
+On startup, if the configured method differs from the last-used method
+(stored in the `meta` table as `simplify_method`), the node recomputes
+significance for all points.
 
 Significance is stored as a continuous float in square degrees, not a
 discrete zoom level. At query time, the significance threshold is
@@ -361,6 +380,11 @@ There are two:
 - **MVT (Mapbox Vector Tiles)** — lossy, quantized to a tile-local
   4096x4096 grid, encoded on the fly from query results. This is a
   display format served to MapLibre, not a storage or sync format.
+  If a tile contains more than 5,000 points, they are uniformly
+  downsampled (keeping first and last) before encoding. MapLibre's
+  WebGL vertex buffer is capped at 65,535 indices (uint16), and line
+  rendering generates ~10–18 vertices per coordinate for extruded
+  width, joins, and caps.
 
 ## Protocol
 

@@ -9,20 +9,33 @@ import (
 
 const mvtExtent = 4096
 
+// maxPointsPerTile is the maximum number of points we encode into a single
+// MVT tile. MapLibre's WebGL vertex buffer limit is 65,535 (uint16 index),
+// and line rendering generates ~10-18 vertices per coordinate (for extruded
+// width, miter joins, caps). We cap at 5,000 to stay safely under the limit.
+const maxPointsPerTile = 5000
+
 // EncodeMVT encodes points as a Mapbox Vector Tile with a single "track"
-// layer containing one LineString feature.
+// layer containing one LineString feature. If the point count exceeds
+// MapLibre's per-tile vertex limit, points are uniformly downsampled
+// (always keeping first and last) to stay under the cap.
 func EncodeMVT(points []*pb.Point, z, x, y int) ([]byte, error) {
 	south, north, west, east, err := TileBBox(z, x, y)
 	if err != nil {
 		return nil, err
 	}
 
-	feature := &pb.Tile_Feature{
-		Type: pb.Tile_LINESTRING.Enum(),
+	pts := points
+	if len(pts) > maxPointsPerTile {
+		pts = downsample(pts, maxPointsPerTile)
 	}
 
-	if len(points) > 0 {
-		feature.Geometry = encodeLineString(points, south, north, west, east)
+	var features []*pb.Tile_Feature
+	if len(pts) >= 2 {
+		features = append(features, &pb.Tile_Feature{
+			Type:     pb.Tile_LINESTRING.Enum(),
+			Geometry: encodeLineString(pts, south, north, west, east),
+		})
 	}
 
 	version := uint32(2)
@@ -32,11 +45,27 @@ func EncodeMVT(points []*pb.Point, z, x, y int) ([]byte, error) {
 			Version:  &version,
 			Name:     new("track"),
 			Extent:   &extent,
-			Features: []*pb.Tile_Feature{feature},
+			Features: features,
 		}},
 	}
 
 	return proto.Marshal(tile)
+}
+
+// downsample uniformly selects n points from pts, always including the
+// first and last point. Points are evenly spaced by index.
+func downsample(pts []*pb.Point, n int) []*pb.Point {
+	if len(pts) <= n {
+		return pts
+	}
+	out := make([]*pb.Point, n)
+	out[0] = pts[0]
+	out[n-1] = pts[len(pts)-1]
+	for i := 1; i < n-1; i++ {
+		idx := int(float64(i) * float64(len(pts)-1) / float64(n-1))
+		out[i] = pts[idx]
+	}
+	return out
 }
 
 func encodeLineString(points []*pb.Point, south, north, west, east float64) []uint32 {

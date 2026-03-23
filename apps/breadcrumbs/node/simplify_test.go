@@ -8,7 +8,7 @@ import (
 )
 
 func TestSimplifyFirstPoint(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	r := s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
 	if r.NewPointSig != math.MaxFloat64 {
 		t.Errorf("first point sig = %v, want MaxFloat64", r.NewPointSig)
@@ -19,7 +19,7 @@ func TestSimplifyFirstPoint(t *testing.T) {
 }
 
 func TestSimplifySecondPoint(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
 	r := s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
 	if r.NewPointSig != math.MaxFloat64 {
@@ -31,7 +31,7 @@ func TestSimplifySecondPoint(t *testing.T) {
 }
 
 func TestSimplifyThirdPoint(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
 	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 0})
 	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 0, Longitude: 1})
@@ -52,7 +52,7 @@ func TestSimplifyThirdPoint(t *testing.T) {
 }
 
 func TestSimplifyCollinear(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
 	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
 	r := s.Append(&pb.Point{Timestamp: 3, Latitude: 2, Longitude: 2})
@@ -66,7 +66,7 @@ func TestSimplifyCollinear(t *testing.T) {
 }
 
 func TestSimplifyDistancePure(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Method = MethodDistance
 	// (0,0), (1,0), (0,1): triangle area = 0.5, but pure distance only
 	// uses distanceSquared((0,0), (0,1)) = 1.
@@ -83,7 +83,7 @@ func TestSimplifyDistancePure(t *testing.T) {
 }
 
 func TestSimplifyDistanceFloorCollinear(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Method = MethodDistanceFloor
 	s.Append(&pb.Point{Timestamp: 1, Latitude: 0, Longitude: 0})
 	s.Append(&pb.Point{Timestamp: 2, Latitude: 1, Longitude: 1})
@@ -100,7 +100,7 @@ func TestSimplifyDistanceFloorCollinear(t *testing.T) {
 }
 
 func TestSimplifyDistanceFloorUsesMaxOfAreaAndDistance(t *testing.T) {
-	s := NewSimplifier()
+	s := NewSimplifier(MethodArea)
 	s.Method = MethodDistanceFloor
 	// (0,0), (1,0), (0,1): triangle area = 0.5, distance (0,0)→(0,1) = 1, dist² = 1.
 	// max(0.5, 1) = 1.
@@ -118,7 +118,7 @@ func TestSimplifyDistanceFloorUsesMaxOfAreaAndDistance(t *testing.T) {
 
 func TestSimplifyRecovery(t *testing.T) {
 	// Continuous: append 5 points, record the 5th's significance update.
-	s1 := NewSimplifier()
+	s1 := NewSimplifier(MethodArea)
 	pts := []*pb.Point{
 		{Timestamp: 1, Latitude: 0, Longitude: 0},
 		{Timestamp: 2, Latitude: 1, Longitude: 0},
@@ -133,7 +133,7 @@ func TestSimplifyRecovery(t *testing.T) {
 	r1 := s1.Append(&pb.Point{Timestamp: 6, Latitude: 3, Longitude: 2})
 
 	// Recovered: start from last two points (4th and 5th), append 6th.
-	s2 := NewSimplifier()
+	s2 := NewSimplifier(MethodArea)
 	s2.Recover(pts[3], pts[4])
 	r2 := s2.Append(&pb.Point{Timestamp: 6, Latitude: 3, Longitude: 2})
 

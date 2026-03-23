@@ -396,6 +396,27 @@ func (s *Store) RecomputeSignificance(ctx context.Context, method SimplifyMethod
 	return total, nil
 }
 
+// GetMeta retrieves a value from the meta table. Returns "" if not found.
+func (s *Store) GetMeta(ctx context.Context, key string) (string, error) {
+	var val sql.NullString
+	err := s.db.QueryRowContext(ctx,
+		`SELECT value FROM meta WHERE key = ?`, key,
+	).Scan(&val)
+	if err == sql.ErrNoRows || !val.Valid {
+		return "", nil
+	}
+	return val.String, err
+}
+
+// SetMeta sets a value in the meta table (upsert).
+func (s *Store) SetMeta(ctx context.Context, key, value string) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?`,
+		key, value, value,
+	)
+	return err
+}
+
 // Close closes the database connection.
 func (s *Store) Close() error {
 	if _, err := s.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {

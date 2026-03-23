@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="{{BASE_PATH}}">
 <title>breadcrumbs</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -25,6 +26,8 @@
 <div id="stats" class="stale">loading…</div>
 <script>
 const clientID = crypto.randomUUID().replace(/-/g, '');
+const base = document.baseURI.replace(/\/$/, '');
+const tileURL = base + '/tiles/{z}/{x}/{y}?client=' + clientID;
 
 const map = new maplibregl.Map({
   container: 'map',
@@ -39,7 +42,7 @@ const map = new maplibregl.Map({
       },
       'track': {
         type: 'vector',
-        tiles: [location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID],
+        tiles: [tileURL],
         minzoom: 0,
         maxzoom: 22,
       },
@@ -68,12 +71,12 @@ const map = new maplibregl.Map({
 });
 
 // SSE: listen for tile-updated events and reload affected tiles.
-const events = new EventSource('/events?client=' + clientID);
+const events = new EventSource(base + '/events?client=' + clientID);
 events.addEventListener('tile-updated', function(e) {
   const src = map.getSource('track');
   if (src) {
     // setTiles forces a reload of all tiles from the source.
-    src.setTiles([location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID]);
+    src.setTiles([tileURL]);
   }
 });
 events.onerror = function() {
@@ -81,7 +84,7 @@ events.onerror = function() {
   setTimeout(function() {
     const src = map.getSource('track');
     if (src) {
-      src.setTiles([location.origin + '/tiles/{z}/{x}/{y}?client=' + clientID]);
+      src.setTiles([tileURL]);
     }
   }, 2000);
 };
@@ -95,7 +98,7 @@ function formatTime(nsEpoch) {
   return unit + ' ago';
 }
 function refreshStats() {
-  fetch('/stats', { headers: { 'Accept': 'application/json' } })
+  fetch(base + '/stats', { headers: { 'Accept': 'application/json' } })
     .then(r => r.json())
     .then(s => {
       const el = document.getElementById('stats');

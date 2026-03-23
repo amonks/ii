@@ -14,6 +14,7 @@ import (
 	"time"
 
 	pb "monks.co/apps/breadcrumbs/proto"
+	"monks.co/pkg/serve"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -342,6 +343,7 @@ func (h *handler) handleRecompute(w http.ResponseWriter, r *http.Request) {
 
 	// Update the simplifier so new ingests use the same method.
 	h.simplifier.Method = SimplifyMethod(method)
+	_ = h.store.SetMeta(r.Context(), "simplify_method", method)
 
 	slog.Info("recompute complete", "method", method, "points", n, "duration", elapsed)
 
@@ -419,8 +421,10 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "reading index: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	basePath := serve.BasePathFromContext(r.Context())
+	html := strings.Replace(string(data), "{{BASE_PATH}}", basePath, 1)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write(data)
+	w.Write([]byte(html))
 }
 
 // readThrough fetches a tile from upstream, writes new points, and notifies

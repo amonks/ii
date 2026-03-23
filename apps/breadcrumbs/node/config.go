@@ -6,11 +6,20 @@ import (
 )
 
 type Config struct {
-	DBPath        string         `json:"db_path"`
-	Listen        string         `json:"listen"`
-	Upstream      string         `json:"upstream,omitempty"`
-	Capacity      int            `json:"capacity"`
-	Subscriptions []Subscription `json:"subscriptions"`
+	DBPath         string         `json:"db_path"`
+	Listen         string         `json:"listen"`
+	Upstream       string         `json:"upstream,omitempty"`
+	Capacity       int            `json:"capacity"`
+	Subscriptions  []Subscription `json:"subscriptions"`
+	SimplifyMethod string         `json:"simplify_method,omitempty"` // "area", "distance", "distance_floor", "multiscale"; default "distance_floor"
+}
+
+// simplifyMethod returns the configured simplify method, defaulting to distance_floor.
+func (c Config) simplifyMethod() SimplifyMethod {
+	if c.SimplifyMethod != "" && ValidSimplifyMethod(c.SimplifyMethod) {
+		return SimplifyMethod(c.SimplifyMethod)
+	}
+	return MethodDistanceFloor
 }
 
 type Subscription struct {

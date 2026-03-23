@@ -24,7 +24,8 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 	}
 
 	// Recover simplifier state from the last two points.
-	simplifier := NewSimplifier()
+	method := config.simplifyMethod()
+	simplifier := NewSimplifier(method)
 	prev, tail, err := store.LastTwoPoints(ctx)
 	if err != nil {
 		store.Close()
@@ -32,6 +33,25 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 	}
 	if tail != nil {
 		simplifier.Recover(prev, tail)
+	}
+
+	// If the simplify method changed since last run, recompute all significance values.
+	prevMethod, _ := store.GetMeta(ctx, "simplify_method")
+	if prevMethod != string(method) {
+		slog.Info("simplify method changed, recomputing significance",
+			"old", prevMethod, "new", method)
+		start := time.Now()
+		n, err := store.RecomputeSignificance(ctx, method)
+		if err != nil {
+			store.Close()
+			return nil, fmt.Errorf("recomputing significance: %w", err)
+		}
+		if err := store.SetMeta(ctx, "simplify_method", string(method)); err != nil {
+			store.Close()
+			return nil, fmt.Errorf("saving simplify method: %w", err)
+		}
+		slog.Info("significance recompute complete",
+			"method", method, "points", n, "duration", time.Since(start))
 	}
 
 	// Recompute subscription flags.

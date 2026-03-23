@@ -59,9 +59,9 @@ type SimplifyResult struct {
 	HasPrevUpdate bool
 }
 
-// NewSimplifier creates a simplifier with no state using the default area method.
-func NewSimplifier() *Simplifier {
-	return &Simplifier{Method: MethodArea}
+// NewSimplifier creates a simplifier with no state using the given method.
+func NewSimplifier(method SimplifyMethod) *Simplifier {
+	return &Simplifier{Method: method}
 }
 
 // Recover initializes the simplifier from the last two points in the store.

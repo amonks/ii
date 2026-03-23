@@ -95,7 +95,7 @@ func TestSignificanceThresholdDropsPerZoom(t *testing.T) {
 // per tile at different zoom levels for a realistic track.
 func TestPointDensityPerTileAtFixedDetail(t *testing.T) {
 	s := testStore(t)
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 
 	// Generate a dense track: ~1000 points over ~0.01° (~1km).
 	points := generateGPSTrack(1000, 41.88, -87.63)
@@ -134,7 +134,7 @@ func TestPointDensityPerTileAtFixedDetail(t *testing.T) {
 // TestVWSignificanceDistribution shows the distribution of significance
 // values from online VW to understand what threshold values are meaningful.
 func TestVWSignificanceDistribution(t *testing.T) {
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	points := generateGPSTrack(1000, 41.88, -87.63)
 
 	var sigs []float64
@@ -186,7 +186,7 @@ func TestVWSignificanceDistribution(t *testing.T) {
 // smoothness when zooming in. This is the key behavioral test.
 func TestConstantVisualDensity(t *testing.T) {
 	s := testStore(t)
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 
 	points := generateGPSTrack(1000, 41.88, -87.63)
 	ingestTrack(t, s, simp, points)
@@ -255,7 +255,7 @@ func TestConstantVisualDensity(t *testing.T) {
 // collinear points along long segments get significance from neighbor distance.
 func TestDistanceFloorSurvivesAtLowZoom(t *testing.T) {
 	s := testStore(t)
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 
 	points := generateGPSTrack(1000, 41.88, -87.63)
 	ingestTrack(t, s, simp, points)

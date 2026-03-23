@@ -29,6 +29,7 @@ func TestEncodeMVTEmpty(t *testing.T) {
 }
 
 func TestEncodeMVTSinglePoint(t *testing.T) {
+	// A single point can't form a LINESTRING, so the tile should have no features.
 	points := []*pb.Point{
 		{Latitude: 0, Longitude: 0},
 	}
@@ -42,13 +43,8 @@ func TestEncodeMVTSinglePoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	feat := tile.Layers[0].Features[0]
-	if feat.GetType() != pb.Tile_LINESTRING {
-		t.Errorf("type = %v, want LINESTRING", feat.GetType())
-	}
-	// MoveTo(1) + dx + dy = 3 commands
-	if len(feat.Geometry) != 3 {
-		t.Errorf("geometry len = %d, want 3", len(feat.Geometry))
+	if len(tile.Layers[0].Features) != 0 {
+		t.Errorf("features = %d, want 0 for single point", len(tile.Layers[0].Features))
 	}
 }
 
@@ -79,8 +75,10 @@ func TestEncodeMVTLineString(t *testing.T) {
 func TestEncodeMVTMercatorProjection(t *testing.T) {
 	// At zoom 0, the equator (lat=0) should map to the vertical midpoint
 	// of the tile in Mercator projection (tileY = 2048 for extent 4096).
+	// Use two points so we get a valid LINESTRING.
 	points := []*pb.Point{
 		{Latitude: 0, Longitude: 0},
+		{Latitude: 0, Longitude: 1},
 	}
 	data, err := EncodeMVT(points, 0, 0, 0)
 	if err != nil {
@@ -93,12 +91,12 @@ func TestEncodeMVTMercatorProjection(t *testing.T) {
 	}
 
 	feat := tile.Layers[0].Features[0]
-	// Geometry: MoveTo(1) + zigzag(dx) + zigzag(dy) = 3 values
+	// Geometry: MoveTo(1) + dx + dy + LineTo(1) + dx + dy = 6 values
 	if len(feat.Geometry) < 3 {
 		t.Fatalf("geometry len = %d, want >= 3", len(feat.Geometry))
 	}
 
-	// Decode: dx and dy are zigzag-encoded.
+	// Decode first point: dx and dy are zigzag-encoded.
 	dx := decodeZigzag(feat.Geometry[1])
 	dy := decodeZigzag(feat.Geometry[2])
 
@@ -113,6 +111,61 @@ func TestEncodeMVTMercatorProjection(t *testing.T) {
 
 func decodeZigzag(v uint32) int {
 	return int(int32(v>>1) ^ -int32(v&1))
+}
+
+func TestEncodeMVTDownsamplesLargeTile(t *testing.T) {
+	// Generate more points than maxPointsPerTile.
+	n := maxPointsPerTile + 10000
+	points := make([]*pb.Point, n)
+	for i := range n {
+		frac := float64(i) / float64(n-1)
+		points[i] = &pb.Point{
+			Latitude:  frac * 10,
+			Longitude: -180 + frac*360,
+		}
+	}
+
+	data, err := EncodeMVT(points, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var tile pb.Tile
+	if err := proto.Unmarshal(data, &tile); err != nil {
+		t.Fatal(err)
+	}
+
+	features := tile.Layers[0].Features
+	if len(features) != 1 {
+		t.Fatalf("expected 1 feature, got %d", len(features))
+	}
+
+	// Count vertices: geometry = MoveTo(1) + 2 coords + LineTo(count) + 2*count coords
+	// Total geometry ints = 4 + 2*count, so total vertices = (len-4)/2 + 1
+	verts := (len(features[0].Geometry)-4)/2 + 1
+	if verts > maxPointsPerTile {
+		t.Errorf("tile has %d vertices, exceeds limit %d", verts, maxPointsPerTile)
+	}
+	if verts < maxPointsPerTile-1 {
+		t.Errorf("tile has %d vertices, expected close to %d", verts, maxPointsPerTile)
+	}
+}
+
+func TestDownsamplePreservesFirstAndLast(t *testing.T) {
+	pts := make([]*pb.Point, 100)
+	for i := range pts {
+		pts[i] = &pb.Point{Timestamp: int64(i)}
+	}
+	out := downsample(pts, 10)
+	if len(out) != 10 {
+		t.Fatalf("len = %d, want 10", len(out))
+	}
+	if out[0].Timestamp != 0 {
+		t.Errorf("first = %d, want 0", out[0].Timestamp)
+	}
+	if out[9].Timestamp != 99 {
+		t.Errorf("last = %d, want 99", out[9].Timestamp)
+	}
 }
 
 func TestZigzag(t *testing.T) {
