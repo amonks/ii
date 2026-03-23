@@ -101,16 +101,39 @@ func (s *Simplifier) Append(p *pb.Point) SimplifyResult {
 }
 
 // computeSignificance returns the significance for the middle point b
-// given neighbors a and c, using the specified method.
+// given neighbors a and c, using the specified method. The raw geometric
+// significance is scaled by the worst accuracy weight among the three
+// vertices, so triangles involving imprecise points are downweighted.
 func computeSignificance(method SimplifyMethod, a, b, c *pb.Point) float64 {
+	var raw float64
 	switch method {
 	case MethodDistance:
-		return distanceSquared(a, c)
+		raw = distanceSquared(a, c)
 	case MethodDistanceFloor:
-		return math.Max(triangleArea(a, b, c), distanceSquared(a, c))
+		raw = math.Max(triangleArea(a, b, c), distanceSquared(a, c))
 	default:
-		return triangleArea(a, b, c)
+		raw = triangleArea(a, b, c)
 	}
+	w := math.Min(accuracyWeight(a), math.Min(accuracyWeight(b), accuracyWeight(c)))
+	return raw * w
+}
+
+// accuracyWeight returns a [0,1] scaling factor for a point's contribution
+// to significance. Points with good accuracy (<= 10m) or unknown accuracy
+// (0, as from protobuf default) get weight 1. Between 10m and 100m, weight
+// decays as baseline²/accuracy². Above 100m the position is too unreliable
+// to contribute to significance at all, so weight is 0.
+func accuracyWeight(p *pb.Point) float64 {
+	const baseline = 10.0  // meters — no penalty below this
+	const ceiling = 100.0  // meters — zero weight above this
+	a := p.HorizontalAccuracy
+	if a <= baseline {
+		return 1.0
+	}
+	if a >= ceiling {
+		return 0.0
+	}
+	return (baseline * baseline) / (a * a)
 }
 
 // triangleArea computes the area of the triangle formed by three points

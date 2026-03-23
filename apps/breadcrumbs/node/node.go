@@ -35,18 +35,23 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		simplifier.Recover(prev, tail)
 	}
 
-	// If the simplify method changed since last run, recompute all significance values.
+	// If the simplify method or algorithm version changed since last run,
+	// recompute all significance values.
+	// simplifyVersion is bumped whenever the significance computation changes
+	// (e.g. adding accuracy weighting) without changing the method name.
+	const simplifyVersion = "3" // v3: hard cutoff at 100m accuracy
+	methodKey := string(method) + "/v" + simplifyVersion
 	prevMethod, _ := store.GetMeta(ctx, "simplify_method")
-	if prevMethod != string(method) {
+	if prevMethod != methodKey {
 		slog.Info("simplify method changed, recomputing significance",
-			"old", prevMethod, "new", method)
+			"old", prevMethod, "new", methodKey)
 		start := time.Now()
 		n, err := store.RecomputeSignificance(ctx, method)
 		if err != nil {
 			store.Close()
 			return nil, fmt.Errorf("recomputing significance: %w", err)
 		}
-		if err := store.SetMeta(ctx, "simplify_method", string(method)); err != nil {
+		if err := store.SetMeta(ctx, "simplify_method", methodKey); err != nil {
 			store.Close()
 			return nil, fmt.Errorf("saving simplify method: %w", err)
 		}

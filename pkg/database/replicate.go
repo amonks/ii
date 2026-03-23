@@ -19,9 +19,22 @@ import (
 	"monks.co/pkg/tailnet"
 )
 
-// startReplication sets up litestream replication for the given database path
-// over SFTP to monks-vault-thor. Returns a Store that must be closed when done.
-func startReplication(ctx context.Context, dbPath string) (*litestream.Store, error) {
+// Replication manages a litestream replication session. Close it when the
+// database is being shut down.
+type Replication struct {
+	store *litestream.Store
+}
+
+// Close stops the litestream replication session.
+func (r *Replication) Close() error {
+	return r.store.Close(context.Background())
+}
+
+// StartReplication sets up litestream WAL replication for the given database
+// path over SFTP to monks-vault-thor. The caller must call Close on the
+// returned Replication when the database is shut down. The tailnet must be
+// ready before calling this.
+func StartReplication(ctx context.Context, dbPath string) (*Replication, error) {
 	lsDB := litestream.NewDB(dbPath)
 
 	client := newVaultClient(filepath.Base(dbPath))
@@ -38,7 +51,7 @@ func startReplication(ctx context.Context, dbPath string) (*litestream.Store, er
 	if err := store.Open(ctx); err != nil {
 		return nil, fmt.Errorf("opening litestream store: %w", err)
 	}
-	return store, nil
+	return &Replication{store: store}, nil
 }
 
 // vaultClient implements litestream.ReplicaClient, replicating over SFTP

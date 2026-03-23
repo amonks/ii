@@ -45,6 +45,22 @@ only specifies the database filename.
 `Close()` shuts down the litestream store before closing the GORM
 connection.
 
+### Standalone Replication
+
+Apps that manage their own `sql.DB` (not using the GORM wrapper) can use
+the exported replication API directly:
+
+- `StartReplication(ctx, dbPath) (*Replication, error)` — starts
+  litestream WAL replication for the given database path. The tailnet
+  must be ready before calling this. Must be started **before** the
+  database is opened so litestream can monitor WAL changes from the
+  beginning.
+- `(*Replication).Close() error` — stops replication. Call after closing
+  the database.
+
+This is used by apps like breadcrumbs that use raw `database/sql`
+instead of GORM.
+
 ## Migrations
 
 All apps use `pkg/migrate` via the `MigrateFS` convenience method:

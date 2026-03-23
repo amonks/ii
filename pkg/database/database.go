@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/benbjohnson/litestream"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -20,7 +19,7 @@ import (
 
 type DB struct {
 	*gorm.DB
-	litestreamStore *litestream.Store
+	replication *Replication
 }
 
 func OpenFromDataFolder(name string) (*DB, error) {
@@ -32,10 +31,10 @@ func Open(path string) (*DB, error) {
 	// Start litestream replication before opening GORM. Litestream needs
 	// to set up WAL monitoring first. Skip for :memory: databases (tests)
 	// and when the tailnet isn't ready (tests that use file-backed DBs).
-	var store *litestream.Store
+	var repl *Replication
 	if path != ":memory:" && tailnetReady() {
 		var err error
-		store, err = startReplication(context.Background(), path)
+		repl, err = StartReplication(context.Background(), path)
 		if err != nil {
 			return nil, fmt.Errorf("litestream replication for %s: %w", path, err)
 		}
@@ -55,8 +54,8 @@ func Open(path string) (*DB, error) {
 		),
 	})
 	if err != nil {
-		if store != nil {
-			store.Close(context.Background())
+		if repl != nil {
+			repl.Close()
 		}
 		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
@@ -66,8 +65,8 @@ func Open(path string) (*DB, error) {
 	// pooled connections from concurrent goroutines.
 	sqlDB, err := db.DB()
 	if err != nil {
-		if store != nil {
-			store.Close(context.Background())
+		if repl != nil {
+			repl.Close()
 		}
 		return nil, fmt.Errorf("getting sql.DB for %s: %w", path, err)
 	}
@@ -77,13 +76,13 @@ func Open(path string) (*DB, error) {
 	// synchronous=FULL should already do this, but set it explicitly
 	// so durability doesn't depend on compile-time defaults.
 	if _, err := sqlDB.Exec("PRAGMA synchronous = FULL"); err != nil {
-		if store != nil {
-			store.Close(context.Background())
+		if repl != nil {
+			repl.Close()
 		}
 		return nil, fmt.Errorf("setting synchronous mode for %s: %w", path, err)
 	}
 
-	return &DB{db, store}, nil
+	return &DB{db, repl}, nil
 }
 
 func (db *DB) Close() error {
@@ -102,8 +101,8 @@ func (db *DB) Close() error {
 	if err := sqlDB.Close(); err != nil {
 		return err
 	}
-	if db.litestreamStore != nil {
-		if err := db.litestreamStore.Close(context.Background()); err != nil {
+	if db.replication != nil {
+		if err := db.replication.Close(); err != nil {
 			return err
 		}
 	}

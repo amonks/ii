@@ -29,6 +29,14 @@ const clientID = crypto.randomUUID().replace(/-/g, '');
 const base = document.baseURI.replace(/\/$/, '');
 const tileURL = base + '/tiles/{z}/{x}/{y}?client=' + clientID;
 
+// Parse #z/lat/lon from URL hash, fall back to defaults.
+function parseHash() {
+  const m = location.hash.match(/^#(\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+  if (m) return { zoom: +m[1], center: [+m[3], +m[2]] };
+  return { zoom: 10, center: [-87.65, 41.88] };
+}
+const initial = parseHash();
+
 const map = new maplibregl.Map({
   container: 'map',
   style: {
@@ -66,8 +74,15 @@ const map = new maplibregl.Map({
       },
     ],
   },
-  center: [-87.65, 41.88],
-  zoom: 10,
+  center: initial.center,
+  zoom: initial.zoom,
+});
+
+// Sync URL hash with viewport.
+map.on('moveend', function() {
+  const c = map.getCenter();
+  const z = map.getZoom().toFixed(1);
+  history.replaceState(null, '', '#' + z + '/' + c.lat.toFixed(6) + '/' + c.lng.toFixed(6));
 });
 
 // SSE: listen for tile-updated events and reload affected tiles.

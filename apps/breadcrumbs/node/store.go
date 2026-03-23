@@ -284,22 +284,23 @@ func (s *Store) SignificanceStats(ctx context.Context) (SignificanceStats, error
 // given method. It reads all points in timestamp order, walks through
 // triplets, and batch-updates the rtree index.
 func (s *Store) RecomputeSignificance(ctx context.Context, method SimplifyMethod) (int, error) {
-	// Read all point IDs and coordinates in timestamp order.
+	// Read all point IDs, coordinates, and accuracy in timestamp order.
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, lat, lon FROM points ORDER BY timestamp`)
+		`SELECT id, lat, lon, h_accuracy FROM points ORDER BY timestamp`)
 	if err != nil {
 		return 0, fmt.Errorf("reading points: %w", err)
 	}
 
 	type idPoint struct {
-		id  int64
-		lat float64
-		lon float64
+		id    int64
+		lat   float64
+		lon   float64
+		h_acc float64
 	}
 	var pts []idPoint
 	for rows.Next() {
 		var p idPoint
-		if err := rows.Scan(&p.id, &p.lat, &p.lon); err != nil {
+		if err := rows.Scan(&p.id, &p.lat, &p.lon, &p.h_acc); err != nil {
 			rows.Close()
 			return 0, err
 		}
@@ -337,14 +338,19 @@ func (s *Store) RecomputeSignificance(ctx context.Context, method SimplifyMethod
 			coords[i] = struct{ lat, lon float64 }{p.lat, p.lon}
 		}
 		for i := 1; i < total-1; i++ {
-			updates[i] = sigUpdate{pts[i].id, computeMultiscaleSignificance(coords, i)}
+			raw := computeMultiscaleSignificance(coords, i)
+			a := &pb.Point{HorizontalAccuracy: pts[i-1].h_acc}
+			b := &pb.Point{HorizontalAccuracy: pts[i].h_acc}
+			c := &pb.Point{HorizontalAccuracy: pts[i+1].h_acc}
+			w := math.Min(accuracyWeight(a), math.Min(accuracyWeight(b), accuracyWeight(c)))
+			updates[i] = sigUpdate{pts[i].id, raw * w}
 		}
 	} else {
 		// Triplet-based methods.
 		for i := 1; i < total-1; i++ {
-			a := &pb.Point{Latitude: pts[i-1].lat, Longitude: pts[i-1].lon}
-			b := &pb.Point{Latitude: pts[i].lat, Longitude: pts[i].lon}
-			c := &pb.Point{Latitude: pts[i+1].lat, Longitude: pts[i+1].lon}
+			a := &pb.Point{Latitude: pts[i-1].lat, Longitude: pts[i-1].lon, HorizontalAccuracy: pts[i-1].h_acc}
+			b := &pb.Point{Latitude: pts[i].lat, Longitude: pts[i].lon, HorizontalAccuracy: pts[i].h_acc}
+			c := &pb.Point{Latitude: pts[i+1].lat, Longitude: pts[i+1].lon, HorizontalAccuracy: pts[i+1].h_acc}
 			updates[i] = sigUpdate{pts[i].id, computeSignificance(method, a, b, c)}
 		}
 	}

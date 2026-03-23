@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"monks.co/apps/breadcrumbs/node"
+	"monks.co/pkg/database"
 	"monks.co/pkg/env"
 	"monks.co/pkg/gzip"
 	"monks.co/pkg/meta"
@@ -40,6 +41,16 @@ func run() error {
 		config.DBPath = env.InMonksData("breadcrumbs.db")
 	}
 
+	if err := tailnet.WaitReady(ctx); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
+	repl, err := database.StartReplication(ctx, config.DBPath)
+	if err != nil {
+		return fmt.Errorf("starting replication: %w", err)
+	}
+	defer repl.Close()
+
 	n, err := node.NewNode(ctx, config)
 	if err != nil {
 		return fmt.Errorf("creating node: %w", err)
@@ -49,9 +60,6 @@ func run() error {
 	mux := serve.NewMux()
 	mux.Handle("/", n.Handler())
 
-	if err := tailnet.WaitReady(ctx); err != nil {
-		return fmt.Errorf("tailnet: %w", err)
-	}
 	if err := tailnet.ListenAndServe(ctx, reqlog.Middleware().ModifyHandler(gzip.Middleware(mux))); err != nil {
 		return err
 	}

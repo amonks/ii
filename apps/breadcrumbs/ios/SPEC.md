@@ -242,6 +242,18 @@ Multiple simplification methods are available, configured via
   exponentially increasing offsets (1, 2, 4, 8, ...). Creates a natural
   LOD pyramid. Only usable via recompute (requires all points in memory).
 
+All methods apply accuracy weighting: the raw geometric significance is
+scaled by `min(w(a), w(b), w(c))` where w is an accuracy weight for
+each vertex of the triangle. Points with horizontal accuracy ≤ 10 m (or
+unknown/zero accuracy) have weight 1. Between 10 m and 100 m, weight
+decays as `(10 / accuracy)²`. Above 100 m the position is too
+unreliable to be useful, so weight is 0 — both the point and its
+neighbors get significance 0 and are never rendered. This ensures that
+cell-tower fixes (typically reported at 1414 m, i.e. `sqrt(2) × 1000`)
+and other imprecise points produce no visible spikes. No query-time
+changes are needed: the weight is baked into the stored significance
+value.
+
 On append, only the previous tail point's significance is recomputed —
 everything older is frozen.
 
@@ -564,7 +576,10 @@ All interaction with the node goes through HTTP.
 
 A Go binary that creates a Node with full-world storage and no
 upstream, serves its Handler(), and also serves static assets for the
-web map viewer.
+web map viewer. The server uses `database.StartReplication` from
+`pkg/database` to continuously replicate its SQLite database to
+monks-vault-thor via litestream over the tailnet. The startup order
+is: wait for tailnet → start replication → open node → serve.
 
 ### iOS app
 
