@@ -130,6 +130,12 @@ nonisolated struct Breadcrumbs_StatsResponse: Sendable {
   /// Clears the value of `latestPoint`. Subsequent reads from it will return its default value.
   mutating func clearLatestPoint() {self._latestPoint = nil}
 
+  /// timestamp of last forwarded point (0 if none)
+  var forwardWatermark: Int64 = 0
+
+  /// number of points waiting to be forwarded
+  var forwardQueueSize: Int64 = 0
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
@@ -373,7 +379,7 @@ nonisolated extension Breadcrumbs_TileUpdated: SwiftProtobuf.Message, SwiftProto
 
 nonisolated extension Breadcrumbs_StatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".StatsResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}count\0\u{3}latest_point\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}count\0\u{3}latest_point\0\u{3}forward_watermark\0\u{3}forward_queue_size\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -383,6 +389,8 @@ nonisolated extension Breadcrumbs_StatsResponse: SwiftProtobuf.Message, SwiftPro
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt64Field(value: &self.count) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._latestPoint) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self.forwardWatermark) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.forwardQueueSize) }()
       default: break
       }
     }
@@ -399,12 +407,20 @@ nonisolated extension Breadcrumbs_StatsResponse: SwiftProtobuf.Message, SwiftPro
     try { if let v = self._latestPoint {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     } }()
+    if self.forwardWatermark != 0 {
+      try visitor.visitSingularInt64Field(value: self.forwardWatermark, fieldNumber: 3)
+    }
+    if self.forwardQueueSize != 0 {
+      try visitor.visitSingularInt64Field(value: self.forwardQueueSize, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Breadcrumbs_StatsResponse, rhs: Breadcrumbs_StatsResponse) -> Bool {
     if lhs.count != rhs.count {return false}
     if lhs._latestPoint != rhs._latestPoint {return false}
+    if lhs.forwardWatermark != rhs.forwardWatermark {return false}
+    if lhs.forwardQueueSize != rhs.forwardQueueSize {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

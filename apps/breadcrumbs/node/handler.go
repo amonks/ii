@@ -260,7 +260,24 @@ func (h *handler) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := &pb.StatsResponse{Count: count, LatestPoint: latest}
+	watermark, err := h.store.GetWatermark(r.Context())
+	if err != nil {
+		http.Error(w, "querying watermark: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	queueSize, err := h.store.ForwardQueueSize(r.Context(), watermark)
+	if err != nil {
+		http.Error(w, "querying queue size: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &pb.StatsResponse{
+		Count:            count,
+		LatestPoint:      latest,
+		ForwardWatermark: watermark,
+		ForwardQueueSize: queueSize,
+	}
 	data, err := proto.Marshal(resp)
 	if err != nil {
 		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)

@@ -42,4 +42,6 @@ message TileUpdated {
 message StatsResponse {
     int64 count = 1;
     Point latest_point = 2;  // most recent point, or absent if empty
+    int64 forward_watermark = 3;   // timestamp of last forwarded point (0 if none)
+    int64 forward_queue_size = 4;  // number of points waiting to be forwarded
 }

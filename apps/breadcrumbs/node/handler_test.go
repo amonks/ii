@@ -415,6 +415,49 @@ func TestHandlerStatsAfterIngest(t *testing.T) {
 	}
 }
 
+func TestHandlerStatsForwardQueue(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Insert 5 points.
+	for i := range 5 {
+		s.InsertPoint(ctx, &pb.Point{
+			Timestamp: int64(i + 1),
+			Latitude:  0, Longitude: 0,
+		}, math.MaxFloat64, false)
+	}
+
+	// Set watermark to 3 — points 4 and 5 are unforwarded.
+	s.SetWatermark(ctx, 3)
+
+	simp := NewSimplifier()
+	hub := NewHub()
+	config := &Config{Capacity: 10000}
+	h := newHandler(s, simp, hub, config, nil)
+
+	req := httptest.NewRequest("GET", "/stats", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	var resp pb.StatsResponse
+	if err := proto.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Count != 5 {
+		t.Errorf("count = %d, want 5", resp.Count)
+	}
+	if resp.ForwardWatermark != 3 {
+		t.Errorf("forward_watermark = %d, want 3", resp.ForwardWatermark)
+	}
+	if resp.ForwardQueueSize != 2 {
+		t.Errorf("forward_queue_size = %d, want 2", resp.ForwardQueueSize)
+	}
+}
+
 func TestHandlerEventsMissingClient(t *testing.T) {
 	h := testHandler(t)
 

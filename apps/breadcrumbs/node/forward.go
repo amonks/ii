@@ -45,6 +45,15 @@ func (s *Store) SetWatermark(ctx context.Context, watermark int64) error {
 	return err
 }
 
+// ForwardQueueSize returns the number of points with timestamp > watermark.
+func (s *Store) ForwardQueueSize(ctx context.Context, watermark int64) (int64, error) {
+	var count int64
+	err := s.db.QueryRowContext(ctx,
+		`SELECT count(*) FROM points WHERE timestamp > ?`, watermark,
+	).Scan(&count)
+	return count, err
+}
+
 // ForwardablePoints returns all points with timestamp > watermark, ordered
 // by timestamp. These are points that have not yet been forwarded upstream.
 func (s *Store) ForwardablePoints(ctx context.Context, watermark int64) ([]*pb.Point, error) {

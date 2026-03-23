@@ -212,6 +212,8 @@ message TileUpdated {
 message StatsResponse {
     int64 count = 1;
     Point latest_point = 2;
+    int64 forward_watermark = 3;
+    int64 forward_queue_size = 4;
 }
 ```
 
@@ -462,9 +464,11 @@ on reconnect to compensate.
 
 Response body: protobuf-encoded `StatsResponse`.
 
-Returns the total point count and the most recent point (by timestamp).
-Used by the iOS app's status UI to confirm the node is running and
-receiving data.
+Returns the total point count, the most recent point (by timestamp),
+the forward watermark (timestamp of the last successfully forwarded
+point), and the forward queue size (number of points waiting to be
+forwarded). Used by the iOS app's status UI to show node health and
+sync status.
 
 ### `POST /flush`
 

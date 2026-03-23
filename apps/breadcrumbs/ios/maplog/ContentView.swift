@@ -51,6 +51,9 @@ struct StatusTab: View {
     @State private var flushing: Bool = false
     @State private var recomputing: Bool = false
     @State private var recomputeResult: String? = nil
+    @State private var forwardQueueSize: Int64 = 0
+    @State private var forwardWatermark: Int64 = 0
+    @State private var lastFlushResult: String? = nil
 
     var body: some View {
         NavigationStack {
@@ -71,6 +74,29 @@ struct StatusTab: View {
                     }
                     if let lat = latestLat, let lon = latestLon {
                         row("Latest pos", String(format: "%.5f, %.5f", lat, lon))
+                    }
+                }
+
+                Section("Sync") {
+                    row("Upstream", "monks.co/breadcrumbs")
+                    row("Queue", "\(forwardQueueSize)")
+                    if forwardWatermark > 0 {
+                        let date = Date(timeIntervalSince1970: Double(forwardWatermark) / 1_000_000_000)
+                        row("Last synced", date.formatted(.dateTime.month().day().hour().minute().second()))
+                    } else {
+                        row("Last synced", "never")
+                    }
+                    if flushing {
+                        ProgressView("Syncing…")
+                    } else {
+                        Button("Sync Now") {
+                            Task { await flush() }
+                        }
+                    }
+                    if let result = lastFlushResult {
+                        Text(result)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -112,10 +138,6 @@ struct StatusTab: View {
 
                 Section {
                     Toggle("Logging", isOn: $logger.isEnabled)
-                    Button("Sync Now") {
-                        Task { await flush() }
-                    }
-                    .disabled(flushing)
                 }
 
                 if legacyCount > 0 {
@@ -175,6 +197,8 @@ struct StatusTab: View {
                 latestLat = nil
                 latestLon = nil
             }
+            forwardWatermark = resp.forwardWatermark
+            forwardQueueSize = resp.forwardQueueSize
             statsError = nil
         } catch {
             statsError = error.localizedDescription
@@ -253,10 +277,22 @@ struct StatusTab: View {
 
     private func flush() async {
         flushing = true
+        lastFlushResult = nil
         defer { flushing = false }
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(nodePort)/flush")!)
         request.httpMethod = "POST"
-        _ = try? await URLSession.shared.data(for: request)
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let resp = try Breadcrumbs_FlushResponse(serializedBytes: data)
+            if resp.pointsForwarded > 0 {
+                lastFlushResult = "Sent \(resp.pointsForwarded) points"
+            } else {
+                lastFlushResult = "Nothing to send"
+            }
+            await refreshStats()
+        } catch {
+            lastFlushResult = "Failed: \(error.localizedDescription)"
+        }
     }
 
     private func recompute() async {
