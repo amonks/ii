@@ -30,10 +30,9 @@ func TestEncodeMVTEmpty(t *testing.T) {
 
 func TestEncodeMVTSinglePoint(t *testing.T) {
 	// A single point can't form a LINESTRING, so the tile should have no features.
-	points := []*pb.Point{
-		{Latitude: 0, Longitude: 0},
-	}
-	data, err := EncodeMVT(points, 0, 0, 0)
+	data, err := EncodeMVT([][]*pb.Point{
+		{{Latitude: 0, Longitude: 0}},
+	}, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,12 +49,11 @@ func TestEncodeMVTSinglePoint(t *testing.T) {
 
 func TestEncodeMVTLineString(t *testing.T) {
 	// Three points in a line within tile (0,0,0).
-	points := []*pb.Point{
-		{Latitude: 0, Longitude: -180},  // left edge, equator
-		{Latitude: 0, Longitude: 0},     // center, equator
-		{Latitude: 0, Longitude: 180},   // right edge, equator
-	}
-	data, err := EncodeMVT(points, 0, 0, 0)
+	data, err := EncodeMVT([][]*pb.Point{{
+		{Latitude: 0, Longitude: -180},
+		{Latitude: 0, Longitude: 0},
+		{Latitude: 0, Longitude: 180},
+	}}, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,14 +71,10 @@ func TestEncodeMVTLineString(t *testing.T) {
 }
 
 func TestEncodeMVTMercatorProjection(t *testing.T) {
-	// At zoom 0, the equator (lat=0) should map to the vertical midpoint
-	// of the tile in Mercator projection (tileY = 2048 for extent 4096).
-	// Use two points so we get a valid LINESTRING.
-	points := []*pb.Point{
+	data, err := EncodeMVT([][]*pb.Point{{
 		{Latitude: 0, Longitude: 0},
 		{Latitude: 0, Longitude: 1},
-	}
-	data, err := EncodeMVT(points, 0, 0, 0)
+	}}, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,16 +85,13 @@ func TestEncodeMVTMercatorProjection(t *testing.T) {
 	}
 
 	feat := tile.Layers[0].Features[0]
-	// Geometry: MoveTo(1) + dx + dy + LineTo(1) + dx + dy = 6 values
 	if len(feat.Geometry) < 3 {
 		t.Fatalf("geometry len = %d, want >= 3", len(feat.Geometry))
 	}
 
-	// Decode first point: dx and dy are zigzag-encoded.
 	dx := decodeZigzag(feat.Geometry[1])
 	dy := decodeZigzag(feat.Geometry[2])
 
-	// Equator, lon=0 → center of tile (0,0,0), i.e. tileX=2048, tileY=2048.
 	if dx != 2048 {
 		t.Errorf("tileX = %d, want 2048 (center)", dx)
 	}
@@ -114,7 +105,6 @@ func decodeZigzag(v uint32) int {
 }
 
 func TestEncodeMVTDownsamplesLargeTile(t *testing.T) {
-	// Generate more points than maxPointsPerTile.
 	n := maxPointsPerTile + 10000
 	points := make([]*pb.Point, n)
 	for i := range n {
@@ -125,7 +115,7 @@ func TestEncodeMVTDownsamplesLargeTile(t *testing.T) {
 		}
 	}
 
-	data, err := EncodeMVT(points, 0, 0, 0)
+	data, err := EncodeMVT([][]*pb.Point{points}, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,14 +130,61 @@ func TestEncodeMVTDownsamplesLargeTile(t *testing.T) {
 		t.Fatalf("expected 1 feature, got %d", len(features))
 	}
 
-	// Count vertices: geometry = MoveTo(1) + 2 coords + LineTo(count) + 2*count coords
-	// Total geometry ints = 4 + 2*count, so total vertices = (len-4)/2 + 1
 	verts := (len(features[0].Geometry)-4)/2 + 1
 	if verts > maxPointsPerTile {
 		t.Errorf("tile has %d vertices, exceeds limit %d", verts, maxPointsPerTile)
 	}
 	if verts < maxPointsPerTile-1 {
 		t.Errorf("tile has %d vertices, expected close to %d", verts, maxPointsPerTile)
+	}
+}
+
+func TestEncodeMVTMultipleSegments(t *testing.T) {
+	// Two segments should produce two LineString features.
+	data, err := EncodeMVT([][]*pb.Point{
+		{
+			{Latitude: 0, Longitude: -180},
+			{Latitude: 0, Longitude: 0},
+		},
+		{
+			{Latitude: 10, Longitude: 0},
+			{Latitude: 10, Longitude: 180},
+		},
+	}, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var tile pb.Tile
+	if err := proto.Unmarshal(data, &tile); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(tile.Layers[0].Features) != 2 {
+		t.Errorf("features = %d, want 2", len(tile.Layers[0].Features))
+	}
+}
+
+func TestEncodeMVTSinglePointSegmentDropped(t *testing.T) {
+	// A segment with 1 point can't form a line and should be dropped.
+	data, err := EncodeMVT([][]*pb.Point{
+		{{Latitude: 0, Longitude: 0}},
+		{
+			{Latitude: 10, Longitude: 0},
+			{Latitude: 10, Longitude: 180},
+		},
+	}, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var tile pb.Tile
+	if err := proto.Unmarshal(data, &tile); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(tile.Layers[0].Features) != 1 {
+		t.Errorf("features = %d, want 1 (single-point segment dropped)", len(tile.Layers[0].Features))
 	}
 }
 

@@ -15,27 +15,36 @@ const mvtExtent = 4096
 // width, miter joins, caps). We cap at 5,000 to stay safely under the limit.
 const maxPointsPerTile = 5000
 
-// EncodeMVT encodes points as a Mapbox Vector Tile with a single "track"
-// layer containing one LineString feature. If the point count exceeds
-// MapLibre's per-tile vertex limit, points are uniformly downsampled
-// (always keeping first and last) to stay under the cap.
-func EncodeMVT(points []*pb.Point, z, x, y int) ([]byte, error) {
+// EncodeMVT encodes point segments as a Mapbox Vector Tile with a "track"
+// layer. Each segment becomes a separate LineString feature. If the total
+// point count exceeds MapLibre's per-tile vertex limit, the budget is
+// distributed proportionally across segments.
+func EncodeMVT(segments [][]*pb.Point, z, x, y int) ([]byte, error) {
 	south, north, west, east, err := TileBBox(z, x, y)
 	if err != nil {
 		return nil, err
 	}
 
-	pts := points
-	if len(pts) > maxPointsPerTile {
-		pts = downsample(pts, maxPointsPerTile)
+	// Downsample if needed, distributing budget proportionally.
+	total := 0
+	for _, seg := range segments {
+		total += len(seg)
+	}
+	if total > maxPointsPerTile {
+		for i, seg := range segments {
+			budget := max(2, len(seg)*maxPointsPerTile/total)
+			segments[i] = downsample(seg, budget)
+		}
 	}
 
 	var features []*pb.Tile_Feature
-	if len(pts) >= 2 {
-		features = append(features, &pb.Tile_Feature{
-			Type:     pb.Tile_LINESTRING.Enum(),
-			Geometry: encodeLineString(pts, south, north, west, east),
-		})
+	for _, seg := range segments {
+		if len(seg) >= 2 {
+			features = append(features, &pb.Tile_Feature{
+				Type:     pb.Tile_LINESTRING.Enum(),
+				Geometry: encodeLineString(seg, south, north, west, east),
+			})
+		}
 	}
 
 	version := uint32(2)

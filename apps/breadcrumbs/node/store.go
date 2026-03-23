@@ -213,6 +213,71 @@ func (s *Store) LastTwoPoints(ctx context.Context) (prev, tail *pb.Point, err er
 	}
 }
 
+// scanPoint scans a single point from a row with the standard column list.
+func scanPoint(row interface{ Scan(...any) error }) (*pb.Point, error) {
+	p := &pb.Point{}
+	var isSim, isAcc sql.NullInt64
+	if err := row.Scan(
+		&p.Timestamp, &p.Latitude, &p.Longitude, &p.Altitude, &p.EllipsoidalAltitude,
+		&p.HorizontalAccuracy, &p.VerticalAccuracy, &p.Speed, &p.SpeedAccuracy,
+		&p.Course, &p.CourseAccuracy, &p.Floor, &isSim, &isAcc,
+	); err != nil {
+		return nil, err
+	}
+	p.IsSimulated = isSim.Valid && isSim.Int64 != 0
+	p.IsFromAccessory = isAcc.Valid && isAcc.Int64 != 0
+	return p, nil
+}
+
+const pointColumns = `timestamp, lat, lon, alt, ellipsoidal_alt,
+	h_accuracy, v_accuracy, speed, speed_accuracy,
+	course, course_accuracy, floor, is_simulated, is_from_accessory`
+
+// NextVisiblePoint returns the first point after afterTimestamp with
+// significance >= minSig, or nil if none exists.
+func (s *Store) NextVisiblePoint(ctx context.Context, afterTimestamp int64, minSig float64) (*pb.Point, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT `+pointColumns+` FROM points
+		WHERE timestamp > ? AND significance >= ?
+		ORDER BY timestamp LIMIT 1`,
+		afterTimestamp, minSig,
+	)
+	p, err := scanPoint(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return p, err
+}
+
+// PrevVisiblePoint returns the last point before beforeTimestamp with
+// significance >= minSig, or nil if none exists.
+func (s *Store) PrevVisiblePoint(ctx context.Context, beforeTimestamp int64, minSig float64) (*pb.Point, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT `+pointColumns+` FROM points
+		WHERE timestamp < ? AND significance >= ?
+		ORDER BY timestamp DESC LIMIT 1`,
+		beforeTimestamp, minSig,
+	)
+	p, err := scanPoint(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return p, err
+}
+
+// GlobalTimestampRange returns the min and max timestamps in the store.
+// Returns (0, 0, nil) if the store is empty.
+func (s *Store) GlobalTimestampRange(ctx context.Context) (first, last int64, err error) {
+	var f, l sql.NullInt64
+	err = s.db.QueryRowContext(ctx,
+		`SELECT min(timestamp), max(timestamp) FROM points`,
+	).Scan(&f, &l)
+	if err != nil || !f.Valid {
+		return 0, 0, err
+	}
+	return f.Int64, l.Int64, nil
+}
+
 // Stats returns the total point count and the most recent point (by timestamp).
 // If the store is empty, latest is nil.
 func (s *Store) Stats(ctx context.Context) (count int64, latest *pb.Point, err error) {

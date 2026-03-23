@@ -219,6 +219,94 @@ func TestStoreStats(t *testing.T) {
 	}
 }
 
+func TestNextVisiblePoint(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 10, Longitude: 20}, 0.5, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 2000, Latitude: 11, Longitude: 21}, 0.01, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 3000, Latitude: 12, Longitude: 22}, 0.5, false)
+
+	// Should skip ts=2000 (sig 0.01 < 0.1) and return ts=3000.
+	p, err := s.NextVisiblePoint(ctx, 1000, 0.1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p == nil || p.Timestamp != 3000 {
+		t.Errorf("got %v, want timestamp 3000", p)
+	}
+}
+
+func TestNextVisiblePointNone(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 10, Longitude: 20}, 0.5, false)
+
+	p, err := s.NextVisiblePoint(ctx, 1000, 0.1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p != nil {
+		t.Errorf("got %v, want nil", p)
+	}
+}
+
+func TestPrevVisiblePoint(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 10, Longitude: 20}, 0.5, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 2000, Latitude: 11, Longitude: 21}, 0.01, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 3000, Latitude: 12, Longitude: 22}, 0.5, false)
+
+	// Should skip ts=2000 (sig 0.01 < 0.1) and return ts=1000.
+	p, err := s.PrevVisiblePoint(ctx, 3000, 0.1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p == nil || p.Timestamp != 1000 {
+		t.Errorf("got %v, want timestamp 1000", p)
+	}
+}
+
+func TestPrevVisiblePointNone(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 10, Longitude: 20}, 0.5, false)
+
+	p, err := s.PrevVisiblePoint(ctx, 1000, 0.1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p != nil {
+		t.Errorf("got %v, want nil", p)
+	}
+}
+
+func TestGlobalTimestampRange(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Empty store.
+	first, last, err := s.GlobalTimestampRange(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != 0 || last != 0 {
+		t.Errorf("empty: got (%d, %d), want (0, 0)", first, last)
+	}
+
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 3000, Latitude: 10, Longitude: 20}, 0.5, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 1000, Latitude: 11, Longitude: 21}, 0.5, false)
+	s.InsertPoint(ctx, &pb.Point{Timestamp: 5000, Latitude: 12, Longitude: 22}, 0.5, false)
+
+	first, last, err = s.GlobalTimestampRange(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != 1000 || last != 5000 {
+		t.Errorf("got (%d, %d), want (1000, 5000)", first, last)
+	}
+}
+
 func TestStoreLastTwoPointsEmpty(t *testing.T) {
 	s := testStore(t)
 	prev, tail, err := s.LastTwoPoints(context.Background())

@@ -392,11 +392,18 @@ There are two:
 - **MVT (Mapbox Vector Tiles)** — lossy, quantized to a tile-local
   4096x4096 grid, encoded on the fly from query results. This is a
   display format served to MapLibre, not a storage or sync format.
-  If a tile contains more than 5,000 points, they are uniformly
-  downsampled (keeping first and last) before encoding. MapLibre's
-  WebGL vertex buffer is capped at 65,535 indices (uint16), and line
-  rendering generates ~10–18 vertices per coordinate for extruded
-  width, joins, and caps.
+  Before encoding, points are split into visit segments at time gaps
+  exceeding 120 seconds. Each segment is extended with its temporal
+  neighbor from the global dataset (at the same significance level)
+  so lines connect across tile boundaries. Each segment becomes a
+  separate LineString feature. The only true line endpoints in the
+  entire map are the first and last point globally.
+  If a tile contains more than 5,000 points total, the budget is
+  distributed proportionally across segments and each is uniformly
+  downsampled (keeping first and last). MapLibre's WebGL vertex
+  buffer is capped at 65,535 indices (uint16), and line rendering
+  generates ~10–18 vertices per coordinate for extruded width,
+  joins, and caps.
 
 ## Protocol
 

@@ -174,7 +174,20 @@ func (h *handler) handleTile(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	} else {
 		// Default to MVT for map clients (MapLibre, browsers, etc.).
-		data, err := EncodeMVT(points, z, x, y)
+		// Split into visit segments and extend with neighbor points so
+		// lines connect across tile boundaries.
+		segments := splitVisits(points)
+		globalFirst, globalLast, err := h.store.GlobalTimestampRange(r.Context())
+		if err != nil {
+			http.Error(w, "querying timestamp range: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		segments, err = extendSegments(r.Context(), segments, minSig, globalFirst, globalLast, h.store)
+		if err != nil {
+			http.Error(w, "extending segments: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data, err := EncodeMVT(segments, z, x, y)
 		if err != nil {
 			http.Error(w, "encoding MVT: "+err.Error(), http.StatusInternalServerError)
 			return
