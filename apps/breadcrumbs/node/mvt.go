@@ -3,8 +3,8 @@ package node
 import (
 	"math"
 
-	pb "monks.co/apps/breadcrumbs/proto"
 	"google.golang.org/protobuf/proto"
+	pb "monks.co/apps/breadcrumbs/proto"
 )
 
 const mvtExtent = 4096
@@ -30,7 +30,7 @@ func EncodeMVT(points []*pb.Point, z, x, y int) ([]byte, error) {
 	tile := &pb.Tile{
 		Layers: []*pb.Tile_Layer{{
 			Version:  &version,
-			Name:     proto.String("track"),
+			Name:     new("track"),
 			Extent:   &extent,
 			Features: []*pb.Tile_Feature{feature},
 		}},

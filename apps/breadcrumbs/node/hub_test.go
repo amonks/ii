@@ -83,15 +83,13 @@ func TestHubConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 
 	for i := range 10 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			id := string(rune('a' + i))
 			ch, unsub := h.Subscribe(id)
 			h.Publish(id, []byte("msg"))
 			<-ch
 			unsub()
-		}()
+		})
 	}
 
 	wg.Wait()

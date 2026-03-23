@@ -78,10 +78,7 @@ func zoomForSignificance(minSig float64) int {
 // lonToTileX converts a longitude to a tile X coordinate at the given zoom.
 func lonToTileX(lon float64, z int) int {
 	n := float64(int(1) << z)
-	x := int((lon + 180.0) / 360.0 * n)
-	if x < 0 {
-		x = 0
-	}
+	x := max(int((lon+180.0)/360.0*n), 0)
 	if x >= int(n) {
 		x = int(n) - 1
 	}
@@ -92,10 +89,7 @@ func lonToTileX(lon float64, z int) int {
 func latToTileY(lat float64, z int) int {
 	n := float64(int(1) << z)
 	latRad := lat * math.Pi / 180.0
-	y := int((1.0 - math.Log(math.Tan(latRad)+1.0/math.Cos(latRad))/math.Pi) / 2.0 * n)
-	if y < 0 {
-		y = 0
-	}
+	y := max(int((1.0-math.Log(math.Tan(latRad)+1.0/math.Cos(latRad))/math.Pi)/2.0*n), 0)
 	if y >= int(n) {
 		y = int(n) - 1
 	}

@@ -13,7 +13,7 @@ import (
 // small lateral jitter to produce nonzero VW triangle areas.
 func generateGPSTrack(n int, baseLat, baseLon float64) []*pb.Point {
 	points := make([]*pb.Point, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		frac := float64(i) / float64(n-1)
 		// Walk northeast with small sinusoidal lateral wobble.
 		lat := baseLat + frac*0.01

@@ -359,10 +359,7 @@ func (s *Store) RecomputeSignificance(ctx context.Context, method SimplifyMethod
 
 	const batchSize = 1000
 	for start := 0; start < len(updates); start += batchSize {
-		end := start + batchSize
-		if end > len(updates) {
-			end = len(updates)
-		}
+		end := min(start+batchSize, len(updates))
 		batch := updates[start:end]
 
 		// Build: UPDATE points SET significance = CASE id
