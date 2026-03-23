@@ -3,10 +3,9 @@ FROM golang:1.26.1-alpine
 RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
     python3 py3-pip sqlite ca-certificates curl pkgconf tailscale
 
-# protoc + protoc-gen-go (for breadcrumbs protobuf codegen)
-# Pin versions so codegen is deterministic across local and CI.
-RUN curl -L https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip \
-    -o /tmp/protoc.zip && unzip /tmp/protoc.zip -d /usr/local bin/protoc && rm /tmp/protoc.zip
+# protoc (from Alpine) + protoc-gen-go (pinned version)
+# protoc-gen-go version determines .pb.go code structure; pin it for determinism.
+RUN apk add --no-cache protoc
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
 
 # NLopt 2.10.0
