@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -455,6 +456,52 @@ func TestHandlerStatsForwardQueue(t *testing.T) {
 	}
 	if resp.ForwardQueueSize != 2 {
 		t.Errorf("forward_queue_size = %d, want 2", resp.ForwardQueueSize)
+	}
+}
+
+func TestHandlerStatsJSON(t *testing.T) {
+	h := testHandler(t)
+
+	// Ingest a point.
+	track := &pb.Track{
+		Points: []*pb.Point{
+			{Timestamp: 5000, Latitude: 41.88, Longitude: -87.63},
+		},
+	}
+	body, _ := proto.Marshal(track)
+	req := httptest.NewRequest("POST", "/ingest", strings.NewReader(string(body)))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("ingest status = %d", w.Code)
+	}
+
+	// Request stats as JSON.
+	req = httptest.NewRequest("GET", "/stats", nil)
+	req.Header.Set("Accept", "application/json")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	if ct := w.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("content-type = %q, want application/json", ct)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if count, ok := result["count"].(float64); !ok || count != 1 {
+		t.Errorf("count = %v, want 1", result["count"])
+	}
+	lp, ok := result["latest_point"].(map[string]any)
+	if !ok {
+		t.Fatal("latest_point missing or not an object")
+	}
+	if lat, ok := lp["latitude"].(float64); !ok || lat != 41.88 {
+		t.Errorf("latitude = %v, want 41.88", lp["latitude"])
 	}
 }
 

@@ -278,6 +278,25 @@ func (h *handler) handleStats(w http.ResponseWriter, r *http.Request) {
 		ForwardWatermark: watermark,
 		ForwardQueueSize: queueSize,
 	}
+
+	if strings.Contains(r.Header.Get("Accept"), "application/json") {
+		out := map[string]any{
+			"count":              resp.Count,
+			"forward_watermark":  resp.ForwardWatermark,
+			"forward_queue_size": resp.ForwardQueueSize,
+		}
+		if resp.LatestPoint != nil {
+			out["latest_point"] = map[string]any{
+				"timestamp": resp.LatestPoint.Timestamp,
+				"latitude":  resp.LatestPoint.Latitude,
+				"longitude": resp.LatestPoint.Longitude,
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(out)
+		return
+	}
+
 	data, err := proto.Marshal(resp)
 	if err != nil {
 		http.Error(w, "encoding response: "+err.Error(), http.StatusInternalServerError)

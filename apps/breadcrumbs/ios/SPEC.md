@@ -462,13 +462,19 @@ on reconnect to compensate.
 
 ### `GET /stats`
 
-Response body: protobuf-encoded `StatsResponse`.
+Response format depends on `Accept` header:
+
+- `Accept: application/json` — JSON object with `count`,
+  `forward_watermark`, `forward_queue_size`, and `latest_point`
+  (object with `timestamp`, `latitude`, `longitude`). Used by the
+  web viewer's diagnostic overlay.
+- Otherwise — protobuf-encoded `StatsResponse`.
 
 Returns the total point count, the most recent point (by timestamp),
 the forward watermark (timestamp of the last successfully forwarded
 point), and the forward queue size (number of points waiting to be
-forwarded). Used by the iOS app's status UI to show node health and
-sync status.
+forwarded). Used by the iOS app's status UI and the web viewer's
+diagnostic overlay to show node health and sync status.
 
 ### `POST /flush`
 
@@ -551,7 +557,10 @@ manual sync button.
 Static HTML/JS. Generates a random client ID on page load. A MapLibre
 GL JS map with a tile source pointed at the server's
 `/tiles/{z}/{x}/{y}?client={id}` endpoint. Connects to
-`/events?client={id}` for live tile updates.
+`/events?client={id}` for live tile updates. A diagnostic overlay in
+the top-right corner polls `GET /stats` (JSON) every 5 seconds and
+displays point count, latest point age, forward queue size, forward
+watermark age, and latest position.
 
 ## Development
 

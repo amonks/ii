@@ -9,10 +9,20 @@
 <style>
   body { margin: 0; }
   #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  #stats {
+    position: absolute; top: 10px; right: 10px; z-index: 1;
+    background: rgba(0,0,0,0.75); color: #fff; padding: 10px 14px;
+    border-radius: 6px; font: 12px/1.6 monospace;
+    pointer-events: none;
+  }
+  #stats .label { color: #999; }
+  #stats .value { color: #fff; }
+  #stats .stale { opacity: 0.5; }
 </style>
 </head>
 <body>
 <div id="map"></div>
+<div id="stats" class="stale">loading…</div>
 <script>
 const clientID = crypto.randomUUID().replace(/-/g, '');
 
@@ -75,6 +85,39 @@ events.onerror = function() {
     }
   }, 2000);
 };
+
+// Stats overlay: poll /stats every 5s.
+function formatTime(nsEpoch) {
+  if (!nsEpoch) return '—';
+  const d = new Date(Number(nsEpoch) / 1e6);
+  const ago = Math.round((Date.now() - d.getTime()) / 1000);
+  const unit = ago < 60 ? ago + 's' : ago < 3600 ? Math.round(ago/60) + 'm' : Math.round(ago/3600) + 'h';
+  return unit + ' ago';
+}
+function refreshStats() {
+  fetch('/stats', { headers: { 'Accept': 'application/json' } })
+    .then(r => r.json())
+    .then(s => {
+      const el = document.getElementById('stats');
+      const lp = s.latest_point;
+      const lines = [
+        '<span class="label">points:</span> <span class="value">' + s.count.toLocaleString() + '</span>',
+        '<span class="label">latest:</span> <span class="value">' + formatTime(lp && lp.timestamp) + '</span>',
+        '<span class="label">fwd queue:</span> <span class="value">' + (s.forward_queue_size || 0).toLocaleString() + '</span>',
+        '<span class="label">fwd watermark:</span> <span class="value">' + formatTime(s.forward_watermark) + '</span>',
+      ];
+      if (lp) {
+        lines.push('<span class="label">pos:</span> <span class="value">' + lp.latitude.toFixed(4) + ', ' + lp.longitude.toFixed(4) + '</span>');
+      }
+      el.innerHTML = lines.join('<br>');
+      el.classList.remove('stale');
+    })
+    .catch(() => {
+      document.getElementById('stats').classList.add('stale');
+    });
+}
+refreshStats();
+setInterval(refreshStats, 5000);
 </script>
 </body>
 </html>
