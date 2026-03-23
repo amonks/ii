@@ -5,7 +5,9 @@ RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
 
 # protoc (from Alpine) + protoc-gen-go (pinned version)
 # protoc-gen-go version determines .pb.go code structure; pin it for determinism.
-RUN apk add --no-cache protoc
+# The symlink ensures /usr/local/bin/protoc (which PATH finds first) uses the
+# Alpine binary, not any stale artifact from prior builder images.
+RUN apk add --no-cache protoc && ln -sf /usr/bin/protoc /usr/local/bin/protoc
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
 
 # NLopt 2.10.0
