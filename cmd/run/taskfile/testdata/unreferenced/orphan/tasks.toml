@@ -1,4 +1,0 @@
-[[task]]
-  id="build"
-  type="short"
-  cmd="echo orphan-build"

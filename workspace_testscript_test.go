@@ -1,0 +1,20 @@
+package main
+
+import (
+	"testing"
+
+	"monks.co/ii/internal/testsupport"
+	"github.com/rogpeppe/go-internal/testscript"
+)
+
+func TestWorkspaceScripts(t *testing.T) {
+	testscript.Run(t, testscript.Params{
+		Dir: "testdata/workspace",
+		Setup: func(env *testscript.Env) error {
+			return testsupport.SetupScriptEnv(t, env)
+		},
+		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+			"envset": testsupport.CmdEnvSet,
+		},
+	})
+}

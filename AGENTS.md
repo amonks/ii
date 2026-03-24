@@ -1,5 +1,4 @@
 @specs/README.md
 
 - keep the specifications up to date as you make changes
-- always use red-green tdd; we don't have good test coverage at the moment but we would like to. taking time to write tests is good.
-- never run 'go build' -- it pollutes the working directory with binary artifacts. use 'go test', which implies 'go build' but goes to tmp
+- never run 'go build' without specifying some output directory in /tmp or similar-- it polutes the working directory. remember that 'go test' _internally_ runs 'go build', and so tests whether a build would succeed.
