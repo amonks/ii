@@ -17,10 +17,12 @@ type module struct {
 	hasGoMod   bool   // whether go.mod already exists
 }
 
-// discoverModules finds all {apps,pkg,cmd}/* directories containing .go files.
+// discoverModules finds all {apps,pkg,cmd}/* directories containing .go files,
+// plus any nested subdirectories that already have their own go.mod.
 // Module path defaults to "monks.co/{dir}".
 func discoverModules(root string) ([]module, error) {
 	var mods []module
+	seen := map[string]bool{}
 	for _, prefix := range []string{"apps", "pkg", "cmd"} {
 		prefixDir := filepath.Join(root, prefix)
 		entries, err := os.ReadDir(prefixDir)
@@ -48,6 +50,30 @@ func discoverModules(root string) ([]module, error) {
 				dir:        dir,
 				modulePath: "monks.co/" + dir,
 				hasGoMod:   hasGoMod,
+			})
+			seen[dir] = true
+
+			// Also discover nested modules (subdirectories with their own go.mod).
+			filepath.WalkDir(absDir, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if !d.IsDir() {
+					return nil
+				}
+				rel, _ := filepath.Rel(root, path)
+				if seen[rel] {
+					return nil
+				}
+				if _, serr := os.Stat(filepath.Join(path, "go.mod")); serr == nil {
+					seen[rel] = true
+					mods = append(mods, module{
+						dir:        rel,
+						modulePath: "monks.co/" + rel,
+						hasGoMod:   true,
+					})
+				}
+				return nil
 			})
 		}
 	}

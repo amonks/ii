@@ -9,6 +9,7 @@ use (
 	./apps/breadcrumbs
 	./apps/calendar
 	./apps/ci
+	./apps/ci/cmd/ci
 	./apps/creamery
 	./apps/directory
 	./apps/dogs
@@ -37,6 +38,7 @@ use (
 	./cmd/backupd
 	./cmd/beetman
 	./cmd/compare-agents
+	./cmd/compare-agents/testdata/lru
 	./cmd/compressor
 	./cmd/incrementum
 	./cmd/publish
