@@ -39,12 +39,23 @@ struct SettingsTab: View {
     @State private var syncStatus: SyncStatusResponse?
     @State private var isSyncing = false
     @FocusState private var periodFieldFocused: Bool
+    @AppStorage("notif_sound") private var notifSound = true
+    @AppStorage("notif_timeSensitive") private var notifTimeSensitive = false
 
     private var current: PeriodChange? { changes.last }
 
     var body: some View {
         NavigationView {
             List {
+                Section {
+                    Toggle("Sound", isOn: $notifSound)
+                    Toggle("Time Sensitive", isOn: $notifTimeSensitive)
+                } header: {
+                    Text("Notifications")
+                } footer: {
+                    Text("Time Sensitive notifications can break through Focus and Do Not Disturb.")
+                }
+
                 Section("Next Ping") {
                     if let nextPing {
                         HStack {
@@ -156,6 +167,12 @@ struct SettingsTab: View {
             .navigationTitle("Settings")
             .task { await refresh() }
             .refreshable { await refresh() }
+            .onChange(of: notifSound) {
+                NotificationManager.shared.scheduleUpcoming(baseURL: nodeManager.baseURL)
+            }
+            .onChange(of: notifTimeSensitive) {
+                NotificationManager.shared.scheduleUpcoming(baseURL: nodeManager.baseURL)
+            }
         }
     }
 

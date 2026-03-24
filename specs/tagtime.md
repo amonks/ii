@@ -132,8 +132,8 @@ Tags are resolved from `ping_tags` (the structured, post-rename association tabl
 - Pings tab is native SwiftUI with batch-set support, tap-to-edit on recent pings, and tag autocomplete
 - Search tab uses server-side FTS via `/search/data` JSON endpoint
 - Tags tab shows hierarchical tree view with collapsible nodes, sparklines, and aggregated time via `/tags/summary`, with drill-down to tag detail via `/tags/{name...}`
-- Settings tab shows next ping countdown, period display/change, sync controls
-- Schedules up to 64 local notifications from the deterministic schedule
+- Settings tab shows notification preferences (sound, time-sensitive delivery), next ping countdown, period display/change, sync controls
+- Schedules up to 64 local notifications from the deterministic schedule; notification sound and interruption level are configurable via settings (stored in UserDefaults)
 - On notification tap, opens to ping answer screen
 
 ## Storage

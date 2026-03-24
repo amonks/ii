@@ -1,5 +1,18 @@
 import UserNotifications
 
+struct NotificationSettings {
+    var soundEnabled: Bool
+    var timeSensitive: Bool
+
+    static func load() -> NotificationSettings {
+        let defaults = UserDefaults.standard
+        return NotificationSettings(
+            soundEnabled: defaults.object(forKey: "notif_sound") as? Bool ?? true,
+            timeSensitive: defaults.bool(forKey: "notif_timeSensitive")
+        )
+    }
+}
+
 class NotificationManager {
     static let shared = NotificationManager()
 
@@ -34,6 +47,7 @@ class NotificationManager {
 
     private func scheduleNotifications(for timestamps: [Int64]) {
         let center = UNUserNotificationCenter.current()
+        let settings = NotificationSettings.load()
 
         center.removePendingNotificationRequests(withIdentifiers:
             timestamps.map { "tagtime-\($0)" }
@@ -47,8 +61,15 @@ class NotificationManager {
             let content = UNMutableNotificationContent()
             content.title = "TagTime"
             content.body = "What are you doing right now?"
-            content.sound = .default
             content.categoryIdentifier = "TAGTIME_PING"
+
+            if settings.soundEnabled {
+                content.sound = .default
+            }
+
+            if settings.timeSensitive {
+                content.interruptionLevel = .timeSensitive
+            }
 
             let trigger = UNTimeIntervalNotificationTrigger(
                 timeInterval: date.timeIntervalSinceNow,
