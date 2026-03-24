@@ -33,17 +33,41 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		store.Close()
 		return nil, fmt.Errorf("listing period changes: %w", err)
 	}
+
+	var syncer *Syncer
+	if config.Upstream != "" {
+		syncer = NewSyncer(store, config.Upstream, config.NodeID, nil)
+	}
+
 	if len(changes) == 0 {
-		initial := PeriodChange{
-			Timestamp:  0,
-			Seed:       config.DefaultSeed,
-			PeriodSecs: config.DefaultPeriodSecs,
+		if syncer != nil {
+			// Client: pull period changes from server on first launch.
+			if _, err := syncer.Pull(ctx); err != nil {
+				store.Close()
+				return nil, fmt.Errorf("first launch sync failed (is the server reachable?): %w", err)
+			}
+			changes, err = store.ListPeriodChanges(ctx)
+			if err != nil {
+				store.Close()
+				return nil, fmt.Errorf("listing period changes after sync: %w", err)
+			}
+			if len(changes) == 0 {
+				store.Close()
+				return nil, fmt.Errorf("server has no period changes; initialize the server first")
+			}
+		} else {
+			// Server: create the initial period change.
+			initial := PeriodChange{
+				Timestamp:  time.Now().Unix(),
+				Seed:       config.DefaultSeed,
+				PeriodSecs: config.DefaultPeriodSecs,
+			}
+			if err := store.AddPeriodChange(ctx, initial); err != nil {
+				store.Close()
+				return nil, fmt.Errorf("adding initial period change: %w", err)
+			}
+			changes = []PeriodChange{initial}
 		}
-		if err := store.AddPeriodChange(ctx, initial); err != nil {
-			store.Close()
-			return nil, fmt.Errorf("adding initial period change: %w", err)
-		}
-		changes = []PeriodChange{initial}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -56,9 +80,9 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 
 	n.handler = newHandler(store, n.getChanges, config.NodeID, config.Upstream)
 
-	// Start syncer if upstream configured.
-	if config.Upstream != "" {
-		n.syncer = NewSyncer(store, config.Upstream, config.NodeID, nil)
+	// Start periodic sync if upstream configured.
+	if syncer != nil {
+		n.syncer = syncer
 		go n.syncer.RunPeriodicSync(ctx, 5*time.Minute)
 	}
 

@@ -18,6 +18,7 @@ struct PingsTab: View {
     @EnvironmentObject var nodeManager: NodeManager
     @State private var pending: [Ping] = []
     @State private var recent: [Ping] = []
+    @State private var initializedAt: Date?
     @State private var batchBlurb = ""
     @State private var selectedTimestamps: Set<Int64> = []
     @State private var answerTexts: [Int64: String] = [:]
@@ -85,6 +86,15 @@ struct PingsTab: View {
                 }
             }
             .navigationTitle("TagTime")
+            .toolbar {
+                if let initializedAt {
+                    ToolbarItem(placement: .bottomBar) {
+                        Text("Tracking since \(initializedAt, format: .dateTime.month(.wide).day().year().hour().minute())")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             .refreshable { await refresh() }
             .task { await refresh() }
         }
@@ -99,35 +109,23 @@ struct PingsTab: View {
 
     private func refresh() async {
         guard nodeManager.isRunning else { return }
-        let base = nodeManager.baseURL
+        guard let url = URL(string: "\(nodeManager.baseURL)/pings") else { return }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
 
-        // The Go node materializes pings asynchronously on startup.
-        // Retry briefly if the first fetch returns nothing.
-        for attempt in 0..<5 {
-            if attempt > 0 {
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+        struct PingsPayload: Codable {
+            let pending: [Ping]?
+            let recent: [Ping]?
+            let initialized_at: Int64?
+        }
+        guard let payload = try? JSONDecoder().decode(PingsPayload.self, from: data) else { return }
+
+        await MainActor.run {
+            pending = payload.pending ?? []
+            recent = payload.recent ?? []
+            selectedTimestamps = Set(pending.map(\.timestamp))
+            if let ts = payload.initialized_at, ts > 0 {
+                initializedAt = Date(timeIntervalSince1970: TimeInterval(ts))
             }
-
-            guard let url = URL(string: "\(base)/sync/pull?since=0") else { return }
-            guard let (data, _) = try? await URLSession.shared.data(from: url) else { continue }
-
-            struct SyncPayload: Codable {
-                let pings: [Ping]?
-            }
-            guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: data) else { continue }
-            let allPings = (payload.pings ?? []).sorted { $0.timestamp > $1.timestamp }
-
-            let newPending = allPings.filter { $0.blurb.isEmpty && Date(timeIntervalSince1970: TimeInterval($0.timestamp)) <= Date() }
-            let newRecent = Array(allPings.filter { !$0.blurb.isEmpty }.prefix(20))
-
-            await MainActor.run {
-                pending = newPending
-                recent = newRecent
-                selectedTimestamps = Set(newPending.map(\.timestamp))
-            }
-
-            // If we got any pings at all, we're done.
-            if !allPings.isEmpty { return }
         }
     }
 

@@ -57,6 +57,7 @@ Star topology, watermark-based:
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/` | Dashboard: pending pings + recent history |
+| GET | `/pings` | JSON: pending + recent pings (used by iOS) |
 | POST | `/answer` | Set blurb for one ping |
 | POST | `/batch-answer` | Batch-set blurb for multiple pings |
 | GET | `/search?q=` | Full-text search |

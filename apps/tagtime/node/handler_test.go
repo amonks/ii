@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func newTestHandler(t *testing.T) (http.Handler, *Store) {
@@ -43,6 +44,41 @@ func TestHandlerIndex(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "TagTime") {
 		t.Error("index page missing title")
+	}
+}
+
+func TestHandlerPingsJSON(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	now := time.Now()
+	pastTS := now.Add(-1 * time.Hour).Unix()
+	answeredTS := now.Add(-2 * time.Hour).Unix()
+
+	// Create a pending ping and an answered ping.
+	if err := store.EnsurePingsExist(ctx, []int64{pastTS}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.UpsertPing(ctx, Ping{Timestamp: answeredTS, Blurb: "#test", NodeID: "test", UpdatedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/pings", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /pings = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"pending"`) {
+		t.Error("response missing pending field")
+	}
+	if !strings.Contains(body, `"recent"`) {
+		t.Error("response missing recent field")
+	}
+	if !strings.Contains(body, "#test") {
+		t.Error("response missing answered ping in recent")
 	}
 }
 

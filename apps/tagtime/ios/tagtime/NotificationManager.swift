@@ -1,5 +1,4 @@
 import UserNotifications
-import Mobile
 
 class NotificationManager {
     static let shared = NotificationManager()
@@ -15,26 +14,27 @@ class NotificationManager {
     }
 
     func scheduleUpcoming(baseURL: String) {
-        // Get next 64 ping times from the Go schedule engine.
-        let config: [String: Any] = [
-            "default_seed": 11193462,
-            "default_period_secs": 2700
-        ]
-        guard let configData = try? JSONSerialization.data(withJSONObject: config) else { return }
+        guard let url = URL(string: "\(baseURL)/next-ping?n=64") else { return }
 
-        var error: NSError?
-        guard let timestampsData = MobileNextPings(configData, 64, &error) else {
+        URLSession.shared.dataTask(with: url) { data, _, error in
             if let error = error {
-                print("NextPings error: \(error)")
+                print("NextPings fetch error: \(error)")
+                return
             }
-            return
-        }
+            guard let data = data else { return }
 
-        guard let timestamps = try? JSONDecoder().decode([Int64].self, from: timestampsData) else { return }
+            struct Response: Codable {
+                let timestamps: [Int64]
+            }
+            guard let response = try? JSONDecoder().decode(Response.self, from: data) else { return }
 
+            self.scheduleNotifications(for: response.timestamps)
+        }.resume()
+    }
+
+    private func scheduleNotifications(for timestamps: [Int64]) {
         let center = UNUserNotificationCenter.current()
 
-        // Remove old tagtime notifications.
         center.removePendingNotificationRequests(withIdentifiers:
             timestamps.map { "tagtime-\($0)" }
         )
@@ -42,7 +42,6 @@ class NotificationManager {
         for ts in timestamps {
             let date = Date(timeIntervalSince1970: TimeInterval(ts))
 
-            // Don't schedule for the past.
             guard date > Date() else { continue }
 
             let content = UNMutableNotificationContent()

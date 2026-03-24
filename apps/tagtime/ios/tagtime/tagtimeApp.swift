@@ -64,6 +64,7 @@ class NodeManager: ObservableObject {
         let config: [String: Any] = [
             "db_path": dbPath,
             "node_id": UIDevice.current.identifierForVendor?.uuidString ?? "ios",
+            "upstream": "https://monks.co/tagtime",
             "default_seed": 11193462,
             "default_period_secs": 2700
         ]

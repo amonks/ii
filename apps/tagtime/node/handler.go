@@ -63,6 +63,7 @@ func newHandler(store *Store, changes func() []PeriodChange, nodeID, upstream st
 	h := &handler{store: store, changes: changes, nodeID: nodeID, upstream: upstream}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", h.handleIndex)
+	mux.HandleFunc("GET /pings", h.handlePingsJSON)
 	mux.HandleFunc("POST /answer", h.handleAnswer)
 	mux.HandleFunc("POST /batch-answer", h.handleBatchAnswer)
 	mux.HandleFunc("GET /search", h.handleSearch)
@@ -81,9 +82,10 @@ func newHandler(store *Store, changes func() []PeriodChange, nodeID, upstream st
 }
 
 type indexData struct {
-	BasePath string
-	Pending  []Ping
-	Recent   []Ping
+	BasePath    string
+	Pending     []Ping
+	Recent      []Ping
+	InitializedAt time.Time
 }
 
 func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -115,11 +117,58 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var initializedAt time.Time
+	if len(changes) > 0 {
+		initializedAt = time.Unix(changes[0].Timestamp, 0)
+	}
+
 	templates.ExecuteTemplate(w, "index.html", indexData{
-		BasePath: serve.BasePath(r),
-		Pending:  pending,
-		Recent:   recent,
+		BasePath:      serve.BasePath(r),
+		Pending:       pending,
+		Recent:        recent,
+		InitializedAt: initializedAt,
 	})
+}
+
+func (h *handler) handlePingsJSON(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	now := time.Now()
+
+	// Ensure pings exist for the recent schedule.
+	changes := h.changes()
+	start := now.Add(-24 * time.Hour)
+	scheduledPings := PingsInRange(changes, start, now)
+	if len(scheduledPings) > 0 {
+		timestamps := make([]int64, len(scheduledPings))
+		for i, p := range scheduledPings {
+			timestamps[i] = p.Unix()
+		}
+		if err := h.store.EnsurePingsExist(ctx, timestamps); err != nil {
+			slog.Error("ensuring pings exist", "error", err)
+		}
+	}
+
+	pending, err := h.store.PendingPings(ctx, now)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	recent, err := h.store.RecentPings(ctx, 20)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+
+	var initializedAt int64
+	if len(changes) > 0 {
+		initializedAt = changes[0].Timestamp
+	}
+
+	serve.JSON(w, r, struct {
+		Pending       []Ping `json:"pending"`
+		Recent        []Ping `json:"recent"`
+		InitializedAt int64  `json:"initialized_at"`
+	}{Pending: pending, Recent: recent, InitializedAt: initializedAt})
 }
 
 func (h *handler) handleAnswer(w http.ResponseWriter, r *http.Request) {
@@ -378,8 +427,24 @@ func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) handleNextPing(w http.ResponseWriter, r *http.Request) {
 	changes := h.changes()
-	next := NextPing(changes, time.Now())
-	serve.JSON(w, r, map[string]int64{"timestamp": next.Unix()})
+	nStr := r.URL.Query().Get("n")
+	n, _ := strconv.Atoi(nStr)
+	if n <= 1 {
+		next := NextPing(changes, time.Now())
+		serve.JSON(w, r, map[string]int64{"timestamp": next.Unix()})
+		return
+	}
+	if n > 64 {
+		n = 64
+	}
+	var timestamps []int64
+	after := time.Now()
+	for range n {
+		next := NextPing(changes, after)
+		timestamps = append(timestamps, next.Unix())
+		after = next
+	}
+	serve.JSON(w, r, map[string]any{"timestamps": timestamps})
 }
 
 func (h *handler) handleStatic(w http.ResponseWriter, r *http.Request) {

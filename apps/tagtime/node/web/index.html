@@ -16,6 +16,7 @@
   </nav>
 
   <h1>TagTime</h1>
+  <p class="initialized">Tracking since {{.InitializedAt.Format "Jan 2, 2006 3:04 PM"}}</p>
 
   {{if .Pending}}
   <h2>Pending ({{len .Pending}})</h2>

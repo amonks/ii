@@ -5,11 +5,9 @@ package mobile
 
 import (
 	"context"
-	"encoding/json"
 	"net"
 	"net/http"
 	"sync"
-	"time"
 
 	"monks.co/apps/tagtime/node"
 )
@@ -78,29 +76,4 @@ func Stop() {
 
 	nodeInst = nil
 	srv = nil
-}
-
-// NextPings returns the next n ping timestamps as a JSON array of unix seconds.
-// Useful for scheduling local notifications from Swift.
-func NextPings(configJSON []byte, n int) ([]byte, error) {
-	config, err := node.ParseConfig(configJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	changes := []node.PeriodChange{{
-		Timestamp:  0,
-		Seed:       config.DefaultSeed,
-		PeriodSecs: config.DefaultPeriodSecs,
-	}}
-
-	var timestamps []int64
-	after := time.Now()
-	for range n {
-		next := node.NextPing(changes, after)
-		timestamps = append(timestamps, next.Unix())
-		after = next
-	}
-
-	return json.Marshal(timestamps)
 }
