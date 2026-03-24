@@ -4,7 +4,9 @@ RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
     python3 py3-pip sqlite ca-certificates curl pkgconf tailscale unzip
 
 # protoc + protoc-gen-go: both pinned for deterministic .pb.go generation.
-RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip && \
+# The GitHub release binary is glibc-linked; gcompat provides the compat layer.
+RUN apk add --no-cache gcompat && \
+    curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip && \
     unzip protoc-21.12-linux-x86_64.zip bin/protoc -d /usr/local && \
     rm protoc-21.12-linux-x86_64.zip && \
     chmod +x /usr/local/bin/protoc
