@@ -78,7 +78,7 @@ Star topology, watermark-based:
 
 ## Graphs
 
-Each ping represents `period_secs` of time. Tags are extracted from blurbs. Time-by-tag histograms are bucketed by hour/day/week. The graph data endpoint includes a `tag_colors` map with canonical hex colors from `pkg/color`, so all clients render consistent tag colors. Rendered client-side with Canvas JS (web) or SwiftUI Charts (iOS).
+Tags are extracted from blurbs. Time-by-tag histograms are bucketed by hour/day/week. Each bucket's tag values are **percentages (0-100)** of time within that bucket, weighted by the effective `period_secs` at each ping. Using percentages rather than absolute time ensures charts remain comparable across period changes. The graph data endpoint includes a `tag_colors` map with canonical hex colors from `pkg/color`, so all clients render consistent tag colors. Rendered client-side with Canvas JS (web) or SwiftUI Charts (iOS).
 
 ## iOS App
 

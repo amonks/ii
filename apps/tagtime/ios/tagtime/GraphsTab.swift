@@ -17,7 +17,7 @@ struct TagEntry: Identifiable {
     let id = UUID()
     let date: Date
     let tag: String
-    let hours: Double
+    let percent: Double
 }
 
 struct GraphsTab: View {
@@ -56,11 +56,11 @@ struct GraphsTab: View {
                     Chart(entries) { entry in
                         BarMark(
                             x: .value("Date", entry.date, unit: chartUnit),
-                            y: .value("Hours", entry.hours)
+                            y: .value("Percent", entry.percent)
                         )
                         .foregroundStyle(by: .value("Tag", entry.tag))
                     }
-                    .chartYAxisLabel("Hours")
+                    .chartYAxisLabel("%")
                     .padding()
                 }
             }
@@ -92,10 +92,9 @@ struct GraphsTab: View {
             guard let date = Self.iso8601.date(from: bucket.start)
                     ?? Self.iso8601NoFrac.date(from: bucket.start)
             else { continue }
-            for (tag, secs) in bucket.tags {
-                let hours = secs / 3600.0
-                if hours > 0 {
-                    built.append(TagEntry(date: date, tag: tag, hours: hours))
+            for (tag, pct) in bucket.tags {
+                if pct > 0 {
+                    built.append(TagEntry(date: date, tag: tag, percent: pct))
                 }
             }
         }

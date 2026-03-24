@@ -23,19 +23,21 @@ func TestComputeGraphDataBasic(t *testing.T) {
 		t.Fatalf("expected 2 day buckets, got %d", len(data.Buckets))
 	}
 
-	// Day 1: two pings with #code (2700*2=5400s), one ping with #meeting (2700s).
+	// Day 1: two pings with #code, one with #meeting.
+	// #code appears in both pings (2 hits), #meeting in one (1 hit).
+	// Total tag-hits = 3, so code = 2/3*100 ≈ 66.67%, meeting = 1/3*100 ≈ 33.33%.
 	day1 := data.Buckets[0]
-	if math.Abs(day1.Tags["code"]-5400) > 0.1 {
-		t.Errorf("day1 code = %.0f, want 5400", day1.Tags["code"])
+	if math.Abs(day1.Tags["code"]-66.666666) > 0.1 {
+		t.Errorf("day1 code = %.2f%%, want ~66.67%%", day1.Tags["code"])
 	}
-	if math.Abs(day1.Tags["meeting"]-2700) > 0.1 {
-		t.Errorf("day1 meeting = %.0f, want 2700", day1.Tags["meeting"])
+	if math.Abs(day1.Tags["meeting"]-33.333333) > 0.1 {
+		t.Errorf("day1 meeting = %.2f%%, want ~33.33%%", day1.Tags["meeting"])
 	}
 
-	// Day 2: one ping with #sleeping.
+	// Day 2: one ping with #sleeping = 100%.
 	day2 := data.Buckets[1]
-	if math.Abs(day2.Tags["sleeping"]-2700) > 0.1 {
-		t.Errorf("day2 sleeping = %.0f, want 2700", day2.Tags["sleeping"])
+	if math.Abs(day2.Tags["sleeping"]-100) > 0.1 {
+		t.Errorf("day2 sleeping = %.2f%%, want 100%%", day2.Tags["sleeping"])
 	}
 }
 
@@ -49,8 +51,8 @@ func TestComputeGraphDataUntagged(t *testing.T) {
 	}
 
 	data := ComputeGraphData(pings, changes, "day", start, end)
-	if data.Buckets[0].Tags["untagged"] != 900 {
-		t.Errorf("untagged = %.0f, want 900", data.Buckets[0].Tags["untagged"])
+	if math.Abs(data.Buckets[0].Tags["untagged"]-100) > 0.1 {
+		t.Errorf("untagged = %.2f%%, want 100%%", data.Buckets[0].Tags["untagged"])
 	}
 }
 
@@ -79,15 +81,42 @@ func TestComputeGraphDataPeriodChange(t *testing.T) {
 	}
 
 	pings := []Ping{
-		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "#code"},   // period=2700
-		{Timestamp: start.Add(13 * time.Hour).Unix(), Blurb: "#code"},  // period=900
+		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "#code"},  // period=2700
+		{Timestamp: start.Add(13 * time.Hour).Unix(), Blurb: "#code"}, // period=900
 	}
 
 	data := ComputeGraphData(pings, changes, "day", start, end)
-	// First ping at period 2700, second at 900.
-	codeTime := data.Buckets[0].Tags["code"]
-	if math.Abs(codeTime-3600) > 0.1 {
-		t.Errorf("code time = %.0f, want 3600 (2700+900)", codeTime)
+	// Both pings are #code, so code = 100% regardless of period change.
+	codePercent := data.Buckets[0].Tags["code"]
+	if math.Abs(codePercent-100) > 0.1 {
+		t.Errorf("code = %.2f%%, want 100%%", codePercent)
+	}
+}
+
+func TestComputeGraphDataPeriodChangeAffectsWeight(t *testing.T) {
+	start := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC)
+	mid := start.Add(12 * time.Hour)
+	changes := []PeriodChange{
+		{Timestamp: 0, Seed: 42, PeriodSecs: 2700},
+		{Timestamp: mid.Unix(), Seed: 42, PeriodSecs: 900},
+	}
+
+	pings := []Ping{
+		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "#code"},    // period=2700
+		{Timestamp: start.Add(13 * time.Hour).Unix(), Blurb: "#sleep"},  // period=900
+	}
+
+	data := ComputeGraphData(pings, changes, "day", start, end)
+	// Weighted: code=2700, sleep=900, total=3600.
+	// code=75%, sleep=25%.
+	codePercent := data.Buckets[0].Tags["code"]
+	sleepPercent := data.Buckets[0].Tags["sleep"]
+	if math.Abs(codePercent-75) > 0.1 {
+		t.Errorf("code = %.2f%%, want 75%%", codePercent)
+	}
+	if math.Abs(sleepPercent-25) > 0.1 {
+		t.Errorf("sleep = %.2f%%, want 25%%", sleepPercent)
 	}
 }
 

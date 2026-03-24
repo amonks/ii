@@ -41,16 +41,8 @@
 
     const colors = data.tag_colors || {};
 
-    // Find max total per bucket for scale.
-    let maxTotal = 0;
-    for (const b of data.buckets) {
-      let total = 0;
-      for (const tag of (data.all_tags || [])) {
-        total += (b.tags[tag] || 0);
-      }
-      if (total > maxTotal) maxTotal = total;
-    }
-    if (maxTotal === 0) maxTotal = 1;
+    // Y-axis max is always 100%.
+    const maxTotal = 100;
 
     const barW = plotW / data.buckets.length;
     const gap = Math.max(1, barW * 0.1);
@@ -71,15 +63,14 @@
       }
     }
 
-    // Y-axis: hours.
+    // Y-axis: percentage.
     ctx.fillStyle = '#8899aa';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'right';
     for (let i = 0; i <= 4; i++) {
-      const val = (maxTotal / 4) * i;
+      const val = 25 * i;
       const y = padding.top + plotH - (val / maxTotal) * plotH;
-      const hours = (val / 3600).toFixed(1);
-      ctx.fillText(hours + 'h', padding.left - 5, y + 4);
+      ctx.fillText(val + '%', padding.left - 5, y + 4);
     }
 
     // X-axis: bucket labels.

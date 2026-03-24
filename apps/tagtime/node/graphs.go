@@ -10,7 +10,7 @@ import (
 type TagBucket struct {
 	Start time.Time          `json:"start"`
 	End   time.Time          `json:"end"`
-	Tags  map[string]float64 `json:"tags"` // tag -> seconds
+	Tags  map[string]float64 `json:"tags"` // tag -> percentage (0-100)
 }
 
 // GraphData is the JSON response for /graphs/data.
@@ -62,6 +62,19 @@ func ComputeGraphData(pings []Ping, changes []PeriodChange, window string, start
 					allTagsSet[tag] = true
 				}
 				break
+			}
+		}
+	}
+
+	// Normalize each bucket's tags to percentages (0-100).
+	for i := range buckets {
+		var total float64
+		for _, v := range buckets[i].Tags {
+			total += v
+		}
+		if total > 0 {
+			for tag, v := range buckets[i].Tags {
+				buckets[i].Tags[tag] = (v / total) * 100
 			}
 		}
 	}
