@@ -191,7 +191,7 @@ func (h *handler) handleAnswer(w http.ResponseWriter, r *http.Request) {
 		serve.InternalServerError(w, r, err)
 		return
 	}
-	http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *handler) handleBatchAnswer(w http.ResponseWriter, r *http.Request) {
@@ -210,14 +210,14 @@ func (h *handler) handleBatchAnswer(w http.ResponseWriter, r *http.Request) {
 		timestamps = append(timestamps, ts)
 	}
 	if len(timestamps) == 0 {
-		http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	if err := h.store.BatchSetBlurb(r.Context(), timestamps, blurb, h.nodeID); err != nil {
 		serve.InternalServerError(w, r, err)
 		return
 	}
-	http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 type searchData struct {
@@ -352,7 +352,7 @@ func (h *handler) handleSettingsPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.refreshChanges()
-	http.Redirect(w, r, serve.BasePath(r)+"/settings", http.StatusSeeOther)
+	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
 // Sync endpoints.
