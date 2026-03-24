@@ -334,7 +334,9 @@ the LLM gateway over the tailnet.
 The builder image is pinned to a specific Go patch version (e.g.
 `golang:1.26.1-alpine`) to prevent toolchain drift between local
 development and CI. The `go` directive in all `go.mod` and `go.work`
-files should match the version in the Dockerfile.
+files should match the version in the Dockerfile. Protoc is also
+pinned (downloaded from GitHub releases rather than Alpine packages)
+to prevent version drift in generated `.pb.go` files.
 
 CI automatically rebuilds the builder image when its Dockerfile or Go
 dependencies change. When detected, the current builder rebuilds the

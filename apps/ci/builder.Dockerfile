@@ -1,13 +1,13 @@
 FROM golang:1.26.1-alpine
 
 RUN apk add --no-cache build-base gcc cmake git git-subtree bash nodejs npm \
-    python3 py3-pip sqlite ca-certificates curl pkgconf tailscale
+    python3 py3-pip sqlite ca-certificates curl pkgconf tailscale unzip
 
-# protoc (from Alpine) + protoc-gen-go (pinned version)
-# protoc-gen-go version determines .pb.go code structure; pin it for determinism.
-# The symlink ensures /usr/local/bin/protoc (which PATH finds first) uses the
-# Alpine binary, not any stale artifact from prior builder images.
-RUN apk add --no-cache protoc && ln -sf /usr/bin/protoc /usr/local/bin/protoc
+# protoc + protoc-gen-go: both pinned for deterministic .pb.go generation.
+RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip && \
+    unzip protoc-21.12-linux-x86_64.zip bin/protoc -d /usr/local && \
+    rm protoc-21.12-linux-x86_64.zip && \
+    chmod +x /usr/local/bin/protoc
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
 
 # NLopt 2.10.0
