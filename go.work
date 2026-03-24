@@ -34,9 +34,9 @@ use (
 	./apps/writing
 	./apps/youtube
 	./cmd/agent
-	./cmd/ci
 	./cmd/backupd
 	./cmd/beetman
+	./cmd/ci
 	./cmd/compare-agents
 	./cmd/compressor
 	./cmd/incrementum
