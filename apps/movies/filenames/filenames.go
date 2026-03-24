@@ -249,14 +249,18 @@ func ParseSeasonEpisode(path string) (int, int, error) {
 // DetectSeasonFromPath extracts the season number from a directory path
 // Returns season number (defaults to 1 if not found)
 func DetectSeasonFromPath(dirPath string) int {
-	parts := strings.SplitSeq(dirPath, string(filepath.Separator))
-
-	for part := range parts {
-		if seasonMatch := SeasonFolderPattern.FindStringSubmatch(part); seasonMatch != nil {
+	// Scan path components from the end toward the root so that the
+	// meaningful parts (e.g. "Season 1") are found before random
+	// system-prefix directories (e.g. macOS TMPDIR paths like
+	// /var/folders/99/8vc1q14566s50t_kwnt0cr700000gn/T/...).
+	parts := strings.Split(dirPath, string(filepath.Separator))
+	for i := len(parts) - 1; i >= 0; i-- {
+		if seasonMatch := SeasonFolderPattern.FindStringSubmatch(parts[i]); seasonMatch != nil {
 			if s, err := strconv.Atoi(seasonMatch[1]); err == nil && s > 0 {
 				return s
 			}
-		} else if s2Match := SPattern.FindStringSubmatch(part); s2Match != nil {
+		}
+		if s2Match := SPattern.FindStringSubmatch(parts[i]); s2Match != nil {
 			if s, err := strconv.Atoi(s2Match[1]); err == nil && s > 0 {
 				return s
 			}
