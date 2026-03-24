@@ -63,6 +63,12 @@ func run() error {
 	mux.HandleFunc("GET /deployments", dashboardDeployments(model))
 	mux.HandleFunc("GET /output/{runID}/{jobName}", serveJobStreams(outputDir))
 	mux.HandleFunc("GET /output/{runID}/{jobName}/{stream}", serveStream(outputDir, hub))
+
+	// JSON API for CLI clients.
+	mux.HandleFunc("GET /api/runs", apiListRuns(model))
+	mux.HandleFunc("GET /api/runs/{id}", apiGetRun(model, outputDir))
+	mux.HandleFunc("GET /api/deployments", apiListDeployments(model))
+
 	staticSub, _ := fs.Sub(staticFS, "static")
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticSub)))
 

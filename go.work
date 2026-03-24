@@ -34,6 +34,7 @@ use (
 	./apps/writing
 	./apps/youtube
 	./cmd/agent
+	./cmd/ci
 	./cmd/backupd
 	./cmd/beetman
 	./cmd/compare-agents
