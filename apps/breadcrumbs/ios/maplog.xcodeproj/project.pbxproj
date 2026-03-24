@@ -11,6 +11,7 @@
 		11A58B122F6F6E7000B08893 /* Mobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11A58B112F6F6E7000B08893 /* Mobile.xcframework */; };
 		11A58B132F6F6E7000B08893 /* Mobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 11A58B112F6F6E7000B08893 /* Mobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		11A58B172F6F70D900B08893 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 11A58B162F6F70D900B08893 /* SwiftProtobuf */; };
+		AA0001152F70000000AAAAAA /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = AA0001162F70000000AAAAAA /* libresolv.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,7 @@
 		116A71822F6C624100A8258D /* maplogTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		116A718C2F6C624100A8258D /* maplogUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = maplogUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		11A58B112F6F6E7000B08893 /* Mobile.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Mobile.xcframework; sourceTree = "<group>"; };
+		AA0001162F70000000AAAAAA /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -87,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0001152F70000000AAAAAA /* libresolv.tbd in Frameworks */,
 				11A58B122F6F6E7000B08893 /* Mobile.xcframework in Frameworks */,
 				115153422F6F873F0072C4E5 /* MapLibre in Frameworks */,
 				11A58B172F6F70D900B08893 /* SwiftProtobuf in Frameworks */,
@@ -135,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				11A58B112F6F6E7000B08893 /* Mobile.xcframework */,
+				AA0001162F70000000AAAAAA /* libresolv.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
