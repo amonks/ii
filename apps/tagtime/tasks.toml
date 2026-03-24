@@ -19,9 +19,8 @@
 [[task]]
   id = "xcframework"
   type = "short"
-  cmd = "test \"$(uname)\" = Darwin && go tool gomobile init && rm -rf ios/Mobile.xcframework && go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile || echo 'skipping xcframework (not macOS)'"
+  cmd = "go tool gomobile init && rm -rf ios/Mobile.xcframework && GOWORK=off go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
 
 [[task]]
   id = "generate"
   type = "short"
-  dependencies = ["xcframework"]
