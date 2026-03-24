@@ -53,7 +53,12 @@ func OpenStore(ctx context.Context, dbPath string) (*Store, error) {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 
-	return &Store{db: db}, nil
+	s := &Store{db: db}
+	if err := s.backfillPingTags(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("backfilling ping_tags: %w", err)
+	}
+	return s, nil
 }
 
 // Close closes the database.
@@ -127,15 +132,19 @@ func (s *Store) RecentPings(ctx context.Context, limit int) ([]Ping, error) {
 }
 
 // SetBlurb sets the blurb for a ping, updating the LWW clock.
+// Also maintains ping_tags and tags tables.
 func (s *Store) SetBlurb(ctx context.Context, timestamp int64, blurb, nodeID string) error {
 	now := time.Now().UnixNano()
-	return s.UpsertPing(ctx, Ping{
+	if err := s.UpsertPing(ctx, Ping{
 		Timestamp:  timestamp,
 		Blurb:      blurb,
 		NodeID:     nodeID,
 		UpdatedAt:  now,
 		ReceivedAt: now,
-	})
+	}); err != nil {
+		return err
+	}
+	return s.ensureTagsFromBlurb(ctx, timestamp, blurb)
 }
 
 // BatchSetBlurb sets the blurb for multiple pings at once.
@@ -166,7 +175,16 @@ func (s *Store) BatchSetBlurb(ctx context.Context, timestamps []int64, blurb, no
 			return err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	// Maintain ping_tags outside the transaction (UpsertPing already committed).
+	for _, ts := range timestamps {
+		if err := s.ensureTagsFromBlurb(ctx, ts, blurb); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SearchBlurbs performs a full-text search on ping blurbs.
@@ -342,6 +360,209 @@ func (s *Store) SetMeta(ctx context.Context, key, value string) error {
 		key, value,
 	)
 	return err
+}
+
+// PingTagsInTimeRange returns a map of ping_timestamp → tag names for the given range.
+func (s *Store) PingTagsInTimeRange(ctx context.Context, start, end time.Time) (map[int64][]string, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT ping_timestamp, tag_name FROM ping_tags
+		 WHERE ping_timestamp >= ? AND ping_timestamp < ?
+		 ORDER BY ping_timestamp, tag_name`,
+		start.Unix(), end.Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[int64][]string)
+	for rows.Next() {
+		var ts int64
+		var tag string
+		if err := rows.Scan(&ts, &tag); err != nil {
+			return nil, err
+		}
+		result[ts] = append(result[ts], tag)
+	}
+	return result, rows.Err()
+}
+
+// backfillPingTags populates ping_tags and tags from existing blurbs.
+// It's idempotent: rows that already exist are skipped.
+func (s *Store) backfillPingTags(ctx context.Context) error {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT timestamp, blurb FROM pings WHERE blurb != ''`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type pingBlurb struct {
+		ts   int64
+		blurb string
+	}
+	var pbs []pingBlurb
+	for rows.Next() {
+		var pb pingBlurb
+		if err := rows.Scan(&pb.ts, &pb.blurb); err != nil {
+			return err
+		}
+		pbs = append(pbs, pb)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, pb := range pbs {
+		if err := s.ensureTagsFromBlurb(ctx, pb.ts, pb.blurb); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureTagsFromBlurb extracts tags from a blurb and inserts them into
+// ping_tags and tags. Idempotent via INSERT OR IGNORE.
+func (s *Store) ensureTagsFromBlurb(ctx context.Context, timestamp int64, blurb string) error {
+	tags := ExtractTags(blurb)
+	if len(tags) == 0 {
+		return nil
+	}
+	for _, tag := range tags {
+		if _, err := s.db.ExecContext(ctx,
+			`INSERT OR IGNORE INTO tags (name) VALUES (?)`, tag); err != nil {
+			return err
+		}
+		if _, err := s.db.ExecContext(ctx,
+			`INSERT OR IGNORE INTO ping_tags (ping_timestamp, tag_name) VALUES (?, ?)`,
+			timestamp, tag); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ListTags returns all known tag names, sorted alphabetically.
+func (s *Store) ListTags(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT name FROM tags ORDER BY name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var tags []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		tags = append(tags, name)
+	}
+	return tags, rows.Err()
+}
+
+// TagsForPing returns the tag names associated with a ping.
+func (s *Store) TagsForPing(ctx context.Context, timestamp int64) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT tag_name FROM ping_tags WHERE ping_timestamp = ? ORDER BY tag_name`,
+		timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var tags []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		tags = append(tags, name)
+	}
+	return tags, rows.Err()
+}
+
+// RenameTag records a time-scoped tag rename and applies it to ping_tags.
+// Only pings at or before the current time are affected.
+func (s *Store) RenameTag(ctx context.Context, oldName, newName, nodeID string) error {
+	now := time.Now().Unix()
+	rename := TagRename{
+		OldName:   oldName,
+		NewName:   newName,
+		RenamedAt: now,
+		NodeID:    nodeID,
+	}
+	if err := s.AddTagRename(ctx, rename); err != nil {
+		return err
+	}
+	return s.ApplyTagRename(ctx, rename)
+}
+
+// AddTagRename inserts a rename record. Idempotent by primary key.
+func (s *Store) AddTagRename(ctx context.Context, r TagRename) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR IGNORE INTO tag_renames (old_name, new_name, renamed_at, node_id)
+		 VALUES (?, ?, ?, ?)`,
+		r.OldName, r.NewName, r.RenamedAt, r.NodeID)
+	return err
+}
+
+// ApplyTagRename updates ping_tags for a time-scoped rename.
+// Pings with timestamp <= renamed_at have their tag updated.
+// Also ensures the new tag exists in the tags table.
+func (s *Store) ApplyTagRename(ctx context.Context, r TagRename) error {
+	if _, err := s.db.ExecContext(ctx,
+		`UPDATE ping_tags SET tag_name = ? WHERE tag_name = ? AND ping_timestamp <= ?`,
+		r.NewName, r.OldName, r.RenamedAt); err != nil {
+		return err
+	}
+	// Ensure new tag name exists.
+	if _, err := s.db.ExecContext(ctx,
+		`INSERT OR IGNORE INTO tags (name) VALUES (?)`, r.NewName); err != nil {
+		return err
+	}
+	// Remove old tag if no ping_tags reference it.
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM tags WHERE name = ? AND NOT EXISTS (
+			SELECT 1 FROM ping_tags WHERE tag_name = ?
+		)`, r.OldName, r.OldName)
+	return err
+}
+
+// ListTagRenames returns all tag renames, ordered by renamed_at.
+func (s *Store) ListTagRenames(ctx context.Context) ([]TagRename, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT old_name, new_name, renamed_at, node_id FROM tag_renames ORDER BY renamed_at`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var renames []TagRename
+	for rows.Next() {
+		var r TagRename
+		if err := rows.Scan(&r.OldName, &r.NewName, &r.RenamedAt, &r.NodeID); err != nil {
+			return nil, err
+		}
+		renames = append(renames, r)
+	}
+	return renames, rows.Err()
+}
+
+// ApplyAllRenamesForPing applies all relevant renames to a ping's tags.
+// This is used after syncing a ping to ensure its tags reflect all renames
+// that happened while the ping existed.
+func (s *Store) ApplyAllRenamesForPing(ctx context.Context, pingTimestamp int64) error {
+	renames, err := s.ListTagRenames(ctx)
+	if err != nil {
+		return err
+	}
+	for _, r := range renames {
+		if r.RenamedAt >= pingTimestamp {
+			// This rename applies to this ping (rename happened after ping was created).
+			if _, err := s.db.ExecContext(ctx,
+				`UPDATE ping_tags SET tag_name = ? WHERE tag_name = ? AND ping_timestamp = ?`,
+				r.NewName, r.OldName, pingTimestamp); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func scanPings(rows *sql.Rows) ([]Ping, error) {

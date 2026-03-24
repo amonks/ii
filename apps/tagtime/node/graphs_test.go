@@ -17,7 +17,7 @@ func TestComputeGraphDataBasic(t *testing.T) {
 		{Timestamp: start.Add(25 * time.Hour).Unix(), Blurb: "#sleeping"},
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 
 	if len(data.Buckets) != 2 {
 		t.Fatalf("expected 2 day buckets, got %d", len(data.Buckets))
@@ -50,7 +50,7 @@ func TestComputeGraphDataUntagged(t *testing.T) {
 		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "just working no tags"},
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 	if math.Abs(data.Buckets[0].Tags["untagged"]-100) > 0.1 {
 		t.Errorf("untagged = %.2f%%, want 100%%", data.Buckets[0].Tags["untagged"])
 	}
@@ -65,7 +65,7 @@ func TestComputeGraphDataEmptyBlurb(t *testing.T) {
 		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: ""},
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 	if len(data.Buckets[0].Tags) != 0 {
 		t.Errorf("empty blurb should not contribute to any tag, got %v", data.Buckets[0].Tags)
 	}
@@ -85,7 +85,7 @@ func TestComputeGraphDataPeriodChange(t *testing.T) {
 		{Timestamp: start.Add(13 * time.Hour).Unix(), Blurb: "#code"}, // period=900
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 	// Both pings are #code, so code = 100% regardless of period change.
 	codePercent := data.Buckets[0].Tags["code"]
 	if math.Abs(codePercent-100) > 0.1 {
@@ -107,7 +107,7 @@ func TestComputeGraphDataPeriodChangeAffectsWeight(t *testing.T) {
 		{Timestamp: start.Add(13 * time.Hour).Unix(), Blurb: "#sleep"},  // period=900
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 	// Weighted: code=2700, sleep=900, total=3600.
 	// code=75%, sleep=25%.
 	codePercent := data.Buckets[0].Tags["code"]
@@ -129,7 +129,7 @@ func TestComputeGraphDataTagColors(t *testing.T) {
 		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "#code #meeting"},
 	}
 
-	data := ComputeGraphData(pings, changes, "day", start, end)
+	data := ComputeGraphData(pings, changes, "day", start, end, nil)
 
 	if data.TagColors == nil {
 		t.Fatal("TagColors should not be nil")

@@ -468,3 +468,110 @@ func TestHandlerSyncStatusWithUpstream(t *testing.T) {
 		t.Errorf("expected upstream URL in response, got %s", body)
 	}
 }
+
+func TestHandlerTags(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	// Add some pings with tags.
+	if err := store.SetBlurb(ctx, 1000, "#work on #code", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, 2000, "#sleeping", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/tags", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /tags = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"code"`) {
+		t.Errorf("response missing 'code', got %s", body)
+	}
+	if !strings.Contains(body, `"sleeping"`) {
+		t.Errorf("response missing 'sleeping', got %s", body)
+	}
+	if !strings.Contains(body, `"work"`) {
+		t.Errorf("response missing 'work', got %s", body)
+	}
+}
+
+func TestHandlerTagsEmpty(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	req := httptest.NewRequest("GET", "/tags", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /tags = %d, want 200", w.Code)
+	}
+	if w.Body.String() != "[]\n" {
+		t.Errorf("expected empty array, got %q", w.Body.String())
+	}
+}
+
+func TestHandlerTagRename(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	// Add pings with #sleep.
+	if err := store.SetBlurb(ctx, 1000, "#sleep", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, 2000, "#sleep at home", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rename sleep → sleeping.
+	form := url.Values{
+		"old_name": {"sleep"},
+		"new_name": {"sleeping"},
+	}
+	req := httptest.NewRequest("POST", "/tags/rename", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("POST /tags/rename = %d, want 200", w.Code)
+	}
+
+	// Verify ping_tags were updated.
+	tags, err := store.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleeping" {
+		t.Errorf("after rename, TagsForPing(1000) = %v, want [sleeping]", tags)
+	}
+
+	// Verify tags list shows sleeping, not sleep.
+	allTags, err := store.ListTags(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tag := range allTags {
+		if tag == "sleep" {
+			t.Error("'sleep' should have been removed from tags after rename")
+		}
+	}
+}
+
+func TestHandlerTagRenameMissingParams(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	form := url.Values{"old_name": {"sleep"}}
+	req := httptest.NewRequest("POST", "/tags/rename", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 400 {
+		t.Errorf("POST /tags/rename missing new_name = %d, want 400", w.Code)
+	}
+}

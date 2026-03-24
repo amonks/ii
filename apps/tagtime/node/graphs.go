@@ -24,7 +24,9 @@ type GraphData struct {
 // ComputeGraphData computes tag time distribution over buckets.
 // Each ping's time value is the effective period at that ping's time
 // (i.e., the average gap, since each ping represents that much time).
-func ComputeGraphData(pings []Ping, changes []PeriodChange, window string, start, end time.Time) GraphData {
+// pingTags maps ping timestamp → tag names from the ping_tags table.
+// If nil, tags are extracted from blurbs (legacy behavior).
+func ComputeGraphData(pings []Ping, changes []PeriodChange, window string, start, end time.Time, pingTags map[int64][]string) GraphData {
 	bucketDur := parseBucketDuration(window)
 	if bucketDur == 0 {
 		bucketDur = 24 * time.Hour
@@ -46,7 +48,12 @@ func ComputeGraphData(pings []Ping, changes []PeriodChange, window string, start
 		if p.Blurb == "" {
 			continue
 		}
-		tags := ExtractTags(p.Blurb)
+		var tags []string
+		if pingTags != nil {
+			tags = pingTags[p.Timestamp]
+		} else {
+			tags = ExtractTags(p.Blurb)
+		}
 		if len(tags) == 0 {
 			tags = []string{"untagged"}
 		}

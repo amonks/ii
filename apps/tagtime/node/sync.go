@@ -38,6 +38,7 @@ func NewSyncer(store *Store, upstream, nodeID string, client *http.Client, refre
 type syncPayload struct {
 	Pings         []Ping         `json:"pings,omitempty"`
 	PeriodChanges []PeriodChange `json:"period_changes,omitempty"`
+	TagRenames    []TagRename    `json:"tag_renames,omitempty"`
 }
 
 // Push sends unsynced pings and period changes to upstream. Returns the number of pings pushed.
@@ -50,11 +51,15 @@ func (s *Syncer) Push(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("listing period changes: %w", err)
 	}
-	if len(pings) == 0 && len(changes) == 0 {
+	tagRenames, err := s.store.ListTagRenames(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("listing tag renames: %w", err)
+	}
+	if len(pings) == 0 && len(changes) == 0 && len(tagRenames) == 0 {
 		return 0, nil
 	}
 
-	payload := syncPayload{Pings: pings, PeriodChanges: changes}
+	payload := syncPayload{Pings: pings, PeriodChanges: changes, TagRenames: tagRenames}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return 0, err
@@ -126,10 +131,15 @@ func (s *Syncer) Pull(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("decoding pull response: %w", err)
 	}
 
-	// Apply received pings with LWW.
+	// Apply received pings with LWW, deriving ping_tags from blurbs.
 	for _, p := range payload.Pings {
 		if err := s.store.UpsertPing(ctx, p); err != nil {
 			return 0, fmt.Errorf("upserting pulled ping: %w", err)
+		}
+		if p.Blurb != "" {
+			if err := s.store.ensureTagsFromBlurb(ctx, p.Timestamp, p.Blurb); err != nil {
+				return 0, fmt.Errorf("ensuring tags from pulled ping: %w", err)
+			}
 		}
 	}
 
@@ -141,6 +151,16 @@ func (s *Syncer) Pull(ctx context.Context) (int, error) {
 	}
 	if len(payload.PeriodChanges) > 0 && s.refreshChanges != nil {
 		s.refreshChanges(ctx)
+	}
+
+	// Apply tag renames.
+	for _, r := range payload.TagRenames {
+		if err := s.store.AddTagRename(ctx, r); err != nil {
+			return 0, fmt.Errorf("adding pulled tag rename: %w", err)
+		}
+		if err := s.store.ApplyTagRename(ctx, r); err != nil {
+			return 0, fmt.Errorf("applying pulled tag rename: %w", err)
+		}
 	}
 
 	// Advance watermark based on server-assigned received_at.

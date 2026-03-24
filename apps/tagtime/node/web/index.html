@@ -73,6 +73,26 @@
   <p>No pending pings. Nice!</p>
   {{end}}
 
+  <datalist id="tag-suggestions"></datalist>
+  <script>
+  (function() {
+    var basePath = document.querySelector('meta[name="base-path"]').getAttribute('content');
+    fetch(basePath + '/tags')
+      .then(function(r) { return r.json(); })
+      .then(function(tags) {
+        var dl = document.getElementById('tag-suggestions');
+        tags.forEach(function(tag) {
+          var opt = document.createElement('option');
+          opt.value = '#' + tag;
+          dl.appendChild(opt);
+        });
+        document.querySelectorAll('input[name="blurb"]').forEach(function(input) {
+          input.setAttribute('list', 'tag-suggestions');
+        });
+      });
+  })();
+  </script>
+
   {{if .Recent}}
   <h2>Recent</h2>
   {{range .Recent}}

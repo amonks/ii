@@ -22,3 +22,11 @@ func ExtractTags(blurb string) []string {
 	}
 	return tags
 }
+
+// TagRename records a time-scoped tag rename event.
+type TagRename struct {
+	OldName   string `json:"old_name"`
+	NewName   string `json:"new_name"`
+	RenamedAt int64  `json:"renamed_at"` // unix seconds
+	NodeID    string `json:"node_id"`
+}

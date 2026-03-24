@@ -24,15 +24,20 @@ struct PingsTab: View {
     @State private var answerTexts: [Int64: String] = [:]
     @State private var editingTimestamp: Int64?
     @State private var editTexts: [Int64: String] = [:]
+    @State private var allTags: [String] = []
 
     var body: some View {
         NavigationView {
             List {
                 if !pending.isEmpty {
                     Section("Batch Set") {
+                        TagTextField(
+                            placeholder: "#sleeping",
+                            text: $batchBlurb,
+                            allTags: allTags
+                        )
                         HStack {
-                            TextField("#sleeping", text: $batchBlurb)
-                                .textFieldStyle(.roundedBorder)
+                            Spacer()
                             Button("Set All") {
                                 batchAnswer()
                             }
@@ -60,9 +65,13 @@ struct PingsTab: View {
                                     .toggleStyle(.checkmark)
                                 }
 
+                                TagTextField(
+                                    placeholder: "What were you doing? #tag",
+                                    text: binding(for: ping.timestamp),
+                                    allTags: allTags
+                                )
                                 HStack {
-                                    TextField("What were you doing? #tag", text: binding(for: ping.timestamp))
-                                        .textFieldStyle(.roundedBorder)
+                                    Spacer()
                                     Button("Save") {
                                         answer(timestamp: ping.timestamp)
                                     }
@@ -82,9 +91,13 @@ struct PingsTab: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 if editingTimestamp == ping.timestamp {
+                                    TagTextField(
+                                        placeholder: "",
+                                        text: editBinding(for: ping.timestamp),
+                                        allTags: allTags
+                                    )
                                     HStack {
-                                        TextField("", text: editBinding(for: ping.timestamp))
-                                            .textFieldStyle(.roundedBorder)
+                                        Spacer()
                                         Button("Save") {
                                             saveEdit(timestamp: ping.timestamp)
                                         }
@@ -137,24 +150,44 @@ struct PingsTab: View {
 
     private func refresh() async {
         guard nodeManager.isRunning else { return }
-        guard let url = URL(string: "\(nodeManager.baseURL)/pings") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
 
-        struct PingsPayload: Codable {
-            let pending: [Ping]?
-            let recent: [Ping]?
-            let initialized_at: Int64?
-        }
-        guard let payload = try? JSONDecoder().decode(PingsPayload.self, from: data) else { return }
+        // Fetch pings and tags in parallel.
+        async let pingsResult = fetchPings()
+        async let tagsResult = fetchTags()
+
+        let (pingsData, tagsData) = await (pingsResult, tagsResult)
 
         await MainActor.run {
-            pending = payload.pending ?? []
-            recent = payload.recent ?? []
-            selectedTimestamps = Set(pending.map(\.timestamp))
-            if let ts = payload.initialized_at, ts > 0 {
-                initializedAt = Date(timeIntervalSince1970: TimeInterval(ts))
+            if let pingsData {
+                pending = pingsData.pending ?? []
+                recent = pingsData.recent ?? []
+                selectedTimestamps = Set(pending.map(\.timestamp))
+                if let ts = pingsData.initialized_at, ts > 0 {
+                    initializedAt = Date(timeIntervalSince1970: TimeInterval(ts))
+                }
+            }
+            if let tagsData {
+                allTags = tagsData
             }
         }
+    }
+
+    private struct PingsPayload: Codable {
+        let pending: [Ping]?
+        let recent: [Ping]?
+        let initialized_at: Int64?
+    }
+
+    private func fetchPings() async -> PingsPayload? {
+        guard let url = URL(string: "\(nodeManager.baseURL)/pings") else { return nil }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        return try? JSONDecoder().decode(PingsPayload.self, from: data)
+    }
+
+    private func fetchTags() async -> [String]? {
+        guard let url = URL(string: "\(nodeManager.baseURL)/tags") else { return nil }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        return try? JSONDecoder().decode([String].self, from: data)
     }
 
     private func saveEdit(timestamp: Int64) {
@@ -187,6 +220,81 @@ struct PingsTab: View {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = body.data(using: .utf8)
         URLSession.shared.dataTask(with: request) { _, _, _ in }.resume()
+    }
+}
+
+// TagTextField wraps a TextField with tag autocomplete suggestions.
+// When the user types a `#` followed by characters, matching tags appear
+// as tappable chips below the field.
+struct TagTextField: View {
+    let placeholder: String
+    @Binding var text: String
+    let allTags: [String]
+
+    private var currentTagPrefix: String? {
+        // Find the word being typed after the last # or space.
+        guard let hashRange = text.range(of: "#", options: .backwards) else { return nil }
+        let afterHash = String(text[hashRange.upperBound...])
+        // If there's a space after the #, the user finished typing this tag.
+        if afterHash.contains(" ") { return nil }
+        return afterHash.lowercased()
+    }
+
+    private var suggestions: [String] {
+        guard let prefix = currentTagPrefix else { return [] }
+        if prefix.isEmpty {
+            // Just typed #, show all tags.
+            return Array(allTags.prefix(8))
+        }
+        return allTags
+            .filter { $0.lowercased().hasPrefix(prefix) && $0.lowercased() != prefix }
+            .prefix(8)
+            .map { $0 }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            TextField(placeholder, text: $text)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Button("#") {
+                            text.append("#")
+                        }
+                        .font(.body.bold())
+                        Spacer()
+                    }
+                }
+
+            if !suggestions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(suggestions, id: \.self) { tag in
+                            Button {
+                                insertTag(tag)
+                            } label: {
+                                Text("#\(tag)")
+                                    .font(.caption)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.blue.opacity(0.15))
+                                    .foregroundStyle(.blue)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func insertTag(_ tag: String) {
+        // Replace the current partial tag with the full tag.
+        guard let hashRange = text.range(of: "#", options: .backwards) else { return }
+        text = String(text[..<hashRange.lowerBound]) + "#\(tag) "
     }
 }
 

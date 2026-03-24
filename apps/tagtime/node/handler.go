@@ -80,6 +80,8 @@ func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func
 	mux.HandleFunc("GET /sync/period-changes", h.handleSyncPeriodChanges)
 	mux.HandleFunc("GET /sync/status", h.handleSyncStatus)
 	mux.HandleFunc("POST /sync/now", h.handleSyncNow)
+	mux.HandleFunc("GET /tags", h.handleTags)
+	mux.HandleFunc("POST /tags/rename", h.handleTagRename)
 	mux.HandleFunc("GET /next-ping", h.handleNextPing)
 	mux.HandleFunc("GET /style.css", h.handleStatic)
 	mux.HandleFunc("GET /graphs.js", h.handleStatic)
@@ -320,8 +322,13 @@ func (h *handler) handleGraphsData(w http.ResponseWriter, r *http.Request) {
 		serve.InternalServerError(w, r, err)
 		return
 	}
+	pingTags, err := h.store.PingTagsInTimeRange(r.Context(), start, end)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
 
-	data := ComputeGraphData(pings, changes, window, start, end)
+	data := ComputeGraphData(pings, changes, window, start, end, pingTags)
 	// Sort all_tags deterministically.
 	sort.Strings(data.AllTags)
 	serve.JSON(w, r, data)
@@ -376,6 +383,36 @@ func (h *handler) handleSettingsPeriod(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
+func (h *handler) handleTags(w http.ResponseWriter, r *http.Request) {
+	tags, err := h.store.ListTags(r.Context())
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	if tags == nil {
+		tags = []string{}
+	}
+	serve.JSON(w, r, tags)
+}
+
+func (h *handler) handleTagRename(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	oldName := r.FormValue("old_name")
+	newName := r.FormValue("new_name")
+	if oldName == "" || newName == "" {
+		http.Error(w, "old_name and new_name required", 400)
+		return
+	}
+	if err := h.store.RenameTag(r.Context(), oldName, newName, h.nodeID); err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // Sync endpoints.
 
 func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
@@ -391,6 +428,12 @@ func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 			serve.InternalServerError(w, r, err)
 			return
 		}
+		if p.Blurb != "" {
+			if err := h.store.ensureTagsFromBlurb(r.Context(), p.Timestamp, p.Blurb); err != nil {
+				serve.InternalServerError(w, r, err)
+				return
+			}
+		}
 	}
 	for _, c := range payload.PeriodChanges {
 		if err := h.store.AddPeriodChange(r.Context(), c); err != nil {
@@ -400,6 +443,16 @@ func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(payload.PeriodChanges) > 0 {
 		h.refreshChanges()
+	}
+	for _, rename := range payload.TagRenames {
+		if err := h.store.AddTagRename(r.Context(), rename); err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
+		if err := h.store.ApplyTagRename(r.Context(), rename); err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -418,7 +471,12 @@ func (h *handler) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 		serve.InternalServerError(w, r, err)
 		return
 	}
-	serve.JSON(w, r, syncPayload{Pings: pings, PeriodChanges: changes})
+	tagRenames, err := h.store.ListTagRenames(r.Context())
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	serve.JSON(w, r, syncPayload{Pings: pings, PeriodChanges: changes, TagRenames: tagRenames})
 }
 
 func (h *handler) handleSyncPeriodChanges(w http.ResponseWriter, r *http.Request) {

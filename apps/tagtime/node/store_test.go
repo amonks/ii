@@ -287,3 +287,182 @@ func TestUnsyncedPings(t *testing.T) {
 		t.Errorf("expected timestamp 2000, got %d", unsynced[0].Timestamp)
 	}
 }
+
+func TestBackfillPingTags(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	// Insert pings with blurbs before the backfill already ran in OpenStore.
+	// Since OpenStore already backfilled, insert new pings and verify
+	// ensureTagsFromBlurb works via SetBlurb.
+	if err := store.SetBlurb(ctx, 1000, "#work on #code", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, 2000, "#sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	tags, err := store.ListTags(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"code", "sleeping", "work"}
+	if len(tags) != len(want) {
+		t.Fatalf("ListTags = %v, want %v", tags, want)
+	}
+	for i, tag := range tags {
+		if tag != want[i] {
+			t.Errorf("tag[%d] = %q, want %q", i, tag, want[i])
+		}
+	}
+}
+
+func TestTagsForPing(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	if err := store.SetBlurb(ctx, 1000, "#work on #code", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	tags, err := store.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"code", "work"}
+	if len(tags) != len(want) {
+		t.Fatalf("TagsForPing = %v, want %v", tags, want)
+	}
+	for i, tag := range tags {
+		if tag != want[i] {
+			t.Errorf("tag[%d] = %q, want %q", i, tag, want[i])
+		}
+	}
+}
+
+func TestRenameTagTimeScoped(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	// T1: add #sleep
+	if err := store.SetBlurb(ctx, 1000, "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// T3: rename sleep → sleeping (applies to pings at or before now)
+	if err := store.RenameTag(ctx, "sleep", "sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// T1's tag should now be "sleeping"
+	tags, err := store.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleeping" {
+		t.Errorf("after rename, TagsForPing(1000) = %v, want [sleeping]", tags)
+	}
+
+	// T4: add #sleep again (after rename)
+	if err := store.SetBlurb(ctx, 9999999999, "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// T4's tag should still be "sleep" (not renamed, it's after T3)
+	tags, err = store.TagsForPing(ctx, 9999999999)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleep" {
+		t.Errorf("post-rename ping TagsForPing(9999999999) = %v, want [sleep]", tags)
+	}
+
+	// Both tags should exist
+	allTags, err := store.ListTags(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(allTags) != 2 {
+		t.Errorf("ListTags = %v, want [sleep, sleeping]", allTags)
+	}
+}
+
+func TestRenameTagRemovesOrphan(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	// Only one ping with #sleep
+	if err := store.SetBlurb(ctx, 1000, "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rename: sleep → sleeping. Since all pings are before now, "sleep" has no remaining refs.
+	if err := store.RenameTag(ctx, "sleep", "sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	tags, err := store.ListTags(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleeping" {
+		t.Errorf("ListTags = %v, want [sleeping]", tags)
+	}
+}
+
+func TestListTagRenames(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	if err := store.SetBlurb(ctx, 1000, "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RenameTag(ctx, "sleep", "sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	renames, err := store.ListTagRenames(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renames) != 1 {
+		t.Fatalf("got %d renames, want 1", len(renames))
+	}
+	if renames[0].OldName != "sleep" || renames[0].NewName != "sleeping" {
+		t.Errorf("rename = %+v, want sleep→sleeping", renames[0])
+	}
+}
+
+func TestBatchSetBlurbMaintainsTags(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	timestamps := []int64{1000, 2000}
+	for _, ts := range timestamps {
+		if err := store.UpsertPing(ctx, Ping{Timestamp: ts}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := store.BatchSetBlurb(ctx, timestamps, "#sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, ts := range timestamps {
+		tags, err := store.TagsForPing(ctx, ts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(tags) != 1 || tags[0] != "sleeping" {
+			t.Errorf("TagsForPing(%d) = %v, want [sleeping]", ts, tags)
+		}
+	}
+
+	allTags, err := store.ListTags(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(allTags) != 1 || allTags[0] != "sleeping" {
+		t.Errorf("ListTags = %v, want [sleeping]", allTags)
+	}
+}

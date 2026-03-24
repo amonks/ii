@@ -44,9 +44,25 @@ func newTestSyncPair(t *testing.T) (client *Syncer, clientStore, serverStore *St
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			if p.Blurb != "" {
+				if err := serverStore.ensureTagsFromBlurb(r.Context(), p.Timestamp, p.Blurb); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+			}
 		}
 		for _, c := range payload.PeriodChanges {
 			if err := serverStore.AddPeriodChange(r.Context(), c); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+		for _, rename := range payload.TagRenames {
+			if err := serverStore.AddTagRename(r.Context(), rename); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if err := serverStore.ApplyTagRename(r.Context(), rename); err != nil {
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -66,7 +82,12 @@ func newTestSyncPair(t *testing.T) (client *Syncer, clientStore, serverStore *St
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		json.NewEncoder(w).Encode(syncPayload{Pings: pings, PeriodChanges: changes})
+		tagRenames, err := serverStore.ListTagRenames(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(syncPayload{Pings: pings, PeriodChanges: changes, TagRenames: tagRenames})
 	})
 
 	ts := httptest.NewServer(mux)
@@ -297,9 +318,25 @@ func TestSyncLateClientPingsVisible(t *testing.T) {
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			if p.Blurb != "" {
+				if err := serverStore.ensureTagsFromBlurb(r.Context(), p.Timestamp, p.Blurb); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+			}
 		}
 		for _, c := range payload.PeriodChanges {
 			if err := serverStore.AddPeriodChange(r.Context(), c); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+		for _, rename := range payload.TagRenames {
+			if err := serverStore.AddTagRename(r.Context(), rename); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if err := serverStore.ApplyTagRename(r.Context(), rename); err != nil {
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -319,7 +356,12 @@ func TestSyncLateClientPingsVisible(t *testing.T) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		json.NewEncoder(w).Encode(syncPayload{Pings: pings, PeriodChanges: changes})
+		tagRenames, err := serverStore.ListTagRenames(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(syncPayload{Pings: pings, PeriodChanges: changes, TagRenames: tagRenames})
 	})
 	ts := httptest.NewServer(mux)
 	t.Cleanup(ts.Close)
@@ -428,5 +470,125 @@ func TestSyncPushPeriodChanges(t *testing.T) {
 	}
 	if len(changes) != 1 || changes[0].PeriodSecs != 1800 {
 		t.Errorf("expected pushed period change with 1800s, got %+v", changes)
+	}
+}
+
+// TestSyncTagRename tests the multi-device rename scenario:
+// - Both devices add #sleep
+// - Device A renames #sleep → #sleeping
+// - After sync, device B's ping_tags show "sleeping"
+func TestSyncTagRename(t *testing.T) {
+	ctx := context.Background()
+	syncer, clientStore, serverStore := newTestSyncPair(t)
+
+	// Client adds a ping with #sleep.
+	if err := clientStore.SetBlurb(ctx, 1000, "#sleep", "client"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Push to server.
+	if _, err := syncer.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify ping arrived with tag on server.
+	serverTags, err := serverStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(serverTags) != 1 || serverTags[0] != "sleep" {
+		t.Fatalf("server TagsForPing(1000) = %v, want [sleep]", serverTags)
+	}
+
+	// Server renames sleep → sleeping (simulating device A).
+	if err := serverStore.RenameTag(ctx, "sleep", "sleeping", "server"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify server's ping_tags updated.
+	serverTags, err = serverStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(serverTags) != 1 || serverTags[0] != "sleeping" {
+		t.Fatalf("after rename, server TagsForPing(1000) = %v, want [sleeping]", serverTags)
+	}
+
+	// Client pulls — should get the rename and apply it.
+	if _, err := syncer.Pull(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify client's ping_tags were updated by the rename.
+	clientTags, err := clientStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(clientTags) != 1 || clientTags[0] != "sleeping" {
+		t.Errorf("after pull, client TagsForPing(1000) = %v, want [sleeping]", clientTags)
+	}
+
+	// Verify rename record arrived on client.
+	renames, err := clientStore.ListTagRenames(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renames) != 1 || renames[0].OldName != "sleep" || renames[0].NewName != "sleeping" {
+		t.Errorf("client renames = %+v, want [{sleep→sleeping}]", renames)
+	}
+}
+
+// TestSyncTagRenameTimeScoped tests that renames synced across devices
+// respect the time scope: pings created after the rename keep original tags.
+func TestSyncTagRenameTimeScoped(t *testing.T) {
+	ctx := context.Background()
+	syncer, clientStore, serverStore := newTestSyncPair(t)
+
+	// Client adds a ping with #sleep at T=1000.
+	if err := clientStore.SetBlurb(ctx, 1000, "#sleep", "client"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Push to server.
+	if _, err := syncer.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Server renames sleep → sleeping.
+	if err := serverStore.RenameTag(ctx, "sleep", "sleeping", "server"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Client adds ANOTHER ping with #sleep at T=far future (after rename).
+	if err := clientStore.SetBlurb(ctx, 9999999999, "#sleep", "client"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Push the new ping.
+	if _, err := syncer.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Pull the rename.
+	if _, err := syncer.Pull(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Old ping should be renamed.
+	tags, err := clientStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleeping" {
+		t.Errorf("old ping TagsForPing(1000) = %v, want [sleeping]", tags)
+	}
+
+	// New ping (after rename time) should keep "sleep".
+	tags, err = clientStore.TagsForPing(ctx, 9999999999)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "sleep" {
+		t.Errorf("new ping TagsForPing(9999999999) = %v, want [sleep]", tags)
 	}
 }
