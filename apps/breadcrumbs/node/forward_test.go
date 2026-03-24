@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"io"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -137,6 +138,178 @@ func TestForwarderForward(t *testing.T) {
 	}
 	if n != 0 {
 		t.Errorf("second forward = %d, want 0", n)
+	}
+}
+
+func TestForwarderBatching(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Insert more points than one batch (forwardBatchSize = 1000).
+	n := forwardBatchSize + 500
+	for i := range n {
+		s.InsertPoint(ctx, &pb.Point{
+			Timestamp: int64(i + 1),
+			Latitude:  0, Longitude: 0,
+		}, math.MaxFloat64, false)
+	}
+
+	// Track how many requests the upstream receives.
+	var batchCount int
+	var totalReceived int
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var track pb.Track
+		proto.Unmarshal(body, &track)
+		batchCount++
+		totalReceived += len(track.Points)
+
+		resp := &pb.IngestResponse{Watermark: track.Points[len(track.Points)-1].Timestamp}
+		data, _ := proto.Marshal(resp)
+		w.Write(data)
+	}))
+	defer upstream.Close()
+
+	f := newForwarder(s, upstream.URL, 100000)
+	forwarded, wm, err := f.Forward(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if int(forwarded) != n {
+		t.Errorf("forwarded = %d, want %d", forwarded, n)
+	}
+	if wm != int64(n) {
+		t.Errorf("watermark = %d, want %d", wm, n)
+	}
+	if batchCount != 2 {
+		t.Errorf("batch count = %d, want 2", batchCount)
+	}
+	if totalReceived != n {
+		t.Errorf("total received = %d, want %d", totalReceived, n)
+	}
+
+	// Watermark should be persisted at the final value.
+	stored, _ := s.GetWatermark(ctx)
+	if stored != int64(n) {
+		t.Errorf("stored watermark = %d, want %d", stored, n)
+	}
+}
+
+func TestForwarderBatchPartialFailure(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Insert 2.5 batches of points.
+	n := forwardBatchSize*2 + 500
+	for i := range n {
+		s.InsertPoint(ctx, &pb.Point{
+			Timestamp: int64(i + 1),
+			Latitude:  0, Longitude: 0,
+		}, math.MaxFloat64, false)
+	}
+
+	// Upstream fails on the second batch.
+	var batchCount int
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		batchCount++
+		if batchCount == 2 {
+			http.Error(w, "server error", 500)
+			return
+		}
+		body, _ := io.ReadAll(r.Body)
+		var track pb.Track
+		proto.Unmarshal(body, &track)
+
+		resp := &pb.IngestResponse{Watermark: track.Points[len(track.Points)-1].Timestamp}
+		data, _ := proto.Marshal(resp)
+		w.Write(data)
+	}))
+	defer upstream.Close()
+
+	f := newForwarder(s, upstream.URL, 100000)
+	forwarded, wm, err := f.Forward(ctx)
+	if err == nil {
+		t.Fatal("expected error from partial failure")
+	}
+
+	// First batch should have been forwarded.
+	if int(forwarded) != forwardBatchSize {
+		t.Errorf("forwarded = %d, want %d", forwarded, forwardBatchSize)
+	}
+	// Watermark should be at end of first batch.
+	if wm != int64(forwardBatchSize) {
+		t.Errorf("watermark = %d, want %d", wm, forwardBatchSize)
+	}
+
+	// Stored watermark should also reflect partial progress.
+	stored, _ := s.GetWatermark(ctx)
+	if stored != int64(forwardBatchSize) {
+		t.Errorf("stored watermark = %d, want %d", stored, forwardBatchSize)
+	}
+}
+
+func TestForwarderRealisticTimestamps(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Use realistic nanosecond timestamps like iOS produces.
+	baseTS := int64(1774200000000000000) // ~March 2026 in nanoseconds
+	for i := range 5 {
+		s.InsertPoint(ctx, &pb.Point{
+			Timestamp: baseTS + int64(i)*1_000_000_000,
+			Latitude:  41.88 + float64(i)*0.001,
+			Longitude: -87.63,
+		}, math.MaxFloat64, false)
+	}
+
+	// Queue should contain all 5 points.
+	queueSize, err := s.ForwardQueueSize(ctx, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if queueSize != 5 {
+		t.Errorf("queue size = %d, want 5", queueSize)
+	}
+
+	// Forward to upstream.
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := make([]byte, r.ContentLength)
+		r.Body.Read(body)
+		resp := &pb.IngestResponse{}
+		data, _ := proto.Marshal(resp)
+		w.Write(data)
+	}))
+	defer upstream.Close()
+
+	f := newForwarder(s, upstream.URL, 100000)
+	forwarded, wm, err := f.Forward(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if forwarded != 5 {
+		t.Errorf("forwarded = %d, want 5", forwarded)
+	}
+	expectedWM := baseTS + 4*1_000_000_000
+	if wm != expectedWM {
+		t.Errorf("watermark = %d, want %d", wm, expectedWM)
+	}
+
+	// Queue should now be empty.
+	queueSize, err = s.ForwardQueueSize(ctx, wm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if queueSize != 0 {
+		t.Errorf("queue size after forward = %d, want 0", queueSize)
+	}
+
+	// Watermark should be readable back correctly.
+	storedWM, err := s.GetWatermark(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storedWM != expectedWM {
+		t.Errorf("stored watermark = %d, want %d", storedWM, expectedWM)
 	}
 }
 

@@ -96,8 +96,17 @@ func (h *handler) handleIngest(w http.ResponseWriter, r *http.Request) {
 
 	// Run eviction if capacity is configured.
 	if h.config.Capacity > 0 {
-		// For now (no upstream), all points are eligible for eviction.
-		h.store.Evict(r.Context(), h.config.Capacity, math.MaxInt64)
+		var evictWatermark int64 = math.MaxInt64
+		if h.forwarder != nil {
+			// Only evict points that have been forwarded upstream.
+			// Unforwarded points are sacred — they must not be dropped.
+			if wm, err := h.store.GetWatermark(r.Context()); err == nil && wm > 0 {
+				evictWatermark = wm
+			} else {
+				evictWatermark = 0 // nothing forwarded yet; don't evict anything
+			}
+		}
+		h.store.Evict(r.Context(), h.config.Capacity, evictWatermark)
 	}
 
 	resp := &pb.IngestResponse{Watermark: watermark}
@@ -268,6 +277,7 @@ func (h *handler) handleFlush(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleStats(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	count, latest, err := h.store.Stats(r.Context())
 	if err != nil {
 		http.Error(w, "querying stats: "+err.Error(), http.StatusInternalServerError)

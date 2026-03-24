@@ -184,7 +184,11 @@ struct StatusTab: View {
     private func refreshStats() async {
         let url = URL(string: "http://127.0.0.1:\(nodePort)/stats")!
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await URLSession.shared.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                statsError = "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)"
+                return
+            }
             let resp = try Breadcrumbs_StatsResponse(serializedBytes: data)
             nodeCount = resp.count
             if resp.hasLatestPoint {
@@ -282,7 +286,12 @@ struct StatusTab: View {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(nodePort)/flush")!)
         request.httpMethod = "POST"
         do {
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                let body = String(data: data, encoding: .utf8) ?? "unknown error"
+                lastFlushResult = "Failed: \(body)"
+                return
+            }
             let resp = try Breadcrumbs_FlushResponse(serializedBytes: data)
             if resp.pointsForwarded > 0 {
                 lastFlushResult = "Sent \(resp.pointsForwarded) points"

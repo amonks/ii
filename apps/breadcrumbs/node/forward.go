@@ -105,8 +105,12 @@ func newForwarder(store *Store, upstream string, capacity int) *Forwarder {
 	}
 }
 
-// Forward sends all unforwarded points to the upstream node. Returns the
-// number of points forwarded and the new watermark.
+// forwardBatchSize is the maximum number of points to send in a single
+// upstream request. Large batches risk timeouts and OOM on both sides.
+const forwardBatchSize = 1000
+
+// Forward sends all unforwarded points to the upstream node in batches.
+// Returns the total number of points forwarded and the new watermark.
 func (f *Forwarder) Forward(ctx context.Context) (int32, int64, error) {
 	watermark, err := f.store.GetWatermark(ctx)
 	if err != nil {
@@ -122,41 +126,60 @@ func (f *Forwarder) Forward(ctx context.Context) (int32, int64, error) {
 		return 0, watermark, nil
 	}
 
+	var totalForwarded int32
+	currentWatermark := watermark
+
+	for start := 0; start < len(points); start += forwardBatchSize {
+		end := min(start+forwardBatchSize, len(points))
+		batch := points[start:end]
+
+		if err := f.sendBatch(ctx, batch); err != nil {
+			// Return progress so far; the next Forward picks up where we left off.
+			return totalForwarded, currentWatermark, fmt.Errorf("forwarding batch: %w", err)
+		}
+
+		// Advance watermark after each successful batch.
+		batchWatermark := batch[len(batch)-1].Timestamp
+		if err := f.store.SetWatermark(ctx, batchWatermark); err != nil {
+			return totalForwarded, currentWatermark, fmt.Errorf("setting watermark: %w", err)
+		}
+		currentWatermark = batchWatermark
+		totalForwarded += int32(len(batch))
+	}
+
+	// Run eviction now that points have been forwarded.
+	if f.capacity > 0 {
+		f.store.Evict(ctx, f.capacity, currentWatermark)
+	}
+
+	return totalForwarded, currentWatermark, nil
+}
+
+// sendBatch POSTs a batch of points to the upstream /ingest endpoint.
+func (f *Forwarder) sendBatch(ctx context.Context, points []*pb.Point) error {
 	track := &pb.Track{Points: points}
 	body, err := proto.Marshal(track)
 	if err != nil {
-		return 0, 0, fmt.Errorf("marshaling track: %w", err)
+		return fmt.Errorf("marshaling track: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", f.upstream+"/ingest", bytes.NewReader(body))
 	if err != nil {
-		return 0, 0, fmt.Errorf("creating request: %w", err)
+		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/protobuf")
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return 0, watermark, fmt.Errorf("forwarding to upstream: %w", err)
+		return fmt.Errorf("upstream request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return 0, watermark, fmt.Errorf("upstream returned %d: %s", resp.StatusCode, respBody)
+		return fmt.Errorf("upstream returned %d: %s", resp.StatusCode, respBody)
 	}
-
-	// Advance watermark to the latest forwarded point.
-	newWatermark := points[len(points)-1].Timestamp
-	if err := f.store.SetWatermark(ctx, newWatermark); err != nil {
-		return 0, watermark, fmt.Errorf("setting watermark: %w", err)
-	}
-
-	// Run eviction now that points have been forwarded.
-	if f.capacity > 0 {
-		f.store.Evict(ctx, f.capacity, newWatermark)
-	}
-
-	return int32(len(points)), newWatermark, nil
+	return nil
 }
 
 // RunPeriodicForward starts a background goroutine that forwards every

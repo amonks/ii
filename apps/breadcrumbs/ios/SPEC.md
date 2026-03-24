@@ -542,9 +542,11 @@ timestamp > the forwarding watermark. On crash, no unsent points are
 lost because they're already persisted.
 
 A forward is triggered by `/flush` or by a periodic timer (e.g., every
-5 minutes when there are unsent points). On successful POST, the phone
-advances its forwarding watermark. On failure, the same batch is
-retried on the next trigger.
+5 minutes when there are unsent points). Points are sent in batches of
+up to 1000 to avoid timeouts with large backlogs. The watermark is
+advanced after each successful batch, so partial progress is preserved
+if a later batch fails. On failure, the remaining batches are retried
+on the next trigger.
 
 After a successful forward, eviction runs — any forwarded,
 unsubscribed points exceeding capacity are deleted by LRU order.

@@ -416,6 +416,60 @@ func TestHandlerStatsAfterIngest(t *testing.T) {
 	}
 }
 
+func TestHandlerIngestDoesNotEvictUnforwardedPoints(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	// Pre-populate with points up to capacity.
+	for i := range 10 {
+		s.InsertPoint(ctx, &pb.Point{
+			Timestamp: int64(i + 1),
+			Latitude:  0, Longitude: 0,
+		}, math.MaxFloat64, false)
+	}
+
+	simp := NewSimplifier()
+	prev, tail, _ := s.LastTwoPoints(ctx)
+	if tail != nil {
+		simp.Recover(prev, tail)
+	}
+	hub := NewHub()
+
+	// Create a handler WITH a forwarder (upstream configured) but small capacity.
+	// Watermark is 0 (never forwarded), so no points should be evicted.
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	}))
+	defer upstream.Close()
+	forwarder := newForwarder(s, upstream.URL, 5) // capacity 5
+	config := &Config{Capacity: 5, Upstream: upstream.URL}
+	h := newHandler(s, simp, hub, config, forwarder)
+
+	// Ingest one more point.
+	track := &pb.Track{
+		Points: []*pb.Point{
+			{Timestamp: 11, Latitude: 0.01, Longitude: 0.01},
+		},
+	}
+	body, _ := proto.Marshal(track)
+	req := httptest.NewRequest("POST", "/ingest", strings.NewReader(string(body)))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("ingest status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	// All 11 points should still be present — none evicted because watermark is 0.
+	count, _, err := s.Stats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 11 {
+		t.Errorf("count = %d, want 11 (unforwarded points must not be evicted)", count)
+	}
+}
+
 func TestHandlerStatsForwardQueue(t *testing.T) {
 	s := testStore(t)
 	ctx := context.Background()
