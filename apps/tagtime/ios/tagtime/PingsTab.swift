@@ -22,6 +22,8 @@ struct PingsTab: View {
     @State private var batchBlurb = ""
     @State private var selectedTimestamps: Set<Int64> = []
     @State private var answerTexts: [Int64: String] = [:]
+    @State private var editingTimestamp: Int64?
+    @State private var editTexts: [Int64: String] = [:]
 
     var body: some View {
         NavigationView {
@@ -75,11 +77,30 @@ struct PingsTab: View {
                 if !recent.isEmpty {
                     Section("Recent") {
                         ForEach(recent) { ping in
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(ping.date, style: .relative)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                Text(ping.blurb)
+                                if editingTimestamp == ping.timestamp {
+                                    HStack {
+                                        TextField("", text: editBinding(for: ping.timestamp))
+                                            .textFieldStyle(.roundedBorder)
+                                        Button("Save") {
+                                            saveEdit(timestamp: ping.timestamp)
+                                        }
+                                        .disabled((editTexts[ping.timestamp] ?? "").isEmpty)
+                                        Button("Cancel") {
+                                            editingTimestamp = nil
+                                        }
+                                        .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    Text(ping.blurb)
+                                        .onTapGesture {
+                                            editTexts[ping.timestamp] = ping.blurb
+                                            editingTimestamp = ping.timestamp
+                                        }
+                                }
                             }
                         }
                     }
@@ -107,6 +128,13 @@ struct PingsTab: View {
         )
     }
 
+    private func editBinding(for timestamp: Int64) -> Binding<String> {
+        Binding(
+            get: { editTexts[timestamp, default: ""] },
+            set: { editTexts[timestamp] = $0 }
+        )
+    }
+
     private func refresh() async {
         guard nodeManager.isRunning else { return }
         guard let url = URL(string: "\(nodeManager.baseURL)/pings") else { return }
@@ -127,6 +155,14 @@ struct PingsTab: View {
                 initializedAt = Date(timeIntervalSince1970: TimeInterval(ts))
             }
         }
+    }
+
+    private func saveEdit(timestamp: Int64) {
+        guard let blurb = editTexts[timestamp], !blurb.isEmpty else { return }
+        post(path: "/answer", body: "timestamp=\(timestamp)&blurb=\(blurb.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? blurb)")
+        editingTimestamp = nil
+        editTexts[timestamp] = nil
+        Task { await refresh() }
     }
 
     private func answer(timestamp: Int64) {

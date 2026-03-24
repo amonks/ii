@@ -46,17 +46,18 @@ Period changes are event-sourced: to generate pings across a time range, walk th
 ## Sync
 
 Star topology, watermark-based:
-- **Push**: client sends unsynced pings to server via `POST /sync/push`
-- **Pull**: client fetches changed pings via `GET /sync/pull?since=WATERMARK`
-- **Period changes**: synced via `GET /sync/period-changes` (always sends all)
+- **Push**: client sends unsynced pings and all period changes to server via `POST /sync/push`
+- **Pull**: client fetches changed pings and period changes via `GET /sync/pull?since=WATERMARK`
 - LWW merge on receive: only apply if `incoming.updated_at > existing.updated_at`
+- Period changes are idempotent (keyed by timestamp), so sending all on every push/pull is safe
 - Periodic background sync (5 min) when upstream configured
+- In-memory period change cache refreshes immediately on settings change or sync push
 
 ## HTTP Routes
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/` | Dashboard: pending pings + recent history |
+| GET | `/` | Dashboard: next ping countdown, pending pings, recent history (editable) |
 | GET | `/pings` | JSON: pending + recent pings (used by iOS) |
 | POST | `/answer` | Set blurb for one ping |
 | POST | `/batch-answer` | Batch-set blurb for multiple pings |
@@ -77,7 +78,8 @@ Each ping represents `period_secs` of time. Tags are extracted from blurbs. Time
 
 - Starts the Go node on localhost via gomobile
 - Four tabs: Pings, Search, Graphs, Settings
-- Pings tab is native SwiftUI with batch-set support
+- Pings tab is native SwiftUI with batch-set support and tap-to-edit on recent pings
+- Settings tab shows next ping countdown, period display/change with keyboard dismiss, sync status
 - Other tabs use WKWebView pointing at localhost
 - Schedules up to 64 local notifications from the deterministic schedule
 - On notification tap, opens to ping answer screen

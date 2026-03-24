@@ -18,6 +18,28 @@
   <h1>TagTime</h1>
   <p class="initialized">Tracking since {{.InitializedAt.Format "Jan 2, 2006 3:04 PM"}}</p>
 
+  <p class="next-ping">Next ping: <time id="next-ping-time" datetime="{{.NextPingUnix}}">{{formatTime .NextPingUnix}}</time></p>
+  <script>
+  (function() {
+    var el = document.getElementById('next-ping-time');
+    var ts = parseInt(el.getAttribute('datetime'), 10) * 1000;
+    function update() {
+      var diff = ts - Date.now();
+      if (diff <= 0) { el.textContent = 'now!'; return; }
+      var s = Math.floor(diff / 1000);
+      var m = Math.floor(s / 60); s %= 60;
+      var h = Math.floor(m / 60); m %= 60;
+      var parts = [];
+      if (h > 0) parts.push(h + 'h');
+      if (m > 0) parts.push(m + 'm');
+      if (h === 0) parts.push(s + 's');
+      el.textContent = 'in ' + parts.join(' ');
+    }
+    update();
+    setInterval(update, 1000);
+  })();
+  </script>
+
   {{if .Pending}}
   <h2>Pending ({{len .Pending}})</h2>
 
@@ -54,9 +76,14 @@
   {{if .Recent}}
   <h2>Recent</h2>
   {{range .Recent}}
-  <div class="ping">
+  <div class="ping ping-editable" onclick="this.querySelector('.edit-form').style.display='flex'; this.querySelector('.ping-blurb').style.display='none'">
     <div class="ping-time">{{formatTime .Timestamp}}</div>
     <div class="ping-blurb">{{highlightTags .Blurb}}</div>
+    <form class="edit-form answer-form" method="POST" action="{{$.BasePath}}/answer" style="display:none" onclick="event.stopPropagation()">
+      <input type="hidden" name="timestamp" value="{{.Timestamp}}">
+      <input type="text" name="blurb" value="{{.Blurb}}">
+      <button type="submit">Save</button>
+    </form>
   </div>
   {{end}}
   {{end}}

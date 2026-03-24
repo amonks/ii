@@ -53,14 +53,15 @@ func init() {
 }
 
 type handler struct {
-	store    *Store
-	changes  func() []PeriodChange
-	nodeID   string
-	upstream string
+	store          *Store
+	changes        func() []PeriodChange
+	refreshChanges func()
+	nodeID         string
+	upstream       string
 }
 
-func newHandler(store *Store, changes func() []PeriodChange, nodeID, upstream string) http.Handler {
-	h := &handler{store: store, changes: changes, nodeID: nodeID, upstream: upstream}
+func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func(), nodeID, upstream string) http.Handler {
+	h := &handler{store: store, changes: changes, refreshChanges: refreshChanges, nodeID: nodeID, upstream: upstream}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", h.handleIndex)
 	mux.HandleFunc("GET /pings", h.handlePingsJSON)
@@ -82,10 +83,11 @@ func newHandler(store *Store, changes func() []PeriodChange, nodeID, upstream st
 }
 
 type indexData struct {
-	BasePath    string
-	Pending     []Ping
-	Recent      []Ping
+	BasePath      string
+	Pending       []Ping
+	Recent        []Ping
 	InitializedAt time.Time
+	NextPingUnix  int64
 }
 
 func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -122,11 +124,14 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 		initializedAt = time.Unix(changes[0].Timestamp, 0)
 	}
 
+	nextPing := NextPing(changes, now)
+
 	templates.ExecuteTemplate(w, "index.html", indexData{
 		BasePath:      serve.BasePath(r),
 		Pending:       pending,
 		Recent:        recent,
 		InitializedAt: initializedAt,
+		NextPingUnix:  nextPing.Unix(),
 	})
 }
 
@@ -346,6 +351,7 @@ func (h *handler) handleSettingsPeriod(w http.ResponseWriter, r *http.Request) {
 		serve.InternalServerError(w, r, err)
 		return
 	}
+	h.refreshChanges()
 	http.Redirect(w, r, serve.BasePath(r)+"/settings", http.StatusSeeOther)
 }
 
@@ -368,6 +374,9 @@ func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 			serve.InternalServerError(w, r, err)
 			return
 		}
+	}
+	if len(payload.PeriodChanges) > 0 {
+		h.refreshChanges()
 	}
 	w.WriteHeader(http.StatusOK)
 }

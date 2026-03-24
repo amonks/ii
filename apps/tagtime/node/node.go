@@ -78,7 +78,7 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		changes: changes,
 	}
 
-	n.handler = newHandler(store, n.getChanges, config.NodeID, config.Upstream)
+	n.handler = newHandler(store, n.getChanges, func() { n.refreshChanges(ctx) }, config.NodeID, config.Upstream)
 
 	// Start periodic sync if upstream configured.
 	if syncer != nil {

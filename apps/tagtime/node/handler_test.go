@@ -29,7 +29,7 @@ func newTestHandler(t *testing.T) (http.Handler, *Store) {
 		c, _ := store.ListPeriodChanges(ctx)
 		return c
 	}
-	h := newHandler(store, changes, "test", "")
+	h := newHandler(store, changes, func() {}, "test", "")
 	return h, store
 }
 
@@ -42,8 +42,12 @@ func TestHandlerIndex(t *testing.T) {
 	if w.Code != 200 {
 		t.Errorf("GET / = %d, want 200", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "TagTime") {
+	body := w.Body.String()
+	if !strings.Contains(body, "TagTime") {
 		t.Error("index page missing title")
+	}
+	if !strings.Contains(body, "next-ping-time") {
+		t.Error("index page missing next ping display")
 	}
 }
 
@@ -110,6 +114,57 @@ func TestHandlerAnswer(t *testing.T) {
 	}
 	if p.Blurb != "#working on tests" {
 		t.Errorf("blurb = %q, want %q", p.Blurb, "#working on tests")
+	}
+}
+
+func TestHandlerEditAnswer(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	// Create and answer a ping.
+	if err := store.SetBlurb(ctx, 1000, "#working", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Edit the answer via POST /answer.
+	form := url.Values{
+		"timestamp": {"1000"},
+		"blurb":     {"#meeting with team"},
+	}
+	req := httptest.NewRequest("POST", "/answer", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusSeeOther {
+		t.Errorf("POST /answer (edit) = %d, want 303", w.Code)
+	}
+
+	p, err := store.GetPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Blurb != "#meeting with team" {
+		t.Errorf("edited blurb = %q, want %q", p.Blurb, "#meeting with team")
+	}
+}
+
+func TestHandlerIndexShowsEditForm(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	// Create an answered ping.
+	if err := store.SetBlurb(ctx, 1000, "#coding", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if !strings.Contains(body, "edit-form") {
+		t.Error("recent pings should have edit forms")
 	}
 }
 
@@ -244,7 +299,7 @@ func TestHandlerSyncStatusWithUpstream(t *testing.T) {
 		c, _ := store.ListPeriodChanges(ctx)
 		return c
 	}
-	h := newHandler(store, changes, "test", "http://upstream:8080")
+	h := newHandler(store, changes, func() {}, "test", "http://upstream:8080")
 
 	req := httptest.NewRequest("GET", "/sync/status", nil)
 	w := httptest.NewRecorder()

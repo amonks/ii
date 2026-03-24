@@ -38,17 +38,21 @@ type syncPayload struct {
 	PeriodChanges []PeriodChange `json:"period_changes,omitempty"`
 }
 
-// Push sends unsynced pings to upstream. Returns the number of pings pushed.
+// Push sends unsynced pings and period changes to upstream. Returns the number of pings pushed.
 func (s *Syncer) Push(ctx context.Context) (int, error) {
 	pings, err := s.store.UnsyncedPings(ctx, 1000)
 	if err != nil {
 		return 0, fmt.Errorf("listing unsynced: %w", err)
 	}
-	if len(pings) == 0 {
+	changes, err := s.store.ListPeriodChanges(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("listing period changes: %w", err)
+	}
+	if len(pings) == 0 && len(changes) == 0 {
 		return 0, nil
 	}
 
-	payload := syncPayload{Pings: pings}
+	payload := syncPayload{Pings: pings, PeriodChanges: changes}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return 0, err

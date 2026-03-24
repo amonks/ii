@@ -35,6 +35,7 @@ struct SettingsTab: View {
     @State private var periodInput = ""
     @State private var nextPing: NextPingResponse?
     @State private var syncStatus: SyncStatusResponse?
+    @FocusState private var periodFieldFocused: Bool
 
     private var current: PeriodChange? { changes.last }
 
@@ -69,6 +70,7 @@ struct SettingsTab: View {
                         TextField("Minutes", text: $periodInput)
                             .textFieldStyle(.roundedBorder)
                             .keyboardType(.numberPad)
+                            .focused($periodFieldFocused)
                         Button("Save") {
                             savePeriod()
                         }
@@ -164,15 +166,17 @@ struct SettingsTab: View {
         guard let minutes = Int(periodInput), minutes >= 1 else { return }
         guard let url = URL(string: "\(nodeManager.baseURL)/settings/period") else { return }
 
+        periodInput = ""
+        periodFieldFocused = false
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = "period_minutes=\(minutes)".data(using: .utf8)
 
-        URLSession.shared.dataTask(with: request) { _, _, _ in
-            Task { await refresh() }
-        }.resume()
-
-        periodInput = ""
+        Task {
+            _ = try? await URLSession.shared.data(for: request)
+            await refresh()
+        }
     }
 }

@@ -210,3 +210,32 @@ func TestSyncPeriodChanges(t *testing.T) {
 		t.Errorf("expected period change, got %+v", changes)
 	}
 }
+
+func TestSyncPushPeriodChanges(t *testing.T) {
+	ctx := context.Background()
+	syncer, clientStore, serverStore := newTestSyncPair(t)
+
+	// Add a period change on the client (simulating iOS user changing period).
+	if err := clientStore.AddPeriodChange(ctx, PeriodChange{Timestamp: 100, Seed: 42, PeriodSecs: 1800}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Also add a ping so Push has something to send (Push requires unsynced pings).
+	if err := clientStore.SetBlurb(ctx, 1000, "#work", "client"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Push to server.
+	if _, err := syncer.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify period change arrived on server.
+	changes, err := serverStore.ListPeriodChanges(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 1 || changes[0].PeriodSecs != 1800 {
+		t.Errorf("expected pushed period change with 1800s, got %+v", changes)
+	}
+}
