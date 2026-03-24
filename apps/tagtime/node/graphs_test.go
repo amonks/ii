@@ -91,6 +91,32 @@ func TestComputeGraphDataPeriodChange(t *testing.T) {
 	}
 }
 
+func TestComputeGraphDataTagColors(t *testing.T) {
+	start := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC)
+	changes := []PeriodChange{{Timestamp: 0, Seed: 42, PeriodSecs: 2700}}
+
+	pings := []Ping{
+		{Timestamp: start.Add(1 * time.Hour).Unix(), Blurb: "#code #meeting"},
+	}
+
+	data := ComputeGraphData(pings, changes, "day", start, end)
+
+	if data.TagColors == nil {
+		t.Fatal("TagColors should not be nil")
+	}
+	for _, tag := range data.AllTags {
+		c, ok := data.TagColors[tag]
+		if !ok {
+			t.Errorf("missing color for tag %q", tag)
+			continue
+		}
+		if len(c) != 7 || c[0] != '#' {
+			t.Errorf("tag %q color = %q, want hex like #RRGGBB", tag, c)
+		}
+	}
+}
+
 func TestEffectivePeriodAt(t *testing.T) {
 	changes := []PeriodChange{
 		{Timestamp: 1000, Seed: 42, PeriodSecs: 2700},

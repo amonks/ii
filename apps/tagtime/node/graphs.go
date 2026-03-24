@@ -2,6 +2,8 @@ package node
 
 import (
 	"time"
+
+	"monks.co/pkg/color"
 )
 
 // TagBucket holds time-by-tag data for a single time bucket.
@@ -13,9 +15,10 @@ type TagBucket struct {
 
 // GraphData is the JSON response for /graphs/data.
 type GraphData struct {
-	Buckets []TagBucket `json:"buckets"`
-	AllTags []string    `json:"all_tags"`
-	Window  string      `json:"window"`
+	Buckets   []TagBucket       `json:"buckets"`
+	AllTags   []string          `json:"all_tags"`
+	TagColors map[string]string `json:"tag_colors"`
+	Window    string            `json:"window"`
 }
 
 // ComputeGraphData computes tag time distribution over buckets.
@@ -64,14 +67,17 @@ func ComputeGraphData(pings []Ping, changes []PeriodChange, window string, start
 	}
 
 	var allTags []string
+	tagColors := make(map[string]string)
 	for tag := range allTagsSet {
 		allTags = append(allTags, tag)
+		tagColors[tag] = color.Hash(tag)
 	}
 
 	return GraphData{
-		Buckets: buckets,
-		AllTags: allTags,
-		Window:  window,
+		Buckets:   buckets,
+		AllTags:   allTags,
+		TagColors: tagColors,
+		Window:    window,
 	}
 }
 

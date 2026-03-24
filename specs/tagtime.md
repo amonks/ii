@@ -64,9 +64,10 @@ Star topology, watermark-based:
 | GET | `/pings` | JSON: pending + recent pings (used by iOS) |
 | POST | `/answer` | Set blurb for one ping |
 | POST | `/batch-answer` | Batch-set blurb for multiple pings |
-| GET | `/search?q=` | Full-text search |
+| GET | `/search?q=` | Full-text search (HTML) |
+| GET | `/search/data?q=` | Full-text search (JSON) |
 | GET | `/graphs` | Time-by-tag charts |
-| GET | `/graphs/data` | JSON histogram data |
+| GET | `/graphs/data` | JSON histogram data (includes `tag_colors`) |
 | GET | `/settings` | Period/seed settings |
 | POST | `/settings/period` | Add period change |
 | POST | `/sync/push` | Receive pings from downstream |
@@ -77,15 +78,16 @@ Star topology, watermark-based:
 
 ## Graphs
 
-Each ping represents `period_secs` of time. Tags are extracted from blurbs. Time-by-tag histograms are bucketed by hour/day/week. Rendered client-side with Canvas JS.
+Each ping represents `period_secs` of time. Tags are extracted from blurbs. Time-by-tag histograms are bucketed by hour/day/week. The graph data endpoint includes a `tag_colors` map with canonical hex colors from `pkg/color`, so all clients render consistent tag colors. Rendered client-side with Canvas JS (web) or SwiftUI Charts (iOS).
 
 ## iOS App
 
 - Starts the Go node on localhost via gomobile
 - Four tabs: Pings, Search, Graphs, Settings
 - Pings tab is native SwiftUI with batch-set support and tap-to-edit on recent pings
-- Settings tab shows next ping countdown, period display/change with keyboard dismiss, sync status
-- Other tabs use WKWebView pointing at localhost
+- Search tab uses server-side FTS via `/search/data` JSON endpoint
+- Graphs tab uses native SwiftUI Charts with server-provided tag colors
+- Settings tab shows next ping countdown, period display/change, sync controls
 - Schedules up to 64 local notifications from the deterministic schedule
 - On notification tap, opens to ping answer screen
 
@@ -98,4 +100,5 @@ SQLite with WAL mode, raw `database/sql` (not GORM). Migrations via `pkg/migrate
 - `modernc.org/sqlite` — pure Go SQLite
 - `monks.co/pkg/migrate` — SQL migration runner
 - `monks.co/pkg/serve` — HTTP mux
+- `monks.co/pkg/color` — deterministic tag color hashing
 - Standard app infrastructure: `pkg/reqlog`, `pkg/tailnet`, `pkg/sigctx`, `pkg/gzip`, `pkg/database`

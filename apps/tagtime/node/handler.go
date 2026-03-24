@@ -70,6 +70,7 @@ func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func
 	mux.HandleFunc("POST /answer", h.handleAnswer)
 	mux.HandleFunc("POST /batch-answer", h.handleBatchAnswer)
 	mux.HandleFunc("GET /search", h.handleSearch)
+	mux.HandleFunc("GET /search/data", h.handleSearchData)
 	mux.HandleFunc("GET /graphs", h.handleGraphs)
 	mux.HandleFunc("GET /graphs/data", h.handleGraphsData)
 	mux.HandleFunc("GET /settings", h.handleSettings)
@@ -245,6 +246,23 @@ func (h *handler) handleSearch(w http.ResponseWriter, r *http.Request) {
 		Query:    q,
 		Results:  results,
 	})
+}
+
+func (h *handler) handleSearchData(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
+	var results []Ping
+	if q != "" {
+		var err error
+		results, err = h.store.SearchBlurbs(r.Context(), q, 50)
+		if err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
+	}
+	serve.JSON(w, r, struct {
+		Query   string `json:"query"`
+		Results []Ping `json:"results"`
+	}{Query: q, Results: results})
 }
 
 type graphsPageData struct {

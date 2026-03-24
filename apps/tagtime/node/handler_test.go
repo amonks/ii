@@ -217,6 +217,52 @@ func TestHandlerSearch(t *testing.T) {
 	}
 }
 
+func TestHandlerSearchData(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	if err := store.UpsertPing(ctx, Ping{Timestamp: 1000, Blurb: "working on #code", UpdatedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.UpsertPing(ctx, Ping{Timestamp: 2000, Blurb: "#meeting with team", UpdatedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/search/data?q=code", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /search/data = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"query":"code"`) {
+		t.Errorf("response missing query field, got %s", body)
+	}
+	if !strings.Contains(body, "#code") {
+		t.Error("search results missing expected ping")
+	}
+	if strings.Contains(body, "#meeting") {
+		t.Error("search results should not contain non-matching ping")
+	}
+}
+
+func TestHandlerSearchDataEmpty(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	req := httptest.NewRequest("GET", "/search/data?q=", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /search/data empty = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"query":""`) {
+		t.Errorf("response missing empty query, got %s", body)
+	}
+}
+
 func TestHandlerGraphsData(t *testing.T) {
 	h, store := newTestHandler(t)
 	ctx := context.Background()
@@ -232,8 +278,15 @@ func TestHandlerGraphsData(t *testing.T) {
 	if w.Code != 200 {
 		t.Errorf("GET /graphs/data = %d, want 200", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "buckets") {
+	body := w.Body.String()
+	if !strings.Contains(body, "buckets") {
 		t.Error("response missing buckets")
+	}
+	if !strings.Contains(body, "tag_colors") {
+		t.Error("response missing tag_colors")
+	}
+	if !strings.Contains(body, "#") {
+		t.Error("tag_colors should contain hex color values")
 	}
 }
 

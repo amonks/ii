@@ -3,12 +3,7 @@ import SwiftUI
 struct SearchTab: View {
     @EnvironmentObject var nodeManager: NodeManager
     @State private var query = ""
-    @State private var allPings: [Ping] = []
-
-    private var results: [Ping] {
-        if query.isEmpty { return allPings }
-        return allPings.filter { $0.blurb.localizedCaseInsensitiveContains(query) }
-    }
+    @State private var results: [Ping] = []
 
     var body: some View {
         NavigationView {
@@ -21,25 +16,35 @@ struct SearchTab: View {
                 }
             }
             .navigationTitle("Search")
-            .searchable(text: $query, prompt: "Filter by tag or text")
-            .task { await refresh() }
-            .refreshable { await refresh() }
+            .searchable(text: $query, prompt: "Search pings...")
+            .onSubmit(of: .search) { Task { await search() } }
+            .onChange(of: query) {
+                if query.isEmpty {
+                    results = []
+                }
+            }
         }
     }
 
-    private func refresh() async {
-        guard nodeManager.isRunning,
-              let url = URL(string: "\(nodeManager.baseURL)/sync/pull?since=0"),
+    private func search() async {
+        guard nodeManager.isRunning, !query.isEmpty else {
+            await MainActor.run { results = [] }
+            return
+        }
+
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(nodeManager.baseURL)/search/data?q=\(encoded)"),
               let (data, _) = try? await URLSession.shared.data(from: url)
         else { return }
 
-        struct SyncPayload: Codable { let pings: [Ping]? }
-        guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: data) else { return }
+        struct SearchResponse: Codable {
+            let query: String
+            let results: [Ping]?
+        }
+        guard let response = try? JSONDecoder().decode(SearchResponse.self, from: data) else { return }
 
         await MainActor.run {
-            allPings = (payload.pings ?? [])
-                .filter { !$0.blurb.isEmpty }
-                .sorted { $0.timestamp > $1.timestamp }
+            results = response.results ?? []
         }
     }
 }

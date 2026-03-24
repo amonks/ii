@@ -18,15 +18,6 @@
     .then(data => render(canvas, data))
     .catch(err => console.error('chart error:', err));
 
-  function tagColor(tag) {
-    let hash = 0;
-    for (let i = 0; i < tag.length; i++) {
-      hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash) % 360;
-    return 'hsl(' + h + ', 60%, 55%)';
-  }
-
   function render(canvas, data) {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
@@ -47,6 +38,8 @@
       ctx.fillText('No data', w / 2 - 25, h / 2);
       return;
     }
+
+    const colors = data.tag_colors || {};
 
     // Find max total per bucket for scale.
     let maxTotal = 0;
@@ -73,7 +66,7 @@
         const val = b.tags[tag] || 0;
         const barH = (val / maxTotal) * plotH;
         y -= barH;
-        ctx.fillStyle = tagColor(tag);
+        ctx.fillStyle = colors[tag] || '#888';
         ctx.fillRect(x, y, barW - gap, barH);
       }
     }
@@ -110,7 +103,7 @@
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'left';
     for (const tag of tags) {
-      ctx.fillStyle = tagColor(tag);
+      ctx.fillStyle = colors[tag] || '#888';
       ctx.fillRect(legendX, h - 12, 10, 10);
       ctx.fillStyle = '#8899aa';
       ctx.fillText(tag, legendX + 14, h - 3);
