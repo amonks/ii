@@ -69,9 +69,12 @@ Commands:
       List recent CI runs with status, commit SHA, trigger, and timing.
       -n int    Number of runs to show (default 10, max 100)
 
-  show <id>
-      Show detailed information about a CI run including all jobs and
-      their streams with status, duration, and error messages.
+  show [-n N] <id>
+      Show a focused summary of a CI run. Successful jobs are omitted.
+      If the run failed, only the first failing job is shown (subsequent
+      failures are typically just "context canceled"). The last N lines
+      of the first failed stream's log are printed inline.
+      -n int    Trailing log lines to show (default 20)
 
   log [-n N] <id> [<job> <stream>]
       Show build logs for a CI run.
@@ -141,6 +144,7 @@ func cmdRuns(baseURL string, args []string) error {
 
 func cmdShow(baseURL string, args []string) error {
 	fs := flag.NewFlagSet("show", flag.ExitOnError)
+	lines := fs.Int("n", 20, "number of log lines to show for the first failure")
 	fs.Usage = func() { printUsage() }
 	fs.Parse(args)
 	if fs.NArg() != 1 {
@@ -158,7 +162,29 @@ func cmdShow(baseURL string, args []string) error {
 		return err
 	}
 
-	printRunDetail(&state)
+	failJob, failStream := "", ""
+	if job, stream, found := findFirstFailure(&state); found {
+		failJob = job
+		failStream = stream
+	}
+
+	n := *lines
+	printRunDetail(os.Stdout, &state, failJob, failStream, func(job, stream string, tailN int) string {
+		url := fmt.Sprintf("%s/output/%d/%s/%s", baseURL, runID, job, stream)
+		resp, err := http.Get(url)
+		if err != nil {
+			return fmt.Sprintf("(error fetching log: %v)\n", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Sprintf("(HTTP %d fetching log)\n", resp.StatusCode)
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Sprintf("(error reading log: %v)\n", err)
+		}
+		return lastNLines(string(body), n)
+	})
 	return nil
 }
 
@@ -460,38 +486,59 @@ func lastNLines(s string, n int) string {
 	return strings.Join(lines[len(lines)-n:], "\n") + "\n"
 }
 
-func printRunDetail(state *runState) {
+// printRunDetail prints a focused summary of a CI run.
+//
+// Only the first failure is shown (identified by firstFailJob/firstFailStream);
+// successful jobs/streams and cascade failures are omitted. If fetchLog is
+// non-nil, the log tail of the failing stream is printed inline.
+func printRunDetail(w io.Writer, state *runState, firstFailJob, firstFailStream string, fetchLog func(job, stream string, n int) string) {
 	r := state.Run
-	fmt.Printf("Run %d  %s  sha:%s  trigger:%s\n", r.ID, statusStr(r.Status), shortSHA(r.HeadSHA), r.Trigger)
-	fmt.Printf("Started: %s", formatTime(r.StartedAt))
+	fmt.Fprintf(w, "Run %d  %s  sha:%s  trigger:%s\n", r.ID, statusStr(r.Status), shortSHA(r.HeadSHA), r.Trigger)
+	fmt.Fprintf(w, "Started: %s", formatTime(r.StartedAt))
 	if r.FinishedAt != nil {
-		fmt.Printf("  Duration: %s", formatDuration(r.StartedAt, *r.FinishedAt))
+		fmt.Fprintf(w, "  Duration: %s", formatDuration(r.StartedAt, *r.FinishedAt))
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
 	if r.Error != nil {
-		fmt.Printf("Error: %s\n", *r.Error)
+		fmt.Fprintf(w, "Error: %s\n", *r.Error)
 	}
-	fmt.Println()
 
+	if firstFailJob == "" {
+		return
+	}
+
+	fmt.Fprintln(w)
 	for _, j := range state.Jobs {
+		if j.Name != firstFailJob {
+			continue
+		}
 		dur := ""
 		if j.DurationMs != nil {
 			dur = fmt.Sprintf(" (%s)", fmtMs(*j.DurationMs))
 		}
-		fmt.Printf("  %s %s%s\n", statusStr(j.Status), j.Name, dur)
+		fmt.Fprintf(w, "  %s %s%s\n", statusStr(j.Status), j.Name, dur)
 		if j.Error != nil {
-			fmt.Printf("    error: %s\n", *j.Error)
+			fmt.Fprintf(w, "    error: %s\n", *j.Error)
 		}
 
-		streams := state.Streams[j.Name]
-		for _, s := range streams {
+		for _, s := range state.Streams[j.Name] {
+			if s.Name != firstFailStream {
+				continue
+			}
 			sdur := ""
 			if s.DurationMs != nil {
 				sdur = fmt.Sprintf(" (%s)", fmtMs(*s.DurationMs))
 			}
-			fmt.Printf("    %s %s%s\n", statusStr(s.Status), s.DisplayName, sdur)
+			fmt.Fprintf(w, "    %s %s%s\n", statusStr(s.Status), s.DisplayName, sdur)
 			if s.Error != nil {
-				fmt.Printf("      error: %s\n", *s.Error)
+				fmt.Fprintf(w, "      error: %s\n", *s.Error)
+			}
+			if fetchLog != nil {
+				logTail := fetchLog(j.Name, s.Name, 20)
+				if logTail != "" {
+					fmt.Fprintln(w)
+					fmt.Fprint(w, logTail)
+				}
 			}
 		}
 	}

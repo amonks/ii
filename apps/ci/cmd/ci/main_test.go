@@ -233,6 +233,84 @@ func TestWaitForRun_ShowsCurrentJob(t *testing.T) {
 	}
 }
 
+func TestPrintRunDetail_Success(t *testing.T) {
+	state := &runState{
+		Run: runJSON{ID: 1, Status: "success", HeadSHA: "abc12345dead", Trigger: "webhook", StartedAt: "2026-01-01T00:00:00Z"},
+		Jobs: []jobJSON{
+			{Name: "fetch", Status: "success"},
+			{Name: "test", Status: "success"},
+			{Name: "deploy", Status: "success"},
+		},
+	}
+
+	var buf bytes.Buffer
+	printRunDetail(&buf, state, "", "", nil)
+	out := buf.String()
+
+	// Should show run header
+	if !strings.Contains(out, "Run 1") {
+		t.Errorf("expected run header, got %q", out)
+	}
+	// Should NOT list any jobs (all succeeded)
+	if strings.Contains(out, "fetch") || strings.Contains(out, "test") || strings.Contains(out, "deploy") {
+		t.Errorf("should not list succeeded jobs, got %q", out)
+	}
+}
+
+func TestPrintRunDetail_Failure(t *testing.T) {
+	errMsg := "exit status 1"
+	state := &runState{
+		Run: runJSON{ID: 5, Status: "failed", HeadSHA: "abc12345dead", Trigger: "push", StartedAt: "2026-01-01T00:00:00Z"},
+		Jobs: []jobJSON{
+			{Name: "fetch", Status: "success"},
+			{Name: "test", Status: "failed", Error: &errMsg},
+			{Name: "deploy", Status: "failed"}, // cascade failure
+		},
+		Streams: map[string][]streamJSON{
+			"fetch": {{Name: "go-deps", DisplayName: "go-deps", Status: "success"}},
+			"test": {
+				{Name: "monks.co", DisplayName: "monks.co", Status: "failed", Error: &errMsg},
+				{Name: "monks.co~pkg~serve", DisplayName: "pkg/serve", Status: "success"},
+			},
+			"deploy": {{Name: "monks-proxy", DisplayName: "monks-proxy", Status: "failed"}},
+		},
+	}
+
+	logContent := "line1\nline2\nline3\nline4\nline5\n"
+	var buf bytes.Buffer
+	printRunDetail(&buf, state, "test", "monks.co", func(job, stream string, n int) string {
+		if job == "test" && stream == "monks.co" {
+			return lastNLines(logContent, n)
+		}
+		return ""
+	})
+	out := buf.String()
+
+	// Should show run header
+	if !strings.Contains(out, "Run 5") {
+		t.Errorf("expected run header, got %q", out)
+	}
+	// Should NOT show successful jobs
+	if strings.Contains(out, "fetch") {
+		t.Errorf("should not show succeeded job 'fetch', got %q", out)
+	}
+	// Should show the first failing job and stream
+	if !strings.Contains(out, "test") {
+		t.Errorf("should show first failing job 'test', got %q", out)
+	}
+	if !strings.Contains(out, "monks.co") {
+		t.Errorf("should show first failing stream, got %q", out)
+	}
+	// Should show log tail
+	if !strings.Contains(out, "line1") {
+		t.Errorf("should show log content, got %q", out)
+	}
+	// Should NOT show cascade failure
+	if strings.Contains(out, "deploy") {
+		t.Errorf("should not show cascade failure 'deploy', got %q", out)
+	}
+}
+
 func TestFmtMs(t *testing.T) {
 	tests := []struct {
 		ms   int64
