@@ -24,6 +24,14 @@ func TestExtractTags(t *testing.T) {
 		{"hash in url ignored", "see http://example.com/#foo", []string{"foo"}},
 		{"bare hash", "# not a tag", nil},
 		{"underscore in tag", "#long_meeting", []string{"long_meeting"}},
+		{"hierarchical tag", "#coding/monks.co/tagtime", []string{"coding/monks.co/tagtime"}},
+		{"multiple hierarchical", "#coding/monks.co/ci #tv/taskmaster", []string{"coding/monks.co/ci", "tv/taskmaster"}},
+		{"mixed flat and hierarchical", "#sleep #coding/ci", []string{"sleep", "coding/ci"}},
+		{"trailing slash stripped", "#coding/ stuff", []string{"coding"}},
+		{"trailing dot stripped", "#coding. stuff", []string{"coding"}},
+		{"single char tag", "#a", []string{"a"}},
+		{"dot in middle", "#monks.co", []string{"monks.co"}},
+		{"deep hierarchy", "#a/b/c/d", []string{"a/b/c/d"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

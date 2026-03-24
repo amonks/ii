@@ -81,7 +81,7 @@ func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func
 	mux.HandleFunc("GET /sync/status", h.handleSyncStatus)
 	mux.HandleFunc("POST /sync/now", h.handleSyncNow)
 	mux.HandleFunc("GET /tags/summary", h.handleTagsSummary)
-	mux.HandleFunc("GET /tags/{name}", h.handleTagDetail)
+	mux.HandleFunc("GET /tags/{name...}", h.handleTagDetail)
 	mux.HandleFunc("GET /tags", h.handleTags)
 	mux.HandleFunc("POST /tags/rename", h.handleTagRename)
 	mux.HandleFunc("GET /next-ping", h.handleNextPing)
@@ -455,6 +455,7 @@ func (h *handler) handleTagsSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := ComputeTagSummary(pings, changes, start, end, pingTags, 20)
+	data.Tree = BuildTagTree(data.Tags)
 	serve.JSON(w, r, data)
 }
 

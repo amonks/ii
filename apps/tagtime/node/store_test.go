@@ -570,3 +570,33 @@ func TestBatchSetBlurbMaintainsTags(t *testing.T) {
 		t.Errorf("ListTags = %v, want [sleeping]", allTags)
 	}
 }
+
+func TestEnsureTagsFromBlurbReconcilesStaleTags(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	// Set a blurb, creating ping_tags entries.
+	if err := store.SetBlurb(ctx, 1000, "#coding #sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+	tags, err := store.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 2 {
+		t.Fatalf("got %v, want [coding, sleep]", tags)
+	}
+
+	// Update the blurb to a different set of tags.
+	// ensureTagsFromBlurb should remove stale tags.
+	if err := store.SetBlurb(ctx, 1000, "#coding/monks.co", "a"); err != nil {
+		t.Fatal(err)
+	}
+	tags, err = store.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 1 || tags[0] != "coding/monks.co" {
+		t.Errorf("TagsForPing = %v, want [coding/monks.co]", tags)
+	}
+}

@@ -27,10 +27,12 @@ Keyed by unix-second timestamp (deterministic from schedule). Each ping has:
 
 ### Tags
 
+Tag names may contain word characters, `/`, and `.` to form hierarchies (e.g. `#coding/monks.co/tagtime`). The tag regex is `#(\w(?:[\w./]*\w)?)` — tags must start and end with a word character, with `/` and `.` allowed in the middle.
+
 Structured tag data lives alongside blurbs:
 
 - **`tags` table**: all known tag names (PK: `name`). Populated automatically when blurbs are written. Used for autocomplete.
-- **`ping_tags` table**: association table mapping `(ping_timestamp, tag_name)`. Derived from blurbs on write. Updated by renames.
+- **`ping_tags` table**: association table mapping `(ping_timestamp, tag_name)`. Derived from blurbs on write. Updated by renames. Reconciled on every write: stale entries not matching the current blurb are deleted.
 - **`tag_renames` table**: rename event log — `(old_name, renamed_at)` PK, plus `new_name` and `node_id`.
 
 Tags in `ping_tags` reflect the canonical post-rename name. The original blurb text is never modified.
@@ -88,8 +90,8 @@ Star topology, watermark-based:
 | POST | `/answer` | Set blurb for one ping |
 | POST | `/batch-answer` | Batch-set blurb for multiple pings |
 | GET | `/tags` | JSON: all known tag names, sorted |
-| GET | `/tags/summary?range=` | JSON: tags ranked by time spent with sparklines (range: `24h`, `7d`, `30d`, `all`) |
-| GET | `/tags/{name}` | JSON: tag detail — rename history and pings containing this tag |
+| GET | `/tags/summary?range=` | JSON: tags ranked by time spent with sparklines and hierarchical tree (range: `24h`, `7d`, `30d`, `all`) |
+| GET | `/tags/{name...}` | JSON: tag detail — rename history and pings containing this tag (wildcard path for hierarchical names) |
 | POST | `/tags/rename` | Rename a tag (time-scoped): `old_name`, `new_name` |
 | GET | `/search?q=` | Full-text search (HTML) |
 | GET | `/search/data?q=` | Full-text search (JSON) |
@@ -111,11 +113,13 @@ Both iOS and web UIs provide tag autocomplete:
 
 ## Tags Tab
 
-The Tags tab (iOS) shows a ranked list of tags for a selectable time range. Each tag row displays the tag name, formatted time spent, and an inline sparkline histogram. Tapping a tag opens a detail page with rename support, rename history, and the list of pings containing that tag.
+The Tags tab (iOS) shows a hierarchical tree view of tags for a selectable time range. Tags containing `/` (e.g. `coding/monks.co/tagtime`) are displayed as a collapsible tree with `DisclosureGroup`. Parent nodes aggregate child time and sparklines. Each row displays the segment name, total time (own + descendants), and an inline sparkline histogram. Tapping a tag opens a detail page with rename support, rename history, and the list of pings containing that tag.
 
-The `/tags/summary` endpoint computes per-tag time totals and sparkline data. Each ping's contribution is weighted by the effective `period_secs` at that ping's timestamp (from the period change log), so time accounting remains accurate across period changes. Sparklines use 20 fixed-width sub-buckets of absolute seconds. Tags are sorted by total time descending.
+The `/tags/summary` endpoint computes per-tag time totals and sparkline data, plus a `tree` field containing the hierarchical `TagTreeNode` structure. Each ping's contribution is weighted by the effective `period_secs` at that ping's timestamp (from the period change log), so time accounting remains accurate across period changes. Sparklines use 20 fixed-width sub-buckets of absolute seconds. The flat `tags` array is sorted by total time descending; the `tree` is sorted by total time at each level.
 
-The `/tags/{name}` detail endpoint returns all renames involving the tag (as old_name or new_name) and all pings containing the tag.
+Tree nodes have `own_secs` (time from direct pings to that exact tag) and `total_secs` (own + all descendants). Pure aggregator nodes (parents with no direct pings) have `own_secs = 0`. The tree is built by `BuildTagTree()` in `tag_tree.go`.
+
+The `/tags/{name...}` detail endpoint returns all renames involving the tag (as old_name or new_name) and all pings containing the tag. Uses a wildcard path to support hierarchical tag names with `/`.
 
 ## Graphs (Web)
 
@@ -127,7 +131,7 @@ Tags are resolved from `ping_tags` (the structured, post-rename association tabl
 - Four tabs: Pings, Search, Tags, Settings
 - Pings tab is native SwiftUI with batch-set support, tap-to-edit on recent pings, and tag autocomplete
 - Search tab uses server-side FTS via `/search/data` JSON endpoint
-- Tags tab shows ranked tag list with sparklines via `/tags/summary`, with drill-down to tag detail via `/tags/{name}`
+- Tags tab shows hierarchical tree view with collapsible nodes, sparklines, and aggregated time via `/tags/summary`, with drill-down to tag detail via `/tags/{name...}`
 - Settings tab shows next ping countdown, period display/change, sync controls
 - Schedules up to 64 local notifications from the deterministic schedule
 - On notification tap, opens to ping answer screen

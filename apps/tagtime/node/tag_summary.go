@@ -17,10 +17,11 @@ type TagSummary struct {
 
 // TagSummaryResponse is the JSON response for /tags/summary.
 type TagSummaryResponse struct {
-	Tags      []TagSummary `json:"tags"`
-	TotalSecs float64      `json:"total_secs"`
-	Start     time.Time    `json:"start"`
-	End       time.Time    `json:"end"`
+	Tags      []TagSummary   `json:"tags"`
+	Tree      []*TagTreeNode `json:"tree"`
+	TotalSecs float64        `json:"total_secs"`
+	Start     time.Time      `json:"start"`
+	End       time.Time      `json:"end"`
 }
 
 // ComputeTagSummary computes per-tag time totals and sparklines for a time range.

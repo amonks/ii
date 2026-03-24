@@ -72,8 +72,9 @@ struct TagDetailView: View {
     }
 
     private func refresh() async {
+        let encoded = tagName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? tagName
         guard nodeManager.isRunning,
-              let url = URL(string: "\(nodeManager.baseURL)/tags/\(tagName)"),
+              let url = URL(string: "\(nodeManager.baseURL)/tags/\(encoded)"),
               let (data, _) = try? await URLSession.shared.data(from: url)
         else { return }
 
@@ -96,7 +97,9 @@ struct TagDetailView: View {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let body = "old_name=\(tagName)&new_name=\(newName)"
+        let oldEncoded = tagName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tagName
+        let newEncoded = newName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? newName
+        let body = "old_name=\(oldEncoded)&new_name=\(newEncoded)"
         request.httpBody = body.data(using: .utf8)
 
         guard let (_, response) = try? await URLSession.shared.data(for: request),

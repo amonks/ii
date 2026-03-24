@@ -423,9 +423,6 @@ func (s *Store) backfillPingTags(ctx context.Context) error {
 // ping_tags and tags. Idempotent via INSERT OR IGNORE.
 func (s *Store) ensureTagsFromBlurb(ctx context.Context, timestamp int64, blurb string) error {
 	tags := ExtractTags(blurb)
-	if len(tags) == 0 {
-		return nil
-	}
 	for _, tag := range tags {
 		if _, err := s.db.ExecContext(ctx,
 			`INSERT OR IGNORE INTO tags (name) VALUES (?)`, tag); err != nil {
@@ -437,7 +434,25 @@ func (s *Store) ensureTagsFromBlurb(ctx context.Context, timestamp int64, blurb 
 			return err
 		}
 	}
-	return nil
+	// Remove stale ping_tags rows that no longer match the blurb.
+	if len(tags) == 0 {
+		_, err := s.db.ExecContext(ctx,
+			`DELETE FROM ping_tags WHERE ping_timestamp = ?`, timestamp)
+		return err
+	}
+	args := []any{timestamp}
+	placeholders := ""
+	for i, tag := range tags {
+		if i > 0 {
+			placeholders += ", "
+		}
+		placeholders += "?"
+		args = append(args, tag)
+	}
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM ping_tags WHERE ping_timestamp = ? AND tag_name NOT IN (`+placeholders+`)`,
+		args...)
+	return err
 }
 
 // ListTags returns all known tag names, sorted alphabetically.

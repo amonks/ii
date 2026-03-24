@@ -2,7 +2,7 @@ package node
 
 import "regexp"
 
-var tagRe = regexp.MustCompile(`#(\w+)`)
+var tagRe = regexp.MustCompile(`#(\w(?:[\w./]*\w)?)`)
 
 // ExtractTags returns deduplicated, ordered tags from a blurb string.
 // Tags are #word tokens (letters, digits, underscores).
