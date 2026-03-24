@@ -15,8 +15,10 @@ require (
 	golang.org/x/term v0.41.0
 	modernc.org/sqlite v1.47.0
 	monks.co/pkg/agent v0.0.1
+	monks.co/pkg/jj v0.0.1
 	monks.co/pkg/llm v0.0.1
-	monks.co/pkg/migrate v0.0.1
+	monks.co/pkg/migrate v0.0.3
+	monks.co/ww v0.0.1
 )
 
 require (
@@ -48,6 +50,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.7.16 // indirect
 	github.com/yuin/goldmark-emoji v1.0.5 // indirect
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
