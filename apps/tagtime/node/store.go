@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -17,7 +18,7 @@ var migrationsFS embed.FS
 
 // Ping represents a single time sample.
 type Ping struct {
-	Timestamp  int64  `json:"timestamp"`   // unix seconds
+	Timestamp  int64  `json:"timestamp"` // unix seconds
 	Blurb      string `json:"blurb"`
 	NodeID     string `json:"node_id"`
 	UpdatedAt  int64  `json:"updated_at"`  // unix nanos, LWW clock
@@ -396,7 +397,7 @@ func (s *Store) backfillPingTags(ctx context.Context) error {
 	defer rows.Close()
 
 	type pingBlurb struct {
-		ts   int64
+		ts    int64
 		blurb string
 	}
 	var pbs []pingBlurb
@@ -441,16 +442,16 @@ func (s *Store) ensureTagsFromBlurb(ctx context.Context, timestamp int64, blurb 
 		return err
 	}
 	args := []any{timestamp}
-	placeholders := ""
+	var placeholders strings.Builder
 	for i, tag := range tags {
 		if i > 0 {
-			placeholders += ", "
+			placeholders.WriteString(", ")
 		}
-		placeholders += "?"
+		placeholders.WriteString("?")
 		args = append(args, tag)
 	}
 	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM ping_tags WHERE ping_timestamp = ? AND tag_name NOT IN (`+placeholders+`)`,
+		`DELETE FROM ping_tags WHERE ping_timestamp = ? AND tag_name NOT IN (`+placeholders.String()+`)`,
 		args...)
 	return err
 }
