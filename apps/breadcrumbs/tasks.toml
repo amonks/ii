@@ -19,12 +19,12 @@
 [[task]]
   id = "tidy"
   type = "short"
-  cmd = "go mod tidy -e"
+  cmd = "GOWORK=off go mod tidy"
 
 [[task]]
   id = "xcframework"
   type = "short"
-  cmd = "go tool gomobile init && rm -rf ios/Mobile.xcframework && GOWORK=off go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
+  cmd = "test \"$(uname)\" = Darwin || { echo 'skipping xcframework (requires macOS)'; exit 0; }; go tool gomobile init && rm -rf ios/Mobile.xcframework && GOWORK=off go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
   dependencies = ["protoc", "tidy"]
 
 [[task]]
