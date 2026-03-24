@@ -147,4 +147,5 @@ tool (
 	honnef.co/go/tools/cmd/staticcheck
 	monks.co/apps/ci/cmd/ci
 	monks.co/run
+	monks.co/ww
 )
