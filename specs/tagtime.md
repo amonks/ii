@@ -23,6 +23,7 @@ Keyed by unix-second timestamp (deterministic from schedule). Each ping has:
 - `node_id`: which node last wrote this ping
 - `updated_at`: LWW clock (unix nanos) — higher wins on merge
 - `synced_at`: last sync timestamp
+- `received_at`: server-assigned timestamp (unix nanos) set when ping arrives via push — used for watermark-based pull filtering
 
 ### Period Changes
 
@@ -46,12 +47,14 @@ Period changes are event-sourced: to generate pings across a time range, walk th
 ## Sync
 
 Star topology, watermark-based:
-- **Push**: client sends unsynced pings and all period changes to server via `POST /sync/push`
-- **Pull**: client fetches changed pings and period changes via `GET /sync/pull?since=WATERMARK`
+- **Push**: client sends unsynced pings and all period changes to server via `POST /sync/push`. Server stamps `received_at` (unix nanos) on each ping at receipt time.
+- **Pull**: client fetches changed pings and period changes via `GET /sync/pull?since=WATERMARK`. The watermark tracks server-assigned `received_at` values (not `updated_at`), ensuring late-arriving pings from offline clients are visible to all peers.
+- **Sync Now**: `POST /sync/now` triggers an immediate push+pull cycle (used by the iOS sync button).
 - LWW merge on receive: only apply if `incoming.updated_at > existing.updated_at`
 - Period changes are idempotent (keyed by timestamp), so sending all on every push/pull is safe
 - Periodic background sync (5 min) when upstream configured
 - In-memory period change cache refreshes immediately on settings change or sync push
+- Sync status tracks `last_push_at` and `last_pull_at` timestamps for UI display
 
 ## HTTP Routes
 
@@ -68,6 +71,8 @@ Star topology, watermark-based:
 | POST | `/settings/period` | Add period change |
 | POST | `/sync/push` | Receive pings from downstream |
 | GET | `/sync/pull?since=` | Return changed pings |
+| POST | `/sync/now` | Trigger immediate push+pull |
+| GET | `/sync/status` | Sync status (upstream, unsynced count, timestamps) |
 | GET | `/sync/period-changes` | Return period changes |
 
 ## Graphs

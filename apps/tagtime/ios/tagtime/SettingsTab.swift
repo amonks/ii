@@ -27,6 +27,8 @@ struct SyncStatusResponse: Codable {
     let upstream: String?
     let unsynced_count: Int
     let pull_watermark: String
+    let last_push_at: String
+    let last_pull_at: String
 }
 
 struct SettingsTab: View {
@@ -35,6 +37,7 @@ struct SettingsTab: View {
     @State private var periodInput = ""
     @State private var nextPing: NextPingResponse?
     @State private var syncStatus: SyncStatusResponse?
+    @State private var isSyncing = false
     @FocusState private var periodFieldFocused: Bool
 
     private var current: PeriodChange? { changes.last }
@@ -93,6 +96,34 @@ struct SettingsTab: View {
                                 Text("\(syncStatus.unsynced_count)")
                                     .foregroundStyle(syncStatus.unsynced_count > 0 ? .orange : .secondary)
                             }
+                            HStack {
+                                Text("Last pushed")
+                                Spacer()
+                                Text(formatSyncTimestamp(syncStatus.last_push_at))
+                                    .foregroundStyle(.secondary)
+                            }
+                            HStack {
+                                Text("Last fetched")
+                                Spacer()
+                                Text(formatSyncTimestamp(syncStatus.last_pull_at))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Button {
+                                triggerSync()
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    if isSyncing {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                        Text("Syncing...")
+                                    } else {
+                                        Text("Sync Now")
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            .disabled(isSyncing)
                         } else {
                             Text("No upstream configured")
                                 .foregroundStyle(.secondary)
@@ -159,6 +190,26 @@ struct SettingsTab: View {
             if let c { changes = c }
             if let np { nextPing = np }
             if let ss { syncStatus = ss }
+        }
+    }
+
+    private func formatSyncTimestamp(_ s: String) -> String {
+        guard let ts = Int64(s), ts > 0 else { return "never" }
+        let date = Date(timeIntervalSince1970: TimeInterval(ts))
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func triggerSync() {
+        guard let url = URL(string: "\(nodeManager.baseURL)/sync/now") else { return }
+        isSyncing = true
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        Task {
+            _ = try? await URLSession.shared.data(for: request)
+            await refresh()
+            await MainActor.run { isSyncing = false }
         }
     }
 

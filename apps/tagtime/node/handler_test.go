@@ -29,7 +29,7 @@ func newTestHandler(t *testing.T) (http.Handler, *Store) {
 		c, _ := store.ListPeriodChanges(ctx)
 		return c
 	}
-	h := newHandler(store, changes, func() {}, "test", "")
+	h := newHandler(store, changes, func() {}, nil, "test", "")
 	return h, store
 }
 
@@ -283,6 +283,105 @@ func TestHandlerSyncStatus(t *testing.T) {
 	}
 }
 
+func TestHandlerSyncStatusIncludesTimestamps(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	// Set some sync timestamps.
+	if err := store.SetMeta(ctx, "last_push_at", "1700000000"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetMeta(ctx, "last_pull_at", "1700000100"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/sync/status", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("GET /sync/status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"last_push_at":"1700000000"`) {
+		t.Errorf("response missing last_push_at, got %s", body)
+	}
+	if !strings.Contains(body, `"last_pull_at":"1700000100"`) {
+		t.Errorf("response missing last_pull_at, got %s", body)
+	}
+}
+
+func TestHandlerSyncNow(t *testing.T) {
+	ctx := context.Background()
+	syncer, clientStore, serverStore := newTestSyncPair(t)
+
+	// Add a period change so the handler works.
+	if err := clientStore.AddPeriodChange(ctx, PeriodChange{Timestamp: 0, Seed: 42, PeriodSecs: 2700}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add a ping on the client to push.
+	if err := clientStore.SetBlurb(ctx, 1000, "#work", "client"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add a ping on the server to pull.
+	if err := serverStore.UpsertPing(ctx, Ping{Timestamp: 2000, Blurb: "#meeting", NodeID: "server", UpdatedAt: 500, ReceivedAt: 500}); err != nil {
+		t.Fatal(err)
+	}
+
+	changes := func() []PeriodChange {
+		c, _ := clientStore.ListPeriodChanges(ctx)
+		return c
+	}
+	syncNow := func(ctx context.Context) error {
+		if _, err := syncer.Push(ctx); err != nil {
+			return err
+		}
+		_, err := syncer.Pull(ctx)
+		return err
+	}
+	h := newHandler(clientStore, changes, func() {}, syncNow, "test", "http://upstream")
+
+	req := httptest.NewRequest("POST", "/sync/now", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("POST /sync/now = %d, want 200", w.Code)
+	}
+
+	// Verify push worked.
+	p, err := serverStore.GetPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p == nil || p.Blurb != "#work" {
+		t.Errorf("server should have pushed ping, got %+v", p)
+	}
+
+	// Verify pull worked.
+	p, err = clientStore.GetPing(ctx, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p == nil || p.Blurb != "#meeting" {
+		t.Errorf("client should have pulled ping, got %+v", p)
+	}
+}
+
+func TestHandlerSyncNowNoUpstream(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	req := httptest.NewRequest("POST", "/sync/now", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 400 {
+		t.Errorf("POST /sync/now without upstream = %d, want 400", w.Code)
+	}
+}
+
 func TestHandlerSyncStatusWithUpstream(t *testing.T) {
 	ctx := context.Background()
 	store, err := OpenStore(ctx, filepath.Join(t.TempDir(), "test.db"))
@@ -299,7 +398,7 @@ func TestHandlerSyncStatusWithUpstream(t *testing.T) {
 		c, _ := store.ListPeriodChanges(ctx)
 		return c
 	}
-	h := newHandler(store, changes, func() {}, "test", "http://upstream:8080")
+	h := newHandler(store, changes, func() {}, nil, "test", "http://upstream:8080")
 
 	req := httptest.NewRequest("GET", "/sync/status", nil)
 	w := httptest.NewRecorder()

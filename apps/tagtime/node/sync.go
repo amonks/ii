@@ -86,6 +86,10 @@ func (s *Syncer) Push(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("marking synced: %w", err)
 	}
 
+	if err := s.store.SetMeta(ctx, "last_push_at", fmt.Sprintf("%d", time.Now().Unix())); err != nil {
+		return 0, fmt.Errorf("storing last_push_at: %w", err)
+	}
+
 	return len(pings), nil
 }
 
@@ -134,17 +138,21 @@ func (s *Syncer) Pull(ctx context.Context) (int, error) {
 		}
 	}
 
-	// Advance watermark.
-	maxUpdatedAt := int64(0)
+	// Advance watermark based on server-assigned received_at.
+	maxReceivedAt := int64(0)
 	for _, p := range payload.Pings {
-		if p.UpdatedAt > maxUpdatedAt {
-			maxUpdatedAt = p.UpdatedAt
+		if p.ReceivedAt > maxReceivedAt {
+			maxReceivedAt = p.ReceivedAt
 		}
 	}
-	if maxUpdatedAt > 0 {
-		if err := s.store.SetMeta(ctx, "pull_watermark", fmt.Sprintf("%d", maxUpdatedAt)); err != nil {
+	if maxReceivedAt > 0 {
+		if err := s.store.SetMeta(ctx, "pull_watermark", fmt.Sprintf("%d", maxReceivedAt)); err != nil {
 			return 0, err
 		}
+	}
+
+	if err := s.store.SetMeta(ctx, "last_pull_at", fmt.Sprintf("%d", time.Now().Unix())); err != nil {
+		return 0, fmt.Errorf("storing last_pull_at: %w", err)
 	}
 
 	return len(payload.Pings), nil

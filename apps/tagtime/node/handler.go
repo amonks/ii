@@ -1,6 +1,7 @@
 package node
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -56,12 +57,13 @@ type handler struct {
 	store          *Store
 	changes        func() []PeriodChange
 	refreshChanges func()
+	syncNow        func(context.Context) error
 	nodeID         string
 	upstream       string
 }
 
-func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func(), nodeID, upstream string) http.Handler {
-	h := &handler{store: store, changes: changes, refreshChanges: refreshChanges, nodeID: nodeID, upstream: upstream}
+func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func(), syncNow func(context.Context) error, nodeID, upstream string) http.Handler {
+	h := &handler{store: store, changes: changes, refreshChanges: refreshChanges, syncNow: syncNow, nodeID: nodeID, upstream: upstream}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", h.handleIndex)
 	mux.HandleFunc("GET /pings", h.handlePingsJSON)
@@ -76,6 +78,7 @@ func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func
 	mux.HandleFunc("GET /sync/pull", h.handleSyncPull)
 	mux.HandleFunc("GET /sync/period-changes", h.handleSyncPeriodChanges)
 	mux.HandleFunc("GET /sync/status", h.handleSyncStatus)
+	mux.HandleFunc("POST /sync/now", h.handleSyncNow)
 	mux.HandleFunc("GET /next-ping", h.handleNextPing)
 	mux.HandleFunc("GET /style.css", h.handleStatic)
 	mux.HandleFunc("GET /graphs.js", h.handleStatic)
@@ -363,7 +366,9 @@ func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
+	now := time.Now().UnixNano()
 	for _, p := range payload.Pings {
+		p.ReceivedAt = now
 		if err := h.store.UpsertPing(r.Context(), p); err != nil {
 			serve.InternalServerError(w, r, err)
 			return
@@ -385,7 +390,7 @@ func (h *handler) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	sinceStr := r.URL.Query().Get("since")
 	since, _ := strconv.ParseInt(sinceStr, 10, 64)
 
-	pings, err := h.store.PingsUpdatedAfter(r.Context(), since, 1000)
+	pings, err := h.store.PingsReceivedAfter(r.Context(), since, 1000)
 	if err != nil {
 		serve.InternalServerError(w, r, err)
 		return
@@ -412,6 +417,8 @@ type syncStatus struct {
 	Upstream      string `json:"upstream,omitempty"`
 	UnsyncedCount int    `json:"unsynced_count"`
 	PullWatermark string `json:"pull_watermark"`
+	LastPushAt    string `json:"last_push_at"`
+	LastPullAt    string `json:"last_pull_at"`
 }
 
 func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
@@ -426,12 +433,36 @@ func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
 		serve.InternalServerError(w, r, err)
 		return
 	}
+	lastPushAt, err := h.store.GetMeta(ctx, "last_push_at")
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	lastPullAt, err := h.store.GetMeta(ctx, "last_pull_at")
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
 	serve.JSON(w, r, syncStatus{
 		HasUpstream:   h.upstream != "",
 		Upstream:      h.upstream,
 		UnsyncedCount: len(unsynced),
 		PullWatermark: watermark,
+		LastPushAt:    lastPushAt,
+		LastPullAt:    lastPullAt,
 	})
+}
+
+func (h *handler) handleSyncNow(w http.ResponseWriter, r *http.Request) {
+	if h.syncNow == nil {
+		http.Error(w, "no upstream configured", http.StatusBadRequest)
+		return
+	}
+	if err := h.syncNow(r.Context()); err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) handleNextPing(w http.ResponseWriter, r *http.Request) {

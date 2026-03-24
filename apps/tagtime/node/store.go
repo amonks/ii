@@ -17,11 +17,12 @@ var migrationsFS embed.FS
 
 // Ping represents a single time sample.
 type Ping struct {
-	Timestamp int64  `json:"timestamp"` // unix seconds
-	Blurb     string `json:"blurb"`
-	NodeID    string `json:"node_id"`
-	UpdatedAt int64  `json:"updated_at"` // unix nanos, LWW clock
-	SyncedAt  int64  `json:"synced_at"`  // unix nanos
+	Timestamp  int64  `json:"timestamp"`   // unix seconds
+	Blurb      string `json:"blurb"`
+	NodeID     string `json:"node_id"`
+	UpdatedAt  int64  `json:"updated_at"`  // unix nanos, LWW clock
+	SyncedAt   int64  `json:"synced_at"`   // unix nanos
+	ReceivedAt int64  `json:"received_at"` // unix nanos, server-assigned on push receipt
 }
 
 // Store manages ping storage in SQLite with FTS5 search.
@@ -64,15 +65,16 @@ func (s *Store) Close() error {
 // updated_at > existing updated_at.
 func (s *Store) UpsertPing(ctx context.Context, p Ping) error {
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO pings (timestamp, blurb, node_id, updated_at, synced_at)
-		 VALUES (?, ?, ?, ?, ?)
+		`INSERT INTO pings (timestamp, blurb, node_id, updated_at, synced_at, received_at)
+		 VALUES (?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(timestamp) DO UPDATE SET
 		   blurb = excluded.blurb,
 		   node_id = excluded.node_id,
 		   updated_at = excluded.updated_at,
-		   synced_at = excluded.synced_at
+		   synced_at = excluded.synced_at,
+		   received_at = excluded.received_at
 		 WHERE excluded.updated_at > pings.updated_at`,
-		p.Timestamp, p.Blurb, p.NodeID, p.UpdatedAt, p.SyncedAt,
+		p.Timestamp, p.Blurb, p.NodeID, p.UpdatedAt, p.SyncedAt, p.ReceivedAt,
 	)
 	return err
 }
@@ -81,9 +83,9 @@ func (s *Store) UpsertPing(ctx context.Context, p Ping) error {
 func (s *Store) GetPing(ctx context.Context, timestamp int64) (*Ping, error) {
 	var p Ping
 	err := s.db.QueryRowContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at FROM pings WHERE timestamp = ?`,
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at FROM pings WHERE timestamp = ?`,
 		timestamp,
-	).Scan(&p.Timestamp, &p.Blurb, &p.NodeID, &p.UpdatedAt, &p.SyncedAt)
+	).Scan(&p.Timestamp, &p.Blurb, &p.NodeID, &p.UpdatedAt, &p.SyncedAt, &p.ReceivedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -97,7 +99,7 @@ func (s *Store) GetPing(ctx context.Context, timestamp int64) (*Ping, error) {
 // most recent first.
 func (s *Store) PendingPings(ctx context.Context, now time.Time) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
 		 FROM pings WHERE blurb = '' AND timestamp <= ?
 		 ORDER BY timestamp DESC`,
 		now.Unix(),
@@ -112,7 +114,7 @@ func (s *Store) PendingPings(ctx context.Context, now time.Time) ([]Ping, error)
 // RecentPings returns the most recent answered pings.
 func (s *Store) RecentPings(ctx context.Context, limit int) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
 		 FROM pings WHERE blurb != ''
 		 ORDER BY timestamp DESC LIMIT ?`,
 		limit,
@@ -128,10 +130,11 @@ func (s *Store) RecentPings(ctx context.Context, limit int) ([]Ping, error) {
 func (s *Store) SetBlurb(ctx context.Context, timestamp int64, blurb, nodeID string) error {
 	now := time.Now().UnixNano()
 	return s.UpsertPing(ctx, Ping{
-		Timestamp: timestamp,
-		Blurb:     blurb,
-		NodeID:    nodeID,
-		UpdatedAt: now,
+		Timestamp:  timestamp,
+		Blurb:      blurb,
+		NodeID:     nodeID,
+		UpdatedAt:  now,
+		ReceivedAt: now,
 	})
 }
 
@@ -145,12 +148,13 @@ func (s *Store) BatchSetBlurb(ctx context.Context, timestamps []int64, blurb, no
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT INTO pings (timestamp, blurb, node_id, updated_at, synced_at)
-		 VALUES (?, ?, ?, ?, 0)
+		`INSERT INTO pings (timestamp, blurb, node_id, updated_at, synced_at, received_at)
+		 VALUES (?, ?, ?, ?, 0, ?)
 		 ON CONFLICT(timestamp) DO UPDATE SET
 		   blurb = excluded.blurb,
 		   node_id = excluded.node_id,
-		   updated_at = excluded.updated_at
+		   updated_at = excluded.updated_at,
+		   received_at = excluded.received_at
 		 WHERE excluded.updated_at > pings.updated_at`)
 	if err != nil {
 		return err
@@ -158,7 +162,7 @@ func (s *Store) BatchSetBlurb(ctx context.Context, timestamps []int64, blurb, no
 	defer stmt.Close()
 
 	for _, ts := range timestamps {
-		if _, err := stmt.ExecContext(ctx, ts, blurb, nodeID, now); err != nil {
+		if _, err := stmt.ExecContext(ctx, ts, blurb, nodeID, now, now); err != nil {
 			return err
 		}
 	}
@@ -168,7 +172,7 @@ func (s *Store) BatchSetBlurb(ctx context.Context, timestamps []int64, blurb, no
 // SearchBlurbs performs a full-text search on ping blurbs.
 func (s *Store) SearchBlurbs(ctx context.Context, query string, limit int) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT p.timestamp, p.blurb, p.node_id, p.updated_at, p.synced_at
+		`SELECT p.timestamp, p.blurb, p.node_id, p.updated_at, p.synced_at, p.received_at
 		 FROM pings_fts f
 		 JOIN pings p ON f.rowid = p.timestamp
 		 WHERE pings_fts MATCH ?
@@ -186,7 +190,7 @@ func (s *Store) SearchBlurbs(ctx context.Context, query string, limit int) ([]Pi
 // PingsInTimeRange returns all pings with timestamps in [start, end).
 func (s *Store) PingsInTimeRange(ctx context.Context, start, end time.Time) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
 		 FROM pings WHERE timestamp >= ? AND timestamp < ?
 		 ORDER BY timestamp`,
 		start.Unix(), end.Unix(),
@@ -201,9 +205,24 @@ func (s *Store) PingsInTimeRange(ctx context.Context, start, end time.Time) ([]P
 // PingsUpdatedAfter returns pings with updated_at > since, for sync pull.
 func (s *Store) PingsUpdatedAfter(ctx context.Context, since int64, limit int) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
 		 FROM pings WHERE updated_at > ?
 		 ORDER BY updated_at LIMIT ?`,
+		since, limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanPings(rows)
+}
+
+// PingsReceivedAfter returns pings with received_at > since, for sync pull.
+func (s *Store) PingsReceivedAfter(ctx context.Context, since int64, limit int) ([]Ping, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
+		 FROM pings WHERE received_at > ?
+		 ORDER BY received_at LIMIT ?`,
 		since, limit,
 	)
 	if err != nil {
@@ -216,7 +235,7 @@ func (s *Store) PingsUpdatedAfter(ctx context.Context, since int64, limit int) (
 // UnsyncedPings returns pings that haven't been synced yet (synced_at = 0 and updated_at > 0).
 func (s *Store) UnsyncedPings(ctx context.Context, limit int) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT timestamp, blurb, node_id, updated_at, synced_at
+		`SELECT timestamp, blurb, node_id, updated_at, synced_at, received_at
 		 FROM pings WHERE synced_at = 0 AND updated_at > 0
 		 ORDER BY updated_at LIMIT ?`,
 		limit,
@@ -320,7 +339,7 @@ func scanPings(rows *sql.Rows) ([]Ping, error) {
 	var pings []Ping
 	for rows.Next() {
 		var p Ping
-		if err := rows.Scan(&p.Timestamp, &p.Blurb, &p.NodeID, &p.UpdatedAt, &p.SyncedAt); err != nil {
+		if err := rows.Scan(&p.Timestamp, &p.Blurb, &p.NodeID, &p.UpdatedAt, &p.SyncedAt, &p.ReceivedAt); err != nil {
 			return nil, err
 		}
 		pings = append(pings, p)

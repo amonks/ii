@@ -78,7 +78,7 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		changes: changes,
 	}
 
-	n.handler = newHandler(store, n.getChanges, func() { n.refreshChanges(ctx) }, config.NodeID, config.Upstream)
+	n.handler = newHandler(store, n.getChanges, func() { n.refreshChanges(ctx) }, n.syncNow, config.NodeID, config.Upstream)
 
 	// Start periodic sync if upstream configured.
 	if syncer != nil {
@@ -101,6 +101,20 @@ func (n *Node) Handler() http.Handler {
 func (n *Node) Close() error {
 	n.cancel()
 	return n.store.Close()
+}
+
+func (n *Node) syncNow(ctx context.Context) error {
+	if n.syncer == nil {
+		return fmt.Errorf("no upstream configured")
+	}
+	if _, err := n.syncer.Push(ctx); err != nil {
+		return fmt.Errorf("push: %w", err)
+	}
+	if _, err := n.syncer.Pull(ctx); err != nil {
+		return fmt.Errorf("pull: %w", err)
+	}
+	n.refreshChanges(ctx)
+	return nil
 }
 
 func (n *Node) getChanges() []PeriodChange {
