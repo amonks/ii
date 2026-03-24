@@ -15,3 +15,13 @@
   id = "tidy"
   type = "short"
   cmd = "go mod tidy -e"
+
+[[task]]
+  id = "xcframework"
+  type = "short"
+  cmd = "rm -rf ios/Mobile.xcframework && go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
+
+[[task]]
+  id = "generate"
+  type = "short"
+  dependencies = ["xcframework"]

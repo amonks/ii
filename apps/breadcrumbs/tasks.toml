@@ -22,7 +22,16 @@
   cmd = "go mod tidy -e"
 
 [[task]]
+  id = "xcframework"
+  type = "short"
+  cmd = "rm -rf ios/Mobile.xcframework && go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
+
+[[task]]
+  id = "protoc"
+  type = "short"
+  cmd = "protoc --go_out=. --go_opt=module=monks.co/apps/breadcrumbs proto/breadcrumbs.proto proto/vector_tile.proto"
+
+[[task]]
   id = "generate"
   type = "short"
-  dependencies = ["tidy"]
-  cmd = "protoc --go_out=. --go_opt=module=monks.co/apps/breadcrumbs proto/breadcrumbs.proto proto/vector_tile.proto"
+  dependencies = ["tidy", "xcframework", "protoc"]
