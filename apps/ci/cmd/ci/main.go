@@ -2,20 +2,7 @@
 //
 // It queries the CI server's JSON API to display run status, job details,
 // and build logs. Designed for use by both humans and AI agents debugging
-// CI failures.
-//
-// Usage:
-//
-//	go tool ci <command> [flags] [args]
-//
-// Commands:
-//
-//	runs          List recent CI runs
-//	show <id>     Show details of a specific run
-//	log <id>      Show failure logs for a run (smart mode)
-//	log <id> <job> <stream>
-//	              Show logs for a specific stream
-//	deployments   List current deployments
+// CI failures. Run 'go tool ci -help' for full usage.
 package main
 
 import (
@@ -64,6 +51,8 @@ func run() error {
 		return cmdShow(baseURL, os.Args[2:])
 	case "log":
 		return cmdLog(baseURL, os.Args[2:])
+	case "wait":
+		return cmdWait(baseURL, os.Args[2:])
 	case "deployments":
 		return cmdDeployments(baseURL, os.Args[2:])
 	default:
@@ -75,12 +64,34 @@ func printUsage() {
 	fmt.Fprint(os.Stderr, `Usage: go tool ci <command> [flags] [args]
 
 Commands:
-  runs          List recent CI runs
-  show <id>     Show run details (jobs and streams)
-  log <id>      Show failure logs (first failed stream, last N lines)
-  deployments   List current app deployments
 
-Run 'go tool ci <command> -help' for command-specific help.
+  runs [-n N]
+      List recent CI runs with status, commit SHA, trigger, and timing.
+      -n int    Number of runs to show (default 10, max 100)
+
+  show <id>
+      Show detailed information about a CI run including all jobs and
+      their streams with status, duration, and error messages.
+
+  log [-n N] <id> [<job> <stream>]
+      Show build logs for a CI run.
+      Without <job>/<stream>: "smart" mode finds the first failed stream
+      and shows its last N lines. Skips subsequent failures (typically
+      just "context canceled").
+      With <job> <stream>: shows the full log for that specific stream.
+      Stream names use ~ instead of / in URLs; either separator works.
+      -n int    Trailing lines in smart mode (default 80)
+
+  wait [-poll N] <id>
+      Wait for a run to finish, printing status updates. Exits 0 on
+      success, 1 on failure/cancelled/superseded. Polls the API at the
+      given interval.
+      -poll duration    Poll interval (default 5s)
+
+  deployments
+      List current app deployments (app name, commit SHA, deploy time).
+
+<id> can be a run number or "latest" for the most recent run.
 
 Environment:
   CI_URL    Base URL of the CI server (default: https://monks.co/ci)
@@ -92,15 +103,7 @@ Environment:
 func cmdRuns(baseURL string, args []string) error {
 	fs := flag.NewFlagSet("runs", flag.ExitOnError)
 	limit := fs.Int("n", 10, "number of runs to show")
-	fs.Usage = func() {
-		fmt.Fprint(os.Stderr, `Usage: go tool ci runs [flags]
-
-List recent CI runs with their status, commit SHA, and timing.
-
-Flags:
-  -n int    Number of runs to show (default 10, max 100)
-`)
-	}
+	fs.Usage = func() { printUsage() }
 	fs.Parse(args)
 
 	var runs []apiRun
@@ -138,15 +141,7 @@ Flags:
 
 func cmdShow(baseURL string, args []string) error {
 	fs := flag.NewFlagSet("show", flag.ExitOnError)
-	fs.Usage = func() {
-		fmt.Fprint(os.Stderr, `Usage: go tool ci show <run-id>
-
-Show detailed information about a CI run including all jobs and their
-streams with status, duration, and error messages.
-
-If <run-id> is "latest", shows the most recent run.
-`)
-	}
+	fs.Usage = func() { printUsage() }
 	fs.Parse(args)
 	if fs.NArg() != 1 {
 		fs.Usage()
@@ -172,33 +167,7 @@ If <run-id> is "latest", shows the most recent run.
 func cmdLog(baseURL string, args []string) error {
 	fs := flag.NewFlagSet("log", flag.ExitOnError)
 	lines := fs.Int("n", 80, "number of log lines to show")
-	fs.Usage = func() {
-		fmt.Fprint(os.Stderr, `Usage: go tool ci log [flags] <run-id> [<job> <stream>]
-
-Show build logs for a CI run.
-
-Without <job> and <stream> arguments, operates in "smart" mode:
-  - Finds the first stream in the run that failed
-  - Shows the last N lines of that stream's log
-  - Skips subsequent jobs/streams (which typically just show
-    "context canceled" after the first real failure)
-  - Includes a header identifying which stream is shown
-
-With <job> and <stream> arguments, shows the full log for that
-specific stream (stream names use ~ instead of / in URLs, but
-you can use either separator here).
-
-If <run-id> is "latest", uses the most recent run.
-
-Flags:
-  -n int    Number of trailing log lines to show in smart mode (default 80)
-
-Examples:
-  go tool ci log latest           Show why the latest run failed
-  go tool ci log 42               Show why run 42 failed
-  go tool ci log 42 test monks.co   Show full test log for monks.co
-`)
-	}
+	fs.Usage = func() { printUsage() }
 	fs.Parse(args)
 
 	if fs.NArg() < 1 {
@@ -252,17 +221,75 @@ Examples:
 	return fetchAndPrintLog(baseURL, runID, job, stream, *lines)
 }
 
+// --- wait command ---
+
+func cmdWait(baseURL string, args []string) error {
+	fs := flag.NewFlagSet("wait", flag.ExitOnError)
+	poll := fs.Duration("poll", 5*time.Second, "poll interval")
+	fs.Usage = func() { printUsage() }
+	fs.Parse(args)
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return fmt.Errorf("expected exactly one argument")
+	}
+
+	runID, err := resolveRunID(baseURL, fs.Arg(0))
+	if err != nil {
+		return err
+	}
+
+	return waitForRun(baseURL, runID, *poll, os.Stderr)
+}
+
+func waitForRun(baseURL string, runID int64, poll time.Duration, w io.Writer) error {
+	var lastStatus string
+	for {
+		var state runState
+		if err := getJSON(fmt.Sprintf("%s/api/runs/%d", baseURL, runID), &state); err != nil {
+			return err
+		}
+
+		status := state.Run.Status
+		if status != lastStatus {
+			jobInfo := ""
+			for _, j := range state.Jobs {
+				if j.Status == "in_progress" {
+					jobInfo = " (" + j.Name + ")"
+					break
+				}
+			}
+			fmt.Fprintf(w, "run %d: %s%s\n", runID, status, jobInfo)
+			lastStatus = status
+		}
+
+		if isTerminal(status) {
+			if status == "success" {
+				return nil
+			}
+			errMsg := status
+			if state.Run.Error != nil {
+				errMsg = status + ": " + *state.Run.Error
+			}
+			return fmt.Errorf("run %d %s", runID, errMsg)
+		}
+
+		time.Sleep(poll)
+	}
+}
+
+func isTerminal(status string) bool {
+	switch status {
+	case "success", "failed", "cancelled", "superseded":
+		return true
+	}
+	return false
+}
+
 // --- deployments command ---
 
 func cmdDeployments(baseURL string, args []string) error {
 	fs := flag.NewFlagSet("deployments", flag.ExitOnError)
-	fs.Usage = func() {
-		fmt.Fprint(os.Stderr, `Usage: go tool ci deployments
-
-List current app deployments showing the app name, deployed commit,
-and deployment time.
-`)
-	}
+	fs.Usage = func() { printUsage() }
 	fs.Parse(args)
 
 	var deployments []apiDeployment

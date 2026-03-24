@@ -36,7 +36,7 @@ use (
 	./cmd/agent
 	./cmd/backupd
 	./cmd/beetman
-	./cmd/ci
+	./apps/ci/cmd/ci
 	./cmd/compare-agents
 	./cmd/compressor
 	./cmd/incrementum

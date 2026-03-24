@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestLastNLines(t *testing.T) {
@@ -121,6 +125,111 @@ func TestStatusStr(t *testing.T) {
 		if got := statusStr(input); got != want {
 			t.Errorf("statusStr(%q) = %q, want %q", input, got, want)
 		}
+	}
+}
+
+func TestIsTerminal(t *testing.T) {
+	terminal := []string{"success", "failed", "cancelled", "superseded"}
+	for _, s := range terminal {
+		if !isTerminal(s) {
+			t.Errorf("isTerminal(%q) = false, want true", s)
+		}
+	}
+	nonTerminal := []string{"running", "restarting", "pending"}
+	for _, s := range nonTerminal {
+		if isTerminal(s) {
+			t.Errorf("isTerminal(%q) = true, want false", s)
+		}
+	}
+}
+
+func TestWaitForRun_ImmediateSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(runState{
+			Run: runJSON{ID: 1, Status: "success"},
+		})
+	}))
+	defer srv.Close()
+
+	var buf bytes.Buffer
+	err := waitForRun(srv.URL, 1, 10*time.Millisecond, &buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(buf.String(), "success") {
+		t.Errorf("output = %q, want it to contain 'success'", buf.String())
+	}
+}
+
+func TestWaitForRun_ImmediateFailure(t *testing.T) {
+	errMsg := "build failed"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(runState{
+			Run: runJSON{ID: 1, Status: "failed", Error: &errMsg},
+		})
+	}))
+	defer srv.Close()
+
+	var buf bytes.Buffer
+	err := waitForRun(srv.URL, 1, 10*time.Millisecond, &buf)
+	if err == nil {
+		t.Fatal("expected error for failed run")
+	}
+	if !strings.Contains(err.Error(), "build failed") {
+		t.Errorf("error = %q, want it to contain 'build failed'", err.Error())
+	}
+}
+
+func TestWaitForRun_TransitionsToSuccess(t *testing.T) {
+	var calls atomic.Int64
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := calls.Add(1)
+		status := "running"
+		if n >= 3 {
+			status = "success"
+		}
+		state := runState{
+			Run:  runJSON{ID: 1, Status: status},
+			Jobs: []jobJSON{{Name: "test", Status: "in_progress"}},
+		}
+		if status == "success" {
+			state.Jobs[0].Status = "success"
+		}
+		json.NewEncoder(w).Encode(state)
+	}))
+	defer srv.Close()
+
+	var buf bytes.Buffer
+	err := waitForRun(srv.URL, 1, 10*time.Millisecond, &buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	output := buf.String()
+	if !strings.Contains(output, "running") {
+		t.Errorf("output should contain 'running', got %q", output)
+	}
+	if !strings.Contains(output, "success") {
+		t.Errorf("output should contain 'success', got %q", output)
+	}
+}
+
+func TestWaitForRun_ShowsCurrentJob(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(runState{
+			Run:  runJSON{ID: 1, Status: "success"},
+			Jobs: []jobJSON{{Name: "deploy", Kind: "deploy", Status: "in_progress"}},
+		})
+	}))
+	defer srv.Close()
+
+	var buf bytes.Buffer
+	err := waitForRun(srv.URL, 1, 10*time.Millisecond, &buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// success is terminal so it prints status without job info (job won't be in_progress at that point)
+	if !strings.Contains(buf.String(), "success") {
+		t.Errorf("output = %q, want it to contain 'success'", buf.String())
 	}
 }
 

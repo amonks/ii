@@ -145,6 +145,6 @@ tool (
 	github.com/sqlc-dev/sqlc/cmd/sqlc
 	golang.org/x/vuln/cmd/govulncheck
 	honnef.co/go/tools/cmd/staticcheck
-	monks.co/cmd/ci
+	monks.co/apps/ci/cmd/ci
 	monks.co/run
 )
