@@ -441,7 +441,7 @@ type syncStatus struct {
 
 func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	unsynced, err := h.store.UnsyncedPings(ctx, 10000)
+	unsyncedCount, err := h.store.UnsyncedPingCount(ctx)
 	if err != nil {
 		serve.InternalServerError(w, r, err)
 		return
@@ -464,7 +464,7 @@ func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
 	serve.JSON(w, r, syncStatus{
 		HasUpstream:   h.upstream != "",
 		Upstream:      h.upstream,
-		UnsyncedCount: len(unsynced),
+		UnsyncedCount: unsyncedCount,
 		PullWatermark: watermark,
 		LastPushAt:    lastPushAt,
 		LastPullAt:    lastPullAt,

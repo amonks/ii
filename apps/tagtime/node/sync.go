@@ -13,22 +13,24 @@ import (
 
 // Syncer handles bidirectional sync with an upstream server.
 type Syncer struct {
-	store    *Store
-	upstream string
-	nodeID   string
-	client   *http.Client
+	store          *Store
+	upstream       string
+	nodeID         string
+	client         *http.Client
+	refreshChanges func(context.Context)
 }
 
 // NewSyncer creates a syncer that pushes/pulls with the given upstream URL.
-func NewSyncer(store *Store, upstream, nodeID string, client *http.Client) *Syncer {
+func NewSyncer(store *Store, upstream, nodeID string, client *http.Client, refreshChanges func(context.Context)) *Syncer {
 	if client == nil {
-		client = http.DefaultClient
+		client = &http.Client{Timeout: 30 * time.Second}
 	}
 	return &Syncer{
-		store:    store,
-		upstream: upstream,
-		nodeID:   nodeID,
-		client:   client,
+		store:          store,
+		upstream:       upstream,
+		nodeID:         nodeID,
+		client:         client,
+		refreshChanges: refreshChanges,
 	}
 }
 
@@ -136,6 +138,9 @@ func (s *Syncer) Pull(ctx context.Context) (int, error) {
 		if err := s.store.AddPeriodChange(ctx, c); err != nil {
 			return 0, fmt.Errorf("adding pulled period change: %w", err)
 		}
+	}
+	if len(payload.PeriodChanges) > 0 && s.refreshChanges != nil {
+		s.refreshChanges(ctx)
 	}
 
 	// Advance watermark based on server-assigned received_at.

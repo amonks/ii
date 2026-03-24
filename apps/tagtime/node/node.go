@@ -34,9 +34,14 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		return nil, fmt.Errorf("listing period changes: %w", err)
 	}
 
+	n := &Node{
+		store:   store,
+		changes: changes,
+	}
+
 	var syncer *Syncer
 	if config.Upstream != "" {
-		syncer = NewSyncer(store, config.Upstream, config.NodeID, nil)
+		syncer = NewSyncer(store, config.Upstream, config.NodeID, nil, n.refreshChanges)
 	}
 
 	if len(changes) == 0 {
@@ -55,6 +60,7 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 				store.Close()
 				return nil, fmt.Errorf("server has no period changes; initialize the server first")
 			}
+			n.changes = changes
 		} else {
 			// Server: create the initial period change.
 			initial := PeriodChange{
@@ -67,16 +73,12 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 				return nil, fmt.Errorf("adding initial period change: %w", err)
 			}
 			changes = []PeriodChange{initial}
+			n.changes = changes
 		}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-
-	n := &Node{
-		store:   store,
-		cancel:  cancel,
-		changes: changes,
-	}
+	n.cancel = cancel
 
 	n.handler = newHandler(store, n.getChanges, func() { n.refreshChanges(ctx) }, n.syncNow, config.NodeID, config.Upstream)
 

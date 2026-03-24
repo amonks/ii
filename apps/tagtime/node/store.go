@@ -232,6 +232,15 @@ func (s *Store) PingsReceivedAfter(ctx context.Context, since int64, limit int) 
 	return scanPings(rows)
 }
 
+// UnsyncedPingCount returns the number of pings that haven't been synced yet.
+func (s *Store) UnsyncedPingCount(ctx context.Context) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM pings WHERE synced_at = 0 AND updated_at > 0`,
+	).Scan(&count)
+	return count, err
+}
+
 // UnsyncedPings returns pings that haven't been synced yet (synced_at = 0 and updated_at > 0).
 func (s *Store) UnsyncedPings(ctx context.Context, limit int) ([]Ping, error) {
 	rows, err := s.db.QueryContext(ctx,
@@ -265,7 +274,7 @@ func (s *Store) ListPeriodChanges(ctx context.Context) ([]PeriodChange, error) {
 	}
 	defer rows.Close()
 
-	var changes []PeriodChange
+	changes := []PeriodChange{}
 	for rows.Next() {
 		var c PeriodChange
 		if err := rows.Scan(&c.Timestamp, &c.Seed, &c.PeriodSecs); err != nil {
@@ -336,7 +345,7 @@ func (s *Store) SetMeta(ctx context.Context, key, value string) error {
 }
 
 func scanPings(rows *sql.Rows) ([]Ping, error) {
-	var pings []Ping
+	pings := []Ping{}
 	for rows.Next() {
 		var p Ping
 		if err := rows.Scan(&p.Timestamp, &p.Blurb, &p.NodeID, &p.UpdatedAt, &p.SyncedAt, &p.ReceivedAt); err != nil {

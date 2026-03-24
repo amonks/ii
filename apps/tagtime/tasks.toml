@@ -20,7 +20,9 @@
   id = "xcframework"
   type = "short"
   cmd = "go tool gomobile init && rm -rf ios/Mobile.xcframework && GOWORK=off go tool gomobile bind -target ios,iossimulator -o ios/Mobile.xcframework ./mobile"
+  dependencies = ["tidy"]
 
 [[task]]
   id = "generate"
   type = "short"
+  dependencies = ["xcframework", "tidy"]

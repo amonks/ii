@@ -72,7 +72,7 @@ func newTestSyncPair(t *testing.T) (client *Syncer, clientStore, serverStore *St
 	ts := httptest.NewServer(mux)
 	t.Cleanup(ts.Close)
 
-	client = NewSyncer(clientStore, ts.URL, "test-client", ts.Client())
+	client = NewSyncer(clientStore, ts.URL, "test-client", ts.Client(), nil)
 	return client, clientStore, serverStore
 }
 
@@ -330,7 +330,7 @@ func TestSyncLateClientPingsVisible(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { storeA.Close() })
-	syncerA := NewSyncer(storeA, ts.URL, "client-a", ts.Client())
+	syncerA := NewSyncer(storeA, ts.URL, "client-a", ts.Client(), nil)
 
 	// Client C (stays online).
 	storeC, err := OpenStore(ctx, filepath.Join(t.TempDir(), "c.db"))
@@ -338,7 +338,7 @@ func TestSyncLateClientPingsVisible(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { storeC.Close() })
-	syncerC := NewSyncer(storeC, ts.URL, "client-c", ts.Client())
+	syncerC := NewSyncer(storeC, ts.URL, "client-c", ts.Client(), nil)
 
 	// 1. Client A writes a ping while offline (doesn't push yet).
 	if err := storeA.SetBlurb(ctx, 1000, "#offline-work", "client-a"); err != nil {
