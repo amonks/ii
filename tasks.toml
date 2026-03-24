@@ -17,6 +17,7 @@
     'apps/ping/dev',
     'apps/scrobbles/dev',
     'apps/sms/dev',
+    'apps/tagtime/dev',
     'apps/writing/dev',
     'apps/youtube/dev'
   ]
@@ -48,6 +49,7 @@
     'apps/reddit/build',
     'apps/scrobbles/build',
     'apps/sms/build',
+    'apps/tagtime/build',
     'apps/template/build',
     'apps/vault/build',
     'apps/writing/build',

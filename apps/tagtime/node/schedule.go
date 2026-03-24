@@ -79,7 +79,7 @@ func PingsInRange(changes []PeriodChange, start, end time.Time) []time.Time {
 func NextPing(changes []PeriodChange, after time.Time) time.Time {
 	// Search forward in small windows until we find one.
 	window := 24 * time.Hour
-	for attempt := 0; attempt < 100; attempt++ {
+	for range 100 {
 		start := after.Add(time.Second) // strictly after
 		end := after.Add(window)
 		pings := PingsInRange(changes, start, end)
@@ -97,7 +97,7 @@ func NextPing(changes []PeriodChange, after time.Time) time.Time {
 func PrevPing(changes []PeriodChange, before time.Time) time.Time {
 	// Search backward in expanding windows.
 	window := 24 * time.Hour
-	for attempt := 0; attempt < 100; attempt++ {
+	for range 100 {
 		start := before.Add(-window)
 		pings := PingsInRange(changes, start, before)
 		if len(pings) > 0 {

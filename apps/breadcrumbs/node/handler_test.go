@@ -428,7 +428,7 @@ func TestHandlerIngestDoesNotEvictUnforwardedPoints(t *testing.T) {
 		}, math.MaxFloat64, false)
 	}
 
-	simp := NewSimplifier()
+	simp := NewSimplifier(MethodArea)
 	prev, tail, _ := s.LastTwoPoints(ctx)
 	if tail != nil {
 		simp.Recover(prev, tail)

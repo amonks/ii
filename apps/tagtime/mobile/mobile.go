@@ -96,7 +96,7 @@ func NextPings(configJSON []byte, n int) ([]byte, error) {
 
 	var timestamps []int64
 	after := time.Now()
-	for i := 0; i < n; i++ {
+	for range n {
 		next := node.NextPing(changes, after)
 		timestamps = append(timestamps, next.Unix())
 		after = next
