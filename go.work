@@ -28,6 +28,7 @@ use (
 	./apps/reddit
 	./apps/scrobbles
 	./apps/sms
+	./apps/tagtime
 	./apps/template
 	./apps/vault
 	./apps/writing

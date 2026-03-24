@@ -193,6 +193,12 @@
     host = "brigid"
     access = "tag:service"
 
+[apps.tagtime]
+  [[apps.tagtime.routes]]
+    path = "tagtime"
+    host = "brigid"
+    access = "ajm@passkey"
+
 [apps.writing]
   vm_size = "shared-cpu-4x"
   vm_memory = "2gb"

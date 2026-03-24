@@ -1,0 +1,170 @@
+package node
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"time"
+)
+
+// Syncer handles bidirectional sync with an upstream server.
+type Syncer struct {
+	store    *Store
+	upstream string
+	nodeID   string
+	client   *http.Client
+}
+
+// NewSyncer creates a syncer that pushes/pulls with the given upstream URL.
+func NewSyncer(store *Store, upstream, nodeID string, client *http.Client) *Syncer {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &Syncer{
+		store:    store,
+		upstream: upstream,
+		nodeID:   nodeID,
+		client:   client,
+	}
+}
+
+// syncPayload is the JSON wire format for push/pull.
+type syncPayload struct {
+	Pings         []Ping         `json:"pings,omitempty"`
+	PeriodChanges []PeriodChange `json:"period_changes,omitempty"`
+}
+
+// Push sends unsynced pings to upstream. Returns the number of pings pushed.
+func (s *Syncer) Push(ctx context.Context) (int, error) {
+	pings, err := s.store.UnsyncedPings(ctx, 1000)
+	if err != nil {
+		return 0, fmt.Errorf("listing unsynced: %w", err)
+	}
+	if len(pings) == 0 {
+		return 0, nil
+	}
+
+	payload := syncPayload{Pings: pings}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return 0, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", s.upstream+"/sync/push", bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("push request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("push failed: %s %s", resp.Status, respBody)
+	}
+
+	// Mark pings as synced.
+	maxUpdatedAt := int64(0)
+	for _, p := range pings {
+		if p.UpdatedAt > maxUpdatedAt {
+			maxUpdatedAt = p.UpdatedAt
+		}
+	}
+	if err := s.store.MarkSynced(ctx, maxUpdatedAt); err != nil {
+		return 0, fmt.Errorf("marking synced: %w", err)
+	}
+
+	return len(pings), nil
+}
+
+// Pull fetches changed pings from upstream. Returns the number of pings received.
+func (s *Syncer) Pull(ctx context.Context) (int, error) {
+	since, err := s.store.GetMeta(ctx, "pull_watermark")
+	if err != nil {
+		return 0, err
+	}
+	if since == "" {
+		since = "0"
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", s.upstream+"/sync/pull?since="+since, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("pull request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("pull failed: %s %s", resp.Status, respBody)
+	}
+
+	var payload syncPayload
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return 0, fmt.Errorf("decoding pull response: %w", err)
+	}
+
+	// Apply received pings with LWW.
+	for _, p := range payload.Pings {
+		if err := s.store.UpsertPing(ctx, p); err != nil {
+			return 0, fmt.Errorf("upserting pulled ping: %w", err)
+		}
+	}
+
+	// Apply period changes.
+	for _, c := range payload.PeriodChanges {
+		if err := s.store.AddPeriodChange(ctx, c); err != nil {
+			return 0, fmt.Errorf("adding pulled period change: %w", err)
+		}
+	}
+
+	// Advance watermark.
+	maxUpdatedAt := int64(0)
+	for _, p := range payload.Pings {
+		if p.UpdatedAt > maxUpdatedAt {
+			maxUpdatedAt = p.UpdatedAt
+		}
+	}
+	if maxUpdatedAt > 0 {
+		if err := s.store.SetMeta(ctx, "pull_watermark", fmt.Sprintf("%d", maxUpdatedAt)); err != nil {
+			return 0, err
+		}
+	}
+
+	return len(payload.Pings), nil
+}
+
+// RunPeriodicSync runs push then pull on the given interval until ctx is cancelled.
+func (s *Syncer) RunPeriodicSync(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if n, err := s.Push(ctx); err != nil {
+				slog.Error("sync push", "error", err)
+			} else if n > 0 {
+				slog.Info("sync pushed", "count", n)
+			}
+			if n, err := s.Pull(ctx); err != nil {
+				slog.Error("sync pull", "error", err)
+			} else if n > 0 {
+				slog.Info("sync pulled", "count", n)
+			}
+		}
+	}
+}

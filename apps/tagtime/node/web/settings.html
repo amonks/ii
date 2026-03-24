@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TagTime - Settings</title>
+  <link rel="stylesheet" href="{{.BasePath}}/style.css">
+</head>
+<body>
+  <nav>
+    <a href="{{.BasePath}}/">Pings</a>
+    <a href="{{.BasePath}}/search">Search</a>
+    <a href="{{.BasePath}}/graphs">Graphs</a>
+    <a href="{{.BasePath}}/settings">Settings</a>
+  </nav>
+
+  <h1>Settings</h1>
+
+  {{if .Current}}
+  <p>Current period: <strong>{{periodMinutes .Current.PeriodSecs}} minutes</strong> ({{.Current.PeriodSecs}}s)</p>
+  <p>Seed: <strong>{{.Current.Seed}}</strong></p>
+  {{end}}
+
+  <h2>Change Period</h2>
+  <form class="settings-form" method="POST" action="{{.BasePath}}/settings/period">
+    <label>New average period (minutes):
+      <input type="number" name="period_minutes" value="45" min="1" max="1440">
+    </label>
+    <button type="submit" style="margin-top:0.5rem">Update</button>
+  </form>
+
+  {{if .Changes}}
+  <h2>Period History</h2>
+  {{range .Changes}}
+  <div class="ping">
+    <div class="ping-time">{{formatTime .Timestamp}}</div>
+    <div class="ping-blurb">Period: {{.PeriodSecs}}s, Seed: {{.Seed}}</div>
+  </div>
+  {{end}}
+  {{end}}
+</body>
+</html>

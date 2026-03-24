@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="base-path" content="{{.BasePath}}">
+  <title>TagTime</title>
+  <link rel="stylesheet" href="{{.BasePath}}/style.css">
+</head>
+<body>
+  <nav>
+    <a href="{{.BasePath}}/">Pings</a>
+    <a href="{{.BasePath}}/search">Search</a>
+    <a href="{{.BasePath}}/graphs">Graphs</a>
+    <a href="{{.BasePath}}/settings">Settings</a>
+  </nav>
+
+  <h1>TagTime</h1>
+
+  {{if .Pending}}
+  <h2>Pending ({{len .Pending}})</h2>
+
+  <div class="batch-form">
+    <form method="POST" action="{{.BasePath}}/batch-answer">
+      <p>Batch set selected pings:</p>
+      {{range .Pending}}
+      <label>
+        <input type="checkbox" name="timestamps" value="{{.Timestamp}}" checked>
+        {{formatTime .Timestamp}}
+      </label>
+      {{end}}
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <input type="text" name="blurb" placeholder="#sleeping" required>
+        <button type="submit">Set All</button>
+      </div>
+    </form>
+  </div>
+
+  {{range .Pending}}
+  <div class="ping">
+    <div class="ping-time">{{formatTime .Timestamp}}</div>
+    <form class="answer-form" method="POST" action="{{$.BasePath}}/answer">
+      <input type="hidden" name="timestamp" value="{{.Timestamp}}">
+      <input type="text" name="blurb" placeholder="What were you doing? #tag" required>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+  {{end}}
+  {{else}}
+  <p>No pending pings. Nice!</p>
+  {{end}}
+
+  {{if .Recent}}
+  <h2>Recent</h2>
+  {{range .Recent}}
+  <div class="ping">
+    <div class="ping-time">{{formatTime .Timestamp}}</div>
+    <div class="ping-blurb">{{highlightTags .Blurb}}</div>
+  </div>
+  {{end}}
+  {{end}}
+</body>
+</html>

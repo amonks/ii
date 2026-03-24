@@ -1,0 +1,363 @@
+package node
+
+import (
+	"embed"
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"log/slog"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"monks.co/pkg/serve"
+)
+
+//go:embed web/*
+var webFS embed.FS
+
+var templates *template.Template
+
+func init() {
+	funcMap := template.FuncMap{
+		"formatTime": func(ts int64) string {
+			return time.Unix(ts, 0).Local().Format("Mon Jan 2 3:04 PM")
+		},
+		"formatDuration": func(secs float64) string {
+			h := int(secs) / 3600
+			m := (int(secs) % 3600) / 60
+			if h > 0 {
+				return fmt.Sprintf("%dh %dm", h, m)
+			}
+			return fmt.Sprintf("%dm", m)
+		},
+		"periodMinutes": func(secs int64) int64 {
+			return secs / 60
+		},
+		"highlightTags": func(blurb string) template.HTML {
+			words := strings.Fields(blurb)
+			for i, w := range words {
+				if strings.HasPrefix(w, "#") && len(w) > 1 {
+					words[i] = `<span class="tag">` + template.HTMLEscapeString(w) + `</span>`
+				} else {
+					words[i] = template.HTMLEscapeString(w)
+				}
+			}
+			return template.HTML(strings.Join(words, " "))
+		},
+	}
+
+	templates = template.Must(template.New("").Funcs(funcMap).ParseFS(webFS, "web/*.html"))
+}
+
+type handler struct {
+	store   *Store
+	changes func() []PeriodChange
+	nodeID  string
+}
+
+func newHandler(store *Store, changes func() []PeriodChange, nodeID string) http.Handler {
+	h := &handler{store: store, changes: changes, nodeID: nodeID}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", h.handleIndex)
+	mux.HandleFunc("POST /answer", h.handleAnswer)
+	mux.HandleFunc("POST /batch-answer", h.handleBatchAnswer)
+	mux.HandleFunc("GET /search", h.handleSearch)
+	mux.HandleFunc("GET /graphs", h.handleGraphs)
+	mux.HandleFunc("GET /graphs/data", h.handleGraphsData)
+	mux.HandleFunc("GET /settings", h.handleSettings)
+	mux.HandleFunc("POST /settings/period", h.handleSettingsPeriod)
+	mux.HandleFunc("POST /sync/push", h.handleSyncPush)
+	mux.HandleFunc("GET /sync/pull", h.handleSyncPull)
+	mux.HandleFunc("GET /sync/period-changes", h.handleSyncPeriodChanges)
+	mux.HandleFunc("GET /style.css", h.handleStatic)
+	mux.HandleFunc("GET /graphs.js", h.handleStatic)
+	return mux
+}
+
+type indexData struct {
+	BasePath string
+	Pending  []Ping
+	Recent   []Ping
+}
+
+func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	now := time.Now()
+
+	// Ensure pings exist for the recent schedule.
+	changes := h.changes()
+	start := now.Add(-24 * time.Hour)
+	scheduledPings := PingsInRange(changes, start, now)
+	if len(scheduledPings) > 0 {
+		timestamps := make([]int64, len(scheduledPings))
+		for i, p := range scheduledPings {
+			timestamps[i] = p.Unix()
+		}
+		if err := h.store.EnsurePingsExist(ctx, timestamps); err != nil {
+			slog.Error("ensuring pings exist", "error", err)
+		}
+	}
+
+	pending, err := h.store.PendingPings(ctx, now)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	recent, err := h.store.RecentPings(ctx, 20)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+
+	templates.ExecuteTemplate(w, "index.html", indexData{
+		BasePath: serve.BasePath(r),
+		Pending:  pending,
+		Recent:   recent,
+	})
+}
+
+func (h *handler) handleAnswer(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	ts, err := strconv.ParseInt(r.FormValue("timestamp"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid timestamp", 400)
+		return
+	}
+	blurb := r.FormValue("blurb")
+	if err := h.store.SetBlurb(r.Context(), ts, blurb, h.nodeID); err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+}
+
+func (h *handler) handleBatchAnswer(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	blurb := r.FormValue("blurb")
+	tsStrs := r.Form["timestamps"]
+	var timestamps []int64
+	for _, s := range tsStrs {
+		ts, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			continue
+		}
+		timestamps = append(timestamps, ts)
+	}
+	if len(timestamps) == 0 {
+		http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+		return
+	}
+	if err := h.store.BatchSetBlurb(r.Context(), timestamps, blurb, h.nodeID); err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, serve.BasePath(r)+"/", http.StatusSeeOther)
+}
+
+type searchData struct {
+	BasePath string
+	Query    string
+	Results  []Ping
+}
+
+func (h *handler) handleSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
+	var results []Ping
+	if q != "" {
+		var err error
+		results, err = h.store.SearchBlurbs(r.Context(), q, 50)
+		if err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
+	}
+	templates.ExecuteTemplate(w, "search.html", searchData{
+		BasePath: serve.BasePath(r),
+		Query:    q,
+		Results:  results,
+	})
+}
+
+type graphsPageData struct {
+	BasePath string
+	Window   string
+}
+
+func (h *handler) handleGraphs(w http.ResponseWriter, r *http.Request) {
+	window := r.URL.Query().Get("window")
+	if window == "" {
+		window = "day"
+	}
+	templates.ExecuteTemplate(w, "graphs.html", graphsPageData{
+		BasePath: serve.BasePath(r),
+		Window:   window,
+	})
+}
+
+func (h *handler) handleGraphsData(w http.ResponseWriter, r *http.Request) {
+	window := r.URL.Query().Get("window")
+	if window == "" {
+		window = "day"
+	}
+
+	now := time.Now().UTC()
+	var start, end time.Time
+	if s := r.URL.Query().Get("start"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			start = t
+		}
+	}
+	if e := r.URL.Query().Get("end"); e != "" {
+		if t, err := time.Parse(time.RFC3339, e); err == nil {
+			end = t
+		}
+	}
+
+	if start.IsZero() || end.IsZero() {
+		switch window {
+		case "hour":
+			start = now.Add(-24 * time.Hour)
+		case "day":
+			start = now.Add(-30 * 24 * time.Hour)
+		case "week":
+			start = now.Add(-12 * 7 * 24 * time.Hour)
+		default:
+			start = now.Add(-30 * 24 * time.Hour)
+		}
+		end = now
+	}
+
+	changes := h.changes()
+	pings, err := h.store.PingsInTimeRange(r.Context(), start, end)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+
+	data := ComputeGraphData(pings, changes, window, start, end)
+	// Sort all_tags deterministically.
+	sort.Strings(data.AllTags)
+	serve.JSON(w, r, data)
+}
+
+type settingsData struct {
+	BasePath string
+	Changes  []PeriodChange
+	Current  *PeriodChange
+}
+
+func (h *handler) handleSettings(w http.ResponseWriter, r *http.Request) {
+	changes := h.changes()
+	var current *PeriodChange
+	if len(changes) > 0 {
+		current = &changes[len(changes)-1]
+	}
+	templates.ExecuteTemplate(w, "settings.html", settingsData{
+		BasePath: serve.BasePath(r),
+		Changes:  changes,
+		Current:  current,
+	})
+}
+
+func (h *handler) handleSettingsPeriod(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	periodMins, err := strconv.ParseInt(r.FormValue("period_minutes"), 10, 64)
+	if err != nil || periodMins < 1 {
+		http.Error(w, "invalid period", 400)
+		return
+	}
+
+	changes := h.changes()
+	seed := uint64(12345)
+	if len(changes) > 0 {
+		seed = changes[len(changes)-1].Seed
+	}
+
+	change := PeriodChange{
+		Timestamp:  time.Now().Unix(),
+		Seed:       seed,
+		PeriodSecs: periodMins * 60,
+	}
+	if err := h.store.AddPeriodChange(r.Context(), change); err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, serve.BasePath(r)+"/settings", http.StatusSeeOther)
+}
+
+// Sync endpoints.
+
+func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
+	var payload syncPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	for _, p := range payload.Pings {
+		if err := h.store.UpsertPing(r.Context(), p); err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
+	}
+	for _, c := range payload.PeriodChanges {
+		if err := h.store.AddPeriodChange(r.Context(), c); err != nil {
+			serve.InternalServerError(w, r, err)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) handleSyncPull(w http.ResponseWriter, r *http.Request) {
+	sinceStr := r.URL.Query().Get("since")
+	since, _ := strconv.ParseInt(sinceStr, 10, 64)
+
+	pings, err := h.store.PingsUpdatedAfter(r.Context(), since, 1000)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	changes, err := h.store.ListPeriodChanges(r.Context())
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	serve.JSON(w, r, syncPayload{Pings: pings, PeriodChanges: changes})
+}
+
+func (h *handler) handleSyncPeriodChanges(w http.ResponseWriter, r *http.Request) {
+	changes, err := h.store.ListPeriodChanges(r.Context())
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	serve.JSON(w, r, changes)
+}
+
+func (h *handler) handleStatic(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/")
+	data, err := webFS.ReadFile("web/" + name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	switch {
+	case strings.HasSuffix(name, ".css"):
+		w.Header().Set("Content-Type", "text/css")
+	case strings.HasSuffix(name, ".js"):
+		w.Header().Set("Content-Type", "application/javascript")
+	}
+	w.Write(data)
+}

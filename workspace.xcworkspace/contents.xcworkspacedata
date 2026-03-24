@@ -5,6 +5,9 @@
       location = "group:apps/breadcrumbs/ios/maplog.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:apps/tagtime/ios/tagtime.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:apps">
    </FileRef>
    <FileRef

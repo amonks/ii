@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TagTime - Search</title>
+  <link rel="stylesheet" href="{{.BasePath}}/style.css">
+</head>
+<body>
+  <nav>
+    <a href="{{.BasePath}}/">Pings</a>
+    <a href="{{.BasePath}}/search">Search</a>
+    <a href="{{.BasePath}}/graphs">Graphs</a>
+    <a href="{{.BasePath}}/settings">Settings</a>
+  </nav>
+
+  <h1>Search</h1>
+
+  <form class="search-box" method="GET" action="{{.BasePath}}/search">
+    <input type="text" name="q" value="{{.Query}}" placeholder="Search pings..." autofocus>
+    <button type="submit">Search</button>
+  </form>
+
+  {{if .Query}}
+  <p>{{len .Results}} result{{if ne (len .Results) 1}}s{{end}} for "{{.Query}}"</p>
+  {{range .Results}}
+  <div class="ping">
+    <div class="ping-time">{{formatTime .Timestamp}}</div>
+    <div class="ping-blurb">{{highlightTags .Blurb}}</div>
+  </div>
+  {{end}}
+  {{end}}
+</body>
+</html>

@@ -78,6 +78,7 @@ Each area of the system should have a spec. Keep specs up to date while working 
 | [reddit](reddit.md)               | [apps/reddit/](../apps/reddit/)         | Reddit saved-posts archive and browser                               |
 | [scrobbles](scrobbles.md)         | [apps/scrobbles/](../apps/scrobbles/)   | Music listening history viewer (Last.fm)                             |
 | [sms](sms.md)                     | [apps/sms/](../apps/sms/)               | SMS sending service (Twilio)                                         |
+| [tagtime](tagtime.md)             | [apps/tagtime/](../apps/tagtime/)       | Stochastic time tracking via Poisson process sampling                |
 | [vault](vault.md)                 | [apps/vault/](../apps/vault/)           | Litestream SFTP replica target on ZFS                                |
 | [writing](writing.md)             | [apps/writing/](../apps/writing/)       | Personal blog with responsive images                                 |
 | [youtube](youtube.md)             | [apps/youtube/](../apps/youtube/)       | YouTube watch history viewer                                         |
