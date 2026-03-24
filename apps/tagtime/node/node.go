@@ -54,7 +54,7 @@ func NewNode(ctx context.Context, config Config) (*Node, error) {
 		changes: changes,
 	}
 
-	n.handler = newHandler(store, n.getChanges, config.NodeID)
+	n.handler = newHandler(store, n.getChanges, config.NodeID, config.Upstream)
 
 	// Start syncer if upstream configured.
 	if config.Upstream != "" {

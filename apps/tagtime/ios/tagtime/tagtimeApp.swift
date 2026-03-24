@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Mobile
 
@@ -44,7 +45,8 @@ class NodeManager: ObservableObject {
         }
 
         var error: NSError?
-        let p = MobileStart(configData, &error)
+        var p: Int = 0
+        MobileStart(configData, &p, &error)
         if let error = error {
             print("Failed to start node: \(error)")
             return

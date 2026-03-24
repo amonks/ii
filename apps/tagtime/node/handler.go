@@ -53,13 +53,14 @@ func init() {
 }
 
 type handler struct {
-	store   *Store
-	changes func() []PeriodChange
-	nodeID  string
+	store    *Store
+	changes  func() []PeriodChange
+	nodeID   string
+	upstream string
 }
 
-func newHandler(store *Store, changes func() []PeriodChange, nodeID string) http.Handler {
-	h := &handler{store: store, changes: changes, nodeID: nodeID}
+func newHandler(store *Store, changes func() []PeriodChange, nodeID, upstream string) http.Handler {
+	h := &handler{store: store, changes: changes, nodeID: nodeID, upstream: upstream}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", h.handleIndex)
 	mux.HandleFunc("POST /answer", h.handleAnswer)
@@ -72,6 +73,8 @@ func newHandler(store *Store, changes func() []PeriodChange, nodeID string) http
 	mux.HandleFunc("POST /sync/push", h.handleSyncPush)
 	mux.HandleFunc("GET /sync/pull", h.handleSyncPull)
 	mux.HandleFunc("GET /sync/period-changes", h.handleSyncPeriodChanges)
+	mux.HandleFunc("GET /sync/status", h.handleSyncStatus)
+	mux.HandleFunc("GET /next-ping", h.handleNextPing)
 	mux.HandleFunc("GET /style.css", h.handleStatic)
 	mux.HandleFunc("GET /graphs.js", h.handleStatic)
 	return mux
@@ -344,6 +347,39 @@ func (h *handler) handleSyncPeriodChanges(w http.ResponseWriter, r *http.Request
 		return
 	}
 	serve.JSON(w, r, changes)
+}
+
+type syncStatus struct {
+	HasUpstream   bool   `json:"has_upstream"`
+	Upstream      string `json:"upstream,omitempty"`
+	UnsyncedCount int    `json:"unsynced_count"`
+	PullWatermark string `json:"pull_watermark"`
+}
+
+func (h *handler) handleSyncStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	unsynced, err := h.store.UnsyncedPings(ctx, 10000)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	watermark, err := h.store.GetMeta(ctx, "pull_watermark")
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	serve.JSON(w, r, syncStatus{
+		HasUpstream:   h.upstream != "",
+		Upstream:      h.upstream,
+		UnsyncedCount: len(unsynced),
+		PullWatermark: watermark,
+	})
+}
+
+func (h *handler) handleNextPing(w http.ResponseWriter, r *http.Request) {
+	changes := h.changes()
+	next := NextPing(changes, time.Now())
+	serve.JSON(w, r, map[string]int64{"timestamp": next.Unix()})
 }
 
 func (h *handler) handleStatic(w http.ResponseWriter, r *http.Request) {

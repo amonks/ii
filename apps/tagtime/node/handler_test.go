@@ -28,7 +28,7 @@ func newTestHandler(t *testing.T) (http.Handler, *Store) {
 		c, _ := store.ListPeriodChanges(ctx)
 		return c
 	}
-	h := newHandler(store, changes, "test")
+	h := newHandler(store, changes, "test", "")
 	return h, store
 }
 
@@ -157,5 +157,71 @@ func TestHandlerSettings(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "Settings") {
 		t.Error("settings page missing title")
+	}
+}
+
+func TestHandlerNextPing(t *testing.T) {
+	h, _ := newTestHandler(t)
+	req := httptest.NewRequest("GET", "/next-ping", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /next-ping = %d, want 200", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "timestamp") {
+		t.Error("response missing timestamp field")
+	}
+}
+
+func TestHandlerSyncStatus(t *testing.T) {
+	h, _ := newTestHandler(t)
+	req := httptest.NewRequest("GET", "/sync/status", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /sync/status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "has_upstream") {
+		t.Error("response missing has_upstream field")
+	}
+	if !strings.Contains(body, "unsynced_count") {
+		t.Error("response missing unsynced_count field")
+	}
+}
+
+func TestHandlerSyncStatusWithUpstream(t *testing.T) {
+	ctx := context.Background()
+	store, err := OpenStore(ctx, filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { store.Close() })
+
+	if err := store.AddPeriodChange(ctx, PeriodChange{Timestamp: 0, Seed: 42, PeriodSecs: 2700}); err != nil {
+		t.Fatal(err)
+	}
+
+	changes := func() []PeriodChange {
+		c, _ := store.ListPeriodChanges(ctx)
+		return c
+	}
+	h := newHandler(store, changes, "test", "http://upstream:8080")
+
+	req := httptest.NewRequest("GET", "/sync/status", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /sync/status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"has_upstream":true`) {
+		t.Errorf("expected has_upstream:true, got %s", body)
+	}
+	if !strings.Contains(body, "upstream:8080") {
+		t.Errorf("expected upstream URL in response, got %s", body)
 	}
 }

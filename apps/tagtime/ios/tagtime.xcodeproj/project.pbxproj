@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AA0001122F70000000AAAAAA /* Mobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA0001112F70000000AAAAAA /* Mobile.xcframework */; };
 		AA0001132F70000000AAAAAA /* Mobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA0001112F70000000AAAAAA /* Mobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA0001152F70000000AAAAAA /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = AA0001162F70000000AAAAAA /* libresolv.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +29,7 @@
 /* Begin PBXFileReference section */
 		AA0001012F70000000AAAAAA /* tagtime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tagtime.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0001112F70000000AAAAAA /* Mobile.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Mobile.xcframework; sourceTree = "<group>"; };
+		AA0001162F70000000AAAAAA /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -44,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001122F70000000AAAAAA /* Mobile.xcframework in Frameworks */,
+				AA0001152F70000000AAAAAA /* libresolv.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001112F70000000AAAAAA /* Mobile.xcframework */,
+				AA0001162F70000000AAAAAA /* libresolv.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
