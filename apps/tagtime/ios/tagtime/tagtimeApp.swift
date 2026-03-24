@@ -1,21 +1,49 @@
 import Combine
 import SwiftUI
+import UserNotifications
 import Mobile
 
 @main
 struct TagTimeApp: App {
     @StateObject private var nodeManager = NodeManager()
+    @StateObject private var navigation = NavigationState()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(nodeManager)
+                .environmentObject(navigation)
                 .onAppear {
+                    appDelegate.navigation = navigation
                     nodeManager.start()
                     NotificationManager.shared.requestPermission()
                     NotificationManager.shared.scheduleUpcoming(baseURL: nodeManager.baseURL)
                 }
         }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    var navigation: NavigationState?
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        if response.notification.request.content.categoryIdentifier == "TAGTIME_PING" {
+            DispatchQueue.main.async {
+                self.navigation?.selectedTab = .pings
+            }
+        }
+        completionHandler()
+    }
+
+    // Show notifications even when app is in the foreground.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 }
 

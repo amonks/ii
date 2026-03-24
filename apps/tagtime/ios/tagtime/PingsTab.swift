@@ -98,25 +98,36 @@ struct PingsTab: View {
     }
 
     private func refresh() async {
-        // Fetch pending and recent pings from local node.
         guard nodeManager.isRunning else { return }
         let base = nodeManager.baseURL
 
-        // We parse the HTML response is impractical; instead use the sync/pull endpoint
-        // to get raw JSON data and filter locally.
-        guard let url = URL(string: "\(base)/sync/pull?since=0") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+        // The Go node materializes pings asynchronously on startup.
+        // Retry briefly if the first fetch returns nothing.
+        for attempt in 0..<5 {
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+            }
 
-        struct SyncPayload: Codable {
-            let pings: [Ping]?
-        }
-        guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: data) else { return }
-        let allPings = (payload.pings ?? []).sorted { $0.timestamp > $1.timestamp }
+            guard let url = URL(string: "\(base)/sync/pull?since=0") else { return }
+            guard let (data, _) = try? await URLSession.shared.data(from: url) else { continue }
 
-        await MainActor.run {
-            pending = allPings.filter { $0.blurb.isEmpty && Date(timeIntervalSince1970: TimeInterval($0.timestamp)) <= Date() }
-            recent = Array(allPings.filter { !$0.blurb.isEmpty }.prefix(20))
-            selectedTimestamps = Set(pending.map(\.timestamp))
+            struct SyncPayload: Codable {
+                let pings: [Ping]?
+            }
+            guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: data) else { continue }
+            let allPings = (payload.pings ?? []).sorted { $0.timestamp > $1.timestamp }
+
+            let newPending = allPings.filter { $0.blurb.isEmpty && Date(timeIntervalSince1970: TimeInterval($0.timestamp)) <= Date() }
+            let newRecent = Array(allPings.filter { !$0.blurb.isEmpty }.prefix(20))
+
+            await MainActor.run {
+                pending = newPending
+                recent = newRecent
+                selectedTimestamps = Set(newPending.map(\.timestamp))
+            }
+
+            // If we got any pings at all, we're done.
+            if !allPings.isEmpty { return }
         }
     }
 
