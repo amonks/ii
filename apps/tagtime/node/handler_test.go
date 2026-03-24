@@ -562,6 +562,91 @@ func TestHandlerTagRename(t *testing.T) {
 	}
 }
 
+func TestHandlerTagsSummary(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	now := time.Now()
+	// Add pings within the last 24h.
+	if err := store.SetBlurb(ctx, now.Add(-1*time.Hour).Unix(), "#code working", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, now.Add(-2*time.Hour).Unix(), "#code #meeting", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, now.Add(-3*time.Hour).Unix(), "#sleep", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/tags/summary?range=24h", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /tags/summary = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"name":"code"`) {
+		t.Errorf("response missing code tag, got %s", body)
+	}
+	if !strings.Contains(body, `"sparkline"`) {
+		t.Errorf("response missing sparkline, got %s", body)
+	}
+	if !strings.Contains(body, `"total_secs"`) {
+		t.Errorf("response missing total_secs, got %s", body)
+	}
+}
+
+func TestHandlerTagsSummaryDefault(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	// No range param → defaults to 7d.
+	req := httptest.NewRequest("GET", "/tags/summary", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /tags/summary default = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"tags"`) {
+		t.Errorf("response missing tags field, got %s", body)
+	}
+}
+
+func TestHandlerTagDetail(t *testing.T) {
+	h, store := newTestHandler(t)
+	ctx := context.Background()
+
+	if err := store.SetBlurb(ctx, 1000, "#sleep at home", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, 2000, "#sleep #nap", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RenameTag(ctx, "sleep", "sleeping", "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/tags/sleeping", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("GET /tags/sleeping = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"name":"sleeping"`) {
+		t.Errorf("response missing name field, got %s", body)
+	}
+	if !strings.Contains(body, `"renames"`) {
+		t.Errorf("response missing renames field, got %s", body)
+	}
+	if !strings.Contains(body, `"pings"`) {
+		t.Errorf("response missing pings field, got %s", body)
+	}
+}
+
 func TestHandlerTagRenameMissingParams(t *testing.T) {
 	h, _ := newTestHandler(t)
 

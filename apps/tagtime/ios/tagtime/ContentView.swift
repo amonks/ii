@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 
 enum Tab {
-    case pings, search, graphs, settings
+    case pings, search, tags, settings
 }
 
 struct ContentView: View {
@@ -23,11 +23,11 @@ struct ContentView: View {
                 }
                 .tag(Tab.search)
 
-            GraphsTab()
+            TagsTab()
                 .tabItem {
-                    Label("Graphs", systemImage: "chart.bar")
+                    Label("Tags", systemImage: "tag")
                 }
-                .tag(Tab.graphs)
+                .tag(Tab.tags)
 
             SettingsTab()
                 .tabItem {

@@ -534,6 +534,44 @@ func (s *Store) ApplyTagRename(ctx context.Context, r TagRename) error {
 	return err
 }
 
+// PingsByTagInTimeRange returns pings that have the given tag in [start, end), ordered by timestamp desc.
+func (s *Store) PingsByTagInTimeRange(ctx context.Context, tagName string, start, end time.Time) ([]Ping, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT p.timestamp, p.blurb, p.node_id, p.updated_at, p.synced_at, p.received_at
+		 FROM pings p
+		 JOIN ping_tags pt ON pt.ping_timestamp = p.timestamp
+		 WHERE pt.tag_name = ? AND p.timestamp >= ? AND p.timestamp < ?
+		 ORDER BY p.timestamp DESC`,
+		tagName, start.Unix(), end.Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanPings(rows)
+}
+
+// TagRenamesForTag returns renames where old_name or new_name matches tagName, ordered by renamed_at.
+func (s *Store) TagRenamesForTag(ctx context.Context, tagName string) ([]TagRename, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT old_name, new_name, renamed_at, node_id FROM tag_renames
+		 WHERE old_name = ? OR new_name = ?
+		 ORDER BY renamed_at`,
+		tagName, tagName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var renames []TagRename
+	for rows.Next() {
+		var r TagRename
+		if err := rows.Scan(&r.OldName, &r.NewName, &r.RenamedAt, &r.NodeID); err != nil {
+			return nil, err
+		}
+		renames = append(renames, r)
+	}
+	return renames, rows.Err()
+}
+
 // ListTagRenames returns all tag renames, ordered by renamed_at.
 func (s *Store) ListTagRenames(ctx context.Context) ([]TagRename, error) {
 	rows, err := s.db.QueryContext(ctx,

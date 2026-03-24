@@ -88,6 +88,8 @@ Star topology, watermark-based:
 | POST | `/answer` | Set blurb for one ping |
 | POST | `/batch-answer` | Batch-set blurb for multiple pings |
 | GET | `/tags` | JSON: all known tag names, sorted |
+| GET | `/tags/summary?range=` | JSON: tags ranked by time spent with sparklines (range: `24h`, `7d`, `30d`, `all`) |
+| GET | `/tags/{name}` | JSON: tag detail — rename history and pings containing this tag |
 | POST | `/tags/rename` | Rename a tag (time-scoped): `old_name`, `new_name` |
 | GET | `/search?q=` | Full-text search (HTML) |
 | GET | `/search/data?q=` | Full-text search (JSON) |
@@ -107,17 +109,25 @@ Both iOS and web UIs provide tag autocomplete:
 - **iOS**: `TagTextField` component fetches `/tags` on load, shows filtered suggestion chips in a horizontal scroll view as the user types after `#`. Tapping a chip inserts the completed tag.
 - **Web**: `<datalist>` element populated from `/tags` on page load, attached to all blurb input fields.
 
-## Graphs
+## Tags Tab
 
-Tags are resolved from `ping_tags` (the structured, post-rename association table). Time-by-tag histograms are bucketed by hour/day/week. Each bucket's tag values are **percentages (0-100)** of time within that bucket, weighted by the effective `period_secs` at each ping. Using percentages rather than absolute time ensures charts remain comparable across period changes. The graph data endpoint includes a `tag_colors` map with canonical hex colors from `pkg/color`, so all clients render consistent tag colors. Rendered client-side with Canvas JS (web) or SwiftUI Charts (iOS).
+The Tags tab (iOS) shows a ranked list of tags for a selectable time range. Each tag row displays the tag name, formatted time spent, and an inline sparkline histogram. Tapping a tag opens a detail page with rename support, rename history, and the list of pings containing that tag.
+
+The `/tags/summary` endpoint computes per-tag time totals and sparkline data. Each ping's contribution is weighted by the effective `period_secs` at that ping's timestamp (from the period change log), so time accounting remains accurate across period changes. Sparklines use 20 fixed-width sub-buckets of absolute seconds. Tags are sorted by total time descending.
+
+The `/tags/{name}` detail endpoint returns all renames involving the tag (as old_name or new_name) and all pings containing the tag.
+
+## Graphs (Web)
+
+Tags are resolved from `ping_tags` (the structured, post-rename association table). Time-by-tag histograms are bucketed by hour/day/week. Each bucket's tag values are **percentages (0-100)** of time within that bucket, weighted by the effective `period_secs` at each ping. Using percentages rather than absolute time ensures charts remain comparable across period changes. The graph data endpoint includes a `tag_colors` map with canonical hex colors from `pkg/color`, so all clients render consistent tag colors. Rendered client-side with Canvas JS (web).
 
 ## iOS App
 
 - Starts the Go node on localhost via gomobile
-- Four tabs: Pings, Search, Graphs, Settings
+- Four tabs: Pings, Search, Tags, Settings
 - Pings tab is native SwiftUI with batch-set support, tap-to-edit on recent pings, and tag autocomplete
 - Search tab uses server-side FTS via `/search/data` JSON endpoint
-- Graphs tab uses native SwiftUI Charts with server-provided tag colors
+- Tags tab shows ranked tag list with sparklines via `/tags/summary`, with drill-down to tag detail via `/tags/{name}`
 - Settings tab shows next ping countdown, period display/change, sync controls
 - Schedules up to 64 local notifications from the deterministic schedule
 - On notification tap, opens to ping answer screen

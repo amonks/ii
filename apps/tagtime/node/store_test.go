@@ -433,6 +433,110 @@ func TestListTagRenames(t *testing.T) {
 	}
 }
 
+func TestPingsByTagInTimeRange(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	start := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC)
+
+	// Create pings: two with #code, one with #sleep, one outside range.
+	if err := store.SetBlurb(ctx, start.Add(1*time.Hour).Unix(), "#code working", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, start.Add(5*time.Hour).Unix(), "#code #meeting", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetBlurb(ctx, start.Add(10*time.Hour).Unix(), "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+	// Outside range
+	if err := store.SetBlurb(ctx, end.Add(1*time.Hour).Unix(), "#code", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	pings, err := store.PingsByTagInTimeRange(ctx, "code", start, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pings) != 2 {
+		t.Fatalf("got %d pings, want 2", len(pings))
+	}
+	// Should be ordered by timestamp desc.
+	if pings[0].Timestamp > pings[1].Timestamp {
+		// Good, desc order
+	} else {
+		t.Errorf("expected desc order: %d, %d", pings[0].Timestamp, pings[1].Timestamp)
+	}
+
+	// Sleep should only return 1.
+	pings, err = store.PingsByTagInTimeRange(ctx, "sleep", start, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pings) != 1 {
+		t.Errorf("got %d pings for sleep, want 1", len(pings))
+	}
+
+	// Nonexistent tag.
+	pings, err = store.PingsByTagInTimeRange(ctx, "nonexistent", start, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pings) != 0 {
+		t.Errorf("got %d pings for nonexistent, want 0", len(pings))
+	}
+}
+
+func TestTagRenamesForTag(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	if err := store.SetBlurb(ctx, 1000, "#sleep", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RenameTag(ctx, "sleep", "sleeping", "a"); err != nil {
+		t.Fatal(err)
+	}
+	// Unrelated rename.
+	if err := store.SetBlurb(ctx, 2000, "#work", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RenameTag(ctx, "work", "working", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Renames involving "sleep" (old_name=sleep).
+	renames, err := store.TagRenamesForTag(ctx, "sleep")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renames) != 1 {
+		t.Fatalf("got %d renames for sleep, want 1", len(renames))
+	}
+	if renames[0].NewName != "sleeping" {
+		t.Errorf("rename new_name = %q, want sleeping", renames[0].NewName)
+	}
+
+	// Renames involving "sleeping" (new_name=sleeping).
+	renames, err = store.TagRenamesForTag(ctx, "sleeping")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renames) != 1 {
+		t.Fatalf("got %d renames for sleeping, want 1", len(renames))
+	}
+
+	// Nonexistent tag.
+	renames, err = store.TagRenamesForTag(ctx, "nonexistent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renames) != 0 {
+		t.Errorf("got %d renames for nonexistent, want 0", len(renames))
+	}
+}
+
 func TestBatchSetBlurbMaintainsTags(t *testing.T) {
 	ctx := context.Background()
 	store := openTestStore(t)

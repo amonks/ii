@@ -80,6 +80,8 @@ func newHandler(store *Store, changes func() []PeriodChange, refreshChanges func
 	mux.HandleFunc("GET /sync/period-changes", h.handleSyncPeriodChanges)
 	mux.HandleFunc("GET /sync/status", h.handleSyncStatus)
 	mux.HandleFunc("POST /sync/now", h.handleSyncNow)
+	mux.HandleFunc("GET /tags/summary", h.handleTagsSummary)
+	mux.HandleFunc("GET /tags/{name}", h.handleTagDetail)
 	mux.HandleFunc("GET /tags", h.handleTags)
 	mux.HandleFunc("POST /tags/rename", h.handleTagRename)
 	mux.HandleFunc("GET /next-ping", h.handleNextPing)
@@ -411,6 +413,83 @@ func (h *handler) handleTagRename(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) handleTagsSummary(w http.ResponseWriter, r *http.Request) {
+	rangeParam := r.URL.Query().Get("range")
+	if rangeParam == "" {
+		rangeParam = "7d"
+	}
+
+	now := time.Now().UTC()
+	var start time.Time
+	switch rangeParam {
+	case "24h":
+		start = now.Add(-24 * time.Hour)
+	case "7d":
+		start = now.Add(-7 * 24 * time.Hour)
+	case "30d":
+		start = now.Add(-30 * 24 * time.Hour)
+	case "all":
+		changes := h.changes()
+		if len(changes) > 0 {
+			start = time.Unix(changes[0].Timestamp, 0).UTC()
+		} else {
+			start = now.Add(-30 * 24 * time.Hour)
+		}
+	default:
+		start = now.Add(-7 * 24 * time.Hour)
+	}
+	end := now
+
+	changes := h.changes()
+	pings, err := h.store.PingsInTimeRange(r.Context(), start, end)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	pingTags, err := h.store.PingTagsInTimeRange(r.Context(), start, end)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+
+	data := ComputeTagSummary(pings, changes, start, end, pingTags, 20)
+	serve.JSON(w, r, data)
+}
+
+func (h *handler) handleTagDetail(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if name == "" {
+		http.Error(w, "tag name required", 400)
+		return
+	}
+
+	renames, err := h.store.TagRenamesForTag(r.Context(), name)
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	if renames == nil {
+		renames = []TagRename{}
+	}
+
+	// Get pings for this tag across all time.
+	pings, err := h.store.PingsByTagInTimeRange(r.Context(), name,
+		time.Unix(0, 0), time.Now().Add(24*time.Hour))
+	if err != nil {
+		serve.InternalServerError(w, r, err)
+		return
+	}
+	if pings == nil {
+		pings = []Ping{}
+	}
+
+	serve.JSON(w, r, struct {
+		Name    string      `json:"name"`
+		Renames []TagRename `json:"renames"`
+		Pings   []Ping      `json:"pings"`
+	}{Name: name, Renames: renames, Pings: pings})
 }
 
 // Sync endpoints.

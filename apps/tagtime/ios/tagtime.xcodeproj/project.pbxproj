@@ -348,20 +348,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA00010A2F70000000AAAAAA /* Build configuration list for PBXProject "tagtime" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA00010B2F70000000AAAAAA /* Debug */,
-				AA00010C2F70000000AAAAAA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		AA0001062F70000000AAAAAA /* Build configuration list for PBXNativeTarget "tagtime" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA00010D2F70000000AAAAAA /* Debug */,
 				AA00010E2F70000000AAAAAA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00010A2F70000000AAAAAA /* Build configuration list for PBXProject "tagtime" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00010B2F70000000AAAAAA /* Debug */,
+				AA00010C2F70000000AAAAAA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
