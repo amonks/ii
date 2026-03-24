@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"monks.co/incrementum/internal/paths"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +53,7 @@ func getRepoPath() (string, error) {
 }
 
 // resolveWorkspaceName returns the workspace name from args or current directory.
-func resolveWorkspaceName(args []string, pool *workspace.Pool) (string, error) {
+func resolveWorkspaceName(args []string, pool *ww.Pool) (string, error) {
 	if len(args) > 0 {
 		return args[0], nil
 	}

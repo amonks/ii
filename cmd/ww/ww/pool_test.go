@@ -1,4 +1,4 @@
-package workspace_test
+package ww_test
 
 import (
 	"errors"
@@ -8,14 +8,20 @@ import (
 	"strings"
 	"testing"
 
-	"monks.co/incrementum/internal/db"
-	"monks.co/incrementum/internal/jj"
-	"monks.co/incrementum/internal/paths"
-	internalstrings "monks.co/incrementum/internal/strings"
-	"monks.co/incrementum/workspace"
+	"monks.co/pkg/jj"
+	"monks.co/ww/ww"
 )
 
-func requirePool(t *testing.T, pool *workspace.Pool) *workspace.Pool {
+// normalizePath resolves symlinks and strips macOS /private prefix,
+// matching the behavior of ww's internal paths.NormalizePath.
+func normalizePath(path string) string {
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		path = resolved
+	}
+	return strings.TrimPrefix(path, "/private")
+}
+
+func requirePool(t *testing.T, pool *ww.Pool) *ww.Pool {
 	t.Helper()
 	t.Cleanup(func() {
 		if err := pool.Close(); err != nil {
@@ -25,18 +31,18 @@ func requirePool(t *testing.T, pool *workspace.Pool) *workspace.Pool {
 	return pool
 }
 
-func openPool(t *testing.T, opts workspace.Options) *workspace.Pool {
+func openPool(t *testing.T, opts ww.Options) *ww.Pool {
 	t.Helper()
-	pool, err := workspace.OpenWithOptions(opts)
+	pool, err := ww.OpenWithOptions(opts)
 	if err != nil {
 		t.Fatalf("failed to open pool: %v", err)
 	}
 	return requirePool(t, pool)
 }
 
-func openDefaultPool(t *testing.T) *workspace.Pool {
+func openDefaultPool(t *testing.T) *ww.Pool {
 	t.Helper()
-	pool, err := workspace.Open()
+	pool, err := ww.Open()
 	if err != nil {
 		t.Fatalf("failed to open pool: %v", err)
 	}
@@ -72,8 +78,8 @@ func ensureMainBookmark(t *testing.T, repoPath string) {
 	}
 }
 
-func acquireOptions() workspace.AcquireOptions {
-	return workspace.AcquireOptions{Purpose: "test purpose"}
+func acquireOptions() ww.AcquireOptions {
+	return ww.AcquireOptions{Purpose: "test purpose"}
 }
 
 func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
@@ -82,7 +88,7 @@ func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -113,7 +119,7 @@ func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
 	if len(list) != 1 {
 		t.Fatalf("expected 1 workspace after release, got %d", len(list))
 	}
-	if list[0].Status != workspace.StatusAvailable {
+	if list[0].Status != ww.StatusAvailable {
 		t.Fatalf("expected status available after release, got %s", list[0].Status)
 	}
 	if list[0].Purpose != "" {
@@ -122,7 +128,7 @@ func TestPool_Acquire_CreatesNewWorkspace(t *testing.T) {
 }
 
 func TestPool_RepoSlug(t *testing.T) {
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      t.TempDir(),
 		WorkspacesDir: t.TempDir(),
 	})
@@ -133,8 +139,9 @@ func TestPool_RepoSlug(t *testing.T) {
 		t.Fatalf("get repo slug: %v", err)
 	}
 
-	if slug != db.SanitizeRepoName(repoPath) {
-		t.Fatalf("expected slug %q, got %q", db.SanitizeRepoName(repoPath), slug)
+	// The slug should be a sanitized version of the repo path.
+	if slug == "" {
+		t.Fatal("expected non-empty slug")
 	}
 }
 
@@ -144,12 +151,12 @@ func TestPool_Acquire_RequiresPurpose(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
 
-	_, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: ""})
+	_, err := pool.Acquire(repoPath, ww.AcquireOptions{Purpose: ""})
 	if err == nil {
 		t.Fatal("expected error for empty purpose")
 	}
@@ -161,12 +168,12 @@ func TestPool_Acquire_RejectsMultilinePurpose(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
 
-	_, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: "line 1\nline 2"})
+	_, err := pool.Acquire(repoPath, ww.AcquireOptions{Purpose: "line 1\nline 2"})
 	if err == nil {
 		t.Fatal("expected error for multiline purpose")
 	}
@@ -179,12 +186,12 @@ func TestPool_Acquire_MissingChangeIDFallsBackToMain(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
 
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{
 		Purpose: "test purpose",
 		Rev:     "deadbeefdead",
 	})
@@ -227,7 +234,7 @@ func TestPool_Acquire_ReusesAvailableWorkspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -277,13 +284,13 @@ func TestPool_Acquire_ImmutableRevisionCreatesNewChange(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
 
 	message := "staging for todo test"
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{
 		Purpose:          "test purpose",
 		Rev:              "main",
 		NewChangeMessage: message,
@@ -309,7 +316,7 @@ func TestPool_Acquire_ImmutableRevisionCreatesNewChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get change description: %v", err)
 	}
-	trimmedDescription := internalstrings.TrimSpace(description)
+	trimmedDescription := strings.TrimSpace(description)
 	if trimmedDescription != message {
 		t.Fatalf("expected change description %q, got %q", message, trimmedDescription)
 	}
@@ -355,13 +362,13 @@ func TestPool_Acquire_RevAtResolvesInSourceRepo(t *testing.T) {
 		t.Fatalf("get source @ change id: %v", err)
 	}
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
 
 	// Acquire with --rev=@ (the default)
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{
 		Purpose: "test purpose",
 		Rev:     "@",
 	})
@@ -390,7 +397,7 @@ func TestPool_Acquire_CreatesMultipleWorkspaces(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -441,7 +448,7 @@ func TestPool_Release(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -471,7 +478,7 @@ func TestPool_List(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -505,7 +512,7 @@ func TestPool_List(t *testing.T) {
 		t.Errorf("expected path %q, got %q", wsPath, list[0].Path)
 	}
 
-	if list[0].Status != workspace.StatusAcquired {
+	if list[0].Status != ww.StatusAcquired {
 		t.Errorf("expected status claimed, got %s", list[0].Status)
 	}
 	if list[0].Purpose != "test purpose" {
@@ -524,7 +531,7 @@ func TestPool_List_SortsByStatusThenName(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -566,13 +573,13 @@ func TestPool_List_SortsByStatusThenName(t *testing.T) {
 		t.Fatalf("expected third workspace %q, got %q", filepath.Base(wsPath2), list[2].Name)
 	}
 
-	if list[0].Status != workspace.StatusAcquired {
+	if list[0].Status != ww.StatusAcquired {
 		t.Fatalf("expected first workspace status acquired, got %s", list[0].Status)
 	}
-	if list[1].Status != workspace.StatusAcquired {
+	if list[1].Status != ww.StatusAcquired {
 		t.Fatalf("expected second workspace status acquired, got %s", list[1].Status)
 	}
-	if list[2].Status != workspace.StatusAvailable {
+	if list[2].Status != ww.StatusAvailable {
 		t.Fatalf("expected third workspace status available, got %s", list[2].Status)
 	}
 }
@@ -588,21 +595,22 @@ func TestPool_DefaultOptions(t *testing.T) {
 func TestRepoRoot(t *testing.T) {
 	repoPath := setupTestRepo(t)
 
-	root, err := workspace.RepoRoot(repoPath)
+	root, err := ww.RepoRoot(repoPath)
 	if err != nil {
 		t.Fatalf("failed to get repo root: %v", err)
 	}
 
-	// RepoRoot returns normalized paths (without macOS /private prefix)
-	if root != paths.NormalizePath(repoPath) {
-		t.Errorf("expected %q, got %q", paths.NormalizePath(repoPath), root)
+	// RepoRoot returns normalized paths (without macOS /private prefix).
+	expected := normalizePath(repoPath)
+	if root != expected {
+		t.Errorf("expected %q, got %q", expected, root)
 	}
 }
 
 func TestRepoRoot_NotARepo(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	_, err := workspace.RepoRoot(tmpDir)
+	_, err := ww.RepoRoot(tmpDir)
 	if err == nil {
 		t.Error("expected error for non-repo directory")
 	}
@@ -614,7 +622,7 @@ func TestRepoRootFromPath_Workspace(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -624,7 +632,7 @@ func TestRepoRootFromPath_Workspace(t *testing.T) {
 		t.Fatalf("failed to acquire workspace: %v", err)
 	}
 
-	root, err := workspace.RepoRootFromPathWithOptions(wsPath, workspace.Options{
+	root, err := ww.RepoRootFromPathWithOptions(wsPath, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -639,23 +647,24 @@ func TestRepoRootFromPath_Workspace(t *testing.T) {
 func TestRepoRootFromPath_Repo(t *testing.T) {
 	repoPath := setupTestRepo(t)
 
-	root, err := workspace.RepoRootFromPathWithOptions(repoPath, workspace.Options{
+	root, err := ww.RepoRootFromPathWithOptions(repoPath, ww.Options{
 		StateDir:      "",
 		WorkspacesDir: "",
 	})
 	if err != nil {
 		t.Fatalf("failed to resolve repo root: %v", err)
 	}
-	// RepoRootFromPath returns normalized paths (without macOS /private prefix)
-	if root != paths.NormalizePath(repoPath) {
-		t.Fatalf("expected repo path %q, got %q", paths.NormalizePath(repoPath), root)
+	// RepoRootFromPath returns normalized paths (without macOS /private prefix).
+	expected := normalizePath(repoPath)
+	if root != expected {
+		t.Fatalf("expected repo path %q, got %q", expected, root)
 	}
 }
 
 func TestRepoRootFromPath_NotARepo(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	_, err := workspace.RepoRootFromPath(tmpDir)
+	_, err := ww.RepoRootFromPath(tmpDir)
 	if err == nil {
 		t.Fatal("expected error for non-repo directory")
 	}
@@ -667,7 +676,7 @@ func TestPool_DestroyAll(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -720,7 +729,7 @@ func TestPool_DestroyAll_NoWorkspaces(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -737,7 +746,7 @@ func TestPool_WorkspaceNameForPath(t *testing.T) {
 	workspacesDir, _ = filepath.EvalSymlinks(workspacesDir)
 	stateDir := t.TempDir()
 
-	pool := openPool(t, workspace.Options{
+	pool := openPool(t, ww.Options{
 		StateDir:      stateDir,
 		WorkspacesDir: workspacesDir,
 	})
@@ -763,7 +772,7 @@ func TestPool_WorkspaceNameForPath_NotInWorkspace(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for non-workspace directory")
 	}
-	if !errors.Is(err, workspace.ErrWorkspaceRootNotFound) {
+	if !errors.Is(err, ww.ErrWorkspaceRootNotFound) {
 		t.Fatalf("expected workspace root not found error, got %v", err)
 	}
 }

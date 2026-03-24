@@ -1,9 +1,8 @@
-package workspace
+package ww
 
 import (
+	"slices"
 	"time"
-
-	"monks.co/incrementum/internal/validation"
 )
 
 // Status represents the state of a workspace.
@@ -23,7 +22,7 @@ func ValidStatuses() []Status {
 
 // IsValid returns true if the status is a known value.
 func (s Status) IsValid() bool {
-	return validation.IsValidValue(s, ValidStatuses())
+	return slices.Contains(ValidStatuses(), s)
 }
 
 // WorkspaceInfo stores information about a workspace.

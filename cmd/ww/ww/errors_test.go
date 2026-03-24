@@ -1,10 +1,10 @@
-package workspace
+package ww
 
 import (
 	"errors"
 	"testing"
 
-	"monks.co/incrementum/internal/db"
+	"monks.co/ww/ww/internal/db"
 )
 
 func TestWorkspaceErrorsAliasModel(t *testing.T) {

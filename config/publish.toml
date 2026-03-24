@@ -10,12 +10,20 @@ dir = "pkg/llm"
 dir = "pkg/agent"
 
 [[package]]
+dir = "pkg/jj"
+
+[[package]]
 dir = "pkg/set"
 
 [[package]]
 dir = "cmd/beetman"
 module_path = "monks.co/beetman"
 mirror = "github.com/amonks/beetman"
+
+[[package]]
+dir = "cmd/ww"
+module_path = "monks.co/ww"
+mirror = "github.com/amonks/ww"
 
 [[package]]
 dir = "cmd/incrementum"

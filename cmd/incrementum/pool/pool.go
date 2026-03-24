@@ -11,10 +11,10 @@ import (
 
 	"monks.co/incrementum/agent"
 	"monks.co/incrementum/internal/config"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	"monks.co/incrementum/job"
 	"monks.co/incrementum/todo"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 )
 
 type workspacePool interface {
-	Acquire(repoPath string, opts workspace.AcquireOptions) (string, error)
+	Acquire(repoPath string, opts ww.AcquireOptions) (string, error)
 	Release(wsPath string) error
 	Close() error
 }
@@ -45,7 +45,7 @@ type jobRunner interface {
 }
 
 var openWorkspacePool = func() (workspacePool, error) {
-	return workspace.Open()
+	return ww.Open()
 }
 
 var openTodoStore = func(repoPath, purpose string) (todoStore, error) {
@@ -154,7 +154,7 @@ func normalizeWorkerExit(err error) error {
 }
 
 func runWorker(ctx context.Context, pool workspacePool, opts Options) error {
-	wsPath, err := pool.Acquire(opts.RepoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(opts.RepoPath, ww.AcquireOptions{
 		Purpose: poolPurpose,
 		Rev:     "main",
 	})

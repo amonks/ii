@@ -14,6 +14,6 @@ exec $II workspace acquire --purpose config-hooks-reuse
 stdout ${WORKSPACE_PATH@R}
 exists $WORKSPACE_PATH/.created
 
--- repo/incrementum.toml --
+-- repo/ww.toml --
 [workspace]
 on-create = "touch .created"

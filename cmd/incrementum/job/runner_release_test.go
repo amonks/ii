@@ -10,7 +10,7 @@ import (
 
 	"monks.co/incrementum/internal/config"
 	"monks.co/incrementum/todo"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 )
 
 func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
@@ -57,7 +57,7 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 		},
 		Now: func() time.Time { return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC) },
 		OnStart: func(StartInfo) {
-			pool, err := workspace.Open()
+			pool, err := ww.Open()
 			if err != nil {
 				workspaceErr = err
 				return
@@ -68,7 +68,7 @@ func TestRunReleasesTodoStoreWorkspaceEarly(t *testing.T) {
 				return
 			}
 			for _, item := range items {
-				if item.Purpose == expectedPurpose && item.Status == workspace.StatusAcquired {
+				if item.Purpose == expectedPurpose && item.Status == ww.StatusAcquired {
 					workspaceErr = fmt.Errorf("todo store workspace still acquired")
 					return
 				}

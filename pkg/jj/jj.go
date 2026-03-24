@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	internalstrings "monks.co/incrementum/internal/strings"
 )
 
 // Client wraps the jj CLI.
@@ -38,14 +36,14 @@ func commandOutputString(cmd *exec.Cmd, context string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return internalstrings.TrimSpace(string(output)), nil
+	return strings.TrimSpace(string(output)), nil
 }
 
 func splitTrimmedLines(output []byte) []string {
 	lines := strings.Split(string(output), "\n")
 	trimmed := make([]string, 0, len(lines))
 	for _, line := range lines {
-		line = internalstrings.TrimSpace(line)
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
@@ -108,7 +106,7 @@ func (c *Client) WorkspaceList(repoPath string) ([]string, error) {
 	for _, line := range lines {
 		// Output format is "name: <change_id>" - extract just the name
 		parts := strings.SplitN(line, ":", 2)
-		workspaces = append(workspaces, internalstrings.TrimSpace(parts[0]))
+		workspaces = append(workspaces, strings.TrimSpace(parts[0]))
 	}
 	return workspaces, nil
 }
@@ -202,7 +200,7 @@ func (c *Client) NewChangeWithMessage(workspacePath, parentRev, message string) 
 	if err != nil {
 		return "", err
 	}
-	if internalstrings.IsBlank(message) {
+	if strings.TrimSpace(message) == "" {
 		return changeID, nil
 	}
 	if err := c.Describe(workspacePath, message); err != nil {
@@ -218,7 +216,7 @@ func (c *Client) ChangeIDAt(workspacePath, rev string) (string, error) {
 
 // ChangeIDsForRevset returns change IDs for the given revset.
 func (c *Client) ChangeIDsForRevset(workspacePath, revset string) ([]string, error) {
-	if internalstrings.IsBlank(revset) {
+	if strings.TrimSpace(revset) == "" {
 		return nil, fmt.Errorf("revset is required")
 	}
 	cmd := exec.Command("jj", "log", "--no-graph", "-r", revset, "-T", "change_id")
@@ -235,6 +233,7 @@ func (c *Client) CommitIDAt(workspacePath, rev string) (string, error) {
 	return logFieldAt(workspacePath, rev, "commit_id")
 }
 
+// DiffStat returns the diff stat between two revisions.
 func (c *Client) DiffStat(workspacePath, from, to string) (string, error) {
 	cmd := exec.Command("jj", "diff", "--from", from, "--to", to, "--stat")
 	cmd.Dir = workspacePath
@@ -305,17 +304,16 @@ func (c *Client) FileShow(repoPath, rev, path string) ([]byte, error) {
 }
 
 func isFileNotFoundOutput(output []byte) bool {
-	return internalstrings.ContainsAnyLower(string(output),
-		"no such file",
-		"no such path",
-		"path does not exist",
-		"path doesn't exist",
-	)
+	lower := strings.ToLower(string(output))
+	return strings.Contains(lower, "no such file") ||
+		strings.Contains(lower, "no such path") ||
+		strings.Contains(lower, "path does not exist") ||
+		strings.Contains(lower, "path doesn't exist")
 }
 
 // ConflictedInRange returns change IDs with conflicts in the given revset.
 func (c *Client) ConflictedInRange(workspacePath, revset string) ([]string, error) {
-	if internalstrings.IsBlank(revset) {
+	if strings.TrimSpace(revset) == "" {
 		return nil, fmt.Errorf("revset is required")
 	}
 	cmd := exec.Command("jj", "log", "--no-graph", "-r", revset, "-T", "if(conflict, change_id)")
@@ -335,8 +333,7 @@ func (c *Client) HasConflicts(workspacePath, rev string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	output = internalstrings.TrimSpace(output)
-	return output == "true", nil
+	return strings.TrimSpace(output) == "true", nil
 }
 
 // Squash squashes the current change into its parent.

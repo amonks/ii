@@ -6,17 +6,14 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/creack/pty"
 	"github.com/spf13/cobra"
-	"monks.co/incrementum/internal/db"
 	"monks.co/incrementum/internal/listflags"
-	"monks.co/incrementum/internal/paths"
 	"monks.co/incrementum/internal/ui"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 	"golang.org/x/term"
 )
 
@@ -78,36 +75,20 @@ func init() {
 	listflags.AddAllFlag(workspaceListCmd, &workspaceListAll)
 }
 
-func openWorkspacePoolAndRepoPath() (*workspace.Pool, string, error) {
+func openWorkspacePoolAndRepoPath() (*ww.Pool, string, error) {
 	repoPath, err := getRepoPath()
 	if err != nil {
 		return nil, "", err
 	}
-
-	stateDir := os.Getenv("INCREMENTUM_STATE_DIR")
-	resolvedStateDir, err := paths.ResolveWithDefault(stateDir, paths.DefaultStateDir)
+	pool, err := ww.Open()
 	if err != nil {
 		return nil, "", err
 	}
-
-	workspacesDir, err := paths.ResolveWithDefault("", paths.DefaultWorkspacesDir)
-	if err != nil {
-		return nil, "", err
-	}
-
-	dbPath := filepath.Join(resolvedStateDir, "state.db")
-	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(resolvedStateDir, "state.json")})
-	if err != nil {
-		return nil, "", err
-	}
-
-	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
-	pool.SetCloseFunc(dbStore.Close)
 	return pool, repoPath, nil
 }
 
 func runWorkspaceAcquire(cmd *cobra.Command, args []string) error {
-	if err := workspace.ValidateAcquirePurpose(workspaceAcquirePurpose); err != nil {
+	if err := ww.ValidateAcquirePurpose(workspaceAcquirePurpose); err != nil {
 		return err
 	}
 
@@ -117,7 +98,7 @@ func runWorkspaceAcquire(cmd *cobra.Command, args []string) error {
 	}
 	defer pool.Close()
 
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{
 		Rev:     workspaceAcquireRev,
 		Purpose: workspaceAcquirePurpose,
 	})
@@ -141,7 +122,7 @@ func runWorkspaceExec(cmd *cobra.Command, args []string) error {
 		purpose = "exec: " + args[0]
 	}
 
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{
 		Rev:     workspaceExecRev,
 		Purpose: purpose,
 	})
@@ -277,15 +258,15 @@ func runWorkspaceList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func filterWorkspaceList(items []workspace.Info, includeAll bool) []workspace.Info {
+func filterWorkspaceList(items []ww.Info, includeAll bool) []ww.Info {
 	if includeAll {
 		return items
 	}
 
-	filtered := make([]workspace.Info, 0, len(items))
+	filtered := make([]ww.Info, 0, len(items))
 	for _, item := range items {
 		switch item.Status {
-		case workspace.StatusAcquired, workspace.StatusAvailable:
+		case ww.StatusAcquired, ww.StatusAvailable:
 			filtered = append(filtered, item)
 		}
 	}
@@ -302,7 +283,7 @@ func runWorkspaceDestroyAll(cmd *cobra.Command, args []string) error {
 	return pool.DestroyAll(repoPath)
 }
 
-func formatWorkspaceTable(items []workspace.Info, highlight func(string) string, now time.Time) string {
+func formatWorkspaceTable(items []ww.Info, highlight func(string) string, now time.Time) string {
 	if highlight == nil {
 		highlight = func(value string) string { return value }
 	}
@@ -335,18 +316,18 @@ func formatWorkspaceTable(items []workspace.Info, highlight func(string) string,
 	return ui.FormatTable([]string{"NAME", "STATUS", "AGE", "DURATION", "REV", "PURPOSE", "PATH"}, rows)
 }
 
-func formatWorkspaceAge(item workspace.Info, now time.Time) string {
+func formatWorkspaceAge(item ww.Info, now time.Time) string {
 	if item.CreatedAt.IsZero() {
 		return "-"
 	}
 	return ui.FormatDurationShort(now.Sub(item.CreatedAt))
 }
 
-func formatWorkspaceDuration(item workspace.Info, now time.Time) string {
+func formatWorkspaceDuration(item ww.Info, now time.Time) string {
 	if item.CreatedAt.IsZero() {
 		return "-"
 	}
-	if item.Status == workspace.StatusAcquired {
+	if item.Status == ww.StatusAcquired {
 		return ui.FormatDurationShort(now.Sub(item.CreatedAt))
 	}
 	if item.UpdatedAt.IsZero() {

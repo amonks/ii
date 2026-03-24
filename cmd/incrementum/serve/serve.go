@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"monks.co/incrementum/internal/config"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/job"
 	"monks.co/incrementum/merge"
 	"monks.co/incrementum/pool"
 	"monks.co/incrementum/todo"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -30,7 +30,7 @@ const (
 )
 
 type workspacePool interface {
-	Acquire(repoPath string, opts workspace.AcquireOptions) (string, error)
+	Acquire(repoPath string, opts ww.AcquireOptions) (string, error)
 	Release(wsPath string) error
 	Close() error
 }
@@ -49,7 +49,7 @@ type jobManager interface {
 }
 
 var openWorkspacePool = func() (workspacePool, error) {
-	return workspace.Open()
+	return ww.Open()
 }
 
 var openTodoStore = func(repoPath, purpose string) (todoStore, error) {
@@ -151,7 +151,7 @@ func runMergeLoop(ctx context.Context, opts Options) error {
 		_ = pool.Close()
 	}()
 
-	wsPath, err := pool.Acquire(opts.RepoPath, workspace.AcquireOptions{
+	wsPath, err := pool.Acquire(opts.RepoPath, ww.AcquireOptions{
 		Purpose: mergeWorkspacePurpose,
 		Rev:     opts.Target,
 	})

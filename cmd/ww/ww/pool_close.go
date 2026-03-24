@@ -1,4 +1,4 @@
-package workspace
+package ww
 
 // Close closes the underlying database connection.
 func (p *Pool) Close() error {

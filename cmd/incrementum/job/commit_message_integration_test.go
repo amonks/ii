@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/todo"
 )

@@ -1,4 +1,4 @@
-// Package workspace manages a pool of jujutsu workspaces.
+// Package ww manages a pool of jujutsu workspaces.
 //
 // This package provides functionality to acquire, release, and manage jujutsu
 // workspaces from a shared pool. It's designed for scenarios where multiple
@@ -9,13 +9,13 @@
 //
 // Create a pool and acquire a workspace:
 //
-//	pool, err := workspace.Open()
+//	pool, err := ww.Open()
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
 //	defer pool.Close()
 //
-//	wsPath, err := pool.Acquire("/path/to/repo", workspace.AcquireOptions{
+//	wsPath, err := pool.Acquire("/path/to/repo", ww.AcquireOptions{
 //	    Rev: "main",
 //	    Purpose: "feature work",
 //	})
@@ -38,17 +38,17 @@
 //	}
 //	dbPath := filepath.Join(stateDir, "state.db")
 //
-//	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+//	dbStore, err := db.Open(dbPath, db.OpenOptions{})
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
 //	defer dbStore.Close()
 //
-//	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
-
+//	pool := ww.NewPool(dbStore.SqlDB(), workspacesDir)
+//
 // # Configuration
 //
-// Repositories can include an incrementum.toml or .incrementum/config.toml file to
+// Repositories can include a ww.toml or .ww/config.toml file to
 // configure workspace behavior:
 //
 //	[workspace]
@@ -56,9 +56,9 @@
 //
 // # Storage
 //
-// By default, workspaces are stored in ~/.local/share/incrementum/workspaces/ and
-// state is stored in ~/.local/state/incrementum/. These locations follow the XDG
+// By default, workspaces are stored in ~/.local/share/ww/workspaces/ and
+// state is stored in ~/.local/state/ww/. These locations follow the XDG
 // Base Directory Specification.
 //
 // The pool coordinates concurrent access through SQLite state rather than lock files.
-package workspace
+package ww

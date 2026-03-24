@@ -1,4 +1,4 @@
-package workspace
+package ww
 
 import (
 	"database/sql"
@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"monks.co/incrementum/internal/db"
-	"monks.co/incrementum/internal/paths"
+	"monks.co/ww/ww/internal/db"
+	"monks.co/ww/ww/internal/paths"
 )
 
 type Store struct {

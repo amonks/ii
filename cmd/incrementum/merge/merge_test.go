@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	jobpkg "monks.co/incrementum/job"
 )
 

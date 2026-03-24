@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"monks.co/incrementum/internal/db"
-	"monks.co/incrementum/internal/jj"
-	"monks.co/incrementum/workspace"
+	"monks.co/pkg/jj"
+	"monks.co/ww/ww"
 )
 
 func setupTestRepo(t *testing.T) string {
@@ -60,7 +60,7 @@ func TestResolveWorkspaceNameFromArgs(t *testing.T) {
 		}
 	})
 
-	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	pool := ww.NewPool(dbStore.SqlDB(), workspacesDir)
 
 	name, err := resolveWorkspaceName([]string{"ws-123"}, pool)
 	if err != nil {
@@ -86,7 +86,7 @@ func TestValidateWorkspaceAcquirePurpose(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := workspace.ValidateAcquirePurpose(tc.purpose)
+			err := ww.ValidateAcquirePurpose(tc.purpose)
 			if tc.wantErr == "" {
 				if err != nil {
 					t.Fatalf("expected no error, got %v", err)
@@ -119,10 +119,10 @@ func TestResolveWorkspaceNameFromCwd(t *testing.T) {
 		}
 	})
 
-	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	pool := ww.NewPool(dbStore.SqlDB(), workspacesDir)
 	repoPath := setupTestRepo(t)
 
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: "workspace test"})
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{Purpose: "workspace test"})
 	if err != nil {
 		t.Fatalf("failed to acquire workspace: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestResolveWorkspaceNameFromCwd_NotInWorkspace(t *testing.T) {
 		}
 	})
 
-	pool := workspace.NewPool(dbStore.SqlDB(), workspacesDir)
+	pool := ww.NewPool(dbStore.SqlDB(), workspacesDir)
 	repoPath := setupTestRepo(t)
 
 	withCwd(t, repoPath, func() {
@@ -163,7 +163,7 @@ func TestResolveWorkspaceNameFromCwd_NotInWorkspace(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error when not in a workspace")
 		}
-		if !errors.Is(err, workspace.ErrRepoPathNotFound) {
+		if !errors.Is(err, ww.ErrRepoPathNotFound) {
 			t.Fatalf("expected repo path not found error, got %v", err)
 		}
 	})

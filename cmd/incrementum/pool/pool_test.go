@@ -10,7 +10,7 @@ import (
 
 	"monks.co/incrementum/job"
 	"monks.co/incrementum/todo"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 )
 
 type fakePool struct {
@@ -18,7 +18,7 @@ type fakePool struct {
 	released bool
 }
 
-func (p *fakePool) Acquire(repoPath string, opts workspace.AcquireOptions) (string, error) {
+func (p *fakePool) Acquire(repoPath string, opts ww.AcquireOptions) (string, error) {
 	p.acquired = true
 	return "ws-1", nil
 }

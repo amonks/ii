@@ -3,17 +3,21 @@
 ## Overview
 The workspace pool manages a shared set of jujutsu workspaces for a repository. It hands out leases to callers, reuses released workspaces, and persists workspace state so multiple processes can coordinate safely.
 
+The workspace pool lives in a standalone module `monks.co/ww` (code at `cmd/ww/`), with the library package at `monks.co/ww/ww`. Incrementum imports and delegates to this module. The `ww` CLI provides standalone workspace management; `ii workspace` wraps the same library.
+
 ## Architecture
-- `workspace.Pool` is the public API for acquiring, releasing, listing, and destroying workspaces.
-- The CLI constructs `internal/db.DB` once per command and passes the SQLite handle into `workspace.NewPool`.
-- Agent session timing helpers (for age/duration display) live in `workspace` to keep the CLI thin.
-- Workspace state is persisted in SQLite via `internal/db` (default `~/.local/state/incrementum/state.db`) and the `workspace.Store` SQL helpers.
-- Workspaces live under a shared base directory (`~/.local/share/incrementum/workspaces` by default).
-- Jujutsu operations are delegated to `internal/jj` (workspace add/forget, edit, and new change).
-- Configuration hooks are loaded from the merged config (`incrementum.toml` or `.incrementum/config.toml` plus `~/.config/incrementum/config.toml`) via `internal/config` and executed on each acquire.
+- `ww.Pool` is the public API for acquiring, releasing, listing, and destroying workspaces.
+- `ww.Open()` opens the pool with default paths. `ww.NewPool(sqlDB, workspacesDir)` allows injecting an existing DB handle.
+- Workspace state is persisted in SQLite (default `~/.local/state/ww/state.db`) via `ww.Store` SQL helpers.
+- Workspaces live under a shared base directory (`~/.local/share/ww/workspaces` by default).
+- Jujutsu operations are delegated to `monks.co/pkg/jj` (shared module at `pkg/jj/`): workspace add/forget, edit, and new change.
+- Configuration hooks are loaded from `ww.toml` or `.ww/config.toml` (plus global `~/.config/ww/config.toml`) and executed on each acquire.
+
+### Migration from incrementum
+On first run, if `~/.local/state/ww/state.db` is fresh (no repos) and `~/.local/state/incrementum/state.db` exists, ww auto-migrates repos and workspaces rows and moves workspace directories from `~/.local/share/incrementum/workspaces/` to `~/.local/share/ww/workspaces/`. Migration only runs with default paths (not when custom StateDir/WorkspacesDir are provided).
 
 ## State Model
-- Workspace state is managed by `workspace.Store`, which uses SQLite tables (`repos`, `workspaces`). See [internal-db.md](./internal-db.md) for connection behavior. Legacy `state.json` is imported once on first open.
+- Workspace state is managed by `ww.Store`, which uses SQLite tables (`repos`, `workspaces`).
 - Workspace-specific state includes: path, repo name, purpose, revision, status, created/updated timestamps, acquisition PID/time, and provisioning status.
 - Workspace names are sequential `ws-###` values allocated per repo.
 
@@ -28,7 +32,7 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 - Once a workspace is selected, the requested revision is resolved to a change ID in the **source repository** context. This is necessary because symbolic refs like `@` have different meanings in the workspace vs source repo. Then a new change is created with `jj new <resolved-rev>` to ensure the workspace is always checked out to a fresh change based on the expected parent.
 - If the requested revision is missing and looks like a change ID, the pool retries with `@` (resolved in the source repo) as the parent.
 - When `NewChangeMessage` is provided, it is used as the description for that newly created change.
-- `incrementum.toml` or `.incrementum/config.toml` is loaded from the source repo (merged with global config) and the workspace `on-create` hook runs for every acquire (including reuse).
+- `ww.toml` or `.ww/config.toml` is loaded from the source repo (merged with global config) and the workspace `on-create` hook runs for every acquire (including reuse).
 - When `SkipHooks` is set, hook execution and provisioning marking are suppressed entirely. This is used by the todo store, which immediately edits to an orphan bookmark where main-tree hooks would fail.
 - A workspace is marked `Provisioned` once the hooks run successfully.
 
@@ -54,8 +58,13 @@ The workspace pool manages a shared set of jujutsu workspaces for a repository. 
 - All paths stored in SQLite and returned by these functions are normalized to ensure consistent comparisons regardless of whether macOS-specific prefixes are present.
 
 ## CLI Commands
-- `ii workspace acquire [--rev <rev>] --purpose <text>`: acquire or create a workspace; prints the workspace path.
-- `ii workspace release [name...]`: release one or more workspaces by name (or the current workspace when no names provided); prints "released workspace <name>" for each.
-- `ii workspace list [--json] [--all]`: list workspaces for the current repo.
-- `ii workspace exec [--rev <rev>] [--purpose <text>] -- <command> [args...]`: acquire a workspace, run a command in it via a PTY, and release it when done. If `--purpose` is omitted, defaults to `"exec: <command>"`. Stdin/stdout/stderr are wired through a PTY so interactive programs (shells, editors) work correctly. The child's exit code is propagated.
-- `ii workspace destroy-all`: remove all workspaces for the current repo.
+
+### Standalone (`ww`)
+- `ww acquire [--rev <rev>] --purpose <text>`: acquire or create a workspace; prints the workspace path.
+- `ww release [name...]`: release one or more workspaces.
+- `ww list [--json] [--all]`: list workspaces for the current repo.
+- `ww exec [--rev <rev>] [--purpose <text>] -- <command> [args...]`: acquire, run command in PTY, release.
+- `ww destroy-all`: remove all workspaces for the current repo.
+
+### Via incrementum (`ii workspace`)
+Same commands as above, accessed as `ii workspace <verb>`. Delegates to the `ww` library.

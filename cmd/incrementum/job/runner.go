@@ -14,7 +14,7 @@ import (
 	"monks.co/incrementum/internal/agents"
 	"monks.co/incrementum/internal/config"
 	internalagent "monks.co/pkg/agent"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/todo"
 )

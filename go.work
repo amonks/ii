@@ -45,6 +45,7 @@ use (
 	./cmd/rootsync
 	./cmd/run
 	./cmd/taskmaker
+	./cmd/ww
 	./cmd/zone2terraform
 	./pkg/agent
 	./pkg/aranet4
@@ -71,6 +72,7 @@ use (
 	./pkg/gzipserver
 	./pkg/hardmemo
 	./pkg/image
+	./pkg/jj
 	./pkg/lastfm
 	./pkg/letterboxd
 	./pkg/llm

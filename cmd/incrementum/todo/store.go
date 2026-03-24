@@ -18,10 +18,10 @@ import (
 
 	"monks.co/incrementum/internal/db"
 	internalids "monks.co/incrementum/internal/ids"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	"monks.co/incrementum/internal/paths"
 	internalstrings "monks.co/incrementum/internal/strings"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 	"golang.org/x/term"
 )
 
@@ -74,7 +74,7 @@ var jsonlDependencyBufPool = sync.Pool{
 type Store struct {
 	repoPath  string
 	wsPath    string
-	pool      *workspace.Pool
+	pool      *ww.Pool
 	snapshot  Snapshotter
 	prompter  Prompter
 	client    *jj.Client
@@ -193,7 +193,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		return nil, err
 	}
 
-	pool, err := workspace.Open()
+	pool, err := ww.Open()
 	if err != nil {
 		releaseTodoLock(lockFile)
 		return nil, fmt.Errorf("open workspace pool: %w", err)
@@ -201,7 +201,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 
 	// Acquire a workspace. If the bookmark doesn't exist yet, we'll create
 	// the store in this workspace, then edit to it.
-	wsPath, err := pool.Acquire(repoPath, workspace.AcquireOptions{Purpose: purpose, SkipHooks: true})
+	wsPath, err := pool.Acquire(repoPath, ww.AcquireOptions{Purpose: purpose, SkipHooks: true})
 	if err != nil {
 		releaseTodoLock(lockFile)
 		return nil, fmt.Errorf("acquire workspace: %w", err)

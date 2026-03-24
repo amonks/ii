@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"monks.co/incrementum/habit"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	"monks.co/incrementum/internal/paths"
 	internalstrings "monks.co/incrementum/internal/strings"
 	"monks.co/incrementum/internal/validation"

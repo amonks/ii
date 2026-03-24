@@ -1,9 +1,9 @@
-package workspace
+package ww
 
 import (
 	"errors"
 
-	"monks.co/incrementum/internal/db"
+	"monks.co/ww/ww/internal/db"
 )
 
 var (

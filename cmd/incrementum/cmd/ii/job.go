@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	"monks.co/incrementum/internal/paths"
 
 	"monks.co/incrementum/internal/listflags"

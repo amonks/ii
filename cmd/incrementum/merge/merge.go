@@ -6,7 +6,7 @@ import (
 	"time"
 
 	internalagent "monks.co/pkg/agent"
-	"monks.co/incrementum/internal/jj"
+	"monks.co/pkg/jj"
 	"monks.co/incrementum/internal/paths"
 	internalstrings "monks.co/incrementum/internal/strings"
 	jobpkg "monks.co/incrementum/job"

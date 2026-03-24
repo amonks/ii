@@ -1,4 +1,4 @@
-package workspace
+package ww
 
 import (
 	"database/sql"
@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"monks.co/incrementum/internal/config"
-	"monks.co/incrementum/internal/db"
-	"monks.co/incrementum/internal/jj"
-	"monks.co/incrementum/internal/paths"
-	internalstrings "monks.co/incrementum/internal/strings"
+	"monks.co/pkg/jj"
+	"monks.co/ww/ww/internal/config"
+	"monks.co/ww/ww/internal/db"
+	"monks.co/ww/ww/internal/paths"
 )
 
 // Pool manages a pool of jujutsu workspaces.
@@ -31,17 +30,17 @@ type Pool struct {
 // Options configures a workspace pool.
 type Options struct {
 	// StateDir is the directory where the SQLite database is stored.
-	// Defaults to ~/.local/state/incrementum if empty.
+	// Defaults to ~/.local/state/ww if empty.
 	StateDir string
 
 	// WorkspacesDir is the directory where workspaces are created.
-	// Defaults to ~/.local/share/incrementum/workspaces if empty.
+	// Defaults to ~/.local/share/ww/workspaces if empty.
 	WorkspacesDir string
 }
 
 // Open creates a new Pool with default options.
-// State is stored in ~/.local/state/incrementum and workspaces in
-// ~/.local/share/incrementum/workspaces.
+// State is stored in ~/.local/state/ww and workspaces in
+// ~/.local/share/ww/workspaces.
 func Open() (*Pool, error) {
 	return OpenWithOptions(Options{})
 }
@@ -63,9 +62,17 @@ func OpenWithOptions(opts Options) (*Pool, error) {
 		return nil, err
 	}
 
-	dbStore, err := db.Open(dbPath, db.OpenOptions{LegacyJSONPath: filepath.Join(stateDir, "state.json")})
+	dbStore, err := db.Open(dbPath, db.OpenOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	// Attempt auto-migration from incrementum's state database,
+	// but only when using default paths (not custom test dirs).
+	if opts.StateDir == "" && opts.WorkspacesDir == "" {
+		if err := migrateFromIncrementum(dbStore.SqlDB(), workspacesDir); err != nil {
+			fmt.Fprintf(os.Stderr, "ww: warning: incrementum migration failed: %v\n", err)
+		}
 	}
 
 	pool := NewPool(dbStore.SqlDB(), workspacesDir)
@@ -120,7 +127,7 @@ type AcquireOptions struct {
 
 // ValidateAcquirePurpose ensures the purpose is present and single-line.
 func ValidateAcquirePurpose(purpose string) error {
-	if internalstrings.IsBlank(purpose) {
+	if strings.TrimSpace(purpose) == "" {
 		return fmt.Errorf("purpose is required")
 	}
 	if strings.ContainsAny(purpose, "\r\n") {
@@ -138,9 +145,8 @@ func ValidateAcquirePurpose(purpose string) error {
 // The returned path is the root directory of the acquired workspace.
 // Call Release when done to return the workspace to the pool.
 //
-// If the repository contains an incrementum.toml or .incrementum/config.toml
+// If the repository contains a ww.toml or .ww/config.toml
 // configuration file, the on-create hooks run on every acquire.
-
 func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 	// Apply defaults
 	if opts.Rev == "" {
@@ -226,7 +232,7 @@ func (p *Pool) Acquire(repoPath string, opts AcquireOptions) (string, error) {
 	}
 
 	newChange := func(parentRev string) (string, error) {
-		if !internalstrings.IsBlank(opts.NewChangeMessage) {
+		if strings.TrimSpace(opts.NewChangeMessage) != "" {
 			return p.jj.NewChangeWithMessage(wsPath, parentRev, opts.NewChangeMessage)
 		}
 		return p.jj.NewChange(wsPath, parentRev)
@@ -348,7 +354,6 @@ type Info struct {
 // List returns information about all workspaces for the given repository.
 //
 // The returned slice includes both available and acquired workspaces.
-
 func (p *Pool) List(repoPath string) ([]Info, error) {
 	repoName, err := p.store.GetOrCreateRepoName(repoPath)
 	if err != nil {
@@ -406,7 +411,8 @@ func isMissingRevisionError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return internalstrings.ContainsAnyLower(err.Error(), "doesn't exist", "does not exist")
+	lower := strings.ToLower(err.Error())
+	return strings.Contains(lower, "doesn't exist") || strings.Contains(lower, "does not exist")
 }
 
 func looksLikeChangeID(rev string) bool {
@@ -549,5 +555,87 @@ func (p *Pool) DestroyAll(repoPath string) error {
 		return errs[0]
 	}
 
+	return nil
+}
+
+// migrateFromIncrementum migrates workspace state from the incrementum database
+// if it exists and the ww database is fresh (has 0 repos).
+func migrateFromIncrementum(wwDB *sql.DB, wwWorkspacesDir string) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil // silently skip
+	}
+	incrDBPath := filepath.Join(home, ".local", "state", "incrementum", "state.db")
+	if _, err := os.Stat(incrDBPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Check if ww DB already has data
+	var count int
+	if err := wwDB.QueryRow("SELECT COUNT(*) FROM repos").Scan(&count); err != nil {
+		return nil
+	}
+	if count > 0 {
+		return nil // already has data, skip migration
+	}
+
+	incrDB, err := sql.Open("sqlite", incrDBPath)
+	if err != nil {
+		return fmt.Errorf("open incrementum db: %w", err)
+	}
+	defer incrDB.Close()
+
+	// Copy repos
+	rows, err := incrDB.Query("SELECT name, source_path FROM repos")
+	if err != nil {
+		return fmt.Errorf("read incrementum repos: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var name, sourcePath string
+		if err := rows.Scan(&name, &sourcePath); err != nil {
+			return fmt.Errorf("scan repo: %w", err)
+		}
+		if _, err := wwDB.Exec("INSERT OR IGNORE INTO repos (name, source_path) VALUES (?, ?)", name, sourcePath); err != nil {
+			return fmt.Errorf("insert repo: %w", err)
+		}
+	}
+
+	// Copy workspaces, updating paths
+	incrWorkspacesDir := filepath.Join(home, ".local", "share", "incrementum", "workspaces")
+	wsRows, err := incrDB.Query("SELECT repo, name, path, purpose, rev, status, acquired_by_pid, provisioned, created_at, updated_at, acquired_at FROM workspaces")
+	if err != nil {
+		return fmt.Errorf("read incrementum workspaces: %w", err)
+	}
+	defer wsRows.Close()
+	for wsRows.Next() {
+		var repo, name, path, purpose, rev, status, createdAt, updatedAt, acquiredAt string
+		var acquiredByPID sql.NullInt64
+		var provisioned int
+		if err := wsRows.Scan(&repo, &name, &path, &purpose, &rev, &status, &acquiredByPID, &provisioned, &createdAt, &updatedAt, &acquiredAt); err != nil {
+			return fmt.Errorf("scan workspace: %w", err)
+		}
+		// Update path from incrementum dir to ww dir
+		if strings.HasPrefix(path, incrWorkspacesDir) {
+			path = wwWorkspacesDir + path[len(incrWorkspacesDir):]
+		}
+		if _, err := wwDB.Exec("INSERT OR IGNORE INTO workspaces (repo, name, path, purpose, rev, status, acquired_by_pid, provisioned, created_at, updated_at, acquired_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			repo, name, path, purpose, rev, status, acquiredByPID, provisioned, createdAt, updatedAt, acquiredAt); err != nil {
+			return fmt.Errorf("insert workspace: %w", err)
+		}
+	}
+
+	// Move workspace directories
+	if _, err := os.Stat(incrWorkspacesDir); err == nil {
+		if err := os.MkdirAll(filepath.Dir(wwWorkspacesDir), 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "ww: warning: could not create workspace dir: %v\n", err)
+		} else if err := os.Rename(incrWorkspacesDir, wwWorkspacesDir); err != nil {
+			fmt.Fprintf(os.Stderr, "ww: warning: could not move workspace directories: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "ww: migrated workspaces from %s to %s\n", incrWorkspacesDir, wwWorkspacesDir)
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "ww: migrated workspace state from incrementum\n")
 	return nil
 }

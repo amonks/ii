@@ -6,22 +6,22 @@ import (
 	"time"
 
 	"monks.co/incrementum/internal/ui"
-	"monks.co/incrementum/workspace"
+	"monks.co/ww/ww"
 )
 
 func TestFormatWorkspaceTablePreservesAlignmentWithANSI(t *testing.T) {
-	items := []workspace.Info{
+	items := []ww.Info{
 		{
 			Name:    "ws-001",
 			Path:    "/tmp/ws-001",
 			Purpose: "feature work",
-			Status:  workspace.StatusAvailable,
+			Status:  ww.StatusAvailable,
 		},
 		{
 			Name:    "ws-010",
 			Path:    "/tmp/ws-010",
 			Purpose: "bugfix",
-			Status:  workspace.StatusAcquired,
+			Status:  ww.StatusAcquired,
 		},
 	}
 
@@ -39,12 +39,12 @@ func TestFormatWorkspaceTablePreservesAlignmentWithANSI(t *testing.T) {
 
 func TestFormatWorkspaceTableTruncatesLongPaths(t *testing.T) {
 	longPath := "/tmp/" + strings.Repeat("a", 60)
-	items := []workspace.Info{
+	items := []ww.Info{
 		{
 			Name:    "ws-002",
 			Path:    longPath,
 			Purpose: "refactor",
-			Status:  workspace.StatusAvailable,
+			Status:  ww.StatusAvailable,
 		},
 	}
 
@@ -63,12 +63,12 @@ func TestFormatWorkspaceTableTruncatesLongPaths(t *testing.T) {
 func TestFormatWorkspaceTableShowsAcquiredAge(t *testing.T) {
 	now := time.Date(2026, 1, 23, 2, 0, 0, 0, time.UTC)
 	createdAt := now.Add(-2 * time.Hour)
-	items := []workspace.Info{
+	items := []ww.Info{
 		{
 			Name:      "ws-003",
 			Path:      "/tmp/ws-003",
 			Purpose:   "age-check",
-			Status:    workspace.StatusAcquired,
+			Status:    ww.StatusAcquired,
 			CreatedAt: createdAt,
 		},
 	}
@@ -84,19 +84,19 @@ func TestFormatWorkspaceTableShowsDurationForActiveAndAvailable(t *testing.T) {
 	now := time.Date(2026, 1, 23, 4, 0, 0, 0, time.UTC)
 	createdAt := now.Add(-90 * time.Minute)
 	updatedAt := now.Add(-30 * time.Minute)
-	items := []workspace.Info{
+	items := []ww.Info{
 		{
 			Name:      "ws-005",
 			Path:      "/tmp/ws-005",
 			Purpose:   "active",
-			Status:    workspace.StatusAcquired,
+			Status:    ww.StatusAcquired,
 			CreatedAt: createdAt,
 		},
 		{
 			Name:      "ws-006",
 			Path:      "/tmp/ws-006",
 			Purpose:   "available",
-			Status:    workspace.StatusAvailable,
+			Status:    ww.StatusAvailable,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 		},
@@ -115,12 +115,12 @@ func TestFormatWorkspaceTableShowsDurationForActiveAndAvailable(t *testing.T) {
 
 func TestFormatWorkspaceTableShowsRevision(t *testing.T) {
 	now := time.Date(2026, 1, 23, 3, 0, 0, 0, time.UTC)
-	items := []workspace.Info{
+	items := []ww.Info{
 		{
 			Name:    "ws-004",
 			Path:    "/tmp/ws-004",
 			Purpose: "rev-check",
-			Status:  workspace.StatusAcquired,
+			Status:  ww.StatusAcquired,
 			Rev:     "main~2",
 		},
 	}
@@ -132,9 +132,9 @@ func TestFormatWorkspaceTableShowsRevision(t *testing.T) {
 }
 
 func TestFilterWorkspaceListDefaultsToAvailableAndAcquired(t *testing.T) {
-	items := []workspace.Info{
-		{Name: "ws-001", Status: workspace.StatusAvailable},
-		{Name: "ws-002", Status: workspace.StatusAcquired},
+	items := []ww.Info{
+		{Name: "ws-001", Status: ww.StatusAvailable},
+		{Name: "ws-002", Status: ww.StatusAcquired},
 	}
 
 	filtered := filterWorkspaceList(items, false)
@@ -150,9 +150,9 @@ func TestFilterWorkspaceListDefaultsToAvailableAndAcquired(t *testing.T) {
 }
 
 func TestFilterWorkspaceListWithAll(t *testing.T) {
-	items := []workspace.Info{
-		{Name: "ws-001", Status: workspace.StatusAvailable},
-		{Name: "ws-002", Status: workspace.StatusAcquired},
+	items := []ww.Info{
+		{Name: "ws-001", Status: ww.StatusAvailable},
+		{Name: "ws-002", Status: ww.StatusAcquired},
 	}
 
 	filtered := filterWorkspaceList(items, true)

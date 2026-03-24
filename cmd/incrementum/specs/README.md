@@ -43,7 +43,7 @@
 
 | Spec                               | Code                        | Purpose                                                                                                      |
 | ---------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| [workspace.md](./workspace.md)     | [workspace/](../workspace/) | Jujutsu workspace pool: acquire a workspace to do some isolated work, then release it                        |
+| [workspace.md](./workspace.md)     | [cmd/ww/ww/](../../ww/ww/) | Jujutsu workspace pool (standalone module `monks.co/ww`): acquire, release, list workspaces                  |
 | [todo.md](./todo.md)               | [todo/](../todo/)           | Task tracking: command-line JIRA with TODOs stored in a special branch                                       |
 | [habit.md](./habit.md)             | [habit/](../habit/)         | Habit management: ongoing improvement practices stored as version-controlled instruction documents           |
 | [cli.md](./cli.md)                 | [cmd/ii/](../cmd/ii/)       | CLI conventions and behavior notes                                                                             |
@@ -67,7 +67,7 @@
 | [internal-config.md](./internal-config.md)             | [internal/config/](../internal/config/)             | Load project/global configuration and run hook scripts      |
 | [internal-editor.md](./internal-editor.md)             | [internal/editor/](../internal/editor/)             | `$EDITOR` integration and todo TOML editing flow     |
 | [internal-ids.md](./internal-ids.md)                   | [internal/ids/](../internal/ids/)                   | Unique prefix length calculation for IDs             |
-| [internal-jj.md](./internal-jj.md)                     | [internal/jj/](../internal/jj/)                     | Go wrapper around jj CLI commands                    |
+| [internal-jj.md](./internal-jj.md)                     | [pkg/jj/](../../pkg/jj/)                            | Go wrapper around jj CLI commands (standalone module `monks.co/pkg/jj`) |
 | [internal-listflags.md](./internal-listflags.md)       | [internal/listflags/](../internal/listflags/)       | Shared Cobra list flags                              |
 | [internal-llm.md](./internal-llm.md)                   | ~~internal/llm/~~ → [pkg/llm/](../../pkg/llm/)      | Core LLM abstraction without persistence (moved to standalone module `monks.co/pkg/llm`) |
 | [internal-markdown.md](./internal-markdown.md)         | [internal/markdown/](../internal/markdown/)         | Markdown rendering helpers for terminal output       |
