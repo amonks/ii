@@ -433,6 +433,10 @@ func (h *handler) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 				serve.InternalServerError(w, r, err)
 				return
 			}
+			if err := h.store.ApplyAllRenamesForPing(r.Context(), p.Timestamp); err != nil {
+				serve.InternalServerError(w, r, err)
+				return
+			}
 		}
 	}
 	for _, c := range payload.PeriodChanges {

@@ -140,6 +140,9 @@ func (s *Syncer) Pull(ctx context.Context) (int, error) {
 			if err := s.store.ensureTagsFromBlurb(ctx, p.Timestamp, p.Blurb); err != nil {
 				return 0, fmt.Errorf("ensuring tags from pulled ping: %w", err)
 			}
+			if err := s.store.ApplyAllRenamesForPing(ctx, p.Timestamp); err != nil {
+				return 0, fmt.Errorf("applying renames to pulled ping: %w", err)
+			}
 		}
 	}
 

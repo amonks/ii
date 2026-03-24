@@ -507,6 +507,15 @@ func (s *Store) AddTagRename(ctx context.Context, r TagRename) error {
 // Pings with timestamp <= renamed_at have their tag updated.
 // Also ensures the new tag exists in the tags table.
 func (s *Store) ApplyTagRename(ctx context.Context, r TagRename) error {
+	// Remove old_name entries where new_name already exists for the same ping
+	// (can happen when ensureTagsFromBlurb re-derives tags after a rename).
+	if _, err := s.db.ExecContext(ctx,
+		`DELETE FROM ping_tags WHERE tag_name = ? AND ping_timestamp <= ?
+		 AND ping_timestamp IN (SELECT ping_timestamp FROM ping_tags WHERE tag_name = ? AND ping_timestamp <= ?)`,
+		r.OldName, r.RenamedAt, r.NewName, r.RenamedAt); err != nil {
+		return err
+	}
+	// Rename remaining old_name entries.
 	if _, err := s.db.ExecContext(ctx,
 		`UPDATE ping_tags SET tag_name = ? WHERE tag_name = ? AND ping_timestamp <= ?`,
 		r.NewName, r.OldName, r.RenamedAt); err != nil {
@@ -555,6 +564,14 @@ func (s *Store) ApplyAllRenamesForPing(ctx context.Context, pingTimestamp int64)
 	for _, r := range renames {
 		if r.RenamedAt >= pingTimestamp {
 			// This rename applies to this ping (rename happened after ping was created).
+			// Delete old_name if new_name already exists for this ping.
+			if _, err := s.db.ExecContext(ctx,
+				`DELETE FROM ping_tags WHERE tag_name = ? AND ping_timestamp = ?
+				 AND EXISTS (SELECT 1 FROM ping_tags WHERE tag_name = ? AND ping_timestamp = ?)`,
+				r.OldName, pingTimestamp, r.NewName, pingTimestamp); err != nil {
+				return err
+			}
+			// Rename remaining.
 			if _, err := s.db.ExecContext(ctx,
 				`UPDATE ping_tags SET tag_name = ? WHERE tag_name = ? AND ping_timestamp = ?`,
 				r.NewName, r.OldName, pingTimestamp); err != nil {

@@ -49,6 +49,10 @@ func newTestSyncPair(t *testing.T) (client *Syncer, clientStore, serverStore *St
 					http.Error(w, err.Error(), 500)
 					return
 				}
+				if err := serverStore.ApplyAllRenamesForPing(r.Context(), p.Timestamp); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
 			}
 		}
 		for _, c := range payload.PeriodChanges {
@@ -323,6 +327,10 @@ func TestSyncLateClientPingsVisible(t *testing.T) {
 					http.Error(w, err.Error(), 500)
 					return
 				}
+				if err := serverStore.ApplyAllRenamesForPing(r.Context(), p.Timestamp); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
 			}
 		}
 		for _, c := range payload.PeriodChanges {
@@ -590,5 +598,189 @@ func TestSyncTagRenameTimeScoped(t *testing.T) {
 	}
 	if len(tags) != 1 || tags[0] != "sleep" {
 		t.Errorf("new ping TagsForPing(9999999999) = %v, want [sleep]", tags)
+	}
+}
+
+// TestSyncRenameThenLateArrival tests the offline rename scenario:
+// - A and B are offline
+// - A logs #sleep at T1, B logs #sleep at T2
+// - A renames #sleep → #sleeping at T3
+// - A logs #sleep at T4
+// - After sync: T1 and T2 should be #sleeping, T4 should be #sleep
+// This verifies that the server applies existing renames to late-arriving pings.
+func TestSyncRenameThenLateArrival(t *testing.T) {
+	ctx := context.Background()
+
+	// We need two clients and a server. Use a slightly different setup
+	// than newTestSyncPair so we can have two independent clients.
+	serverStore, err := OpenStore(ctx, filepath.Join(t.TempDir(), "server.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { serverStore.Close() })
+
+	clientAStore, err := OpenStore(ctx, filepath.Join(t.TempDir(), "clientA.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { clientAStore.Close() })
+
+	clientBStore, err := OpenStore(ctx, filepath.Join(t.TempDir(), "clientB.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { clientBStore.Close() })
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /sync/push", func(w http.ResponseWriter, r *http.Request) {
+		var payload syncPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		now := time.Now().UnixNano()
+		for _, p := range payload.Pings {
+			p.ReceivedAt = now
+			if err := serverStore.UpsertPing(r.Context(), p); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if p.Blurb != "" {
+				if err := serverStore.ensureTagsFromBlurb(r.Context(), p.Timestamp, p.Blurb); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+				if err := serverStore.ApplyAllRenamesForPing(r.Context(), p.Timestamp); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+			}
+		}
+		for _, c := range payload.PeriodChanges {
+			if err := serverStore.AddPeriodChange(r.Context(), c); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+		for _, rename := range payload.TagRenames {
+			if err := serverStore.AddTagRename(r.Context(), rename); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if err := serverStore.ApplyTagRename(r.Context(), rename); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("GET /sync/pull", func(w http.ResponseWriter, r *http.Request) {
+		sinceStr := r.URL.Query().Get("since")
+		since, _ := strconv.ParseInt(sinceStr, 10, 64)
+		pings, err := serverStore.PingsReceivedAfter(r.Context(), since, 1000)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		changes, err := serverStore.ListPeriodChanges(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		renames, err := serverStore.ListTagRenames(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(syncPayload{Pings: pings, PeriodChanges: changes, TagRenames: renames})
+	})
+	ts := httptest.NewServer(mux)
+	t.Cleanup(ts.Close)
+
+	syncerA := NewSyncer(clientAStore, ts.URL, "A", http.DefaultClient, nil)
+	syncerB := NewSyncer(clientBStore, ts.URL, "B", http.DefaultClient, nil)
+
+	// Both offline: A logs #sleep at T=1000, B logs #sleep at T=2000.
+	if err := clientAStore.SetBlurb(ctx, 1000, "#sleep", "A"); err != nil {
+		t.Fatal(err)
+	}
+	if err := clientBStore.SetBlurb(ctx, 2000, "#sleep", "B"); err != nil {
+		t.Fatal(err)
+	}
+
+	// A renames #sleep → #sleeping at T3 (current time).
+	if err := clientAStore.RenameTag(ctx, "sleep", "sleeping", "A"); err != nil {
+		t.Fatal(err)
+	}
+
+	// A logs #sleep again at T=9999999999 (far future, after rename).
+	if err := clientAStore.SetBlurb(ctx, 9999999999, "#sleep", "A"); err != nil {
+		t.Fatal(err)
+	}
+
+	// A syncs first (push + pull).
+	if _, err := syncerA.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := syncerA.Pull(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// B syncs (push + pull). B's ping T=2000 arrives on server after rename.
+	if _, err := syncerB.Push(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := syncerB.Pull(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify server state: T1 and T2 should be "sleeping", T4 should be "sleep".
+	serverTagsT1, err := serverStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(serverTagsT1) != 1 || serverTagsT1[0] != "sleeping" {
+		t.Errorf("server TagsForPing(1000) = %v, want [sleeping]", serverTagsT1)
+	}
+
+	serverTagsT2, err := serverStore.TagsForPing(ctx, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(serverTagsT2) != 1 || serverTagsT2[0] != "sleeping" {
+		t.Errorf("server TagsForPing(2000) = %v, want [sleeping]", serverTagsT2)
+	}
+
+	serverTagsT4, err := serverStore.TagsForPing(ctx, 9999999999)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(serverTagsT4) != 1 || serverTagsT4[0] != "sleep" {
+		t.Errorf("server TagsForPing(9999999999) = %v, want [sleep]", serverTagsT4)
+	}
+
+	// Verify client B state: should also be correct after pull.
+	clientBTagsT1, err := clientBStore.TagsForPing(ctx, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(clientBTagsT1) != 1 || clientBTagsT1[0] != "sleeping" {
+		t.Errorf("clientB TagsForPing(1000) = %v, want [sleeping]", clientBTagsT1)
+	}
+
+	clientBTagsT2, err := clientBStore.TagsForPing(ctx, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(clientBTagsT2) != 1 || clientBTagsT2[0] != "sleeping" {
+		t.Errorf("clientB TagsForPing(2000) = %v, want [sleeping]", clientBTagsT2)
+	}
+
+	clientBTagsT4, err := clientBStore.TagsForPing(ctx, 9999999999)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(clientBTagsT4) != 1 || clientBTagsT4[0] != "sleep" {
+		t.Errorf("clientB TagsForPing(9999999999) = %v, want [sleep]", clientBTagsT4)
 	}
 }
