@@ -14,11 +14,11 @@ require (
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.41.0
 	modernc.org/sqlite v1.47.0
-	monks.co/pkg/agent v0.0.1
-	monks.co/pkg/jj v0.0.1
-	monks.co/pkg/llm v0.0.1
-	monks.co/pkg/migrate v0.0.3
-	monks.co/ww v0.0.1
+	monks.co/pkg/agent v0.0.2
+	monks.co/pkg/jj v0.0.2
+	monks.co/pkg/llm v0.0.2
+	monks.co/pkg/migrate v0.0.4
+	monks.co/ww v0.0.2
 )
 
 require (
