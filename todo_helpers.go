@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
+	"monks.co/ii/internal/editor"
 	internalstrings "monks.co/ii/internal/strings"
 	"monks.co/ii/todo"
 	"github.com/spf13/cobra"
@@ -92,4 +94,14 @@ func resolveDescriptionFlag(cmd *cobra.Command, description *string, reader io.R
 
 func hasTodoCreateFlags(cmd *cobra.Command) bool {
 	return hasChangedFlags(cmd, "title", "type", "priority", "description", "implementation-model", "code-review-model", "project-review-model", "deps")
+}
+
+// printParsedTodoForRecovery prints the user's edited todo content to stderr
+// so they can recover it when a subsequent operation (store open, create) fails.
+func printParsedTodoForRecovery(parsed *editor.ParsedTodo) {
+	content, err := editor.RenderTodoTOML(parsed.ToTodoData())
+	if err != nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "\nYour edited content (for recovery):\n%s", content)
 }

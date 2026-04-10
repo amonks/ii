@@ -318,6 +318,7 @@ func runTodoCreate(cmd *cobra.Command, args []string) error {
 
 		store, err := openTodoStore(cmd, args)
 		if err != nil {
+			printParsedTodoForRecovery(parsed)
 			return err
 		}
 		defer store.Release()
@@ -327,6 +328,7 @@ func runTodoCreate(cmd *cobra.Command, args []string) error {
 
 		created, err := store.Create(parsed.Title, opts)
 		if err != nil {
+			printParsedTodoForRecovery(parsed)
 			return err
 		}
 

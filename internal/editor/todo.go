@@ -277,6 +277,23 @@ func EditTodoWithDataRetry(data TodoData, prompter todo.Prompter) (*ParsedTodo, 
 	}
 }
 
+// ToTodoData converts a ParsedTodo back to TodoData for re-rendering.
+func (p *ParsedTodo) ToTodoData() TodoData {
+	data := TodoData{
+		Title:               p.Title,
+		Type:                p.Type,
+		Priority:            p.Priority,
+		Description:         p.Description,
+		ImplementationModel: p.ImplementationModel,
+		CodeReviewModel:     p.CodeReviewModel,
+		ProjectReviewModel:  p.ProjectReviewModel,
+	}
+	if p.Status != nil {
+		data.Status = *p.Status
+	}
+	return data
+}
+
 // ToCreateOptions converts a ParsedTodo to todo.CreateOptions.
 func (p *ParsedTodo) ToCreateOptions() todo.CreateOptions {
 	opts := todo.CreateOptions{

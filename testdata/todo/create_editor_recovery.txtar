@@ -1,0 +1,31 @@
+# When the editor succeeds but a subsequent operation fails,
+# the user's edited content should be printed to stderr for recovery.
+
+# Do NOT init a jj repo — this causes openTodoStore to fail after the editor.
+mkdir notarepo
+cd notarepo
+
+exec chmod +x editor.sh
+
+# Run create with --edit; expect failure since there's no jj repo.
+! exec env EDITOR=./editor.sh $II todo create --edit
+stderr 'not in a jj repository'
+
+# Stderr should contain the user's edited content for recovery.
+stderr 'My Important Todo'
+stderr 'This is the description I carefully typed'
+
+-- notarepo/editor.sh --
+#!/bin/sh
+set -eu
+cat > "$1" <<'EOF'
+title = "My Important Todo"
+type = "task" # task, bug, feature
+priority = 1 # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
+status = "open" # open, proposed, in_progress, closed, done, tombstone
+implementation-model = ""
+code-review-model = ""
+project-review-model = ""
+---
+This is the description I carefully typed
+EOF
