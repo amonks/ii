@@ -141,5 +141,7 @@ monks.co/pkg/llm v0.0.1 h1:jfiT9DJgjJYfuFnkFTd+2wGB7SsGpJjGB+KP0QJhGbU=
 monks.co/pkg/llm v0.0.1/go.mod h1:5zNdauOUn5Hd54afe0rjD1ff5+Fb9HwIYY52qNQV+Ac=
 monks.co/pkg/migrate v0.0.3 h1:6tTBxCc6mHfB5P0Q+XGZrCse00s88GmUeEw8IbVIPs0=
 monks.co/pkg/migrate v0.0.3/go.mod h1:XZgAjU9em10DaboplVABEEsu5LlZy2WOO37fDhKozZA=
+monks.co/pkg/table v0.0.1 h1:6GczoIPasaJO3jxXV3QVkHHqHiZ6dKVrO+H5aQ/xs34=
+monks.co/pkg/table v0.0.1/go.mod h1:WBXXxP55Xaq6FA2X9Gm+oBiRwlAsEKAmN4ONtU3MeDg=
 monks.co/ww v0.0.1 h1:8i6fxlYWGtx0Ug6FeNVt/Fg0VDZMnllwSWmAjfTT+78=
 monks.co/ww v0.0.1/go.mod h1:Uc4TnBz9r94W6jtOEc2DcBFHzNK4H90q7H1XigC07bs=
