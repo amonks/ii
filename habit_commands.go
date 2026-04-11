@@ -10,6 +10,7 @@ import (
 	"monks.co/ii/internal/editor"
 	"monks.co/ii/internal/ui"
 	"monks.co/ii/job"
+	"monks.co/pkg/table"
 	"github.com/spf13/cobra"
 )
 
@@ -90,7 +91,7 @@ func runHabitList(cmd *cobra.Command, args []string) error {
 }
 
 func printHabitTable(habits []*habit.Habit, prefixLengths map[string]int, jobCounts map[string]int) {
-	builder := ui.NewTableBuilder([]string{"NAME", "IMPL MODEL", "REVIEW MODEL", "JOBS"}, len(habits))
+	builder := table.NewBuilder([]string{"NAME", "IMPL MODEL", "REVIEW MODEL", "JOBS"}, len(habits))
 
 	for _, h := range habits {
 		prefixLen := ui.PrefixLength(prefixLengths, h.Name)

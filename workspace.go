@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"monks.co/ii/internal/listflags"
 	"monks.co/ii/internal/ui"
+	"monks.co/pkg/table"
 	"monks.co/ww/ww"
 	"golang.org/x/term"
 )
@@ -308,12 +309,12 @@ func formatWorkspaceTable(items []ww.Info, highlight func(string) string, now ti
 			age,
 			duration,
 			rev,
-			ui.TruncateTableCell(purpose),
-			ui.TruncateTableCell(item.Path),
+			table.TruncateCell(purpose),
+			table.TruncateCell(item.Path),
 		})
 	}
 
-	return ui.FormatTable([]string{"NAME", "STATUS", "AGE", "DURATION", "REV", "PURPOSE", "PATH"}, rows)
+	return table.Format([]string{"NAME", "STATUS", "AGE", "DURATION", "REV", "PURPOSE", "PATH"}, rows)
 }
 
 func formatWorkspaceAge(item ww.Info, now time.Time) string {

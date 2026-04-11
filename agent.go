@@ -8,6 +8,7 @@ import (
 	"monks.co/ii/agent"
 	"monks.co/ii/internal/listflags"
 	"monks.co/ii/internal/ui"
+	"monks.co/pkg/table"
 	"github.com/spf13/cobra"
 )
 
@@ -105,7 +106,7 @@ func formatAgentTable(sessions []agent.Session, highlight func(string, int) stri
 		})
 	}
 
-	return ui.FormatTable([]string{"SESSION", "STATUS", "MODEL", "AGE", "DURATION", "TOKENS", "COST"}, rows)
+	return table.Format([]string{"SESSION", "STATUS", "MODEL", "AGE", "DURATION", "TOKENS", "COST"}, rows)
 }
 
 func agentSessionPrefixLengths(sessions []agent.Session) map[string]int {

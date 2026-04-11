@@ -13,6 +13,7 @@ import (
 	internalstrings "monks.co/ii/internal/strings"
 	"monks.co/ii/internal/ui"
 	jobpkg "monks.co/ii/job"
+	"monks.co/pkg/table"
 	"monks.co/ii/todo"
 	"github.com/spf13/cobra"
 )
@@ -272,7 +273,7 @@ func formatJobTable(opts TableFormatOptions) string {
 	now := opts.Now
 	todoPrefixLengths := opts.TodoPrefixLengths
 	jobPrefixLengths := opts.JobPrefixLengths
-	builder := ui.NewTableBuilder([]string{"JOB", "TODO", "STAGE", "STATUS", "IMPL", "REVIEW", "PROJECT", "AGE", "DURATION", "TITLE"}, len(jobs))
+	builder := table.NewBuilder([]string{"JOB", "TODO", "STAGE", "STATUS", "IMPL", "REVIEW", "PROJECT", "AGE", "DURATION", "TITLE"}, len(jobs))
 
 	jobIDs := make([]string, 0, len(jobs))
 	todoIDs := make([]string, 0, len(jobs))
@@ -310,7 +311,7 @@ func formatJobTable(opts TableFormatOptions) string {
 		title := ""
 		if opts.TodoTitles != nil {
 			if value, ok := opts.TodoTitles[internalstrings.NormalizeLower(item.TodoID)]; ok {
-				title = ui.TruncateTableCell(value)
+				title = table.TruncateCell(value)
 			}
 		}
 
@@ -345,7 +346,7 @@ func formatJobModelCell(value string) string {
 	if value == "" {
 		return "-"
 	}
-	return ui.TruncateTableCell(value)
+	return table.TruncateCell(value)
 }
 
 func printJobDetail(item jobpkg.Job, todoTitle string, highlightJob func(string) string, highlightTodo func(string) string) {

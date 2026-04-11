@@ -7,6 +7,7 @@ import (
 
 	"monks.co/ii/internal/ui"
 	"monks.co/ii/todo"
+	"monks.co/pkg/table"
 )
 
 // printTodoTable prints todos in a table format.
@@ -20,14 +21,14 @@ func printTodoTable(todos []todo.Todo, prefixLengths map[string]int, now time.Ti
 }
 
 func formatTodoTable(todos []todo.Todo, prefixLengths map[string]int, highlight func(string, int) string, now time.Time) string {
-	builder := ui.NewTableBuilder([]string{"ID", "PRI", "TYPE", "STATUS", "AGE", "UPDATED", "DURATION", "TITLE"}, len(todos))
+	builder := table.NewBuilder([]string{"ID", "PRI", "TYPE", "STATUS", "AGE", "UPDATED", "DURATION", "TITLE"}, len(todos))
 
 	if prefixLengths == nil {
 		prefixLengths = todoIDPrefixLengths(todos)
 	}
 
 	for _, t := range todos {
-		title := ui.TruncateTableCell(t.Title)
+		title := table.TruncateCell(t.Title)
 		prefixLen := ui.PrefixLength(prefixLengths, t.ID)
 		highlighted := highlight(t.ID, prefixLen)
 		age := formatTodoAge(t, now)
