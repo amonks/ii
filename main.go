@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"monks.co/ii/internal/paths"
-	"monks.co/ww/ww"
+
 	"github.com/spf13/cobra"
 )
 
@@ -50,18 +50,4 @@ func getRepoPath() (string, error) {
 	}
 
 	return resolveRepoRoot(cwd)
-}
-
-// resolveWorkspaceName returns the workspace name from args or current directory.
-func resolveWorkspaceName(args []string, pool *ww.Pool) (string, error) {
-	if len(args) > 0 {
-		return args[0], nil
-	}
-
-	cwd, err := paths.WorkingDir()
-	if err != nil {
-		return "", err
-	}
-
-	return pool.WorkspaceNameForPath(cwd)
 }
