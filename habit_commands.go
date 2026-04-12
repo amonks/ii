@@ -4,12 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 
 	"monks.co/ii/habit"
 	"monks.co/ii/internal/editor"
 	"monks.co/ii/internal/ui"
-	"monks.co/ii/job"
 	"monks.co/pkg/table"
 	"github.com/spf13/cobra"
 )
@@ -75,23 +73,13 @@ func runHabitList(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Get job counts per habit
-	manager, err := job.Open(repoPath, job.OpenOptions{})
-	if err != nil {
-		return fmt.Errorf("open job manager: %w", err)
-	}
-	jobCounts, err := manager.CountByHabit()
-	if err != nil {
-		return fmt.Errorf("count jobs by habit: %w", err)
-	}
-
 	prefixLengths := habit.PrefixLengths(habits)
-	printHabitTable(habits, prefixLengths, jobCounts)
+	printHabitTable(habits, prefixLengths)
 	return nil
 }
 
-func printHabitTable(habits []*habit.Habit, prefixLengths map[string]int, jobCounts map[string]int) {
-	builder := table.NewBuilder([]string{"NAME", "IMPL MODEL", "REVIEW MODEL", "JOBS"}, len(habits))
+func printHabitTable(habits []*habit.Habit, prefixLengths map[string]int) {
+	builder := table.NewBuilder([]string{"NAME", "IMPL MODEL", "REVIEW MODEL"}, len(habits))
 
 	for _, h := range habits {
 		prefixLen := ui.PrefixLength(prefixLengths, h.Name)
@@ -106,13 +94,10 @@ func printHabitTable(habits []*habit.Habit, prefixLengths map[string]int, jobCou
 			reviewModel = "-"
 		}
 
-		jobCount := strconv.Itoa(jobCounts[h.Name])
-
 		row := []string{
 			highlighted,
 			implModel,
 			reviewModel,
-			jobCount,
 		}
 		builder.AddRow(row)
 	}

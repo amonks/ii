@@ -12,7 +12,6 @@ func TestListCommandsHaveAllFlag(t *testing.T) {
 		cmd  *cobra.Command
 	}{
 		{name: "todo", cmd: todoListCmd},
-		{name: "agent", cmd: agentListCmd},
 	}
 
 	for _, tc := range cases {

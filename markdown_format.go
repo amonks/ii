@@ -3,16 +3,16 @@ package main
 import (
 	"strings"
 
+	"monks.co/ii/internal/markdown"
 	internalstrings "monks.co/ii/internal/strings"
-	jobpkg "monks.co/ii/job"
 )
 
 func renderMarkdownOrDash(value string, width int) string {
-	formatted := jobpkg.RenderMarkdown(value, width)
-	if internalstrings.IsBlank(formatted) {
+	result := markdown.Render(width, 0, []byte(value))
+	if result == nil || internalstrings.IsBlank(string(result)) {
 		return "-"
 	}
-	return formatted
+	return string(result)
 }
 
 func renderMarkdownWithoutMargin(value string, width int) string {

@@ -5,18 +5,13 @@ go 1.26.2
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/charmbracelet/glamour v0.10.0
-	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/creack/pty v1.1.24
-	github.com/muesli/reflow v0.3.0
 	github.com/rogpeppe/go-internal v1.14.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
-	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.42.0
 	modernc.org/sqlite v1.47.0
-	monks.co/pkg/agent v0.0.1
 	monks.co/pkg/jj v0.0.1
-	monks.co/pkg/llm v0.0.1
 	monks.co/pkg/migrate v0.0.3
 	monks.co/pkg/table v0.0.1
 	monks.co/ww v0.0.1
@@ -27,6 +22,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/charmbracelet/colorprofile v0.4.2 // indirect
+	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20250327172914-2fdc97757edf // indirect
@@ -42,6 +38,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.20 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect

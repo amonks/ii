@@ -1,8 +1,0 @@
-# pool command test
-
-cd repo
-exec jj git init
-exec jj bookmark create main -r @
-exec $II todo create --title "Sample"
-! exec $II pool --workers 1
-stderr 'resolve model'

@@ -18,7 +18,6 @@ exec $II habit list
 stdout 'NAME'
 stdout 'IMPL MODEL'
 stdout 'REVIEW MODEL'
-stdout 'JOBS'
 stdout 'cleanup'
 
 # show habit
