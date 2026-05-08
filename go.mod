@@ -12,7 +12,7 @@ require (
 	golang.org/x/term v0.42.0
 	modernc.org/sqlite v1.47.0
 	monks.co/pkg/jj v0.0.1
-	monks.co/pkg/migrate v0.0.3
+	monks.co/pkg/migrate v0.0.1
 	monks.co/pkg/table v0.0.1
 	monks.co/ww v0.0.1
 )
