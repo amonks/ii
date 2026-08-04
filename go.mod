@@ -11,10 +11,10 @@ require (
 	github.com/spf13/pflag v1.0.9
 	golang.org/x/term v0.44.0
 	modernc.org/sqlite v1.56.0
-	monks.co/pkg/jj v0.0.1
-	monks.co/pkg/migrate v0.0.3
-	monks.co/pkg/table v0.0.1
-	monks.co/ww v0.0.1
+	monks.co/pkg/jj v0.0.8
+	monks.co/pkg/migrate v0.0.11
+	monks.co/pkg/table v0.0.7
+	monks.co/ww v0.0.12
 )
 
 require (
