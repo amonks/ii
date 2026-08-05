@@ -8,7 +8,7 @@ import (
 	"text/template"
 
 	"github.com/BurntSushi/toml"
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
 	"monks.co/ii/internal/validation"
 	"monks.co/ii/todo"
 )
@@ -112,14 +112,14 @@ func ParseTodoTOML(content string) (*ParsedTodo, error) {
 		return nil, fmt.Errorf("parse TOML: %w", err)
 	}
 	parsed.Description = strings.TrimLeft(body, "\n")
-	parsed.Type = internalstrings.NormalizeLowerTrimSpace(parsed.Type)
+	parsed.Type = text.NormalizeLowerTrimSpace(parsed.Type)
 	if parsed.Status != nil {
-		normalizedStatus := internalstrings.NormalizeLowerTrimSpace(*parsed.Status)
+		normalizedStatus := text.NormalizeLowerTrimSpace(*parsed.Status)
 		parsed.Status = &normalizedStatus
 	}
-	parsed.ImplementationModel = internalstrings.TrimSpace(parsed.ImplementationModel)
-	parsed.CodeReviewModel = internalstrings.TrimSpace(parsed.CodeReviewModel)
-	parsed.ProjectReviewModel = internalstrings.TrimSpace(parsed.ProjectReviewModel)
+	parsed.ImplementationModel = strings.TrimSpace(parsed.ImplementationModel)
+	parsed.CodeReviewModel = strings.TrimSpace(parsed.CodeReviewModel)
+	parsed.ProjectReviewModel = strings.TrimSpace(parsed.ProjectReviewModel)
 
 	// Validate required fields
 	if err := todo.ValidateTitle(parsed.Title); err != nil {
@@ -162,7 +162,7 @@ func splitFrontmatter(content string) (string, string) {
 }
 
 func isFrontmatterSeparator(line string) bool {
-	return internalstrings.TrimSpace(line) == "---"
+	return strings.TrimSpace(line) == "---"
 }
 
 func validTodoTypes() string {

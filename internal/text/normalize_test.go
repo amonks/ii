@@ -1,4 +1,4 @@
-package strings
+package text
 
 import "testing"
 
@@ -45,39 +45,6 @@ func TestNormalizeWhitespace(t *testing.T) {
 	}
 }
 
-func TestNormalizeLower(t *testing.T) {
-	cases := []struct {
-		name  string
-		input string
-		want  string
-	}{
-		{
-			name:  "already lower",
-			input: "ready",
-			want:  "ready",
-		},
-		{
-			name:  "mixed case",
-			input: "In_Progress",
-			want:  "in_progress",
-		},
-		{
-			name:  "empty",
-			input: "",
-			want:  "",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := NormalizeLower(tc.input)
-			if got != tc.want {
-				t.Fatalf("expected %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestNormalizeLowerTrimSpace(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -99,49 +66,16 @@ func TestNormalizeLowerTrimSpace(t *testing.T) {
 			input: "  \t\n ",
 			want:  "",
 		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := NormalizeLowerTrimSpace(tc.input)
-			if got != tc.want {
-				t.Fatalf("expected %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
-func TestTrimSpace(t *testing.T) {
-	cases := []struct {
-		name  string
-		input string
-		want  string
-	}{
 		{
 			name:  "empty",
 			input: "",
 			want:  "",
 		},
-		{
-			name:  "whitespace only",
-			input: " \t\n ",
-			want:  "",
-		},
-		{
-			name:  "trimmed",
-			input: "  note  ",
-			want:  "note",
-		},
-		{
-			name:  "inner whitespace preserved",
-			input: "  one  two  ",
-			want:  "one  two",
-		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := TrimSpace(tc.input)
+			got := NormalizeLowerTrimSpace(tc.input)
 			if got != tc.want {
 				t.Fatalf("expected %q, got %q", tc.want, got)
 			}
@@ -180,6 +114,61 @@ func TestIsBlank(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := IsBlank(tc.input)
+			if got != tc.want {
+				t.Fatalf("expected %v, got %v", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestContainsAnyLower(t *testing.T) {
+	cases := []struct {
+		name       string
+		input      string
+		substrings []string
+		want       bool
+	}{
+		{
+			name:       "no substrings",
+			input:      "working copy is stale",
+			substrings: nil,
+			want:       false,
+		},
+		{
+			name:       "matches first",
+			input:      "working copy is stale",
+			substrings: []string{"working copy is stale", "workspace is stale"},
+			want:       true,
+		},
+		{
+			name:       "matches later",
+			input:      "the workspace is stale",
+			substrings: []string{"working copy is stale", "workspace is stale"},
+			want:       true,
+		},
+		{
+			name:       "case insensitive on value",
+			input:      "Working Copy Is Stale",
+			substrings: []string{"working copy is stale"},
+			want:       true,
+		},
+		{
+			name:       "no match",
+			input:      "permission denied",
+			substrings: []string{"working copy is stale"},
+			want:       false,
+		},
+		{
+			name:       "empty value",
+			input:      "",
+			substrings: []string{"stale"},
+			want:       false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := ContainsAnyLower(tc.input, tc.substrings...)
 			if got != tc.want {
 				t.Fatalf("expected %v, got %v", tc.want, got)
 			}
@@ -321,6 +310,97 @@ func TestTrimLeadingNewlines(t *testing.T) {
 	}
 }
 
+func TestTrimTrailingWhitespace(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "empty",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "whitespace only",
+			input: " \t ",
+			want:  "",
+		},
+		{
+			name:  "no trailing whitespace",
+			input: "  line",
+			want:  "  line",
+		},
+		{
+			name:  "preserves leading indentation",
+			input: "    line   ",
+			want:  "    line",
+		},
+		{
+			name:  "trims tabs and newlines",
+			input: "line\t\n",
+			want:  "line",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := TrimTrailingWhitespace(tc.input)
+			if got != tc.want {
+				t.Fatalf("expected %q, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestLeadingSpaces(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  int
+	}{
+		{
+			name:  "empty",
+			input: "",
+			want:  0,
+		},
+		{
+			name:  "no indentation",
+			input: "line",
+			want:  0,
+		},
+		{
+			name:  "indented",
+			input: "    line",
+			want:  4,
+		},
+		{
+			name:  "spaces only",
+			input: "   ",
+			want:  3,
+		},
+		{
+			name:  "tab is not a space",
+			input: "\tline",
+			want:  0,
+		},
+		{
+			name:  "stops at tab",
+			input: "  \t line",
+			want:  2,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := LeadingSpaces(tc.input)
+			if got != tc.want {
+				t.Fatalf("expected %d, got %d", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestIndentBlock(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -332,6 +412,12 @@ func TestIndentBlock(t *testing.T) {
 			name:   "no indent",
 			input:  "line",
 			spaces: 0,
+			want:   "line",
+		},
+		{
+			name:   "negative indent",
+			input:  "line",
+			spaces: -2,
 			want:   "line",
 		},
 		{

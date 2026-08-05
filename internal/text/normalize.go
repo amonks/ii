@@ -1,4 +1,12 @@
-package strings
+// Package text holds the string helpers that ii uses in more than one place:
+// canonicalization of user-supplied tokens, newline and whitespace trimming,
+// and terminal block indentation.
+//
+// It deliberately does not wrap stdlib strings functions. A helper earns a
+// place here only when it names a concept the stdlib call does not — "blank",
+// "newlines", "indent a block" — so that call sites read as intent rather than
+// as an extra hop.
+package text
 
 import (
 	"strings"
@@ -11,24 +19,16 @@ func NormalizeWhitespace(value string) string {
 	return strings.Join(fields, " ")
 }
 
-// NormalizeLower returns the input lowercased.
-func NormalizeLower(value string) string {
-	return strings.ToLower(value)
-}
-
-// NormalizeLowerTrimSpace trims surrounding whitespace and lowercases the input.
+// NormalizeLowerTrimSpace trims surrounding whitespace and lowercases the
+// input. This is the canonical form for user-typed enum tokens such as todo
+// statuses and types.
 func NormalizeLowerTrimSpace(value string) string {
-	return NormalizeLower(TrimSpace(value))
-}
-
-// TrimSpace trims surrounding whitespace.
-func TrimSpace(value string) string {
-	return strings.TrimSpace(value)
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 // IsBlank reports whether the string contains only whitespace.
 func IsBlank(value string) bool {
-	return TrimSpace(value) == ""
+	return strings.TrimSpace(value) == ""
 }
 
 // ContainsAnyLower reports whether lowercased value contains any substrings.
@@ -37,7 +37,7 @@ func ContainsAnyLower(value string, substrings ...string) bool {
 	if len(substrings) == 0 {
 		return false
 	}
-	value = NormalizeLower(value)
+	value = strings.ToLower(value)
 	for _, substring := range substrings {
 		if strings.Contains(value, substring) {
 			return true
@@ -52,11 +52,6 @@ func NormalizeNewlines(value string) string {
 	return strings.ReplaceAll(value, "\r", "\n")
 }
 
-// TrimTrailingCarriageReturn removes a trailing carriage return if present.
-func TrimTrailingCarriageReturn(value string) string {
-	return strings.TrimSuffix(value, "\r")
-}
-
 // TrimTrailingNewlines removes trailing CR/LF characters.
 func TrimTrailingNewlines(value string) string {
 	return strings.TrimRight(value, "\r\n")
@@ -67,14 +62,10 @@ func TrimLeadingNewlines(value string) string {
 	return strings.TrimLeft(value, "\r\n")
 }
 
-// TrimTrailingWhitespace removes trailing Unicode whitespace characters.
+// TrimTrailingWhitespace removes trailing Unicode whitespace characters,
+// leaving any leading indentation intact.
 func TrimTrailingWhitespace(value string) string {
 	return strings.TrimRightFunc(value, unicode.IsSpace)
-}
-
-// TrimTrailingSlash removes trailing '/' characters.
-func TrimTrailingSlash(value string) string {
-	return strings.TrimRight(value, "/")
 }
 
 // LeadingSpaces counts leading ASCII space characters.

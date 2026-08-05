@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"monks.co/ii/internal/markdown"
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
 )
 
 func renderMarkdownOrDash(value string, width int) string {
 	result := markdown.Render(width, 0, []byte(value))
-	if result == nil || internalstrings.IsBlank(string(result)) {
+	if result == nil || text.IsBlank(string(result)) {
 		return "-"
 	}
 	return string(result)
@@ -24,10 +24,10 @@ func trimCommonIndent(value string) string {
 	lines := strings.Split(value, "\n")
 	minIndent := -1
 	for _, line := range lines {
-		if internalstrings.IsBlank(line) {
+		if text.IsBlank(line) {
 			continue
 		}
-		indent := internalstrings.LeadingSpaces(line)
+		indent := text.LeadingSpaces(line)
 		if minIndent == -1 || indent < minIndent {
 			minIndent = indent
 		}
@@ -40,7 +40,7 @@ func trimCommonIndent(value string) string {
 	}
 	indentStr := strings.Repeat(" ", minIndent)
 	for i, line := range lines {
-		if internalstrings.IsBlank(line) {
+		if text.IsBlank(line) {
 			lines[i] = ""
 			continue
 		}

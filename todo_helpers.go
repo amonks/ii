@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"monks.co/ii/internal/editor"
-	internalstrings "monks.co/ii/internal/strings"
-	"monks.co/ii/todo"
 	"github.com/spf13/cobra"
+	"monks.co/ii/internal/editor"
+	"monks.co/ii/internal/text"
+	"monks.co/ii/todo"
 )
 
 func openTodoStoreWithOptions(cmd *cobra.Command, args []string, opts todo.OpenOptions) (*todo.Store, error) {
@@ -59,7 +59,7 @@ func todoStorePurpose(cmd *cobra.Command, args []string) string {
 	parts := []string{cmd.CommandPath()}
 	parts = append(parts, args...)
 	value := strings.Join(parts, " ")
-	value = internalstrings.NormalizeWhitespace(value)
+	value = text.NormalizeWhitespace(value)
 	if value == "" {
 		return "todo store"
 	}
@@ -76,7 +76,7 @@ func resolveDescriptionFromStdin(description string, reader io.Reader) (string, 
 		return "", fmt.Errorf("read description from stdin: %w", err)
 	}
 
-	value := internalstrings.TrimTrailingNewlines(string(input))
+	value := text.TrimTrailingNewlines(string(input))
 	return value, nil
 }
 

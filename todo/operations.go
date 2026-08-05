@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	internalstrings "monks.co/ii/internal/strings"
 )
 
 // CreateOptions configures a new todo.
@@ -83,9 +81,9 @@ func (s *Store) Create(title string, opts CreateOptions) (*Todo, error) {
 	}
 
 	now := time.Now()
-	implementationModel := internalstrings.TrimSpace(opts.ImplementationModel)
-	codeReviewModel := internalstrings.TrimSpace(opts.CodeReviewModel)
-	projectReviewModel := internalstrings.TrimSpace(opts.ProjectReviewModel)
+	implementationModel := strings.TrimSpace(opts.ImplementationModel)
+	codeReviewModel := strings.TrimSpace(opts.CodeReviewModel)
+	projectReviewModel := strings.TrimSpace(opts.ProjectReviewModel)
 	todo := Todo{
 		ID:                  GenerateID(title, now),
 		Title:               title,
@@ -270,7 +268,7 @@ func (s *Store) Queue(ids []string) ([]Todo, error) {
 // QueueForMerge marks todos as ready to merge and stores the job ID.
 func (s *Store) QueueForMerge(ids []string, jobID string) ([]Todo, error) {
 	status := StatusQueuedForMerge
-	jobID = internalstrings.TrimSpace(jobID)
+	jobID = strings.TrimSpace(jobID)
 	opts := UpdateOptions{Status: &status, JobID: &jobID}
 	return s.Update(ids, opts)
 }
@@ -394,8 +392,8 @@ func (s *Store) listWithTodos(filter ListFilter) ([]Todo, []Todo, error) {
 		return nil, nil, err
 	}
 
-	titleQuery := internalstrings.NormalizeLower(filter.TitleSubstring)
-	descriptionQuery := internalstrings.NormalizeLower(filter.DescriptionSubstring)
+	titleQuery := strings.ToLower(filter.TitleSubstring)
+	descriptionQuery := strings.ToLower(filter.DescriptionSubstring)
 
 	todos, err := s.readTodosWithContext()
 	if err != nil {
@@ -456,7 +454,7 @@ func containsLower(haystack, needle string) bool {
 	if needle == "" {
 		return true
 	}
-	return strings.Contains(internalstrings.NormalizeLower(haystack), needle)
+	return strings.Contains(strings.ToLower(haystack), needle)
 }
 
 func idSetFromIDs(ids []string) map[string]struct{} {
@@ -646,13 +644,13 @@ func applyTodoUpdates(item *Todo, opts UpdateOptions, now time.Time) error {
 		item.Type = *opts.Type
 	}
 	if opts.ImplementationModel != nil {
-		item.ImplementationModel = internalstrings.TrimSpace(*opts.ImplementationModel)
+		item.ImplementationModel = strings.TrimSpace(*opts.ImplementationModel)
 	}
 	if opts.CodeReviewModel != nil {
-		item.CodeReviewModel = internalstrings.TrimSpace(*opts.CodeReviewModel)
+		item.CodeReviewModel = strings.TrimSpace(*opts.CodeReviewModel)
 	}
 	if opts.ProjectReviewModel != nil {
-		item.ProjectReviewModel = internalstrings.TrimSpace(*opts.ProjectReviewModel)
+		item.ProjectReviewModel = strings.TrimSpace(*opts.ProjectReviewModel)
 	}
 	if opts.DeletedAt != nil {
 		item.DeletedAt = opts.DeletedAt
@@ -661,7 +659,7 @@ func applyTodoUpdates(item *Todo, opts UpdateOptions, now time.Time) error {
 		item.DeleteReason = *opts.DeleteReason
 	}
 	if opts.Source != nil {
-		item.Source = internalstrings.TrimSpace(*opts.Source)
+		item.Source = strings.TrimSpace(*opts.Source)
 	}
 	if opts.StartedAt != nil {
 		item.StartedAt = opts.StartedAt
@@ -670,7 +668,7 @@ func applyTodoUpdates(item *Todo, opts UpdateOptions, now time.Time) error {
 		item.CompletedAt = opts.CompletedAt
 	}
 	if opts.JobID != nil {
-		item.JobID = internalstrings.TrimSpace(*opts.JobID)
+		item.JobID = strings.TrimSpace(*opts.JobID)
 	}
 	item.UpdatedAt = now
 

@@ -4,8 +4,6 @@ import (
 	"sort"
 	"strings"
 	"unicode/utf8"
-
-	internalstrings "monks.co/ii/internal/strings"
 )
 
 // NormalizeUniqueIDs lowercases IDs and removes duplicates or empty values.
@@ -30,7 +28,7 @@ func normalizeID(id string) string {
 	for i := 0; i < len(id); i++ {
 		b := id[i]
 		if b >= utf8.RuneSelf || (b >= 'A' && b <= 'Z') {
-			return internalstrings.NormalizeLower(id)
+			return strings.ToLower(id)
 		}
 	}
 	return id

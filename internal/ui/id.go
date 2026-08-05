@@ -2,10 +2,10 @@ package ui
 
 import (
 	"os"
+	"strings"
 
-	"monks.co/ii/internal/ids"
-	internalstrings "monks.co/ii/internal/strings"
 	"golang.org/x/term"
+	"monks.co/ii/internal/ids"
 )
 
 const (
@@ -53,5 +53,5 @@ func PrefixLength(prefixLengths map[string]int, id string) int {
 	if id == "" || prefixLengths == nil {
 		return 0
 	}
-	return prefixLengths[internalstrings.NormalizeLower(id)]
+	return prefixLengths[strings.ToLower(id)]
 }

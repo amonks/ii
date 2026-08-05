@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	internalstrings "monks.co/ii/internal/strings"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/glamour/styles"
+	"monks.co/ii/internal/text"
 )
 
 type termRenderer interface {
@@ -32,9 +32,9 @@ func Render(width, indent int, input []byte) []byte {
 // glamour has historically panicked on some markdown inputs; we prefer a best-effort
 // render over crashing the CLI.
 func SafeRender(width, indent int, input []byte) []byte {
-	value := internalstrings.NormalizeNewlines(string(input))
-	value = internalstrings.TrimTrailingNewlines(value)
-	if internalstrings.IsBlank(value) {
+	value := text.NormalizeNewlines(string(input))
+	value = text.TrimTrailingNewlines(value)
+	if text.IsBlank(value) {
 		return nil
 	}
 	if width < 1 {
@@ -55,16 +55,16 @@ func SafeRender(width, indent int, input []byte) []byte {
 			rendered = formatted
 		}
 	}
-	rendered = internalstrings.TrimLeadingNewlines(rendered)
-	rendered = internalstrings.TrimTrailingNewlines(rendered)
+	rendered = text.TrimLeadingNewlines(rendered)
+	rendered = text.TrimTrailingNewlines(rendered)
 	rendered = cleanRenderedMarkdown(rendered)
-	if internalstrings.IsBlank(rendered) {
+	if text.IsBlank(rendered) {
 		return nil
 	}
 	if indent <= 0 {
 		return []byte(rendered)
 	}
-	return []byte(internalstrings.IndentBlock(rendered, indent))
+	return []byte(text.IndentBlock(rendered, indent))
 }
 
 func safeRender(render func() (string, error)) (out string, err error) {
@@ -80,10 +80,10 @@ func safeRender(render func() (string, error)) (out string, err error) {
 func cleanRenderedMarkdown(value string) string {
 	lines := strings.Split(value, "\n")
 	for i, line := range lines {
-		lines[i] = internalstrings.TrimTrailingWhitespace(line)
+		lines[i] = text.TrimTrailingWhitespace(line)
 	}
 	cleaned := strings.Join(lines, "\n")
-	if internalstrings.IsBlank(cleaned) {
+	if text.IsBlank(cleaned) {
 		return ""
 	}
 	return cleaned

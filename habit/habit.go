@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"monks.co/ii/internal/ids"
-	internalstrings "monks.co/ii/internal/strings"
 )
 
 // HabitsDir is the directory containing habit instruction documents.
@@ -36,7 +35,7 @@ type Habit struct {
 
 // Load loads a habit by name from the given repo path.
 func Load(repoPath, name string) (*Habit, error) {
-	name = internalstrings.TrimSpace(name)
+	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, fmt.Errorf("habit name is required")
 	}
@@ -101,7 +100,7 @@ var ErrAmbiguousHabitPrefix = fmt.Errorf("ambiguous habit prefix")
 
 // Find finds a habit by name or unique prefix.
 func Find(repoPath, nameOrPrefix string) (*Habit, error) {
-	nameOrPrefix = internalstrings.TrimSpace(nameOrPrefix)
+	nameOrPrefix = strings.TrimSpace(nameOrPrefix)
 	if nameOrPrefix == "" {
 		return nil, ErrHabitNotFound
 	}
@@ -153,7 +152,7 @@ func PrefixLengths(habits []*Habit) map[string]int {
 // Path returns the file path for a habit by name.
 // It does not check whether the file exists.
 func Path(repoPath, name string) (string, error) {
-	name = internalstrings.TrimSpace(name)
+	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", fmt.Errorf("habit name is required")
 	}
@@ -190,7 +189,7 @@ Describe the habit instructions here.
 // Create creates a new habit file with a template.
 // Returns the file path and an error if the habit already exists or creation fails.
 func Create(repoPath, name string) (string, error) {
-	name = internalstrings.TrimSpace(name)
+	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", fmt.Errorf("habit name is required")
 	}
@@ -236,7 +235,7 @@ func parseHabit(name string, data []byte) (*Habit, error) {
 
 	// Check for frontmatter (starts with ---)
 	if !strings.HasPrefix(content, "---") {
-		habit.Instructions = internalstrings.TrimSpace(content)
+		habit.Instructions = strings.TrimSpace(content)
 		return habit, nil
 	}
 
@@ -245,7 +244,7 @@ func parseHabit(name string, data []byte) (*Habit, error) {
 	endIdx := strings.Index(rest, "\n---")
 	if endIdx == -1 {
 		// No closing ---, treat entire content as instructions
-		habit.Instructions = internalstrings.TrimSpace(content)
+		habit.Instructions = strings.TrimSpace(content)
 		return habit, nil
 	}
 
@@ -261,7 +260,7 @@ func parseHabit(name string, data []byte) (*Habit, error) {
 		body := rest[bodyStart:]
 		// Skip leading newline after closing ---
 		body = strings.TrimPrefix(body, "\n")
-		habit.Instructions = internalstrings.TrimSpace(body)
+		habit.Instructions = strings.TrimSpace(body)
 	}
 
 	return habit, nil
@@ -278,7 +277,7 @@ func parseFrontmatter(data string) (implementationModel, reviewModel string) {
 	inModels := false
 
 	for _, line := range lines {
-		trimmed := internalstrings.TrimSpace(line)
+		trimmed := strings.TrimSpace(line)
 
 		// Check for models: section
 		if trimmed == "models:" {
@@ -297,9 +296,9 @@ func parseFrontmatter(data string) (implementationModel, reviewModel string) {
 
 		// Parse implementation: or review: within models section
 		if after, ok := strings.CutPrefix(trimmed, "implementation:"); ok {
-			implementationModel = internalstrings.TrimSpace(after)
+			implementationModel = strings.TrimSpace(after)
 		} else if after, ok := strings.CutPrefix(trimmed, "review:"); ok {
-			reviewModel = internalstrings.TrimSpace(after)
+			reviewModel = strings.TrimSpace(after)
 		}
 	}
 

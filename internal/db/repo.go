@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"monks.co/ii/internal/paths"
-	internalstrings "monks.co/ii/internal/strings"
 )
 
 // ErrRepoPathNotFound indicates a workspace is tracked but missing repo info.
@@ -31,7 +30,7 @@ func SanitizeRepoName(path string) string {
 	path = strings.TrimPrefix(path, "/")
 
 	// Convert to lowercase
-	path = internalstrings.NormalizeLower(path)
+	path = strings.ToLower(path)
 
 	// Replace path separators and spaces with hyphens
 	path = strings.ReplaceAll(path, "/", "-")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
 	"monks.co/ii/internal/validation"
 )
 
@@ -85,7 +85,7 @@ var (
 
 // ValidateTitle checks if the title is valid.
 func ValidateTitle(title string) error {
-	if internalstrings.IsBlank(title) {
+	if text.IsBlank(title) {
 		return ErrEmptyTitle
 	}
 	length := utf8.RuneCountInString(title)

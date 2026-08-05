@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
 )
 
 func todoEmptyListMessage(total int, status string, includeAll bool, includeTombstones bool, hasDone bool, hasTombstones bool) string {
@@ -12,7 +12,7 @@ func todoEmptyListMessage(total int, status string, includeAll bool, includeTomb
 		return "No todos found."
 	}
 
-	status = internalstrings.NormalizeLowerTrimSpace(status)
+	status = text.NormalizeLowerTrimSpace(status)
 	if status != "" {
 		return fmt.Sprintf("No todos found with status %s.", status)
 	}

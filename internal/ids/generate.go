@@ -3,9 +3,8 @@ package ids
 import (
 	"crypto/sha256"
 	"encoding/base32"
+	"strings"
 	"time"
-
-	internalstrings "monks.co/ii/internal/strings"
 )
 
 // DefaultLength is the standard length for generated IDs.
@@ -21,7 +20,7 @@ func Generate(input string, length int) string {
 	if length > len(encoded) {
 		length = len(encoded)
 	}
-	return internalstrings.NormalizeLower(encoded[:length])
+	return strings.ToLower(encoded[:length])
 }
 
 // GenerateWithTimestamp appends a timestamp to input before hashing.

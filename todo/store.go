@@ -16,13 +16,13 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"golang.org/x/term"
 	"monks.co/ii/internal/db"
 	internalids "monks.co/ii/internal/ids"
-	"monks.co/pkg/jj"
 	"monks.co/ii/internal/paths"
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
+	"monks.co/pkg/jj"
 	"monks.co/ww/ww"
-	"golang.org/x/term"
 )
 
 const (
@@ -141,7 +141,7 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		opts.Prompter = StdioPrompter{}
 	}
 
-	purpose := internalstrings.NormalizeWhitespace(opts.Purpose)
+	purpose := text.NormalizeWhitespace(opts.Purpose)
 	if purpose == "" {
 		purpose = "todo store"
 	}
@@ -856,7 +856,7 @@ func isStaleWorkspaceError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return internalstrings.ContainsAnyLower(err.Error(), "working copy is stale", "workspace is stale")
+	return text.ContainsAnyLower(err.Error(), "working copy is stale", "workspace is stale")
 }
 
 func writeJSONLStoreWithContext[T any](store *Store, filename, label string, items []T) error {

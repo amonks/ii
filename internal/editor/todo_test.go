@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	internalstrings "monks.co/ii/internal/strings"
+	"monks.co/ii/internal/text"
 	"monks.co/ii/todo"
 )
 
@@ -328,7 +328,7 @@ func assertUnindentedFrontmatter(t *testing.T, content string) {
 	t.Helper()
 	lines := strings.SplitSeq(content, "\n")
 	for line := range lines {
-		if internalstrings.IsBlank(line) {
+		if text.IsBlank(line) {
 			continue
 		}
 		if isFrontmatterSeparator(line) {
