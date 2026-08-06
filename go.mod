@@ -10,9 +10,9 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/term v0.45.0
-	monks.co/pkg/jj v0.0.1
-	monks.co/pkg/table v0.0.1
-	monks.co/ww v0.0.1
+	monks.co/pkg/jj v0.0.8
+	monks.co/pkg/table v0.0.8
+	monks.co/ww v0.0.14
 )
 
 require (
