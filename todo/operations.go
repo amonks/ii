@@ -169,7 +169,6 @@ type UpdateOptions struct {
 	Source              *string
 	StartedAt           *time.Time
 	CompletedAt         *time.Time
-	JobID               *string
 }
 
 // Update updates one or more todos with the given options.
@@ -258,29 +257,6 @@ func (s *Store) Reopen(ids []string) ([]Todo, error) {
 // Start marks one or more todos as in progress.
 func (s *Store) Start(ids []string) ([]Todo, error) {
 	return s.updateStatus(ids, StatusInProgress)
-}
-
-// Queue marks one or more todos as queued for batch processing.
-func (s *Store) Queue(ids []string) ([]Todo, error) {
-	return s.updateStatus(ids, StatusQueued)
-}
-
-// QueueForMerge marks todos as ready to merge and stores the job ID.
-func (s *Store) QueueForMerge(ids []string, jobID string) ([]Todo, error) {
-	status := StatusQueuedForMerge
-	jobID = strings.TrimSpace(jobID)
-	opts := UpdateOptions{Status: &status, JobID: &jobID}
-	return s.Update(ids, opts)
-}
-
-// Merge marks todos as actively merging.
-func (s *Store) Merge(ids []string) ([]Todo, error) {
-	return s.updateStatus(ids, StatusMerging)
-}
-
-// MergeFailed marks todos as failed merges.
-func (s *Store) MergeFailed(ids []string) ([]Todo, error) {
-	return s.updateStatus(ids, StatusMergeFailed)
 }
 
 // Delete tombstones one or more todos with an optional reason.
@@ -573,10 +549,6 @@ func applyStatusChange(item *Todo, newStatus Status, previousStatus Status, opts
 		item.DeletedAt = nil
 		item.DeleteReason = ""
 	}
-	if newStatus != StatusQueuedForMerge && newStatus != StatusMerging && newStatus != StatusMergeFailed && newStatus != StatusDone {
-		item.JobID = ""
-	}
-
 	switch newStatus {
 	case StatusClosed, StatusDone:
 		item.ClosedAt = &now
@@ -586,29 +558,23 @@ func applyStatusChange(item *Todo, newStatus Status, previousStatus Status, opts
 			} else if resetCompletedAt {
 				item.CompletedAt = nil
 			}
-			if opts.JobID == nil {
-				item.JobID = ""
-			}
 		}
 	case StatusTombstone:
 		item.ClosedAt = nil
 		if opts.DeletedAt == nil && item.DeletedAt == nil {
 			item.DeletedAt = &now
 		}
-	case StatusOpen, StatusProposed, StatusQueued, StatusInProgress, StatusQueuedForMerge, StatusMerging, StatusMergeFailed, StatusWaiting, StatusStuck:
+	case StatusOpen, StatusProposed, StatusInProgress, StatusWaiting, StatusStuck:
 		item.ClosedAt = nil
 		if newStatus == StatusInProgress && previousStatus != StatusInProgress {
 			item.StartedAt = &now
-		}
-		if newStatus == StatusQueuedForMerge && previousStatus == StatusInProgress {
-			item.CompletedAt = &now
 		}
 	}
 }
 
 func statusAllowsStartedAt(status Status) bool {
 	switch status {
-	case StatusInProgress, StatusQueuedForMerge, StatusMerging, StatusMergeFailed, StatusDone:
+	case StatusInProgress, StatusDone:
 		return true
 	default:
 		return false
@@ -617,7 +583,7 @@ func statusAllowsStartedAt(status Status) bool {
 
 func statusAllowsCompletedAt(status Status) bool {
 	switch status {
-	case StatusQueuedForMerge, StatusMerging, StatusMergeFailed, StatusDone:
+	case StatusDone:
 		return true
 	default:
 		return false
@@ -666,9 +632,6 @@ func applyTodoUpdates(item *Todo, opts UpdateOptions, now time.Time) error {
 	}
 	if opts.CompletedAt != nil {
 		item.CompletedAt = opts.CompletedAt
-	}
-	if opts.JobID != nil {
-		item.JobID = strings.TrimSpace(*opts.JobID)
 	}
 	item.UpdatedAt = now
 

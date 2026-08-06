@@ -61,8 +61,8 @@ func SetupScriptEnv(t testing.TB, env *testscript.Env) error {
 	env.Setenv("II", BuildII(t))
 
 	homeDir := filepath.Join(env.WorkDir, "home")
-	if err := EnsureHomeDirs(homeDir); err != nil {
-		return err
+	if err := os.MkdirAll(filepath.Join(homeDir, ".local", "state", "incrementum"), 0o755); err != nil {
+		return fmt.Errorf("create state dir: %w", err)
 	}
 	env.Setenv("HOME", homeDir)
 	return nil

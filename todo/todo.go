@@ -46,17 +46,14 @@ type Todo struct {
 	// CompletedAt is when the todo completed (nil when not completed).
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 
-	// JobID is the ID of the job that produced the mergeable change.
-	JobID string `json:"job_id,omitempty"`
-
 	// DeletedAt is when the todo was soft-deleted (nil if not deleted).
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 
 	// DeleteReason explains why the todo was deleted.
 	DeleteReason string `json:"delete_reason,omitempty"`
 
-	// Source tracks the origin of the todo.
-	// Empty or omitted means user-created. Values like "habit:<name>" indicate
-	// the todo was created by running a habit.
+	// Source tracks the origin of the todo. Empty or omitted means
+	// user-created; ii itself never sets it. It is a slot for external
+	// harnesses that file todos to record where they came from.
 	Source string `json:"source,omitempty"`
 }

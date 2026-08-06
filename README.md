@@ -1,27 +1,33 @@
 # Incrementum
 
-Incrementum is a CLI for managing focused work with todos, sessions, and
-Jujutsu-backed workspaces. The main entrypoint is the `ii` command, which wraps
-the public Go packages defined in this repo.
+Incrementum is a command-line todo tracker for Jujutsu repositories. Its todos
+live in an orphan jj change rather than in a database, so they travel with the
+repo and are shared across every workspace of it without touching code history.
+
+The entrypoint is the `ii` command; every subcommand is a todo verb.
+
+```
+ii create --title 'Fix the login bug' --type bug
+ii list
+ii start <id>
+ii finish <id>
+```
 
 ## Core concepts
 
-- Workspace: a pooled, isolated working copy managed via Jujutsu.
-- Todo: a task record stored in a dedicated branch for tracking.
-- Session: a unit of work that acquires a workspace to complete one todo.
-- Job: orchestration for running LLM agent work on todos.
+- **Todo**: a task record with a title, description, type, priority, status,
+  and dependencies.
+- **Todo store**: the orphan jj change holding those records, locked across
+  processes so concurrent `ii` invocations cannot interleave writes.
 
 ## Repository layout
 
-- `cmd/ii`: CLI entrypoint and subcommands.
-- `workspace/`: workspace pool implementation.
+- `.`: CLI entrypoint and subcommands.
 - `todo/`: todo storage and operations.
-- `session/`: session lifecycle and helpers.
-- `internal/`: shared internal helpers and infrastructure.
-- `specs/`: behavioral specifications for each package.
+- `internal/`: shared internal helpers.
 
 ## Development
 
-- Specs live in `specs/README.md` and describe intended behavior.
-- Run `go tool run test` to execute the test suite (unit/integration tests and
-  `go fix` conformance). See `tasks.toml` for individual tasks.
+- Specs live in [`specs/ii/`](../../specs/ii/) and describe intended behavior.
+- Run `go tool run test` to execute the test suite. See `tasks.toml` for
+  individual tasks.

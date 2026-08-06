@@ -17,7 +17,6 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
-	"monks.co/ii/internal/db"
 	internalids "monks.co/ii/internal/ids"
 	"monks.co/ii/internal/paths"
 	"monks.co/ii/internal/text"
@@ -612,10 +611,6 @@ func appendTodoJSONLine(buf []byte, todo *Todo) []byte {
 	buf, hasField = appendOptionalJSONTime(buf, "closed_at", todo.ClosedAt, hasField)
 	buf, hasField = appendOptionalJSONTime(buf, "started_at", todo.StartedAt, hasField)
 	buf, hasField = appendOptionalJSONTime(buf, "completed_at", todo.CompletedAt, hasField)
-	if todo.JobID != "" {
-		buf, hasField = appendJSONFieldPrefix(buf, "job_id", hasField)
-		buf = appendJSONString(buf, todo.JobID)
-	}
 	buf, hasField = appendOptionalJSONTime(buf, "deleted_at", todo.DeletedAt, hasField)
 	if todo.DeleteReason != "" {
 		buf, hasField = appendJSONFieldPrefix(buf, "delete_reason", hasField)
@@ -819,15 +814,13 @@ func snapshotStore(store *Store) error {
 }
 
 func acquireTodoLock(repoPath string) (*os.File, error) {
-	stateDir, err := paths.DefaultStateDir()
+	lockPath, err := paths.TodoLockPath(repoPath)
 	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(lockPath), 0o755); err != nil {
 		return nil, fmt.Errorf("create todo lock dir: %w", err)
 	}
-	lockName := fmt.Sprintf("todo-%s.lock", db.SanitizeRepoName(repoPath))
-	lockPath := filepath.Join(stateDir, lockName)
 	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("open todo lock file: %w", err)

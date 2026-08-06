@@ -60,30 +60,6 @@ func DefaultStateDir() (string, error) {
 	return defaultHomeDirPath(".local", "state", "incrementum")
 }
 
-// DefaultDBPath returns the default SQLite state database path.
-func DefaultDBPath() (string, error) {
-	stateDir, err := DefaultStateDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(stateDir, "state.db"), nil
-}
-
-// DefaultWorkspacesDir returns the default incrementum workspaces directory.
-func DefaultWorkspacesDir() (string, error) {
-	return defaultHomeDirPath(".local", "share", "incrementum", "workspaces")
-}
-
-// DefaultJobEventsDir returns the default directory for job events.
-func DefaultJobEventsDir() (string, error) {
-	return defaultHomeDirPath(".local", "share", "incrementum", "jobs", "events")
-}
-
-// DefaultConfigDir returns the default incrementum config directory.
-func DefaultConfigDir() (string, error) {
-	return defaultHomeDirPath(".config", "incrementum")
-}
-
 // HomeDir returns the current user's home directory.
 func HomeDir() (string, error) {
 	home, err := os.UserHomeDir()
@@ -100,13 +76,4 @@ func defaultHomeDirPath(parts ...string) (string, error) {
 	}
 
 	return filepath.Join(append([]string{home}, parts...)...), nil
-}
-
-// ResolveWithDefault returns the override value if non-empty, otherwise calls
-// the default function to get a fallback value.
-func ResolveWithDefault(override string, defaultFn func() (string, error)) (string, error) {
-	if override != "" {
-		return override, nil
-	}
-	return defaultFn()
 }

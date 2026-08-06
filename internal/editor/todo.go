@@ -177,24 +177,6 @@ func createTodoTempFile() (*os.File, error) {
 	return os.CreateTemp("", "ii-todo-*.md")
 }
 
-// EditTodo opens the editor for a todo and returns the parsed result.
-// For create: pass nil for existing.
-// For update: pass the existing todo.
-func EditTodo(existing *todo.Todo) (*ParsedTodo, error) {
-	var data TodoData
-	if existing == nil {
-		data = DefaultCreateData()
-	} else {
-		data = DataFromTodo(existing)
-	}
-	return EditTodoWithData(data)
-}
-
-// EditTodoWithData opens the editor with pre-populated data and returns the parsed result.
-func EditTodoWithData(data TodoData) (*ParsedTodo, error) {
-	return EditTodoWithDataRetry(data, nil)
-}
-
 // EditTodoWithDataRetry opens the editor with pre-populated data and returns the parsed result.
 // If prompter is non-nil and parsing fails, the user is prompted to re-edit the file.
 // This allows recovering from validation errors without losing work.

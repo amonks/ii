@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"golang.org/x/term"
-	"monks.co/ii/internal/ids"
 )
 
 const (
@@ -41,11 +40,6 @@ func ansiEnabled() bool {
 		return false
 	}
 	return term.IsTerminal(int(os.Stdout.Fd()))
-}
-
-// UniqueIDPrefixLengths returns the shortest unique prefix length for each ID.
-func UniqueIDPrefixLengths(inputIDs []string) map[string]int {
-	return ids.UniquePrefixLengths(inputIDs)
 }
 
 // PrefixLength returns the unique prefix length for a case-insensitive ID lookup.

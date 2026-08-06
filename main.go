@@ -1,4 +1,4 @@
-// Package main implements the ii CLI tool.
+// Package main implements the ii CLI: a todo tracker for jj repositories.
 package main
 
 import (
@@ -39,7 +39,7 @@ func normalizeVersionArgs(args []string) []string {
 
 var rootCmd = &cobra.Command{
 	Use:   "ii",
-	Short: "Incrementum - tools for incremental development",
+	Short: "Incrementum - a todo tracker for jj repositories",
 }
 
 // getRepoPath returns the jj repository root for the current directory.

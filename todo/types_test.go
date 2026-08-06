@@ -9,11 +9,7 @@ func TestStatus_IsValid(t *testing.T) {
 	}{
 		{StatusOpen, true},
 		{StatusProposed, true},
-		{StatusQueued, true},
 		{StatusInProgress, true},
-		{StatusQueuedForMerge, true},
-		{StatusMerging, true},
-		{StatusMergeFailed, true},
 		{StatusClosed, true},
 		{StatusDone, true},
 		{StatusWaiting, true},
@@ -39,11 +35,7 @@ func TestStatus_IsResolved(t *testing.T) {
 	}{
 		{StatusOpen, false},
 		{StatusProposed, false},
-		{StatusQueued, false},
 		{StatusInProgress, false},
-		{StatusQueuedForMerge, false},
-		{StatusMerging, false},
-		{StatusMergeFailed, false},
 		{StatusClosed, true},
 		{StatusDone, true},
 		{StatusWaiting, false},

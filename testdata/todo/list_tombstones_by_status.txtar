@@ -3,16 +3,16 @@ cd repo
 exec jj git init
 
 stdin input.txt
-exec $II todo create --title 'Old task'
+exec $II create --title 'Old task'
 stdout 'Created todo'
 
-exec $II todo list --json
+exec $II list --json
 todoid stdout 'Old task' TODO_ID
 
-exec $II todo delete $TODO_ID
+exec $II delete $TODO_ID
 stdout 'Deleted'
 
-exec $II todo list --status tombstone --json
+exec $II list --status tombstone --json
 stdout 'Old task'
 stdout '"status": "tombstone"'
 

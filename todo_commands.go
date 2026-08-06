@@ -13,12 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var todoCmd = &cobra.Command{
-	Use:   "todo",
-	Short: "Manage todos for the current repository",
-}
-
-// todo create
+// create
 var todoCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new todo",
@@ -118,9 +113,9 @@ Accepts todo IDs as positional arguments, or use filter flags to select todos.
 At least one ID or filter flag must be provided.
 
 Examples:
-  ii todo delete abc123 def456     # Delete specific todos by ID
-  ii todo delete --status=proposed # Delete all proposed todos
-  ii todo delete --type=bug        # Delete all bugs`,
+  ii delete abc123 def456     # Delete specific todos by ID
+  ii delete --status=proposed # Delete all proposed todos
+  ii delete --type=bug        # Delete all bugs`,
 	Aliases: []string{
 		"destroy",
 	},
@@ -201,8 +196,7 @@ var todoDepTreeCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(todoCmd)
-	todoCmd.AddCommand(todoCreateCmd, todoUpdateCmd, todoStartCmd, todoCloseCmd, todoFinishCmd, todoReopenCmd,
+	rootCmd.AddCommand(todoCreateCmd, todoUpdateCmd, todoStartCmd, todoCloseCmd, todoFinishCmd, todoReopenCmd,
 		todoDeleteCmd, todoShowCmd, todoListCmd, todoReadyCmd, todoDepCmd)
 	todoDepCmd.AddCommand(todoDepAddCmd, todoDepTreeCmd)
 	addDescriptionFlagAliases(todoCreateCmd, todoUpdateCmd, todoListCmd)
@@ -222,7 +216,7 @@ func init() {
 	// todo update flags
 	todoUpdateCmd.Flags().StringVar(&todoUpdateTitle, "title", "", "New title")
 	todoUpdateCmd.Flags().StringVarP(&todoUpdateDescription, "description", "d", "", "New description (use '-' to read from stdin)")
-	todoUpdateCmd.Flags().StringVar(&todoUpdateStatus, "status", "", "New status (open, proposed, queued, in_progress, queued_for_merge, merging, merge_failed, closed, done, waiting, stuck, tombstone)")
+	todoUpdateCmd.Flags().StringVar(&todoUpdateStatus, "status", "", "New status (open, proposed, in_progress, closed, done, waiting, stuck, tombstone)")
 	todoUpdateCmd.Flags().IntVar(&todoUpdatePriority, "priority", 0, "New priority (0-4)")
 	todoUpdateCmd.Flags().StringVar(&todoUpdateType, "type", "", "New type (task, bug, feature, design)")
 	todoUpdateCmd.Flags().StringVar(&todoUpdateImplementationModel, "implementation-model", "", "LLM model for implementation")

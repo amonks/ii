@@ -8,7 +8,7 @@ cd notarepo
 exec chmod +x editor.sh
 
 # Run create with --edit; expect failure since there's no jj repo.
-! exec env EDITOR=./editor.sh $II todo create --edit
+! exec env EDITOR=./editor.sh $II create --edit
 stderr 'not in a jj repository'
 
 # Stderr should contain the user's edited content for recovery.
