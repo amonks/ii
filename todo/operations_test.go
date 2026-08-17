@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -330,39 +331,43 @@ func TestStore_Update_NormalizesStatus(t *testing.T) {
 }
 
 func TestStore_Update_StatusUnchangedKeepsClosedAt(t *testing.T) {
-	store, err := openTestStore(t)
-	if err != nil {
-		t.Fatalf("failed to open store: %v", err)
-	}
-	defer store.Release()
+	synctest.Test(t, func(t *testing.T) {
+		store, err := openTestStore(t)
+		if err != nil {
+			t.Fatalf("failed to open store: %v", err)
+		}
+		defer store.Release()
 
-	created, err := store.Create("Closed todo", CreateOptions{})
-	if err != nil {
-		t.Fatalf("failed to create todo: %v", err)
-	}
+		created, err := store.Create("Closed todo", CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to create todo: %v", err)
+		}
 
-	closed, err := store.Close([]string{created.ID})
-	if err != nil {
-		t.Fatalf("failed to close todo: %v", err)
-	}
-	if closed[0].ClosedAt == nil {
-		t.Fatalf("expected ClosedAt to be set")
-	}
-	originalClosedAt := *closed[0].ClosedAt
+		closed, err := store.Close([]string{created.ID})
+		if err != nil {
+			t.Fatalf("failed to close todo: %v", err)
+		}
+		if closed[0].ClosedAt == nil {
+			t.Fatalf("expected ClosedAt to be set")
+		}
+		originalClosedAt := *closed[0].ClosedAt
 
-	time.Sleep(10 * time.Millisecond)
+		// Advance the fake clock so a buggy Update that re-stamped
+		// ClosedAt would produce a visibly different time.
+		time.Sleep(10 * time.Millisecond)
 
-	status := StatusClosed
-	updated, err := store.Update([]string{created.ID}, UpdateOptions{Status: &status})
-	if err != nil {
-		t.Fatalf("failed to update todo: %v", err)
-	}
-	if updated[0].ClosedAt == nil {
-		t.Fatalf("expected ClosedAt to remain set")
-	}
-	if !updated[0].ClosedAt.Equal(originalClosedAt) {
-		t.Errorf("expected ClosedAt to stay %v, got %v", originalClosedAt, updated[0].ClosedAt)
-	}
+		status := StatusClosed
+		updated, err := store.Update([]string{created.ID}, UpdateOptions{Status: &status})
+		if err != nil {
+			t.Fatalf("failed to update todo: %v", err)
+		}
+		if updated[0].ClosedAt == nil {
+			t.Fatalf("expected ClosedAt to remain set")
+		}
+		if !updated[0].ClosedAt.Equal(originalClosedAt) {
+			t.Errorf("expected ClosedAt to stay %v, got %v", originalClosedAt, updated[0].ClosedAt)
+		}
+	})
 }
 
 func TestStore_Update_TombstoneSetsDeletedAt(t *testing.T) {
@@ -652,10 +657,6 @@ func TestStore_Start(t *testing.T) {
 		t.Error("expected CompletedAt to be nil")
 	}
 }
-
-
-
-
 
 func TestStore_Update_TracksProgressTimestamps(t *testing.T) {
 	store, err := openTestStore(t)
