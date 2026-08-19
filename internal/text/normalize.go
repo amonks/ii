@@ -31,21 +31,6 @@ func IsBlank(value string) bool {
 	return strings.TrimSpace(value) == ""
 }
 
-// ContainsAnyLower reports whether lowercased value contains any substrings.
-// Substrings should be provided in lowercase.
-func ContainsAnyLower(value string, substrings ...string) bool {
-	if len(substrings) == 0 {
-		return false
-	}
-	value = strings.ToLower(value)
-	for _, substring := range substrings {
-		if strings.Contains(value, substring) {
-			return true
-		}
-	}
-	return false
-}
-
 // NormalizeNewlines replaces CRLF and CR with LF.
 func NormalizeNewlines(value string) string {
 	value = strings.ReplaceAll(value, "\r\n", "\n")

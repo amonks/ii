@@ -147,12 +147,18 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 
 	client := jj.New()
 
-	// Update stale working copy before listing bookmarks
-	// This can happen if another workspace has modified the repo
-	_ = client.WorkspaceUpdateStale(repoPath)
-
-	// Check if the bookmark exists
+	// jj refuses every command in a repo whose working copy an operation
+	// elsewhere left behind, so the bookmark read can fail for a reason
+	// that has nothing to do with the todo store. Recover only when it
+	// does: update-stale drops working-copy edits jj never snapshotted,
+	// and this is the operator's own checkout, not a pool workspace.
 	bookmarks, err := client.BookmarkList(repoPath)
+	if jj.IsStaleWorkingCopy(err) {
+		if updateErr := client.WorkspaceUpdateStale(repoPath); updateErr != nil {
+			return nil, fmt.Errorf("update stale repo working copy: %w", updateErr)
+		}
+		bookmarks, err = client.BookmarkList(repoPath)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("list bookmarks: %w", err)
 	}
@@ -222,12 +228,13 @@ func Open(repoPath string, opts OpenOptions) (*Store, error) {
 		return nil, fmt.Errorf("edit to todo store: %w", err)
 	}
 
-	// Update stale working copy if needed (this can happen if the bookmark
-	// was moved after the workspace was last used)
-	if err := client.WorkspaceUpdateStale(wsPath); err != nil {
-		// Ignore errors - the workspace might not be stale
-		// The error message is not helpful for detecting this case
-	}
+	// The pool's acquire recovers a workspace the repo moved on from before
+	// handing it over, and snapshotStore recovers one that goes stale under
+	// us later; this covers the gap between them, where Edit landed on a
+	// bookmark that has since been rewritten. Nothing is written yet, so
+	// there are no unsnapshotted edits for update-stale to drop, and it
+	// exits 0 on a workspace that turns out not to be stale.
+	_ = client.WorkspaceUpdateStale(wsPath)
 
 	return &Store{
 		repoPath: repoPath,
@@ -801,7 +808,7 @@ func snapshotStore(store *Store) error {
 	}
 	if err := store.snapshot.Snapshot(store.wsPath); err == nil {
 		return nil
-	} else if !isStaleWorkspaceError(err) {
+	} else if !jj.IsStaleWorkingCopy(err) {
 		return err
 	}
 	if store.client == nil {
@@ -843,13 +850,6 @@ func releaseTodoLock(file *os.File) error {
 	// and acquire a "lock" that doesn't conflict with any existing holder,
 	// breaking mutual exclusion.
 	return errors.Join(unlockErr, closeErr)
-}
-
-func isStaleWorkspaceError(err error) bool {
-	if err == nil {
-		return false
-	}
-	return text.ContainsAnyLower(err.Error(), "working copy is stale", "workspace is stale")
 }
 
 func writeJSONLStoreWithContext[T any](store *Store, filename, label string, items []T) error {

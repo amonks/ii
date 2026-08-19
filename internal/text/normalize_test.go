@@ -121,61 +121,6 @@ func TestIsBlank(t *testing.T) {
 	}
 }
 
-func TestContainsAnyLower(t *testing.T) {
-	cases := []struct {
-		name       string
-		input      string
-		substrings []string
-		want       bool
-	}{
-		{
-			name:       "no substrings",
-			input:      "working copy is stale",
-			substrings: nil,
-			want:       false,
-		},
-		{
-			name:       "matches first",
-			input:      "working copy is stale",
-			substrings: []string{"working copy is stale", "workspace is stale"},
-			want:       true,
-		},
-		{
-			name:       "matches later",
-			input:      "the workspace is stale",
-			substrings: []string{"working copy is stale", "workspace is stale"},
-			want:       true,
-		},
-		{
-			name:       "case insensitive on value",
-			input:      "Working Copy Is Stale",
-			substrings: []string{"working copy is stale"},
-			want:       true,
-		},
-		{
-			name:       "no match",
-			input:      "permission denied",
-			substrings: []string{"working copy is stale"},
-			want:       false,
-		},
-		{
-			name:       "empty value",
-			input:      "",
-			substrings: []string{"stale"},
-			want:       false,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := ContainsAnyLower(tc.input, tc.substrings...)
-			if got != tc.want {
-				t.Fatalf("expected %v, got %v", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestNormalizeNewlines(t *testing.T) {
 	cases := []struct {
 		name  string
